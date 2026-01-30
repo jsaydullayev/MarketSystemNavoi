@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Interfaces;
 using MarketSystem.Domain.Entities;
 
 namespace MarketSystem.Application.Services;
