@@ -135,6 +135,20 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
+// Use CORS based on environment
+app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
+
+// Only use HTTPS redirection in production
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+// Authentication & Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Swagger (Development only)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -143,17 +157,9 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "MarketSystem API v1");
         options.DocumentTitle = "MarketSystem API Documentation";
         options.DefaultModelsExpandDepth(1);
+        options.RoutePrefix = "swagger";
     });
 }
-
-// Use CORS based on environment
-app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
-
-app.UseHttpsRedirection();
-
-// Authentication & Authorization
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.MapControllers();
 
@@ -192,7 +198,6 @@ if (app.Environment.IsDevelopment())
             Username = "owner",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("owner123"),
             Role = Role.Owner,
-            BranchId = branch.Id,
             IsActive = true
         };
         context.Users.Add(owner);
@@ -205,7 +210,6 @@ if (app.Environment.IsDevelopment())
             Username = "admin",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
             Role = Role.Admin,
-            BranchId = branch.Id,
             IsActive = true
         };
         context.Users.Add(admin);
@@ -213,12 +217,11 @@ if (app.Environment.IsDevelopment())
         // Create Seller user
         var seller = new User
         {
-            Id = Guid.Parse("44444444-4444-4444-4444-4444444444"),
+            Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
             FullName = "Seller User",
             Username = "seller",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("seller123"),
             Role = Role.Seller,
-            BranchId = branch.Id,
             IsActive = true
         };
         context.Users.Add(seller);
@@ -232,7 +235,6 @@ if (app.Environment.IsDevelopment())
                 new { username = "admin", password = "admin123", role = "Admin" },
                 new { username = "seller", password = "seller123", role = "Seller" }
             }});
-    }).WithName("Seed Database").RequireAuthorization();
+    }).WithName("Seed Database").AllowAnonymous(); // Allow for initial setup
 }
-
 app.Run();
