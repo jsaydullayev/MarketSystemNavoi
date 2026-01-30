@@ -30,8 +30,7 @@ public class JwtService : IJwtService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.GivenName, user.FullName),
-            new(ClaimTypes.Role, user.Role.ToString()),
-            new("BranchId", user.BranchId.ToString())
+            new(ClaimTypes.Role, user.Role.ToString())
         };
 
         var token = new JwtSecurityToken(
