@@ -40,7 +40,7 @@ public class PaymentService : IPaymentService
         return payment;
     }
 
-    public async Task UpdateSaleStatusAsync(Sale sale, CancellationToken cancellationToken = default)
+    public Task UpdateSaleStatusAsync(Sale sale, CancellationToken cancellationToken = default)
     {
         var totalPaid = sale.PaidAmount;
         var previousStatus = sale.Status;
@@ -57,6 +57,8 @@ public class PaymentService : IPaymentService
             _logger.LogInformation("Sale {SaleId} partially paid. Status changed from {Previous} to Debt. Remaining: {Remaining}",
                 sale.Id, previousStatus, sale.TotalAmount - totalPaid);
         }
+
+        return Task.CompletedTask;
     }
 
     public async Task<Debt?> CreateOrUpdateDebtAsync(Sale sale, CancellationToken cancellationToken = default)
