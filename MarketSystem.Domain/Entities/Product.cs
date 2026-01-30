@@ -10,7 +10,6 @@ public class Product : BaseEntity
 
     // Navigation properties
     public User? CreatedBySeller { get; set; }
-    public ICollection<BranchProduct> BranchProducts { get; set; } = new List<BranchProduct>();
     public ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
     public ICollection<Zakup> Zakups { get; set; } = new List<Zakup>();
 }

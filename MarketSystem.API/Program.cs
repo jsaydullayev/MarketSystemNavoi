@@ -106,8 +106,6 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Add Application Services
 builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddScoped<IStockService, StockService>();
-builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
@@ -175,20 +173,10 @@ if (app.Environment.IsDevelopment())
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // Check if data exists
-        if (await context.Branches.AnyAsync())
+        if (await context.Users.AnyAsync())
         {
             return Results.Ok(new { message = "Database already seeded" });
         }
-
-        // Create seed data
-        var branch = new Branch
-        {
-            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            Name = "Main Branch",
-            Address = "Tashkent, Uzbekistan",
-            Phone = "+9989012345678"
-        };
-        context.Branches.Add(branch);
 
         // Create Owner user
         var owner = new User
