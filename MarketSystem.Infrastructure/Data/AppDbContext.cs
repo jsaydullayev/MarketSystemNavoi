@@ -7,11 +7,9 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Product> Products => Set<Product>();
-    public DbSet<BranchProduct> BranchProducts => Set<BranchProduct>();
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
     public DbSet<Payment> Payments => Set<Payment>();
@@ -22,15 +20,6 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        // Configure Branch
-        modelBuilder.Entity<Branch>(b =>
-        {
-            b.HasKey(x => x.Id);
-            b.Property(x => x.Name).IsRequired().HasMaxLength(200);
-            b.Property(x => x.Address).HasMaxLength(500);
-            b.Property(x => x.Phone).HasMaxLength(20);
-        });
 
         // Configure Customer
         modelBuilder.Entity<Customer>(b =>
@@ -59,23 +48,6 @@ public class AppDbContext : DbContext
             b.Property(x => x.Name).IsRequired().HasMaxLength(200);
         });
 
-        // Configure BranchProduct (composite key)
-        modelBuilder.Entity<BranchProduct>(b =>
-        {
-            b.HasKey(x => x.Id);
-            b.Property(x => x.CostPrice).HasPrecision(18, 2);
-            b.Property(x => x.SalePrice).HasPrecision(18, 2);
-            b.Property(x => x.MinSalePrice).HasPrecision(18, 2);
-            b.Property(x => x.Quantity).HasPrecision(18, 3);
-            b.Property(x => x.MinThreshold).HasPrecision(18, 3);
-
-            b.HasOne(x => x.Branch).WithMany(p => p.BranchProducts).HasForeignKey(x => x.BranchId);
-            b.HasOne(x => x.Product).WithMany(p => p.BranchProducts).HasForeignKey(x => x.ProductId);
-
-            // Ensure unique combination of Branch and Product
-            b.HasIndex(x => new { x.BranchId, x.ProductId }).IsUnique();
-        });
-
         // Configure Sale
         modelBuilder.Entity<Sale>(b =>
         {
@@ -83,7 +55,6 @@ public class AppDbContext : DbContext
             b.Property(x => x.TotalAmount).HasPrecision(18, 2);
             b.Property(x => x.PaidAmount).HasPrecision(18, 2);
 
-            b.HasOne(x => x.Branch).WithMany(p => p.Sales).HasForeignKey(x => x.BranchId);
             b.HasOne(x => x.Seller).WithMany(p => p.Sales).HasForeignKey(x => x.SellerId);
             b.HasOne(x => x.Customer).WithMany(p => p.Sales).HasForeignKey(x => x.CustomerId);
 
@@ -131,7 +102,6 @@ public class AppDbContext : DbContext
             b.Property(x => x.CostPrice).HasPrecision(18, 2);
 
             b.HasOne(x => x.Product).WithMany(p => p.Zakups).HasForeignKey(x => x.ProductId);
-            b.HasOne(x => x.Branch).WithMany(p => p.Zakups).HasForeignKey(x => x.BranchId);
             b.HasOne(x => x.CreatedByAdmin).WithMany(p => p.Zakups).HasForeignKey(x => x.CreatedByAdminId);
         });
 

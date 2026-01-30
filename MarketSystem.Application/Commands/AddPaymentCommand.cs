@@ -69,9 +69,7 @@ public class AddPaymentCommandHandler : IRequestHandler<AddPaymentCommand, Payme
             // Determine sale status based on payment
             if (totalPaid >= sale.TotalAmount)
             {
-                // Fully paid - deduct stock
-                await DeductStockAsync(sale, cancellationToken);
-
+                // Fully paid
                 if (sale.Debt != null)
                 {
                     _logger.LogInformation("Closing debt for sale {SaleId}. Previous debt: {Debt}",
@@ -133,38 +131,6 @@ public class AddPaymentCommandHandler : IRequestHandler<AddPaymentCommand, Payme
         {
             _logger.LogError(ex, "Error adding payment to sale {SaleId}: {Message}", request.SaleId, ex.Message);
             throw;
-        }
-    }
-
-    private async Task DeductStockAsync(Sale sale, CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Deducting stock for sale {SaleId}", sale.Id);
-
-        foreach (var item in sale.SaleItems)
-        {
-            var branchProduct = await _context.BranchProducts
-                .FirstOrDefaultAsync(bp => bp.ProductId == item.ProductId && bp.BranchId == sale.BranchId, cancellationToken)
-                ?? throw new Exception($"Branch product not found for ProductId {item.ProductId} in Branch {sale.BranchId}");
-
-            if (branchProduct.Quantity < item.Quantity)
-            {
-                _logger.LogError("Insufficient stock for Product {ProductId} when finalizing sale {SaleId}. Available: {Available}, Required: {Required}",
-                    item.ProductId, sale.Id, branchProduct.Quantity, item.Quantity);
-                throw new Exception($"Insufficient stock for product {item.ProductId}. Available: {branchProduct.Quantity}, Required: {item.Quantity}");
-            }
-
-            var previousQuantity = branchProduct.Quantity;
-            branchProduct.Quantity -= item.Quantity;
-
-            _logger.LogInformation("Deducted stock for Product {ProductId}: Previous={Previous}, Deducted={Deducted}, New={New}",
-                item.ProductId, previousQuantity, item.Quantity, branchProduct.Quantity);
-
-            // Check if now below threshold
-            if (branchProduct.Quantity <= branchProduct.MinThreshold)
-            {
-                _logger.LogWarning("Product {ProductId} is now at or below threshold after deduction. Current: {Current}, Threshold: {Threshold}",
-                    item.ProductId, branchProduct.Quantity, branchProduct.MinThreshold);
-            }
         }
     }
 }

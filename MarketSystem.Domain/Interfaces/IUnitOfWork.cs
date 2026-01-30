@@ -4,11 +4,9 @@ namespace MarketSystem.Domain.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
-    IRepository<Branch> Branches { get; }
     IRepository<Customer> Customers { get; }
     IUserRepository Users { get; }
     IRepository<Product> Products { get; }
-    IBranchProductRepository BranchProducts { get; }
     ISaleRepository Sales { get; }
     IRepository<SaleItem> SaleItems { get; }
     IRepository<Payment> Payments { get; }

@@ -38,7 +38,6 @@ public class CreateSaleCommandHandler : IRequestHandler<CreateSaleCommand, SaleR
         var sale = new Sale
         {
             Id = Guid.NewGuid(),
-            BranchId = request.BranchId,
             SellerId = request.SellerId,
             CustomerId = request.CustomerId,
             Status = SaleStatus.Draft,
@@ -49,6 +48,6 @@ public class CreateSaleCommandHandler : IRequestHandler<CreateSaleCommand, SaleR
         _context.Sales.Add(sale);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new SaleResponse(sale.Id, sale.BranchId, sale.SellerId, sale.Status, 0, 0, 0, [], []);
+        return new SaleResponse(sale.Id, sale.SellerId, sale.Status, 0, 0, 0, [], []);
     }
 }
