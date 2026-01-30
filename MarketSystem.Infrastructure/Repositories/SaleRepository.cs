@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
+using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 
 namespace MarketSystem.Infrastructure.Repositories;

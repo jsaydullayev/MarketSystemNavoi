@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
-using MarketSystem.Infrastructure.Repositories;
 
 namespace MarketSystem.Infrastructure.Repositories;
 
@@ -28,17 +27,17 @@ public class UnitOfWork : IUnitOfWork
     {
         _context = context;
 
-        Branches = new BaseRepository<Branch>(context);
-        Customers = new BaseRepository<Customer>(context);
+        Branches = new BranchRepository(context);
+        Customers = new CustomerRepository(context);
         Users = new UserRepository(context);
-        Products = new BaseRepository<Product>(context);
+        Products = new ProductRepository(context);
         BranchProducts = new BranchProductRepository(context);
         Sales = new SaleRepository(context);
-        SaleItems = new BaseRepository<SaleItem>(context);
-        Payments = new BaseRepository<Payment>(context);
-        Debts = new BaseRepository<Debt>(context);
-        Zakups = new BaseRepository<Zakup>(context);
-        AuditLogs = new BaseRepository<AuditLog>(context);
+        SaleItems = new SaleItemRepository(context);
+        Payments = new PaymentRepository(context);
+        Debts = new DebtRepository(context);
+        Zakups = new ZakupRepository(context);
+        AuditLogs = new AuditLogRepository(context);
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

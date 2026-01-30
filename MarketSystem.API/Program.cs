@@ -2,9 +2,10 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using MarketSystem.Application.Interfaces;
 using MarketSystem.Application.Services;
+using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
+using MarketSystem.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,8 +41,15 @@ builder.Services.AddSwaggerGen();
 // Add SignalR
 builder.Services.AddSignalR();
 
+// Add Unit of Work and Repositories
+builder.Services.AddScoped<IUnitOfWork, MarketSystem.Infrastructure.Repositories.UnitOfWork>();
+
 // Add Application Services
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 
 // Add CORS

@@ -1,6 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using MarketSystem.Domain.Entities;
-using MarketSystem.Domain.Common;
+using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Infrastructure.Data;
 

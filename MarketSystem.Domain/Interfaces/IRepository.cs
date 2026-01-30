@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace MarketSystem.Application.Interfaces;
+namespace MarketSystem.Domain.Interfaces;
 
 public interface IRepository<T> where T : class
 {

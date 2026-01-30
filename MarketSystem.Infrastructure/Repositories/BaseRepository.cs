@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Common;
+using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 
 namespace MarketSystem.Infrastructure.Repositories;

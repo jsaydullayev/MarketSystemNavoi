@@ -1,8 +1,7 @@
+using MarketSystem.Application.DTOs;
+using MarketSystem.Infrastructure.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Entities;
-using MarketSystem.Infrastructure.Data;
 
 namespace MarketSystem.Application.Queries;
 
