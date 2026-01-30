@@ -4,11 +4,6 @@ using MarketSystem.Infrastructure.Data;
 
 namespace MarketSystem.Infrastructure.Repositories;
 
-public class BranchRepository : BaseRepository<Branch>, IRepository<Branch>
-{
-    public BranchRepository(AppDbContext context) : base(context) { }
-}
-
 public class CustomerRepository : BaseRepository<Customer>, IRepository<Customer>
 {
     public CustomerRepository(AppDbContext context) : base(context) { }
