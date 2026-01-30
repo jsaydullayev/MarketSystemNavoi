@@ -1,9 +1,8 @@
+using MarketSystem.Application.DTOs;
+using   MarketSystem.Domain.Enums;
+using MarketSystem.Infrastructure.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Entities;
-using MarketSystem.Domain.Enums;
-using MarketSystem.Infrastructure.Data;
 
 namespace MarketSystem.Application.Queries;
 
@@ -15,7 +14,7 @@ public class GetSaleByIdQueryHandler : IRequestHandler<GetSaleByIdQuery, SaleRes
 
     public GetSaleByIdQueryHandler(AppDbContext context)
     {
-        _context = context; 
+        _context = context;
     }
 
     public async Task<SaleResponse?> Handle(GetSaleByIdQuery query, CancellationToken cancellationToken)
