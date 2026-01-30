@@ -1,3 +1,5 @@
+using System;
+
 namespace MarketSystem.Domain.Common;
 
 public abstract class BaseEntity
