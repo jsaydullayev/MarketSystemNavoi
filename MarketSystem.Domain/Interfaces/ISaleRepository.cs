@@ -1,7 +1,7 @@
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 
-namespace MarketSystem.Application.Interfaces;
+namespace MarketSystem.Domain.Interfaces;
 
 public interface ISaleRepository : IRepository<Sale>
 {
