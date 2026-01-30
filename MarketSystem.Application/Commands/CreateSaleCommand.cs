@@ -22,9 +22,9 @@ public class CreateSaleCommandHandler : IRequestHandler<CreateSaleCommand, SaleR
     {
         var request = command.Request;
 
-        // Validate seller exists and belongs to branch
+        // Validate seller exists
         var seller = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id == request.SellerId && u.BranchId == request.BranchId && u.IsActive, cancellationToken)
+            .FirstOrDefaultAsync(u => u.Id == request.SellerId && u.IsActive, cancellationToken)
             ?? throw new Exception("Seller not found or inactive");
 
         // Validate customer if provided

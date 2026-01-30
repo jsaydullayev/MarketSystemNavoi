@@ -52,7 +52,6 @@ public class AuthController : ControllerBase
             Username = request.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = request.Role,
-            BranchId = request.BranchId,
             IsActive = true
         };
 
@@ -65,4 +64,4 @@ public class AuthController : ControllerBase
     }
 }
 
-public record RegisterRequest(string FullName, string Username, string Password, MarketSystem.Domain.Enums.Role Role, Guid BranchId);
+public record RegisterRequest(string FullName, string Username, string Password, MarketSystem.Domain.Enums.Role Role);
