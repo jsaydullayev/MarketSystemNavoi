@@ -2,8 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MarketSystem.Application.DTOs;
-using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 
 namespace MarketSystem.API.Controllers;

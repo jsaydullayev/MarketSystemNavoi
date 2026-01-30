@@ -1,6 +1,6 @@
 using MarketSystem.Domain.Entities;
 
-namespace MarketSystem.Application.Interfaces;
+namespace MarketSystem.Domain.Interfaces;
 
 public interface IBranchProductRepository : IRepository<BranchProduct>
 {

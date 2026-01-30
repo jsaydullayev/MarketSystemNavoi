@@ -1,4 +1,6 @@
-namespace MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Entities;
+
+namespace MarketSystem.Domain.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
