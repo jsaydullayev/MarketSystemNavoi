@@ -34,7 +34,6 @@ public class CreateZakupCommandHandler : IRequestHandler<CreateZakupCommand>
 
             // Validate admin
             var admin = await _context.Users
-                .Include(u => u.Branch)
                 .FirstOrDefaultAsync(u => u.Id == adminId && u.IsActive, cancellationToken)
                 ?? throw new Exception($"Admin with ID {adminId} not found or inactive");
 
