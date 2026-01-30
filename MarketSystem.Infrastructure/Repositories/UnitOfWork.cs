@@ -11,11 +11,9 @@ public class UnitOfWork : IUnitOfWork
     private IDbContextTransaction? _transaction;
     private bool _disposed;
 
-    public IRepository<Branch> Branches { get; }
     public IRepository<Customer> Customers { get; }
     public IUserRepository Users { get; }
     public IRepository<Product> Products { get; }
-    public IBranchProductRepository BranchProducts { get; }
     public ISaleRepository Sales { get; }
     public IRepository<SaleItem> SaleItems { get; }
     public IRepository<Payment> Payments { get; }
@@ -27,11 +25,9 @@ public class UnitOfWork : IUnitOfWork
     {
         _context = context;
 
-        Branches = new BranchRepository(context);
         Customers = new CustomerRepository(context);
         Users = new UserRepository(context);
         Products = new ProductRepository(context);
-        BranchProducts = new BranchProductRepository(context);
         Sales = new SaleRepository(context);
         SaleItems = new SaleItemRepository(context);
         Payments = new PaymentRepository(context);

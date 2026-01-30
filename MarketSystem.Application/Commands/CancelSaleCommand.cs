@@ -48,30 +48,6 @@ public class CancelSaleCommandHandler : IRequestHandler<CancelSaleCommand>
                 throw new Exception("Sale already cancelled");
             }
 
-            // Only restore stock if sale was paid (stock was deducted)
-            if (sale.Status == SaleStatus.Paid || sale.Status == SaleStatus.Closed)
-            {
-                _logger.LogInformation("Restoring stock for paid/closed sale {SaleId}", command.SaleId);
-
-                foreach (var item in sale.SaleItems)
-                {
-                    var branchProduct = await _context.BranchProducts
-                        .FirstOrDefaultAsync(bp => bp.ProductId == item.ProductId && bp.BranchId == sale.BranchId, cancellationToken)
-                        ?? throw new Exception($"Branch product not found for ProductId {item.ProductId}");
-
-                    var previousQuantity = branchProduct.Quantity;
-                    branchProduct.Quantity += item.Quantity;
-
-                    _logger.LogInformation("Restored stock for Product {ProductId}: Previous={Previous}, Restored={Restored}, New={New}",
-                        item.ProductId, previousQuantity, item.Quantity, branchProduct.Quantity);
-                }
-            }
-            else
-            {
-                _logger.LogInformation("No stock restoration needed for sale {SaleId} with status {Status} (stock was not deducted yet)",
-                    command.SaleId, sale.Status);
-            }
-
             // Update sale status
             sale.Status = SaleStatus.Cancelled;
             _logger.LogInformation("Sale {SaleId} status changed from {PreviousStatus} to Cancelled",
