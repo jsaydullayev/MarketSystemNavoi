@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<Debt> Debts => Set<Debt>();
     public DbSet<Zakup> Zakups => Set<Zakup>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +47,13 @@ public class AppDbContext : DbContext
         {
             b.HasKey(x => x.Id);
             b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            b.Property(x => x.CostPrice).HasPrecision(18, 2).IsRequired();
+            b.Property(x => x.SalePrice).HasPrecision(18, 2).IsRequired();
+            b.Property(x => x.MinSalePrice).HasPrecision(18, 2).IsRequired();
+            b.Property(x => x.Quantity).IsRequired();
+            b.Property(x => x.MinThreshold).IsRequired();
+
+            b.HasOne(x => x.CreatedBySeller).WithMany(p => p.TemporaryProducts).HasForeignKey(x => x.CreatedBySellerId);
         });
 
         // Configure Sale
@@ -65,7 +73,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SaleItem>(b =>
         {
             b.HasKey(x => x.Id);
-            b.Property(x => x.Quantity).HasPrecision(18, 3);
+            b.Property(x => x.Quantity).IsRequired();
             b.Property(x => x.CostPrice).HasPrecision(18, 2);
             b.Property(x => x.SalePrice).HasPrecision(18, 2);
             b.Property(x => x.Comment).HasMaxLength(500);
@@ -114,6 +122,18 @@ public class AppDbContext : DbContext
             b.Property(x => x.Payload);
 
             b.HasOne(x => x.User).WithMany(p => p.AuditLogs).HasForeignKey(x => x.UserId);
+        });
+
+        // Configure RefreshToken
+        modelBuilder.Entity<RefreshToken>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Token).IsRequired().HasMaxLength(500);
+            b.Property(x => x.ExpiresAt).IsRequired();
+            b.Property(x => x.IsUsed).IsRequired();
+            b.Property(x => x.IsRevoked).IsRequired();
+
+            b.HasOne(x => x.User).WithMany(p => p.RefreshTokens).HasForeignKey(x => x.UserId);
         });
     }
 }

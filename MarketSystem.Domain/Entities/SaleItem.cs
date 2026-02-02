@@ -6,7 +6,7 @@ public class SaleItem : BaseEntity
 {
     public Guid SaleId { get; set; }
     public Guid ProductId { get; set; }
-    public decimal Quantity { get; set; }
+    public int Quantity { get; set; }
     public decimal CostPrice { get; set; }
     public decimal SalePrice { get; set; }
     public string? Comment { get; set; }
