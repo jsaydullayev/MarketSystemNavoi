@@ -8,7 +8,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class ZakupsController : ControllerBase
 {
     private readonly IZakupService _zakupService;
