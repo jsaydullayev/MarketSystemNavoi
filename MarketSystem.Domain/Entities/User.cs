@@ -16,4 +16,5 @@ public class User : BaseEntity
     public ICollection<Zakup> Zakups { get; set; } = new List<Zakup>();
     public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     public ICollection<Product> TemporaryProducts { get; set; } = new List<Product>();
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

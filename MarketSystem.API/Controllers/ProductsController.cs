@@ -1,8 +1,8 @@
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using MarketSystem.Application.Commands;
 using MarketSystem.Application.DTOs;
+using MarketSystem.Domain.Interfaces;
+using System.Security.Claims;
 
 namespace MarketSystem.API.Controllers;
 
@@ -11,17 +11,81 @@ namespace MarketSystem.API.Controllers;
 [Authorize]
 public class ProductsController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IProductService _productService;
 
-    public ProductsController(IMediator mediator)
+    public ProductsController(IProductService productService)
     {
-        _mediator = mediator;
+        _productService = productService;
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ProductDto>> GetProduct(Guid id)
+    {
+        var product = await _productService.GetProductByIdAsync(id);
+        if (product is null)
+            return NotFound();
+
+        return Ok(product);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts()
+    {
+        var products = await _productService.GetAllProductsAsync();
+        return Ok(products);
+    }
+
+    [HttpGet("low-stock")]
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetLowStockProducts()
+    {
+        var products = await _productService.GetLowStockProductsAsync();
+        return Ok(products);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
+    public async Task<ActionResult<ProductDto>> CreateProduct([FromBody] CreateProductDto request)
     {
-        await _mediator.Send(new CreateProductCommand(request));
-        return Ok();
+        var sellerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var sellerGuid = string.IsNullOrEmpty(sellerId) ? (Guid?)null : Guid.Parse(sellerId);
+
+        try
+        {
+            var product = await _productService.CreateProductAsync(request, sellerGuid);
+            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<ProductDto>> UpdateProduct(Guid id, [FromBody] UpdateProductDto request)
+    {
+        if (id != request.Id)
+            return BadRequest("ID mismatch");
+
+        try
+        {
+            var product = await _productService.UpdateProductAsync(request);
+            if (product is null)
+                return NotFound();
+
+            return Ok(product);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteProduct(Guid id)
+    {
+        var result = await _productService.DeleteProductAsync(id);
+        if (!result)
+            return NotFound();
+
+        return NoContent();
     }
 }

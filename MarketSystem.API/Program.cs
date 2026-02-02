@@ -106,7 +106,13 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Add Application Services
 builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddScoped<IZakupService, ZakupService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 

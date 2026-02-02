@@ -20,6 +20,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Debt> Debts { get; }
     public IRepository<Zakup> Zakups { get; }
     public IRepository<AuditLog> AuditLogs { get; }
+    public IRefreshTokenRepository RefreshTokens { get; }
 
     public UnitOfWork(AppDbContext context)
     {
@@ -34,6 +35,7 @@ public class UnitOfWork : IUnitOfWork
         Debts = new DebtRepository(context);
         Zakups = new ZakupRepository(context);
         AuditLogs = new AuditLogRepository(context);
+        RefreshTokens = new RefreshTokenRepository(context);
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
