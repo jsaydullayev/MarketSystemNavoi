@@ -13,6 +13,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<Debt> Debts { get; }
     IRepository<Zakup> Zakups { get; }
     IRepository<AuditLog> AuditLogs { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
