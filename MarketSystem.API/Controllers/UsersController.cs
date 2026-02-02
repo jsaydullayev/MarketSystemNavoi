@@ -7,7 +7,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;

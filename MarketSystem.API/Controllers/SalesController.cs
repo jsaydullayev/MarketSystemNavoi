@@ -8,7 +8,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class SalesController : ControllerBase
 {
     private readonly ISaleService _saleService;
