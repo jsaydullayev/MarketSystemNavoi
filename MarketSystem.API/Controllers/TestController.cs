@@ -60,8 +60,8 @@ public class TestController : ControllerBase
                 user.Username,
                 user.FullName,
                 user.Role.ToString(),
-                token,
-                "refresh_token_placeholder",
+                token.AccessToken,
+                string.Empty, // Test endpoint - no refresh token
                 DateTime.UtcNow.AddDays(7)
             ));
         }
