@@ -8,7 +8,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "AllRoles")]
 public class ZakupsController : ControllerBase
 {
     private readonly IZakupService _zakupService;
@@ -43,6 +43,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<ZakupDto>> CreateZakup([FromBody] CreateZakupDto request)
     {
         var adminIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

@@ -7,10 +7,12 @@ namespace MarketSystem.Application.Services;
 public class ZakupService : IZakupService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogService;
 
-    public ZakupService(IUnitOfWork unitOfWork)
+    public ZakupService(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
+        _auditLogService = auditLogService;
     }
 
     public async Task<ZakupDto?> GetZakupByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -52,29 +54,53 @@ public class ZakupService : IZakupService
 
     public async Task<ZakupDto> CreateZakupAsync(CreateZakupDto request, Guid adminId, CancellationToken cancellationToken = default)
     {
-        var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId, cancellationToken);
-        if (product is null)
-            throw new InvalidOperationException("Product not found");
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
-        var zakup = new Zakup
+        try
         {
-            Id = Guid.NewGuid(),
-            ProductId = request.ProductId,
-            Quantity = request.Quantity,
-            CostPrice = request.CostPrice,
-            CreatedByAdminId = adminId
-        };
+            var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId, cancellationToken);
+            if (product is null)
+                throw new InvalidOperationException("Product not found");
 
-        await _unitOfWork.Zakups.AddAsync(zakup, cancellationToken);
+            var zakup = new Zakup
+            {
+                Id = Guid.NewGuid(),
+                ProductId = request.ProductId,
+                Quantity = request.Quantity,
+                CostPrice = request.CostPrice,
+                CreatedByAdminId = adminId
+            };
 
-        // Update product stock and cost price
-        product.Quantity += request.Quantity;
-        product.CostPrice = request.CostPrice; // Update cost price to latest purchase price
-        _unitOfWork.Products.Update(product);
+            await _unitOfWork.Zakups.AddAsync(zakup, cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // WEIGHTED AVERAGE FORMULA:
+            // NewCostPrice = (OldTotalCost + NewCost) / (OldQuantity + NewQuantity)
+            var oldTotalCost = product.Quantity * product.CostPrice;
+            var newTotalCost = request.Quantity * request.CostPrice;
+            var totalQuantity = product.Quantity + request.Quantity;
 
-        return await MapToDtoAsync(zakup, cancellationToken);
+            // Update product stock and cost price with weighted average
+            product.Quantity += request.Quantity;
+            product.CostPrice = totalQuantity > 0 ? (oldTotalCost + newTotalCost) / totalQuantity : request.CostPrice;
+
+            // Optionally update SalePrice and MinSalePrice if provided (admin discretion)
+            // For now, we keep them unchanged as per TZ
+
+            _unitOfWork.Products.Update(product);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            // Audit log
+            await _auditLogService.LogZakupActionAsync(zakup.Id, adminId, cancellationToken);
+
+            return await MapToDtoAsync(zakup, cancellationToken);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
     }
 
     private async Task<ZakupDto> MapToDtoAsync(Zakup zakup, CancellationToken cancellationToken)
