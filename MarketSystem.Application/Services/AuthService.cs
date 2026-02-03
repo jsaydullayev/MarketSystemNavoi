@@ -1,8 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
+using MarketSystem.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using MarketSystem.Domain.Interfaces;
 
 namespace MarketSystem.Application.Services;
@@ -74,7 +74,7 @@ public class AuthService : IAuthService
     public async Task<AuthResponse?> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
     {
         // Validate access token
-        var userId = _jwtService.ValidateToken(request.AccessToken);
+        var userId = _jwtService.ValidateAndGetUser(request.AccessToken);
         if (userId is null)
             return null;
 
@@ -129,7 +129,7 @@ public class AuthService : IAuthService
         {
             _logger.LogInformation("Generating tokens for user: {UserId}, {Username}", user.Id, user.Username);
 
-            var accessToken = _jwtService.GenerateToken(user);
+            var accessToken = _jwtService.GenerateToken(user, true);
             var refreshToken = GenerateRefreshToken();
 
             var refreshTokenEntity = new RefreshToken
@@ -152,7 +152,6 @@ public class AuthService : IAuthService
                 user.Username,
                 user.FullName,
                 user.Role.ToString(),
-                accessToken,
                 refreshToken,
                 DateTime.UtcNow.AddDays(7) // Access token expires in 7 days
             );

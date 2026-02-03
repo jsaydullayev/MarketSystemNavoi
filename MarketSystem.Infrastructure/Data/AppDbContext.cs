@@ -165,8 +165,6 @@ public class AppDbContext : DbContext
             b.Property(x => x.IsUsed).IsRequired();
             b.Property(x => x.IsRevoked).IsRequired();
 
-            b.HasOne(x => x.User).WithMany(p => p.RefreshTokens).HasForeignKey(x => x.UserId);
-
             // Indexes for performance
             b.HasIndex(x => x.Token)
                 .HasDatabaseName("IX_RefreshToken_Token");
