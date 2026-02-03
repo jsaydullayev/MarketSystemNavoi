@@ -74,19 +74,21 @@ public class AuthService : IAuthService
     public async Task<AuthResponse?> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
     {
         // Validate access token
-        var userId = _jwtService.ValidateAndGetUser(request.AccessToken);
-        if (userId is null)
+        var (isValid, userIdStr) = _jwtService.ValidateAndGetUser(request.AccessToken);
+        if (!isValid || userIdStr is null)
             return null;
+
+        var userId = Guid.Parse(userIdStr);
 
         // Get refresh token
         var refreshToken = await _unitOfWork.RefreshTokens
             .GetByTokenAsync(request.RefreshToken, cancellationToken);
 
-        if (refreshToken is null || refreshToken.UserId != userId || refreshToken.IsUsed || refreshToken.IsRevoked || refreshToken.ExpiresAt < DateTime.UtcNow)
+        if (refreshToken is null || refreshToken.IsUsed || refreshToken.IsRevoked || refreshToken.ExpiresAt < DateTime.UtcNow)
             return null;
 
         // Get user
-        var user = await _unitOfWork.Users.GetByIdAsync(userId.Value, cancellationToken);
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null || !user.IsActive)
             return null;
 
@@ -152,7 +154,8 @@ public class AuthService : IAuthService
                 user.Username,
                 user.FullName,
                 user.Role.ToString(),
-                refreshToken,
+                accessToken.AccessToken, // Access token string
+                refreshToken, // Refresh token string
                 DateTime.UtcNow.AddDays(7) // Access token expires in 7 days
             );
         }
