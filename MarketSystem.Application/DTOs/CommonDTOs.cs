@@ -33,5 +33,9 @@ public record DailyReportDto(DateTime Date, decimal TotalSales, decimal TotalZak
 public record PeriodReportRequest(DateTime StartDate, DateTime EndDate);
 public record PeriodReportDto(DateTime StartDate, DateTime EndDate, decimal TotalSales, decimal TotalZakup, decimal Profit, decimal NetIncome, int TotalTransactions);
 
+// Debt DTOs
+public record DebtDto(Guid Id, Guid SaleId, Guid CustomerId, decimal TotalDebt, decimal RemainingDebt, string Status, DateTime CreatedAt);
+public record PayDebtDto(decimal Amount, string PaymentType);
+
 // Pagination
 public record PagedResponse<T>(List<T> Items, int TotalCount, int Page, int PageSize);

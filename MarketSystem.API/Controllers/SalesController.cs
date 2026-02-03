@@ -8,7 +8,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "AllRoles")]
 public class SalesController : ControllerBase
 {
     private readonly ISaleService _saleService;
@@ -106,6 +106,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/cancel")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request)
     {
         try

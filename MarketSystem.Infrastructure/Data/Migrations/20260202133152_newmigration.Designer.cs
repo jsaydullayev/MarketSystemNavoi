@@ -3,17 +3,20 @@ using System;
 using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MarketSystem.Infrastructure.Migrations
+namespace MarketSystem.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260202133152_newmigration")]
+    partial class newmigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,11 +56,7 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "CreatedAt")
-                        .HasDatabaseName("IX_AuditLog_User_CreatedAt");
-
-                    b.HasIndex("EntityType", "EntityId", "CreatedAt")
-                        .HasDatabaseName("IX_AuditLog_Entity_CreatedAt");
+                    b.HasIndex("UserId");
 
                     b.ToTable("AuditLogs");
                 });
@@ -119,11 +118,10 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CustomerId");
+
                     b.HasIndex("SaleId")
                         .IsUnique();
-
-                    b.HasIndex("CustomerId", "Status")
-                        .HasDatabaseName("IX_Debt_Customer_Status");
 
                     b.ToTable("Debts");
                 });
@@ -149,8 +147,7 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SaleId")
-                        .HasDatabaseName("IX_Payment_SaleId");
+                    b.HasIndex("SaleId");
 
                     b.ToTable("Payments");
                 });
@@ -170,9 +167,6 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.Property<Guid?>("CreatedBySellerId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsTemporary")
                         .HasColumnType("boolean");
@@ -234,11 +228,7 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Token")
-                        .HasDatabaseName("IX_RefreshToken_Token");
-
-                    b.HasIndex("UserId", "ExpiresAt")
-                        .HasDatabaseName("IX_RefreshToken_User_ExpiresAt");
+                    b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
                 });
@@ -254,9 +244,6 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
 
                     b.Property<decimal>("PaidAmount")
                         .HasPrecision(18, 2)
@@ -274,15 +261,9 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomerId")
-                        .HasDatabaseName("IX_Sale_CustomerId")
-                        .HasFilter("CustomerId IS NOT NULL");
+                    b.HasIndex("CustomerId");
 
-                    b.HasIndex("SellerId", "Status")
-                        .HasDatabaseName("IX_Sale_Seller_Status");
-
-                    b.HasIndex("Status", "CreatedAt")
-                        .HasDatabaseName("IX_Sale_Status_CreatedAt");
+                    b.HasIndex("SellerId");
 
                     b.ToTable("Sales");
                 });
@@ -321,8 +302,7 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("SaleId", "ProductId")
-                        .HasDatabaseName("IX_SaleItem_Sale_Product");
+                    b.HasIndex("SaleId");
 
                     b.ToTable("SaleItems");
                 });
@@ -342,9 +322,6 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<string>("PasswordHash")

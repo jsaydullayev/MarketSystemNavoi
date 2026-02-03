@@ -137,27 +137,37 @@ public class ReportService : IReportService
         DateTime end)
     {
         decimal totalSales = 0;
-        decimal totalCost = 0;
+        decimal totalCost = 0;     // Cost of goods sold
+        decimal totalProfit = 0;    // Actual profit from sales
         int totalTransactions = sales.Count();
 
+        // Calculate from sales and their items
         foreach (var sale in sales)
         {
             totalSales += sale.TotalAmount;
+
+            // Calculate cost and profit from each sale item
+            foreach (var item in sale.SaleItems)
+            {
+                var itemCost = item.CostPrice * item.Quantity;
+                var itemRevenue = item.SalePrice * item.Quantity;
+                var itemProfit = itemRevenue - itemCost;
+
+                totalCost += itemCost;
+                totalProfit += itemProfit;
+            }
         }
 
         decimal totalZakup = zakups.Sum(z => z.Quantity * z.CostPrice);
 
-        // Calculate profit from sale items
-        // We need to load sale items for each sale to calculate actual profit
-        // For now, simplified calculation
-        decimal profit = totalSales - totalCost - totalZakup;
-        decimal netIncome = profit;
+        // Net income = Profit - Operating expenses (currently 0)
+        decimal netIncome = totalProfit;
 
         return new DailyReportDto(
             start,
             totalSales,
             totalZakup,
-            profit,
+            totalProfit,
             netIncome,
             totalTransactions
         );

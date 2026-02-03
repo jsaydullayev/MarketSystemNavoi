@@ -1,20 +1,24 @@
 # MarketSystem – Full Technical Specification (TZ)
 
 ## 1. Project Overview
+
 MarketSystem – bu market(lar) uchun mo‘ljallangan markazlashgan savdo va sklad boshqaruv tizimi. Tizim real vaqt rejimida savdolarni, sklad qoldiqlarini, foydani, qarzlarni va to‘lovlarni nazorat qiladi.
 
 Platformalar:
+
 - Desktop (Windows)
-- Android
+- Android, IOS
 
 Arxitektura:
+
 - Backend: ASP.NET Core (Web API)
-- Frontend: Desktop + Android (bitta backend)
+- Frontend: Android, IOS (bitta backend)
 - Database: PostgreSQL
 
 ---
 
 ## 2. Domain Glossary
+
 - **Product** – sotiladigan tovar
 - **Zakup** – tovarning kelish jarayoni (faqat admin)
 - **Sale** – bitta sotuv operatsiyasi
@@ -30,27 +34,31 @@ Arxitektura:
 ## 3. Roles & Permissions
 
 ### 3.1 Roles
+
 - Owner
 - Admin
 - Seller
 
 ### 3.2 Permission Matrix
-| Action | Owner | Admin | Seller |
-|------|------|-------|--------|
-| Zakup qilish | ✅ | ✅ | ❌ |
-| Product qo‘shish (temporary) | ❌ | ❌ | ✅ |
-| Sale qilish | ❌ | ❌ | ✅ |
-| Sale o‘chirish | ❌ | ✅ | ❌ |
-| Past narxda sotish | ❌ | ❌ | ✅ (comment bilan) |
-| Hisobot ko‘rish | ✅ | ✅ | ❌ |
-| Threshold sozlash | ❌ | ✅ | ❌ |
+
+| Action                       | Owner | Admin | Seller             |
+| ---------------------------- | ----- | ----- | ------------------ |
+| Zakup qilish                 | ✅    | ✅    | ❌                 |
+| Product qo‘shish (temporary) | ❌    | ❌    | ✅                 |
+| Sale qilish                  | ❌    | ❌    | ✅                 |
+| Sale o‘chirish               | ❌    | ✅    | ❌                 |
+| Past narxda sotish           | ❌    | ❌    | ✅ (comment bilan) |
+| Hisobot ko‘rish              | ✅    | ✅    | ❌                 |
+| Threshold sozlash            | ❌    | ✅    | ❌                 |
 
 ---
 
 ## 4. Database Entities (Detailed)
 
 ### 4.1 Customer
+
 Mijoz qarz va sotuvlarni bog‘lash uchun kerak.
+
 - Id (UUID)
 - Phone (string, unique, nullable=false)
 - FullName (string, nullable=true)
@@ -58,15 +66,16 @@ Mijoz qarz va sotuvlarni bog‘lash uchun kerak.
 - IsDeleted (bool)
 
 ### 4.2 User
+
 - Id (UUID)
 - FullName
 - Username
 - PasswordHash
 - Role (Owner/Admin/Seller)
-- BranchId
 - IsActive
 
 ### 4.3 Product
+
 - Id
 - Name
 - IsTemporary (bool)
@@ -80,17 +89,8 @@ Temporary product yaratilganda seller BranchProduct orqali CostPrice, SalePrice,
 - IsTemporary (bool)
 - CreatedBySellerId (nullable)
 
-### 4.4 BranchProduct
-- Id
-- BranchId
-- ProductId
-- CostPrice
-- SalePrice
-- MinSalePrice
-- Quantity
-- MinThreshold
-
 ### 4.5 Sale
+
 - Id
 - BranchId
 - SellerId
@@ -101,6 +101,7 @@ Temporary product yaratilganda seller BranchProduct orqali CostPrice, SalePrice,
 - CreatedAt
 
 ### 4.6 SaleItem
+
 - Id
 - SaleId
 - ProductId
@@ -110,6 +111,7 @@ Temporary product yaratilganda seller BranchProduct orqali CostPrice, SalePrice,
 - Comment (nullable)
 
 ### 4.7 Payment
+
 - Id
 - SaleId
 - PaymentType (Cash/Terminal/Transfer)
@@ -117,6 +119,7 @@ Temporary product yaratilganda seller BranchProduct orqali CostPrice, SalePrice,
 - CreatedAt
 
 ### 4.8 Debt
+
 - Id
 - SaleId
 - CustomerId
@@ -125,15 +128,16 @@ Temporary product yaratilganda seller BranchProduct orqali CostPrice, SalePrice,
 - Status (Open/Closed)
 
 ### 4.9 Zakup
+
 - Id
 - ProductId
-- BranchId
 - Quantity
 - CostPrice
 - CreatedByAdminId
 - CreatedAt
 
 ### 4.10 AuditLog
+
 - Id
 - EntityType
 - EntityId
@@ -147,6 +151,7 @@ Temporary product yaratilganda seller BranchProduct orqali CostPrice, SalePrice,
 ## 5. Sale Lifecycle (State Machine)
 
 ### 5.1 Sale Statuses
+
 - Draft
 - Paid
 - Debt
@@ -154,30 +159,34 @@ Temporary product yaratilganda seller BranchProduct orqali CostPrice, SalePrice,
 - Cancelled
 
 ### 5.2 State Transitions
-| From | To | Trigger | Handler |
-|----|----|-------|---------|
-| Draft | Paid | 100% payment | PaymentHandler |
-| Draft | Debt | Partial payment | DebtHandler |
-| Debt | Closed | Full payment | DebtCloseHandler |
-| Any | Cancelled | Admin action | SaleCancelHandler |
+
+| From  | To        | Trigger         | Handler           |
+| ----- | --------- | --------------- | ----------------- |
+| Draft | Paid      | 100% payment    | PaymentHandler    |
+| Draft | Debt      | Partial payment | DebtHandler       |
+| Debt  | Closed    | Full payment    | DebtCloseHandler  |
+| Any   | Cancelled | Admin action    | SaleCancelHandler |
 
 ---
 
 ## 6. Business Rules
 
 ### 6.1 Pricing Rules
+
 - Product har doim `cost_price`, `sale_price`, `min_sale_price` ga ega
 - Agar `sale_price < min_sale_price`:
-  - Comment REQUIRED
-  - UI’da sariq rangda belgilanadi
+    - Comment REQUIRED
+    - UI’da sariq rangda belgilanadi
 
 ### 6.2 Profit Formula
+
 ```text
 ItemProfit = (SalePrice - CostPrice) * Quantity
 SaleProfit = SUM(ItemProfit)
 ```
 
 ### 6.3 Stock Rules
+
 - Quantity manfiy bo‘lishi taqiqlanadi
 - Stock update faqat transaction ichida
 - Qaytarilgan tovar skladda qayta qo‘shiladi
@@ -187,6 +196,7 @@ SaleProfit = SUM(ItemProfit)
 ## 7. Payment Logic
 
 ### 7.1 Payment Types
+
 - Cash
 - Terminal
 - Transfer
@@ -201,6 +211,7 @@ SaleProfit = SUM(ItemProfit)
 - Debt
 
 ### 7.2 Mix Payment
+
 - Bir sale’da bir nechta payment bo‘lishi mumkin
 - Payment summalar yig‘indisi `total_amount` ga teng bo‘lishi shart
 - Qisman to‘lov bo‘lsa → Debt ochiladi
@@ -212,22 +223,19 @@ SaleProfit = SUM(ItemProfit)
 - Bitta mijozda bir nechta debt bo‘lishi mumkin
 - Debt Sale bilan bog‘langan bo‘ladi
 - Agar Payment yig‘indisi TotalAmount dan kam bo‘lsa:
-  - Sale.Status = Debt
-  - Debt yozuvi yaratiladi
+    - Sale.Status = Debt
+    - Debt yozuvi yaratiladi
 - Debt to‘liq yopilganda:
-  - RemainingDebt = 0
-  - Debt.Status = Closed
-  - Sale.Status = Closed
+    - RemainingDebt = 0
+    - Debt.Status = Closed
+    - Sale.Status = Closed
 
 ## 9. Zakup Logic
-
 
 - Zakup faqat Admin tomonidan amalga oshiriladi
 - Zakup alohida Zakup table’da tarix sifatida saqlanadi
 - Zakup vaqtida:
-  - BranchProduct.Quantity oshiriladi
-  - BranchProduct.CostPrice yangilanadi
-  - SalePrice va MinSalePrice **ixtiyoriy**, admin xohishiga ko‘ra yangilanadi
+    - SalePrice va MinSalePrice **ixtiyoriy**, admin xohishiga ko‘ra yangilanadi
 
 ---
 
@@ -235,23 +243,24 @@ SaleProfit = SUM(ItemProfit)
 
 - Har bir product uchun min_threshold admin tomonidan belgilanadi
 - Quantity <= MinThreshold bo‘lsa:
-  - UI’da qizil rang bilan belgilanadi
-  - Sotish ruxsat etiladi, lekin warning chiqariladi
+    - UI’da qizil rang bilan belgilanadi
+    - Sotish ruxsat etiladi, lekin warning chiqariladi
 - Threshold qiymatini faqat Admin o‘zgartira oladi
 - Barcha userlar ko‘ra oladi
 
 ## 11. Real-Time Visibility
 
-
 **"Spiska" taʼrifi:** bu sotuvchining **Active Draft Sale (cart)** holatidagi savdosi.
 
 Real-time ko‘rinadigan maʼlumotlar:
+
 - Seller
 - Draft Sale ID
 - SaleItem ro‘yxati (Product, Quantity)
 - Jami summa
 
 Cheklovlar:
+
 - Boshqa sotuvchilar faqat ko‘rishi mumkin (read-only)
 - O‘zgartirish taqiqlanadi
 
@@ -262,12 +271,14 @@ Texnologiya: **SignalR (WebSockets asosida)**
 ## 12. Reports & Analytics
 
 ### 12.1 Hisobotlar
+
 1. Sotilgan tovarlar umumiy summasi
 2. Zakup summasi
 3. Profit
 4. Sof daromad
 
 ### 12.2 Export
+
 - Ekranda ko‘rish
 - Excel formatda yuklab olish
 
@@ -283,19 +294,23 @@ Texnologiya: **SignalR (WebSockets asosida)**
 ## 14. Handlers (Core Logic)
 
 ### 14.1 SaleCreateHandler
+
 - Validation
 - Stock check
 - Sale & SaleItem create
 
 ### 14.2 PaymentHandler
+
 - Payment create
 - Sale status update
 
 ### 14.3 DebtHandler
+
 - Debt create/update
 - Status control
 
 ### 14.4 StockUpdateHandler
+
 - Atomic stock update
 - Rollback on error
 
@@ -304,13 +319,16 @@ Texnologiya: **SignalR (WebSockets asosida)**
 ## 15. Logging & Audit
 
 ### 15.1 AuditLog
+
 Har bir muhim event yoziladi:
+
 - Sale create/update/delete
 - Payment create
 - Debt close
 - Zakup create
 
 Log fields:
+
 - EntityType
 - EntityId
 - Action
@@ -319,6 +337,7 @@ Log fields:
 - CreatedAt
 
 ### 15.2 Log Levels
+
 - Info – normal flow
 - Warning – validation bypass (past narx, threshold)
 - Error – transaction failure

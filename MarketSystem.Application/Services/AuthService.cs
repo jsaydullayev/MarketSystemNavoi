@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
@@ -10,33 +11,48 @@ public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtService _jwtService;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService)
+    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService, ILogger<AuthService> logger)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
+        _logger = logger;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users
-            .FindAsync(u => u.Username == request.Username && u.IsActive, cancellationToken)
-            .ContinueWith(t => t.Result.FirstOrDefault(), cancellationToken);
+        _logger.LogInformation("Login attempt for username: {Username}", request.Username);
+
+        var users = await _unitOfWork.Users.FindAsync(u => u.Username == request.Username && u.IsActive, cancellationToken);
+        var user = users.FirstOrDefault();
 
         if (user is null)
+        {
+            _logger.LogWarning("User not found or inactive: {Username}", request.Username);
             return null;
+        }
 
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            _logger.LogWarning("Invalid password for user: {Username}", request.Username);
             return null;
+        }
 
+        _logger.LogInformation("Login successful for user: {Username}, ID: {UserId}", user.Username, user.Id);
         return await GenerateAuthResponseAsync(user, cancellationToken);
     }
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation("Register attempt for username: {Username}", request.Username);
+
         // Check if username already exists
         if (await _unitOfWork.Users.AnyAsync(u => u.Username == request.Username, cancellationToken))
+        {
+            _logger.LogWarning("Username already exists: {Username}", request.Username);
             throw new InvalidOperationException($"Username '{request.Username}' already exists");
+        }
 
         var user = new User
         {
@@ -51,6 +67,7 @@ public class AuthService : IAuthService
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        _logger.LogInformation("User registered successfully: {Username}, ID: {UserId}", user.Username, user.Id);
         return await GenerateAuthResponseAsync(user, cancellationToken);
     }
 
@@ -108,31 +125,43 @@ public class AuthService : IAuthService
 
     private async Task<AuthResponse> GenerateAuthResponseAsync(User user, CancellationToken cancellationToken)
     {
-        var accessToken = _jwtService.GenerateToken(user);
-        var refreshToken = GenerateRefreshToken();
-
-        var refreshTokenEntity = new RefreshToken
+        try
         {
-            Id = Guid.NewGuid(),
-            UserId = user.Id,
-            Token = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddDays(30), // Refresh token valid for 30 days
-            IsUsed = false,
-            IsRevoked = false
-        };
+            _logger.LogInformation("Generating tokens for user: {UserId}, {Username}", user.Id, user.Username);
 
-        await _unitOfWork.RefreshTokens.AddAsync(refreshTokenEntity, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            var accessToken = _jwtService.GenerateToken(user);
+            var refreshToken = GenerateRefreshToken();
 
-        return new AuthResponse(
-            user.Id,
-            user.Username,
-            user.FullName,
-            user.Role.ToString(),
-            accessToken,
-            refreshToken,
-            DateTime.UtcNow.AddDays(7) // Access token expires in 7 days
-        );
+            var refreshTokenEntity = new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(30), // Refresh token valid for 30 days
+                IsUsed = false,
+                IsRevoked = false
+            };
+
+            await _unitOfWork.RefreshTokens.AddAsync(refreshTokenEntity, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Tokens generated successfully for user: {UserId}", user.Id);
+
+            return new AuthResponse(
+                user.Id,
+                user.Username,
+                user.FullName,
+                user.Role.ToString(),
+                accessToken,
+                refreshToken,
+                DateTime.UtcNow.AddDays(7) // Access token expires in 7 days
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating tokens for user: {UserId}", user.Id);
+            throw;
+        }
     }
 
     private static string GenerateRefreshToken()
