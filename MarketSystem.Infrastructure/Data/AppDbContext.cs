@@ -40,6 +40,7 @@ public class AppDbContext : DbContext
             b.Property(x => x.Username).IsRequired().HasMaxLength(100);
             b.Property(x => x.PasswordHash).IsRequired();
             b.HasIndex(x => x.Username).IsUnique();
+            b.HasQueryFilter(x => !x.IsDeleted);
         });
 
         // Configure Product
@@ -54,6 +55,7 @@ public class AppDbContext : DbContext
             b.Property(x => x.MinThreshold).IsRequired();
 
             b.HasOne(x => x.CreatedBySeller).WithMany(p => p.TemporaryProducts).HasForeignKey(x => x.CreatedBySellerId);
+            b.HasQueryFilter(x => !x.IsDeleted);
         });
 
         // Configure Sale
@@ -67,6 +69,18 @@ public class AppDbContext : DbContext
             b.HasOne(x => x.Customer).WithMany(p => p.Sales).HasForeignKey(x => x.CustomerId);
 
             b.HasOne(x => x.Debt).WithOne(x => x.Sale).HasForeignKey<Debt>(x => x.SaleId);
+
+            // Indexes for performance
+            b.HasIndex(x => new { x.Status, x.CreatedAt })
+                .HasDatabaseName("IX_Sale_Status_CreatedAt");
+            b.HasIndex(x => x.CustomerId)
+                .HasFilter("CustomerId IS NOT NULL")
+                .HasDatabaseName("IX_Sale_CustomerId");
+            b.HasIndex(x => new { x.SellerId, x.Status })
+                .HasDatabaseName("IX_Sale_Seller_Status");
+
+            // Soft delete filter
+            b.HasQueryFilter(x => !x.IsDeleted);
         });
 
         // Configure SaleItem
@@ -80,6 +94,10 @@ public class AppDbContext : DbContext
 
             b.HasOne(x => x.Sale).WithMany(p => p.SaleItems).HasForeignKey(x => x.SaleId);
             b.HasOne(x => x.Product).WithMany(p => p.SaleItems).HasForeignKey(x => x.ProductId);
+
+            // Index for performance
+            b.HasIndex(x => new { x.SaleId, x.ProductId })
+                .HasDatabaseName("IX_SaleItem_Sale_Product");
         });
 
         // Configure Payment
@@ -89,6 +107,10 @@ public class AppDbContext : DbContext
             b.Property(x => x.Amount).HasPrecision(18, 2);
 
             b.HasOne(x => x.Sale).WithMany(p => p.Payments).HasForeignKey(x => x.SaleId);
+
+            // Index for performance
+            b.HasIndex(x => x.SaleId)
+                .HasDatabaseName("IX_Payment_SaleId");
         });
 
         // Configure Debt
@@ -100,6 +122,10 @@ public class AppDbContext : DbContext
 
             b.HasOne(x => x.Sale).WithOne(x => x.Debt).HasForeignKey<Debt>(x => x.SaleId);
             b.HasOne(x => x.Customer).WithMany(p => p.Debts).HasForeignKey(x => x.CustomerId);
+
+            // Index for performance
+            b.HasIndex(x => new { x.CustomerId, x.Status })
+                .HasDatabaseName("IX_Debt_Customer_Status");
         });
 
         // Configure Zakup
@@ -122,6 +148,12 @@ public class AppDbContext : DbContext
             b.Property(x => x.Payload);
 
             b.HasOne(x => x.User).WithMany(p => p.AuditLogs).HasForeignKey(x => x.UserId);
+
+            // Indexes for performance
+            b.HasIndex(x => new { x.EntityType, x.EntityId, x.CreatedAt })
+                .HasDatabaseName("IX_AuditLog_Entity_CreatedAt");
+            b.HasIndex(x => new { x.UserId, x.CreatedAt })
+                .HasDatabaseName("IX_AuditLog_User_CreatedAt");
         });
 
         // Configure RefreshToken
@@ -134,6 +166,12 @@ public class AppDbContext : DbContext
             b.Property(x => x.IsRevoked).IsRequired();
 
             b.HasOne(x => x.User).WithMany(p => p.RefreshTokens).HasForeignKey(x => x.UserId);
+
+            // Indexes for performance
+            b.HasIndex(x => x.Token)
+                .HasDatabaseName("IX_RefreshToken_Token");
+            b.HasIndex(x => new { x.UserId, x.ExpiresAt })
+                .HasDatabaseName("IX_RefreshToken_User_ExpiresAt");
         });
     }
 }

@@ -10,11 +10,13 @@ public class User : BaseEntity
     public string PasswordHash { get; set; } = string.Empty;
     public Role Role { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
 
     // Navigation properties
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
     public ICollection<Zakup> Zakups { get; set; } = new List<Zakup>();
     public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     public ICollection<Product> TemporaryProducts { get; set; } = new List<Product>();
-    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpireTime { get; set; }
 }

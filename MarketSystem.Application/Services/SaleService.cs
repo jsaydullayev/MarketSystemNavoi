@@ -9,10 +9,12 @@ namespace MarketSystem.Application.Services;
 public class SaleService : ISaleService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogService;
 
-    public SaleService(IUnitOfWork unitOfWork)
+    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
+        _auditLogService = auditLogService;
     }
 
     public async Task<SaleDto?> GetSaleByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -82,6 +84,9 @@ public class SaleService : ISaleService
         await _unitOfWork.Sales.AddAsync(sale, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Audit log
+        await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
+
         return await MapToDtoAsync(sale, cancellationToken);
     }
 
@@ -91,7 +96,8 @@ public class SaleService : ISaleService
 
         try
         {
-            var sale = await _unitOfWork.Sales.GetByIdAsync(saleId, cancellationToken);
+            // Get sale with items to check for duplicates
+            var sale = await _unitOfWork.Sales.GetWithDetailsAsync(saleId, cancellationToken);
             if (sale is null || sale.Status != SaleStatus.Draft)
                 throw new InvalidOperationException("Sale not found or not in Draft status");
 
@@ -114,32 +120,66 @@ public class SaleService : ISaleService
                 // This is allowed but should trigger warning in UI
             }
 
-            var saleItem = new SaleItem
+            SaleItem? resultSaleItem;
+            decimal itemTotal;
+
+            // CHECK: Is this product already in the sale?
+            var existingItem = sale.SaleItems.FirstOrDefault(si => si.ProductId == request.ProductId);
+
+            if (existingItem != null)
             {
-                Id = Guid.NewGuid(),
-                SaleId = saleId,
-                ProductId = request.ProductId,
-                Quantity = request.Quantity,
-                CostPrice = product.CostPrice,
-                SalePrice = request.SalePrice,
-                Comment = request.Comment
-            };
+                // Product exists - UPDATE existing item
+                var oldQuantity = existingItem.Quantity;
+                existingItem.Quantity += request.Quantity;
+                // Keep the original sale price (or could use weighted average)
+                // existingItem.SalePrice = existingItem.SalePrice; // Keep original price
 
-            await _unitOfWork.SaleItems.AddAsync(saleItem, cancellationToken);
+                _unitOfWork.SaleItems.Update(existingItem);
 
-            // Update stock
-            product.Quantity -= request.Quantity;
-            _unitOfWork.Products.Update(product);
+                // Update stock
+                product.Quantity -= request.Quantity;
+                _unitOfWork.Products.Update(product);
 
-            // Update sale total
-            var itemTotal = request.Quantity * request.SalePrice;
-            sale.TotalAmount += itemTotal;
-            _unitOfWork.Sales.Update(sale);
+                // Update sale total
+                var oldItemTotal = oldQuantity * existingItem.SalePrice;
+                itemTotal = existingItem.Quantity * existingItem.SalePrice;
+                sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
+                _unitOfWork.Sales.Update(sale);
+
+                resultSaleItem = existingItem;
+            }
+            else
+            {
+                // Product doesn't exist - CREATE new item
+                var saleItem = new SaleItem
+                {
+                    Id = Guid.NewGuid(),
+                    SaleId = saleId,
+                    ProductId = request.ProductId,
+                    Quantity = request.Quantity,
+                    CostPrice = product.CostPrice,
+                    SalePrice = request.SalePrice,
+                    Comment = request.Comment
+                };
+
+                await _unitOfWork.SaleItems.AddAsync(saleItem, cancellationToken);
+
+                // Update stock
+                product.Quantity -= request.Quantity;
+                _unitOfWork.Products.Update(product);
+
+                // Update sale total
+                itemTotal = request.Quantity * request.SalePrice;
+                sale.TotalAmount += itemTotal;
+                _unitOfWork.Sales.Update(sale);
+
+                resultSaleItem = saleItem;
+            }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-            return MapSaleItemToDto(saleItem, product.Name);
+            return MapSaleItemToDto(resultSaleItem, product.Name);
         }
         catch
         {
@@ -216,6 +256,9 @@ public class SaleService : ISaleService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
+            // Audit log
+            await _auditLogService.LogPaymentActionAsync(payment.Id, sale.SellerId, cancellationToken);
+
             return new PaymentDto(
                 payment.Id,
                 payment.PaymentType.ToString(),
@@ -268,6 +311,9 @@ public class SaleService : ISaleService
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            // Audit log
+            await _auditLogService.LogSaleActionAsync(saleId, "Cancel", adminId, cancellationToken);
 
             return await MapToDtoAsync(sale, cancellationToken);
         }
