@@ -1,7 +1,8 @@
+using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Interfaces;
 
 namespace MarketSystem.API.Controllers;
 
@@ -52,8 +53,8 @@ public class TestController : ControllerBase
             await _unitOfWork.Users.AddAsync(user);
             await _unitOfWork.SaveChangesAsync();
 
-            var token = _jwtService.GenerateToken(user);
-            
+            var token = _jwtService.GenerateToken(user, true);
+
             return Ok(new AuthResponse(
                 user.Id,
                 user.Username,
@@ -78,11 +79,12 @@ public class TestController : ControllerBase
         var username = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
         var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
 
-        return Ok(new { 
-            message = "You are authenticated!", 
-            userId, 
-            username, 
-            role 
+        return Ok(new
+        {
+            message = "You are authenticated!",
+            userId,
+            username,
+            role
         });
     }
 }
