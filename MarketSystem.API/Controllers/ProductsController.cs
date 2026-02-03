@@ -8,7 +8,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize]
+[Authorize(Policy = "AllRoles")]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;

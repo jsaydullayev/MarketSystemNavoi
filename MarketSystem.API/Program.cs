@@ -44,11 +44,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            // Important: Map ClaimTypes.Role to the Role claim in JWT
+            RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+            NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Owner only - full access
+    options.AddPolicy("OwnerOnly", policy =>
+        policy.RequireRole("Owner"));
+
+    // Admin or Owner - can manage purchases, cancel sales, view reports
+    options.AddPolicy("AdminOrOwner", policy =>
+        policy.RequireRole("Owner", "Admin"));
+
+    // All authenticated users - can create sales, add items
+    options.AddPolicy("AllRoles", policy =>
+        policy.RequireRole("Owner", "Admin", "Seller"));
+});
 
 // Add Controllers with API Explorer
 builder.Services.AddControllers();
@@ -113,6 +129,7 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<IZakupService, ZakupService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 

@@ -7,6 +7,7 @@ public class Product : BaseEntity
     public string Name { get; set; } = string.Empty;
     public bool IsTemporary { get; set; } = false;
     public Guid? CreatedBySellerId { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     // Pricing (since Branch is removed, prices are in Product)
     public decimal CostPrice { get; set; }

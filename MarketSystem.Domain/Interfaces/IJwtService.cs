@@ -2,6 +2,6 @@ namespace MarketSystem.Domain.Interfaces;
 
 public interface IJwtService
 {
-    string GenerateToken(Domain.Entities.User user);
-    Guid? ValidateToken(string token);
+    TokenDto GenerateToken(Entities.User user, bool populateExp);
+    Tuple<bool, string?> ValidateAndGetUser(string token);
 }
