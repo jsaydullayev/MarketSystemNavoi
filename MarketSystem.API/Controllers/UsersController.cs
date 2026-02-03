@@ -7,7 +7,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "AllRoles")]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -35,6 +35,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto request)
     {
         try
@@ -49,6 +50,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto request)
     {
         if (id != request.Id)

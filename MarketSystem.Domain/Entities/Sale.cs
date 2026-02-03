@@ -10,6 +10,7 @@ public class Sale : BaseEntity
     public SaleStatus Status { get; set; } = SaleStatus.Draft;
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     // Navigation properties
     public User Seller { get; set; } = null!;
