@@ -126,6 +126,26 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Owner", "Admin", "Seller"));
 });
 
+// Add CORS - development mode
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevelopmentCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173", "http://localhost:64147")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+
+    options.AddPolicy("ProductionCors", policy =>
+    {
+        policy.WithOrigins("https://your-frontend-domain.com") // TODO: Update with actual domain
+              .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH")
+              .WithHeaders("Content-Type", "Authorization")
+              .AllowCredentials();
+    });
+});
+
 // Add Controllers with API Explorer
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -198,7 +218,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevelopmentCors", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173")
+        policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173", "http://localhost:64147", "http://localhost:5000", "http://localhost:5137")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
