@@ -6,7 +6,7 @@ using MarketSystem.Domain.Interfaces;
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
