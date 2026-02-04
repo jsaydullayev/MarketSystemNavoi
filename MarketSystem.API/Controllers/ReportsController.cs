@@ -6,7 +6,7 @@ using MarketSystem.Domain.Interfaces;
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 [Authorize(Policy = "AdminOrOwner")]
 public class ReportsController : ControllerBase
 {

@@ -1,6 +1,8 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Application.Services;
 
@@ -8,11 +10,13 @@ public class ZakupService : IZakupService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
+    private readonly AppDbContext _context;
 
-    public ZakupService(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
+    public ZakupService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
+        _context = context;
     }
 
     public async Task<ZakupDto?> GetZakupByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -81,11 +85,18 @@ public class ZakupService : IZakupService
 
             // Update product stock and cost price with weighted average
             product.Quantity += request.Quantity;
-            product.CostPrice = totalQuantity > 0 ? (oldTotalCost + newTotalCost) / totalQuantity : request.CostPrice;
 
-            // Optionally update SalePrice and MinSalePrice if provided (admin discretion)
-            // For now, we keep them unchanged as per TZ
+            if (totalQuantity > 0)
+            {
+                product.CostPrice = (oldTotalCost + newTotalCost) / totalQuantity;
+            }
+            else
+            {
+                product.CostPrice = request.CostPrice;
+            }
 
+            // Ensure EF Core tracks the product entity explicitly
+            _context.Entry(product).State = EntityState.Modified;
             _unitOfWork.Products.Update(product);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
