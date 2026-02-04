@@ -4,6 +4,8 @@ using MarketSystem.Domain.Enums;
 using MarketSystem.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Application.Services;
 
@@ -12,12 +14,14 @@ public class AuthService : IAuthService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtService _jwtService;
     private readonly ILogger<AuthService> _logger;
+    private readonly AppDbContext _context;
 
-    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService, ILogger<AuthService> logger)
+    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService, ILogger<AuthService> logger, AppDbContext context)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
         _logger = logger;
+        _context = context;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -94,6 +98,7 @@ public class AuthService : IAuthService
 
         // Mark current refresh token as used
         refreshToken.IsUsed = true;
+        _context.Entry(refreshToken).State = EntityState.Modified;
         _unitOfWork.RefreshTokens.Update(refreshToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

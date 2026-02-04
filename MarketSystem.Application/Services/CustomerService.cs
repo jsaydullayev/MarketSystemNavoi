@@ -2,16 +2,20 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Application.Services;
 
 public class CustomerService : ICustomerService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly AppDbContext _context;
 
-    public CustomerService(IUnitOfWork unitOfWork)
+    public CustomerService(IUnitOfWork unitOfWork, AppDbContext context)
     {
         _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<CustomerDto?> GetCustomerByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -71,20 +75,23 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDto?> UpdateCustomerAsync(UpdateCustomerDto request, CancellationToken cancellationToken = default)
     {
-        var customer = await _unitOfWork.Customers.GetByIdAsync(request.Id, cancellationToken);
+        // Find customer by phone number
+        var customers = await _unitOfWork.Customers.FindAsync(
+            c => c.Phone == request.Phone,
+            cancellationToken);
+        var customer = customers.FirstOrDefault();
+
         if (customer is null)
             return null;
 
-        // Check if phone is being changed and if new phone already exists
-        if (customer.Phone != request.Phone &&
-            await _unitOfWork.Customers.AnyAsync(c => c.Phone == request.Phone && c.Id != request.Id, cancellationToken))
-            throw new InvalidOperationException($"Customer with phone '{request.Phone}' already exists");
-
-        customer.Phone = request.Phone;
-        customer.FullName = request.FullName;
-
-        _unitOfWork.Customers.Update(customer);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // Only update FullName if provided
+        if (request.FullName is not null)
+        {
+            customer.FullName = request.FullName;
+            _context.Entry(customer).State = EntityState.Modified;
+            _unitOfWork.Customers.Update(customer);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         return await MapToDtoAsync(customer, cancellationToken);
     }
@@ -107,6 +114,7 @@ public class CustomerService : ICustomerService
             return false;
 
         customer.IsDeleted = true;
+        _context.Entry(customer).State = EntityState.Modified;
         _unitOfWork.Customers.Update(customer);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;

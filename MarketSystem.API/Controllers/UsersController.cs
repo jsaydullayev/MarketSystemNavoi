@@ -6,7 +6,7 @@ using MarketSystem.Domain.Interfaces;
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 [Authorize(Policy = "AllRoles")]
 public class UsersController : ControllerBase
 {
@@ -31,6 +31,10 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
     {
         var users = await _userService.GetAllUsersAsync();
+        if (users is null)
+        {
+            return BadRequest("Users not found");
+        }
         return Ok(users);
     }
 

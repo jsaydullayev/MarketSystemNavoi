@@ -7,7 +7,7 @@ using System.Security.Claims;
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 [Authorize(Policy = "AllRoles")]
 public class ProductsController : ControllerBase
 {
