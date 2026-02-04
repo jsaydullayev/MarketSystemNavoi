@@ -1,16 +1,20 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Application.Services;
 
 public class ProductService : IProductService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly AppDbContext _context;
 
-    public ProductService(IUnitOfWork unitOfWork)
+    public ProductService(IUnitOfWork unitOfWork, AppDbContext context)
     {
         _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -70,6 +74,7 @@ public class ProductService : IProductService
         product.MinSalePrice = request.MinSalePrice;
         product.MinThreshold = request.MinThreshold;
 
+        _context.Entry(product).State = EntityState.Modified;
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -98,6 +103,7 @@ public class ProductService : IProductService
             throw new InvalidOperationException($"Insufficient stock. Current: {product.Quantity}, Change: {quantityChange}");
 
         product.Quantity += quantityChange;
+        _context.Entry(product).State = EntityState.Modified;
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;

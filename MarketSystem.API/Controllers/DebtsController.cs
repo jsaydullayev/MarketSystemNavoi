@@ -8,7 +8,7 @@ using MarketSystem.Domain.Interfaces;
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 [Authorize(Policy = "AllRoles")]
 public class DebtsController : ControllerBase
 {

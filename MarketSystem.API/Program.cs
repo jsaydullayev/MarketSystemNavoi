@@ -11,8 +11,71 @@ using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using MarketSystem.Infrastructure.Repositories;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Common;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+    {
+        Description = "JWT Bearer. : \"Authorization: Bearer { token } \"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
+});
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+{
+    var jwtParam = builder.Configuration
+    .GetSection("Jwt").
+    Get<JwtSetting>();
+    var key = System.Text.Encoding.UTF32.GetBytes(jwtParam.Key);
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidIssuer = jwtParam.Issuer,
+        ValidateIssuer = true,
+        ValidAudience = jwtParam.Audience,
+        ValidateAudience = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuerSigningKey = true,
+        ValidateLifetime = false,
+    };
+
+    options.Events = new JwtBearerEvents()
+    {
+        OnMessageReceived = context =>
+        {
+            var token = context.Token;
+            if (string.IsNullOrEmpty(token))
+            {
+                token = context.Request.Query["token"];
+                if (!string.IsNullOrEmpty(token))
+                {
+                    context.Token = token;
+                }
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
 
 // Add DbContext with optimizations
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -20,37 +83,33 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsqlOptions =>
         {
-            npgsqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 3,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                null);
             npgsqlOptions.CommandTimeout(30);
         });
     options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
 });
 
 // Add JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
+//var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
+//var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
+//var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF32.GetBytes(jwtKey)),
-            // Important: Map ClaimTypes.Role to the Role claim in JWT
-            RoleClaimType = System.Security.Claims.ClaimTypes.Role,
-            NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
-        };
-    });
+//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//    .AddJwtBearer(options =>
+//    {
+//        options.TokenValidationParameters = new TokenValidationParameters
+//        {
+//            ValidateIssuer = true,
+//            ValidateAudience = true,
+//            ValidateLifetime = true,
+//            ValidateIssuerSigningKey = true,
+//            ValidIssuer = jwtIssuer,
+//            ValidAudience = jwtAudience,
+//            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF32.GetBytes(jwtKey)),
+//            // Important: Map ClaimTypes.Role to the Role claim in JWT
+//            RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+//            NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
+//        };
+//    });
 
 builder.Services.AddAuthorization(options =>
 {
@@ -82,29 +141,29 @@ builder.Services.AddSwaggerGen(options =>
     });
 
     // Define JWT Authentication for Swagger
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Bearer",
-        Description = "Enter JWT token (format: 'Bearer {token}')",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] { }
-        }
-    });
+    //options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    //{
+    //    Name = "Bearer",
+    //    Description = "Enter JWT token (format: 'Bearer {token}')",
+    //    In = ParameterLocation.Header,
+    //    Type = SecuritySchemeType.ApiKey,
+    //    Scheme = "Bearer"
+    //});
+    //
+    //options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    //{
+    //    {
+    //        new OpenApiSecurityScheme
+    //        {
+    //            Reference = new OpenApiReference
+    //            {
+    //                Type = ReferenceType.SecurityScheme,
+    //                Id = "Bearer"
+    //            }
+    //        },
+    //        new string[] { }
+    //    }
+    //});
 
     // Include XML comments (optional, for documentation)
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";

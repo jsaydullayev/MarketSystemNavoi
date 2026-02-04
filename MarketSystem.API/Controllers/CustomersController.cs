@@ -6,7 +6,7 @@ using MarketSystem.Domain.Interfaces;
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 [Authorize(Policy = "AllRoles")]
 public class CustomersController : ControllerBase
 {
@@ -18,7 +18,8 @@ public class CustomersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<CustomerDto>> GetCustomer(Guid id)    {
+    public async Task<ActionResult<CustomerDto>> GetCustomer(Guid id)
+    {
         var customer = await _customerService.GetCustomerByIdAsync(id);
         if (customer is null)
             return NotFound();
@@ -49,7 +50,7 @@ public class CustomersController : ControllerBase
         try
         {
             var customer = await _customerService.CreateCustomerAsync(request);
-            return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id }, customer);
+            return CreatedAtAction(nameof(GetCustomerByPhone), new { phone = customer.Phone }, customer);
         }
         catch (InvalidOperationException ex)
         {
@@ -57,12 +58,9 @@ public class CustomersController : ControllerBase
         }
     }
 
-    [HttpPut("{id}")]
-    public async Task<ActionResult<CustomerDto>> UpdateCustomer(Guid id, [FromBody] UpdateCustomerDto request)
+    [HttpPut]
+    public async Task<ActionResult<CustomerDto>> UpdateCustomer([FromBody] UpdateCustomerDto request)
     {
-        if (id != request.Id)
-            return BadRequest("ID mismatch");
-
         try
         {
             var customer = await _customerService.UpdateCustomerAsync(request);

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 public class TestController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;

@@ -3,6 +3,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Infrastructure.Data;
 
 namespace MarketSystem.Application.Services;
 
@@ -10,11 +11,13 @@ public class SaleService : ISaleService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
+    private readonly AppDbContext _context;
 
-    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
+    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
+        _context = context;
     }
 
     public async Task<SaleDto?> GetSaleByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -138,6 +141,7 @@ public class SaleService : ISaleService
 
                 // Update stock
                 product.Quantity -= request.Quantity;
+                _context.Entry(product).State = EntityState.Modified;
                 _unitOfWork.Products.Update(product);
 
                 // Update sale total
@@ -166,6 +170,7 @@ public class SaleService : ISaleService
 
                 // Update stock
                 product.Quantity -= request.Quantity;
+                _context.Entry(product).State = EntityState.Modified;
                 _unitOfWork.Products.Update(product);
 
                 // Update sale total
@@ -294,6 +299,7 @@ public class SaleService : ISaleService
                 if (product != null)
                 {
                     product.Quantity += item.Quantity;
+                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
                 }
             }

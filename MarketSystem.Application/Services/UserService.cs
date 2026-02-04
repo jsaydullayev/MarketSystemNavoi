@@ -1,18 +1,21 @@
-using Microsoft.EntityFrameworkCore;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Application.Services;
 
 public class UserService : IUserService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly AppDbContext _context;
 
-    public UserService(IUnitOfWork unitOfWork)
+    public UserService(IUnitOfWork unitOfWork, AppDbContext context)
     {
         _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<UserDto?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -77,6 +80,7 @@ public class UserService : IUserService
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
         }
 
+        _context.Entry(user).State = EntityState.Modified;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -101,6 +105,7 @@ public class UserService : IUserService
             return false;
 
         user.IsActive = false;
+        _context.Entry(user).State = EntityState.Modified;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
@@ -113,6 +118,7 @@ public class UserService : IUserService
             return false;
 
         user.IsActive = true;
+        _context.Entry(user).State = EntityState.Modified;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
