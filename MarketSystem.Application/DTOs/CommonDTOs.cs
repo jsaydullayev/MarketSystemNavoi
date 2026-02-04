@@ -13,7 +13,7 @@ public record UpdateProductDto(Guid Id, string Name, decimal CostPrice, decimal 
 // Customer DTOs
 public record CustomerDto(Guid Id, string Phone, string? FullName, decimal TotalDebt);
 public record CreateCustomerDto(string Phone, string? FullName);
-public record UpdateCustomerDto(Guid Id, string Phone, string? FullName);
+public record UpdateCustomerDto(string Phone, string? FullName);
 
 // Sale DTOs
 public record SaleItemDto(Guid ProductId, string ProductName, int Quantity, decimal CostPrice, decimal SalePrice, decimal Profit, string? Comment);

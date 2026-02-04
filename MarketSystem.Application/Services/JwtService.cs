@@ -58,7 +58,7 @@ public class JwtService(IConfiguration configuration) : IJwtService
         var principal = tokenHandler.ValidateToken(token, options, out var securityToken);
         var jwtSecurityToken = securityToken as JwtSecurityToken;
 
-        if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256,
+        if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals("HS256",
             StringComparison.InvariantCultureIgnoreCase))
             return new(false, null);
 
