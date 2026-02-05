@@ -12,8 +12,8 @@ class ApiConstants {
   static const String debts = '/Debts';
 
   // Auth endpoints
-  static const String login = '$auth/Login/login';
-  static const String register = '$auth/Login/register';
-  static const String refreshToken = '$auth/Login/refresh';
-  static const String logout = '$auth/Login/logout';
+  static const String login = '$auth/Login';
+  static const String register = '$auth/Register';
+  static const String refreshToken = '$auth/Refresh';
+  static const String logout = '$auth/Logout';
 }

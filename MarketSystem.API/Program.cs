@@ -12,6 +12,7 @@ using MarketSystem.Infrastructure.Data;
 using MarketSystem.Infrastructure.Repositories;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Common;
+using MarketSystem.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,7 +56,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateAudience = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuerSigningKey = true,
-        ValidateLifetime = false,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero // Token expiration ni aniq tekshirish
     };
 
     options.Events = new JwtBearerEvents()
@@ -146,8 +148,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add Controllers with API Explorer
-builder.Services.AddControllers();
+// Add Controllers with API Explorer and JSON configuration
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Use camelCase for JSON property names (standard for JSON APIs)
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 // Add Swagger with JWT Authentication
@@ -218,7 +225,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevelopmentCors", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173", "http://localhost:64147", "http://localhost:5000", "http://localhost:5137")
+        policy.SetIsOriginAllowed((_) => true)  // Allow any origin
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -234,6 +241,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Request logging middleware (for debugging)
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 // Configure the HTTP request pipeline
 // Use CORS based on environment

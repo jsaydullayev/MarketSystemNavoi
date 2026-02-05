@@ -1,6 +1,30 @@
+using System.Text.Json.Serialization;
+
 namespace MarketSystem.Application.DTOs;
 
-public record LoginRequest(string Username, string Password);
-public record RegisterRequest(string FullName, string Username, string Password, string Role);
-public record RefreshTokenRequest(string AccessToken, string RefreshToken);
-public record AuthResponse(Guid UserId, string Username, string FullName, string Role, string AccessToken, string RefreshToken, DateTime ExpiresAt);
+public record LoginRequest(
+    [property: JsonPropertyName("username")] string Username,
+    [property: JsonPropertyName("password")] string Password
+);
+
+public record RegisterRequest(
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("username")] string Username,
+    [property: JsonPropertyName("password")] string Password,
+    [property: JsonPropertyName("role")] string Role
+);
+
+public record RefreshTokenRequest(
+    [property: JsonPropertyName("accessToken")] string AccessToken,
+    [property: JsonPropertyName("refreshToken")] string RefreshToken
+);
+
+public record AuthResponse(
+    [property: JsonPropertyName("userId")] Guid UserId,
+    [property: JsonPropertyName("username")] string Username,
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("accessToken")] string AccessToken,
+    [property: JsonPropertyName("refreshToken")] string RefreshToken,
+    [property: JsonPropertyName("expiresAt")] DateTime ExpiresAt
+);
