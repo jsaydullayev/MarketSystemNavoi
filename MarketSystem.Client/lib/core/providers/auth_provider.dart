@@ -5,8 +5,7 @@ import '../../data/services/auth_service.dart';
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
 
-  AuthProvider({required AuthService authService})
-      : _authService = authService;
+  AuthProvider({required AuthService authService}) : _authService = authService;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -78,7 +77,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Xatolik yuz berdi: $e';
       _isLoading = false;
-        notifyListeners();
+      notifyListeners();
       return false;
     }
   }
