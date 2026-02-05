@@ -5,7 +5,7 @@ import 'core/constants/api_constants.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/http_service.dart';
 import 'core/providers/auth_provider.dart';
-import 'features/auth/screens/login_screen.dart';
+import 'features/auth/screens/welcome_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        home: const LoginScreen(),
+        home: const WelcomeScreen(),
       ),
     );
   }
