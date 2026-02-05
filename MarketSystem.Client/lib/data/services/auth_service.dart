@@ -12,13 +12,23 @@ class AuthService {
   // Login
   Future<Map<String, dynamic>?> login(String username, String password) async {
     try {
+      final requestBody = {
+        'username': username,
+        'password': password,
+      };
+
+      print('=== LOGIN DEBUG ===');
+      print('URL: ${ApiConstants.baseUrl}${ApiConstants.login}');
+      print('Request Body: ${jsonEncode(requestBody)}');
+
       final response = await _httpService.post(
         ApiConstants.login,
-        body: {
-          'username': username,
-          'password': password,
-        },
+        body: requestBody,
       );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+      print('==================');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -30,8 +40,10 @@ class AuthService {
         );
 
         return data;
+      } else {
+        print('Login failed with status: ${response.statusCode}');
+        return null;
       }
-      return null;
     } catch (e) {
       print('Login error: $e');
       return null;

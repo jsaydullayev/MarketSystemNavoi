@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../screens/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -32,19 +33,11 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (success && mounted) {
-        // Login muvaffaqiyatli - Home screen ga o'tamiz
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login muvaffaqiyatli!'),
-            backgroundColor: Colors.green,
-          ),
+        // Login muvaffaqiyatli - Dashboard ga o'tamiz
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
-
-        // TODO: Home screen ga o'tish
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (_) => const HomeScreen()),
-        // );
       } else if (mounted) {
         // Login xato
         ScaffoldMessenger.of(context).showSnackBar(

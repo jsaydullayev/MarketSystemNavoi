@@ -54,13 +54,21 @@ class HttpService {
   // POST request
   Future<http.Response> post(String endpoint, {Object? body}) async {
     final token = await getAccessToken();
+    final encodedBody = body != null ? jsonEncode(body) : null;
+
+    print('=== HTTP POST ===');
+    print('URL: $baseUrl$endpoint');
+    print('Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}');
+    print('Body: $encodedBody');
+    print('================');
+
     return http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       },
-      body: body != null ? jsonEncode(body) : null,
+      body: encodedBody,
     );
   }
 
