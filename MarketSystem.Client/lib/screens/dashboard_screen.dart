@@ -8,6 +8,7 @@ import '../features/zakup/screens/zakup_screen.dart';
 import '../features/admin_products/screens/admin_products_screen.dart';
 import '../features/sales/screens/sales_screen.dart';
 import '../features/users/screens/users_screen.dart';
+import '../features/customers/screens/customers_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -162,7 +163,10 @@ class DashboardScreen extends StatelessWidget {
               icon: Icons.people_outline,
               color: Colors.blue,
               onTap: () {
-                _showComingSoon(context, 'Mijozlar');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CustomersScreen()),
+                );
               },
             ),
 
