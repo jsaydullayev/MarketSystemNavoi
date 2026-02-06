@@ -23,8 +23,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   bool _isLoading = false;
   bool _isCreating = false;
   double _totalAmount = 0;
-  double _paidAmount = 0;
-  double _remainingAmount = 0;
 
   @override
   void initState() {
@@ -95,23 +93,31 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         );
       }
 
-      // Add payment
-      if (_paidAmount > 0) {
+      // Add payment (auto-pay full amount)
+      if (_totalAmount > 0) {
         await salesService.addPayment(
           saleId: sale['id'],
           paymentType: 'Naqd', // Default to cash
-          amount: _paidAmount,
+          amount: _totalAmount,
         );
       }
 
       if (mounted) {
-        Navigator.pop(context, true);
+        // SnackBar ko'rsatamiz
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Sotuv muvaffaqiyatli yaratildi!'),
+            content: Text('✅ Sotuv muvaffaqiyatli yaratildi!'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
+
+        // Kichik pause dan keyin back ga qaytamiz
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
       setState(() {
@@ -184,7 +190,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     setState(() {
       _totalAmount = _cartItems.fold(
           0, (sum, item) => sum + (item['totalPrice'] as double));
-      _remainingAmount = _totalAmount - _paidAmount;
     });
   }
 
@@ -300,28 +305,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('To\'langan:'),
-                          Text('${_paidAmount.toStringAsFixed(0)} so\'m'),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Qarzdorlik:'),
-                          Text(
-                            '${_remainingAmount.toStringAsFixed(0)} so\'m',
-                            style: TextStyle(
-                              color: _remainingAmount > 0
-                                  ? Colors.red
-                                  : Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'To\'lov avtomatik tarzda to\'liq summa bo\'yicha amalga oshiriladi',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
                       Row(

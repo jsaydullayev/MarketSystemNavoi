@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/sales_service.dart';
-import '../../../data/services/product_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../screens/dashboard_screen.dart';
 import 'new_sale_screen.dart';
@@ -122,6 +121,18 @@ class _SalesScreenState extends State<SalesScreen> {
       try {
         final salesService = SalesService(authProvider: authProvider);
         final userId = authProvider.user?['userId'];
+        final username = authProvider.user?['username'];
+
+        // Validate userId
+        if (userId == null) {
+          throw Exception('User ID topilmadi. Iltimos, qayta login qiling');
+        }
+
+        print('=== CANCEL SALE DEBUG ===');
+        print('Sale ID: ${sale['id']}');
+        print('User ID: $userId');
+        print('Username: $username');
+        print('===========================');
 
         await salesService.cancelSale(
           saleId: sale['id'],
@@ -139,6 +150,8 @@ class _SalesScreenState extends State<SalesScreen> {
           );
         }
       } catch (e) {
+        print('Cancel sale error: $e');
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
