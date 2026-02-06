@@ -7,6 +7,7 @@ import '../features/products/screens/products_screen.dart';
 import '../features/zakup/screens/zakup_screen.dart';
 import '../features/admin_products/screens/admin_products_screen.dart';
 import '../features/sales/screens/sales_screen.dart';
+import '../features/users/screens/users_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -213,7 +214,10 @@ class DashboardScreen extends StatelessWidget {
                 icon: Icons.admin_panel_settings_outlined,
                 color: Colors.indigo,
                 onTap: () {
-                  _showComingSoon(context, 'Foydalanuvchilar');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UsersScreen()),
+                  );
                 },
               ),
 

@@ -60,15 +60,26 @@ class SalesService {
     required double salePrice,
     String? comment,
   }) async {
+    print('=== ADD SALE ITEM DEBUG ===');
+    print('Sale ID: $saleId');
+    print('Product ID: $productId');
+    print('Quantity: $quantity');
+    print('Sale Price: $salePrice');
+    print('Comment: ${comment ?? "(empty string)"}');
+    print('==========================');
+
     final response = await _httpService.post(
-      '${ApiConstants.sales}/$saleId/items',
+      '${ApiConstants.sales}/AddSaleItem/$saleId',
       body: {
         'productId': productId,
         'quantity': quantity,
         'salePrice': salePrice,
-        if (comment != null) 'comment': comment,
+        'comment': comment ?? '', // Null bo'lsa bo'sh string yuboramiz
       },
     );
+
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -84,7 +95,7 @@ class SalesService {
     required double amount,
   }) async {
     final response = await _httpService.post(
-      '${ApiConstants.sales}/$saleId/payments',
+      '${ApiConstants.sales}/AddPayment/$saleId',
       body: {
         'paymentType': paymentType,
         'amount': amount,
@@ -104,7 +115,7 @@ class SalesService {
     required String adminId,
   }) async {
     final response = await _httpService.post(
-      '${ApiConstants.sales}/$saleId/cancel',
+      '${ApiConstants.sales}/CancelSale/$saleId',
       body: {
         'adminId': adminId,
       },
