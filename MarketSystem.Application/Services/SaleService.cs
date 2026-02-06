@@ -239,24 +239,27 @@ public class SaleService : ISaleService
             {
                 sale.Status = SaleStatus.Debt;
 
-                // Create or update debt
-                if (sale.Debt == null)
+                // Create or update debt - ONLY if there's a customer
+                if (sale.CustomerId.HasValue && sale.CustomerId.Value != Guid.Empty)
                 {
-                    sale.Debt = new Debt
+                    if (sale.Debt == null)
                     {
-                        Id = Guid.NewGuid(),
-                        SaleId = saleId,
-                        CustomerId = sale.CustomerId ?? Guid.Empty,
-                        TotalDebt = sale.TotalAmount,
-                        RemainingDebt = sale.TotalAmount - sale.PaidAmount,
-                        Status = DebtStatus.Open
-                    };
-                    await _unitOfWork.Debts.AddAsync(sale.Debt, cancellationToken);
-                }
-                else
-                {
-                    sale.Debt.RemainingDebt = sale.TotalAmount - sale.PaidAmount;
-                    _unitOfWork.Debts.Update(sale.Debt);
+                        sale.Debt = new Debt
+                        {
+                            Id = Guid.NewGuid(),
+                            SaleId = saleId,
+                            CustomerId = sale.CustomerId.Value,
+                            TotalDebt = sale.TotalAmount,
+                            RemainingDebt = sale.TotalAmount - sale.PaidAmount,
+                            Status = DebtStatus.Open
+                        };
+                        await _unitOfWork.Debts.AddAsync(sale.Debt, cancellationToken);
+                    }
+                    else
+                    {
+                        sale.Debt.RemainingDebt = sale.TotalAmount - sale.PaidAmount;
+                        _unitOfWork.Debts.Update(sale.Debt);
+                    }
                 }
             }
 

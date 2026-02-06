@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.API.Controllers;
 
@@ -12,10 +13,12 @@ namespace MarketSystem.API.Controllers;
 public class SalesController : ControllerBase
 {
     private readonly ISaleService _saleService;
+    private readonly ILogger<SalesController> _logger;
 
-    public SalesController(ISaleService saleService)
+    public SalesController(ISaleService saleService, ILogger<SalesController> logger)
     {
         _saleService = saleService;
+        _logger = logger;
     }
 
     [HttpGet("{id}")]
@@ -71,7 +74,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}/items")]
+    [HttpPost("{saleId}")]
     public async Task<ActionResult<SaleItemDto>> AddSaleItem(Guid saleId, [FromBody] AddSaleItemDto request)
     {
         try
@@ -88,7 +91,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}/payments")]
+    [HttpPost("{saleId}")]
     public async Task<ActionResult<PaymentDto>> AddPayment(Guid saleId, [FromBody] AddPaymentDto request)
     {
         try
@@ -105,12 +108,16 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}/cancel")]
+    [HttpPost("{saleId}")]
     [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request)
     {
         try
         {
+            _logger.LogInformation("=== CONTROLLER: CancelSale called ===");
+            _logger.LogInformation("Sale ID: {SaleId}", saleId);
+            _logger.LogInformation("Admin ID from request: {AdminId}", request.AdminId);
+
             var sale = await _saleService.CancelSaleAsync(saleId, request.AdminId);
             if (sale is null)
                 return NotFound();
