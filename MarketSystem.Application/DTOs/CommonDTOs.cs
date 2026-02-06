@@ -115,7 +115,7 @@ public record AddPaymentDto(
     [property: JsonPropertyName("amount")] decimal Amount
 );
 public record CancelSaleDto(
-    [property: JsonPropertyName("adminId")] Guid AdminId
+    [property: JsonPropertyName("adminId")] string AdminId
 );
 
 // Zakup DTOs
