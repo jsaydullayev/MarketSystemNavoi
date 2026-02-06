@@ -114,6 +114,11 @@ class SalesService {
     required String saleId,
     required String adminId,
   }) async {
+    print('=== CANCEL SALE REQUEST ===');
+    print('URL: ${ApiConstants.sales}/CancelSale/$saleId');
+    print('Admin ID: $adminId');
+    print('Body: {"adminId": "$adminId"}');
+
     final response = await _httpService.post(
       '${ApiConstants.sales}/CancelSale/$saleId',
       body: {
@@ -121,10 +126,14 @@ class SalesService {
       },
     );
 
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+    print('==========================');
+
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to cancel sale: ${response.body}');
+      throw Exception('Failed to cancel sale. Status: ${response.statusCode}, Body: ${response.body}');
     }
   }
 }
