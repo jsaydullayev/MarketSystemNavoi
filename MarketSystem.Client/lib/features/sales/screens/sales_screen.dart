@@ -19,7 +19,7 @@ class _SalesScreenState extends State<SalesScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   final _searchController = TextEditingController();
-  String _selectedStatus = 'All'; // All, Draft, Completed, Cancelled
+  String _selectedStatus = 'All'; // All, Draft, Paid, Debt, Cancelled
 
   @override
   void initState() {
@@ -41,7 +41,22 @@ class _SalesScreenState extends State<SalesScreen> {
         // Status filter
         if (_selectedStatus != 'All') {
           final status = sale['status']?.toString().toLowerCase() ?? '';
-          if (status != _selectedStatus.toLowerCase()) return false;
+
+          // Map status to filter
+          switch (_selectedStatus.toLowerCase()) {
+            case 'paid':
+              if (status != 'paid') return false;
+              break;
+            case 'debt':
+              if (status != 'debt') return false;
+              break;
+            case 'cancelled':
+              if (status != 'cancelled') return false;
+              break;
+            case 'draft':
+              if (status != 'draft') return false;
+              break;
+          }
         }
 
         // Search filter
@@ -230,7 +245,9 @@ class _SalesScreenState extends State<SalesScreen> {
                   const SizedBox(width: 8),
                   _buildStatusChip('Draft', 'Qoralama'),
                   const SizedBox(width: 8),
-                  _buildStatusChip('Completed', 'Tugatilgan'),
+                  _buildStatusChip('Paid', 'Tugatilgan'),
+                  const SizedBox(width: 8),
+                  _buildStatusChip('Debt', 'Qarzdor'),
                   const SizedBox(width: 8),
                   _buildStatusChip('Cancelled', 'Bekor qilingan'),
                 ],
@@ -439,7 +456,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     ),
                   ],
                 ),
-                if (canCancel && status != 'cancelled' && status != 'completed') ...[
+                if (canCancel && (status == 'draft' || status == 'debt')) ...[
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
@@ -466,10 +483,12 @@ class _SalesScreenState extends State<SalesScreen> {
     switch (status.toLowerCase()) {
       case 'draft':
         return Colors.orange;
-      case 'completed':
+      case 'paid':
         return Colors.green;
-      case 'cancelled':
+      case 'debt':
         return Colors.red;
+      case 'cancelled':
+        return Colors.grey;
       default:
         return Colors.grey;
     }
@@ -479,8 +498,10 @@ class _SalesScreenState extends State<SalesScreen> {
     switch (status.toLowerCase()) {
       case 'draft':
         return Icons.edit_note;
-      case 'completed':
+      case 'paid':
         return Icons.check_circle;
+      case 'debt':
+        return Icons.money_off;
       case 'cancelled':
         return Icons.cancel;
       default:
@@ -492,8 +513,10 @@ class _SalesScreenState extends State<SalesScreen> {
     switch (status.toLowerCase()) {
       case 'draft':
         return 'Qoralama';
-      case 'completed':
+      case 'paid':
         return 'Tugatilgan';
+      case 'debt':
+        return 'Qarzdor';
       case 'cancelled':
         return 'Bekor qilingan';
       default:
