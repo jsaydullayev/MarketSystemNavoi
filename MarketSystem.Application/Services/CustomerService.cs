@@ -102,7 +102,9 @@ public class CustomerService : ICustomerService
         if (customer is null)
             return false;
 
-        _unitOfWork.Customers.Delete(customer);
+        // Use soft delete instead of hard delete to avoid foreign key constraint violations
+        customer.IsDeleted = true;
+        _unitOfWork.Customers.Update(customer);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -133,6 +135,7 @@ public class CustomerService : ICustomerService
             customer.Id,
             customer.Phone,
             customer.FullName,
+            customer.Comment,
             totalDebt
         );
     }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
+using System.Security.Claims;
 
 namespace MarketSystem.API.Controllers;
 
@@ -21,6 +22,20 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserDto>> GetUser(Guid id)
     {
         var user = await _userService.GetUserByIdAsync(id);
+        if (user is null)
+            return NotFound();
+
+        return Ok(user);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<UserDto>> MyProfile()
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        var user = await _userService.GetUserByIdAsync(userId);
         if (user is null)
             return NotFound();
 
@@ -67,6 +82,31 @@ public class UsersController : ControllerBase
                 return NotFound();
 
             return Ok(user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPut]
+    public async Task<ActionResult<UserDto>> UpdateMyProfile([FromBody] UpdateProfileDto request)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            var user = await _userService.UpdateProfileAsync(userId, request);
+            if (user is null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
