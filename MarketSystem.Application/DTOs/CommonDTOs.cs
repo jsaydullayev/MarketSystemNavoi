@@ -7,6 +7,7 @@ public record UserDto(
     [property: JsonPropertyName("id")] Guid Id,
     [property: JsonPropertyName("fullName")] string FullName,
     [property: JsonPropertyName("username")] string Username,
+    [property: JsonPropertyName("profileImage")] string? ProfileImage,
     [property: JsonPropertyName("role")] string Role,
     [property: JsonPropertyName("isActive")] bool IsActive
 );
@@ -22,6 +23,11 @@ public record UpdateUserDto(
     [property: JsonPropertyName("password")] string? Password,
     [property: JsonPropertyName("role")] string Role,
     [property: JsonPropertyName("isActive")] bool IsActive
+);
+public record UpdateProfileDto(
+    [property: JsonPropertyName("fullName")] string? FullName,
+    [property: JsonPropertyName("currentPassword")] string? CurrentPassword,
+    [property: JsonPropertyName("newPassword")] string? NewPassword
 );
 
 // Product DTOs
@@ -59,11 +65,13 @@ public record CustomerDto(
     [property: JsonPropertyName("id")] Guid Id,
     [property: JsonPropertyName("phone")] string Phone,
     [property: JsonPropertyName("fullName")] string? FullName,
+    [property: JsonPropertyName("comment")] string? Comment,
     [property: JsonPropertyName("totalDebt")] decimal TotalDebt
 );
 public record CreateCustomerDto(
     [property: JsonPropertyName("phone")] string Phone,
-    [property: JsonPropertyName("fullName")] string? FullName
+    [property: JsonPropertyName("fullName")] string? FullName,
+    [property: JsonPropertyName("comment")] string? Comment
 );
 public record UpdateCustomerDto(
     [property: JsonPropertyName("phone")] string Phone,
@@ -162,6 +170,7 @@ public record DebtDto(
     [property: JsonPropertyName("id")] Guid Id,
     [property: JsonPropertyName("saleId")] Guid SaleId,
     [property: JsonPropertyName("customerId")] Guid CustomerId,
+    [property: JsonPropertyName("customerName")] string? CustomerName,
     [property: JsonPropertyName("totalDebt")] decimal TotalDebt,
     [property: JsonPropertyName("remainingDebt")] decimal RemainingDebt,
     [property: JsonPropertyName("status")] string Status,

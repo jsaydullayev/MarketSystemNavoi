@@ -29,6 +29,7 @@ public class AppDbContext : DbContext
             b.Property(x => x.Phone).IsRequired().HasMaxLength(20);
             b.HasIndex(x => x.Phone).IsUnique();
             b.Property(x => x.FullName).HasMaxLength(200);
+            b.Property(x => x.Comment).HasMaxLength(500);
             b.HasQueryFilter(x => !x.IsDeleted);
         });
 
@@ -39,6 +40,7 @@ public class AppDbContext : DbContext
             b.Property(x => x.FullName).IsRequired().HasMaxLength(200);
             b.Property(x => x.Username).IsRequired().HasMaxLength(100);
             b.Property(x => x.PasswordHash).IsRequired();
+            b.Property(x => x.ProfileImage).HasMaxLength(500);
             b.HasIndex(x => x.Username).IsUnique();
             b.HasQueryFilter(x => !x.IsDeleted);
         });

@@ -9,6 +9,8 @@ import '../features/admin_products/screens/admin_products_screen.dart';
 import '../features/sales/screens/sales_screen.dart';
 import '../features/users/screens/users_screen.dart';
 import '../features/customers/screens/customers_screen.dart';
+import '../features/debts/screens/debts_screen.dart';
+import '../features/profile/screens/profile_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -23,6 +25,16 @@ class DashboardScreen extends StatelessWidget {
         title: const Text('Market System'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'Profil',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -129,13 +141,15 @@ class DashboardScreen extends StatelessWidget {
             _buildMenuItem(
               context,
               title: 'Mahsulotlar',
-              subtitle: 'Mahsulotlarni boshqarish',
+              subtitle: user?['role'] == 'Seller'
+                  ? 'Mahsulotlar ro\'yxati (faqat ko\'rish)'
+                  : 'Mahsulotlarni boshqarish',
               icon: Icons.inventory_2_outlined,
               color: Colors.orange,
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProductsScreen()),
+                  MaterialPageRoute(builder: (_) => ProductsScreen(isReadOnly: user?['role'] == 'Seller')),
                 );
               },
             ),
@@ -170,44 +184,50 @@ class DashboardScreen extends StatelessWidget {
               },
             ),
 
-            // Zakup
-            _buildMenuItem(
-              context,
-              title: 'Xaridlar',
-              subtitle: 'Maxsulot xaridlari',
-              icon: Icons.shopping_bag_outlined,
-              color: Colors.purple,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ZakupScreen()),
-                );
-              },
-            ),
+            // Zakup (Admin/Owner only)
+            if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+              _buildMenuItem(
+                context,
+                title: 'Xaridlar',
+                subtitle: 'Maxsulot xaridlari',
+                icon: Icons.shopping_bag_outlined,
+                color: Colors.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ZakupScreen()),
+                  );
+                },
+              ),
 
-            // Reports
-            _buildMenuItem(
-              context,
-              title: 'Hisobotlar',
-              subtitle: 'Tizim hisobotlari',
-              icon: Icons.bar_chart_outlined,
-              color: Colors.teal,
-              onTap: () {
-                _showComingSoon(context, 'Hisobotlar');
-              },
-            ),
+            // Reports (Admin/Owner only)
+            if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+              _buildMenuItem(
+                context,
+                title: 'Hisobotlar',
+                subtitle: 'Tizim hisobotlari',
+                icon: Icons.bar_chart_outlined,
+                color: Colors.teal,
+                onTap: () {
+                  _showComingSoon(context, 'Hisobotlar');
+                },
+              ),
 
-            // Debts
-            _buildMenuItem(
-              context,
-              title: 'Qarzdorlik',
-              subtitle: 'Mijozlar qarzlari',
-              icon: Icons.money_outlined,
-              color: Colors.red,
-              onTap: () {
-                _showComingSoon(context, 'Qarzdorlik');
-              },
-            ),
+            // Debts (Admin/Owner only)
+            if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+              _buildMenuItem(
+                context,
+                title: 'Qarzdorlik',
+                subtitle: 'Mijozlar qarzlari',
+                icon: Icons.money_outlined,
+                color: Colors.red,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DebtsScreen()),
+                  );
+                },
+              ),
 
             // Users (Admin/Owner only)
             if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
