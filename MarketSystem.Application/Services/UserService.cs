@@ -87,6 +87,36 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
+    public async Task<UserDto?> UpdateProfileAsync(Guid userId, UpdateProfileDto request, CancellationToken cancellationToken = default)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        if (user is null)
+            return null;
+
+        // Update full name if provided
+        if (!string.IsNullOrWhiteSpace(request.FullName))
+        {
+            user.FullName = request.FullName;
+        }
+
+        // Update password if both current and new password are provided
+        if (!string.IsNullOrWhiteSpace(request.CurrentPassword) &&
+            !string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            // Verify current password
+            if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+                throw new UnauthorizedAccessException("Current password is incorrect");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        }
+
+        _context.Entry(user).State = EntityState.Modified;
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(user);
+    }
+
     public async Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(id, cancellationToken);
@@ -130,6 +160,7 @@ public class UserService : IUserService
             user.Id,
             user.FullName,
             user.Username,
+            user.ProfileImage,
             user.Role.ToString(),
             user.IsActive
         );

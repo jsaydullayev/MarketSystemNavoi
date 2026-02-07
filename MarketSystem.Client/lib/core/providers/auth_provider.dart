@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/services/auth_service.dart';
+import '../../data/services/user_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
@@ -87,6 +88,19 @@ class AuthProvider extends ChangeNotifier {
     await _authService.logout();
     _user = null;
     notifyListeners();
+  }
+
+  // Fetch user profile from backend
+  Future<void> fetchUserProfile() async {
+    try {
+      final userService = UserService(authProvider: this);
+      final profile = await userService.getMyProfile();
+      _user = profile;
+      notifyListeners();
+    } catch (e) {
+      // Silent fail - don't show error to user
+      print('Error fetching profile: $e');
+    }
   }
 
   // Check authentication status

@@ -35,10 +35,12 @@ public class DebtsController : ControllerBase
         foreach (var debt in debts)
         {
             var sale = await _unitOfWork.Sales.GetByIdAsync(debt.SaleId);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(debt.CustomerId);
             result.Add(new DebtDto(
                 debt.Id,
                 debt.SaleId,
                 debt.CustomerId,
+                customer?.FullName,
                 debt.TotalDebt,
                 debt.RemainingDebt,
                 debt.Status.ToString(),
@@ -153,10 +155,12 @@ public class DebtsController : ControllerBase
         foreach (var debt in debts)
         {
             var sale = await _unitOfWork.Sales.GetByIdAsync(debt.SaleId);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(debt.CustomerId);
             result.Add(new DebtDto(
                 debt.Id,
                 debt.SaleId,
                 debt.CustomerId,
+                customer?.FullName,
                 debt.TotalDebt,
                 debt.RemainingDebt,
                 debt.Status.ToString(),
