@@ -117,6 +117,21 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
+    public async Task<UserDto?> UpdateProfileImageAsync(Guid userId, UpdateProfileImageDto request, CancellationToken cancellationToken = default)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        if (user is null)
+            return null;
+
+        user.ProfileImage = request.ProfileImage;
+
+        _context.Entry(user).State = EntityState.Modified;
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(user);
+    }
+
     public async Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(id, cancellationToken);
