@@ -29,6 +29,9 @@ public record UpdateProfileDto(
     [property: JsonPropertyName("currentPassword")] string? CurrentPassword,
     [property: JsonPropertyName("newPassword")] string? NewPassword
 );
+public record UpdateProfileImageDto(
+    [property: JsonPropertyName("profileImage")] string ProfileImage
+);
 
 // Product DTOs
 public record ProductDto(
