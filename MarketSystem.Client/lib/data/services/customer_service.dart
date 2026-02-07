@@ -41,12 +41,14 @@ class CustomerService {
   Future<dynamic> createCustomer({
     required String phone,
     String? fullName,
+    String? comment,
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.customers}/CreateCustomer',
       body: {
         'phone': phone,
         if (fullName != null) 'fullName': fullName,
+        if (comment != null) 'comment': comment,
       },
     );
 

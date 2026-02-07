@@ -123,6 +123,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   void _showAddCustomerDialog() {
     final phoneController = TextEditingController();
     final fullNameController = TextEditingController();
+    final commentController = TextEditingController();
     bool isSaving = false;
 
     showDialog(
@@ -150,6 +151,17 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   prefixIcon: Icon(Icons.person),
                   border: OutlineInputBorder(),
                 ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: commentController,
+                decoration: const InputDecoration(
+                  labelText: 'Izoh (ixtiyoriy)',
+                  prefixIcon: Icon(Icons.comment),
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+                textInputAction: TextInputAction.newline,
               ),
             ],
           ),
@@ -181,6 +193,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                         await customerService.createCustomer(
                           phone: phoneController.text.trim(),
                           fullName: fullNameController.text.trim().isEmpty ? null : fullNameController.text.trim(),
+                          comment: commentController.text.trim().isEmpty ? null : commentController.text.trim(),
                         );
 
                         if (mounted) {
@@ -231,6 +244,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
             Text('Telefon: ${customer['phone'] ?? 'Noma\'lum'}'),
             const SizedBox(height: 8),
             Text('Qarz: ${customer['totalDebt'] ?? 0} so\'m'),
+            if (customer['comment'] != null && customer['comment'].toString().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text('Izoh:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(customer['comment'] ?? ''),
+            ],
           ],
         ),
         actions: [
@@ -364,6 +382,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
   Widget _buildCustomerCard(dynamic customer) {
     final totalDebt = customer['totalDebt'] ?? 0;
     final hasDebt = totalDebt > 0;
+    final comment = customer['comment']?.toString() ?? '';
+    final hasComment = comment.isNotEmpty;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -406,9 +426,23 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+            if (hasComment)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  comment,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
           ],
         ),
-        isThreeLine: true,
+        isThreeLine: hasComment ? true : false,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

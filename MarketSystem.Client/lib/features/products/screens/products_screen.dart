@@ -8,7 +8,9 @@ import '../../../screens/dashboard_screen.dart';
 import 'product_form_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
-  const ProductsScreen({super.key});
+  final bool isReadOnly;
+
+  const ProductsScreen({super.key, this.isReadOnly = false});
 
   @override
   State<ProductsScreen> createState() => _ProductsScreenState();
@@ -336,20 +338,22 @@ class _ProductsScreenState extends State<ProductsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ProductFormScreen(),
-            ),
-          );
-          if (result == true) {
-            _loadProducts();
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: !widget.isReadOnly
+          ? FloatingActionButton(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProductFormScreen(),
+                  ),
+                );
+                if (result == true) {
+                  _loadProducts();
+                }
+              },
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -441,24 +445,26 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 tooltip: 'Zakup qo\'shish',
                 onPressed: () => _quickZakup(product),
               ),
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ProductFormScreen(product: product),
-                  ),
-                );
-                if (result == true) {
-                  _loadProducts();
-                }
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteProduct(product),
-            ),
+            if (!widget.isReadOnly) ...[
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProductFormScreen(product: product),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadProducts();
+                  }
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deleteProduct(product),
+              ),
+            ],
           ],
         ),
       ),
