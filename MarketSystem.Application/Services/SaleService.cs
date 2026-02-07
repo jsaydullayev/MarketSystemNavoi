@@ -228,11 +228,12 @@ public class SaleService : ISaleService
                 sale.Status = SaleStatus.Paid;
 
                 // Close any associated debt
-                if (sale.Debt != null)
+                var existingDebtToClose = (await _unitOfWork.Debts.FindAsync(d => d.SaleId == saleId, cancellationToken)).FirstOrDefault();
+                if (existingDebtToClose != null)
                 {
-                    sale.Debt.Status = DebtStatus.Closed;
-                    sale.Debt.RemainingDebt = 0;
-                    _unitOfWork.Debts.Update(sale.Debt);
+                    existingDebtToClose.Status = DebtStatus.Closed;
+                    existingDebtToClose.RemainingDebt = 0;
+                    _unitOfWork.Debts.Update(existingDebtToClose);
                 }
             }
             else if (sale.PaidAmount > 0)
@@ -242,9 +243,10 @@ public class SaleService : ISaleService
                 // Create or update debt - ONLY if there's a customer
                 if (sale.CustomerId.HasValue && sale.CustomerId.Value != Guid.Empty)
                 {
-                    if (sale.Debt == null)
+                    var existingDebt = (await _unitOfWork.Debts.FindAsync(d => d.SaleId == saleId, cancellationToken)).FirstOrDefault();
+                    if (existingDebt == null)
                     {
-                        sale.Debt = new Debt
+                        var newDebt = new Debt
                         {
                             Id = Guid.NewGuid(),
                             SaleId = saleId,
@@ -253,12 +255,12 @@ public class SaleService : ISaleService
                             RemainingDebt = sale.TotalAmount - sale.PaidAmount,
                             Status = DebtStatus.Open
                         };
-                        await _unitOfWork.Debts.AddAsync(sale.Debt, cancellationToken);
+                        await _unitOfWork.Debts.AddAsync(newDebt, cancellationToken);
                     }
                     else
                     {
-                        sale.Debt.RemainingDebt = sale.TotalAmount - sale.PaidAmount;
-                        _unitOfWork.Debts.Update(sale.Debt);
+                        existingDebt.RemainingDebt = sale.TotalAmount - sale.PaidAmount;
+                        _unitOfWork.Debts.Update(existingDebt);
                     }
                 }
             }
