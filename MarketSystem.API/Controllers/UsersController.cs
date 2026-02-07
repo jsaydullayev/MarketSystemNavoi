@@ -114,6 +114,31 @@ public class UsersController : ControllerBase
         }
     }
 
+    [HttpPut]
+    public async Task<ActionResult<UserDto>> UpdateProfileImage([FromBody] UpdateProfileImageDto request)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            var user = await _userService.UpdateProfileImageAsync(userId, request);
+            if (user is null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'http_service.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
@@ -41,6 +42,31 @@ class UserService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to update profile: ${response.body}');
+    }
+  }
+
+  // Upload profile image
+  Future<dynamic> uploadProfileImage(String imagePath) async {
+    try {
+      // Read image file and convert to base64
+      final file = File(imagePath);
+      final bytes = await file.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final response = await _httpService.put(
+        '${ApiConstants.users}/UpdateProfileImage',
+        body: {
+          'profileImage': 'data:image/jpeg;base64,$base64Image',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to upload image: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error uploading image: $e');
     }
   }
 }
