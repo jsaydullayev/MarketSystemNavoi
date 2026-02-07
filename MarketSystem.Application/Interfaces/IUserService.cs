@@ -11,6 +11,7 @@ public interface IUserService
     Task<UserDto> CreateUserAsync(CreateUserDto request, CancellationToken cancellationToken = default);
     Task<UserDto?> UpdateUserAsync(UpdateUserDto request, CancellationToken cancellationToken = default);
     Task<UserDto?> UpdateProfileAsync(Guid userId, UpdateProfileDto request, CancellationToken cancellationToken = default);
+    Task<UserDto?> UpdateProfileImageAsync(Guid userId, UpdateProfileImageDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> DeactivateUserAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ActivateUserAsync(Guid id, CancellationToken cancellationToken = default);

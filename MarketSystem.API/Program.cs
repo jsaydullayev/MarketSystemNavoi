@@ -255,6 +255,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+// Enable static files
+app.UseStaticFiles();
+
 // Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
