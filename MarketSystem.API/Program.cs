@@ -242,6 +242,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Auto-apply database migrations (development only)
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.Migrate();
+}
+
 // Request logging middleware (for debugging)
 app.UseMiddleware<RequestLoggingMiddleware>();
 
