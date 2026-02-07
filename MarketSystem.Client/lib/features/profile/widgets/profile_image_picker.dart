@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../data/services/user_service.dart';
 
 class ProfileImagePicker extends StatefulWidget {
   final String? currentImageUrl;
@@ -32,14 +33,40 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
       if (image != null && mounted) {
         setState(() => _isUploading = true);
 
-        // TODO: Implement image upload to server
-        // For now, just show the local image
-        if (widget.onImageUpdated != null) {
-          widget.onImageUpdated!(image.path);
-        }
+        // Upload image to server
+        try {
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final userService = UserService(authProvider: authProvider);
 
-        if (mounted) {
-          setState(() => _isUploading = false);
+          final result = await userService.uploadProfileImage(image.path);
+
+          if (mounted) {
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profil rasmi muvaffaqiyatli yangilandi!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+
+            // Notify parent widget with the new image URL
+            if (widget.onImageUpdated != null && result != null) {
+              widget.onImageUpdated!(result['profileImage']);
+            }
+          }
+        } catch (uploadError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Rasmni yuklashda xatolik: $uploadError'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        } finally {
+          if (mounted) {
+            setState(() => _isUploading = false);
+          }
         }
       }
     } catch (e) {
