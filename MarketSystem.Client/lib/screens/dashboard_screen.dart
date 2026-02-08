@@ -11,6 +11,7 @@ import '../features/users/screens/users_screen.dart';
 import '../features/customers/screens/customers_screen.dart';
 import '../features/debts/screens/debts_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
+import '../features/reports/screens/reports_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -209,7 +210,10 @@ class DashboardScreen extends StatelessWidget {
                 icon: Icons.bar_chart_outlined,
                 color: Colors.teal,
                 onTap: () {
-                  _showComingSoon(context, 'Hisobotlar');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ReportsScreen()),
+                  );
                 },
               ),
 
@@ -326,15 +330,5 @@ class DashboardScreen extends StatelessWidget {
       default:
         return Colors.grey.withOpacity(0.2);
     }
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature tez orada ishga tushadi!'),
-        backgroundColor: Colors.orange,
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 }
