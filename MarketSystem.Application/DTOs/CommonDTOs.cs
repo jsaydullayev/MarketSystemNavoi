@@ -168,6 +168,38 @@ public record PeriodReportDto(
     [property: JsonPropertyName("totalTransactions")] int TotalTransactions
 );
 
+// Seller Report
+public record SellerReportDto(
+    [property: JsonPropertyName("sellerId")] Guid SellerId,
+    [property: JsonPropertyName("sellerName")] string SellerName,
+    [property: JsonPropertyName("totalSales")] decimal TotalSales,
+    [property: JsonPropertyName("totalProfit")] decimal TotalProfit,
+    [property: JsonPropertyName("transactionCount")] int TransactionCount
+);
+
+// Inventory Report
+public record InventoryReportDto(
+    [property: JsonPropertyName("productId")] Guid ProductId,
+    [property: JsonPropertyName("productName")] string ProductName,
+    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("costPrice")] decimal CostPrice,
+    [property: JsonPropertyName("salePrice")] decimal SalePrice,
+    [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
+    [property: JsonPropertyName("totalCostValue")] decimal TotalCostValue,
+    [property: JsonPropertyName("totalSaleValue")] decimal TotalSaleValue,
+    [property: JsonPropertyName("potentialProfit")] decimal PotentialProfit
+);
+
+// Comprehensive Report
+public record ComprehensiveReportDto(
+    [property: JsonPropertyName("date")] DateTime Date,
+    [property: JsonPropertyName("dailyReport")] DailyReportDto DailyReport,
+    [property: JsonPropertyName("sellerReports")] List<SellerReportDto> SellerReports,
+    [property: JsonPropertyName("inventoryReport")] List<InventoryReportDto> InventoryReport,
+    [property: JsonPropertyName("totalInventoryCost")] decimal TotalInventoryCost,
+    [property: JsonPropertyName("totalInventorySaleValue")] decimal TotalInventorySaleValue
+);
+
 // Debt DTOs
 public record DebtDto(
     [property: JsonPropertyName("id")] Guid Id,

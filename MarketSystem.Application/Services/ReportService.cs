@@ -20,8 +20,8 @@ public class ReportService : IReportService
 
     public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, CancellationToken cancellationToken = default)
     {
-        var start = date.Date;
-        var end = date.Date.AddDays(1);
+        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled,
@@ -126,6 +126,186 @@ public class ReportService : IReportService
 
         // AutoFit columns
         worksheet.Cells.AutoFitColumns();
+
+        return await package.GetAsByteArrayAsync();
+    }
+
+    public async Task<ComprehensiveReportDto> GetComprehensiveReportAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
+
+        // Get daily sales
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled,
+            cancellationToken);
+
+        // Get zakups
+        var zakups = await _unitOfWork.Zakups.FindAsync(
+            z => z.CreatedAt >= start && z.CreatedAt < end,
+            cancellationToken);
+
+        // Get all products for inventory report
+        var products = await _unitOfWork.Products.GetAllAsync(cancellationToken);
+
+        // Get all users for seller reports
+        var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
+
+        // Calculate daily report
+        var dailyReport = CalculateReport(sales, zakups, start, end);
+
+        // Calculate seller reports
+        var sellerReports = new List<SellerReportDto>();
+        foreach (var user in users.Where(u => u.Role == Role.Seller || u.Role == Role.Admin || u.Role == Role.Owner))
+        {
+            var userSales = sales.Where(s => s.SellerId == user.Id).ToList();
+            if (userSales.Any())
+            {
+                decimal totalSales = userSales.Sum(s => s.TotalAmount);
+                decimal totalProfit = 0;
+
+                foreach (var sale in userSales)
+                {
+                    foreach (var item in sale.SaleItems)
+                    {
+                        var itemCost = item.CostPrice * item.Quantity;
+                        var itemRevenue = item.SalePrice * item.Quantity;
+                        totalProfit += itemRevenue - itemCost;
+                    }
+                }
+
+                sellerReports.Add(new SellerReportDto(
+                    user.Id,
+                    user.FullName,
+                    totalSales,
+                    totalProfit,
+                    userSales.Count
+                ));
+            }
+        }
+
+        // Calculate inventory report
+        var inventoryReport = new List<InventoryReportDto>();
+        decimal totalInventoryCost = 0;
+        decimal totalInventorySaleValue = 0;
+
+        foreach (var product in products)
+        {
+            var totalCostValue = product.Quantity * product.CostPrice;
+            var totalSaleValue = product.Quantity * product.SalePrice;
+            var potentialProfit = totalSaleValue - totalCostValue;
+
+            totalInventoryCost += totalCostValue;
+            totalInventorySaleValue += totalSaleValue;
+
+            inventoryReport.Add(new InventoryReportDto(
+                product.Id,
+                product.Name,
+                product.Quantity,
+                product.CostPrice,
+                product.SalePrice,
+                product.MinSalePrice,
+                totalCostValue,
+                totalSaleValue,
+                potentialProfit
+            ));
+        }
+
+        return new ComprehensiveReportDto(
+            date,
+            dailyReport,
+            sellerReports,
+            inventoryReport,
+            totalInventoryCost,
+            totalInventorySaleValue
+        );
+    }
+
+    public async Task<byte[]> ExportComprehensiveToExcelAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        var report = await GetComprehensiveReportAsync(date, cancellationToken);
+
+        using var package = new ExcelPackage();
+
+        // 1. Summary Sheet
+        var summarySheet = package.Workbook.Worksheets.Add("Summary");
+        summarySheet.Cells[1, 1].Value = "Hisobot sanasi:";
+        summarySheet.Cells[1, 2].Value = date.ToString("yyyy-MM-dd");
+        summarySheet.Cells[2, 1].Value = "Jami savdo:";
+        summarySheet.Cells[2, 2].Value = report.DailyReport.TotalSales;
+        summarySheet.Cells[3, 1].Value = "Jami foyda:";
+        summarySheet.Cells[3, 2].Value = report.DailyReport.Profit;
+        summarySheet.Cells[4, 1].Value = "Jami tranzaksiyalar:";
+        summarySheet.Cells[4, 2].Value = report.DailyReport.TotalTransactions;
+        summarySheet.Cells[5, 1].Value = "Skladdagi tovarlar qiymati (xarid narxi):";
+        summarySheet.Cells[5, 2].Value = report.TotalInventoryCost;
+        summarySheet.Cells[6, 1].Value = "Skladdagi tovarlar qiymati (sotuv narxi):";
+        summarySheet.Cells[6, 2].Value = report.TotalInventorySaleValue;
+
+        using (var range = summarySheet.Cells[1, 1, 6, 2])
+        {
+            range.Style.Font.Bold = true;
+        }
+
+        // 2. Seller Reports Sheet
+        var sellerSheet = package.Workbook.Worksheets.Add("Sotuvchilar");
+        sellerSheet.Cells[1, 1].Value = "Sotuvchi";
+        sellerSheet.Cells[1, 2].Value = "Jami savdo";
+        sellerSheet.Cells[1, 3].Value = "Foyda";
+        sellerSheet.Cells[1, 4].Value = "Tranzaksiyalar soni";
+
+        using (var headerRange = sellerSheet.Cells[1, 1, 1, 4])
+        {
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+        }
+
+        int row = 2;
+        foreach (var seller in report.SellerReports)
+        {
+            sellerSheet.Cells[row, 1].Value = seller.SellerName;
+            sellerSheet.Cells[row, 2].Value = seller.TotalSales;
+            sellerSheet.Cells[row, 3].Value = seller.TotalProfit;
+            sellerSheet.Cells[row, 4].Value = seller.TransactionCount;
+            row++;
+        }
+
+        sellerSheet.Cells.AutoFitColumns();
+
+        // 3. Inventory Sheet
+        var inventorySheet = package.Workbook.Worksheets.Add("Sklad");
+        inventorySheet.Cells[1, 1].Value = "Mahsulot";
+        inventorySheet.Cells[1, 2].Value = "Miqdor";
+        inventorySheet.Cells[1, 3].Value = "Xarid narxi";
+        inventorySheet.Cells[1, 4].Value = "Sotuv narxi";
+        inventorySheet.Cells[1, 5].Value = "Minimal narx";
+        inventorySheet.Cells[1, 6].Value = "Jami xarid qiymati";
+        inventorySheet.Cells[1, 7].Value = "Jami sotuv qiymati";
+        inventorySheet.Cells[1, 8].Value = "Potensial foyda";
+
+        using (var headerRange = inventorySheet.Cells[1, 1, 1, 8])
+        {
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+        }
+
+        row = 2;
+        foreach (var item in report.InventoryReport)
+        {
+            inventorySheet.Cells[row, 1].Value = item.ProductName;
+            inventorySheet.Cells[row, 2].Value = item.Quantity;
+            inventorySheet.Cells[row, 3].Value = item.CostPrice;
+            inventorySheet.Cells[row, 4].Value = item.SalePrice;
+            inventorySheet.Cells[row, 5].Value = item.MinSalePrice;
+            inventorySheet.Cells[row, 6].Value = item.TotalCostValue;
+            inventorySheet.Cells[row, 7].Value = item.TotalSaleValue;
+            inventorySheet.Cells[row, 8].Value = item.PotentialProfit;
+            row++;
+        }
+
+        inventorySheet.Cells.AutoFitColumns();
 
         return await package.GetAsByteArrayAsync();
     }
