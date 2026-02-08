@@ -20,7 +20,7 @@ public class ReportsController : ControllerBase
     /// <summary>
     /// Get daily sales report
     /// </summary>
-    [HttpGet("daily")]
+    [HttpGet]
     public async Task<ActionResult<DailyReportDto>> GetDailyReport([FromQuery] DateTime date)
     {
         var report = await _reportService.GetDailyReportAsync(date);
@@ -30,7 +30,7 @@ public class ReportsController : ControllerBase
     /// <summary>
     /// Get sales report for a period
     /// </summary>
-    [HttpGet("period")]
+    [HttpGet]
     public async Task<ActionResult<PeriodReportDto>> GetPeriodReport(
         [FromQuery] DateTime start,
         [FromQuery] DateTime end)
@@ -46,7 +46,7 @@ public class ReportsController : ControllerBase
     /// <summary>
     /// Export sales report to Excel
     /// </summary>
-    [HttpGet("export")]
+    [HttpGet]
     public async Task<IActionResult> ExportToExcel(
         [FromQuery] DateTime start,
         [FromQuery] DateTime end)
@@ -61,6 +61,31 @@ public class ReportsController : ControllerBase
             excelBytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"report_{start:yyyyMMdd}_{end:yyyyMMdd}.xlsx"
+        );
+    }
+
+    /// <summary>
+    /// Get comprehensive report including seller stats and inventory
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<ComprehensiveReportDto>> GetComprehensiveReport([FromQuery] DateTime date)
+    {
+        var report = await _reportService.GetComprehensiveReportAsync(date);
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Export comprehensive report to Excel
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> ExportComprehensiveToExcel([FromQuery] DateTime date)
+    {
+        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(date);
+
+        return File(
+            excelBytes,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"comprehensive_report_{date:yyyyMMdd}.xlsx"
         );
     }
 }
