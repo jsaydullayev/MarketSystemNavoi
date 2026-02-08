@@ -77,23 +77,9 @@ public class ZakupService : IZakupService
 
             await _unitOfWork.Zakups.AddAsync(zakup, cancellationToken);
 
-            // WEIGHTED AVERAGE FORMULA:
-            // NewCostPrice = (OldTotalCost + NewCost) / (OldQuantity + NewQuantity)
-            var oldTotalCost = product.Quantity * product.CostPrice;
-            var newTotalCost = request.Quantity * request.CostPrice;
-            var totalQuantity = product.Quantity + request.Quantity;
-
-            // Update product stock and cost price with weighted average
+            // Update product stock and cost price with latest purchase price
             product.Quantity += request.Quantity;
-
-            if (totalQuantity > 0)
-            {
-                product.CostPrice = (oldTotalCost + newTotalCost) / totalQuantity;
-            }
-            else
-            {
-                product.CostPrice = request.CostPrice;
-            }
+            product.CostPrice = request.CostPrice; // Use latest purchase price
 
             // Ensure EF Core tracks the product entity explicitly
             _context.Entry(product).State = EntityState.Modified;
