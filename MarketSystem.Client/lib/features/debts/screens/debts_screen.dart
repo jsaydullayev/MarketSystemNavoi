@@ -12,7 +12,7 @@ class DebtsScreen extends StatefulWidget {
 }
 
 class _DebtsScreenState extends State<DebtsScreen> {
-  List<dynamic> _debts = [];
+  Map<String, List<dynamic>> _debtsByCustomer = {}; // Group debts by customer
   Map<String, String> _customerNames = {};
   bool _isLoading = false;
 
@@ -33,16 +33,20 @@ class _DebtsScreenState extends State<DebtsScreen> {
 
       final debts = await debtService.getAllDebts(status: 'Open');
 
-      // Load customer names
+      // Group debts by customer
+      final Map<String, List<dynamic>> grouped = {};
       final Map<String, String> names = {};
       for (var debt in debts) {
-        if (!names.containsKey(debt['customerId'])) {
-          names[debt['customerId']] = debt['customerName'] ?? 'Noma\'lum';
+        final customerId = debt['customerId'];
+        if (!grouped.containsKey(customerId)) {
+          grouped[customerId] = [];
+          names[customerId] = debt['customerName'] ?? 'Noma\'lum';
         }
+        grouped[customerId]!.add(debt);
       }
 
       setState(() {
-        _debts = debts;
+        _debtsByCustomer = grouped;
         _customerNames = names;
         _isLoading = false;
       });
@@ -203,7 +207,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _debts.isEmpty
+          : _debtsByCustomer.isEmpty
               ? const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -221,10 +225,19 @@ class _DebtsScreenState extends State<DebtsScreen> {
                   onRefresh: _loadData,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: _debts.length,
+                    itemCount: _debtsByCustomer.keys.length,
                     itemBuilder: (context, index) {
-                      final debt = _debts[index];
-                      final customerName = _customerNames[debt['customerId']] ?? 'Noma\'lum';
+                      final customerId = _debtsByCustomer.keys.elementAt(index);
+                      final customerDebts = _debtsByCustomer[customerId]!;
+                      final customerName = _customerNames[customerId] ?? 'Noma\'lum';
+
+                      // Calculate totals for this customer
+                      double totalDebt = 0;
+                      double remainingDebt = 0;
+                      for (var debt in customerDebts) {
+                        totalDebt += (debt['totalDebt'] as num).toDouble();
+                        remainingDebt += (debt['remainingDebt'] as num).toDouble();
+                      }
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -254,15 +267,15 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: debt['status'] == 'Open' ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5),
+                                      color: remainingDebt > 0 ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      debt['status'] == 'Open' ? 'Ochiq' : 'Yopiq',
+                                      '${customerDebts.length} ta qarz',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: debt['status'] == 'Open' ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                                        color: remainingDebt > 0 ? const Color(0xFFDC2626) : const Color(0xFF059669),
                                       ),
                                     ),
                                   ),
@@ -280,7 +293,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                         style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                                       ),
                                       Text(
-                                        '${debt['totalDebt']} so\'m',
+                                        '${totalDebt.toStringAsFixed(0)} so\'m',
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
@@ -297,9 +310,9 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                         style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                                       ),
                                       Text(
-                                        '${debt['remainingDebt']} so\'m',
+                                        '${remainingDebt.toStringAsFixed(0)} so\'m',
                                         style: const TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 18,
                                           fontWeight: FontWeight.w700,
                                           color: Color(0xFFDC2626),
                                         ),
@@ -309,11 +322,11 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              if (debt['status'] == 'Open')
+                              if (remainingDebt > 0)
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton.icon(
-                                    onPressed: () => _showPayDebtDialog(debt),
+                                    onPressed: () => _showPayDebtDialog(customerDebts.first),
                                     icon: const Icon(Icons.payment, size: 18),
                                     label: const Text('To\'lash'),
                                     style: ElevatedButton.styleFrom(
