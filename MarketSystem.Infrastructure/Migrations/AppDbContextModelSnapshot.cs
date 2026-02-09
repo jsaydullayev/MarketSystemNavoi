@@ -356,11 +356,15 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ProfileImage")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Language")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("Username")
                         .IsRequired()

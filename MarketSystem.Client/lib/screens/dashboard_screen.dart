@@ -13,6 +13,7 @@ import '../features/customers/screens/customers_screen.dart';
 import '../features/debts/screens/debts_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/reports/screens/reports_screen.dart';
+import '../l10n/app_localizations.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -62,10 +63,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildUserInfoCard(user),
+                      _buildUserInfoCard(context, user),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Bo\'limlar',
+                      Text(
+                        AppLocalizations.of(context)!.dashboard,
                         style: AppTheme.headingMedium,
                       ),
                       const SizedBox(height: 10),
@@ -83,6 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildAppBar(BuildContext context, dynamic user) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
@@ -102,9 +104,9 @@ class _DashboardScreenState extends State<DashboardScreen>
             child: const Icon(Icons.store, color: AppTheme.primary, size: 18),
           ),
           const SizedBox(width: 10),
-          const Text(
-            'Market System',
-            style: TextStyle(
+          Text(
+            l10n.appTitle,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
@@ -130,22 +132,22 @@ class _DashboardScreenState extends State<DashboardScreen>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  title: const Text(
-                    'Tizimdan chiqish',
-                    style: TextStyle(color: AppTheme.textPrimary),
+                  title: Text(
+                    l10n.logout,
+                    style: const TextStyle(color: AppTheme.textPrimary),
                   ),
-                  content: const Text(
-                    'Rostdan ham tizimdan chiqmoqchimisiz?',
-                    style: TextStyle(color: AppTheme.textSecondary),
+                  content: Text(
+                    l10n.logoutConfirm,
+                    style: const TextStyle(color: AppTheme.textSecondary),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Yo\'q'),
+                      child: Text(l10n.no),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Ha'),
+                      child: Text(l10n.yes),
                     ),
                   ],
                 ),
@@ -166,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildUserInfoCard(dynamic user) {
+  Widget _buildUserInfoCard(BuildContext context, dynamic user) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -201,7 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?['fullName'] ?? 'Foydalanuvchi',
+                  user?['fullName'] ?? 'User',
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -238,12 +240,13 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildMenuGrid(BuildContext context, dynamic user) {
+    final l10n = AppLocalizations.of(context)!;
     final menuItems = [
       _MenuItemData(
-        title: 'Mahsulotlar',
+        title: l10n.products,
         subtitle: user?['role'] == 'Seller'
-            ? 'Mahsulotlar ro\'yxati'
-            : 'Mahsulotlarni boshqarish',
+            ? l10n.productList
+            : l10n.productManagement,
         icon: Icons.inventory_2_outlined,
         color: MenuCardColors.products,
         onTap: () => Navigator.push(
@@ -254,8 +257,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       ),
       _MenuItemData(
-        title: 'Sotuvlar',
-        subtitle: 'Sotuvlar tarixi',
+        title: l10n.sales,
+        subtitle: l10n.salesHistory,
         icon: Icons.shopping_cart_outlined,
         color: MenuCardColors.sales,
         onTap: () => Navigator.push(
@@ -264,8 +267,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       ),
       _MenuItemData(
-        title: 'Mijozlar',
-        subtitle: 'Mijozlar ro\'yxati',
+        title: l10n.customers,
+        subtitle: l10n.customerList,
         icon: Icons.people_outline,
         color: MenuCardColors.customers,
         onTap: () => Navigator.push(
@@ -275,8 +278,8 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
         _MenuItemData(
-          title: 'Xaridlar',
-          subtitle: 'Maxsulot xaridlari',
+          title: l10n.zakup,
+          subtitle: l10n.productPurchases,
           icon: Icons.shopping_bag_outlined,
           color: MenuCardColors.zakup,
           onTap: () => Navigator.push(
@@ -286,8 +289,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
         _MenuItemData(
-          title: 'Hisobotlar',
-          subtitle: 'Tizim hisobotlari',
+          title: l10n.reports,
+          subtitle: l10n.systemReports,
           icon: Icons.bar_chart_outlined,
           color: MenuCardColors.reports,
           onTap: () => Navigator.push(
@@ -297,8 +300,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
         _MenuItemData(
-          title: 'Qarzdorlik',
-          subtitle: 'Mijozlar qarzlari',
+          title: l10n.debts,
+          subtitle: l10n.customerDebts,
           icon: Icons.money_outlined,
           color: MenuCardColors.debts,
           onTap: () => Navigator.push(
@@ -308,8 +311,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
         _MenuItemData(
-          title: 'Foydalanuvchilar',
-          subtitle: 'Foydalanuvchilarni boshqarish',
+          title: l10n.users,
+          subtitle: l10n.userManagement,
           icon: Icons.admin_panel_settings_outlined,
           color: MenuCardColors.users,
           onTap: () => Navigator.push(
@@ -319,8 +322,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
         _MenuItemData(
-          title: 'Admin: Mahsulotlar',
-          subtitle: 'Narxlarni boshqarish',
+          title: l10n.adminProducts,
+          subtitle: l10n.priceManagement,
           icon: Icons.settings_outlined,
           color: MenuCardColors.adminProducts,
           onTap: () => Navigator.push(
@@ -334,10 +337,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+        crossAxisCount: 4,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 1.2,
+        childAspectRatio: 1.1,
       ),
       itemCount: menuItems.length,
       itemBuilder: (context, index) {

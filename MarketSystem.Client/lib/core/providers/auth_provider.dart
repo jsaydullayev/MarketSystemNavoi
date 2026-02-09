@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/services/auth_service.dart';
 import '../../data/services/user_service.dart';
@@ -28,6 +29,11 @@ class AuthProvider extends ChangeNotifier {
 
       if (result != null) {
         _user = result;
+        // Save language preference from server
+        if (_user?['language'] != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('app_locale', _user!['language']);
+        }
         _isLoading = false;
         notifyListeners();
         return true;
@@ -51,6 +57,7 @@ class AuthProvider extends ChangeNotifier {
     required String username,
     required String password,
     required String role,
+    String? language,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -62,10 +69,16 @@ class AuthProvider extends ChangeNotifier {
         username: username,
         password: password,
         role: role,
+        language: language,
       );
 
       if (result != null) {
         _user = result;
+        // Save language preference
+        if (_user?['language'] != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('app_locale', _user!['language']);
+        }
         _isLoading = false;
         notifyListeners();
         return true;

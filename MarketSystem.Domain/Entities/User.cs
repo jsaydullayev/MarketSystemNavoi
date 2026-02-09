@@ -8,8 +8,12 @@ public class User : BaseEntity
     public string FullName { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
+    /// <summary>
+    /// Base64 encoded profile image data
+    /// </summary>
     public string? ProfileImage { get; set; }
     public Role Role { get; set; }
+    public Language Language { get; set; } = Language.Uzbek;
     public bool IsActive { get; set; } = true;
     public bool IsDeleted { get; set; } = false;
 

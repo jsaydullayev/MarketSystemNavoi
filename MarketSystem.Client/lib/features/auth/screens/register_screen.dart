@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../screens/dashboard_screen.dart';
 
@@ -54,12 +55,14 @@ class _RegisterScreenState extends State<RegisterScreen>
   void _register() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
 
       final success = await authProvider.register(
         fullName: _fullNameController.text.trim(),
         username: _usernameController.text.trim(),
         password: _passwordController.text,
         role: _selectedRole,
+        language: localeProvider.locale.languageCode,
       );
 
       if (success && mounted) {

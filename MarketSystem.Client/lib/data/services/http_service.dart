@@ -1,6 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 import '../../core/constants/api_constants.dart';
 
@@ -75,13 +76,44 @@ class HttpService {
   // PUT request
   Future<http.Response> put(String endpoint, {Object? body}) async {
     final token = await getAccessToken();
+    final encodedBody = body != null ? jsonEncode(body) : null;
+
+    print('=== HTTP PUT ===');
+    print('URL: $baseUrl$endpoint');
+    print('Has body: ${body != null}');
+    if (body != null && encodedBody != null && encodedBody.length < 500) {
+      print('Body: $encodedBody');
+    } else if (body != null) {
+      print('Body length: ${encodedBody?.length ?? 0} bytes (too large to display)');
+    }
+    print('================');
+
+    // For large bodies, use a different approach to avoid encoding issues
+    if (encodedBody != null && encodedBody.length > 100000) {
+      final client = http.Client();
+      try {
+        final request = http.Request('PUT', Uri.parse('$baseUrl$endpoint'));
+        request.headers.addAll({
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        });
+        request.body = encodedBody;
+
+        final streamedResponse = await client.send(request);
+        final response = await http.Response.fromStream(streamedResponse);
+        return response;
+      } finally {
+        client.close();
+      }
+    }
+
     return http.put(
       Uri.parse('$baseUrl$endpoint'),
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       },
-      body: body != null ? jsonEncode(body) : null,
+      body: encodedBody,
     );
   }
 
@@ -95,5 +127,51 @@ class HttpService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
     );
+  }
+
+  // Multipart file upload (for images, etc.)
+  Future<http.Response> uploadFile(
+    String endpoint, {
+    required String filePath,
+    String? fileFieldName,
+    Map<String, String>? fields,
+  }) async {
+    final token = await getAccessToken();
+    final file = File(filePath);
+
+    final request = http.MultipartRequest(
+      'PUT',
+      Uri.parse('$baseUrl$endpoint'),
+    );
+
+    // Add headers
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // Add file
+    final fileStream = http.ByteStream(file.openRead());
+    final length = await file.length();
+    final multipartFile = http.MultipartFile(
+      fileFieldName ?? 'file',
+      fileStream,
+      length,
+      filename: filePath.split('/').last,
+    );
+    request.files.add(multipartFile);
+
+    // Add additional fields
+    if (fields != null) {
+      fields.forEach((key, value) {
+        request.fields[key] = value;
+      });
+    }
+
+    print('=== HTTP MULTIPART UPLOAD ===');
+    print('URL: $baseUrl$endpoint');
+    print('File: $filePath');
+    print('File size: ${(length / 1024).toStringAsFixed(2)} KB');
+    print('================');
+
+    final response = await request.send();
+    return http.Response.fromStream(response);
   }
 }

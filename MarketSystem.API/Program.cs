@@ -254,11 +254,37 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.Migrate();
+
+    // Ensure database is created
+    dbContext.Database.EnsureCreated();
+
+    // Add Language column if it doesn't exist (manual migration)
+    var connection = dbContext.Database.GetDbConnection();
+    await connection.OpenAsync();
+    using var command = connection.CreateCommand();
+    command.CommandText = @"
+        SELECT COUNT(*)
+        FROM information_schema.columns
+        WHERE table_name = 'Users' AND column_name = 'Language'";
+    var columnExists = (long)(await command.ExecuteScalarAsync() ?? 0);
+
+    if (columnExists == 0)
+    {
+        command.CommandText = @"
+            ALTER TABLE ""Users""
+            ADD COLUMN ""Language"" integer NOT NULL DEFAULT 0";
+        await command.ExecuteNonQueryAsync();
+        Console.WriteLine("Added Language column to Users table");
+    }
+
+    await connection.CloseAsync();
 }
 
 // Request logging middleware (for debugging)
 app.UseMiddleware<RequestLoggingMiddleware>();
+
+// Global Exception Handler - MUST be before other middleware
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 // Configure the HTTP request pipeline
 // Use CORS based on environment

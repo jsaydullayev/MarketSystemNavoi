@@ -55,6 +55,7 @@ class AuthService {
     required String username,
     required String password,
     required String role,
+    String? language,
   }) async {
     try {
       final response = await _httpService.post(
@@ -64,6 +65,7 @@ class AuthService {
           'username': username,
           'password': password,
           'role': role,
+          if (language != null) 'language': language,
         },
       );
 
