@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../data/services/user_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/theme_provider.dart';
 import '../../auth/screens/welcome_screen.dart';
 import '../widgets/profile_image_picker.dart';
 
@@ -272,6 +273,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Theme Toggle Card
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Card(
+                        elevation: 2,
+                        child: SwitchListTile(
+                          title: const Text(
+                            'Qorong\'i rejim',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            themeProvider.isDarkMode ? 'Qorong\'i tema yoqilgan' : 'Yorqin tema yoqilgan',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          secondary: Icon(
+                            themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                            color: themeProvider.isDarkMode ? Colors.purple : Colors.amber,
+                          ),
+                          value: themeProvider.isDarkMode,
+                          onChanged: (value) {
+                            themeProvider.setTheme(value);
+                          },
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
 

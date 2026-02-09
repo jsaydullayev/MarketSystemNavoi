@@ -5,6 +5,7 @@ import '../../../data/services/sales_service.dart';
 import '../../../data/services/product_service.dart';
 import '../../../data/services/customer_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/utils/number_formatter.dart';
 
 class NewSaleScreen extends StatefulWidget {
   const NewSaleScreen({super.key});
@@ -395,7 +396,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                               ),
                             ),
                             Text(
-                              '${_totalAmount.toStringAsFixed(0)} so\'m',
+                              NumberFormatter.formatDecimal(_totalAmount),
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w700,
@@ -413,7 +414,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 // Cart items
                 if (_cartItems.isNotEmpty)
                   Container(
-                    height: 95,
+                    height: 104,
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -452,14 +453,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${item['quantity']} x ${item['salePrice']}',
+                                '${item['quantity']} x ${NumberFormatter.format(item['salePrice'])}',
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: Color(0xFF6B7280),
                                 ),
                               ),
                               Text(
-                                '${itemTotal.toStringAsFixed(0)} so\'m',
+                                NumberFormatter.formatDecimal(itemTotal),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -622,7 +623,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            '${product['salePrice']}',
+                                            NumberFormatter.format(product['salePrice']),
                                             style: const TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
@@ -842,7 +843,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final customerDebt = widget.selectedCustomer?['totalDebt'] ?? 0;
+    final customerDebt = (widget.selectedCustomer?['totalDebt'] ?? 0).toDouble();
 
     return AlertDialog(
       title: const Text('To\'lov usullari'),
@@ -946,7 +947,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
               title: const Text('Qarzga olish'),
               subtitle: widget.selectedCustomer != null
                   ? Text(
-                      '${widget.selectedCustomer!['fullName'] ?? 'Mijoz'} - Hozirgi qarz: $customerDebt so\'m',
+                      '${widget.selectedCustomer!['fullName'] ?? 'Mijoz'} - Hozirgi qarz: ${NumberFormatter.formatDecimal(customerDebt)}',
                       style: const TextStyle(fontSize: 12, color: Colors.blue))
                   : const Text('Mijoz tanlang',
                       style: TextStyle(fontSize: 12, color: Colors.red)),
@@ -985,7 +986,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                     children: [
                       const Text('Jami summa:',
                           style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('${widget.totalAmount.toStringAsFixed(0)} so\'m'),
+                      Text(NumberFormatter.formatDecimal(widget.totalAmount)),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -994,7 +995,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                     children: [
                       const Text('To\'langan:',
                           style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('${_totalPaid.toStringAsFixed(0)} so\'m',
+                      Text(NumberFormatter.formatDecimal(_totalPaid),
                           style: const TextStyle(color: Colors.green)),
                     ],
                   ),
@@ -1007,7 +1008,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        '${_remainingAmount.toStringAsFixed(0)} so\'m',
+                        NumberFormatter.formatDecimal(_remainingAmount),
                         style: TextStyle(
                           color: _hasDebt
                               ? Colors.orange
@@ -1029,7 +1030,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                               style: TextStyle(
                                   fontSize: 11, color: Colors.orange)),
                           Text(
-                            '+${_remainingAmount.toStringAsFixed(0)} so\'m',
+                            '+${NumberFormatter.formatDecimal(_remainingAmount)}',
                             style: const TextStyle(
                                 fontSize: 11,
                                 color: Colors.orange,
