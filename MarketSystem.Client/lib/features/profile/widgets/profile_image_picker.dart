@@ -27,7 +27,9 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     try {
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 70,
+        imageQuality: 50,
+        maxWidth: 800,
+        maxHeight: 800,
       );
 
       if (image != null && mounted) {

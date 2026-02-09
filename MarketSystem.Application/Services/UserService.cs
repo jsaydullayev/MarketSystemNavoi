@@ -123,6 +123,37 @@ public class UserService : IUserService
         if (user is null)
             return null;
 
+        // Validate base64 image size (approximately)
+        if (!string.IsNullOrEmpty(request.ProfileImage))
+        {
+            // Remove data URL prefix if present
+            var base64Data = request.ProfileImage;
+            if (base64Data.StartsWith("data:image/"))
+            {
+                var commaIndex = base64Data.IndexOf(',');
+                if (commaIndex > 0)
+                {
+                    base64Data = base64Data.Substring(commaIndex + 1);
+                }
+            }
+
+            // Check base64 string length (10MB limit in base64 is approximately 13M characters)
+            if (base64Data.Length > 13_000_000)
+            {
+                throw new ArgumentException("Rasm hajmi juda katta. Maksimum rasm hajmi 10MB.");
+            }
+
+            // Validate base64 format
+            try
+            {
+                Convert.FromBase64String(base64Data);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException("Rasm formati noto'g'ri.");
+            }
+        }
+
         user.ProfileImage = request.ProfileImage;
 
         _context.Entry(user).State = EntityState.Modified;
