@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../data/services/sales_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/utils/number_formatter.dart';
 import '../../../screens/dashboard_screen.dart';
 import 'new_sale_screen.dart';
 
@@ -117,7 +118,7 @@ class _SalesScreenState extends State<SalesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sotuvni bekor qilish'),
-        content: Text('Rostdan ham bu sotuvni bekor qilmoqchimisiz?\n\nMijoz: ${sale['customerName'] ?? 'Noma\'lum'}\nSumma: ${sale['totalAmount'] ?? 0} so\'m'),
+        content: Text('Rostdan ham bu sotuvni bekor qilmoqchimisiz?\n\nMijoz: ${sale['customerName'] ?? 'Noma\'lum'}\nSumma: ${NumberFormatter.formatDecimal(sale['totalAmount'] ?? 0)}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -411,7 +412,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     const Text('Jami summa:',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     Text(
-                      '${totalAmount.toStringAsFixed(0)} so\'m',
+                      NumberFormatter.formatDecimal(totalAmount),
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16),
                     ),
@@ -423,7 +424,7 @@ class _SalesScreenState extends State<SalesScreen> {
                   children: [
                     const Text('To\'langan:'),
                     Text(
-                      '${paidAmount.toStringAsFixed(0)} so\'m',
+                      NumberFormatter.formatDecimal(paidAmount),
                       style: TextStyle(color: Colors.green[700]),
                     ),
                   ],
@@ -436,7 +437,7 @@ class _SalesScreenState extends State<SalesScreen> {
                       const Text('Qarzdorlik:',
                           style: TextStyle(color: Colors.red)),
                       Text(
-                        '${remainingAmount.toStringAsFixed(0)} so\'m',
+                        NumberFormatter.formatDecimal(remainingAmount),
                         style: const TextStyle(
                           color: Colors.red,
                           fontWeight: FontWeight.bold,
