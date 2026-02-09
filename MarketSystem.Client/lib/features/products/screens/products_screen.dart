@@ -6,6 +6,7 @@ import '../../../data/services/zakup_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../screens/dashboard_screen.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/utils/number_formatter.dart';
 import 'product_form_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
@@ -389,8 +390,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Sotish narxi: ${product['salePrice'] ?? 0} so\'m'),
-            Text('Olingan narxi: ${product['costPrice'] ?? 0} so\'m'),
+            Text('${l10n.salePrice}: ${NumberFormatter.formatDecimal(product['salePrice'] ?? 0)}'),
+            Text('${l10n.costPrice}: ${NumberFormatter.formatDecimal(product['costPrice'] ?? 0)}'),
             const SizedBox(height: 4),
             Row(
               children: [
