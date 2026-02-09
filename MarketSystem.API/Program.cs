@@ -155,6 +155,13 @@ builder.Services.AddControllers()
         // Use camelCase for JSON property names (standard for JSON APIs)
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
+
+// Configure Kestrel server limits for large image uploads
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 50 * 1024 * 1024; // 50 MB
+});
+
 builder.Services.AddEndpointsApiExplorer();
 
 // Add Swagger with JWT Authentication
