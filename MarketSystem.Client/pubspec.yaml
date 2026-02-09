@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # UI
   cupertino_icons: ^1.0.6
@@ -26,7 +28,7 @@ dependencies:
   json_annotation: ^4.8.1
 
   # Utils
-  intl: ^0.18.1
+  intl: ^0.20.2
   uuid: ^4.2.1
 
   # Image Picker
@@ -41,3 +43,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true

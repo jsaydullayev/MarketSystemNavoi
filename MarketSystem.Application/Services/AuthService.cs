@@ -65,6 +65,9 @@ public class AuthService : IAuthService
             Username = request.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Enum.Parse<Role>(request.Role, ignoreCase: true),
+            Language = Enum.TryParse<Language>(request.Language, ignoreCase: true, out var lang)
+                ? lang
+                : Language.Uzbek,
             IsActive = true
         };
 
@@ -159,6 +162,7 @@ public class AuthService : IAuthService
                 user.Username,
                 user.FullName,
                 user.Role.ToString(),
+                user.Language.ToString().ToLowerInvariant(),
                 accessToken.AccessToken, // Access token string
                 refreshToken, // Refresh token string
                 DateTime.UtcNow.AddDays(7) // Access token expires in 7 days

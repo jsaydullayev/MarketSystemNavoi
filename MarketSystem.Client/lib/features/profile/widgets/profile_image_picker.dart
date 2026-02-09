@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -27,9 +28,9 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     try {
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 50,
-        maxWidth: 800,
-        maxHeight: 800,
+        imageQuality: 60, // Yaxshi sifat
+        maxWidth: 600,   // Yaxshi o'lcham
+        maxHeight: 600,  // Yaxshi o'lcham
       );
 
       if (image != null && mounted) {
@@ -84,6 +85,70 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     }
   }
 
+  /// Helper method to build image from base64 or URL
+  Widget _buildProfileImage(String imageString) {
+    // Check if it's a base64 data URL
+    if (imageString.startsWith('data:image/')) {
+      try {
+        // Extract base64 data
+        final base64Data = imageString.split(',').last;
+        final imageBytes = base64Decode(base64Data);
+
+        return Image.memory(
+          imageBytes,
+          width: 120,
+          height: 120,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultAvatar();
+          },
+        );
+      } catch (e) {
+        // If base64 decode fails, show default avatar
+        return _buildDefaultAvatar();
+      }
+    }
+    // If it's a URL (http/https), use Image.network
+    else if (imageString.startsWith('http')) {
+      return Image.network(
+        imageString,
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildDefaultAvatar();
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        },
+      );
+    }
+    // Otherwise, try as raw base64
+    else {
+      try {
+        final imageBytes = base64Decode(imageString);
+        return Image.memory(
+          imageBytes,
+          width: 120,
+          height: 120,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultAvatar();
+          },
+        );
+      } catch (e) {
+        return _buildDefaultAvatar();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthProvider>(context).user;
@@ -114,24 +179,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
                   )
                 : profileImage != null && profileImage.isNotEmpty
                     ? ClipOval(
-                        child: Image.network(
-                          profileImage,
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildDefaultAvatar();
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            return const Center(
-                              child: SizedBox(
-                                width: 40,
-                                height: 40,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            );
-                          },
-                        ),
+                        child: _buildProfileImage(profileImage),
                       )
                     : _buildDefaultAvatar(),
           ),
