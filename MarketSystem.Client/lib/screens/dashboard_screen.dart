@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/providers/auth_provider.dart';
+import '../core/theme/app_theme.dart';
 import '../features/auth/screens/welcome_screen.dart';
 import '../features/products/screens/products_screen.dart';
 import '../features/zakup/screens/zakup_screen.dart';
@@ -13,8 +14,34 @@ import '../features/debts/screens/debts_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/reports/screens/reports_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +49,70 @@ class DashboardScreen extends StatelessWidget {
     final user = authProvider.user;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Market System'),
-        centerTitle: true,
-        actions: [
+      backgroundColor: const Color(0xFFF1F5F9),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildAppBar(context, user),
+            Expanded(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildUserInfoCard(user),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Bo\'limlar',
+                        style: AppTheme.headingMedium,
+                      ),
+                      const SizedBox(height: 10),
+                      _buildMenuGrid(context, user),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar(BuildContext context, dynamic user) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.store, color: AppTheme.primary, size: 18),
+          ),
+          const SizedBox(width: 10),
+          const Text(
+            'Market System',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const Spacer(),
           IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'Profil',
+            icon: const Icon(Icons.person_outline, color: AppTheme.textSecondary, size: 20),
             onPressed: () {
               Navigator.push(
                 context,
@@ -37,13 +121,23 @@ class DashboardScreen extends StatelessWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: AppTheme.textSecondary, size: 20),
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Tizimdan chiqish'),
-                  content: const Text('Rostdan ham tizimdan chiqmoqchimisiz?'),
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  title: const Text(
+                    'Tizimdan chiqish',
+                    style: TextStyle(color: AppTheme.textPrimary),
+                  ),
+                  content: const Text(
+                    'Rostdan ham tizimdan chiqmoqchimisiz?',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
@@ -56,7 +150,6 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               );
-
               if (confirmed == true && context.mounted) {
                 await authProvider.logout();
                 if (context.mounted) {
@@ -70,251 +163,255 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User info card
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.blue.shade100,
-                      child: Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user?['fullName'] ?? 'Foydalanuvchi',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '@${user?['username'] ?? 'user'}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Chip(
-                            label: Text(
-                              user?['role'] ?? 'Seller',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            backgroundColor: _getRoleColor(user?['role']),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+    );
+  }
 
-            // Menu items
-            const Text(
-              'Bo\'limlar',
-              style: TextStyle(
+  Widget _buildUserInfoCard(dynamic user) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF64748B).withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: AppTheme.primary,
+            child: Text(
+              (user?['fullName'] ?? 'U')[0].toUpperCase(),
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Products
-            _buildMenuItem(
-              context,
-              title: 'Mahsulotlar',
-              subtitle: user?['role'] == 'Seller'
-                  ? 'Mahsulotlar ro\'yxati (faqat ko\'rish)'
-                  : 'Mahsulotlarni boshqarish',
-              icon: Icons.inventory_2_outlined,
-              color: Colors.orange,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ProductsScreen(isReadOnly: user?['role'] == 'Seller')),
-                );
-              },
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user?['fullName'] ?? 'Foydalanuvchi',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '@${user?['username'] ?? 'user'}',
+                  style: AppTheme.caption,
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _getRoleColor(user?['role']),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    user?['role'] ?? 'Seller',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
-
-            // Sales
-            _buildMenuItem(
-              context,
-              title: 'Sotuvlar',
-              subtitle: 'Sotuvlar tarixi',
-              icon: Icons.shopping_cart_outlined,
-              color: Colors.green,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SalesScreen()),
-                );
-              },
-            ),
-
-            // Customers
-            _buildMenuItem(
-              context,
-              title: 'Mijozlar',
-              subtitle: 'Mijozlar ro\'yxati',
-              icon: Icons.people_outline,
-              color: Colors.blue,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CustomersScreen()),
-                );
-              },
-            ),
-
-            // Zakup (Admin/Owner only)
-            if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
-              _buildMenuItem(
-                context,
-                title: 'Xaridlar',
-                subtitle: 'Maxsulot xaridlari',
-                icon: Icons.shopping_bag_outlined,
-                color: Colors.purple,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ZakupScreen()),
-                  );
-                },
-              ),
-
-            // Reports (Admin/Owner only)
-            if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
-              _buildMenuItem(
-                context,
-                title: 'Hisobotlar',
-                subtitle: 'Tizim hisobotlari',
-                icon: Icons.bar_chart_outlined,
-                color: Colors.teal,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ReportsScreen()),
-                  );
-                },
-              ),
-
-            // Debts (Admin/Owner only)
-            if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
-              _buildMenuItem(
-                context,
-                title: 'Qarzdorlik',
-                subtitle: 'Mijozlar qarzlari',
-                icon: Icons.money_outlined,
-                color: Colors.red,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DebtsScreen()),
-                  );
-                },
-              ),
-
-            // Users (Admin/Owner only)
-            if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
-              _buildMenuItem(
-                context,
-                title: 'Foydalanuvchilar',
-                subtitle: 'Foydalanuvchilarni boshqarish',
-                icon: Icons.admin_panel_settings_outlined,
-                color: Colors.indigo,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const UsersScreen()),
-                  );
-                },
-              ),
-
-            // Admin Products (Admin/Owner only)
-            if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
-              _buildMenuItem(
-                context,
-                title: 'Admin: Mahsulotlar',
-                subtitle: 'Mahsulot narxlari va sozlamalari',
-                icon: Icons.settings,
-                color: Colors.deepOrange,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AdminProductsScreen()),
-                  );
-                },
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMenuItem(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: ListTile(
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 28,
+  Widget _buildMenuGrid(BuildContext context, dynamic user) {
+    final menuItems = [
+      _MenuItemData(
+        title: 'Mahsulotlar',
+        subtitle: user?['role'] == 'Seller'
+            ? 'Mahsulotlar ro\'yxati'
+            : 'Mahsulotlarni boshqarish',
+        icon: Icons.inventory_2_outlined,
+        color: MenuCardColors.products,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductsScreen(isReadOnly: user?['role'] == 'Seller'),
           ),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+      ),
+      _MenuItemData(
+        title: 'Sotuvlar',
+        subtitle: 'Sotuvlar tarixi',
+        icon: Icons.shopping_cart_outlined,
+        color: MenuCardColors.sales,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SalesScreen()),
+        ),
+      ),
+      _MenuItemData(
+        title: 'Mijozlar',
+        subtitle: 'Mijozlar ro\'yxati',
+        icon: Icons.people_outline,
+        color: MenuCardColors.customers,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CustomersScreen()),
+        ),
+      ),
+      if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+        _MenuItemData(
+          title: 'Xaridlar',
+          subtitle: 'Maxsulot xaridlari',
+          icon: Icons.shopping_bag_outlined,
+          color: MenuCardColors.zakup,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ZakupScreen()),
           ),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey[600],
+      if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+        _MenuItemData(
+          title: 'Hisobotlar',
+          subtitle: 'Tizim hisobotlari',
+          icon: Icons.bar_chart_outlined,
+          color: MenuCardColors.reports,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ReportsScreen()),
           ),
         ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey[400],
+      if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+        _MenuItemData(
+          title: 'Qarzdorlik',
+          subtitle: 'Mijozlar qarzlari',
+          icon: Icons.money_outlined,
+          color: MenuCardColors.debts,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DebtsScreen()),
+          ),
         ),
-        onTap: onTap,
+      if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+        _MenuItemData(
+          title: 'Foydalanuvchilar',
+          subtitle: 'Foydalanuvchilarni boshqarish',
+          icon: Icons.admin_panel_settings_outlined,
+          color: MenuCardColors.users,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UsersScreen()),
+          ),
+        ),
+      if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+        _MenuItemData(
+          title: 'Admin: Mahsulotlar',
+          subtitle: 'Narxlarni boshqarish',
+          icon: Icons.settings_outlined,
+          color: MenuCardColors.adminProducts,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminProductsScreen()),
+          ),
+        ),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 1.2,
+      ),
+      itemCount: menuItems.length,
+      itemBuilder: (context, index) {
+        return _buildAnimatedMenuItem(menuItems[index], index);
+      },
+    );
+  }
+
+  Widget _buildAnimatedMenuItem(_MenuItemData item, int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 150 + (index * 60)),
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.9 + (0.1 * value),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: _buildMenuItemCard(item),
+    );
+  }
+
+  Widget _buildMenuItemCard(_MenuItemData item) {
+    return GestureDetector(
+      onTap: item.onTap,
+      child: Container(
+        decoration: AppTheme.menuCardDecoration(item.color),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: item.color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(item.icon, color: item.color, size: 22),
+              ),
+              const SizedBox(height: 8),
+
+              // Title
+              Text(
+                item.title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+
+              // Subtitle
+              Text(
+                item.subtitle,
+                style: const TextStyle(
+                  fontSize: 9,
+                  color: AppTheme.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -322,13 +419,29 @@ class DashboardScreen extends StatelessWidget {
   Color _getRoleColor(String? role) {
     switch (role) {
       case 'Owner':
-        return Colors.purple.withOpacity(0.2);
+        return AppTheme.accent;
       case 'Admin':
-        return Colors.blue.withOpacity(0.2);
+        return AppTheme.primary;
       case 'Seller':
-        return Colors.green.withOpacity(0.2);
+        return AppTheme.secondary;
       default:
-        return Colors.grey.withOpacity(0.2);
+        return Colors.grey;
     }
   }
+}
+
+class _MenuItemData {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  _MenuItemData({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 }
