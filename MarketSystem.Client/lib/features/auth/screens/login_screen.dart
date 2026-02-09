@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../screens/dashboard_screen.dart';
+import '../../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -75,6 +76,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       body: SafeArea(
@@ -104,9 +106,9 @@ class _LoginScreenState extends State<LoginScreen>
                     const SizedBox(height: 20),
 
                     // Title
-                    const Text(
-                      'Market System',
-                      style: TextStyle(
+                    Text(
+                      l10n.appTitle,
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimary,
@@ -114,9 +116,9 @@ class _LoginScreenState extends State<LoginScreen>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Tizimga xush kelibsiz',
-                      style: TextStyle(
+                    Text(
+                      l10n.welcome,
+                      style: const TextStyle(
                         fontSize: 13,
                         color: AppTheme.textSecondary,
                       ),
@@ -145,12 +147,12 @@ class _LoginScreenState extends State<LoginScreen>
                             controller: _usernameController,
                             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
-                              label: 'Username',
+                              label: l10n.username,
                               icon: Icons.person_outline,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Username kiritish shart';
+                                return l10n.enterUsername;
                               }
                               return null;
                             },
@@ -163,12 +165,12 @@ class _LoginScreenState extends State<LoginScreen>
                             obscureText: true,
                             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
-                              label: 'Password',
+                              label: l10n.password,
                               icon: Icons.lock_outline,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Password kiritish shat';
+                                return l10n.enterPassword;
                               }
                               return null;
                             },
@@ -201,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 child: ElevatedButton(
                                   onPressed: _login,
                                   style: AppTheme.primaryButtonStyle,
-                                  child: const Text('Kirish'),
+                                  child: Text(l10n.login),
                                 ),
                               );
                             },
