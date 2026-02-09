@@ -9,13 +9,15 @@ public record UserDto(
     [property: JsonPropertyName("username")] string Username,
     [property: JsonPropertyName("profileImage")] string? ProfileImage,
     [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("language")] string Language,
     [property: JsonPropertyName("isActive")] bool IsActive
 );
 public record CreateUserDto(
     [property: JsonPropertyName("fullName")] string FullName,
     [property: JsonPropertyName("username")] string Username,
     [property: JsonPropertyName("password")] string Password,
-    [property: JsonPropertyName("role")] string Role
+    [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("language")] string? Language = "uz"
 );
 public record UpdateUserDto(
     [property: JsonPropertyName("id")] Guid Id,

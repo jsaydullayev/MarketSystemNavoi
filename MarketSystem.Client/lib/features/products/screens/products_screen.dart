@@ -5,6 +5,7 @@ import '../../../data/services/product_service.dart';
 import '../../../data/services/zakup_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../screens/dashboard_screen.dart';
+import '../../../l10n/app_localizations.dart';
 import 'product_form_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
@@ -75,20 +76,21 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<void> _deleteProduct(dynamic product) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Mahsulotni o\'chirish'),
-        content: Text('${product['name']} mahsulotini rostdan ham o\'chirmoqchimisiz?'),
+        title: Text(l10n.delete),
+        content: Text(l10n.confirmDelete),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Yo\'q'),
+            child: Text(l10n.no),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Ha'),
+            child: Text(l10n.yes),
           ),
         ],
       ),
@@ -104,8 +106,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Mahsulot muvaffaqiyatli o\'chirildi'),
+            SnackBar(
+              content: Text(l10n.deleteSuccess),
               backgroundColor: Colors.green,
             ),
           );
@@ -114,7 +116,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Xatolik: $e'),
+              content: Text('${l10n.error}: $e'),
               backgroundColor: Colors.red,
             ),
           );
@@ -231,9 +233,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mahsulotlar'),
+        title: Text(l10n.products),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -260,7 +263,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               controller: _searchController,
               onChanged: (_) => _filterProducts(),
               decoration: InputDecoration(
-                hintText: 'Mahsulot qidirish...',
+                hintText: l10n.search,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -296,7 +299,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _loadProducts,
-                              child: const Text('Qayta urinish'),
+                              child: Text(l10n.loading),
                             ),
                           ],
                         ),
@@ -314,8 +317,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                 const SizedBox(height: 16),
                                 Text(
                                   _searchController.text.isNotEmpty
-                                      ? 'Mahsulot topilmadi'
-                                      : 'Mahsulotlar yo\'q',
+                                      ? 'No products found'
+                                      : l10n.noData,
                                   style: TextStyle(
                                     fontSize: 18,
                                     color: Colors.grey[600],
@@ -360,6 +363,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Widget _buildProductCard(dynamic product) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userRole = authProvider.user?['role'];
+    final l10n = AppLocalizations.of(context)!;
     final canZakup = userRole == 'Admin' || userRole == 'Owner';
 
     return Card(

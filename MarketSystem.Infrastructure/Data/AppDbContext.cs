@@ -1,4 +1,5 @@
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Infrastructure.Data;
@@ -40,7 +41,9 @@ public class AppDbContext : DbContext
             b.Property(x => x.FullName).IsRequired().HasMaxLength(200);
             b.Property(x => x.Username).IsRequired().HasMaxLength(100);
             b.Property(x => x.PasswordHash).IsRequired();
-            b.Property(x => x.ProfileImage).HasMaxLength(500);
+            b.Property(x => x.Language).HasDefaultValue(Language.Uzbek).IsRequired();
+            // ProfileImage stores base64 encoded image data - use TEXT type for unlimited size
+            b.Property(x => x.ProfileImage).HasColumnType("text");
             b.HasIndex(x => x.Username).IsUnique();
             b.HasQueryFilter(x => !x.IsDeleted);
         });
