@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import 'login_screen.dart';
 import '../../../core/providers/locale_provider.dart';
+import '../../../core/providers/theme_provider.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -106,6 +107,53 @@ class WelcomeScreen extends StatelessWidget {
                               onChanged: (value) {
                                 if (value != null) {
                                   localeProvider.setLocale(value);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Theme Selector
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            DropdownButton<bool>(
+                              value: themeProvider.isDarkMode,
+                              dropdownColor: Colors.blue.shade700,
+                              iconEnabledColor: Colors.white,
+                              style: const TextStyle(color: Colors.white, fontSize: 16),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: false,
+                                  child: Text('Yorqin'),
+                                ),
+                                DropdownMenuItem(
+                                  value: true,
+                                  child: Text('Qorong\'i'),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  themeProvider.setTheme(value);
                                 }
                               },
                             ),

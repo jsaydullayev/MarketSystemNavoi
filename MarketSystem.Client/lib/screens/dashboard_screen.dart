@@ -340,7 +340,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         crossAxisCount: 4,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 1.1,
+        childAspectRatio: 1.3,
       ),
       itemCount: menuItems.length,
       itemBuilder: (context, index) {
@@ -372,20 +372,20 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: Container(
         decoration: AppTheme.menuCardDecoration(item.color),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Icon
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: item.color.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(item.icon, color: item.color, size: 22),
+                child: Icon(item.icon, color: item.color, size: 20),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               // Title
               Text(
