@@ -11,7 +11,8 @@ public record RegisterRequest(
     [property: JsonPropertyName("fullName")] string FullName,
     [property: JsonPropertyName("username")] string Username,
     [property: JsonPropertyName("password")] string Password,
-    [property: JsonPropertyName("role")] string Role
+    [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("language")] string? Language = "uz"
 );
 
 public record RefreshTokenRequest(
@@ -24,6 +25,7 @@ public record AuthResponse(
     [property: JsonPropertyName("username")] string Username,
     [property: JsonPropertyName("fullName")] string FullName,
     [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("language")] string Language,
     [property: JsonPropertyName("accessToken")] string AccessToken,
     [property: JsonPropertyName("refreshToken")] string RefreshToken,
     [property: JsonPropertyName("expiresAt")] DateTime ExpiresAt

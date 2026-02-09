@@ -45,32 +45,23 @@ class UserService {
     }
   }
 
-  // Upload profile image
+  // Upload profile image using multipart/form-data (NO "_Namespace" error!)
   Future<dynamic> uploadProfileImage(String imagePath) async {
     try {
-      // Read image file and convert to base64
+      // Check file size first (before reading entire file)
       final file = File(imagePath);
-      final bytes = await file.readAsBytes();
+      final fileSize = await file.length();
+      final fileSizeInMB = fileSize / (1024 * 1024);
 
-      // Check file size (max 5MB before base64 encoding)
-      final fileSizeInMB = bytes.length / (1024 * 1024);
       if (fileSizeInMB > 5) {
         throw Exception('Rasm hajmi juda katta. Iltimos, kichikroq rasm tanlang (maksimum 5MB).');
       }
 
-      final base64Image = base64Encode(bytes);
-
-      // Check base64 size (should be under 10MB)
-      final base64SizeInMB = base64Image.length / (1024 * 1024);
-      if (base64SizeInMB > 10) {
-        throw Exception('Rasm hajmi encodingdan keyin juda katta bo\'ldi. Iltimos, kichikroq rasm tanlang.');
-      }
-
-      final response = await _httpService.put(
+      // Use multipart upload - NO jsonEncode, NO "_Namespace" error!
+      final response = await _httpService.uploadFile(
         '${ApiConstants.users}/UpdateProfileImage',
-        body: {
-          'profileImage': 'data:image/jpeg;base64,$base64Image',
-        },
+        filePath: imagePath,
+        fileFieldName: 'image', // Backend expects this field name
       );
 
       if (response.statusCode == 200) {

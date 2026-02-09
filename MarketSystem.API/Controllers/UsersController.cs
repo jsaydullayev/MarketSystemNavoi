@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace MarketSystem.API.Controllers;
 
@@ -115,7 +116,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<ActionResult<UserDto>> UpdateProfileImage([FromBody] UpdateProfileImageDto request)
+    public async Task<ActionResult<UserDto>> UpdateProfileImage()
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdStr, out var userId))
@@ -123,6 +124,64 @@ public class UsersController : ControllerBase
 
         try
         {
+            UpdateProfileImageDto request;
+
+            // Check if request contains file upload (multipart/form-data)
+            if (Request.HasFormContentType && Request.Form.Files.Count > 0)
+            {
+                // Handle file upload
+                var image = Request.Form.Files[0];
+
+                if (image == null || image.Length == 0)
+                    return BadRequest("Rasm fayli tanlanmadi.");
+
+                // Check file size (max 5MB)
+                if (image.Length > 5 * 1024 * 1024)
+                {
+                    return BadRequest("Rasm hajmi juda katta. Maksimum rasm hajmi 5MB.");
+                }
+
+                // Validate file type
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                var fileExtension = Path.GetExtension(image.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    return BadRequest("Faqat rasm fayllari (.jpg, .jpeg, .png, .gif) yuklash mumkin.");
+                }
+
+                // Convert image to base64
+                using var memoryStream = new MemoryStream();
+                await image.CopyToAsync(memoryStream);
+                var imageBytes = memoryStream.ToArray();
+                var base64Image = Convert.ToBase64String(imageBytes);
+
+                // Determine MIME type
+                var mimeType = fileExtension switch
+                {
+                    ".jpg" or ".jpeg" => "image/jpeg",
+                    ".png" => "image/png",
+                    ".gif" => "image/gif",
+                    _ => "image/jpeg"
+                };
+
+                request = new UpdateProfileImageDto(
+                    ProfileImage: $"data:{mimeType};base64,{base64Image}"
+                );
+            }
+            else
+            {
+                // Handle JSON body
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                request = await Request.ReadFromJsonAsync<UpdateProfileImageDto>(options);
+
+                if (request == null)
+                    return BadRequest("So'rov noto'g'ri formatda.");
+            }
+
             var user = await _userService.UpdateProfileImageAsync(userId, request);
             if (user is null)
                 return NotFound();
@@ -136,6 +195,10 @@ public class UsersController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Rasmni yangilashda xatolik: {ex.Message}");
         }
     }
 

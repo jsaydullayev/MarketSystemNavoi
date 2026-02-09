@@ -55,6 +55,9 @@ public class UserService : IUserService
             Username = request.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Enum.Parse<Role>(request.Role, true),
+            Language = Enum.TryParse<Language>(request.Language, ignoreCase: true, out var lang)
+                ? lang
+                : Language.Uzbek,
             IsActive = true
         };
 
@@ -208,6 +211,7 @@ public class UserService : IUserService
             user.Username,
             user.ProfileImage,
             user.Role.ToString(),
+            user.Language.ToString().ToLowerInvariant(),
             user.IsActive
         );
     }
