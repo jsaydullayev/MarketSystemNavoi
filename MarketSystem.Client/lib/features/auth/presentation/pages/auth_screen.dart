@@ -3,9 +3,10 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/constants/app_strings.dart';
-import '../bloc/auth_provider.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../bloc/auth_bloc.dart';
 
 /// Auth Screen Placeholder
 class AuthScreenPlaceholder extends StatelessWidget {
@@ -17,8 +18,8 @@ class AuthScreenPlaceholder extends StatelessWidget {
       appBar: AppBar(
         title: Text(AppStrings.appName),
       ),
-      body: BlocProvider(
-        create: (_) => AuthProvider(),
+      body: BlocProvider<AuthBloc>(
+        create: (_) => AuthBloc(),
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

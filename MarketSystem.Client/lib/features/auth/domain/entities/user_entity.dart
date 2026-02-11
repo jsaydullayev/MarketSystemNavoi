@@ -1,6 +1,5 @@
 /// User Entity
 /// Core domain entity for user
-library;
 
 import 'package:equatable/equatable.dart';
 

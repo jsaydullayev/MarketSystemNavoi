@@ -1,8 +1,5 @@
 /// Login Request Model
 /// Data transfer object for login requests
-library;
-
-import '../../domain/entities/user_entity.dart';
 
 /// Login request DTO
 class LoginRequestModel {
@@ -20,13 +17,5 @@ class LoginRequestModel {
       'email': email,
       'password': password,
     };
-  }
-
-  /// Convert from entity
-  factory LoginRequestModel.fromEntity(UserEntity entity) {
-    return LoginRequestModel(
-      email: entity.email,
-      password: entity.password,
-    );
   }
 }
