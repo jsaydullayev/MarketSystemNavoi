@@ -1,21 +1,7 @@
 /// Product Bloc Provider
 /// Provides ProductBloc to widget tree
-library;
 
-import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../bloc/product_bloc.dart';
-
-/// Product Bloc Provider
-class ProductBlocProvider extends BlocProvider<ProductBloc, ProductState> {
-  ProductBlocProvider({required super.key})
-      : super(
-          key: key,
-          create: (_) => ProductBloc(
-            // Dependencies will be injected via DI later
-          ),
-        );
-}
+import 'package:flutter/material.dart';
 
 /// Placeholder widget to show bloc is ready
 class ProductBlocPlaceholder extends StatelessWidget {
@@ -25,7 +11,7 @@ class ProductBlocPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-        child: Text('Product Bloc Ready! 🎯\nProducts = ...'),
+        child: Text('Product feature coming soon! 🎯\nProducts = ...'),
       ),
     );
   }

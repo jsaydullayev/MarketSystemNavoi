@@ -1,49 +1,22 @@
-/// Product States
-/// States for Product Bloc
-library;
+/// Delete Product Use Case
+/// Business logic for deleting a product
 
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/failure/failures.dart';
-import '../../entities/product_entity.dart';
+import '../repositories/product_repository.dart';
 
-/// Product State Base
-abstract class ProductState extends Equatable {
-  const ProductState();
-}
+/// Delete Product Use Case
+class DeleteProductUseCase extends Equatable {
+  final ProductRepository repository;
 
-/// Initial state
-class ProductInitial extends ProductState {
-  const ProductInitial();
+  const DeleteProductUseCase(this.repository);
 
-  @override
-  List<Object?> get props => [];
-}
-
-/// Loading state
-class ProductLoading extends ProductState {
-  const ProductLoading();
+  /// Execute use case
+  ResultFuture<bool> call(String id) async {
+    return repository.deleteProduct(id);
+  }
 
   @override
-  List<Object?> get props => [];
-}
-
-/// Loaded state
-class ProductLoaded extends ProductState {
-  final List<ProductEntity> products;
-
-  const ProductLoaded({required this.products});
-
-  @override
-  List<Object?> get props => [products];
-}
-
-/// Error state
-class ProductError extends ProductState {
-  final String message;
-
-  const ProductError({required this.message});
-
-  @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [repository];
 }
