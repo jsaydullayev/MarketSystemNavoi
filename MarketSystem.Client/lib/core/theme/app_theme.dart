@@ -151,6 +151,25 @@ class AppTheme {
       ),
     ),
   );
+
+  static ThemeData get darkTheme => ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primaryDark,
+      brightness: Brightness.dark,
+    ),
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF1E1E1E),
+      elevation: 0,
+      iconTheme: IconThemeData(color: Color(0xFFFFFFFF)),
+      titleTextStyle: TextStyle(
+        color: Color(0xFFFFFFFF),
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
 }
 
 /// Menu card uchun ranglar
