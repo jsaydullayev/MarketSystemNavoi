@@ -1,45 +1,28 @@
-/// Product Events
-/// Events for Product Bloc
-library;
+/// Create Product Use Case
+/// Business logic for creating a product
 
 import 'package:equatable/equatable.dart';
-import '../../entities/product_entity.dart';
 
-/// Product Event Base
-abstract class ProductEvent extends Equatable {
-  const ProductEvent();
-}
+import '../../../../core/failure/failures.dart';
+import '../entities/product_entity.dart';
+import '../repositories/product_repository.dart';
 
-/// Load products event
-class LoadProductsEvent extends ProductEvent {
-  const LoadProductsEvent();
-
-  @override
-  List<Object?> get props => [];
-}
-
-/// Refresh products event
-class RefreshProductsEvent extends ProductEvent {
-  const RefreshProductsEvent();
-
-  @override
-  List<Object?> get props => [];
-}
-
-/// Create product event
-class CreateProductEvent extends ProductEvent {
+/// Create Product Params
+class CreateProductParams extends Equatable {
   final String name;
   final bool isTemporary;
   final double costPrice;
   final double salePrice;
+  final double minSalePrice;
   final int quantity;
   final int minThreshold;
 
-  const CreateProductEvent({
+  const CreateProductParams({
     required this.name,
     required this.isTemporary,
     required this.costPrice,
     required this.salePrice,
+    required this.minSalePrice,
     required this.quantity,
     required this.minThreshold,
   });
@@ -50,50 +33,31 @@ class CreateProductEvent extends ProductEvent {
         isTemporary,
         costPrice,
         salePrice,
+        minSalePrice,
         quantity,
         minThreshold,
       ];
 }
 
-/// Update product event
-class UpdateProductEvent extends ProductEvent {
-  final String id;
-  final String name;
-  final bool isTemporary;
-  final double costPrice;
-  final double salePrice;
-  final int quantity;
-  final int minThreshold;
+/// Create Product Use Case
+class CreateProductUseCase extends Equatable {
+  final ProductRepository repository;
 
-  const UpdateProductEvent({
-    required this.id,
-    required this.name,
-    required this.isTemporary,
-    required this.costPrice,
-    required this.salePrice,
-    required this.quantity,
-    required this.minThreshold,
-  });
+  const CreateProductUseCase(this.repository);
 
-  @override
-  List<Object?> get props => [
-        id,
-        name,
-        isTemporary,
-        costPrice,
-        salePrice,
-        salePrice,
-        quantity,
-        minThreshold,
-      ];
-}
-
-/// Delete product event
-class DeleteProductEvent extends ProductEvent {
-  final String id;
-
-  const DeleteProductEvent({required this.id});
+  /// Execute use case
+  Future<ResultFuture<ProductEntity?>> call(CreateProductParams params) async {
+    return repository.createProduct(
+      name: params.name,
+      isTemporary: params.isTemporary,
+      costPrice: params.costPrice,
+      salePrice: params.salePrice,
+      minSalePrice: params.minSalePrice,
+      quantity: params.quantity,
+      minThreshold: params.minThreshold,
+    );
+  }
 
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [repository];
 }

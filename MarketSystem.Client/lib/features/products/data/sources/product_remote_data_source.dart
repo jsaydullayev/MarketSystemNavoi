@@ -1,6 +1,7 @@
 /// Product Remote Data Source
 /// API data source for products
-library;
+
+import 'package:dio/dio.dart';
 
 import '../../../../core/handlers/network_handler.dart';
 import '../../../../core/utils/di.dart' as di;
