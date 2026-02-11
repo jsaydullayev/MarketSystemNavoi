@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "522725819607",
+    "firebase_url": "https://chat-f2d61-default-rtdb.firebaseio.com",
+    "project_id": "chat-f2d61",
+    "storage_bucket": "chat-f2d61.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522725819607:android:49a68c3922ae8a6c811c92",
+        "android_client_info": {
+          "package_name": "com.example.chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSx14yPL0lPkTt67kTTE_UgbcauSMQNRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522725819607:android:54e317228e2b63ed811c92",
+        "android_client_info": {
+          "package_name": "uz.elaro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSx14yPL0lPkTt67kTTE_UgbcauSMQNRo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

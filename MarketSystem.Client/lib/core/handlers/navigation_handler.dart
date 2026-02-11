@@ -2,6 +2,7 @@
 /// Centralized navigation management
 library;
 
+import 'package:flutter/material.dart' as material;
 import 'package:flutter/material.dart';
 
 /// Navigation Handler - Manages app navigation
@@ -10,8 +11,7 @@ class NavigationHandler {
       GlobalKey<NavigatorState>();
 
   /// Get current context
-  static BuildContext? get context =>
-      navigatorKey.currentContext;
+  BuildContext? get context => navigatorKey.currentContext;
 
   /// Navigate to new route
   static Future<T?> navigateTo<T>(
@@ -71,8 +71,8 @@ class NavigationHandler {
     Color? barrierColor,
     String? barrierLabel,
   }) {
-    return showDialogInternal<T>(
-      context: context!,
+    return material.showDialog<T>(
+      context: navigatorKey.currentContext!,
       builder: builder,
       barrierDismissible: barrierDismissible,
       barrierColor: barrierColor,
@@ -90,7 +90,7 @@ class NavigationHandler {
     BoxConstraints? constraints,
   }) {
     return showModalBottomSheet(
-      context: context!,
+      context: navigatorKey.currentContext!,
       builder: builder,
       backgroundColor: backgroundColor,
       elevation: elevation,
@@ -107,7 +107,7 @@ class NavigationHandler {
     SnackBarAction? action,
     Color? backgroundColor,
   }) {
-    final scaffoldMessenger = ScaffoldMessenger.of(context!);
+    final scaffoldMessenger = ScaffoldMessenger.of(navigatorKey.currentContext!);
     scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Text(message),
@@ -120,13 +120,13 @@ class NavigationHandler {
 
   /// Hide current snackbar
   static void hideSnackBar() {
-    ScaffoldMessenger.of(context!).hideCurrentSnackBar();
+    ScaffoldMessenger.of(navigatorKey.currentContext!).hideCurrentSnackBar();
   }
 
   /// Remove current route
   static void removeCurrentRoute() {
     navigatorKey.currentState!.removeRoute(
-      ModalRoute.of(context!)!,
+      ModalRoute.of(navigatorKey.currentContext!)!,
     );
   }
 }

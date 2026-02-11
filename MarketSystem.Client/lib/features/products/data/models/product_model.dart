@@ -1,6 +1,5 @@
 /// Product Model
 /// Data transfer object for products
-library;
 
 import '../../domain/entities/product_entity.dart';
 
@@ -32,11 +31,11 @@ class ProductModel {
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       isTemporary: json['isTemporary'] ?? false,
-      costPrice: (json['costPrice'] is num ? json['costPrice'].toDouble() : 0.0,
-      salePrice: (json['salePrice'] is num ? json['salePrice'].toDouble() : 0.0,
-      minSalePrice: (json['minSalePrice'] is num ? json['minSalePrice'].toDouble() : 0.0,
-      quantity: (json['quantity'] is num ? json['quantity'] : 0,
-      minThreshold: (json['minThreshold'] is num ? json['minThreshold'] : 0,
+      costPrice: json['costPrice'] is num ? (json['costPrice'] as num).toDouble() : 0.0,
+      salePrice: json['salePrice'] is num ? (json['salePrice'] as num).toDouble() : 0.0,
+      minSalePrice: json['minSalePrice'] is num ? (json['minSalePrice'] as num).toDouble() : 0.0,
+      quantity: json['quantity'] is num ? json['quantity'] as int : 0,
+      minThreshold: json['minThreshold'] is num ? json['minThreshold'] as int : 0,
     );
   }
 

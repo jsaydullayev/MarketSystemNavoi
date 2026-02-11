@@ -1,6 +1,5 @@
 /// Register Request Model
 /// Data transfer object for registration requests
-library;
 
 /// Register request DTO
 class RegisterRequestModel {
