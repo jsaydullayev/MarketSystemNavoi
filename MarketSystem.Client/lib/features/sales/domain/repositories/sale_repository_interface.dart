@@ -1,0 +1,42 @@
+/// Sale Repository Interface
+/// Sotuv repository interfeysi - data layer uchun kontrakt
+
+import '../../../../core/failure/api_result.dart';
+import '../entities/sale_entity.dart';
+import '../entities/sale_item_entity.dart';
+import '../entities/payment_entity.dart';
+
+/// Sale Repository Interface
+/// Data layer implementation qilishi kerak bo'lgan metodlar
+abstract class SaleRepositoryInterface {
+  /// Barcha sotuvlarni olish
+  Future<ApiResult<List<SaleEntity>>> getAllSales();
+
+  /// Mening draft sotuvlarimni olish
+  Future<ApiResult<List<SaleEntity>>> getMyDraftSales();
+
+  /// Yangi sotuv yaratish
+  Future<ApiResult<SaleEntity>> createSale({String? customerId});
+
+  /// Sotuvga mahsulot qo'shish
+  Future<ApiResult<void>> addSaleItem({
+    required String saleId,
+    required String productId,
+    required int quantity,
+    required double salePrice,
+    String? comment,
+  });
+
+  /// Sotuvga to'lov qo'shish
+  Future<ApiResult<void>> addPayment({
+    required String saleId,
+    required String paymentType,
+    required double amount,
+  });
+
+  /// Sotuvni bekor qilish (Admin/Owner)
+  Future<ApiResult<void>> cancelSale({
+    required String saleId,
+    required String adminId,
+  });
+}

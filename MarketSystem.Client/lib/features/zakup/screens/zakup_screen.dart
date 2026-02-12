@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 
-import '../../../data/services/zakup_service.dart';
-import '../../../data/services/product_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/utils/number_formatter.dart';
 import '../../../screens/dashboard_screen.dart';
+import '../../../data/services/product_service.dart';
+import '../presentation/bloc/zakup_bloc.dart';
+import '../presentation/bloc/events/zakup_event.dart';
+import '../presentation/bloc/states/zakup_state.dart';
 
 class ZakupScreen extends StatefulWidget {
   const ZakupScreen({super.key});
@@ -14,16 +18,17 @@ class ZakupScreen extends StatefulWidget {
 }
 
 class _ZakupScreenState extends State<ZakupScreen> {
-  List<dynamic> _zakups = [];
-  List<dynamic> _products = [];
-  bool _isLoading = false;
-  String? _errorMessage;
   final _searchController = TextEditingController();
+  List<dynamic> _products = [];
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    // Load products (needed for dialog)
+    _loadProducts();
+    // Load zakups
+    context.read<ZakupBloc>().add(const GetZakupsEvent());
+    _searchController.addListener(_filterProducts);
   }
 
   @override
@@ -32,34 +37,39 @@ class _ZakupScreenState extends State<ZakupScreen> {
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
+  Future<void> _loadProducts() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final zakupService = ZakupService(authProvider: authProvider);
       final productService = ProductService(authProvider: authProvider);
-
-      final zakups = await zakupService.getAllZakups();
       final products = await productService.getAllProducts();
-
       setState(() {
-        _zakups = zakups;
         _products = products;
-        _isLoading = false;
       });
     } catch (e) {
+      // Products loading failed - continue anyway
       setState(() {
-        _errorMessage = 'Xatolik: $e';
-        _isLoading = false;
+        _products = [];
       });
     }
   }
 
-  Future<void> _showAddZakupDialog() async {
+  void _filterProducts() {
+    setState(() {}); // Trigger rebuild for search filter
+  }
+
+  List<dynamic> _getFilteredProducts() {
+    final query = _searchController.text.toLowerCase();
+    if (query.isEmpty) {
+      return _products;
+    } else {
+      return _products.where((product) {
+        final name = (product['name'] ?? '').toLowerCase();
+        return name.contains(query);
+      }).toList();
+    }
+  }
+
+  void _showAddZakupDialog() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userRole = authProvider.user?['role'];
 
@@ -75,9 +85,22 @@ class _ZakupScreenState extends State<ZakupScreen> {
       return;
     }
 
+    final filteredProducts = _getFilteredProducts();
+    if (filteredProducts.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mahsulotlar yo\'q. Avval mahsulot qo\'shing'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
     final selectedProduct = await showDialog<dynamic>(
       context: context,
-      builder: (context) => _AddZakupDialog(products: _products),
+      builder: (context) => _AddZakupDialog(products: filteredProducts),
     );
 
     if (selectedProduct != null && mounted) {
@@ -85,11 +108,11 @@ class _ZakupScreenState extends State<ZakupScreen> {
     }
   }
 
-  Future<void> _showQuantityAndPriceDialog(dynamic product) async {
+  void _showQuantityAndPriceDialog(dynamic product) {
     final quantityController = TextEditingController();
     final costPriceController = TextEditingController();
 
-    final confirmed = await showDialog<bool>(
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('${product['name']} - Zakup'),
@@ -133,56 +156,23 @@ class _ZakupScreenState extends State<ZakupScreen> {
           ),
         ],
       ),
-    );
-
-    if (confirmed == true) {
-      await _createZakup(
-        product['id'],
-        int.parse(quantityController.text),
-        double.parse(costPriceController.text),
-      );
-    }
+    ).then((confirmed) {
+      if (confirmed == true) {
+        _createZakup(
+          product['id'],
+          int.parse(quantityController.text),
+          double.parse(costPriceController.text),
+        );
+      }
+    });
   }
 
-  Future<void> _createZakup(String productId, int quantity, double costPrice) async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final zakupService = ZakupService(authProvider: authProvider);
-
-      await zakupService.createZakup(
-        productId: productId,
-        quantity: quantity,
-        costPrice: costPrice,
-      );
-
-      await _loadData();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Zakup muvaffaqiyatli qo\'shildi'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  void _createZakup(String productId, int quantity, double costPrice) {
+    context.read<ZakupBloc>().add(CreateZakupEvent(
+      productId: productId,
+      quantity: quantity,
+      costPrice: costPrice,
+    ));
   }
 
   @override
@@ -191,98 +181,136 @@ class _ZakupScreenState extends State<ZakupScreen> {
     final userRole = authProvider.user?['role'];
     final canAdd = userRole == 'Admin' || userRole == 'Owner';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Xaridlar (Zakup)'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
+    return BlocListener<ZakupBloc, ZakupState>(
+      listener: (context, state) {
+        if (state is ZakupCreated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Zakup muvaffaqiyatli qo\'shildi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else if (state is ZakupError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Xaridlar (Zakup)'),
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              );
+            },
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          if (_errorMessage != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.red.shade100,
-              child: Row(
-                children: [
-                  const Icon(Icons.error, color: Colors.red),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => context.read<ZakupBloc>().add(const GetZakupsEvent()),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            BlocBuilder<ZakupBloc, ZakupState>(
+              builder: (context, state) {
+                if (state is ZakupLoading) {
+                  return const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final zakups = state is ZakupLoaded
+                    ? state.zakups.map((z) => z.toJson()).toList()
+                    : [];
+
+                if (state is ZakupError) {
+                  return Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            state.message,
+                            style: const TextStyle(color: Colors.red),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => context.read<ZakupBloc>().add(const GetZakupsEvent()),
+                            child: const Text('Qayta urinish'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (zakups.isEmpty) {
+                  return Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 80,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Xaridlar yo\'q',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<ZakupBloc>().add(const GetZakupsEvent());
+                    },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: zakups.length,
+                      itemBuilder: (context, index) {
+                        final zakup = zakups[index];
+                        return _buildZakupCard(zakup);
+                      },
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: _loadData,
-                    child: const Text('Qayta urinish'),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _zakups.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.shopping_bag_outlined,
-                              size: 80,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Xaridlar yo\'q',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadData,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _zakups.length,
-                          itemBuilder: (context, index) {
-                            final zakup = _zakups[index];
-                            return _buildZakupCard(zakup);
-                          },
-                        ),
-                      ),
-          ),
-        ],
+          ],
+        ),
+        floatingActionButton: canAdd
+            ? FloatingActionButton.extended(
+                onPressed: _showAddZakupDialog,
+                icon: const Icon(Icons.add),
+                label: const Text('Zakup qo\'shish'),
+              )
+            : null,
       ),
-      floatingActionButton: canAdd
-          ? FloatingActionButton.extended(
-              onPressed: _showAddZakupDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('Zakup qo\'shish'),
-            )
-          : null,
     );
   }
 
-  Widget _buildZakupCard(dynamic zakup) {
+  Widget _buildZakupCard(Map<String, dynamic> zakup) {
     final createdAt = DateTime.tryParse(zakup['createdAt'] ?? '');
 
     return Card(
@@ -309,7 +337,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Soni: ${zakup['quantity'] ?? 0}'),
-            Text('Olingan narxi: ${zakup['costPrice'] ?? 0} so\'m'),
+            Text('Olingan narxi: ${NumberFormatter.format(zakup['costPrice'] ?? 0)} so\'m'),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -412,7 +440,7 @@ class _AddZakupDialogState extends State<_AddZakupDialog> {
                         return ListTile(
                           title: Text(product['name'] ?? 'Noma\'lum'),
                           subtitle: Text(
-                            'Soni: ${product['quantity'] ?? 0} | Narxi: ${product['salePrice'] ?? 0} so\'m',
+                            'Soni: ${product['quantity'] ?? 0} | Narxi: ${NumberFormatter.format(product['salePrice'] ?? 0)} so\'m',
                           ),
                           onTap: () => Navigator.pop(context, product),
                         );
