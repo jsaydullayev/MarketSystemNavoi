@@ -16,69 +16,6 @@ using MarketSystem.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-builder.Services.AddSwaggerGen(c =>
-{
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
-    {
-        Description = "JWT Bearer. : \"Authorization: Bearer { token } \"",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey
-    });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[]{}
-        }
-    });
-});
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-{
-    var jwtParam = builder.Configuration
-    .GetSection("Jwt").
-    Get<JwtSetting>();
-    var key = System.Text.Encoding.UTF32.GetBytes(jwtParam.Key);
-    options.TokenValidationParameters = new TokenValidationParameters()
-    {
-        ValidIssuer = jwtParam.Issuer,
-        ValidateIssuer = true,
-        ValidAudience = jwtParam.Audience,
-        ValidateAudience = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuerSigningKey = true,
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero // Token expiration ni aniq tekshirish
-    };
-
-    options.Events = new JwtBearerEvents()
-    {
-        OnMessageReceived = context =>
-        {
-            var token = context.Token;
-            if (string.IsNullOrEmpty(token))
-            {
-                token = context.Request.Query["token"];
-                if (!string.IsNullOrEmpty(token))
-                {
-                    context.Token = token;
-                }
-            }
-            return Task.CompletedTask;
-        }
-    };
-});
-
-
 // Add DbContext with optimizations
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -91,27 +28,40 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 // Add JWT Authentication
-//var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
-//var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
-//var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtParam = builder.Configuration.GetSection("Jwt").Get<JwtSetting>()!;
+        var key = Encoding.UTF32.GetBytes(jwtParam.Key);
+        options.TokenValidationParameters = new TokenValidationParameters()
+        {
+            ValidIssuer = jwtParam.Issuer,
+            ValidateIssuer = true,
+            ValidAudience = jwtParam.Audience,
+            ValidateAudience = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
 
-//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-//    .AddJwtBearer(options =>
-//    {
-//        options.TokenValidationParameters = new TokenValidationParameters
-//        {
-//            ValidateIssuer = true,
-//            ValidateAudience = true,
-//            ValidateLifetime = true,
-//            ValidateIssuerSigningKey = true,
-//            ValidIssuer = jwtIssuer,
-//            ValidAudience = jwtAudience,
-//            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF32.GetBytes(jwtKey)),
-//            // Important: Map ClaimTypes.Role to the Role claim in JWT
-//            RoleClaimType = System.Security.Claims.ClaimTypes.Role,
-//            NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
-//        };
-//    });
+        options.Events = new JwtBearerEvents()
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Token;
+                if (string.IsNullOrEmpty(token))
+                {
+                    token = context.Request.Query["token"];
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        context.Token = token;
+                    }
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 builder.Services.AddAuthorization(options =>
 {
@@ -128,12 +78,13 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Owner", "Admin", "Seller"));
 });
 
-// Add CORS - development mode
+// Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevelopmentCors", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173", "http://localhost:64147")
+        policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173",
+                          "http://localhost:64147", "http://10.0.2.2:8080", "http://localhost:8080")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -148,11 +99,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add Controllers with API Explorer and JSON configuration
+// Add Controllers with JSON configuration
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Use camelCase for JSON property names (standard for JSON APIs)
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
@@ -174,30 +124,28 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Market Management System API with Sales, Inventory, and Debt Tracking"
     });
 
-    // Define JWT Authentication for Swagger
-    //options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    //{
-    //    Name = "Bearer",
-    //    Description = "Enter JWT token (format: 'Bearer {token}')",
-    //    In = ParameterLocation.Header,
-    //    Type = SecuritySchemeType.ApiKey,
-    //    Scheme = "Bearer"
-    //});
-    //
-    //options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    //{
-    //    {
-    //        new OpenApiSecurityScheme
-    //        {
-    //            Reference = new OpenApiReference
-    //            {
-    //                Type = ReferenceType.SecurityScheme,
-    //                Id = "Bearer"
-    //            }
-    //        },
-    //        new string[] { }
-    //    }
-    //});
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+    {
+        Description = "JWT Bearer. : \"Authorization: Bearer { token } \"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 
     // Include XML comments (optional, for documentation)
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -227,26 +175,6 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 
-// Add CORS - Development only configuration
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("DevelopmentCors", policy =>
-    {
-        policy.WithOrigins("http://localhost:8080", "http://localhost:4200", "http://localhost:3000", "http://localhost:5173", "http://localhost:64147")
-              .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-              .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
-              .AllowCredentials();
-    });
-
-    options.AddPolicy("ProductionCors", policy =>
-    {
-        policy.WithOrigins("https://your-frontend-domain.com") // TODO: Update with actual domain
-              .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH")
-              .WithHeaders("Content-Type", "Authorization")
-              .AllowCredentials();
-    });
-});
-
 var app = builder.Build();
 
 // Auto-apply database migrations (development only)
@@ -255,36 +183,15 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-    // Ensure database is created
-    dbContext.Database.EnsureCreated();
-
-    // Add Language column if it doesn't exist (manual migration)
-    var connection = dbContext.Database.GetDbConnection();
-    await connection.OpenAsync();
-    using var command = connection.CreateCommand();
-    command.CommandText = @"
-        SELECT COUNT(*)
-        FROM information_schema.columns
-        WHERE table_name = 'Users' AND column_name = 'Language'";
-    var columnExists = (long)(await command.ExecuteScalarAsync() ?? 0);
-
-    if (columnExists == 0)
-    {
-        command.CommandText = @"
-            ALTER TABLE ""Users""
-            ADD COLUMN ""Language"" integer NOT NULL DEFAULT 0";
-        await command.ExecuteNonQueryAsync();
-        Console.WriteLine("Added Language column to Users table");
-    }
-
-    await connection.CloseAsync();
+    // Apply pending migrations
+    await dbContext.Database.MigrateAsync();
 }
 
-// Request logging middleware (for debugging)
-app.UseMiddleware<RequestLoggingMiddleware>();
-
-// Global Exception Handler - MUST be before other middleware
+// Global Exception Handler - MUST be first middleware
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
+// Request logging middleware
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 // Configure the HTTP request pipeline
 // Use CORS based on environment
@@ -343,7 +250,8 @@ if (app.Environment.IsDevelopment())
             Username = "owner",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("owner123"),
             Role = Role.Owner,
-            IsActive = true
+            IsActive = true,
+            Language = Language.Uzbek
         };
         context.Users.Add(owner);
 
@@ -355,7 +263,8 @@ if (app.Environment.IsDevelopment())
             Username = "admin",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
             Role = Role.Admin,
-            IsActive = true
+            IsActive = true,
+            Language = Language.Uzbek
         };
         context.Users.Add(admin);
 
@@ -367,7 +276,8 @@ if (app.Environment.IsDevelopment())
             Username = "seller",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("seller123"),
             Role = Role.Seller,
-            IsActive = true
+            IsActive = true,
+            Language = Language.Uzbek
         };
         context.Users.Add(seller);
 
@@ -380,6 +290,7 @@ if (app.Environment.IsDevelopment())
                 new { username = "admin", password = "admin123", role = "Admin" },
                 new { username = "seller", password = "seller123", role = "Seller" }
             }});
-    }).WithName("Seed Database").AllowAnonymous(); // Allow for initial setup
+    }).WithName("Seed Database").AllowAnonymous();
 }
+
 app.Run();

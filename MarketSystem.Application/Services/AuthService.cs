@@ -5,7 +5,9 @@ using MarketSystem.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
+using MarketSystem.Domain.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace MarketSystem.Application.Services;
 
@@ -15,13 +17,15 @@ public class AuthService : IAuthService
     private readonly IJwtService _jwtService;
     private readonly ILogger<AuthService> _logger;
     private readonly AppDbContext _context;
+    private readonly JwtSetting _jwtSetting;
 
-    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService, ILogger<AuthService> logger, AppDbContext context)
+    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService, ILogger<AuthService> logger, AppDbContext context, IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
         _logger = logger;
         _context = context;
+        _jwtSetting = configuration.GetSection("Jwt").Get<JwtSetting>()!;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -147,7 +151,7 @@ public class AuthService : IAuthService
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 Token = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(30), // Refresh token valid for 30 days
+                ExpiresAt = DateTime.UtcNow.AddDays(_jwtSetting.RefreshTokenExpireDays),
                 IsUsed = false,
                 IsRevoked = false
             };
@@ -163,9 +167,9 @@ public class AuthService : IAuthService
                 user.FullName,
                 user.Role.ToString(),
                 user.Language.ToString().ToLowerInvariant(),
-                accessToken.AccessToken, // Access token string
-                refreshToken, // Refresh token string
-                DateTime.UtcNow.AddDays(7) // Access token expires in 7 days
+                accessToken.AccessToken,
+                refreshToken,
+                DateTime.UtcNow.AddHours(_jwtSetting.AccessTokenExpireHours)
             );
         }
         catch (Exception ex)
