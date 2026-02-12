@@ -1,6 +1,8 @@
 class ApiConstants {
   // O'zgartiring: Backend API manzili
-  static const String baseUrl = 'http://localhost:5137/api';
+  // Emulator uchun 10.0.2.2 ishlatiladi (kompyuterni bildiradi)
+  // Real device uchun kompyuterning haqiqiy IP manzilini yozing
+  static const String baseUrl = 'http://10.0.2.2:5137/api';
 
   // Endpoints (Controller names must match)
   static const String auth = '/Auth';

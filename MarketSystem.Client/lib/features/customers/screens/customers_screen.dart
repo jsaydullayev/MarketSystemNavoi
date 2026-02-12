@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../data/services/customer_service.dart';
-import '../../../core/providers/auth_provider.dart';
 import '../../../screens/dashboard_screen.dart';
+import '../presentation/bloc/customers_bloc.dart';
+import '../presentation/bloc/events/customers_event.dart';
+import '../presentation/bloc/states/customers_state.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -13,16 +14,13 @@ class CustomersScreen extends StatefulWidget {
 }
 
 class _CustomersScreenState extends State<CustomersScreen> {
-  List<dynamic> _customers = [];
-  List<dynamic> _filteredCustomers = [];
-  bool _isLoading = false;
-  String? _errorMessage;
   final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadCustomers();
+    // Load customers on init
+    context.read<CustomersBloc>().add(const GetCustomersEvent());
     _searchController.addListener(_filterCustomers);
   }
 
@@ -33,201 +31,118 @@ class _CustomersScreenState extends State<CustomersScreen> {
   }
 
   void _filterCustomers() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredCustomers = _customers;
-      } else {
-        _filteredCustomers = _customers.where((customer) {
-          final fullName = (customer['fullName'] ?? '').toLowerCase();
-          final phone = (customer['phone'] ?? '').toLowerCase();
-          return fullName.contains(query) || phone.contains(query);
-        }).toList();
-      }
-    });
+    setState(() {}); // Trigger rebuild for search filter
   }
 
-  Future<void> _loadCustomers() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final customerService = CustomerService(authProvider: authProvider);
-
-      final customers = await customerService.getAllCustomers();
-      setState(() {
-        _customers = customers;
-        _filteredCustomers = customers;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Xatolik: $e';
-        _isLoading = false;
-      });
+  List<Map<String, dynamic>> _getFilteredCustomers(List<Map<String, dynamic>> customers) {
+    final query = _searchController.text.toLowerCase();
+    if (query.isEmpty) {
+      return customers;
+    } else {
+      return customers.where((customer) {
+        final fullName = (customer['fullName'] ?? '').toLowerCase();
+        final phone = (customer['phone'] ?? '').toLowerCase();
+        return fullName.contains(query) || phone.contains(query);
+      }).toList();
     }
   }
 
-  Future<void> _deleteCustomer(dynamic customer) async {
-    final confirmed = await showDialog<bool>(
+  void _deleteCustomer(dynamic customer) {
+    showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Mijozni o\'chirish'),
         content: Text('${customer['fullName'] ?? customer['phone']} mijozini rostdan ham o\'chirmoqchimisiz?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Yo\'q'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Ha'),
           ),
         ],
       ),
-    );
-
-    if (confirmed == true) {
-      try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final customerService = CustomerService(authProvider: authProvider);
-
-        await customerService.deleteCustomer(customer['id']);
-        await _loadCustomers();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Mijoz muvaffaqiyatli o\'chirildi'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Xatolik: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+    ).then((confirmed) {
+      if (confirmed == true && mounted) {
+        context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
       }
-    }
+    });
   }
 
   void _showAddCustomerDialog() {
     final phoneController = TextEditingController();
     final fullNameController = TextEditingController();
     final commentController = TextEditingController();
-    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Yangi mijoz'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Telefon raqami',
-                  prefixIcon: Icon(Icons.phone),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.phone,
+      builder: (context) => AlertDialog(
+        title: const Text('Yangi mijoz'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Telefon raqami',
+                prefixIcon: Icon(Icons.phone),
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: fullNameController,
-                decoration: const InputDecoration(
-                  labelText: 'To\'liq ism (ixtiyoriy)',
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: commentController,
-                decoration: const InputDecoration(
-                  labelText: 'Izoh (ixtiyoriy)',
-                  prefixIcon: Icon(Icons.comment),
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-                textInputAction: TextInputAction.newline,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: isSaving ? null : () => Navigator.pop(context),
-              child: const Text('Bekor qilish'),
+              keyboardType: TextInputType.phone,
             ),
-            ElevatedButton(
-              onPressed: isSaving
-                  ? null
-                  : () async {
-                      if (phoneController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Telefon raqam kiritish shart'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      setDialogState(() => isSaving = true);
-
-                      try {
-                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                        final customerService = CustomerService(authProvider: authProvider);
-
-                        await customerService.createCustomer(
-                          phone: phoneController.text.trim(),
-                          fullName: fullNameController.text.trim().isEmpty ? null : fullNameController.text.trim(),
-                          comment: commentController.text.trim().isEmpty ? null : commentController.text.trim(),
-                        );
-
-                        if (mounted) {
-                          Navigator.pop(context);
-                          await _loadCustomers();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Mijoz muvaffaqiyatli qo\'shildi'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        setDialogState(() => isSaving = false);
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Xatolik: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    },
-              child: isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Qo\'shish'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: fullNameController,
+              decoration: const InputDecoration(
+                labelText: 'To\'liq ism (ixtiyoriy)',
+                prefixIcon: Icon(Icons.person),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: commentController,
+              decoration: const InputDecoration(
+                labelText: 'Izoh (ixtiyoriy)',
+                prefixIcon: Icon(Icons.comment),
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+              textInputAction: TextInputAction.newline,
             ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Bekor qilish'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (phoneController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Telefon raqam kiritish shart'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              context.read<CustomersBloc>().add(CreateCustomerEvent(
+                phone: phoneController.text.trim(),
+                fullName: fullNameController.text.trim().isEmpty ? null : fullNameController.text.trim(),
+                comment: commentController.text.trim().isEmpty ? null : commentController.text.trim(),
+              ));
+
+              Navigator.pop(context);
+            },
+            child: const Text('Qo\'shish'),
+          ),
+        ],
       ),
     );
   }
@@ -263,118 +178,163 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mijozlar'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadCustomers,
+    return BlocListener<CustomersBloc, CustomersState>(
+      listener: (context, state) {
+        if (state is CustomerDeleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Mijoz muvaffaqiyatli o\'chirildi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Reload customers after deletion
+          context.read<CustomersBloc>().add(const GetCustomersEvent());
+        } else if (state is CustomerCreated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Mijoz muvaffaqiyatli qo\'shildi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Reload customers after creation
+          context.read<CustomersBloc>().add(const GetCustomersEvent());
+        } else if (state is CustomersError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Mijozlar'),
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              );
+            },
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (_) => _filterCustomers(),
-              decoration: InputDecoration(
-                hintText: 'Mijoz qidirish...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _filterCustomers();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => context.read<CustomersBloc>().add(const GetCustomersEvent()),
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Mijoz qidirish...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _filterCustomers();
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
                 ),
-                filled: true,
-                fillColor: Colors.grey[100],
               ),
             ),
-          ),
 
-          // Customers list
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                    ? Center(
+            // Customers list
+            Expanded(
+              child: BlocBuilder<CustomersBloc, CustomersState>(
+                builder: (context, state) {
+                  if (state is CustomersLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is CustomersError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            state.message,
+                            style: const TextStyle(color: Colors.red),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => context.read<CustomersBloc>().add(const GetCustomersEvent()),
+                            child: const Text('Qayta urinish'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else if (state is CustomersLoaded) {
+                    final customers = state.customers.map((e) => e.toJson()).toList();
+                    final filteredCustomers = _getFilteredCustomers(customers);
+
+                    if (filteredCustomers.isEmpty) {
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: Colors.red),
-                              textAlign: TextAlign.center,
+                            Icon(
+                              Icons.people_outline,
+                              size: 80,
+                              color: Colors.grey[400],
                             ),
                             const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadCustomers,
-                              child: const Text('Qayta urinish'),
+                            Text(
+                              _searchController.text.isNotEmpty
+                                  ? 'Mijoz topilmadi'
+                                  : 'Mijozlar yo\'q',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ],
                         ),
-                      )
-                    : _filteredCustomers.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.people_outline,
-                                  size: 80,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchController.text.isNotEmpty
-                                      ? 'Mijoz topilmadi'
-                                      : 'Mijozlar yo\'q',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadCustomers,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _filteredCustomers.length,
-                              itemBuilder: (context, index) {
-                                final customer = _filteredCustomers[index];
-                                return _buildCustomerCard(customer);
-                              },
-                            ),
-                          ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddCustomerDialog,
-        icon: const Icon(Icons.person_add),
-        label: const Text('Yangi mijoz'),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<CustomersBloc>().add(const GetCustomersEvent());
+                      },
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredCustomers.length,
+                        itemBuilder: (context, index) {
+                          final customer = filteredCustomers[index];
+                          return _buildCustomerCard(customer);
+                        },
+                      ),
+                    );
+                  }
+
+                  // Initial state
+                  return const Center(child: CircularProgressIndicator());
+                },
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _showAddCustomerDialog,
+          icon: const Icon(Icons.person_add),
+          label: const Text('Yangi mijoz'),
+        ),
       ),
     );
   }
