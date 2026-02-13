@@ -8,6 +8,7 @@ class AppTheme {
   static const Color secondary = Color(0xFF10B981);    // Emerald Green
   static const Color accent = Color(0xFFF59E0B);       // Amber
   static const Color danger = Color(0xFFEF4444);       // Red
+  static const Color success = Color(0xFF10B981);      // Green
   static const Color background = Color(0xFFFFFFFF);   // White
   static const Color surface = Color(0xFFF8FAFC);      // Very light gray
   static const Color textPrimary = Color(0xFF1E293B);  // Dark slate

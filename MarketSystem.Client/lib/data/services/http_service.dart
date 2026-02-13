@@ -5,10 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/api_constants.dart';
 class HttpService {
-  final String baseUrl;
   String? _accessToken;
 
-  HttpService({this.baseUrl = ApiConstants.baseUrl});
+  String get baseUrl => ApiConstants.baseUrl;
+
+  HttpService();
 
   // Tokenlarni saqlash
   Future<void> saveTokens(String accessToken, String refreshToken) async {

@@ -18,6 +18,8 @@ public class AppDbContext : DbContext
     public DbSet<Zakup> Zakups => Set<Zakup>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<CashRegister> CashRegisters => Set<CashRegister>();
+    public DbSet<CashWithdrawal> CashWithdrawals => Set<CashWithdrawal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -175,6 +177,27 @@ public class AppDbContext : DbContext
                 .HasDatabaseName("IX_RefreshToken_Token");
             b.HasIndex(x => new { x.UserId, x.ExpiresAt })
                 .HasDatabaseName("IX_RefreshToken_User_ExpiresAt");
+        });
+
+        // Configure CashRegister
+        modelBuilder.Entity<CashRegister>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.CurrentBalance).HasPrecision(18, 2).IsRequired();
+            b.Property(x => x.LastUpdated).IsRequired();
+            b.HasIndex(x => x.LastUpdated);
+        });
+
+        // Configure CashWithdrawal
+        modelBuilder.Entity<CashWithdrawal>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Amount).HasPrecision(18, 2).IsRequired();
+            b.Property(x => x.Comment).IsRequired().HasMaxLength(500);
+            b.Property(x => x.WithdrawalDate).IsRequired();
+
+            b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+            b.HasIndex(x => x.WithdrawalDate);
         });
     }
 }

@@ -502,7 +502,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get loginScreenSubtitle => 'Davom etish uchun tizimga kiring';
 
   @override
-  String get registerScreenTitle => 'Hisob yaratish';
+  String get registerScreenTitle => 'Ro\'yxatdan o\'tish';
 
   @override
   String get registerScreenSubtitle => 'Boshlash uchun ro\'yxatdan o\'ting';
@@ -512,4 +512,61 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get welcomeScreenSubtitle => 'Sizning biznes boshqaruv yechimingiz';
+
+  @override
+  String get lightMode => 'Yorqin';
+
+  @override
+  String get darkMode => 'Qorong\'i';
+
+  @override
+  String get usernameMinLength => 'Username kamida 3 ta belgi';
+
+  @override
+  String get passwordMinLength => 'Parol kamida 6 ta belgi';
+
+  @override
+  String get passwordConfirm => 'Parolni tasdiqlash';
+
+  @override
+  String get passwordConfirmRequired => 'Parolni tasdiqlash shart';
+
+  @override
+  String get passwordMismatch => 'Parollar mos emas';
+
+  @override
+  String get createNewAccount => 'Yangi hisob yaratish';
+
+  @override
+  String get backToLogin => 'Login sahifasiga qaytish';
+
+  @override
+  String get saving => 'Saqlanmoqda...';
+
+  @override
+  String get cashRegister => 'Kassa';
+
+  @override
+  String get currentBalance => 'Joriy Balans';
+
+  @override
+  String get lastUpdated => 'Oxirgi yangilanish';
+
+  @override
+  String get withdrawCash => 'Pul Olish';
+
+  @override
+  String get withdrawalHistory => 'Pul Olish Tarixi';
+
+  @override
+  String get noWithdrawals => 'Hali pul olish tarixi yo\'q';
+
+  @override
+  String get insufficientFunds => 'Balans yetarli emas';
+
+  @override
+  String get withdrawSuccess => 'Pul muvaffaqiyatli olindi';
+
+  @override
+  String get accessDenied => 'Sizga bu bo\'limga kirish ruxsati yo\'q';
 }
