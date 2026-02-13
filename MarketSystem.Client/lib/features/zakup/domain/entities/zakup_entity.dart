@@ -10,10 +10,8 @@ class ZakupEntity extends Equatable {
   final String productName;
   final int quantity;
   final double costPrice;
-  final double totalCost;
   final DateTime createdAt;
-  final String? createdByAdminId;
-  final String? createdByName;
+  final String createdBy;
 
   const ZakupEntity({
     required this.id,
@@ -21,10 +19,8 @@ class ZakupEntity extends Equatable {
     required this.productName,
     required this.quantity,
     required this.costPrice,
-    required this.totalCost,
     required this.createdAt,
-    this.createdByAdminId,
-    this.createdByName,
+    required this.createdBy,
   });
 
   /// JSON dan ZakupEntity yaratish
@@ -33,18 +29,11 @@ class ZakupEntity extends Equatable {
       id: json['id'] as String,
       productId: json['productId'] as String,
       productName: json['productName'] as String? ?? '',
-      quantity: json['quantity'] as int,
+      quantity: (json['quantity'] as num).toInt(),
       costPrice: (json['costPrice'] as num).toDouble(),
-      totalCost: (json['totalCost'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
-      createdByAdminId: json['createdByAdminId'] as String?,
-      createdByName: json['createdByName'] as String?,
+      createdBy: json['createdBy'] as String? ?? 'Noma\'lum',
     );
-  }
-
-  /// Jami narxni formatlash
-  String getFormattedTotalCost() {
-    return totalCost.toStringAsFixed(2);
   }
 
   /// Narxni formatlash
@@ -60,10 +49,8 @@ class ZakupEntity extends Equatable {
       'productName': productName,
       'quantity': quantity,
       'costPrice': costPrice,
-      'totalCost': totalCost,
       'createdAt': createdAt.toIso8601String(),
-      'createdByAdminId': createdByAdminId,
-      'createdByName': createdByName,
+      'createdBy': createdBy,
     };
   }
 
@@ -74,9 +61,7 @@ class ZakupEntity extends Equatable {
         productName,
         quantity,
         costPrice,
-        totalCost,
         createdAt,
-        createdByAdminId,
-        createdByName,
+        createdBy,
       ];
 }

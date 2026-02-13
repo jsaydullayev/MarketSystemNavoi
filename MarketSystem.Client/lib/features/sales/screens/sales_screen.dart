@@ -6,9 +6,22 @@ import '../../../screens/dashboard_screen.dart';
 import '../presentation/bloc/sales_bloc.dart';
 import '../presentation/bloc/events/sales_event.dart';
 import '../presentation/bloc/states/sales_state.dart';
+import 'new_sale_screen.dart';
 
-class SalesScreen extends StatelessWidget {
+class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
+
+  @override
+  State<SalesScreen> createState() => _SalesScreenState();
+}
+
+class _SalesScreenState extends State<SalesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load sales on init
+    context.read<SalesBloc>().add(const GetSalesEvent());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +121,16 @@ class SalesScreen extends StatelessWidget {
 
             return const Center(child: CircularProgressIndicator());
           },
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NewSaleScreen()),
+            );
+          },
+          icon: const Icon(Icons.add_shopping_cart),
+          label: const Text('Yangi sotuv'),
         ),
       ),
     );

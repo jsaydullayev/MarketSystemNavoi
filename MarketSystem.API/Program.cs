@@ -1,18 +1,17 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using Microsoft.IdentityModel.Tokens;
+using MarketSystem.API.Middleware;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Application.Services;
+using MarketSystem.Domain.Common;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using MarketSystem.Infrastructure.Repositories;
-using MarketSystem.Application.Interfaces;
-using MarketSystem.Domain.Common;
-using MarketSystem.API.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -282,13 +281,16 @@ if (app.Environment.IsDevelopment())
 
         await context.SaveChangesAsync();
 
-        return Results.Ok(new { message = "Database seeded successfully",
+        return Results.Ok(new
+        {
+            message = "Database seeded successfully",
             users = new[]
             {
                 new { username = "owner", password = "owner123", role = "Owner" },
                 new { username = "admin", password = "admin123", role = "Admin" },
                 new { username = "seller", password = "seller123", role = "Seller" }
-            }});
+            }
+        });
     }).WithName("Seed Database").AllowAnonymous();
 }
 
