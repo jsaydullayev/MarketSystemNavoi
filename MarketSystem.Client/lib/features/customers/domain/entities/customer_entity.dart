@@ -24,13 +24,19 @@ class CustomerEntity extends Equatable {
   /// JSON dan CustomerEntity yaratish
   factory CustomerEntity.fromJson(Map<String, dynamic> json) {
     return CustomerEntity(
-      id: json['id'] as String,
-      phone: json['phone'] as String,
-      fullName: json['fullName'] as String?,
-      comment: json['comment'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      id: json['id']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      fullName: json['fullName']?.toString(),
+      comment: json['comment']?.toString(),
+      createdAt: json['createdAt'] != null
+          ? (json['createdAt'] is DateTime
+              ? json['createdAt'] as DateTime
+              : DateTime.parse(json['createdAt'].toString()))
+          : DateTime.now(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? (json['updatedAt'] is DateTime
+              ? json['updatedAt'] as DateTime
+              : DateTime.parse(json['updatedAt'].toString()))
           : null,
     );
   }
