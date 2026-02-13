@@ -42,17 +42,33 @@ class SaleEntity extends Equatable {
   /// JSON dan SaleEntity yaratish
   factory SaleEntity.fromJson(Map<String, dynamic> json) {
     return SaleEntity(
-      id: json['id'] as String,
-      customerId: json['customerId'] as String?,
-      sellerId: json['sellerId'] as String,
-      customerName: json['customerName'] as String?,
-      customerPhone: json['customerPhone'] as String?,
-      totalAmount: (json['totalAmount'] as num).toDouble(),
-      paidAmount: (json['paidAmount'] as num).toDouble(),
-      remainingAmount: (json['remainingAmount'] as num?)?.toDouble() ?? 0.0,
-      status: _parseStatus(json['status'] as String?),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      sellerName: json['sellerName'] as String?,
+      id: json['id']?.toString() ?? '',
+      customerId: json['customerId']?.toString(),
+      sellerId: json['sellerId']?.toString() ?? '',
+      customerName: json['customerName']?.toString(),
+      customerPhone: json['customerPhone']?.toString(),
+      totalAmount: json['totalAmount'] != null
+          ? (json['totalAmount'] is num
+              ? (json['totalAmount'] as num).toDouble()
+              : double.tryParse(json['totalAmount'].toString()) ?? 0.0)
+          : 0.0,
+      paidAmount: json['paidAmount'] != null
+          ? (json['paidAmount'] is num
+              ? (json['paidAmount'] as num).toDouble()
+              : double.tryParse(json['paidAmount'].toString()) ?? 0.0)
+          : 0.0,
+      remainingAmount: json['remainingAmount'] != null
+          ? (json['remainingAmount'] is num
+              ? (json['remainingAmount'] as num).toDouble()
+              : double.tryParse(json['remainingAmount'].toString()) ?? 0.0)
+          : 0.0,
+      status: _parseStatus(json['status']?.toString()),
+      createdAt: json['createdAt'] != null
+          ? (json['createdAt'] is DateTime
+              ? json['createdAt'] as DateTime
+              : DateTime.parse(json['createdAt'].toString()))
+          : DateTime.now(),
+      sellerName: json['sellerName']?.toString(),
     );
   }
 

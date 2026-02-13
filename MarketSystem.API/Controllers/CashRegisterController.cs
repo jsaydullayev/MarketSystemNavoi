@@ -27,6 +27,16 @@ public class CashRegisterController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("today-sales")]
+    public async Task<ActionResult<TodaySalesSummaryDto>> GetTodaySales(CancellationToken cancellationToken)
+    {
+        var result = await _cashRegisterService.GetTodaySalesSummaryAsync(cancellationToken);
+        if (result == null)
+            return BadRequest(new { message = "Failed to get today's sales" });
+
+        return Ok(result);
+    }
+
     [HttpPost("withdraw")]
     public async Task<IActionResult> WithdrawCash([FromBody] WithdrawCashRequest request, CancellationToken cancellationToken)
     {
@@ -45,7 +55,7 @@ public class CashRegisterController : ControllerBase
     }
 
     [HttpPost("add")]
-    public async Task<IActionResult> AddCash([FromBody] decimal amount, CancellationToken cancellationToken)
+    public async Task<IActionResult> AddCash([FromQuery] decimal amount, CancellationToken cancellationToken)
     {
         var success = await _cashRegisterService.AddCashAsync(amount, cancellationToken);
         if (!success)

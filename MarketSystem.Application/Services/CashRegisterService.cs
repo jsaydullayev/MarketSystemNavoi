@@ -172,4 +172,55 @@ public class CashRegisterService : ICashRegisterService
             return false;
         }
     }
+
+    public async Task<TodaySalesSummaryDto?> GetTodaySalesSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var today = DateTime.UtcNow.Date;
+
+            // Bugungi savdolarni olish
+            var todaySales = await _context.Sales
+                .Where(s => s.CreatedAt.Date == today)
+                .Include(s => s.Payments)
+                .ToListAsync(cancellationToken);
+
+            // To'lovlar bo'yicha hisoblash
+            decimal cashPaid = 0;
+            decimal cardPaid = 0;
+
+            foreach (var sale in todaySales)
+            {
+                foreach (var payment in sale.Payments)
+                {
+                    if (payment.PaymentType == Domain.Enums.PaymentType.Cash)
+                    {
+                        cashPaid += payment.Amount;
+                    }
+                    else if (payment.PaymentType == Domain.Enums.PaymentType.Terminal ||
+                             payment.PaymentType == Domain.Enums.PaymentType.Transfer)
+                    {
+                        cardPaid += payment.Amount;
+                    }
+                }
+            }
+
+            var summary = new TodaySalesSummaryDto
+            {
+                TotalSales = todaySales.Count,
+                TotalAmount = todaySales.Sum(s => s.TotalAmount),
+                TotalPaid = todaySales.Sum(s => s.PaidAmount),
+                CashPaid = cashPaid,
+                CardPaid = cardPaid,
+                Date = today
+            };
+
+            return summary;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting today's sales summary");
+            return null;
+        }
+    }
 }
