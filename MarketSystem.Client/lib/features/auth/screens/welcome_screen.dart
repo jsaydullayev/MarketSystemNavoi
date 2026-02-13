@@ -94,14 +94,14 @@ class WelcomeScreen extends StatelessWidget {
                               dropdownColor: Colors.blue.shade700,
                               iconEnabledColor: Colors.white,
                               style: const TextStyle(color: Colors.white, fontSize: 16),
-                              items: const [
+                              items: [
                                 DropdownMenuItem(
                                   value: 'uz',
-                                  child: Text('O\'zbek'),
+                                  child: Text(l10n.uzbek),
                                 ),
                                 DropdownMenuItem(
                                   value: 'ru',
-                                  child: Text('Русский'),
+                                  child: Text(l10n.russian),
                                 ),
                               ],
                               onChanged: (value) {
@@ -141,14 +141,14 @@ class WelcomeScreen extends StatelessWidget {
                               dropdownColor: Colors.blue.shade700,
                               iconEnabledColor: Colors.white,
                               style: const TextStyle(color: Colors.white, fontSize: 16),
-                              items: const [
+                              items: [
                                 DropdownMenuItem(
                                   value: false,
-                                  child: Text('Yorqin'),
+                                  child: Text(l10n.lightMode),
                                 ),
                                 DropdownMenuItem(
                                   value: true,
-                                  child: Text('Qorong\'i'),
+                                  child: Text(l10n.darkMode),
                                 ),
                               ],
                               onChanged: (value) {

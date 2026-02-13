@@ -62,6 +62,14 @@ public class AuthService : IAuthService
             throw new InvalidOperationException($"Username '{request.Username}' already exists");
         }
 
+        // Map language codes to Language enum
+        Language language = request.Language?.ToLowerInvariant() switch
+        {
+            "uz" => Language.Uzbek,
+            "ru" => Language.Russian,
+            _ => Language.Uzbek // Default to Uzbek
+        };
+
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -69,9 +77,7 @@ public class AuthService : IAuthService
             Username = request.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Enum.Parse<Role>(request.Role, ignoreCase: true),
-            Language = Enum.TryParse<Language>(request.Language, ignoreCase: true, out var lang)
-                ? lang
-                : Language.Uzbek,
+            Language = language,
             IsActive = true
         };
 
@@ -161,12 +167,20 @@ public class AuthService : IAuthService
 
             _logger.LogInformation("Tokens generated successfully for user: {UserId}", user.Id);
 
+            // Map Language enum to ISO language codes
+            string languageCode = user.Language switch
+            {
+                Language.Uzbek => "uz",
+                Language.Russian => "ru",
+                _ => "uz" // Default to Uzbek
+            };
+
             return new AuthResponse(
                 user.Id,
                 user.Username,
                 user.FullName,
                 user.Role.ToString(),
-                user.Language.ToString().ToLowerInvariant(),
+                languageCode,
                 accessToken.AccessToken,
                 refreshToken,
                 DateTime.UtcNow.AddHours(_jwtSetting.AccessTokenExpireHours)

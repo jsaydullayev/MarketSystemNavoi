@@ -500,7 +500,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginScreenSubtitle => 'Login to continue';
 
   @override
-  String get registerScreenTitle => 'Create Account';
+  String get registerScreenTitle => 'Register';
 
   @override
   String get registerScreenSubtitle => 'Register to get started';
@@ -511,4 +511,61 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get welcomeScreenSubtitle =>
       'Your complete business management solution';
+
+  @override
+  String get lightMode => 'Light';
+
+  @override
+  String get darkMode => 'Dark';
+
+  @override
+  String get usernameMinLength => 'Username must be at least 3 characters';
+
+  @override
+  String get passwordMinLength => 'Password must be at least 6 characters';
+
+  @override
+  String get passwordConfirm => 'Confirm Password';
+
+  @override
+  String get passwordConfirmRequired => 'Password confirmation is required';
+
+  @override
+  String get passwordMismatch => 'Passwords do not match';
+
+  @override
+  String get createNewAccount => 'Create new account';
+
+  @override
+  String get backToLogin => 'Back to login page';
+
+  @override
+  String get saving => 'Saving...';
+
+  @override
+  String get cashRegister => 'Cash Register';
+
+  @override
+  String get currentBalance => 'Current Balance';
+
+  @override
+  String get lastUpdated => 'Last Updated';
+
+  @override
+  String get withdrawCash => 'Withdraw Cash';
+
+  @override
+  String get withdrawalHistory => 'Withdrawal History';
+
+  @override
+  String get noWithdrawals => 'No withdrawals yet';
+
+  @override
+  String get insufficientFunds => 'Insufficient funds';
+
+  @override
+  String get withdrawSuccess => 'Cash withdrawn successfully';
+
+  @override
+  String get accessDenied => 'Access denied';
 }

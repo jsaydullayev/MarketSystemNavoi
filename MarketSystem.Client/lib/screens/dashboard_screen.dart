@@ -5,15 +5,14 @@ import '../core/providers/auth_provider.dart';
 import '../core/theme/app_theme.dart';
 import '../features/auth/screens/welcome_screen.dart';
 import '../features/products/screens/products_screen.dart';
-import '../features/zakup/screens/zakup_screen.dart';
 import '../features/admin_products/screens/admin_products_screen.dart';
-import '../features/sales/screens/sales_screen.dart';
 import '../features/users/screens/users_screen.dart';
-import '../features/customers/screens/customers_screen.dart';
 import '../features/debts/screens/debts_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/reports/screens/reports_screen.dart';
+import '../features/cash_register/screens/cash_register_screen.dart';
 import '../l10n/app_localizations.dart';
+import '../core/routes/app_routes.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -261,20 +260,14 @@ class _DashboardScreenState extends State<DashboardScreen>
         subtitle: l10n.salesHistory,
         icon: Icons.shopping_cart_outlined,
         color: MenuCardColors.sales,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SalesScreen()),
-        ),
+        onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
       ),
       _MenuItemData(
         title: l10n.customers,
         subtitle: l10n.customerList,
         icon: Icons.people_outline,
         color: MenuCardColors.customers,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CustomersScreen()),
-        ),
+        onTap: () => Navigator.pushNamed(context, AppRoutes.customers),
       ),
       if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
         _MenuItemData(
@@ -282,10 +275,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           subtitle: l10n.productPurchases,
           icon: Icons.shopping_bag_outlined,
           color: MenuCardColors.zakup,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ZakupScreen()),
-          ),
+          onTap: () => Navigator.pushNamed(context, AppRoutes.zakup),
         ),
       if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
         _MenuItemData(
@@ -329,6 +319,17 @@ class _DashboardScreenState extends State<DashboardScreen>
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AdminProductsScreen()),
+          ),
+        ),
+      if (user?['role'] == 'Admin' || user?['role'] == 'Owner')
+        _MenuItemData(
+          title: l10n.cashRegister,
+          subtitle: l10n.currentBalance,
+          icon: Icons.account_balance_wallet_outlined,
+          color: MenuCardColors.zakup,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CashRegisterScreen()),
           ),
         ),
     ];

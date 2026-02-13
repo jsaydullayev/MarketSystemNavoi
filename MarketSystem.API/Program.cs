@@ -83,8 +83,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevelopmentCors", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173",
-                          "http://localhost:64147", "http://10.0.2.2:8080", "http://localhost:8080")
+        policy.SetIsOriginAllowed((origin) => origin != null && (origin.StartsWith("http://localhost") || origin.StartsWith("http://10.0.2.2")))
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -172,20 +171,20 @@ builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<IZakupService, ZakupService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<ICashRegisterService, CashRegisterService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 
 var app = builder.Build();
 
 // Auto-apply database migrations (development only)
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-    // Apply pending migrations
-    await dbContext.Database.MigrateAsync();
-}
+// NOTE: Temporarily disabled - create migration manually first via Visual Studio
+// if (app.Environment.IsDevelopment())
+// {
+//     using var scope = app.Services.CreateScope();
+//     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//     await dbContext.Database.MigrateAsync();
+// }
 
 // Global Exception Handler - MUST be first middleware
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();

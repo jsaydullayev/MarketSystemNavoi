@@ -15,11 +15,22 @@ class LocaleProvider with ChangeNotifier {
   Future<void> _loadLocale() async {
     final prefs = await SharedPreferences.getInstance();
     final languageCode = prefs.getString(_localeKey) ?? 'uz';
-    _locale = Locale(languageCode);
+
+    // Validate and fix invalid language codes
+    final validLanguageCode = (languageCode == 'uz' || languageCode == 'ru' || languageCode == 'en')
+        ? languageCode
+        : 'uz';
+
+    _locale = Locale(validLanguageCode);
     notifyListeners();
   }
 
   Future<void> setLocale(String languageCode) async {
+    // Validate and fix invalid language codes
+    if (languageCode.isEmpty || (languageCode != 'uz' && languageCode != 'ru' && languageCode != 'en')) {
+      languageCode = 'uz'; // Default to Uzbek if invalid
+    }
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_localeKey, languageCode);
     _locale = Locale(languageCode);
