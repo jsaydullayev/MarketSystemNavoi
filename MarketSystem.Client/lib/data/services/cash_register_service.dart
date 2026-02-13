@@ -21,6 +21,20 @@ class CashRegisterService {
     }
   }
 
+  Future<TodaySalesSummaryModel?> getTodaySales() async {
+    try {
+      final response = await _httpService.get('/CashRegister/today-sales');
+
+      if (response.statusCode == 200) {
+        return TodaySalesSummaryModel.fromJson(jsonDecode(response.body));
+      }
+      return null;
+    } catch (e) {
+      print('Error getting today sales: $e');
+      return null;
+    }
+  }
+
   Future<bool> withdrawCash(double amount, String comment) async {
     try {
       final response = await _httpService.post(
