@@ -21,6 +21,7 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
   );
 
   CashRegisterModel? _cashRegister;
+  TodaySalesSummaryModel? _todaySales;
   bool _isLoading = true;
   bool _isWithdrawing = false;
 
@@ -43,11 +44,15 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
   Future<void> _loadCashRegister() async {
     setState(() => _isLoading = true);
 
-    final result = await _cashRegisterService.getCashRegister();
+    final results = await Future.wait([
+      _cashRegisterService.getCashRegister(),
+      _cashRegisterService.getTodaySales(),
+    ]);
 
     if (mounted) {
       setState(() {
-        _cashRegister = result;
+        _cashRegister = results[0] as CashRegisterModel?;
+        _todaySales = results[1] as TodaySalesSummaryModel?;
         _isLoading = false;
       });
     }
@@ -246,6 +251,196 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                     ),
                     const SizedBox(height: 24),
 
+                    // Today's Sales Card
+                    if (_todaySales != null)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2)),
+                          ],
+                          border: Border.all(
+                            color: Colors.green.withOpacity(0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.today,
+                                  color: Colors.green,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Bugungi savdolar',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            _buildStatRow('Soni:', '${_todaySales!.totalSales} ta'),
+                            const SizedBox(height: 12),
+                            _buildStatRow('Jami summa:', '${_todaySales!.totalAmount.toStringAsFixed(2)} so\'m'),
+                            const SizedBox(height: 12),
+                            _buildStatRow('To\'langan:', '${_todaySales!.totalPaid.toStringAsFixed(2)} so\'m', color: Colors.green),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+
+                    // Bugungi tushumlar (Cash va Card)
+                    if (_todaySales != null && (_todaySales!.cashPaid > 0 || _todaySales!.cardPaid > 0))
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.blue.shade50, Colors.cyan.shade50],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: Colors.blue.withOpacity(0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.payments_outlined,
+                                  color: Colors.blue,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Bugungi tushumlar',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            if (_todaySales!.cashPaid > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.money,
+                                        color: Colors.green,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Naqd pul',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${_todaySales!.cashPaid.toStringAsFixed(2)} so\'m',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_todaySales!.cardPaid > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.credit_card,
+                                        color: Colors.blue,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Plastik karta',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${_todaySales!.cardPaid.toStringAsFixed(2)} so\'m',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+
                     // Withdraw Button
                     SizedBox(
                       width: double.infinity,
@@ -356,5 +551,28 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
   String _formatDate(DateTime? date) {
     if (date == null) return '-';
     return '${date.day}.${date.month}.${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildStatRow(String label, String value, {Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.grey,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: color ?? AppTheme.textPrimary,
+          ),
+        ),
+      ],
+    );
   }
 }
