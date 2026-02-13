@@ -62,6 +62,64 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("MarketSystem.Domain.Entities.CashRegister", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CurrentBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastWithdrawalId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastUpdated");
+
+                    b.HasIndex("LastWithdrawalId");
+
+                    b.ToTable("CashRegisters");
+                });
+
+            modelBuilder.Entity("MarketSystem.Domain.Entities.CashWithdrawal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("WithdrawalDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WithdrawalDate");
+
+                    b.ToTable("CashWithdrawals");
+                });
+
             modelBuilder.Entity("MarketSystem.Domain.Entities.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -351,6 +409,11 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("Language")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
@@ -360,11 +423,6 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
-
-                    b.Property<int>("Language")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -418,6 +476,24 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MarketSystem.Domain.Entities.CashRegister", b =>
+                {
+                    b.HasOne("MarketSystem.Domain.Entities.CashWithdrawal", "LastWithdrawal")
+                        .WithMany()
+                        .HasForeignKey("LastWithdrawalId");
+
+                    b.Navigation("LastWithdrawal");
+                });
+
+            modelBuilder.Entity("MarketSystem.Domain.Entities.CashWithdrawal", b =>
+                {
+                    b.HasOne("MarketSystem.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
