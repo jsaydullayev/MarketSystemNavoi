@@ -5,6 +5,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../screens/dashboard_screen.dart';
+import '../../../l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -54,6 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
+      final l10n = AppLocalizations.of(context)!;
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
 
@@ -65,15 +67,30 @@ class _RegisterScreenState extends State<RegisterScreen>
         language: localeProvider.locale.languageCode,
       );
 
-      if (success && mounted) {
+      if (!mounted) return;
+
+      if (success) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
-      } else if (mounted) {
+      } else {
+        // Get error message based on error code
+        String errorText;
+        switch (authProvider.errorCode) {
+          case 'register_failed':
+            errorText = l10n.registerError;
+            break;
+          case 'network_error':
+            errorText = l10n.networkError;
+            break;
+          default:
+            errorText = l10n.error;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Ro\'yxatdan o\'tish xato'),
+            content: Text(errorText),
             backgroundColor: AppTheme.danger,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -87,6 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
       body: SafeArea(
@@ -116,9 +134,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                     const SizedBox(height: 20),
 
                     // Title
-                    const Text(
-                      'Ro\'yxatdan o\'tish',
-                      style: TextStyle(
+                    Text(
+                      l10n.registerScreenTitle,
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimary,
@@ -126,9 +144,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Yangi hisob yaratish',
-                      style: TextStyle(
+                    Text(
+                      l10n.createNewAccount,
+                      style: const TextStyle(
                         fontSize: 13,
                         color: AppTheme.textSecondary,
                       ),
@@ -157,12 +175,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                             controller: _fullNameController,
                             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
-                              label: 'To\'liq ism',
+                              label: l10n.fullName,
                               icon: Icons.person_outline,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'To\'liq ism kiritish shart';
+                                return l10n.enterFullName;
                               }
                               return null;
                             },
@@ -174,15 +192,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                             controller: _usernameController,
                             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
-                              label: 'Username',
+                              label: l10n.username,
                               icon: Icons.account_circle_outlined,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Username kiritish shart';
+                                return l10n.enterUsername;
                               }
                               if (value.length < 3) {
-                                return 'Username kamida 3 ta belgi';
+                                return l10n.usernameMinLength;
                               }
                               return null;
                             },
@@ -195,15 +213,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                             obscureText: true,
                             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
-                              label: 'Password',
+                              label: l10n.password,
                               icon: Icons.lock_outline,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Password kiritish shart';
+                                return l10n.enterPassword;
                               }
                               if (value.length < 6) {
-                                return 'Password kamida 6 ta belgi';
+                                return l10n.passwordMinLength;
                               }
                               return null;
                             },
@@ -216,15 +234,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                             obscureText: true,
                             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
-                              label: 'Password tasdiqlash',
+                              label: l10n.passwordConfirm,
                               icon: Icons.lock_outline,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Password tasdiqlash shart';
+                                return l10n.passwordConfirmRequired;
                               }
                               if (value != _passwordController.text) {
-                                return 'Passwordlar mos emas';
+                                return l10n.passwordMismatch;
                               }
                               return null;
                             },
@@ -238,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                             dropdownColor: Colors.white,
                             iconEnabledColor: AppTheme.textSecondary,
                             decoration: AppTheme.inputDecoration(
-                              label: 'Rol',
+                              label: l10n.role,
                               icon: Icons.badge_outlined,
                             ),
                             items: _roles.map((String role) {
@@ -284,7 +302,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 child: ElevatedButton(
                                   onPressed: _register,
                                   style: AppTheme.primaryButtonStyle,
-                                  child: const Text('Ro\'yxatdan o\'tish'),
+                                  child: Text(l10n.register),
                                 ),
                               );
                             },
@@ -300,7 +318,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       style: TextButton.styleFrom(
                         foregroundColor: AppTheme.primary,
                       ),
-                      child: const Text('Login sahifasiga qaytish'),
+                      child: Text(l10n.backToLogin),
                     ),
 
                     const SizedBox(height: 8),

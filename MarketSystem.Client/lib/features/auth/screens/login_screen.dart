@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../screens/dashboard_screen.dart';
 import '../../../l10n/app_localizations.dart';
@@ -47,22 +48,47 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
+      final l10n = AppLocalizations.of(context)!;
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
 
       final success = await authProvider.login(
         _usernameController.text.trim(),
         _passwordController.text,
       );
 
-      if (success && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
-      } else if (mounted) {
+      if (!mounted) return;
+
+      if (success) {
+        // Update language from backend response
+        final user = authProvider.user;
+        if (user != null && user['language'] != null) {
+          await localeProvider.setLocale(user['language']);
+        }
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          );
+        }
+      } else {
+        // Get error message based on error code
+        String errorText;
+        switch (authProvider.errorCode) {
+          case 'login_failed':
+            errorText = l10n.loginError;
+            break;
+          case 'network_error':
+            errorText = l10n.networkError;
+            break;
+          default:
+            errorText = l10n.error;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Login xato'),
+            content: Text(errorText),
             backgroundColor: AppTheme.danger,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

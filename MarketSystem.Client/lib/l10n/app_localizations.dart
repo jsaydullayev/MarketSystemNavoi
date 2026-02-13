@@ -1081,7 +1081,7 @@ abstract class AppLocalizations {
   /// No description provided for @registerScreenTitle.
   ///
   /// In en, this message translates to:
-  /// **'Create Account'**
+  /// **'Register'**
   String get registerScreenTitle;
 
   /// No description provided for @registerScreenSubtitle.
@@ -1101,6 +1101,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your complete business management solution'**
   String get welcomeScreenSubtitle;
+
+  /// No description provided for @lightMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get lightMode;
+
+  /// No description provided for @darkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get darkMode;
+
+  /// No description provided for @usernameMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Username must be at least 3 characters'**
+  String get usernameMinLength;
+
+  /// No description provided for @passwordMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get passwordMinLength;
+
+  /// No description provided for @passwordConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get passwordConfirm;
+
+  /// No description provided for @passwordConfirmRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Password confirmation is required'**
+  String get passwordConfirmRequired;
+
+  /// No description provided for @passwordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordMismatch;
+
+  /// No description provided for @createNewAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create new account'**
+  String get createNewAccount;
+
+  /// No description provided for @backToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to login page'**
+  String get backToLogin;
+
+  /// No description provided for @saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get saving;
+
+  /// No description provided for @cashRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Register'**
+  String get cashRegister;
+
+  /// No description provided for @currentBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Balance'**
+  String get currentBalance;
+
+  /// No description provided for @lastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Updated'**
+  String get lastUpdated;
+
+  /// No description provided for @withdrawCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw Cash'**
+  String get withdrawCash;
+
+  /// No description provided for @withdrawalHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawal History'**
+  String get withdrawalHistory;
+
+  /// No description provided for @noWithdrawals.
+  ///
+  /// In en, this message translates to:
+  /// **'No withdrawals yet'**
+  String get noWithdrawals;
+
+  /// No description provided for @insufficientFunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient funds'**
+  String get insufficientFunds;
+
+  /// No description provided for @withdrawSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash withdrawn successfully'**
+  String get withdrawSuccess;
+
+  /// No description provided for @accessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access denied'**
+  String get accessDenied;
 }
 
 class _AppLocalizationsDelegate

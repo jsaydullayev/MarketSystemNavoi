@@ -1,21 +1,67 @@
 /// Route Generator
-/// Generates routes for navigation (simplified - no imports)
+/// Generates routes for navigation
 library;
 
 import 'package:flutter/material.dart';
 
 import 'app_routes.dart';
 
-/// Generate route (temporary - without screen imports)
+// Screens
+import '../../features/auth/screens/welcome_screen.dart';
+import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/register_screen.dart';
+import '../../screens/dashboard_screen.dart';
+import '../../features/products/screens/products_screen.dart';
+import '../../features/sales/screens/sales_screen.dart';
+import '../../features/customers/screens/customers_screen.dart';
+import '../../features/zakup/screens/zakup_screen.dart';
+import '../../features/admin_products/screens/admin_products_screen.dart';
+import '../../features/users/screens/users_screen.dart';
+import '../../features/profile/screens/profile_screen.dart';
+
+/// Generate route
 Route<dynamic> generateRoute(RouteSettings settings) {
-  // TODO: Feature modules will be implemented here
-  // For now, just return empty route
-  return MaterialPageRoute(
-    builder: (_) => const Scaffold(
-      body: Center(
-        child: Text('Routes will be implemented here'),
-      ),
-    ),
-    settings: settings,
-  );
+  switch (settings.name) {
+    case AppRoutes.welcome:
+      return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+
+    case AppRoutes.login:
+      return MaterialPageRoute(builder: (_) => const LoginScreen());
+
+    case AppRoutes.register:
+      return MaterialPageRoute(builder: (_) => const RegisterScreen());
+
+    case AppRoutes.dashboard:
+      return MaterialPageRoute(builder: (_) => const DashboardScreen());
+
+    case AppRoutes.products:
+      return MaterialPageRoute(builder: (_) => const ProductsScreen());
+
+    case AppRoutes.sales:
+      return MaterialPageRoute(builder: (_) => const SalesScreen());
+
+    case AppRoutes.customers:
+      return MaterialPageRoute(builder: (_) => const CustomersScreen());
+
+    case AppRoutes.zakup:
+      return MaterialPageRoute(builder: (_) => const ZakupScreen());
+
+    case AppRoutes.adminProducts:
+      return MaterialPageRoute(builder: (_) => const AdminProductsScreen());
+
+    case AppRoutes.users:
+      return MaterialPageRoute(builder: (_) => const UsersScreen());
+
+    case AppRoutes.profile:
+      return MaterialPageRoute(builder: (_) => const ProfileScreen());
+
+    default:
+      return MaterialPageRoute(
+        builder: (_) => Scaffold(
+          body: Center(
+            child: Text('Route not found: ${settings.name}'),
+          ),
+        ),
+      );
+  }
 }

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../utils/di.dart';
 import '../constants/app_strings.dart';
@@ -18,6 +19,10 @@ import '../theme/app_theme.dart';
 import '../../features/sales/presentation/bloc/sales_bloc.dart';
 import '../../features/customers/presentation/bloc/customers_bloc.dart';
 import '../../features/zakup/presentation/bloc/zakup_bloc.dart';
+import '../providers/theme_provider.dart';
+import '../providers/locale_provider.dart';
+import '../providers/auth_provider.dart';
+import '../../data/services/auth_service.dart';
 
 /// Main App Widget
 class MainApp extends StatelessWidget {
@@ -25,8 +30,15 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiProvider(
       providers: [
+        // Auth Provider - must be first, others may depend on it
+        ChangeNotifierProvider(create: (_) => AuthProvider(authService: sl<AuthService>())),
+        // Theme Provider
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        // Locale Provider
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        // BLoC Providers
         BlocProvider(create: (_) => sl<SalesBloc>()),
         BlocProvider(create: (_) => sl<CustomersBloc>()),
         BlocProvider(create: (_) => sl<ZakupBloc>()),
@@ -40,7 +52,7 @@ class MainApp extends StatelessWidget {
         navigatorKey: NavigationHandler.navigatorKey,
         onGenerateRoute: generateRoute,
         localizationsDelegates: const [
-          // AppLocalizations.delegate, // TODO: Add localization
+          AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
@@ -48,7 +60,6 @@ class MainApp extends StatelessWidget {
         supportedLocales: const [
           Locale('uz'), // Uzbek
           Locale('ru'), // Russian
-          Locale('en'), // English
         ],
         initialRoute: AppRoutes.welcome,
       ),

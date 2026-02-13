@@ -501,7 +501,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loginScreenSubtitle => 'Войдите, чтобы продолжить';
 
   @override
-  String get registerScreenTitle => 'Создать аккаунт';
+  String get registerScreenTitle => 'Регистрация';
 
   @override
   String get registerScreenSubtitle => 'Зарегистрируйтесь для начала';
@@ -512,4 +512,61 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get welcomeScreenSubtitle =>
       'Ваше комплексное решение для управления бизнесом';
+
+  @override
+  String get lightMode => 'Светлая';
+
+  @override
+  String get darkMode => 'Темная';
+
+  @override
+  String get usernameMinLength => 'Имя пользователя минимум 3 символа';
+
+  @override
+  String get passwordMinLength => 'Пароль минимум 6 символов';
+
+  @override
+  String get passwordConfirm => 'Подтвердите пароль';
+
+  @override
+  String get passwordConfirmRequired => 'Подтверждение пароля обязательно';
+
+  @override
+  String get passwordMismatch => 'Пароли не совпадают';
+
+  @override
+  String get createNewAccount => 'Создать новый аккаунт';
+
+  @override
+  String get backToLogin => 'Вернуться на страницу входа';
+
+  @override
+  String get saving => 'Сохранение...';
+
+  @override
+  String get cashRegister => 'Касса';
+
+  @override
+  String get currentBalance => 'Текущий баланс';
+
+  @override
+  String get lastUpdated => 'Последнее обновление';
+
+  @override
+  String get withdrawCash => 'Вывести деньги';
+
+  @override
+  String get withdrawalHistory => 'История выводов';
+
+  @override
+  String get noWithdrawals => 'История выводов пуста';
+
+  @override
+  String get insufficientFunds => 'Недостаточно средств';
+
+  @override
+  String get withdrawSuccess => 'Деньги успешно выведены';
+
+  @override
+  String get accessDenied => 'У вас нет доступа к этому разделу';
 }

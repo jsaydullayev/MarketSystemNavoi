@@ -10,18 +10,18 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({required AuthService authService}) : _authService = authService;
 
   bool _isLoading = false;
-  String? _errorMessage;
+  String? _errorCode;
   Map<String, dynamic>? _user;
 
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
+  String? get errorCode => _errorCode;
   Map<String, dynamic>? get user => _user;
   bool get isAuthenticated => _user != null;
 
   // Login
   Future<bool> login(String username, String password) async {
     _isLoading = true;
-    _errorMessage = null;
+    _errorCode = null;
     notifyListeners();
 
     try {
@@ -38,13 +38,13 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _errorMessage = 'Login xato. Username yoki password noto\'g\'ri.';
+        _errorCode = 'login_failed';
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
-      _errorMessage = 'Xatolik yuz berdi: $e';
+      _errorCode = 'network_error';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -60,7 +60,7 @@ class AuthProvider extends ChangeNotifier {
     String? language,
   }) async {
     _isLoading = true;
-    _errorMessage = null;
+    _errorCode = null;
     notifyListeners();
 
     try {
@@ -83,13 +83,13 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _errorMessage = 'Ro\'yxatdan o\'tish xato.';
+        _errorCode = 'register_failed';
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
-      _errorMessage = 'Xatolik yuz berdi: $e';
+      _errorCode = 'network_error';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -128,7 +128,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void clearError() {
-    _errorMessage = null;
+    _errorCode = null;
     notifyListeners();
   }
 }
