@@ -12,6 +12,9 @@ abstract class SaleRepositoryInterface {
   /// Barcha sotuvlarni olish
   Future<ApiResult<List<SaleEntity>>> getAllSales();
 
+  /// Sotuvni tafsilotlari bilan olish
+  Future<ApiResult<Map<String, dynamic>>> getSaleDetail(String saleId);
+
   /// Mening draft sotuvlarimni olish
   Future<ApiResult<List<SaleEntity>>> getMyDraftSales();
 
@@ -24,6 +27,7 @@ abstract class SaleRepositoryInterface {
     required String productId,
     required int quantity,
     required double salePrice,
+    required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,
   });
 

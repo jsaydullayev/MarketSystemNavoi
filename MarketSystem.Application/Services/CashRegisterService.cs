@@ -188,6 +188,7 @@ public class CashRegisterService : ICashRegisterService
             // To'lovlar bo'yicha hisoblash
             decimal cashPaid = 0;
             decimal cardPaid = 0;
+            decimal clickPaid = 0;
 
             foreach (var sale in todaySales)
             {
@@ -202,6 +203,10 @@ public class CashRegisterService : ICashRegisterService
                     {
                         cardPaid += payment.Amount;
                     }
+                    else if (payment.PaymentType == Domain.Enums.PaymentType.Click)
+                    {
+                        clickPaid += payment.Amount;
+                    }
                 }
             }
 
@@ -212,6 +217,7 @@ public class CashRegisterService : ICashRegisterService
                 TotalPaid = todaySales.Sum(s => s.PaidAmount),
                 CashPaid = cashPaid,
                 CardPaid = cardPaid,
+                ClickPaid = clickPaid,
                 Date = today
             };
 

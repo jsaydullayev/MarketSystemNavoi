@@ -115,9 +115,8 @@ public class SaleService : ISaleService
             if (product.Quantity < request.Quantity)
                 throw new InvalidOperationException($"Insufficient stock. Available: {product.Quantity}, Requested: {request.Quantity}");
 
-            // MinSalePrice validation - if sale price is less than min, comment is required
-            if (request.SalePrice < product.MinSalePrice && string.IsNullOrWhiteSpace(request.Comment))
-                throw new InvalidOperationException($"Comment is required when selling below minimum price. MinPrice: {product.MinSalePrice}, YourPrice: {request.SalePrice}");
+            // Note: MinSalePrice validation is now UI-only warning, not enforced on backend
+            // Sellers can sell below minimum price without comment if needed
 
             // Check threshold
             if (product.Quantity <= product.MinThreshold)
@@ -414,12 +413,13 @@ public class SaleService : ISaleService
     private static SaleItemDto MapSaleItemToDto(SaleItem item, string productName)
     {
         return new SaleItemDto(
+            item.Id.ToString(),
+            item.SaleId.ToString(),
             item.ProductId,
             productName,
             item.Quantity,
-            item.CostPrice,
             item.SalePrice,
-            item.Profit,
+            item.Quantity * item.SalePrice, // totalPrice
             item.Comment
         );
     }

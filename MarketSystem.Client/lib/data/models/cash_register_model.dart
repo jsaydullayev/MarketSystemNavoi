@@ -22,7 +22,8 @@ class CashRegisterModel {
     return CashRegisterModel(
       id: json['id'] ?? '',
       currentBalance: (json['currentBalance'] ?? 0).toDouble(),
-      lastUpdated: DateTime.parse(json['lastUpdated'] ?? DateTime.now().toIso8601String()),
+      lastUpdated: DateTime.parse(
+          json['lastUpdated'] ?? DateTime.now().toIso8601String()),
       withdrawals: withdrawalsList,
     );
   }
@@ -48,7 +49,8 @@ class CashWithdrawalModel {
       id: json['id'] ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
       comment: json['comment'] ?? '',
-      withdrawalDate: DateTime.parse(json['withdrawalDate'] ?? DateTime.now().toIso8601String()),
+      withdrawalDate: DateTime.parse(
+          json['withdrawalDate'] ?? DateTime.now().toIso8601String()),
       userName: json['userName'],
     );
   }
@@ -60,6 +62,7 @@ class TodaySalesSummaryModel {
   final double totalPaid;
   final double cashPaid;
   final double cardPaid;
+  final double clickPaid;
   final DateTime date;
 
   TodaySalesSummaryModel({
@@ -68,6 +71,7 @@ class TodaySalesSummaryModel {
     required this.totalPaid,
     required this.cashPaid,
     required this.cardPaid,
+    required this.clickPaid,
     required this.date,
   });
 
@@ -93,6 +97,11 @@ class TodaySalesSummaryModel {
           ? (json['cardPaid'] is num
               ? (json['cardPaid'] as num).toDouble()
               : double.tryParse(json['cardPaid'].toString()) ?? 0.0)
+          : 0.0,
+      clickPaid: json['clickPaid'] != null
+          ? (json['clickPaid'] is num
+              ? (json['clickPaid'] as num).toDouble()
+              : double.tryParse(json['clickPaid'].toString()) ?? 0.0)
           : 0.0,
       date: json['date'] != null
           ? (json['date'] is DateTime
