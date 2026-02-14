@@ -46,6 +46,11 @@ public class ReportService : IReportService
 
         var report = CalculateReport(sales, zakups, request.StartDate, request.EndDate);
 
+        // Calculate average sale
+        decimal averageSale = report.TotalTransactions > 0
+            ? report.TotalSales / report.TotalTransactions
+            : 0;
+
         return new PeriodReportDto(
             request.StartDate,
             request.EndDate,
@@ -53,7 +58,9 @@ public class ReportService : IReportService
             report.TotalZakup,
             report.Profit,
             report.NetIncome,
-            report.TotalTransactions
+            report.TotalTransactions,
+            averageSale,
+            report.PaymentBreakdown
         );
     }
 
@@ -321,6 +328,10 @@ public class ReportService : IReportService
         decimal totalProfit = 0;    // Actual profit from sales
         int totalTransactions = sales.Count();
 
+        // Calculate payment breakdown
+        var paymentBreakdown = new Dictionary<string, decimal>();
+        var paymentCounts = new Dictionary<string, int>();
+
         // Calculate from sales and their items
         foreach (var sale in sales)
         {
@@ -336,6 +347,19 @@ public class ReportService : IReportService
                 totalCost += itemCost;
                 totalProfit += itemProfit;
             }
+
+            // Accumulate payment breakdown from payments
+            foreach (var payment in sale.Payments)
+            {
+                var paymentType = payment.PaymentType.ToString();
+                if (!paymentBreakdown.ContainsKey(paymentType))
+                {
+                    paymentBreakdown[paymentType] = 0;
+                    paymentCounts[paymentType] = 0;
+                }
+                paymentBreakdown[paymentType] += payment.Amount;
+                paymentCounts[paymentType]++;
+            }
         }
 
         decimal totalZakup = zakups.Sum(z => z.Quantity * z.CostPrice);
@@ -343,13 +367,23 @@ public class ReportService : IReportService
         // Net income = Profit - Operating expenses (currently 0)
         decimal netIncome = totalProfit;
 
+        // Convert to list of DTOs
+        var paymentBreakdownList = paymentBreakdown
+            .Select(kvp => new PaymentBreakdownDto(
+                kvp.Key,
+                kvp.Value,
+                paymentCounts[kvp.Key]
+            ))
+            .ToList();
+
         return new DailyReportDto(
             start,
             totalSales,
             totalZakup,
             totalProfit,
             netIncome,
-            totalTransactions
+            totalTransactions,
+            paymentBreakdownList
         );
     }
 }
