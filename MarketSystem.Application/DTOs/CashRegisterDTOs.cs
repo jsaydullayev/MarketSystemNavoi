@@ -61,6 +61,9 @@ public class TodaySalesSummaryDto
     [JsonPropertyName("cardPaid")]
     public decimal CardPaid { get; set; }
 
+    [JsonPropertyName("clickPaid")]
+    public decimal ClickPaid { get; set; }
+
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 }

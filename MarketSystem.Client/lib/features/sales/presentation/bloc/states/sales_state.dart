@@ -67,6 +67,21 @@ class SaleCancelled extends SalesState {
   const SaleCancelled();
 }
 
+/// Sale detail loading state
+class SaleDetailLoading extends SalesState {
+  const SaleDetailLoading();
+}
+
+/// Sale detail loaded state
+class SaleDetailLoaded extends SalesState {
+  final Map<String, dynamic> sale;
+
+  const SaleDetailLoaded(this.sale);
+
+  @override
+  List<Object?> get props => [sale];
+}
+
 /// Error state
 class SalesError extends SalesState {
   final String message;

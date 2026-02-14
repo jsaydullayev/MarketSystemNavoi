@@ -16,6 +16,7 @@ class AddSaleItemUseCase {
     required String productId,
     required int quantity,
     required double salePrice,
+    required double minSalePrice,  // ✅ Yangi: minPrice qo'shildi
     String? comment,
   }) async {
     // Biznes validatsiyalar
@@ -35,11 +36,17 @@ class AddSaleItemUseCase {
       return ApiResult.failure('Sotuv narxi manfiy bo\'lishi mumkin emas');
     }
 
+    // ✅ Yangi: Minimum narxdan past sotib bo'lishi mumkin emas!
+    if (salePrice < minSalePrice) {
+      return ApiResult.failure('Narx minimum sotish narxdan ($minSalePrice so\'m) past bo\'lishi mumkin emas');
+    }
+
     return repository.addSaleItem(
       saleId: saleId,
       productId: productId,
       quantity: quantity,
       salePrice: salePrice,
+      minSalePrice: minSalePrice,
       comment: comment,
     );
   }

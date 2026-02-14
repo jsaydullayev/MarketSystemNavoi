@@ -24,6 +24,19 @@ class SalesService {
     }
   }
 
+  // Sotuvni ID bo'yicha olish
+  Future<Map<String, dynamic>> getSaleById(String saleId) async {
+    final response = await _httpService.get('${ApiConstants.sales}/GetSale/$saleId');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else if (response.statusCode == 404) {
+      throw Exception('Sotuv topilmadi');
+    } else {
+      throw Exception('Failed to load sale: ${response.statusCode}');
+    }
+  }
+
   // Mening draft sotuvlarim
   Future<List<dynamic>> getMyDraftSales() async {
     final response = await _httpService.get('${ApiConstants.sales}/GetMyDraftSales');
@@ -58,6 +71,7 @@ class SalesService {
     required String productId,
     required int quantity,
     required double salePrice,
+    required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,
   }) async {
     print('=== ADD SALE ITEM DEBUG ===');
@@ -65,6 +79,7 @@ class SalesService {
     print('Product ID: $productId');
     print('Quantity: $quantity');
     print('Sale Price: $salePrice');
+    print('Min Sale Price: $minSalePrice');  // ✅ Debug: minPrice
     print('Comment: ${comment ?? "(empty string)"}');
     print('==========================');
 
@@ -74,6 +89,7 @@ class SalesService {
         'productId': productId,
         'quantity': quantity,
         'salePrice': salePrice,
+        'minSalePrice': minSalePrice,  // ✅ Backendga minPrice yuborish
         'comment': comment ?? '', // Null bo'lsa bo'sh string yuboramiz
       },
     );

@@ -107,18 +107,44 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         _cartItems[existingIndex]['quantity']++;
       });
     } else {
-      // New product - add to cart
-      setState(() {
-        _cartItems.add({
-          'productId': product['id'],
-          'productName': product['name'],
-          'salePrice': product['salePrice'],
-          'costPrice': product['costPrice'],
-          'quantity': 1,
-          'comment': '',
-        });
-      });
+      // New product - show price input dialog
+      _showPriceInputDialog(product);
     }
+  }
+
+  void _showPriceInputDialog(dynamic product) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _PriceInputDialog(
+        product: product,
+        onAddToCart: (enteredPrice, comment) {
+          setState(() {
+            _cartItems.add({
+              'productId': product['id'],
+              'productName': product['name'],
+              'salePrice': enteredPrice,
+              'minSalePrice': product['minSalePrice'] ?? 0.0,
+              'costPrice': product['costPrice'],
+              'quantity': 1,
+              'comment': comment ?? '',
+            });
+          });
+
+          if (mounted) {
+            Navigator.pop(dialogContext);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '✅ ${product['name']} savatga qo\'shildi!',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 
   void _removeFromCart(int index) {
@@ -135,6 +161,44 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         _cartItems[index]['quantity'] = newQuantity;
       });
     }
+  }
+
+  void _editItemPrice(int index, Map<String, dynamic> item) {
+    final currentPrice = item['salePrice'] ?? 0.0;
+    final minPrice = item['minSalePrice'] ?? 0.0;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _PriceInputDialog(
+        product: {
+          'name': item['productName'],
+          'salePrice': currentPrice,
+          'minSalePrice': minPrice,
+          'costPrice': item['costPrice'],
+        },
+        onAddToCart: (newPrice, comment) {
+          setState(() {
+            _cartItems[index]['salePrice'] = newPrice;
+            if (comment != null) {
+              _cartItems[index]['comment'] = comment;
+            }
+          });
+
+          if (mounted) {
+            Navigator.pop(dialogContext);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '✅ ${item['productName']} narxi o\'zgartirildi!',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 
   void _showCustomerDialog() {
@@ -248,6 +312,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           productId: item['productId'],
           quantity: item['quantity'],
           salePrice: item['salePrice'],
+          minSalePrice: item['minSalePrice'],  // ✅ Backendga minPrice yuborish
           comment: item['comment'],
         );
       }
@@ -496,6 +561,39 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                             index, item['quantity'] + 1),
                                       ),
                                     ],
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _editItemPrice(index, item),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEEF2FF),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: const Color(0xFF10B981),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.edit_rounded,
+                                            size: 12,
+                                            color: Color(0xFF10B981),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Narx',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF10B981),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                   GestureDetector(
                                     onTap: () => _removeFromCart(index),
@@ -780,6 +878,245 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   }
 }
 
+// Price Input Dialog Widget
+class _PriceInputDialog extends StatefulWidget {
+  final dynamic product;
+  final Function(double, String?) onAddToCart;
+
+  const _PriceInputDialog({
+    required this.product,
+    required this.onAddToCart,
+  });
+
+  @override
+  State<_PriceInputDialog> createState() => _PriceInputDialogState();
+}
+
+class _PriceInputDialogState extends State<_PriceInputDialog> {
+  late TextEditingController _priceController;
+  late TextEditingController _commentController;
+
+  @override
+  void initState() {
+    super.initState();
+    final defaultPrice = widget.product['salePrice'] ?? 0.0;
+    _priceController = TextEditingController(
+      text: defaultPrice.toStringAsFixed(2),
+    );
+    _commentController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _priceController.dispose();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final defaultPrice = widget.product['salePrice'] ?? 0.0;
+    final minPrice = widget.product['minSalePrice'] ?? 0.0;
+
+    return AlertDialog(
+      title: Text(
+        widget.product['name'] ?? 'Mahsulot',
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 18,
+        ),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Default price info
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Odatiy narx:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  Text(
+                    NumberFormatter.format(defaultPrice),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF3B82F6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Minimum price warning
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2).withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 20, color: Color(0xFFEF4444)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Minimum narx: ${NumberFormatter.format(minPrice)}',
+                      style: const TextStyle(fontSize: 13, color: Color(0xFFDC2626), fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Price input field
+            TextField(
+              controller: _priceController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: false,
+              ),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                labelText: 'Sotish narxini kiriting',
+                labelStyle: const TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 14,
+                ),
+                prefixIcon: const Icon(
+                  Icons.sell_rounded,
+                  color: Color(0xFF10B981),
+                ),
+                suffixText: " so'm",
+                suffixStyle: const TextStyle(
+                  color: Color(0xFF9CA3AF),
+                  fontSize: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFD1D5DB),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFD1D5DB),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF10B981),
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF9FAFB),
+              ),
+              onChanged: (value) {
+                setState(() {}); // Rebuild when price changes
+              },
+            ),
+            const SizedBox(height: 12),
+            // Optional comment field (always visible but not required)
+            TextField(
+              controller: _commentController,
+              maxLines: 2,
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                labelText: 'Izoh (ixtiyoriy)',
+                labelStyle: const TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 13,
+                ),
+                hintText: 'Necha narxda sotmoqchisiz? (ixtiyoriy)',
+                hintStyle: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 13,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.all(12),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(
+            'Bekor qilish',
+            style: TextStyle(
+              color: Color(0xFF6B7280),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final enteredPrice =
+                double.tryParse(_priceController.text) ?? 0.0;
+
+            if (enteredPrice <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Narx 0 dan katta bo\'lishi kerak!'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+
+            // Allow below minimum - no comment required
+            // Just send the price and optional comment
+            widget.onAddToCart(enteredPrice, _commentController.text.trim());
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF10B981),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 12,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text(
+            'Savatga qo\'shish',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // Payment Dialog Widget
 class _PaymentDialog extends StatefulWidget {
   final String saleId;
@@ -803,11 +1140,13 @@ class _PaymentDialogState extends State<_PaymentDialog> {
   bool _useCash = false;
   bool _useTerminal = false;
   bool _useTransfer = false;
+  bool _useClick = false;
   bool _useDebt = false;
 
   final TextEditingController _cashController = TextEditingController();
   final TextEditingController _terminalController = TextEditingController();
   final TextEditingController _transferController = TextEditingController();
+  final TextEditingController _clickController = TextEditingController();
 
   bool _isProcessing = false;
 
@@ -816,6 +1155,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
     if (_useCash) total += double.tryParse(_cashController.text) ?? 0;
     if (_useTerminal) total += double.tryParse(_terminalController.text) ?? 0;
     if (_useTransfer) total += double.tryParse(_transferController.text) ?? 0;
+    if (_useClick) total += double.tryParse(_clickController.text) ?? 0;
     return total;
   }
 
@@ -838,6 +1178,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
     _cashController.dispose();
     _terminalController.dispose();
     _transferController.dispose();
+    _clickController.dispose();
     super.dispose();
   }
 
@@ -936,6 +1277,36 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Transfer summa (so\'m)',
                     prefixIcon: Icon(Icons.account_balance),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+
+            // Click
+            CheckboxListTile(
+              title: const Text('Click'),
+              subtitle: const Text('Click to\'lov',
+                  style: TextStyle(fontSize: 12, color: Colors.grey)),
+              value: _useClick,
+              onChanged: (value) {
+                setState(() {
+                  _useClick = value ?? false;
+                  if (!_useClick) _clickController.clear();
+                });
+              },
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
+            if (_useClick)
+              Padding(
+                padding: const EdgeInsets.only(left: 16, bottom: 12),
+                child: TextField(
+                  controller: _clickController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Click summa (so\'m)',
+                    prefixIcon: Icon(Icons.phone_android),
                     border: OutlineInputBorder(),
                   ),
                   onChanged: (_) => setState(() {}),
@@ -1079,6 +1450,13 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                     payments.add({
                       'paymentType': 'Transfer',
                       'amount': double.tryParse(_transferController.text) ?? 0,
+                    });
+                  }
+
+                  if (_useClick && (_clickController.text.isNotEmpty)) {
+                    payments.add({
+                      'paymentType': 'Click',
+                      'amount': double.tryParse(_clickController.text) ?? 0,
                     });
                   }
 
