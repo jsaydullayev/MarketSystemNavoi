@@ -13,6 +13,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
+// Configure Npgsql to handle DateTime correctly with PostgreSQL timestamp with time zone
+// This prevents "Cannot write DateTime with Kind=Unspecified" errors
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add DbContext with optimizations
