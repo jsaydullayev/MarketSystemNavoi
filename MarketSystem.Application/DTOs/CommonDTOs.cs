@@ -149,13 +149,20 @@ public record CreateZakupDto(
 );
 
 // Report DTOs
+public record PaymentBreakdownDto(
+    [property: JsonPropertyName("paymentType")] string PaymentType,
+    [property: JsonPropertyName("amount")] decimal Amount,
+    [property: JsonPropertyName("count")] int Count
+);
+
 public record DailyReportDto(
     [property: JsonPropertyName("date")] DateTime Date,
     [property: JsonPropertyName("totalSales")] decimal TotalSales,
     [property: JsonPropertyName("totalZakup")] decimal TotalZakup,
     [property: JsonPropertyName("profit")] decimal Profit,
     [property: JsonPropertyName("netIncome")] decimal NetIncome,
-    [property: JsonPropertyName("totalTransactions")] int TotalTransactions
+    [property: JsonPropertyName("totalTransactions")] int TotalTransactions,
+    [property: JsonPropertyName("paymentBreakdown")] List<PaymentBreakdownDto> PaymentBreakdown
 );
 public record PeriodReportRequest(
     [property: JsonPropertyName("startDate")] DateTime StartDate,
@@ -168,7 +175,9 @@ public record PeriodReportDto(
     [property: JsonPropertyName("totalZakup")] decimal TotalZakup,
     [property: JsonPropertyName("profit")] decimal Profit,
     [property: JsonPropertyName("netIncome")] decimal NetIncome,
-    [property: JsonPropertyName("totalTransactions")] int TotalTransactions
+    [property: JsonPropertyName("totalTransactions")] int TotalTransactions,
+    [property: JsonPropertyName("averageSale")] decimal AverageSale,
+    [property: JsonPropertyName("paymentBreakdown")] List<PaymentBreakdownDto> PaymentBreakdown
 );
 
 // Seller Report
