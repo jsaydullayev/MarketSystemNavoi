@@ -85,12 +85,13 @@ public record UpdateCustomerDto(
 
 // Sale DTOs
 public record SaleItemDto(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("saleId")] string SaleId,
     [property: JsonPropertyName("productId")] Guid ProductId,
     [property: JsonPropertyName("productName")] string ProductName,
     [property: JsonPropertyName("quantity")] int Quantity,
-    [property: JsonPropertyName("costPrice")] decimal CostPrice,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
-    [property: JsonPropertyName("profit")] decimal Profit,
+    [property: JsonPropertyName("totalPrice")] decimal TotalPrice,
     [property: JsonPropertyName("comment")] string? Comment
 );
 public record PaymentDto(
