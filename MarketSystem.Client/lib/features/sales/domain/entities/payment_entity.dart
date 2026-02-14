@@ -8,6 +8,7 @@ enum PaymentType {
   cash,
   card,
   transfer,
+  click,
 }
 
 /// Payment Entity - to'lov obyekti
@@ -42,10 +43,13 @@ class PaymentEntity extends Equatable {
     switch (type?.toLowerCase()) {
       case 'cash':
         return PaymentType.cash;
+      case 'terminal':
       case 'card':
         return PaymentType.card;
       case 'transfer':
         return PaymentType.transfer;
+      case 'click':
+        return PaymentType.click;
       default:
         return PaymentType.cash;
     }
@@ -55,11 +59,13 @@ class PaymentEntity extends Equatable {
   String getPaymentTypeText() {
     switch (paymentType) {
       case PaymentType.cash:
-        return 'cash';
+        return 'Cash';
       case PaymentType.card:
-        return 'card';
+        return 'Terminal';
       case PaymentType.transfer:
-        return 'transfer';
+        return 'Transfer';
+      case PaymentType.click:
+        return 'Click';
     }
   }
 
@@ -72,6 +78,8 @@ class PaymentEntity extends Equatable {
         return 'Plastik';
       case PaymentType.transfer:
         return 'O\'tkazma';
+      case PaymentType.click:
+        return 'Click';
     }
   }
 

@@ -28,6 +28,7 @@ import '../../features/sales/domain/repositories/sale_repository_interface.dart'
 import '../../features/sales/data/repositories/sale_repository_impl.dart';
 import '../../features/sales/data/datasources/sale_remote_data_source.dart';
 import '../../features/sales/domain/usecases/get_sales_usecase.dart';
+import '../../features/sales/domain/usecases/get_sale_detail_usecase.dart';
 import '../../features/sales/domain/usecases/get_my_draft_sales_usecase.dart';
 import '../../features/sales/domain/usecases/create_sale_usecase.dart';
 import '../../features/sales/domain/usecases/add_sale_item_usecase.dart';
@@ -114,6 +115,7 @@ void _initSalesFeature() {
 
   // Use Cases
   sl.registerLazySingleton(() => GetSalesUseCase(sl()));
+  sl.registerLazySingleton(() => GetSaleDetailUseCase(sl()));
   sl.registerLazySingleton(() => GetMyDraftSalesUseCase(sl()));
   sl.registerLazySingleton(() => CreateSaleUseCase(sl()));
   sl.registerLazySingleton(() => AddSaleItemUseCase(sl()));
@@ -124,6 +126,7 @@ void _initSalesFeature() {
   sl.registerFactory<SalesBloc>(
     () => SalesBloc(
       getSalesUseCase: sl(),
+      getSaleDetailUseCase: sl(),
       getMyDraftSalesUseCase: sl(),
       createSaleUseCase: sl(),
       addSaleItemUseCase: sl(),

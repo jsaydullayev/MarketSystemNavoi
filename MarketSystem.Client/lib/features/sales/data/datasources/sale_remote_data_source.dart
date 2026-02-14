@@ -16,6 +16,11 @@ class SaleRemoteDataSource {
     return _salesService.getAllSales();
   }
 
+  /// Sotuvni ID bo'yicha olish
+  Future<Map<String, dynamic>> getSaleById(String saleId) async {
+    return _salesService.getSaleById(saleId);
+  }
+
   /// Mening draft sotuvlarimni olish
   Future<List<dynamic>> getMyDraftSales() async {
     return _salesService.getMyDraftSales();
@@ -32,6 +37,7 @@ class SaleRemoteDataSource {
     required String productId,
     required int quantity,
     required double salePrice,
+    required double minSalePrice,
     String? comment,
   }) async {
     return _salesService.addSaleItem(
@@ -39,6 +45,7 @@ class SaleRemoteDataSource {
       productId: productId,
       quantity: quantity,
       salePrice: salePrice,
+      minSalePrice: minSalePrice,
       comment: comment,
     );
   }
