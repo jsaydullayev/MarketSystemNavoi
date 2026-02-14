@@ -303,7 +303,7 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                     const SizedBox(height: 16),
 
                     // Bugungi tushumlar (Cash va Card)
-                    if (_todaySales != null && (_todaySales!.cashPaid > 0 || _todaySales!.cardPaid > 0))
+                    if (_todaySales != null && (_todaySales!.cashPaid > 0 || _todaySales!.cardPaid > 0 || _todaySales!.clickPaid > 0))
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
@@ -428,6 +428,50 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                                               fontSize: 18,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.blue,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_todaySales!.clickPaid > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.phone_android,
+                                        color: Colors.purple,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Click',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${_todaySales!.clickPaid.toStringAsFixed(2)} so\'m',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.purple,
                                             ),
                                           ),
                                         ],

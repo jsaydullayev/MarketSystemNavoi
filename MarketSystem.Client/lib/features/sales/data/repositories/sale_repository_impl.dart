@@ -28,6 +28,16 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
   }
 
   @override
+  Future<ApiResult<Map<String, dynamic>>> getSaleDetail(String saleId) async {
+    try {
+      final sale = await remoteDataSource.getSaleById(saleId);
+      return ApiResult.success(sale);
+    } catch (e) {
+      return ApiResult.failure('Sotuvni yuklashda xatolik: $e');
+    }
+  }
+
+  @override
   Future<ApiResult<List<SaleEntity>>> getMyDraftSales() async {
     try {
       final data = await remoteDataSource.getMyDraftSales();
@@ -61,6 +71,7 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
     required String productId,
     required int quantity,
     required double salePrice,
+    required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,
   }) async {
     try {
@@ -69,6 +80,7 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
         productId: productId,
         quantity: quantity,
         salePrice: salePrice,
+        minSalePrice: minSalePrice,  // ✅ Backendga minPrice yuborish
         comment: comment,
       );
 

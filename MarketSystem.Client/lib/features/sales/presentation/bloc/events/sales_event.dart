@@ -37,6 +37,7 @@ class AddSaleItemEvent extends SalesEvent {
   final String productId;
   final int quantity;
   final double salePrice;
+  final double minSalePrice;
   final String? comment;
 
   const AddSaleItemEvent({
@@ -44,11 +45,12 @@ class AddSaleItemEvent extends SalesEvent {
     required this.productId,
     required this.quantity,
     required this.salePrice,
+    required this.minSalePrice,
     this.comment,
   });
 
   @override
-  List<Object?> get props => [saleId, productId, quantity, salePrice, comment];
+  List<Object?> get props => [saleId, productId, quantity, salePrice, minSalePrice, comment];
 }
 
 /// Add payment event
@@ -79,4 +81,14 @@ class CancelSaleEvent extends SalesEvent {
 
   @override
   List<Object?> get props => [saleId, adminId];
+}
+
+/// Get sale detail event
+class GetSaleDetailEvent extends SalesEvent {
+  final String saleId;
+
+  const GetSaleDetailEvent(this.saleId);
+
+  @override
+  List<Object?> get props => [saleId];
 }

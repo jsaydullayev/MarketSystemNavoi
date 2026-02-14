@@ -8,6 +8,7 @@ import '../../domain/usecases/add_sale_item_usecase.dart';
 import '../../domain/usecases/cancel_sale_usecase.dart';
 import '../../domain/usecases/create_sale_usecase.dart';
 import '../../domain/usecases/get_my_draft_sales_usecase.dart';
+import '../../domain/usecases/get_sale_detail_usecase.dart';
 import '../../domain/usecases/get_sales_usecase.dart';
 import 'events/sales_event.dart';
 import 'states/sales_state.dart';
@@ -20,6 +21,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final AddSaleItemUseCase addSaleItemUseCase;
   final AddPaymentUseCase addPaymentUseCase;
   final CancelSaleUseCase cancelSaleUseCase;
+  final GetSaleDetailUseCase getSaleDetailUseCase;
 
   SalesBloc({
     required this.getSalesUseCase,
@@ -28,6 +30,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.addSaleItemUseCase,
     required this.addPaymentUseCase,
     required this.cancelSaleUseCase,
+    required this.getSaleDetailUseCase,
   }) : super(const SalesInitial()) {
     on<GetSalesEvent>(_onGetSales);
     on<GetMyDraftSalesEvent>(_onGetMyDraftSales);
@@ -35,6 +38,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<AddSaleItemEvent>(_onAddSaleItem);
     on<AddPaymentEvent>(_onAddPayment);
     on<CancelSaleEvent>(_onCancelSale);
+    on<GetSaleDetailEvent>(_onGetSaleDetail);
   }
 
   /// Get all sales
@@ -93,6 +97,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       productId: event.productId,
       quantity: event.quantity,
       salePrice: event.salePrice,
+      minSalePrice: event.minSalePrice,
       comment: event.comment,
     );
 
@@ -137,6 +142,21 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       emit(const SaleCancelled());
     } else {
       emit(SalesError(result.error ?? 'Sotuvni bekor qilishda xatolik'));
+    }
+  }
+
+  /// Get sale detail
+  Future<void> _onGetSaleDetail(
+    GetSaleDetailEvent event,
+    Emitter<SalesState> emit,
+  ) async {
+    emit(const SaleDetailLoading());
+    final result = await getSaleDetailUseCase(event.saleId);
+
+    if (result.isSuccess && result.data != null) {
+      emit(SaleDetailLoaded(result.data!));
+    } else {
+      emit(SalesError(result.error ?? 'Sotuvni yuklashda xatolik'));
     }
   }
 }
