@@ -217,9 +217,9 @@ public class AppDbContext : DbContext
             b.Property(x => x.LastUpdated).IsRequired();
             b.HasIndex(x => x.LastUpdated);
 
-            // Multi-tenancy
-            b.HasOne(x => x.Market).WithMany(m => m.CashRegisters).HasForeignKey(x => x.MarketId);
-            b.HasIndex(x => x.MarketId);
+            // NOTE: Multi-tenancy disabled for CashRegister
+            // b.HasOne(x => x.Market).WithMany(m => m.CashRegisters).HasForeignKey(x => x.MarketId);
+            // b.HasIndex(x => x.MarketId);
         });
 
         // Configure CashWithdrawal

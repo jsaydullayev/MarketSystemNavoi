@@ -13,10 +13,12 @@ namespace MarketSystem.API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, ICurrentMarketService currentMarketService)
     {
         _userService = userService;
+        _currentMarketService = currentMarketService;
     }
 
     [HttpGet("{id}")]
@@ -47,10 +49,22 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
     {
         var users = await _userService.GetAllUsersAsync();
+
+        // Get current user's role and market ID
+        var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var currentMarketId = _currentMarketService.GetCurrentMarketId();
+
+        // SuperAdmin sees all users, others see only their market's users
+        if (currentRole != "SuperAdmin" && currentMarketId.HasValue)
+        {
+            users = users.Where(u => u.MarketId == currentMarketId.Value);
+        }
+
         if (users is null)
         {
-            return BadRequest("Users not found");
+            return BadRequest("Foydalanuvchilar topilmadi");
         }
+
         return Ok(users);
     }
 

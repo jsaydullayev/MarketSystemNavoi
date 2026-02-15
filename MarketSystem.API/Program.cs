@@ -76,6 +76,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOrOwner", policy =>
         policy.RequireRole("Owner", "Admin"));
 
+    // Owner or SuperAdmin - can manage markets
+    options.AddPolicy("OwnerOrSuperAdmin", policy =>
+        policy.RequireRole("Owner", "SuperAdmin"));
+
     // All authenticated users - can create sales, add items
     options.AddPolicy("AllRoles", policy =>
         policy.RequireRole("Owner", "Admin", "Seller"));
