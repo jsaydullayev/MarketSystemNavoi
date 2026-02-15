@@ -23,8 +23,22 @@ public class ReportsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<DailyReportDto>> GetDailyReport([FromQuery] DateTime date)
     {
-        var report = await _reportService.GetDailyReportAsync(date);
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var report = await _reportService.GetDailyReportAsync(utcDate);
         return Ok(report);
+    }
+
+    /// <summary>
+    /// Get daily sale items - detailed list of products sold on specific date
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<DailySaleItemsResponseDto>> GetDailySaleItems([FromQuery] DateTime date)
+    {
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var saleItems = await _reportService.GetDailySaleItemsAsync(utcDate);
+        return Ok(saleItems);
     }
 
     /// <summary>
@@ -38,7 +52,11 @@ public class ReportsController : ControllerBase
         if (start > end)
             return BadRequest("Start date cannot be after end date");
 
-        var request = new PeriodReportRequest(start, end);
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcStart = DateTime.SpecifyKind(start.Date, DateTimeKind.Utc);
+        var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
+
+        var request = new PeriodReportRequest(utcStart, utcEnd);
         var report = await _reportService.GetPeriodReportAsync(request);
         return Ok(report);
     }
@@ -54,7 +72,11 @@ public class ReportsController : ControllerBase
         if (start > end)
             return BadRequest("Start date cannot be after end date");
 
-        var request = new PeriodReportRequest(start, end);
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcStart = DateTime.SpecifyKind(start.Date, DateTimeKind.Utc);
+        var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
+
+        var request = new PeriodReportRequest(utcStart, utcEnd);
         var excelBytes = await _reportService.ExportToExcelAsync(request);
 
         return File(
@@ -70,7 +92,9 @@ public class ReportsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ComprehensiveReportDto>> GetComprehensiveReport([FromQuery] DateTime date)
     {
-        var report = await _reportService.GetComprehensiveReportAsync(date);
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var report = await _reportService.GetComprehensiveReportAsync(utcDate);
         return Ok(report);
     }
 
@@ -80,7 +104,9 @@ public class ReportsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> ExportComprehensiveToExcel([FromQuery] DateTime date)
     {
-        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(date);
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(utcDate);
 
         return File(
             excelBytes,

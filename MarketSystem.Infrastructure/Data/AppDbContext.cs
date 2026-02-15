@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Market> Markets => Set<Market>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
@@ -25,6 +26,17 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        // Configure Market
+        modelBuilder.Entity<Market>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            b.Property(x => x.Subdomain).HasMaxLength(100);
+            b.Property(x => x.Description).HasMaxLength(500);
+            b.HasIndex(x => x.Subdomain).IsUnique();
+        });
+
         // Configure Customer
         modelBuilder.Entity<Customer>(b =>
         {
@@ -34,6 +46,10 @@ public class AppDbContext : DbContext
             b.Property(x => x.FullName).HasMaxLength(200);
             b.Property(x => x.Comment).HasMaxLength(500);
             b.HasQueryFilter(x => !x.IsDeleted);
+
+            // Multi-tenancy
+            b.HasOne(x => x.Market).WithMany(m => m.Customers).HasForeignKey(x => x.MarketId);
+            b.HasIndex(x => x.MarketId);
         });
 
         // Configure User
@@ -48,6 +64,10 @@ public class AppDbContext : DbContext
             b.Property(x => x.ProfileImage).HasColumnType("text");
             b.HasIndex(x => x.Username).IsUnique();
             b.HasQueryFilter(x => !x.IsDeleted);
+
+            // Multi-tenancy
+            b.HasOne(x => x.Market).WithMany(m => m.Users).HasForeignKey(x => x.MarketId);
+            b.HasIndex(x => x.MarketId);
         });
 
         // Configure Product
@@ -62,7 +82,9 @@ public class AppDbContext : DbContext
             b.Property(x => x.MinThreshold).IsRequired();
 
             b.HasOne(x => x.CreatedBySeller).WithMany(p => p.TemporaryProducts).HasForeignKey(x => x.CreatedBySellerId);
+            b.HasOne(x => x.Market).WithMany(m => m.Products).HasForeignKey(x => x.MarketId);
             b.HasQueryFilter(x => !x.IsDeleted);
+            b.HasIndex(x => x.MarketId);
         });
 
         // Configure Sale
@@ -74,6 +96,7 @@ public class AppDbContext : DbContext
 
             b.HasOne(x => x.Seller).WithMany(p => p.Sales).HasForeignKey(x => x.SellerId);
             b.HasOne(x => x.Customer).WithMany(p => p.Sales).HasForeignKey(x => x.CustomerId);
+            b.HasOne(x => x.Market).WithMany(m => m.Sales).HasForeignKey(x => x.MarketId);
 
             b.HasOne(x => x.Debt).WithOne(x => x.Sale).HasForeignKey<Debt>(x => x.SaleId);
 
@@ -85,6 +108,7 @@ public class AppDbContext : DbContext
                 .HasDatabaseName("IX_Sale_CustomerId");
             b.HasIndex(x => new { x.SellerId, x.Status })
                 .HasDatabaseName("IX_Sale_Seller_Status");
+            b.HasIndex(x => x.MarketId);
 
             // Soft delete filter
             b.HasQueryFilter(x => !x.IsDeleted);
@@ -114,10 +138,12 @@ public class AppDbContext : DbContext
             b.Property(x => x.Amount).HasPrecision(18, 2);
 
             b.HasOne(x => x.Sale).WithMany(p => p.Payments).HasForeignKey(x => x.SaleId);
+            b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId);
 
             // Index for performance
             b.HasIndex(x => x.SaleId)
                 .HasDatabaseName("IX_Payment_SaleId");
+            b.HasIndex(x => x.MarketId);
         });
 
         // Configure Debt
@@ -129,10 +155,12 @@ public class AppDbContext : DbContext
 
             b.HasOne(x => x.Sale).WithOne(x => x.Debt).HasForeignKey<Debt>(x => x.SaleId);
             b.HasOne(x => x.Customer).WithMany(p => p.Debts).HasForeignKey(x => x.CustomerId);
+            b.HasOne(x => x.Market).WithMany(m => m.Debts).HasForeignKey(x => x.MarketId);
 
             // Index for performance
             b.HasIndex(x => new { x.CustomerId, x.Status })
                 .HasDatabaseName("IX_Debt_Customer_Status");
+            b.HasIndex(x => x.MarketId);
         });
 
         // Configure Zakup
@@ -144,6 +172,8 @@ public class AppDbContext : DbContext
 
             b.HasOne(x => x.Product).WithMany(p => p.Zakups).HasForeignKey(x => x.ProductId);
             b.HasOne(x => x.CreatedByAdmin).WithMany(p => p.Zakups).HasForeignKey(x => x.CreatedByAdminId);
+            b.HasOne(x => x.Market).WithMany(m => m.Zakups).HasForeignKey(x => x.MarketId);
+            b.HasIndex(x => x.MarketId);
         });
 
         // Configure AuditLog
@@ -186,6 +216,10 @@ public class AppDbContext : DbContext
             b.Property(x => x.CurrentBalance).HasPrecision(18, 2).IsRequired();
             b.Property(x => x.LastUpdated).IsRequired();
             b.HasIndex(x => x.LastUpdated);
+
+            // Multi-tenancy
+            b.HasOne(x => x.Market).WithMany(m => m.CashRegisters).HasForeignKey(x => x.MarketId);
+            b.HasIndex(x => x.MarketId);
         });
 
         // Configure CashWithdrawal

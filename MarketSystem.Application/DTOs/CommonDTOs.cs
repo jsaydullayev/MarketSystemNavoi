@@ -155,6 +155,21 @@ public record PaymentBreakdownDto(
     [property: JsonPropertyName("count")] int Count
 );
 
+public record DailySaleItemDto(
+    [property: JsonPropertyName("productName")] string ProductName,
+    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("costPrice")] decimal CostPrice,
+    [property: JsonPropertyName("salePrice")] decimal SalePrice,
+    [property: JsonPropertyName("totalCost")] decimal TotalCost,
+    [property: JsonPropertyName("totalRevenue")] decimal TotalRevenue,
+    [property: JsonPropertyName("profit")] decimal Profit
+);
+
+public record DailySaleItemsResponseDto(
+    [property: JsonPropertyName("date")] DateTime Date,
+    [property: JsonPropertyName("saleItems")] List<DailySaleItemDto> SaleItems
+);
+
 public record DailyReportDto(
     [property: JsonPropertyName("date")] DateTime Date,
     [property: JsonPropertyName("totalSales")] decimal TotalSales,

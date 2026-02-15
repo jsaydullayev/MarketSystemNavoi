@@ -1,4 +1,5 @@
 using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
@@ -10,11 +11,13 @@ public class ProductService : IProductService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly AppDbContext _context;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public ProductService(IUnitOfWork unitOfWork, AppDbContext context)
+    public ProductService(IUnitOfWork unitOfWork, AppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _context = context;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -53,7 +56,8 @@ public class ProductService : IProductService
             SalePrice = request.SalePrice,
             MinSalePrice = request.MinSalePrice,
             Quantity = request.Quantity,
-            MinThreshold = request.MinThreshold
+            MinThreshold = request.MinThreshold,
+            MarketId = _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
         };
 
         await _unitOfWork.Products.AddAsync(product, cancellationToken);

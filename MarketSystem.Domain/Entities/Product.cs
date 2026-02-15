@@ -18,6 +18,10 @@ public class Product : BaseEntity
     public int Quantity { get; set; }
     public int MinThreshold { get; set; } = 5;
 
+    // Multi-tenancy
+    public int MarketId { get; set; }
+    public Market? Market { get; set; }
+
     // Navigation properties
     public User? CreatedBySeller { get; set; }
     public ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();

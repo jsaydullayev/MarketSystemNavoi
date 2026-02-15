@@ -164,6 +164,9 @@ builder.Services.AddSignalR();
 // Add Unit of Work and Repositories
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+// Add HttpContextAccessor for CurrentMarketService
+builder.Services.AddHttpContextAccessor();
+
 // Add Application Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -175,6 +178,8 @@ builder.Services.AddScoped<IZakupService, ZakupService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<ICashRegisterService, CashRegisterService>();
+builder.Services.AddScoped<IMarketService, MarketService>();
+builder.Services.AddScoped<ICurrentMarketService, CurrentMarketService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 
@@ -191,6 +196,9 @@ var app = builder.Build();
 
 // Global Exception Handler - MUST be first middleware
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
+// Tenant resolution middleware - HAR DOIM authenticationdan keyin
+app.UseMiddleware<TenantResolutionMiddleware>();
 
 // Request logging middleware
 app.UseMiddleware<RequestLoggingMiddleware>();
@@ -239,25 +247,52 @@ if (app.Environment.IsDevelopment())
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // Check if data exists
-        if (await context.Users.AnyAsync())
+        if (await context.Markets.AnyAsync() || await context.Users.AnyAsync())
         {
             return Results.Ok(new { message = "Database already seeded" });
         }
 
-        // Create Owner user
+        // 1. Create first Market
+        var defaultMarket = new Market
+        {
+            Name = "Demo Market",
+            Subdomain = "demo",
+            Description = "Default demo market for testing",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Markets.Add(defaultMarket);
+        await context.SaveChangesAsync();
+
+        // 2. Create SuperAdmin (barcha marketlarni boshqaradi)
+        var superAdmin = new User
+        {
+            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            FullName = "Super Administrator",
+            Username = "superadmin",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("superadmin123"),
+            Role = Role.SuperAdmin,
+            IsActive = true,
+            Language = Language.Uzbek,
+            MarketId = defaultMarket.Id // SuperAdmin ham bir marketga tegishli
+        };
+        context.Users.Add(superAdmin);
+
+        // 3. Create Owner for default market
         var owner = new User
         {
             Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            FullName = "System Owner",
+            FullName = "Market Owner",
             Username = "owner",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("owner123"),
             Role = Role.Owner,
             IsActive = true,
-            Language = Language.Uzbek
+            Language = Language.Uzbek,
+            MarketId = defaultMarket.Id
         };
         context.Users.Add(owner);
 
-        // Create Admin user
+        // 4. Create Admin user
         var admin = new User
         {
             Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
@@ -266,11 +301,12 @@ if (app.Environment.IsDevelopment())
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
             Role = Role.Admin,
             IsActive = true,
-            Language = Language.Uzbek
+            Language = Language.Uzbek,
+            MarketId = defaultMarket.Id
         };
         context.Users.Add(admin);
 
-        // Create Seller user
+        // 5. Create Seller user
         var seller = new User
         {
             Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
@@ -279,7 +315,8 @@ if (app.Environment.IsDevelopment())
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("seller123"),
             Role = Role.Seller,
             IsActive = true,
-            Language = Language.Uzbek
+            Language = Language.Uzbek,
+            MarketId = defaultMarket.Id
         };
         context.Users.Add(seller);
 
@@ -287,15 +324,16 @@ if (app.Environment.IsDevelopment())
 
         return Results.Ok(new
         {
-            message = "Database seeded successfully",
+            message = "Database seeded successfully with multi-tenant support",
+            market = new { name = "Demo Market", id = defaultMarket.Id },
             users = new[]
             {
-                new { username = "owner", password = "owner123", role = "Owner" },
-                new { username = "admin", password = "admin123", role = "Admin" },
-                new { username = "seller", password = "seller123", role = "Seller" }
+                new { username = "superadmin", password = "superadmin123", role = "SuperAdmin", note = "Can create/manage all markets" },
+                new { username = "owner", password = "owner123", role = "Owner", note = "Owner of Demo Market" },
+                new { username = "admin", password = "admin123", role = "Admin", note = "Administrator of Demo Market" },
+                new { username = "seller", password = "seller123", role = "Seller", note = "Seller in Demo Market" }
             }
         });
     }).WithName("Seed Database").AllowAnonymous();
 }
-
 app.Run();

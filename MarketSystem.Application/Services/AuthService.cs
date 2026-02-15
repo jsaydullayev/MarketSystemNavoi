@@ -18,14 +18,16 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly AppDbContext _context;
     private readonly JwtSetting _jwtSetting;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService, ILogger<AuthService> logger, AppDbContext context, IConfiguration configuration)
+    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService, ILogger<AuthService> logger, AppDbContext context, IConfiguration configuration, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
         _logger = logger;
         _context = context;
         _jwtSetting = configuration.GetSection("Jwt").Get<JwtSetting>()!;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -78,7 +80,8 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Role = Enum.Parse<Role>(request.Role, ignoreCase: true),
             Language = language,
-            IsActive = true
+            IsActive = true,
+            MarketId = request.MarketId ?? _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
         };
 
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
