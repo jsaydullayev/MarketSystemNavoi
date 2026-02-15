@@ -11,11 +11,13 @@ public class UserService : IUserService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly AppDbContext _context;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public UserService(IUnitOfWork unitOfWork, AppDbContext context)
+    public UserService(IUnitOfWork unitOfWork, AppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _context = context;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task<UserDto?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -48,6 +50,11 @@ public class UserService : IUserService
         if (await _unitOfWork.Users.AnyAsync(u => u.Username == request.Username, cancellationToken))
             throw new InvalidOperationException($"Username '{request.Username}' already exists");
 
+        // Get current market ID from context
+        var currentMarketId = _currentMarketService.GetCurrentMarketId();
+        if (currentMarketId == null)
+            throw new InvalidOperationException("Market topilmadi. Iltimos, qaytadan tizimga kiring.");
+
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -58,7 +65,8 @@ public class UserService : IUserService
             Language = Enum.TryParse<Language>(request.Language, ignoreCase: true, out var lang)
                 ? lang
                 : Language.Uzbek,
-            IsActive = true
+            IsActive = true,
+            MarketId = currentMarketId.Value
         };
 
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
@@ -212,7 +220,8 @@ public class UserService : IUserService
             user.ProfileImage,
             user.Role.ToString(),
             user.Language.ToString().ToLowerInvariant(),
-            user.IsActive
+            user.IsActive,
+            user.MarketId
         );
     }
 }

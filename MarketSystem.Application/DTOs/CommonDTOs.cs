@@ -10,7 +10,8 @@ public record UserDto(
     [property: JsonPropertyName("profileImage")] string? ProfileImage,
     [property: JsonPropertyName("role")] string Role,
     [property: JsonPropertyName("language")] string Language,
-    [property: JsonPropertyName("isActive")] bool IsActive
+    [property: JsonPropertyName("isActive")] bool IsActive,
+    [property: JsonPropertyName("marketId")] int? MarketId
 );
 public record CreateUserDto(
     [property: JsonPropertyName("fullName")] string FullName,

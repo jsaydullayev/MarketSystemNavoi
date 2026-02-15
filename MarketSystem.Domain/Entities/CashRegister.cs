@@ -7,9 +7,9 @@ public class CashRegister
     public DateTime LastUpdated { get; set; }
     public Guid? LastWithdrawalId { get; set; }
 
-    // Multi-tenancy
-    public int MarketId { get; set; }
-    public Market? Market { get; set; }
+    // NOTE: Multi-tenancy disabled - CashRegister needs separate implementation
+    // public int MarketId { get; set; }
+    // public Market? Market { get; set; }
 
     public CashWithdrawal? LastWithdrawal { get; set; }
 }
