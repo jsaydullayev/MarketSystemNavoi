@@ -23,9 +23,11 @@ public class ReportService : IReportService
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
+        // Include SaleItems and Payments for proper profit calculation
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled,
-            cancellationToken);
+            cancellationToken,
+            includeProperties: "SaleItems,Payments");
 
         var zakups = await _unitOfWork.Zakups.FindAsync(
             z => z.CreatedAt >= start && z.CreatedAt < end,
@@ -34,11 +36,74 @@ public class ReportService : IReportService
         return CalculateReport(sales, zakups, start, end);
     }
 
+    public async Task<DailySaleItemsResponseDto> GetDailySaleItemsAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
+
+        // Include SaleItems for detailed breakdown
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled,
+            cancellationToken,
+            includeProperties: "SaleItems");
+
+        // Group by product and aggregate
+        var productGroups = new Dictionary<string, DailySaleItemDto>();
+
+        foreach (var sale in sales)
+        {
+            foreach (var item in sale.SaleItems)
+            {
+                var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, cancellationToken);
+                if (product == null) continue;
+
+                var productName = product.Name;
+                var quantity = item.Quantity;
+                var costPrice = item.CostPrice;
+                var salePrice = item.SalePrice;
+                var totalCost = costPrice * quantity;
+                var totalRevenue = salePrice * quantity;
+                var profit = totalRevenue - totalCost;
+
+                if (productGroups.ContainsKey(productName))
+                {
+                    var existing = productGroups[productName];
+                    productGroups[productName] = existing with
+                    {
+                        Quantity = existing.Quantity + quantity,
+                        TotalCost = existing.TotalCost + totalCost,
+                        TotalRevenue = existing.TotalRevenue + totalRevenue,
+                        Profit = existing.Profit + profit
+                    };
+                }
+                else
+                {
+                    productGroups[productName] = new DailySaleItemDto(
+                        productName,
+                        quantity,
+                        costPrice,
+                        salePrice,
+                        totalCost,
+                        totalRevenue,
+                        profit
+                    );
+                }
+            }
+        }
+
+        return new DailySaleItemsResponseDto(
+            start,
+            productGroups.Values.ToList()
+        );
+    }
+
     public async Task<PeriodReportDto> GetPeriodReportAsync(PeriodReportRequest request, CancellationToken cancellationToken = default)
     {
+        // Include SaleItems and Payments for proper profit calculation
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled,
-            cancellationToken);
+            cancellationToken,
+            includeProperties: "SaleItems,Payments");
 
         var zakups = await _unitOfWork.Zakups.FindAsync(
             z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate,
@@ -66,9 +131,11 @@ public class ReportService : IReportService
 
     public async Task<byte[]> ExportToExcelAsync(PeriodReportRequest request, CancellationToken cancellationToken = default)
     {
+        // Include SaleItems for proper data export
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled,
-            cancellationToken);
+            cancellationToken,
+            includeProperties: "SaleItems,Payments");
 
         var zakups = await _unitOfWork.Zakups.FindAsync(
             z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate,
@@ -142,10 +209,11 @@ public class ReportService : IReportService
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
-        // Get daily sales
+        // Get daily sales with SaleItems and Payments
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled,
-            cancellationToken);
+            cancellationToken,
+            includeProperties: "SaleItems,Payments");
 
         // Get zakups
         var zakups = await _unitOfWork.Zakups.FindAsync(

@@ -12,6 +12,7 @@ public record RegisterRequest(
     [property: JsonPropertyName("username")] string Username,
     [property: JsonPropertyName("password")] string Password,
     [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("marketId")] int? MarketId = null,  // Multi-tenancy - optional
     [property: JsonPropertyName("language")] string? Language = "uz"
 );
 

@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../../data/services/reports_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
+import '../../../core/constants/api_constants.dart';
+import 'daily_sales_details_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -25,7 +27,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Map<String, dynamic>? _comprehensiveReport;
 
   bool _isLoading = false;
+  bool _isLoadingDetails = false;
   String _selectedTab = 'daily'; // daily, monthly, inventory
+
+  List<Map<String, dynamic>> _dailySaleItems = [];
 
   @override
   void initState() {
@@ -59,6 +64,49 @@ class _ReportsScreenState extends State<ReportsScreen> {
     } catch (e) {
       setState(() {
         _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadDailySaleItems() async {
+    setState(() {
+      _isLoadingDetails = true;
+    });
+
+    try {
+      // Get sale items from daily report
+      final saleItems = await _reportsService.getDailySaleItems(_selectedDate);
+
+      setState(() {
+        _dailySaleItems = saleItems;
+        _isLoadingDetails = false;
+      });
+
+      // Navigate to details screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DailySalesDetailsScreen(
+              date: _selectedDate,
+              dailyReport: _dailyReport!,
+              saleItems: _dailySaleItems,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingDetails = false;
       });
 
       if (mounted) {
@@ -181,12 +229,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildSummaryCard(
-                'Kunlik savdo',
-                NumberFormatter.formatDecimal(totalSales),
-                Icons.trending_up,
-                Colors.green,
-                subtitle: '$totalTransactions ta savdo',
+              child: GestureDetector(
+                onTap: _isLoadingDetails ? null : _loadDailySaleItems,
+                child: _buildSummaryCard(
+                  'Kunlik savdo',
+                  NumberFormatter.formatDecimal(totalSales),
+                  Icons.trending_up,
+                  Colors.green,
+                  subtitle: '$totalTransactions ta savdo',
+                  isClickable: true,
+                  isLoading: _isLoadingDetails,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -503,82 +556,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildInventoryItemCard(Map<String, dynamic> item) {
-    final name = item['productName'] ?? 'Noma\'lum';
-    final quantity = item['quantity'] as int;
-    final costPrice = (item['costPrice'] as num).toDouble();
-    final salePrice = (item['salePrice'] as num).toDouble();
-    final profit = (salePrice - costPrice) * quantity;
-
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.inventory_2,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$quantity ta • ${NumberFormatter.formatDecimal(costPrice)} so\'m',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  NumberFormatter.formatDecimal(salePrice * quantity),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.green,
-                  ),
-                ),
-                Text(
-                  '+${NumberFormatter.formatDecimal(profit)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.purple,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildDatePicker() {
+    final now = DateTime.now();
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -588,9 +568,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
             Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                DateFormat('dd.MM.yyyy').format(_selectedDate),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Sana', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    DateFormat('dd.MM.yyyy').format(_selectedDate),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
             ),
             IconButton(
@@ -604,12 +590,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.arrow_forward),
-              onPressed: () {
-                setState(() {
-                  _selectedDate = _selectedDate.add(const Duration(days: 1));
-                });
-                _loadReports();
-              },
+              onPressed: _selectedDate.isBefore(DateTime(now.year, now.month, now.day))
+                  ? () {
+                      setState(() {
+                        _selectedDate = _selectedDate.add(const Duration(days: 1));
+                      });
+                      _loadReports();
+                    }
+                  : null, // Disable if today
             ),
             TextButton(
               onPressed: () async {
@@ -617,11 +605,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   context: context,
                   initialDate: _selectedDate,
                   firstDate: DateTime(2020),
-                  lastDate: DateTime.now().add(const Duration(days: 30)),
+                  lastDate: DateTime(now.year, now.month, now.day), // Only today and past
                 );
                 if (picked != null) {
                   setState(() {
-                    _selectedDate = picked;
+                    _selectedDate = DateTime(picked.year, picked.month, picked.day);
                   });
                   _loadReports();
                 }
@@ -635,6 +623,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildDateRangePicker() {
+    final now = DateTime.now();
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -677,13 +667,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     final picked = await showDateRangePicker(
                       context: context,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
+                      lastDate: DateTime(now.year, now.month, now.day), // Only today and past
                       initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
                     );
                     if (picked != null) {
                       setState(() {
-                        _startDate = picked.start;
-                        _endDate = picked.end;
+                        _startDate = DateTime(picked.start.year, picked.start.month, picked.start.day);
+                        _endDate = DateTime(picked.end.year, picked.end.month, picked.end.day);
                       });
                       _loadReports();
                     }
@@ -703,9 +693,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
     IconData icon,
     Color color, {
     String? subtitle,
+    bool isClickable = false,
+    bool isLoading = false,
   }) {
     return Card(
-      elevation: 4,
+      elevation: isClickable ? 6 : 4,
       color: color.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -726,6 +718,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ),
                   ),
                 ),
+                if (isClickable)
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: color,
+                  ),
+                if (isLoading)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
               ],
             ),
             const SizedBox(height: 8),
@@ -804,22 +808,137 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
+  Widget _buildInventoryItemCard(Map<String, dynamic> item) {
+    final productName = item['productName'] as String? ?? 'Noma\'lum';
+    final quantity = item['quantity'] as int? ?? 0;
+    final costPrice = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
+    final salePrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
+    final totalCostValue = (item['totalCostValue'] as num?)?.toDouble() ?? 0.0;
+    final totalSaleValue = (item['totalSaleValue'] as num?)?.toDouble() ?? 0.0;
+    final potentialProfit = totalSaleValue - totalCostValue;
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    productName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: quantity > 0 ? Colors.green[50] : Colors.red[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: quantity > 0 ? Colors.green[300]! : Colors.red[300]!,
+                    ),
+                  ),
+                  child: Text(
+                    '$quantity dona',
+                    style: TextStyle(
+                      color: quantity > 0 ? Colors.green[700] : Colors.red[700],
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildInfoColumn('Xarid narxi', '${NumberFormatter.formatDecimal(costPrice)} so\'m'),
+                _buildInfoColumn('Sotuv narxi', '${NumberFormatter.formatDecimal(salePrice)} so\'m'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildInfoColumn('Jami xarajat', '${NumberFormatter.formatDecimal(totalCostValue)} so\'m'),
+                _buildInfoColumn('Jami qiymat', '${NumberFormatter.formatDecimal(totalSaleValue)} so\'m'),
+              ],
+            ),
+            if (potentialProfit != 0) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: potentialProfit > 0 ? Colors.green[50] : Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      potentialProfit > 0 ? Icons.trending_up : Icons.trending_down,
+                      size: 18,
+                      color: potentialProfit > 0 ? Colors.green[700] : Colors.red[700],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Potensial foyda: ${NumberFormatter.formatDecimal(potentialProfit)} so\'m',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: potentialProfit > 0 ? Colors.green[700] : Colors.red[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoColumn(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+
   void _exportToExcel(String reportType) {
     String url = '';
     String filename = '';
 
     if (reportType == 'daily') {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      url = 'http://10.0.2.2:5137/api/Reports/ExportToExcel?start=$dateStr&end=$dateStr';
+      url = 'http://10.0.2.2:5137${ApiConstants.reports}/ExportToExcel?start=$dateStr&end=$dateStr';
       filename = 'daily_report_${DateFormat('yyyyMMdd').format(_selectedDate)}.xlsx';
     } else if (reportType == 'monthly') {
       final startStr = DateFormat('yyyy-MM-dd').format(_startDate);
       final endStr = DateFormat('yyyy-MM-dd').format(_endDate);
-      url = 'http://10.0.2.2:5137/api/Reports/ExportToExcel?start=$startStr&end=$endStr';
+      url = 'http://10.0.2.2:5137${ApiConstants.reports}/ExportToExcel?start=$startStr&end=$endStr';
       filename = 'period_report_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.xlsx';
     } else if (reportType == 'inventory') {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      url = 'http://10.0.2.2:5137/api/Reports/ExportComprehensiveToExcel?date=$dateStr';
+      url = 'http://10.0.2.2:5137${ApiConstants.reports}/ExportComprehensiveToExcel?date=$dateStr';
       filename = 'inventory_report_${DateFormat('yyyyMMdd').format(_selectedDate)}.xlsx';
     }
 
