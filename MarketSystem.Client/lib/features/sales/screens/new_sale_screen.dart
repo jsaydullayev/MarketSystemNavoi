@@ -998,7 +998,7 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
               decoration: InputDecoration(
                 labelText: 'Sotish narxini kiriting',
                 labelStyle: const TextStyle(
-                  color: Color(0xFF6B7280),
+                  color: Color(0xFF059669), // Yashil rang
                   fontSize: 14,
                 ),
                 prefixIcon: const Icon(
@@ -1007,7 +1007,7 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
                 ),
                 suffixText: " so'm",
                 suffixStyle: const TextStyle(
-                  color: Color(0xFF9CA3AF),
+                  color: Color(0xFF059669), // Yashil rang
                   fontSize: 14,
                 ),
                 border: OutlineInputBorder(
@@ -1019,19 +1019,21 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: const BorderSide(
-                    color: Color(0xFFD1D5DB),
+                    color: Color(0xFF10B981), // Yashil border
+                    width: 2,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: const BorderSide(
-                    color: Color(0xFF10B981),
+                    color: Color(0xFF10B981), // Yashil border
                     width: 2,
                   ),
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF9FAFB),
+                fillColor: const Color(0xFFECFDF5), // Och yashil fon
               ),
+              textInputAction: TextInputAction.none, // Keyboardni yopmaydi
               onChanged: (value) {
                 setState(() {}); // Rebuild when price changes
               },
@@ -1045,19 +1047,38 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
               decoration: InputDecoration(
                 labelText: 'Izoh (ixtiyoriy)',
                 labelStyle: const TextStyle(
-                  color: Color(0xFF6B7280),
+                  color: Color(0xFF059669), // Yashil rang
                   fontSize: 13,
                 ),
                 hintText: 'Necha narxda sotmoqchisiz? (ixtiyoriy)',
-                hintStyle: TextStyle(
-                  color: Colors.grey[400],
+                hintStyle: const TextStyle(
+                  color: Color(0xFF6B7280),
                   fontSize: 13,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF10B981), // Yashil border
+                  ),
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF10B981), // Yashil border
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF10B981), // Yashil border
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFECFDF5), // Och yashil fon
                 contentPadding: const EdgeInsets.all(12),
               ),
+              textInputAction: TextInputAction.newline, // Ko'p qatorli uchun
             ),
           ],
         ),
@@ -1090,8 +1111,8 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
 
             // Allow below minimum - no comment required
             // Just send the price and optional comment
+            // Dialogni onAddToCart ichida yopamiz, shuning uchun bu yerda pop qilmaymiz
             widget.onAddToCart(enteredPrice, _commentController.text.trim());
-            Navigator.pop(context);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF10B981),
@@ -1168,8 +1189,9 @@ class _PaymentDialogState extends State<_PaymentDialog> {
       // Qarzga sotish - mijoz bo'lishi shart
       return widget.selectedCustomer != null && _totalPaid >= 0;
     } else {
-      // To'liq to'lash
-      return _remainingAmount <= 0.01;
+      // To'liq to'lash yoki partial payment
+      // Mijozsiz partial payment uchun ruxsat: status "debt" bo'ladi
+      return _remainingAmount <= 0.01 || (_remainingAmount > 0.01 && _totalPaid > 0);
     }
   }
 

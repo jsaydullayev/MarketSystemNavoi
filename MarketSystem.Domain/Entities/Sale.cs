@@ -12,6 +12,10 @@ public class Sale : BaseEntity
     public decimal PaidAmount { get; set; }
     public bool IsDeleted { get; set; } = false;
 
+    // Multi-tenancy
+    public int MarketId { get; set; }
+    public Market? Market { get; set; }
+
     // Navigation properties
     public User Seller { get; set; } = null!;
     public Customer? Customer { get; set; }

@@ -19,8 +19,15 @@ class ReportsService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
+    } else if (response.statusCode == 401) {
+      throw Exception('Avtorizatsiya xatosi: Tizimga qayta kiring (401)');
+    } else if (response.statusCode == 403) {
+      throw Exception('Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin (403)');
+    } else if (response.statusCode == 500) {
+      final errorBody = jsonDecode(response.body);
+      throw Exception('Server xatosi: ${errorBody['message'] ?? 'Noma\'lum xato'} (500)');
     } else {
-      throw Exception('Failed to load daily report: ${response.statusCode}');
+      throw Exception('Kunlik hisobotni yuklashda xatolik: ${response.statusCode} - ${response.body}');
     }
   }
 
@@ -33,8 +40,15 @@ class ReportsService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
+    } else if (response.statusCode == 401) {
+      throw Exception('Avtorizatsiya xatosi: Tizimga qayta kiring (401)');
+    } else if (response.statusCode == 403) {
+      throw Exception('Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin (403)');
+    } else if (response.statusCode == 500) {
+      final errorBody = jsonDecode(response.body);
+      throw Exception('Server xatosi: ${errorBody['message'] ?? 'Noma\'lum xato'} (500)');
     } else {
-      throw Exception('Failed to load period report: ${response.statusCode}');
+      throw Exception('Davriy hisobotni yuklashda xatolik: ${response.statusCode} - ${response.body}');
     }
   }
 
@@ -46,8 +60,15 @@ class ReportsService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
+    } else if (response.statusCode == 401) {
+      throw Exception('Avtorizatsiya xatosi: Tizimga qayta kiring (401)');
+    } else if (response.statusCode == 403) {
+      throw Exception('Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin (403)');
+    } else if (response.statusCode == 500) {
+      final errorBody = jsonDecode(response.body);
+      throw Exception('Server xatosi: ${errorBody['message'] ?? 'Noma\'lum xato'} (500)');
     } else {
-      throw Exception('Failed to load comprehensive report: ${response.statusCode}');
+      throw Exception('Keng qamrovli hisobotni yuklashda xatolik: ${response.statusCode} - ${response.body}');
     }
   }
 
@@ -66,5 +87,26 @@ class ReportsService {
 
     // Return full URL for download
     return 'http://10.0.2.2:5137${ApiConstants.reports}/ExportComprehensiveToExcel?date=$dateStr';
+  }
+
+  // Kunlik savdo detallari - shu kuni sotilgan barcha tovarlar ro'yxati
+  Future<List<Map<String, dynamic>>> getDailySaleItems(DateTime date) async {
+    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final response = await _httpService.get('${ApiConstants.reports}/GetDailySaleItems?date=$dateStr');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final items = data['saleItems'] as List<dynamic>;
+      return items.map((item) => item as Map<String, dynamic>).toList();
+    } else if (response.statusCode == 401) {
+      throw Exception('Avtorizatsiya xatosi: Tizimga qayta kiring (401)');
+    } else if (response.statusCode == 403) {
+      throw Exception('Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin (403)');
+    } else if (response.statusCode == 500) {
+      final errorBody = jsonDecode(response.body);
+      throw Exception('Server xatosi: ${errorBody['message'] ?? 'Noma\'lum xato'} (500)');
+    } else {
+      throw Exception('Kunlik savdo detallarini yuklashda xatolik: ${response.statusCode} - ${response.body}');
+    }
   }
 }
