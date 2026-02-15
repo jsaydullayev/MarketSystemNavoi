@@ -25,7 +25,8 @@ public class JwtService(IConfiguration configuration) : IJwtService
         {
             new (ClaimTypes.NameIdentifier, user.Id.ToString()),
             new (ClaimTypes.Name, user.Username),
-            new (ClaimTypes.Role, user.Role.ToString()!)
+            new (ClaimTypes.Role, user.Role.ToString()!),
+            new ("MarketId", user.MarketId.ToString())  // Multi-tenancy support
         };
 
         var security = new JwtSecurityToken(

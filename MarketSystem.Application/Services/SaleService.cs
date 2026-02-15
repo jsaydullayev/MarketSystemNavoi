@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
@@ -14,13 +15,15 @@ public class SaleService : ISaleService
     private readonly IAuditLogService _auditLogService;
     private readonly AppDbContext _context;
     private readonly ILogger<SaleService> _logger;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ILogger<SaleService> logger)
+    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
         _context = context;
         _logger = logger;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task<SaleDto?> GetSaleByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -84,7 +87,8 @@ public class SaleService : ISaleService
             CustomerId = request.CustomerId,
             Status = SaleStatus.Draft,
             TotalAmount = 0,
-            PaidAmount = 0
+            PaidAmount = 0,
+            MarketId = _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
         };
 
         await _unitOfWork.Sales.AddAsync(sale, cancellationToken);
@@ -213,7 +217,8 @@ public class SaleService : ISaleService
                 Id = Guid.NewGuid(),
                 SaleId = saleId,
                 PaymentType = Enum.Parse<PaymentType>(request.PaymentType, true),
-                Amount = request.Amount
+                Amount = request.Amount,
+                MarketId = sale.MarketId  // Multi-tenancy - inherit from Sale
             };
 
             await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
@@ -237,9 +242,11 @@ public class SaleService : ISaleService
             }
             else if (sale.PaidAmount > 0)
             {
+                // Set status to Debt for partial payments
                 sale.Status = SaleStatus.Debt;
 
-                // Create or update debt - ONLY if there's a customer
+                // Create or update debt record - ONLY if there's a customer
+                // Mijozsiz qarzga savdo ham mumkin, status "debt" bo'ladi, lekin debt record yaratilmaydi
                 if (sale.CustomerId.HasValue && sale.CustomerId.Value != Guid.Empty)
                 {
                     var existingDebt = (await _unitOfWork.Debts.FindAsync(d => d.SaleId == saleId, cancellationToken)).FirstOrDefault();
@@ -252,7 +259,8 @@ public class SaleService : ISaleService
                             CustomerId = sale.CustomerId.Value,
                             TotalDebt = sale.TotalAmount,
                             RemainingDebt = sale.TotalAmount - sale.PaidAmount,
-                            Status = DebtStatus.Open
+                            Status = DebtStatus.Open,
+                            MarketId = sale.MarketId  // Multi-tenancy - inherit from Sale
                         };
                         await _unitOfWork.Debts.AddAsync(newDebt, cancellationToken);
                     }
@@ -262,6 +270,7 @@ public class SaleService : ISaleService
                         _unitOfWork.Debts.Update(existingDebt);
                     }
                 }
+                // Mijozsiz savdo uchun debt record yaratilmaydi, lekin status "debt" bo'ladi
             }
 
             _unitOfWork.Sales.Update(sale);

@@ -29,9 +29,21 @@ public abstract class BaseRepository<T> : IRepository<T> where T : class
 
     public virtual async Task<IEnumerable<T>> FindAsync(
         Expression<Func<T, bool>> predicate,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? includeProperties = null)
     {
-        return await _dbSet.Where(predicate).ToListAsync(cancellationToken);
+        var query = _dbSet.Where(predicate);
+
+        // Include related entities
+        if (!string.IsNullOrWhiteSpace(includeProperties))
+        {
+            foreach (var includeProperty in includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty.Trim());
+            }
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 
     public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)

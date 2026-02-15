@@ -1,4 +1,5 @@
 using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
@@ -11,11 +12,13 @@ public class CustomerService : ICustomerService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly AppDbContext _context;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public CustomerService(IUnitOfWork unitOfWork, AppDbContext context)
+    public CustomerService(IUnitOfWork unitOfWork, AppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _context = context;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task<CustomerDto?> GetCustomerByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -64,7 +67,8 @@ public class CustomerService : ICustomerService
             Id = Guid.NewGuid(),
             Phone = request.Phone,
             FullName = request.FullName,
-            IsDeleted = false
+            IsDeleted = false,
+            MarketId = _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
         };
 
         await _unitOfWork.Customers.AddAsync(customer, cancellationToken);

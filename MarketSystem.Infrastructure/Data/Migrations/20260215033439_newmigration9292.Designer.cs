@@ -3,17 +3,20 @@ using System;
 using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MarketSystem.Infrastructure.Migrations
+namespace MarketSystem.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260215033439_newmigration9292")]
+    partial class newmigration9292
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -78,16 +81,11 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<Guid?>("LastWithdrawalId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("MarketId")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.HasIndex("LastUpdated");
 
                     b.HasIndex("LastWithdrawalId");
-
-                    b.HasIndex("MarketId");
 
                     b.ToTable("CashRegisters");
                 });
@@ -145,17 +143,12 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("MarketId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MarketId");
 
                     b.HasIndex("Phone")
                         .IsUnique();
@@ -175,9 +168,6 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("MarketId")
-                        .HasColumnType("integer");
-
                     b.Property<decimal>("RemainingDebt")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -194,8 +184,6 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MarketId");
-
                     b.HasIndex("SaleId")
                         .IsUnique();
 
@@ -203,44 +191,6 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasDatabaseName("IX_Debt_Customer_Status");
 
                     b.ToTable("Debts");
-                });
-
-            modelBuilder.Entity("MarketSystem.Domain.Entities.Market", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Subdomain")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Subdomain")
-                        .IsUnique();
-
-                    b.ToTable("Markets");
                 });
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.Payment", b =>
@@ -292,9 +242,6 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<bool>("IsTemporary")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("MarketId")
-                        .HasColumnType("integer");
-
                     b.Property<decimal>("MinSalePrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -317,8 +264,6 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBySellerId");
-
-                    b.HasIndex("MarketId");
 
                     b.ToTable("Products");
                 });
@@ -378,9 +323,6 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("MarketId")
-                        .HasColumnType("integer");
-
                     b.Property<decimal>("PaidAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -400,8 +342,6 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("IX_Sale_CustomerId")
                         .HasFilter("CustomerId IS NOT NULL");
-
-                    b.HasIndex("MarketId");
 
                     b.HasIndex("SellerId", "Status")
                         .HasDatabaseName("IX_Sale_Seller_Status");
@@ -477,9 +417,6 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<int>("MarketId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
@@ -496,8 +433,6 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MarketId");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -521,9 +456,6 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<Guid>("CreatedByAdminId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("MarketId")
-                        .HasColumnType("integer");
-
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -534,8 +466,6 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedByAdminId");
-
-                    b.HasIndex("MarketId");
 
                     b.HasIndex("ProductId");
 
@@ -559,15 +489,7 @@ namespace MarketSystem.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("LastWithdrawalId");
 
-                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
-                        .WithMany("CashRegisters")
-                        .HasForeignKey("MarketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("LastWithdrawal");
-
-                    b.Navigation("Market");
                 });
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.CashWithdrawal", b =>
@@ -579,28 +501,11 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MarketSystem.Domain.Entities.Customer", b =>
-                {
-                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
-                        .WithMany("Customers")
-                        .HasForeignKey("MarketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Market");
-                });
-
             modelBuilder.Entity("MarketSystem.Domain.Entities.Debt", b =>
                 {
                     b.HasOne("MarketSystem.Domain.Entities.Customer", "Customer")
                         .WithMany("Debts")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
-                        .WithMany("Debts")
-                        .HasForeignKey("MarketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -611,8 +516,6 @@ namespace MarketSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
-
-                    b.Navigation("Market");
 
                     b.Navigation("Sale");
                 });
@@ -634,15 +537,7 @@ namespace MarketSystem.Infrastructure.Migrations
                         .WithMany("TemporaryProducts")
                         .HasForeignKey("CreatedBySellerId");
 
-                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
-                        .WithMany("Products")
-                        .HasForeignKey("MarketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("CreatedBySeller");
-
-                    b.Navigation("Market");
                 });
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.RefreshToken", b =>
@@ -662,12 +557,6 @@ namespace MarketSystem.Infrastructure.Migrations
                         .WithMany("Sales")
                         .HasForeignKey("CustomerId");
 
-                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
-                        .WithMany("Sales")
-                        .HasForeignKey("MarketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("MarketSystem.Domain.Entities.User", "Seller")
                         .WithMany("Sales")
                         .HasForeignKey("SellerId")
@@ -675,8 +564,6 @@ namespace MarketSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
-
-                    b.Navigation("Market");
 
                     b.Navigation("Seller");
                 });
@@ -700,28 +587,11 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Navigation("Sale");
                 });
 
-            modelBuilder.Entity("MarketSystem.Domain.Entities.User", b =>
-                {
-                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
-                        .WithMany("Users")
-                        .HasForeignKey("MarketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Market");
-                });
-
             modelBuilder.Entity("MarketSystem.Domain.Entities.Zakup", b =>
                 {
                     b.HasOne("MarketSystem.Domain.Entities.User", "CreatedByAdmin")
                         .WithMany("Zakups")
                         .HasForeignKey("CreatedByAdminId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
-                        .WithMany("Zakups")
-                        .HasForeignKey("MarketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -733,8 +603,6 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.Navigation("CreatedByAdmin");
 
-                    b.Navigation("Market");
-
                     b.Navigation("Product");
                 });
 
@@ -743,23 +611,6 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Navigation("Debts");
 
                     b.Navigation("Sales");
-                });
-
-            modelBuilder.Entity("MarketSystem.Domain.Entities.Market", b =>
-                {
-                    b.Navigation("CashRegisters");
-
-                    b.Navigation("Customers");
-
-                    b.Navigation("Debts");
-
-                    b.Navigation("Products");
-
-                    b.Navigation("Sales");
-
-                    b.Navigation("Users");
-
-                    b.Navigation("Zakups");
                 });
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.Product", b =>

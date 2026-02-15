@@ -1,4 +1,5 @@
 using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
@@ -11,12 +12,14 @@ public class ZakupService : IZakupService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
     private readonly AppDbContext _context;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public ZakupService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context)
+    public ZakupService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
         _context = context;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task<ZakupDto?> GetZakupByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -72,7 +75,8 @@ public class ZakupService : IZakupService
                 ProductId = request.ProductId,
                 Quantity = request.Quantity,
                 CostPrice = request.CostPrice,
-                CreatedByAdminId = adminId
+                CreatedByAdminId = adminId,
+                MarketId = _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
             };
 
             await _unitOfWork.Zakups.AddAsync(zakup, cancellationToken);
