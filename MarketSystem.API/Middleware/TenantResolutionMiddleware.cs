@@ -11,19 +11,26 @@ namespace MarketSystem.API.Middleware;
 public class TenantResolutionMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<TenantResolutionMiddleware> _logger;
 
-    public TenantResolutionMiddleware(RequestDelegate next)
+    public TenantResolutionMiddleware(RequestDelegate next, ILogger<TenantResolutionMiddleware> logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context, AppDbContext dbContext)
     {
         // 1. Agar user logged in bo'lsa, JWT tokenidan MarketId olish
         var marketIdClaim = context.User?.FindFirst("MarketId")?.Value;
+
+        _logger.LogInformation("TenantResolution: User={User}, MarketIdClaim={MarketIdClaim}",
+            context.User?.Identity?.Name, marketIdClaim);
+
         if (!string.IsNullOrEmpty(marketIdClaim) && int.TryParse(marketIdClaim, out var tokenMarketId))
         {
             context.Items["MarketId"] = tokenMarketId;
+            _logger.LogInformation("MarketId set from token: {MarketId}", tokenMarketId);
             await _next(context);
             return;
         }

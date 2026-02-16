@@ -20,17 +20,19 @@ public class PaymentService : IPaymentService
         Guid saleId,
         PaymentType paymentType,
         decimal amount,
+        int marketId,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Adding payment: SaleId={SaleId}, Type={Type}, Amount={Amount}",
-            saleId, paymentType, amount);
+        _logger.LogInformation("Adding payment: SaleId={SaleId}, Type={Type}, Amount={Amount}, MarketId={MarketId}",
+            saleId, paymentType, amount, marketId);
 
         var payment = new Payment
         {
             Id = Guid.NewGuid(),
             SaleId = saleId,
             PaymentType = paymentType,
-            Amount = amount
+            Amount = amount,
+            MarketId = marketId  // Multi-tenancy - MarketId from parameter
         };
 
         await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
@@ -87,6 +89,7 @@ public class PaymentService : IPaymentService
             }
 
             var remainingDebt = sale.TotalAmount - totalPaid;
+
             var debt = new Debt
             {
                 Id = Guid.NewGuid(),
@@ -94,7 +97,8 @@ public class PaymentService : IPaymentService
                 CustomerId = sale.CustomerId.Value,
                 TotalDebt = remainingDebt,
                 RemainingDebt = remainingDebt,
-                Status = DebtStatus.Open
+                Status = DebtStatus.Open,
+                MarketId = sale.MarketId  // Multi-tenancy - inherit from Sale
             };
 
             await _unitOfWork.Debts.AddAsync(debt, cancellationToken);

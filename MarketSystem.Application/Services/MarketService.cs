@@ -6,6 +6,7 @@ using MarketSystem.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MarketSystem.Infrastructure.Data;
+using CommonDTOs = MarketSystem.Application.DTOs;
 
 namespace MarketSystem.Application.Services;
 
@@ -82,6 +83,84 @@ public class MarketService : IMarketService
             market.ExpiresAt,
             market.CreatedAt
         );
+    }
+
+    public async Task<RegisterMarketResponse?> RegisterMarketForOwnerAsync(RegisterMarketRequest request, Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Owner {OwnerId} registering new market: {MarketName}", ownerId, request.Name);
+
+        // 1. Check if Owner already has a market
+        var owner = await _unitOfWork.Users.GetByIdAsync(ownerId, cancellationToken);
+        if (owner is null)
+            throw new InvalidOperationException("Foydalanuvchi topilmadi");
+
+        if (owner.Role != Role.Owner)
+            throw new InvalidOperationException("Faqat Owner rolidagi foydalanuvchilar market registratsiya qilishi mumkin");
+
+        if (owner.MarketId.HasValue)
+            throw new InvalidOperationException("Siz allaqachon marketga tegishlisiz. Bir nechta marketga ega bo'la olmaysiz.");
+
+        // 2. Check if subdomain already exists
+        if (!string.IsNullOrEmpty(request.Subdomain))
+        {
+            var existingSubdomain = await _context.Markets
+                .AnyAsync(m => m.Subdomain == request.Subdomain, cancellationToken);
+            if (existingSubdomain)
+            {
+                _logger.LogWarning("Subdomain already exists: {Subdomain}", request.Subdomain);
+                throw new InvalidOperationException($"Subdomain '{request.Subdomain}' allaqachon mavjud");
+            }
+        }
+
+        // 3. Create Market
+        var market = new Market
+        {
+            Id = 0, // Auto-increment
+            Name = request.Name,
+            Subdomain = request.Subdomain,
+            Description = request.Description,
+            IsActive = true,
+            ExpiresAt = request.ExpiresAt,
+            CreatedAt = DateTime.UtcNow,
+            OwnerId = ownerId  // Set OwnerId to link market to owner
+        };
+
+        _context.Markets.Add(market);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Market created with ID: {MarketId}", market.Id);
+
+        // 4. Update Owner's MarketId
+        owner.MarketId = market.Id;
+        _context.Entry(owner).State = EntityState.Modified;
+        _unitOfWork.Users.Update(owner);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Owner {OwnerId} linked to market {MarketId}", ownerId, market.Id);
+
+        // 5. Return response with market and updated owner
+        var marketDto = new MarketDto(
+            market.Id,
+            market.Name,
+            market.Subdomain,
+            market.Description,
+            market.IsActive,
+            market.ExpiresAt,
+            market.CreatedAt
+        );
+
+        var ownerDto = new CommonDTOs.UserDto(
+            owner.Id,
+            owner.FullName,
+            owner.Username,
+            owner.ProfileImage,
+            owner.Role.ToString(),
+            owner.Language.ToString().ToLowerInvariant(),
+            owner.IsActive,
+            owner.MarketId
+        );
+
+        return new RegisterMarketResponse(marketDto, ownerDto);
     }
 
     public async Task<List<MarketDto>> GetAllMarketsAsync(CancellationToken cancellationToken = default)

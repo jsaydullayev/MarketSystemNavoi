@@ -76,6 +76,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOrOwner", policy =>
         policy.RequireRole("Owner", "Admin"));
 
+    // Owner or SuperAdmin - can manage markets
+    options.AddPolicy("OwnerOrSuperAdmin", policy =>
+        policy.RequireRole("Owner", "SuperAdmin"));
+
     // All authenticated users - can create sales, add items
     options.AddPolicy("AllRoles", policy =>
         policy.RequireRole("Owner", "Admin", "Seller"));
@@ -185,20 +189,16 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Marke
 
 var app = builder.Build();
 
-// Auto-apply database migrations (development only)
-// NOTE: Temporarily disabled - create migration manually first via Visual Studio
-// if (app.Environment.IsDevelopment())
-// {
-//     using var scope = app.Services.CreateScope();
-//     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//     await dbContext.Database.MigrateAsync();
-// }
+// Auto-apply database migrations
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 // Global Exception Handler - MUST be first middleware
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-
-// Tenant resolution middleware - HAR DOIM authenticationdan keyin
-app.UseMiddleware<TenantResolutionMiddleware>();
 
 // Request logging middleware
 app.UseMiddleware<RequestLoggingMiddleware>();
@@ -219,6 +219,9 @@ app.UseStaticFiles();
 // Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Tenant resolution middleware - MUST be AFTER authentication
+app.UseMiddleware<TenantResolutionMiddleware>();
 
 // Swagger (Development only)
 if (app.Environment.IsDevelopment())
