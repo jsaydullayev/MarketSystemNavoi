@@ -621,6 +621,59 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     }
   }
 
+  Future<void> _updateItemPrice(int index) async {
+    final item = _cartItems[index];
+    final currentPrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
+
+    // Narx kiritish dialogi
+    final result = await showDialog<double>(
+      context: context,
+      builder: (context) => _PriceInputDialog(
+        currentPrice: currentPrice,
+        productName: item['productName'],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result != null && result != currentPrice) {
+      // Narxni o'zgartirish
+      if (item.containsKey('saleItemId')) {
+        try {
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final salesService = SalesService(authProvider: authProvider);
+
+          await salesService.updateSaleItemPrice(
+            saleItemId: item['saleItemId'],
+            newPrice: result,
+          );
+
+          // Reload data
+          await _loadData();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('✅ Narx yangilandi: ${NumberFormatter.format(result)}'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Xatolik: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    }
+  }
+
   void _showPaymentDialog() {
     final totalAmount = (_sale!['totalAmount'] as num?)?.toDouble() ?? 0.0;
 
@@ -755,13 +808,26 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                             color: Color(0xFF6B7280),
                           ),
                         ),
-                        Text(
-                          NumberFormatter.formatDecimal(itemTotal),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF10B981),
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              NumberFormatter.formatDecimal(itemTotal),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF10B981),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            GestureDetector(
+                              onTap: () => _updateItemPrice(index),
+                              child: const Icon(
+                                Icons.edit,
+                                size: 14,
+                                color: Color(0xFF3B82F6),
+                              ),
+                            ),
+                          ],
                         ),
                         const Spacer(),
                         Row(
@@ -1355,6 +1421,87 @@ class _ContinuePaymentDialogState extends State<_ContinuePaymentDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Text(_hasDebt ? 'Qarzga olish' : 'Tasdiqlash'),
+        ),
+      ],
+    );
+  }
+}
+
+// Price input dialog for editing item prices
+class _PriceInputDialog extends StatefulWidget {
+  final double currentPrice;
+  final String productName;
+
+  const _PriceInputDialog({
+    required this.currentPrice,
+    required this.productName,
+  });
+
+  @override
+  State<_PriceInputDialog> createState() => _PriceInputDialogState();
+}
+
+class _PriceInputDialogState extends State<_PriceInputDialog> {
+  late TextEditingController _priceController;
+  bool _isValid = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _priceController = TextEditingController(text: widget.currentPrice.toString());
+  }
+
+  @override
+  void dispose() {
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Narxni o\'zgartirish: ${widget.productName}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _priceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Yangi narx',
+              border: const OutlineInputBorder(),
+              errorText: _isValid ? null : 'Iltimos, to\'g\'ri narx kiriting',
+              suffixText: 'so\'m',
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isValid = double.tryParse(value) != null && double.tryParse(value)! > 0;
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Hozirgi narx: ${NumberFormatter.format(widget.currentPrice)}',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Bekor qilish'),
+        ),
+        ElevatedButton(
+          onPressed: _isValid
+              ? () {
+                  final newPrice = double.tryParse(_priceController.text) ?? 0;
+                  Navigator.pop(context, newPrice);
+                }
+              : null,
+          child: const Text('Saqlash'),
         ),
       ],
     );
