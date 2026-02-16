@@ -212,7 +212,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     final totalSales = (_dailyReport!['totalSales'] as num).toDouble();
     final totalTransactions = _dailyReport!['totalTransactions'] as int;
-    final profit = (_dailyReport!['profit'] as num).toDouble();
+    final profit = _dailyReport!['profit'] != null
+        ? (_dailyReport!['profit'] as num).toDouble()
+        : null;
 
     // Payment breakdown
     final paymentBreakdown = _dailyReport!['paymentBreakdown'] as List<dynamic>? ?? [];
@@ -242,16 +244,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildSummaryCard(
-                'Foyda',
-                NumberFormatter.formatDecimal(profit),
-                Icons.account_balance_wallet,
-                Colors.blue,
-                subtitle: 'Sof foyda',
+            // Only show profit card if user is Owner (profit is not null)
+            if (profit != null) ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  'Foyda',
+                  NumberFormatter.formatDecimal(profit),
+                  Icons.account_balance_wallet,
+                  Colors.blue,
+                  subtitle: 'Sof foyda',
+                ),
               ),
-            ),
+            ],
           ],
         ),
 
@@ -312,7 +317,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     final totalSales = (_periodReport!['totalSales'] as num).toDouble();
     final totalTransactions = _periodReport!['totalTransactions'] as int;
-    final profit = (_periodReport!['profit'] as num).toDouble();
+    final profit = _periodReport!['profit'] != null
+        ? (_periodReport!['profit'] as num).toDouble()
+        : null;
     final avgSale = (_periodReport!['averageSale'] as num).toDouble();
 
     // Payment breakdown
@@ -360,16 +367,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
           subtitle: 'Har bir savdoning o\'rtacha summasi',
         ),
 
-        const SizedBox(height: 12),
-
-        // Profit card
-        _buildSummaryCard(
-          'Foyda',
-          NumberFormatter.formatDecimal(profit),
-          Icons.account_balance_wallet,
-          Colors.green,
-          subtitle: 'Sof foyda',
-        ),
+        // Only show profit card if user is Owner (profit is not null)
+        if (profit != null) ...[
+          const SizedBox(height: 12),
+          _buildSummaryCard(
+            'Foyda',
+            NumberFormatter.formatDecimal(profit),
+            Icons.account_balance_wallet,
+            Colors.green,
+            subtitle: 'Sof foyda',
+          ),
+        ],
 
         const SizedBox(height: 16),
 
@@ -429,7 +437,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final inventory = _comprehensiveReport!['inventoryReport'] as List<dynamic>? ?? [];
     final totalInventoryCost = (_comprehensiveReport!['totalInventoryCost'] as num).toDouble();
     final totalInventorySaleValue = (_comprehensiveReport!['totalInventorySaleValue'] as num).toDouble();
+
+    // Calculate potential profit (this will be shown to Owner only, hidden from Admin)
     final potentialProfit = totalInventorySaleValue - totalInventoryCost;
+
+    // Check if user is Owner by looking at the first inventory item's potentialProfit field
+    // If it's null in the response, user is not Owner
+    bool isOwner = inventory.isNotEmpty && inventory.first['potentialProfit'] != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,15 +489,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 Colors.green,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildSummaryCard(
-                'Potensial foyda',
-                NumberFormatter.formatDecimal(potentialProfit),
-                Icons.trending_up,
-                Colors.purple,
+            // Only show potential profit card to Owner
+            if (isOwner) ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  'Potensial foyda',
+                  NumberFormatter.formatDecimal(potentialProfit),
+                  Icons.trending_up,
+                  Colors.purple,
+                ),
               ),
-            ),
+            ],
           ],
         ),
 
@@ -520,7 +537,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           separatorBuilder: (context, index) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final item = inventory[index] as Map<String, dynamic>;
-            return _buildInventoryItemCard(item);
+            return _buildInventoryItemCard(item, isOwner: isOwner);
           },
         ),
 
@@ -808,14 +825,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildInventoryItemCard(Map<String, dynamic> item) {
+  Widget _buildInventoryItemCard(Map<String, dynamic> item, {bool isOwner = true}) {
     final productName = item['productName'] as String? ?? 'Noma\'lum';
     final quantity = item['quantity'] as int? ?? 0;
     final costPrice = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
     final salePrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
     final totalCostValue = (item['totalCostValue'] as num?)?.toDouble() ?? 0.0;
     final totalSaleValue = (item['totalSaleValue'] as num?)?.toDouble() ?? 0.0;
-    final potentialProfit = totalSaleValue - totalCostValue;
+    final potentialProfit = isOwner && item['potentialProfit'] != null
+        ? (item['potentialProfit'] as num).toDouble()
+        : null;
 
     return Card(
       elevation: 2,
@@ -872,7 +891,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 _buildInfoColumn('Jami qiymat', '${NumberFormatter.formatDecimal(totalSaleValue)} so\'m'),
               ],
             ),
-            if (potentialProfit != 0) ...[
+            // Only show potential profit for Owner
+            if (isOwner && potentialProfit != null && potentialProfit != 0) ...[
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
