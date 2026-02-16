@@ -89,14 +89,37 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              // TODO: Delete sale endpointini backendga qo'shish kerak
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Savdo o\'chirildi'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              _loadDraftSales();
+
+              try {
+                print('=== DELETE SALE CLICKED ===');
+                print('Sale ID: $saleId');
+
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final salesService = SalesService(authProvider: authProvider);
+                await salesService.deleteSale(saleId: saleId);
+
+                print('Sale deleted successfully');
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Savdo o\'chirildi'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  _loadDraftSales();
+                }
+              } catch (e) {
+                print('Error deleting sale: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Savdoni o\'chirishda xatolik: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('O\'chirish', style: TextStyle(color: Colors.red)),
           ),
@@ -375,6 +398,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
   }
 
   Future<void> _loadData() async {
+    print('📥 === _loadData START ===');
+    print('Sale ID: ${widget.saleId}');
+
     setState(() {
       _isLoading = true;
     });
@@ -384,11 +410,16 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       final salesService = SalesService(authProvider: authProvider);
       final productService = ProductService(authProvider: authProvider);
 
+      print('📤 Fetching sale data...');
       final sale = await salesService.getSaleById(widget.saleId);
+
+      print('📤 Fetching products...');
       final products = await productService.getAllProducts();
 
       // Mavjud sale items ni cart ga yuklash
       final items = sale['items'] as List<dynamic>? ?? [];
+      print('📦 Sale items count: ${items.length}');
+
       final cartItems = items.map((item) {
         return {
           'saleItemId': item['id'],
@@ -401,6 +432,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           'comment': item['comment'] ?? '',
         };
       }).toList();
+
+      print('✅ Data fetched successfully!');
+      print('📊 Cart items: ${cartItems.length}');
 
       setState(() {
         _sale = sale;
@@ -415,7 +449,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             : null;
         _isLoading = false;
       });
+
+      print('✅ setState complete!');
     } catch (e) {
+      print('❌ ERROR in _loadData: $e');
       setState(() {
         _isLoading = false;
       });
@@ -430,60 +467,55 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         Navigator.pop(context);
       }
     }
+    print('📥 === _loadData END ===');
   }
 
-  void _addToCart(dynamic product) {
-    // Check if product already in cart
-    final existingIndex = _cartItems.indexWhere((item) =>
-        item['productId'] == product['id'] && !item.containsKey('saleItemId'));
+  Future<void> _addToCart(dynamic product) async {
+    print('🛒 === _addToCart START ===');
+    print('Product: ${product['name']}');
+    print('Sale ID: ${widget.saleId}');
 
-    if (existingIndex != -1) {
-      // New product exists in cart - increase quantity
-      setState(() {
-        _cartItems[existingIndex]['quantity']++;
-      });
-    } else {
-      // Check if it's an existing sale item
-      final existingSaleItemIndex = _cartItems.indexWhere((item) =>
-          item['productId'] == product['id'] && item.containsKey('saleItemId'));
+    // ⚡ OPTIMISTIK UI - Yangi mahsulotni cartga qo'shamiz
+    final newItem = {
+      'productId': product['id'],
+      'productName': product['name'],
+      'salePrice': product['salePrice'] ?? 0.0,
+      'minSalePrice': (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+      'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
+      'quantity': 1,
+      'comment': '',
+      // saleItemId yo'q - hali backendda yo'q
+    };
 
-      if (existingSaleItemIndex != -1) {
-        // Existing sale item - increase quantity
-        setState(() {
-          _cartItems[existingSaleItemIndex]['quantity']++;
-        });
-      } else {
-        // New product - show price input dialog
-        _showPriceInputDialog(product, isNew: true);
-      }
-    }
-  }
+    print('⚡ Optimistic UI: Adding to cart locally');
+    setState(() {
+      _cartItems.add(newItem);
+    });
 
-  void _showPriceInputDialog(dynamic product, {required bool isNew}) {
-    final enteredPrice = product['salePrice'] ?? 0.0;
-
-    if (isNew) {
-      // Yangi mahsulot qo'shish - backendga yuboramiz
-      _addNewProductToSale(product, enteredPrice);
-    }
-  }
-
-  Future<void> _addNewProductToSale(dynamic product, double salePrice) async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
 
+      print('📤 Calling addSaleItem...');
+
+      // Backendga 1 ta mahsulot qo'shamiz
+      // Backend avtomatik ravishda mavjud itemni topib quantity oshiradi
       await salesService.addSaleItem(
         saleId: widget.saleId,
         productId: product['id'],
         quantity: 1,
-        salePrice: salePrice,
+        salePrice: product['salePrice'] ?? 0.0,
         minSalePrice: (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
         comment: '',
       );
 
-      // Reload data
-      _loadData();
+      print('✅ addSaleItem success!');
+      print('📥 Loading data...');
+
+      // Backenddan yangi ma'lumotni yuklash
+      await _loadData();
+
+      print('✅ Data loaded! Cart items: ${_cartItems.length}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -495,6 +527,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         );
       }
     } catch (e) {
+      print('❌ ERROR: $e');
+      // Xatolik bo'lsa, data ni qayta yuklash
+      await _loadData();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -504,121 +539,149 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         );
       }
     }
+    print('🛒 === _addToCart END ===');
   }
 
   Future<void> _removeFromCart(int index) async {
     final item = _cartItems[index];
 
-    // Agar bu mavjud sale item bo'lsa, backenddan o'chiramiz
-    if (item.containsKey('saleItemId')) {
-      try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final salesService = SalesService(authProvider: authProvider);
+    print('🗑️ === _removeFromCart START ===');
+    print('Index: $index');
+    print('Product: ${item['productName']}');
+    print('SaleItemId: ${item['saleItemId']}');
+    print('Quantity: ${item['quantity']}');
 
-        await salesService.removeSaleItem(
-          saleId: widget.saleId,
-          saleItemId: item['saleItemId'],
-          quantity: (item['quantity'] as num?)?.toInt() ?? 0, // Butunlay o'chirish
+    // Itemni backup qilamiz (xatolik bo'lsa, qayta qo'shish uchun)
+    final backupItem = Map<String, dynamic>.from(item);
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+
+      print('📤 Calling removeSaleItem...');
+
+      // Backenddan o'chiramiz
+      await salesService.removeSaleItem(
+        saleId: widget.saleId,
+        saleItemId: item['saleItemId'],
+        quantity: (item['quantity'] as num?)?.toInt() ?? 0, // Butunlay o'chirish
+      );
+
+      print('✅ removeSaleItem success!');
+      print('📥 Loading data...');
+
+      // Backenddan yangi ma'lumotni yuklash
+      await _loadData();
+
+      print('✅ Data loaded! Cart items: ${_cartItems.length}');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mahsulot olib tashlandi'),
+            backgroundColor: Colors.green,
+          ),
         );
-
-        // Reload data
-        await _loadData();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Mahsulot olib tashlandi'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Xatolik: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
       }
-    } else {
-      // Yangi qo'shilgan mahsulot - shunchaki cartdan o'chiramiz
+    } catch (e) {
+      print('❌ ERROR: $e');
+      // Xatolik bo'lsa, itemni qayta qo'shamiz
       setState(() {
-        _cartItems.removeAt(index);
+        _cartItems.insert(index, backupItem);
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+    print('🗑️ === _removeFromCart END ===');
   }
 
-  void _updateQuantity(int index, int newQuantity) async {
+  Future<void> _updateQuantity(int index, int newQuantity) async {
     final item = _cartItems[index];
 
+    print('🔢 === _updateQuantity START ===');
+    print('Index: $index');
+    print('Product: ${item['productName']}');
+    print('Current: ${item['quantity']} → New: $newQuantity');
+
     if (newQuantity <= 0) {
+      print('⚠️ Quantity <= 0, removing...');
       await _removeFromCart(index);
       return;
     }
 
-    // Agar bu mavjud sale item bo'lsa
+    final currentQuantity = (item['quantity'] as num?)?.toInt() ?? 0;
+
+    // quantityDiff == 0 bo'lsa, hech narsa qilmaymiz (quantity o'zgarmagan)
+    if (newQuantity == currentQuantity) {
+      print('⚠️ Quantity unchanged, skipping');
+      return;
+    }
+
+    final quantityDiff = newQuantity - currentQuantity;
+    print('Diff: $quantityDiff');
+
+    // ⚡ OPTIMISTIK UI YANGILASH - Darhol UI ni yangilaymiz!
     if (item.containsKey('saleItemId')) {
-      final currentQuantity = (item['quantity'] as num?)?.toInt() ?? 0;
-      final quantityDiff = newQuantity - currentQuantity;
-
-      if (quantityDiff > 0) {
-        // Quantity oshirish - yangi item qo'shamiz
-        try {
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
-          final salesService = SalesService(authProvider: authProvider);
-
-          await salesService.addSaleItem(
-            saleId: widget.saleId,
-            productId: item['productId'],
-            quantity: quantityDiff,
-            salePrice: item['salePrice'],
-            minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-            comment: item['comment'] ?? '',
-          );
-
-          // _loadData ni chaqirmaymiz, chunki u allaqachon backenddan yangi ma'lumot oladi
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Xatolik: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      } else {
-        // Quantity kamaytirish - removeSaleItem dan foydalanamiz
-        try {
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
-          final salesService = SalesService(authProvider: authProvider);
-
-          await salesService.removeSaleItem(
-            saleId: widget.saleId,
-            saleItemId: item['saleItemId'],
-            quantity: -quantityDiff, // Mutlaq qiymat
-          );
-
-          // _loadData() ni chaqirmaymiz, chunki backenddan javob keladi
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Xatolik: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      }
-    } else {
-      // Yangi qo'shilgan mahsulot - shunchaki local quantity ni o'zgartiramiz
+      print('⚡ Optimistic UI update: ${item['quantity']} → $newQuantity');
       setState(() {
         _cartItems[index]['quantity'] = newQuantity;
       });
     }
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+
+      if (quantityDiff > 0) {
+        print('📤 INCREASING by $quantityDiff');
+        // Quantity oshirish - backendga yangi item qo'shamiz
+        await salesService.addSaleItem(
+          saleId: widget.saleId,
+          productId: item['productId'],
+          quantity: quantityDiff.toInt(),
+          salePrice: item['salePrice'],
+          minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+          comment: item['comment'] ?? '',
+        );
+      } else {
+        print('📤 DECREASING by ${quantityDiff.abs()}');
+        // Quantity kamaytirish - backenddan removeSaleItem orqali kamaytiramiz
+        final quantityToRemove = quantityDiff.abs().toInt();
+        await salesService.removeSaleItem(
+          saleId: widget.saleId,
+          saleItemId: item['saleItemId'],
+          quantity: quantityToRemove,
+        );
+      }
+
+      print('✅ API call success!');
+      print('📥 Loading data...');
+
+      // Backenddan yangi ma'lumotni yuklash
+      await _loadData();
+
+      print('✅ Data loaded! Cart items: ${_cartItems.length}');
+    } catch (e) {
+      print('❌ ERROR: $e');
+      // Xatolik bo'lsa, data ni qayta yuklash
+      await _loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+    print('🔢 === _updateQuantity END ===');
   }
 
   Future<void> _updateItemPrice(int index) async {
@@ -836,7 +899,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                             Row(
                               children: [
                                 GestureDetector(
-                                  onTap: () => _updateQuantity(index, (item['quantity'] as num?)?.toInt() ?? 0 - 1),
+                                  onTap: () async {
+                                    final currentQty = (item['quantity'] as num?)?.toInt() ?? 0;
+                                    await _updateQuantity(index, currentQty - 1);
+                                  },
                                   child: Container(
                                     width: 24,
                                     height: 24,
@@ -858,7 +924,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                   ),
                                 ),
                                 GestureDetector(
-                                  onTap: () => _updateQuantity(index, (item['quantity'] as num?)?.toInt() ?? 0 + 1),
+                                  onTap: () async {
+                                    final currentQty = (item['quantity'] as num?)?.toInt() ?? 0;
+                                    await _updateQuantity(index, currentQty + 1);
+                                  },
                                   child: Container(
                                     width: 24,
                                     height: 24,
@@ -872,7 +941,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                               ],
                             ),
                             GestureDetector(
-                              onTap: () => _removeFromCart(index),
+                              onTap: () async {
+                                await _removeFromCart(index);
+                              },
                               child: const Icon(Icons.close, size: 14, color: Color(0xFFEF4444)),
                             ),
                           ],
@@ -1019,7 +1090,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                         Material(
                                           color: Colors.transparent,
                                           child: InkWell(
-                                            onTap: isInStock ? () => _addToCart(product) : null,
+                                            onTap: isInStock ? () async {
+                                              await _addToCart(product);
+                                            } : null,
                                             borderRadius: BorderRadius.circular(6),
                                             child: Container(
                                               width: 28,

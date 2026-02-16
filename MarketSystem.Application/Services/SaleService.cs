@@ -822,4 +822,65 @@ public class SaleService : ISaleService
             throw;
         }
     }
+
+    public async Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("=== DELETE SALE DEBUG ===");
+        _logger.LogInformation("Sale ID: {SaleId}", saleId);
+        _logger.LogInformation("===========================");
+
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.Id == saleId && s.MarketId == marketId,
+            cancellationToken);
+
+        var sale = sales.FirstOrDefault();
+
+        if (sale is null)
+        {
+            _logger.LogWarning("Sale not found: {SaleId}", saleId);
+            return null;
+        }
+
+        if (sale.Status != SaleStatus.Draft)
+        {
+            _logger.LogWarning("Sale is not in Draft status: {SaleId}, Status: {Status}", saleId, sale.Status);
+            throw new InvalidOperationException("Faqat draft savdolarini o'chirish mumkin!");
+        }
+
+        // Sale items ni o'chirish (cascade delete bo'lishi kerak)
+        var saleItems = await _unitOfWork.SaleItems.FindAsync(
+            si => si.SaleId == saleId,
+            cancellationToken
+        );
+
+        foreach (var saleItem in saleItems)
+        {
+            _unitOfWork.SaleItems.Delete(saleItem);
+            _logger.LogInformation("SaleItem deleted: {SaleItemId}, Product: {ProductId}, Qty: {Quantity}",
+                saleItem.Id, saleItem.ProductId, saleItem.Quantity);
+
+            // Mahsulotni qaytarib olish (stock ni qaytarish)
+            var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
+            if (product != null)
+            {
+                product.Quantity += saleItem.Quantity;
+                _unitOfWork.Products.Update(product);
+                _logger.LogInformation("Product stock restored: {ProductId}, Qty: +{Quantity}",
+                    product.Id, saleItem.Quantity);
+            }
+        }
+
+        // Savdoni o'chirish
+        _unitOfWork.Sales.Delete(sale);
+        _logger.LogInformation("Sale deleted: {SaleId}", saleId);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+        _logger.LogInformation("=== DELETE SALE SUCCESS ===");
+
+        return await MapToDtoAsync(sale, cancellationToken);
+    }
 }
