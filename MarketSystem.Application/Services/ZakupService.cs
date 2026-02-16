@@ -24,7 +24,14 @@ public class ZakupService : IZakupService
 
     public async Task<ZakupDto?> GetZakupByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var zakup = await _unitOfWork.Zakups.GetByIdAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var zakups = await _unitOfWork.Zakups.FindAsync(
+            z => z.Id == id && z.MarketId == marketId,
+            cancellationToken);
+
+        var zakup = zakups.FirstOrDefault();
+
         if (zakup is null)
             return null;
 
@@ -33,7 +40,12 @@ public class ZakupService : IZakupService
 
     public async Task<IEnumerable<ZakupDto>> GetAllZakupsAsync(CancellationToken cancellationToken = default)
     {
-        var zakups = await _unitOfWork.Zakups.GetAllAsync(cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var zakups = await _unitOfWork.Zakups.FindAsync(
+            z => z.MarketId == marketId,
+            cancellationToken);
+
         var result = new List<ZakupDto>();
 
         foreach (var zakup in zakups)
@@ -46,8 +58,10 @@ public class ZakupService : IZakupService
 
     public async Task<IEnumerable<ZakupDto>> GetZakupsByDateRangeAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
         var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.CreatedAt >= start && z.CreatedAt <= end,
+            z => z.MarketId == marketId && z.CreatedAt >= start && z.CreatedAt <= end,
             cancellationToken);
 
         var result = new List<ZakupDto>();
@@ -61,11 +75,16 @@ public class ZakupService : IZakupService
 
     public async Task<ZakupDto> CreateZakupAsync(CreateZakupDto request, Guid adminId, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId, cancellationToken);
+            var products = await _unitOfWork.Products.FindAsync(
+                p => p.Id == request.ProductId && p.MarketId == marketId,
+                cancellationToken);
+            var product = products.FirstOrDefault();
+
             if (product is null)
                 throw new InvalidOperationException("Product not found");
 
@@ -106,8 +125,17 @@ public class ZakupService : IZakupService
 
     private async Task<ZakupDto> MapToDtoAsync(Zakup zakup, CancellationToken cancellationToken)
     {
-        var product = await _unitOfWork.Products.GetByIdAsync(zakup.ProductId, cancellationToken);
-        var admin = await _unitOfWork.Users.GetByIdAsync(zakup.CreatedByAdminId, cancellationToken);
+        // Get product and verify it belongs to the same market as the zakup
+        var products = await _unitOfWork.Products.FindAsync(
+            p => p.Id == zakup.ProductId && p.MarketId == zakup.MarketId,
+            cancellationToken);
+        var product = products.FirstOrDefault();
+
+        // Get admin - admin should be from the same market
+        var admins = await _unitOfWork.Users.FindAsync(
+            u => u.Id == zakup.CreatedByAdminId && u.MarketId == zakup.MarketId,
+            cancellationToken);
+        var admin = admins.FirstOrDefault();
 
         return new ZakupDto(
             zakup.Id,

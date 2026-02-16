@@ -22,7 +22,7 @@ public class SaleRepository : BaseRepository<Sale>, ISaleRepository
     public async Task<Sale?> GetWithDetailsAsync(Guid saleId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Include(s => s.SaleItems).ThenInclude(si => si.Product)
+            .Include(s => s.SaleItems)
             .Include(s => s.Payments)
             .Include(s => s.Debt)
             .Include(s => s.Seller)

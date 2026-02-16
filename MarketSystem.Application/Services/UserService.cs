@@ -1,4 +1,5 @@
 using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
@@ -11,16 +12,24 @@ public class UserService : IUserService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly AppDbContext _context;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public UserService(IUnitOfWork unitOfWork, AppDbContext context)
+    public UserService(IUnitOfWork unitOfWork, AppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _context = context;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task<UserDto?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
         if (user is null)
             return null;
 
@@ -29,7 +38,13 @@ public class UserService : IUserService
 
     public async Task<UserDto?> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByUsernameAsync(username, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Username == username && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
         if (user is null)
             return null;
 
@@ -38,7 +53,12 @@ public class UserService : IUserService
 
     public async Task<IEnumerable<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default)
     {
-        var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.MarketId == marketId,
+            cancellationToken);
+
         return users.Select(MapToDto);
     }
 
@@ -47,6 +67,11 @@ public class UserService : IUserService
         // Check if username already exists
         if (await _unitOfWork.Users.AnyAsync(u => u.Username == request.Username, cancellationToken))
             throw new InvalidOperationException($"Username '{request.Username}' already exists");
+
+        // Get current market ID from context
+        var currentMarketId = _currentMarketService.TryGetCurrentMarketId();
+        if (!currentMarketId.HasValue)
+            throw new InvalidOperationException("Market topilmadi. Iltimos, qaytadan tizimga kiring.");
 
         var user = new User
         {
@@ -58,7 +83,8 @@ public class UserService : IUserService
             Language = Enum.TryParse<Language>(request.Language, ignoreCase: true, out var lang)
                 ? lang
                 : Language.Uzbek,
-            IsActive = true
+            IsActive = true,
+            MarketId = currentMarketId.Value
         };
 
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
@@ -69,7 +95,13 @@ public class UserService : IUserService
 
     public async Task<UserDto?> UpdateUserAsync(UpdateUserDto request, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(request.Id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == request.Id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
         if (user is null)
             return null;
 
@@ -92,7 +124,13 @@ public class UserService : IUserService
 
     public async Task<UserDto?> UpdateProfileAsync(Guid userId, UpdateProfileDto request, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == userId && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
         if (user is null)
             return null;
 
@@ -122,7 +160,13 @@ public class UserService : IUserService
 
     public async Task<UserDto?> UpdateProfileImageAsync(Guid userId, UpdateProfileImageDto request, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == userId && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
         if (user is null)
             return null;
 
@@ -168,7 +212,13 @@ public class UserService : IUserService
 
     public async Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
         if (user is null)
             return false;
 
@@ -179,7 +229,13 @@ public class UserService : IUserService
 
     public async Task<bool> DeactivateUserAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
         if (user is null)
             return false;
 
@@ -192,7 +248,13 @@ public class UserService : IUserService
 
     public async Task<bool> ActivateUserAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await _unitOfWork.Users.GetByIdAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
         if (user is null)
             return false;
 
@@ -212,7 +274,8 @@ public class UserService : IUserService
             user.ProfileImage,
             user.Role.ToString(),
             user.Language.ToString().ToLowerInvariant(),
-            user.IsActive
+            user.IsActive,
+            user.MarketId
         );
     }
 }

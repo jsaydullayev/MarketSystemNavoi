@@ -55,6 +55,7 @@ class AuthService {
     required String username,
     required String password,
     required String role,
+    String? marketName,
     String? language,
   }) async {
     try {
@@ -65,6 +66,7 @@ class AuthService {
           'username': username,
           'password': password,
           'role': role,
+          if (marketName != null) 'marketName': marketName,
           if (language != null) 'language': language,
         },
       );

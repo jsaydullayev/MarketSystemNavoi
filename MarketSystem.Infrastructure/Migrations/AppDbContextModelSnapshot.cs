@@ -78,16 +78,11 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<Guid?>("LastWithdrawalId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("MarketId")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.HasIndex("LastUpdated");
 
                     b.HasIndex("LastWithdrawalId");
-
-                    b.HasIndex("MarketId");
 
                     b.ToTable("CashRegisters");
                 });
@@ -231,11 +226,19 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Subdomain")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("Subdomain")
                         .IsUnique();
@@ -256,6 +259,9 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("MarketId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("PaymentType")
                         .HasColumnType("integer");
 
@@ -263,6 +269,8 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MarketId");
 
                     b.HasIndex("SaleId")
                         .HasDatabaseName("IX_Payment_SaleId");
@@ -398,8 +406,7 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId")
-                        .HasDatabaseName("IX_Sale_CustomerId")
-                        .HasFilter("CustomerId IS NOT NULL");
+                        .HasDatabaseName("IX_Sale_CustomerId");
 
                     b.HasIndex("MarketId");
 
@@ -477,7 +484,7 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<int>("MarketId")
+                    b.Property<int?>("MarketId")
                         .HasColumnType("integer");
 
                     b.Property<string>("PasswordHash")
@@ -559,15 +566,7 @@ namespace MarketSystem.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("LastWithdrawalId");
 
-                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
-                        .WithMany("CashRegisters")
-                        .HasForeignKey("MarketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("LastWithdrawal");
-
-                    b.Navigation("Market");
                 });
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.CashWithdrawal", b =>
@@ -617,13 +616,32 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("MarketSystem.Domain.Entities.Market", b =>
+                {
+                    b.HasOne("MarketSystem.Domain.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("MarketSystem.Domain.Entities.Payment", b =>
                 {
+                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
+                        .WithMany()
+                        .HasForeignKey("MarketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MarketSystem.Domain.Entities.Sale", "Sale")
                         .WithMany("Payments")
                         .HasForeignKey("SaleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Market");
 
                     b.Navigation("Sale");
                 });
@@ -704,9 +722,7 @@ namespace MarketSystem.Infrastructure.Migrations
                 {
                     b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
                         .WithMany("Users")
-                        .HasForeignKey("MarketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("MarketId");
 
                     b.Navigation("Market");
                 });
@@ -747,8 +763,6 @@ namespace MarketSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.Market", b =>
                 {
-                    b.Navigation("CashRegisters");
-
                     b.Navigation("Customers");
 
                     b.Navigation("Debts");

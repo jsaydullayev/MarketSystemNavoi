@@ -72,19 +72,63 @@ public class AuthService : IAuthService
             _ => Language.Uzbek // Default to Uzbek
         };
 
+        // For registration, marketId comes from request (when Admin/Owner creates user)
+        // For Owner self-registration with marketName, market will be created below
+        int? marketId = request.MarketId;
+
+        // Generate user ID early
+        var userId = Guid.NewGuid();
+
+        // Create user FIRST (without MarketId initially)
+        var role = Enum.Parse<Role>(request.Role, ignoreCase: true);
         var user = new User
         {
-            Id = Guid.NewGuid(),
+            Id = userId,
             FullName = request.FullName,
             Username = request.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = Enum.Parse<Role>(request.Role, ignoreCase: true),
+            Role = role,
             Language = language,
             IsActive = true,
-            MarketId = request.MarketId ?? _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
+            MarketId = null  // Will be set after market is created
         };
 
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("User created: {Username}, ID: {UserId}", user.Username, user.Id);
+
+        // Create market for EVERY new user (regardless of role)
+        // If no marketId provided, create new market automatically
+        if (marketId == null)
+        {
+            // Generate market name from user's full name or provided marketName
+            string marketName = !string.IsNullOrWhiteSpace(request.MarketName)
+                ? request.MarketName
+                : $"{user.FullName}'s Market";
+
+            // Generate unique subdomain from username
+            string subdomain = $"{user.Username.ToLower().Replace("@", "").Replace(".", "")}{Guid.NewGuid().ToString("N")[..6]}";
+
+            var newMarket = new Market
+            {
+                Name = marketName,
+                Subdomain = subdomain,
+                IsActive = true,
+                OwnerId = userId  // Every user is the owner of their own market
+            };
+
+            await _context.Markets.AddAsync(newMarket, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            marketId = newMarket.Id;
+            _logger.LogInformation("New market created for user: {Username}, Market: {MarketName}, ID: {MarketId}", user.Username, newMarket.Name, newMarket.Id);
+        }
+
+        // Update user with MarketId
+        user.MarketId = marketId;
+        _context.Entry(user).State = EntityState.Modified;
+        _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("User registered successfully: {Username}, ID: {UserId}", user.Username, user.Id);

@@ -28,7 +28,14 @@ public class SaleService : ISaleService
 
     public async Task<SaleDto?> GetSaleByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var sale = await _unitOfWork.Sales.GetWithDetailsAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.Id == id && s.MarketId == marketId,
+            cancellationToken);
+
+        var sale = sales.FirstOrDefault();
+
         if (sale is null)
             return null;
 
@@ -37,7 +44,12 @@ public class SaleService : ISaleService
 
     public async Task<IEnumerable<SaleDto>> GetAllSalesAsync(CancellationToken cancellationToken = default)
     {
-        var sales = await _unitOfWork.Sales.GetAllAsync(cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.MarketId == marketId,
+            cancellationToken);
+
         var result = new List<SaleDto>();
 
         foreach (var sale in sales)
@@ -50,8 +62,10 @@ public class SaleService : ISaleService
 
     public async Task<IEnumerable<SaleDto>> GetSalesByDateRangeAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= start && s.CreatedAt <= end,
+            s => s.MarketId == marketId && s.CreatedAt >= start && s.CreatedAt <= end,
             cancellationToken);
 
         var result = new List<SaleDto>();
@@ -65,8 +79,10 @@ public class SaleService : ISaleService
 
     public async Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.SellerId == sellerId && s.Status == SaleStatus.Draft,
+            s => s.MarketId == marketId && s.SellerId == sellerId && s.Status == SaleStatus.Draft,
             cancellationToken);
 
         var result = new List<SaleDto>();
@@ -102,18 +118,30 @@ public class SaleService : ISaleService
 
     public async Task<SaleItemDto?> AddSaleItemAsync(Guid saleId, AddSaleItemDto request, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            // Get sale with items to check for duplicates
-            var sale = await _unitOfWork.Sales.GetWithDetailsAsync(saleId, cancellationToken);
+            // Get sale with MarketId filtering
+            var sales = await _unitOfWork.Sales.FindAsync(
+                s => s.Id == saleId && s.MarketId == marketId,
+                cancellationToken);
+            var sale = sales.FirstOrDefault();
+
             if (sale is null || sale.Status != SaleStatus.Draft)
                 throw new InvalidOperationException("Sale not found or not in Draft status");
+
+            // Load sale items separately
+            var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == saleId, cancellationToken);
 
             var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId, cancellationToken);
             if (product is null)
                 throw new InvalidOperationException("Product not found");
+
+            // SECURITY: Verify product belongs to the same market as the sale
+            if (product.MarketId != sale.MarketId)
+                throw new InvalidOperationException("Product does not belong to this market");
 
             // Validate stock
             if (product.Quantity < request.Quantity)
@@ -133,7 +161,7 @@ public class SaleService : ISaleService
             decimal itemTotal;
 
             // CHECK: Is this product already in the sale?
-            var existingItem = sale.SaleItems.FirstOrDefault(si => si.ProductId == request.ProductId);
+            var existingItem = saleItems.FirstOrDefault(si => si.ProductId == request.ProductId);
 
             if (existingItem != null)
             {
@@ -201,11 +229,16 @@ public class SaleService : ISaleService
 
     public async Task<PaymentDto?> AddPaymentAsync(Guid saleId, AddPaymentDto request, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            var sale = await _unitOfWork.Sales.GetByIdAsync(saleId, cancellationToken);
+            var sales = await _unitOfWork.Sales.FindAsync(
+                s => s.Id == saleId && s.MarketId == marketId,
+                cancellationToken);
+            var sale = sales.FirstOrDefault();
+
             if (sale is null)
                 throw new InvalidOperationException("Sale not found");
 
@@ -231,8 +264,11 @@ public class SaleService : ISaleService
             {
                 sale.Status = SaleStatus.Paid;
 
-                // Close any associated debt
-                var existingDebtToClose = (await _unitOfWork.Debts.FindAsync(d => d.SaleId == saleId, cancellationToken)).FirstOrDefault();
+                // Close any associated debt (filtered by market)
+                var existingDebtToClose = (await _unitOfWork.Debts.FindAsync(
+                    d => d.SaleId == saleId && d.MarketId == sale.MarketId,
+                    cancellationToken)).FirstOrDefault();
+
                 if (existingDebtToClose != null)
                 {
                     existingDebtToClose.Status = DebtStatus.Closed;
@@ -249,7 +285,10 @@ public class SaleService : ISaleService
                 // Mijozsiz qarzga savdo ham mumkin, status "debt" bo'ladi, lekin debt record yaratilmaydi
                 if (sale.CustomerId.HasValue && sale.CustomerId.Value != Guid.Empty)
                 {
-                    var existingDebt = (await _unitOfWork.Debts.FindAsync(d => d.SaleId == saleId, cancellationToken)).FirstOrDefault();
+                    var existingDebt = (await _unitOfWork.Debts.FindAsync(
+                        d => d.SaleId == saleId && d.MarketId == sale.MarketId,
+                        cancellationToken)).FirstOrDefault();
+
                     if (existingDebt == null)
                     {
                         var newDebt = new Debt
@@ -314,7 +353,13 @@ public class SaleService : ISaleService
 
         try
         {
-            var sale = await _unitOfWork.Sales.GetByIdAsync(saleId, cancellationToken);
+            var marketId = _currentMarketService.GetCurrentMarketId();
+
+            var sales = await _unitOfWork.Sales.FindAsync(
+                s => s.Id == saleId && s.MarketId == marketId,
+                cancellationToken);
+            var sale = sales.FirstOrDefault();
+
             if (sale is null)
             {
                 _logger.LogWarning("Sale not found: {SaleId}", saleId);
@@ -328,7 +373,11 @@ public class SaleService : ISaleService
             var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == saleId, cancellationToken);
             foreach (var item in saleItems)
             {
-                var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, cancellationToken);
+                var products = await _unitOfWork.Products.FindAsync(
+                    p => p.Id == item.ProductId && p.MarketId == marketId,
+                    cancellationToken);
+                var product = products.FirstOrDefault();
+
                 if (product != null)
                 {
                     product.Quantity += item.Quantity;
@@ -365,11 +414,28 @@ public class SaleService : ISaleService
 
     public async Task<bool> ValidateSalePriceAsync(Guid saleItemId, CancellationToken cancellationToken = default)
     {
-        var saleItem = await _unitOfWork.SaleItems.GetByIdAsync(saleItemId, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var saleItems = await _unitOfWork.SaleItems.FindAsync(
+            si => si.Id == saleItemId,
+            cancellationToken);
+        var saleItem = saleItems.FirstOrDefault();
+
         if (saleItem is null)
             return false;
 
-        var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
+        // Get the sale to verify market
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.Id == saleItem.SaleId && s.MarketId == marketId,
+            cancellationToken);
+        if (!sales.Any())
+            return false;
+
+        var products = await _unitOfWork.Products.FindAsync(
+            p => p.Id == saleItem.ProductId && p.MarketId == marketId,
+            cancellationToken);
+        var product = products.FirstOrDefault();
+
         if (product is null)
             return false;
 
@@ -385,7 +451,12 @@ public class SaleService : ISaleService
 
         foreach (var item in saleItems)
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, cancellationToken);
+            // Get product and verify it belongs to the same market as the sale
+            var products = await _unitOfWork.Products.FindAsync(
+                p => p.Id == item.ProductId && p.MarketId == sale.MarketId,
+                cancellationToken);
+            var product = products.FirstOrDefault();
+
             itemsDto.Add(MapSaleItemToDto(item, product?.Name ?? "Unknown"));
         }
 
