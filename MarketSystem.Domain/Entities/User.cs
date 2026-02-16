@@ -18,7 +18,7 @@ public class User : BaseEntity
     public bool IsDeleted { get; set; } = false;
 
     // Multi-tenancy
-    public int MarketId { get; set; }
+    public int? MarketId { get; set; }
     public Market? Market { get; set; }
 
     // Navigation properties

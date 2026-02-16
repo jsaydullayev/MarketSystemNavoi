@@ -6,7 +6,7 @@ using MarketSystem.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using MarketSystem.Infrastructure.Data;
-using CommonDTOs = MarketSystem.Application.DTOs.CommonDTOs;
+using CommonDTOs = MarketSystem.Application.DTOs;
 
 namespace MarketSystem.Application.Services;
 
@@ -121,7 +121,8 @@ public class MarketService : IMarketService
             Description = request.Description,
             IsActive = true,
             ExpiresAt = request.ExpiresAt,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            OwnerId = ownerId  // Set OwnerId to link market to owner
         };
 
         _context.Markets.Add(market);

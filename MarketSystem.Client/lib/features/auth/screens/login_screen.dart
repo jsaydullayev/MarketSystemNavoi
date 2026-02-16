@@ -6,6 +6,7 @@ import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../screens/dashboard_screen.dart';
 import '../../../l10n/app_localizations.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -238,6 +239,22 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // Register button
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.primary,
+                      ),
+                      child: const Text('Ro\'yxatdan o\'tish'),
+                    ),
+
+                    const SizedBox(height: 8),
 
                     // Footer
                     const Text(

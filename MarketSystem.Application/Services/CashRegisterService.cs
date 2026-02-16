@@ -5,6 +5,7 @@ using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MarketSystem.Application.Services;
 
@@ -13,18 +14,22 @@ public class CashRegisterService : ICashRegisterService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CashRegisterService> _logger;
     private readonly AppDbContext _context;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public CashRegisterService(IUnitOfWork unitOfWork, ILogger<CashRegisterService> logger, AppDbContext context)
+    public CashRegisterService(IUnitOfWork unitOfWork, ILogger<CashRegisterService> logger, AppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _context = context;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task<CashRegisterDto?> GetCashRegisterAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            var marketId = _currentMarketService.GetCurrentMarketId();
+
             var cashRegister = await _context.CashRegisters
                 .Include(x => x.LastWithdrawal)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -42,8 +47,10 @@ public class CashRegisterService : ICashRegisterService
                 await _context.SaveChangesAsync(cancellationToken);
             }
 
+            // Filter withdrawals by market (through User.MarketId)
             var withdrawals = await _context.CashWithdrawals
                 .Include(x => x.User)
+                .Where(x => x.User != null && x.User.MarketId == marketId)
                 .OrderByDescending(x => x.WithdrawalDate)
                 .Take(50)
                 .ToListAsync(cancellationToken);
@@ -177,11 +184,12 @@ public class CashRegisterService : ICashRegisterService
     {
         try
         {
+            var marketId = _currentMarketService.GetCurrentMarketId();
             var today = DateTime.UtcNow.Date;
 
-            // Bugungi savdolarni olish
+            // Bugungi savdolarni olish (filtered by market)
             var todaySales = await _context.Sales
-                .Where(s => s.CreatedAt.Date == today)
+                .Where(s => s.CreatedAt.Date == today && s.MarketId == marketId)
                 .Include(s => s.Payments)
                 .ToListAsync(cancellationToken);
 

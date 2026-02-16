@@ -32,7 +32,7 @@ public record RegisterMarketRequest(
 
 public record RegisterMarketResponse(
     [property: JsonPropertyName("market")] MarketDto Market,
-    [property: JsonPropertyName("owner")] CommonDTOs.UserDto Owner
+    [property: JsonPropertyName("owner")] UserDto Owner
 );
 
 public record UpdateMyMarketRequest(

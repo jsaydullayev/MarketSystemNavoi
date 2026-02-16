@@ -21,11 +21,11 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String _selectedRole = 'Seller';
+  final _marketNameController = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  final List<String> _roles = ['Seller', 'Admin', 'Owner'];
+  // Owner registration - no role selector, always creates as Owner with market
 
   @override
   void initState() {
@@ -49,6 +49,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _marketNameController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -63,7 +64,8 @@ class _RegisterScreenState extends State<RegisterScreen>
         fullName: _fullNameController.text.trim(),
         username: _usernameController.text.trim(),
         password: _passwordController.text,
-        role: _selectedRole,
+        role: 'Owner',  // Always register as Owner
+        marketName: _marketNameController.text.trim(),
         language: localeProvider.locale.languageCode,
       );
 
@@ -249,29 +251,22 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           const SizedBox(height: 10),
 
-                          // Role dropdown
-                          DropdownButtonFormField<String>(
-                            value: _selectedRole,
+                          // Market Name field
+                          TextFormField(
+                            controller: _marketNameController,
                             style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                            dropdownColor: Colors.white,
-                            iconEnabledColor: AppTheme.textSecondary,
                             decoration: AppTheme.inputDecoration(
-                              label: l10n.role,
-                              icon: Icons.badge_outlined,
+                              label: 'Market nomi',
+                              icon: Icons.store_outlined,
                             ),
-                            items: _roles.map((String role) {
-                              return DropdownMenuItem<String>(
-                                value: role,
-                                child: Text(
-                                  role,
-                                  style: const TextStyle(color: AppTheme.textPrimary),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedRole = newValue!;
-                              });
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Market nomini kiriting';
+                              }
+                              if (value.length < 3) {
+                                return 'Market nomi kamida 3 ta belgidan iborat bo\'lishi kerak';
+                              }
+                              return null;
                             },
                           ),
                           const SizedBox(height: 16),
