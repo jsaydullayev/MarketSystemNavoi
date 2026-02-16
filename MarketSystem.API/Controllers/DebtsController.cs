@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore; // ✅ For Include extension method
 using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Infrastructure.Data; // ✅ For AppDbContext
 
 namespace MarketSystem.API.Controllers;
 
@@ -14,11 +17,15 @@ public class DebtsController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
+    private readonly ICurrentMarketService _currentMarketService;
+    private readonly AppDbContext _context;
 
-    public DebtsController(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
+    public DebtsController(IUnitOfWork unitOfWork, IAuditLogService auditLogService, ICurrentMarketService currentMarketService, AppDbContext context)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
+        _currentMarketService = currentMarketService;
+        _context = context;
     }
 
     /// <summary>
@@ -27,26 +34,26 @@ public class DebtsController : ControllerBase
     [HttpGet("customer/{customerId}")]
     public async Task<ActionResult<IEnumerable<DebtDto>>> GetCustomerDebts(Guid customerId)
     {
-        var debts = await _unitOfWork.Debts.FindAsync(
-            d => d.CustomerId == customerId && d.Status == DebtStatus.Open,
-            CancellationToken.None);
+        var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var result = new List<DebtDto>();
-        foreach (var debt in debts)
-        {
-            var sale = await _unitOfWork.Sales.GetByIdAsync(debt.SaleId);
-            var customer = await _unitOfWork.Customers.GetByIdAsync(debt.CustomerId);
-            result.Add(new DebtDto(
-                debt.Id,
-                debt.SaleId,
-                debt.CustomerId,
-                customer?.FullName,
-                debt.TotalDebt,
-                debt.RemainingDebt,
-                debt.Status.ToString(),
-                sale?.CreatedAt ?? DateTime.MinValue
-            ));
-        }
+        // ✅ OPTIMIZED: Single query with eager loading
+        var debts = await _unitOfWork.Debts.GetQueryable()
+            .Include(d => d.Sale)
+            .Include(d => d.Customer)
+            .Where(d => d.CustomerId == customerId && d.Status == DebtStatus.Open && d.MarketId == marketId)
+            .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+
+        var result = debts.Select(debt => new DebtDto(
+            debt.Id,
+            debt.SaleId,
+            debt.CustomerId,
+            debt.Customer?.FullName,
+            debt.TotalDebt,
+            debt.RemainingDebt,
+            debt.Status.ToString(),
+            debt.Sale?.CreatedAt ?? DateTime.MinValue
+        )).ToList();
 
         return Ok(result);
     }
@@ -57,8 +64,10 @@ public class DebtsController : ControllerBase
     [HttpGet("customer/{customerId}/total")]
     public async Task<ActionResult<decimal>> GetCustomerTotalDebt(Guid customerId)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
         var debts = await _unitOfWork.Debts.FindAsync(
-            d => d.CustomerId == customerId && d.Status == DebtStatus.Open,
+            d => d.CustomerId == customerId && d.Status == DebtStatus.Open && d.MarketId == marketId,
             CancellationToken.None);
 
         var totalDebt = debts.Sum(d => d.RemainingDebt);
@@ -105,6 +114,21 @@ public class DebtsController : ControllerBase
             };
             await _unitOfWork.Payments.AddAsync(payment);
 
+            // ✅ NEW: Update cash register balance for cash payments
+            if (payment.PaymentType == PaymentType.Cash)
+            {
+                var cashRegister = await _context.CashRegisters
+                    .OrderByDescending(cr => cr.LastUpdated)
+                    .FirstOrDefaultAsync(CancellationToken.None);
+
+                if (cashRegister != null)
+                {
+                    cashRegister.CurrentBalance += request.Amount;
+                    cashRegister.LastUpdated = DateTime.UtcNow;
+                    _context.CashRegisters.Update(cashRegister);
+                }
+            }
+
             // Update debt
             debt.RemainingDebt -= request.Amount;
             if (debt.RemainingDebt <= 0)
@@ -147,26 +171,33 @@ public class DebtsController : ControllerBase
     public async Task<ActionResult<IEnumerable<DebtDto>>> GetAllDebts(
         [FromQuery] DebtStatus? status = null)
     {
-        var debts = status.HasValue
-            ? await _unitOfWork.Debts.FindAsync(d => d.Status == status.Value, CancellationToken.None)
-            : await _unitOfWork.Debts.GetAllAsync(CancellationToken.None);
+        var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var result = new List<DebtDto>();
-        foreach (var debt in debts)
-        {
-            var sale = await _unitOfWork.Sales.GetByIdAsync(debt.SaleId);
-            var customer = await _unitOfWork.Customers.GetByIdAsync(debt.CustomerId);
-            result.Add(new DebtDto(
-                debt.Id,
-                debt.SaleId,
-                debt.CustomerId,
-                customer?.FullName,
-                debt.TotalDebt,
-                debt.RemainingDebt,
-                debt.Status.ToString(),
-                sale?.CreatedAt ?? DateTime.MinValue
-            ));
-        }
+        // ✅ OPTIMIZED: Use eager loading to avoid N+1 queries
+        var debtsQuery = status.HasValue
+            ? _unitOfWork.Debts.GetQueryable()
+                .Include(d => d.Sale)
+                .Include(d => d.Customer)
+                .Where(d => d.Status == status.Value && d.MarketId == marketId)
+            : _unitOfWork.Debts.GetQueryable()
+                .Include(d => d.Sale)
+                .Include(d => d.Customer)
+                .Where(d => d.MarketId == marketId);
+
+        var debts = await debtsQuery
+            .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync(CancellationToken.None);
+
+        var result = debts.Select(debt => new DebtDto(
+            debt.Id,
+            debt.SaleId,
+            debt.CustomerId,
+            debt.Customer?.FullName,
+            debt.TotalDebt,
+            debt.RemainingDebt,
+            debt.Status.ToString(),
+            debt.Sale?.CreatedAt ?? DateTime.MinValue
+        )).ToList();
 
         return Ok(result);
     }

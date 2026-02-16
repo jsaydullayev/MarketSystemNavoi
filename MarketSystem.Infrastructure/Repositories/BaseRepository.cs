@@ -46,6 +46,12 @@ public abstract class BaseRepository<T> : IRepository<T> where T : class
         return await query.ToListAsync(cancellationToken);
     }
 
+    // ✅ NEW: Get IQueryable for complex queries with Include
+    public virtual IQueryable<T> GetQueryable()
+    {
+        return _dbSet.AsQueryable();
+    }
+
     public virtual async Task AddAsync(T entity, CancellationToken cancellationToken = default)
     {
         await _dbSet.AddAsync(entity, cancellationToken);

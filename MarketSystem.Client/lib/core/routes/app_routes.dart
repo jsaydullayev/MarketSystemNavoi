@@ -17,6 +17,7 @@ class AppRoutes {
   static const String productsForm = '/products-form';
   static const String sales = '/sales';
   static const String salesForm = '/sales-form';
+  static const String dailySales = '/daily-sales';
   static const String customers = '/customers';
   static const String customersForm = '/customers-form';
   static const String zakup = '/zakup';

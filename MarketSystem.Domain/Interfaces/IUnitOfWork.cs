@@ -11,6 +11,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<SaleItem> SaleItems { get; }
     IRepository<Payment> Payments { get; }
     IRepository<Debt> Debts { get; }
+    IRepository<DebtAuditLog> DebtAuditLogs { get; }
     IRepository<Zakup> Zakups { get; }
     IRepository<AuditLog> AuditLogs { get; }
     IRefreshTokenRepository RefreshTokens { get; }

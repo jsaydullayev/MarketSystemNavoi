@@ -104,6 +104,36 @@ class SalesService {
     }
   }
 
+  // Sotuvdan mahsulot o'chirish yoki miqdorni kamaytirish
+  Future<dynamic> removeSaleItem({
+    required String saleId,
+    required String saleItemId,
+    required int quantity,  // 0 = butunlay o'chirish, >0 = shunchaki miqdorni kamaytirish
+  }) async {
+    print('=== REMOVE SALE ITEM DEBUG ===');
+    print('Sale ID: $saleId');
+    print('Sale Item ID: $saleItemId');
+    print('Quantity to remove: $quantity');
+    print('============================');
+
+    final response = await _httpService.post(
+      '${ApiConstants.sales}/remove-item/$saleId',
+      body: {
+        'saleItemId': saleItemId,
+        'quantity': quantity,
+      },
+    );
+
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to remove sale item: ${response.body}');
+    }
+  }
+
   // To'lov qo'shish
   Future<dynamic> addPayment({
     required String saleId,
