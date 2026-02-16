@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../data/services/debt_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import 'debt_details_screen.dart';
 
 class DebtsScreen extends StatefulWidget {
   const DebtsScreen({super.key});
@@ -245,101 +246,116 @@ class _DebtsScreenState extends State<DebtsScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.person, size: 20, color: Color(0xFF3B82F6)),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      customerName,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF1F2937),
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: remainingDebt > 0 ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      '${customerDebts.length} ta qarz',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: remainingDebt > 0 ? const Color(0xFFDC2626) : const Color(0xFF059669),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                        child: InkWell(
+                          onTap: () {
+                            // Navigate to debt details screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DebtDetailsScreen(
+                                  debt: customerDebts.first,
+                                  customerName: customerName,
+                                ),
                               ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Jami qarz:',
-                                        style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                                      ),
-                                      Text(
-                                        '${totalDebt.toStringAsFixed(0)} so\'m',
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person, size: 20, color: Color(0xFF3B82F6)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        customerName,
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
                                           color: Color(0xFF1F2937),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      const Text(
-                                        'Qolgan qarz:',
-                                        style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: remainingDebt > 0 ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      Text(
-                                        '${remainingDebt.toStringAsFixed(0)} so\'m',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFFDC2626),
+                                      child: Text(
+                                        '${customerDebts.length} ta qarz',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: remainingDebt > 0 ? const Color(0xFFDC2626) : const Color(0xFF059669),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              if (remainingDebt > 0)
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () => _showPayDebtDialog(customerDebts.first),
-                                    icon: const Icon(Icons.payment, size: 18),
-                                    label: const Text('To\'lash'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF10B981),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Jami qarz:',
+                                          style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                        ),
+                                        Text(
+                                          '${totalDebt.toStringAsFixed(0)} so\'m',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF1F2937),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        const Text(
+                                          'Qolgan qarz:',
+                                          style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                        ),
+                                        Text(
+                                          '${remainingDebt.toStringAsFixed(0)} so\'m',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFFDC2626),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                if (remainingDebt > 0)
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _showPayDebtDialog(customerDebts.first),
+                                      icon: const Icon(Icons.payment, size: 18),
+                                      label: const Text('To\'lash'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF10B981),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );

@@ -129,6 +129,28 @@ class HttpService {
     );
   }
 
+  // PATCH request
+  Future<http.Response> patch(String endpoint, {Object? body}) async {
+    final token = await getAccessToken();
+    final encodedBody = body != null ? jsonEncode(body) : null;
+
+    print('=== HTTP PATCH ===');
+    print('URL: $baseUrl$endpoint');
+    if (body != null && encodedBody != null && encodedBody.length < 500) {
+      print('Body: $encodedBody');
+    }
+    print('================');
+
+    return http.patch(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: encodedBody,
+    );
+  }
+
   // Multipart file upload (for images, etc.)
   Future<http.Response> uploadFile(
     String endpoint, {

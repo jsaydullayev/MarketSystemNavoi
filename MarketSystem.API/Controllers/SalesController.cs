@@ -45,7 +45,7 @@ public class SalesController : ControllerBase
         return Ok(sales);
     }
 
-    [HttpGet("my-drafts")]
+    [HttpGet]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyDraftSales()
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -80,6 +80,23 @@ public class SalesController : ControllerBase
         try
         {
             var item = await _saleService.AddSaleItemAsync(saleId, request);
+            if (item is null)
+                return NotFound();
+
+            return Ok(item);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("remove-item/{saleId}")]
+    public async Task<ActionResult<SaleItemDto>> RemoveSaleItem(Guid saleId, [FromBody] RemoveSaleItemDto request)
+    {
+        try
+        {
+            var item = await _saleService.RemoveSaleItemAsync(saleId, request);
             if (item is null)
                 return NotFound();
 
@@ -127,6 +144,51 @@ public class SalesController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Update sale item price - requires role-based permissions
+    /// - Open debts: All roles can edit
+    /// - Closed debts: Only Owner and Admin can edit
+    /// </summary>
+    [HttpPatch]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<ActionResult<SaleItemDto>> UpdateSaleItemPrice([FromBody] UpdateSaleItemPriceDto request)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (string.IsNullOrEmpty(userRole))
+                return Unauthorized();
+
+            _logger.LogInformation("UpdateSaleItemPrice called by {UserId} with role {Role}", userId, userRole);
+
+            var updatedItem = await _saleService.UpdateSaleItemPriceAsync(request, userId, userRole);
+
+            if (updatedItem == null)
+                return NotFound();
+
+            return Ok(updatedItem);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized access to UpdateSaleItemPrice");
+            return StatusCode(403, ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation in UpdateSaleItemPrice");
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in UpdateSaleItemPrice");
+            return StatusCode(500, "Xatolik yuz berdi");
         }
     }
 }
