@@ -18,6 +18,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<SaleItem> SaleItems { get; }
     public IRepository<Payment> Payments { get; }
     public IRepository<Debt> Debts { get; }
+    public IRepository<DebtAuditLog> DebtAuditLogs { get; }
     public IRepository<Zakup> Zakups { get; }
     public IRepository<AuditLog> AuditLogs { get; }
     public IRefreshTokenRepository RefreshTokens { get; }
@@ -33,6 +34,7 @@ public class UnitOfWork : IUnitOfWork
         SaleItems = new SaleItemRepository(context);
         Payments = new PaymentRepository(context);
         Debts = new DebtRepository(context);
+        DebtAuditLogs = new DebtAuditLogRepository(context);
         Zakups = new ZakupRepository(context);
         AuditLogs = new AuditLogRepository(context);
         RefreshTokens = new RefreshTokenRepository(context);

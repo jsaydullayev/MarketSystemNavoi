@@ -23,7 +23,9 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final totalSales = (widget.dailyReport['totalSales'] as num).toDouble();
-    final totalProfit = (widget.dailyReport['profit'] as num).toDouble();
+    final totalProfit = widget.dailyReport['profit'] != null
+        ? (widget.dailyReport['profit'] as num).toDouble()
+        : null;
     final totalTransactions = widget.dailyReport['totalTransactions'] as int;
 
     return Scaffold(
@@ -51,15 +53,18 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Sof foyda: ${NumberFormatter.formatDecimal(totalProfit)} so\'m',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.green[700],
+                // Only show profit if user is Owner
+                if (totalProfit != null) ...[
+                  Text(
+                    'Sof foyda: ${NumberFormatter.formatDecimal(totalProfit)} so\'m',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green[700],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
+                  const SizedBox(height: 4),
+                ],
                 Text(
                   'Sotuvlar soni: $totalTransactions ta',
                   style: TextStyle(fontSize: 14, color: Colors.grey[700]),
@@ -98,7 +103,11 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
     final salePrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
     final totalCost = costPrice * quantity;
     final totalRevenue = salePrice * quantity;
-    final profit = totalRevenue - totalCost;
+
+    // Profit is now nullable (only for Owner)
+    final profit = item['profit'] != null
+        ? (item['profit'] as num).toDouble()
+        : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -157,50 +166,53 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
               color: Colors.green,
             ),
 
-            const SizedBox(height: 8),
+            // Only show profit if user is Owner (profit is not null)
+            if (profit != null) ...[
+              const SizedBox(height: 8),
 
-            // Profit (highlighted)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: profit >= 0 ? Colors.green[50] : Colors.red[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: profit >= 0 ? Colors.green[300]! : Colors.red[300]!,
-                  width: 2,
+              // Profit (highlighted)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: profit >= 0 ? Colors.green[50] : Colors.red[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: profit >= 0 ? Colors.green[300]! : Colors.red[300]!,
+                    width: 2,
+                  ),
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        profit >= 0 ? Icons.trending_up : Icons.trending_down,
-                        color: profit >= 0 ? Colors.green[700] : Colors.red[700],
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Foyda:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          profit >= 0 ? Icons.trending_up : Icons.trending_down,
                           color: profit >= 0 ? Colors.green[700] : Colors.red[700],
                         ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '${NumberFormatter.formatDecimal(profit)} so\'m',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: profit >= 0 ? Colors.green[700] : Colors.red[700],
+                        const SizedBox(width: 8),
+                        Text(
+                          'Foyda:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: profit >= 0 ? Colors.green[700] : Colors.red[700],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    Text(
+                      '${NumberFormatter.formatDecimal(profit)} so\'m',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: profit >= 0 ? Colors.green[700] : Colors.red[700],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

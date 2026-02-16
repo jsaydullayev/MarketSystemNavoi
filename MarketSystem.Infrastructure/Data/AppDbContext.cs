@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Debt> Debts => Set<Debt>();
+    public DbSet<DebtAuditLog> DebtAuditLogs => Set<DebtAuditLog>();
     public DbSet<Zakup> Zakups => Set<Zakup>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -164,6 +165,29 @@ public class AppDbContext : DbContext
             // Index for performance
             b.HasIndex(x => new { x.CustomerId, x.Status })
                 .HasDatabaseName("IX_Debt_Customer_Status");
+            b.HasIndex(x => x.MarketId);
+        });
+
+        // Configure DebtAuditLog
+        modelBuilder.Entity<DebtAuditLog>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.OldPrice).HasPrecision(18, 2);
+            b.Property(x => x.NewPrice).HasPrecision(18, 2);
+            b.Property(x => x.Comment).IsRequired().HasMaxLength(500);
+
+            b.HasOne(x => x.Sale).WithMany().HasForeignKey(x => x.SaleId);
+            b.HasOne(x => x.SaleItem).WithMany().HasForeignKey(x => x.SaleItemId);
+            b.HasOne(x => x.ChangedByUser).WithMany().HasForeignKey(x => x.ChangedByUserId);
+            b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId);
+
+            // Indexes for performance
+            b.HasIndex(x => new { x.SaleId, x.CreatedAt })
+                .HasDatabaseName("IX_DebtAuditLog_Sale_CreatedAt");
+            b.HasIndex(x => new { x.SaleItemId, x.CreatedAt })
+                .HasDatabaseName("IX_DebtAuditLog_SaleItem_CreatedAt");
+            b.HasIndex(x => x.ChangedByUserId)
+                .HasDatabaseName("IX_DebtAuditLog_ChangedBy");
             b.HasIndex(x => x.MarketId);
         });
 
