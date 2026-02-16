@@ -35,6 +35,11 @@ public class AppDbContext : DbContext
             b.Property(x => x.Subdomain).HasMaxLength(100);
             b.Property(x => x.Description).HasMaxLength(500);
             b.HasIndex(x => x.Subdomain).IsUnique();
+            b.HasIndex(x => x.Name).IsUnique();  // Market nomi unikal bo'lishi kerak
+
+            // Owner relationship
+            b.HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerId);
+            b.HasIndex(x => x.OwnerId);
         });
 
         // Configure Customer
@@ -104,7 +109,6 @@ public class AppDbContext : DbContext
             b.HasIndex(x => new { x.Status, x.CreatedAt })
                 .HasDatabaseName("IX_Sale_Status_CreatedAt");
             b.HasIndex(x => x.CustomerId)
-                .HasFilter("CustomerId IS NOT NULL")
                 .HasDatabaseName("IX_Sale_CustomerId");
             b.HasIndex(x => new { x.SellerId, x.Status })
                 .HasDatabaseName("IX_Sale_Seller_Status");
@@ -217,9 +221,9 @@ public class AppDbContext : DbContext
             b.Property(x => x.LastUpdated).IsRequired();
             b.HasIndex(x => x.LastUpdated);
 
-            // Multi-tenancy
-            b.HasOne(x => x.Market).WithMany(m => m.CashRegisters).HasForeignKey(x => x.MarketId);
-            b.HasIndex(x => x.MarketId);
+            // NOTE: Multi-tenancy disabled for CashRegister
+            // b.HasOne(x => x.Market).WithMany(m => m.CashRegisters).HasForeignKey(x => x.MarketId);
+            // b.HasIndex(x => x.MarketId);
         });
 
         // Configure CashWithdrawal

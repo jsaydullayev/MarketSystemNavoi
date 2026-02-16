@@ -13,12 +13,17 @@ public class Market
     public DateTime? ExpiresAt { get; set; }  // Subscription uchun
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // Owner who created this market
+    public Guid OwnerId { get; set; }
+
     // Navigation properties
+    public User Owner { get; set; } = null!;
     public ICollection<User> Users { get; set; } = new List<User>();
     public ICollection<Product> Products { get; set; } = new List<Product>();
     public ICollection<Customer> Customers { get; set; } = new List<Customer>();
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
     public ICollection<Zakup> Zakups { get; set; } = new List<Zakup>();
     public ICollection<Debt> Debts { get; set; } = new List<Debt>();
-    public ICollection<CashRegister> CashRegisters { get; set; } = new List<CashRegister>();
+    // NOTE: CashRegister not multi-tenant yet - needs separate implementation
+    // public ICollection<CashRegister> CashRegisters { get; set; } = new List<CashRegister>();
 }
