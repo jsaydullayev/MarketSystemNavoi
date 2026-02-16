@@ -91,9 +91,14 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("remove-item/{saleId}")]
+    [HttpPost("{saleId}")]
     public async Task<ActionResult<SaleItemDto>> RemoveSaleItem(Guid saleId, [FromBody] RemoveSaleItemDto request)
     {
+        _logger.LogInformation("=== RemoveSaleItem called ===");
+        _logger.LogInformation("SaleId: {SaleId}", saleId);
+        _logger.LogInformation("SaleItemId: {SaleItemId}", request.SaleItemId);
+        _logger.LogInformation("Quantity: {Quantity}", request.Quantity);
+
         try
         {
             var item = await _saleService.RemoveSaleItemAsync(saleId, request);
@@ -118,6 +123,27 @@ public class SalesController : ControllerBase
                 return NotFound();
 
             return Ok(payment);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("{saleId}")]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<ActionResult<SaleDto>> DeleteSale(Guid saleId)
+    {
+        _logger.LogInformation("=== DeleteSale called ===");
+        _logger.LogInformation("Sale ID: {SaleId}", saleId);
+
+        try
+        {
+            var sale = await _saleService.DeleteSaleAsync(saleId);
+            if (sale is null)
+                return NotFound();
+
+            return Ok(sale);
         }
         catch (InvalidOperationException ex)
         {
