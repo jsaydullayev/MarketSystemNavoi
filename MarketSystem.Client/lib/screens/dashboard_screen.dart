@@ -11,6 +11,7 @@ import '../features/debts/screens/debts_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/reports/screens/reports_screen.dart';
 import '../features/cash_register/screens/cash_register_screen.dart';
+import '../features/market/screens/market_registration_screen.dart';
 import '../l10n/app_localizations.dart';
 import '../core/routes/app_routes.dart';
 
@@ -330,6 +331,18 @@ class _DashboardScreenState extends State<DashboardScreen>
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const CashRegisterScreen()),
+          ),
+        ),
+      // Market Registration - only for Owner without market
+      if (user?['role'] == 'Owner' && user?['marketId'] == null)
+        _MenuItemData(
+          title: 'Market Registratsiyasi',
+          subtitle: 'O\'zingizning marketingizni yarating',
+          icon: Icons.store_outlined,
+          color: MenuCardColors.products,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MarketRegistrationScreen()),
           ),
         ),
     ];

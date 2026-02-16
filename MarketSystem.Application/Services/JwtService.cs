@@ -25,9 +25,14 @@ public class JwtService(IConfiguration configuration) : IJwtService
         {
             new (ClaimTypes.NameIdentifier, user.Id.ToString()),
             new (ClaimTypes.Name, user.Username),
-            new (ClaimTypes.Role, user.Role.ToString()!),
-            new ("MarketId", user.MarketId.ToString())  // Multi-tenancy support
+            new (ClaimTypes.Role, user.Role.ToString()!)
         };
+
+        // MarketId null bo'lsa claim qo'shmaslik (Owner uchun market hali yaratilmagan bo'lishi mumkin)
+        if (user.MarketId.HasValue)
+        {
+            claims.Add(new Claim("MarketId", user.MarketId.Value.ToString()));
+        }
 
         var security = new JwtSecurityToken(
             issuer: _jwtSetting.Issuer,

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 
 namespace MarketSystem.API.Controllers;
@@ -13,12 +14,16 @@ public class MarketsController : ControllerBase
     private readonly IMarketService _marketService;
     private readonly ILogger<MarketsController> _logger;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IJwtService _jwtService;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public MarketsController(IMarketService marketService, ILogger<MarketsController> logger, ICurrentMarketService currentMarketService)
+    public MarketsController(IMarketService marketService, ILogger<MarketsController> logger, ICurrentMarketService currentMarketService, IJwtService jwtService, IUnitOfWork unitOfWork)
     {
         _marketService = marketService;
         _logger = logger;
         _currentMarketService = currentMarketService;
+        _jwtService = jwtService;
+        _unitOfWork = unitOfWork;
     }
 
     // SuperAdmin only - Create market with new Owner user
@@ -50,7 +55,21 @@ public class MarketsController : ControllerBase
                 return Unauthorized();
 
             var result = await _marketService.RegisterMarketForOwnerAsync(request, ownerId, cancellationToken);
-            return Ok(result);
+
+            // Reload owner from database to get updated MarketId
+            var updatedOwner = await _unitOfWork.Users.GetByIdAsync(ownerId, cancellationToken);
+            if (updatedOwner is null)
+                return BadRequest(new { message = "Foydalanuvchi topilmadi" });
+
+            // Generate new JWT token with updated MarketId
+            var newToken = _jwtService.GenerateToken(updatedOwner, populateExp: true);
+
+            return Ok(new
+            {
+                market = result.Market,
+                owner = result.Owner,
+                accessToken = newToken.AccessToken
+            });
         }
         catch (InvalidOperationException ex)
         {
@@ -65,7 +84,7 @@ public class MarketsController : ControllerBase
     {
         try
         {
-            var marketId = _currentMarketService.GetCurrentMarketId();
+            var marketId = _currentMarketService.TryGetCurrentMarketId();
             if (!marketId.HasValue)
                 return NotFound(new { message = "Sizga tegishli market topilmadi" });
 
@@ -89,7 +108,7 @@ public class MarketsController : ControllerBase
     {
         try
         {
-            var marketId = _currentMarketService.GetCurrentMarketId();
+            var marketId = _currentMarketService.TryGetCurrentMarketId();
             if (!marketId.HasValue)
                 return NotFound(new { message = "Sizga tegishli market topilmadi" });
 

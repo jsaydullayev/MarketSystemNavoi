@@ -4,6 +4,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using System.Text.Json;
+using MarketSystem.Application.Interfaces;
 
 namespace MarketSystem.API.Controllers;
 
@@ -52,7 +53,7 @@ public class UsersController : ControllerBase
 
         // Get current user's role and market ID
         var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
-        var currentMarketId = _currentMarketService.GetCurrentMarketId();
+        var currentMarketId = _currentMarketService.TryGetCurrentMarketId();
 
         // SuperAdmin sees all users, others see only their market's users
         if (currentRole != "SuperAdmin" && currentMarketId.HasValue)
@@ -216,7 +217,8 @@ public class UsersController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete]
+    [Route("api/Users/DeleteUser/{id}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _userService.DeleteUserAsync(id);
@@ -226,7 +228,8 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("{id}/deactivate")]
+    [HttpPost]
+    [Route("api/Users/{id}/deactivate")]
     public async Task<IActionResult> DeactivateUser(Guid id)
     {
         var result = await _userService.DeactivateUserAsync(id);
@@ -236,7 +239,8 @@ public class UsersController : ControllerBase
         return Ok(new { message = "User deactivated" });
     }
 
-    [HttpPost("{id}/activate")]
+    [HttpPost]
+    [Route("api/Users/{id}/activate")]
     public async Task<IActionResult> ActivateUser(Guid id)
     {
         var result = await _userService.ActivateUserAsync(id);

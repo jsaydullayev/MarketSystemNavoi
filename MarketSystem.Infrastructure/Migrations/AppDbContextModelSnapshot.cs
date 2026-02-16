@@ -226,11 +226,19 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Subdomain")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("Subdomain")
                         .IsUnique();
@@ -398,8 +406,7 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId")
-                        .HasDatabaseName("IX_Sale_CustomerId")
-                        .HasFilter("CustomerId IS NOT NULL");
+                        .HasDatabaseName("IX_Sale_CustomerId");
 
                     b.HasIndex("MarketId");
 
@@ -477,7 +484,7 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<int>("MarketId")
+                    b.Property<int?>("MarketId")
                         .HasColumnType("integer");
 
                     b.Property<string>("PasswordHash")
@@ -609,6 +616,17 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("MarketSystem.Domain.Entities.Market", b =>
+                {
+                    b.HasOne("MarketSystem.Domain.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("MarketSystem.Domain.Entities.Payment", b =>
                 {
                     b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
@@ -704,9 +722,7 @@ namespace MarketSystem.Infrastructure.Migrations
                 {
                     b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
                         .WithMany("Users")
-                        .HasForeignKey("MarketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("MarketId");
 
                     b.Navigation("Market");
                 });

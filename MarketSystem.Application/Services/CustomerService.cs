@@ -23,7 +23,14 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDto?> GetCustomerByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var customer = await _unitOfWork.Customers.GetByIdAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var customers = await _unitOfWork.Customers.FindAsync(
+            c => c.Id == id && c.MarketId == marketId,
+            cancellationToken);
+
+        var customer = customers.FirstOrDefault();
+
         if (customer is null)
             return null;
 
@@ -32,8 +39,10 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDto?> GetCustomerByPhoneAsync(string phone, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
         var customers = await _unitOfWork.Customers.FindAsync(
-            c => c.Phone == phone,
+            c => c.Phone == phone && c.MarketId == marketId,
             cancellationToken);
 
         var customer = customers.FirstOrDefault();
@@ -45,7 +54,12 @@ public class CustomerService : ICustomerService
 
     public async Task<IEnumerable<CustomerDto>> GetAllCustomersAsync(CancellationToken cancellationToken = default)
     {
-        var customers = await _unitOfWork.Customers.GetAllAsync(cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var customers = await _unitOfWork.Customers.FindAsync(
+            c => c.MarketId == marketId,
+            cancellationToken);
+
         var result = new List<CustomerDto>();
 
         foreach (var customer in customers)
@@ -102,7 +116,13 @@ public class CustomerService : ICustomerService
 
     public async Task<bool> DeleteCustomerAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var customer = await _unitOfWork.Customers.GetByIdAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var customers = await _unitOfWork.Customers.FindAsync(
+            c => c.Id == id && c.MarketId == marketId,
+            cancellationToken);
+        var customer = customers.FirstOrDefault();
+
         if (customer is null)
             return false;
 
@@ -115,7 +135,13 @@ public class CustomerService : ICustomerService
 
     public async Task<bool> SoftDeleteCustomerAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var customer = await _unitOfWork.Customers.GetByIdAsync(id, cancellationToken);
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var customers = await _unitOfWork.Customers.FindAsync(
+            c => c.Id == id && c.MarketId == marketId,
+            cancellationToken);
+        var customer = customers.FirstOrDefault();
+
         if (customer is null)
             return false;
 
@@ -128,9 +154,11 @@ public class CustomerService : ICustomerService
 
     private async Task<CustomerDto> MapToDtoAsync(Customer customer, CancellationToken cancellationToken)
     {
-        // Calculate total debt for this customer
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Calculate total debt for this customer (only from current market)
         var debts = await _unitOfWork.Debts.FindAsync(
-            d => d.CustomerId == customer.Id && d.Status == DebtStatus.Open,
+            d => d.CustomerId == customer.Id && d.MarketId == marketId && d.Status == DebtStatus.Open,
             cancellationToken);
 
         var totalDebt = debts.Sum(d => d.RemainingDebt);

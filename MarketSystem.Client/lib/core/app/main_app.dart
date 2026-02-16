@@ -43,25 +43,28 @@ class MainApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<CustomersBloc>()),
         BlocProvider(create: (_) => sl<ZakupBloc>()),
       ],
-      child: MaterialApp(
-        title: AppStrings.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        navigatorKey: NavigationHandler.navigatorKey,
-        onGenerateRoute: generateRoute,
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('uz'), // Uzbek
-          Locale('ru'), // Russian
-        ],
-        initialRoute: AppRoutes.welcome,
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, _) => MaterialApp(
+          title: AppStrings.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.system,
+          navigatorKey: NavigationHandler.navigatorKey,
+          onGenerateRoute: generateRoute,
+          locale: localeProvider.locale, // ✅ Dynamic locale from LocaleProvider
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('uz'), // Uzbek
+            Locale('ru'), // Russian
+          ],
+          initialRoute: AppRoutes.welcome,
+        ),
       ),
     );
   }

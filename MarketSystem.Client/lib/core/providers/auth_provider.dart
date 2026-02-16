@@ -57,6 +57,7 @@ class AuthProvider extends ChangeNotifier {
     required String username,
     required String password,
     required String role,
+    String? marketName,
     String? language,
   }) async {
     _isLoading = true;
@@ -69,6 +70,7 @@ class AuthProvider extends ChangeNotifier {
         username: username,
         password: password,
         role: role,
+        marketName: marketName,
         language: language,
       );
 

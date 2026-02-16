@@ -3,16 +3,19 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 
 namespace MarketSystem.Application.Services;
 
 public class ReportService : IReportService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public ReportService(IUnitOfWork unitOfWork)
+    public ReportService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
+        _currentMarketService = currentMarketService;
 
         // Set EPPlus license context (EPPlus 7.x)
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -20,17 +23,18 @@ public class ReportService : IReportService
 
     public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
         // Include SaleItems and Payments for proper profit calculation
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled,
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
         var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.CreatedAt >= start && z.CreatedAt < end,
+            z => z.CreatedAt >= start && z.CreatedAt < end && z.MarketId == marketId,
             cancellationToken);
 
         return CalculateReport(sales, zakups, start, end);
@@ -38,12 +42,13 @@ public class ReportService : IReportService
 
     public async Task<DailySaleItemsResponseDto> GetDailySaleItemsAsync(DateTime date, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
         // Include SaleItems for detailed breakdown
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled,
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
@@ -99,14 +104,16 @@ public class ReportService : IReportService
 
     public async Task<PeriodReportDto> GetPeriodReportAsync(PeriodReportRequest request, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
         // Include SaleItems and Payments for proper profit calculation
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled,
+            s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
         var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate,
+            z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate && z.MarketId == marketId,
             cancellationToken);
 
         var report = CalculateReport(sales, zakups, request.StartDate, request.EndDate);
@@ -131,14 +138,16 @@ public class ReportService : IReportService
 
     public async Task<byte[]> ExportToExcelAsync(PeriodReportRequest request, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
         // Include SaleItems for proper data export
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled,
+            s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
         var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate,
+            z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate && z.MarketId == marketId,
             cancellationToken);
 
         using var package = new ExcelPackage();
@@ -206,25 +215,30 @@ public class ReportService : IReportService
 
     public async Task<ComprehensiveReportDto> GetComprehensiveReportAsync(DateTime date, CancellationToken cancellationToken = default)
     {
+        var marketId = _currentMarketService.GetCurrentMarketId();
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
         // Get daily sales with SaleItems and Payments
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled,
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
         // Get zakups
         var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.CreatedAt >= start && z.CreatedAt < end,
+            z => z.CreatedAt >= start && z.CreatedAt < end && z.MarketId == marketId,
             cancellationToken);
 
-        // Get all products for inventory report
-        var products = await _unitOfWork.Products.GetAllAsync(cancellationToken);
+        // Get all products for inventory report (filtered by market)
+        var products = await _unitOfWork.Products.FindAsync(
+            p => p.MarketId == marketId,
+            cancellationToken);
 
-        // Get all users for seller reports
-        var users = await _unitOfWork.Users.GetAllAsync(cancellationToken);
+        // Get all users for seller reports (filtered by market)
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.MarketId == marketId,
+            cancellationToken);
 
         // Calculate daily report
         var dailyReport = CalculateReport(sales, zakups, start, end);
