@@ -123,6 +123,7 @@ public record AddSaleItemDto(
     [property: JsonPropertyName("productId")] Guid ProductId,
     [property: JsonPropertyName("quantity")] int Quantity,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
+    [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,  // For validation, not stored in SaleItem
     [property: JsonPropertyName("comment")] string? Comment
 );
 public record RemoveSaleItemDto(
@@ -137,9 +138,9 @@ public record CancelSaleDto(
     [property: JsonPropertyName("adminId")] string AdminId
 );
 public record UpdateSaleItemPriceDto(
-    [property: JsonPropertyName("saleItemId")] Guid SaleItemId,
+    [property: JsonPropertyName("saleItemId")] string SaleItemId,
     [property: JsonPropertyName("newPrice")] decimal NewPrice,
-    [property: JsonPropertyName("comment")] string Comment
+    [property: JsonPropertyName("comment")] string? Comment  // Optional - not needed for price update
 );
 
 // Zakup DTOs
