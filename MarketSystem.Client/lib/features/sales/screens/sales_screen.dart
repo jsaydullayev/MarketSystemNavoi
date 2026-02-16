@@ -222,6 +222,7 @@ class _SalesScreenState extends State<SalesScreen> {
     final remainingAmount = (sale['remainingAmount'] as num).toDouble();
     final items = sale['items'] as List<dynamic>? ?? [];
     final itemsCount = items.length;
+    final createdAt = sale['createdAt'];
 
     Color getStatusColor() {
       switch (status.toLowerCase()) {
@@ -253,9 +254,23 @@ class _SalesScreenState extends State<SalesScreen> {
       }
     }
 
+    // Format date
+    String formattedDate = 'Noma\'lum';
+    if (createdAt != null) {
+      try {
+        final date = DateTime.parse(createdAt);
+        formattedDate = '${date.day}.${date.month}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        formattedDate = createdAt.toString();
+      }
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -265,150 +280,274 @@ class _SalesScreenState extends State<SalesScreen> {
             ),
           );
         },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row with customer name and items count
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      sale['customerName'] ?? 'Mijozsiz',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: getStatusColor().withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header: Date + Status badge
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Date
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                  if (itemsCount > 0)
+                    // Status badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        color: getStatusColor().withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: getStatusColor(),
+                          width: 1.5,
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.shopping_basket,
+                            _getStatusIcon(status),
                             size: 14,
-                            color: Colors.blue[700],
+                            color: getStatusColor(),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Text(
-                            '$itemsCount',
+                            getStatusText(),
                             style: TextStyle(
-                              color: Colors.blue[700],
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                              color: getStatusColor(),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ],
                       ),
                     ),
-                ],
-              ),
-
-              const SizedBox(height: 8),
-
-              // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: getStatusColor().withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: getStatusColor(),
-                    width: 1.5,
-                  ),
+                  ],
                 ),
-                child: Text(
-                  getStatusText(),
-                  style: TextStyle(
-                    color: getStatusColor(),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Amounts row
-              Row(
-                children: [
-                  Expanded(
-                    child: _AmountBox(
-                      label: 'Jami',
-                      amount: totalAmount,
-                      color: getStatusColor(),
-                      isBold: true,
+                // Customer name
+                Row(
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      size: 18,
+                      color: sale['customerName'] != null
+                          ? Colors.blue.shade700
+                          : Colors.grey.shade400,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _AmountBox(
-                      label: 'To\'langan',
-                      amount: paidAmount,
-                      color: Colors.green,
-                    ),
-                  ),
-                  if (remainingAmount > 0) ...[
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _AmountBox(
-                        label: 'Qarz',
-                        amount: remainingAmount,
-                        color: Colors.red,
+                      child: Text(
+                        sale['customerName'] ?? 'Mijozsiz',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: sale['customerName'] != null
+                              ? Colors.black87
+                              : Colors.grey.shade500,
+                        ),
                       ),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Items preview (first 2-3 items)
+                if (items.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.grey.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 16,
+                              color: Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Mahsulotlar ($itemsCount ta)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...items.take(3).map((item) {
+                          final productName = item['productName'] ?? 'Noma\'lum';
+                          final quantity = item['quantity'] ?? 0;
+                          final salePrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
+                          final totalPrice = quantity * salePrice;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '$quantity x $productName',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  NumberFormatter.format(totalPrice),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        if (items.length > 3)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              '+ ${items.length - 3} ta mahsulot...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade600,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                 ],
-              ),
-            ],
+
+                // Divider
+                Container(
+                  height: 1,
+                  color: Colors.grey.shade200,
+                ),
+
+                const SizedBox(height: 12),
+
+                // Amounts section
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildAmountColumn(
+                        label: 'Jami summa',
+                        amount: totalAmount,
+                        color: getStatusColor(),
+                        isMain: true,
+                      ),
+                    ),
+                    if (paidAmount > 0 || remainingAmount > 0) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildAmountColumn(
+                          label: 'To\'langan',
+                          amount: paidAmount,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                    if (remainingAmount > 0) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildAmountColumn(
+                          label: 'Qarz',
+                          amount: remainingAmount,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _AmountBox({
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'draft':
+        return Icons.edit_note;
+      case 'paid':
+        return Icons.check_circle;
+      case 'debt':
+        return Icons.money_off;
+      case 'cancelled':
+        return Icons.cancel;
+      default:
+        return Icons.receipt_long;
+    }
+  }
+
+  Widget _buildAmountColumn({
     required String label,
     required double amount,
     required Color color,
-    bool isBold = false,
+    bool isMain = false,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: color.withValues(alpha: 0.8),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 3),
-          Text(
-            NumberFormatter.format(amount),
-            style: TextStyle(
-              color: color,
-              fontSize: 16,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w700,
-            ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          NumberFormatter.format(amount),
+          style: TextStyle(
+            fontSize: isMain ? 20 : 17,
+            fontWeight: FontWeight.w700,
+            color: color,
+            letterSpacing: -0.5,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

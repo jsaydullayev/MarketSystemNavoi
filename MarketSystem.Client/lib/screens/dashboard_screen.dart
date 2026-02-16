@@ -12,8 +12,12 @@ import '../features/profile/screens/profile_screen.dart';
 import '../features/reports/screens/reports_screen.dart';
 import '../features/cash_register/screens/cash_register_screen.dart';
 import '../features/market/screens/market_registration_screen.dart';
+import '../features/daily_sales/screens/daily_sales_screen.dart';
+import '../features/sales/screens/draft_sales_screen.dart';
 import '../l10n/app_localizations.dart';
 import '../core/routes/app_routes.dart';
+import '../data/services/report_service.dart';
+import '../data/models/profit_model.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -27,6 +31,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
 
+  // Data for Owner
+  ProfitSummaryModel? _profitSummary;
+  CashBalanceModel? _cashBalance;
+  bool _isLoadingProfit = false;
+  String? _profitError;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +46,44 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
     _controller.forward();
+
+    // Load profit data if Owner - delay to after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.user?['role'] == 'Owner') {
+        _loadOwnerData();
+      }
+    });
+  }
+
+  Future<void> _loadOwnerData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    setState(() {
+      _isLoadingProfit = true;
+      _profitError = null;
+    });
+
+    try {
+      final reportService = ReportService(authProvider: authProvider);
+      final profitSummary = await reportService.getProfitSummary();
+      final cashBalance = await reportService.getCashBalance();
+
+      if (mounted) {
+        setState(() {
+          _profitSummary = profitSummary;
+          _cashBalance = cashBalance;
+          _isLoadingProfit = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _profitError = e.toString();
+          _isLoadingProfit = false;
+        });
+      }
+    }
   }
 
   @override
@@ -48,6 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
+    final isOwner = user?['role'] == 'Owner';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -64,6 +113,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildUserInfoCard(context, user),
+
+                      // Profit cards for Owner only
+                      if (isOwner) ...[
+                        const SizedBox(height: 16),
+                        _buildProfitCards(context),
+                      ],
+
                       const SizedBox(height: 16),
                       Text(
                         AppLocalizations.of(context)!.dashboard,
@@ -239,6 +295,143 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  Widget _buildProfitCards(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (_isLoadingProfit) {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_profitError != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.red.shade200),
+        ),
+        child: Text(
+          _profitError!,
+          style: TextStyle(color: Colors.red.shade800),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Profit Summary Row
+        Row(
+          children: [
+            Expanded(
+              child: _buildProfitCard(
+                context,
+                icon: Icons.today_outlined,
+                title: "Bugun",
+                value: _profitSummary?.todayProfit.toStringAsFixed(0) ?? '0',
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildProfitCard(
+                context,
+                icon: Icons.calendar_view_week_outlined,
+                title: "Hafta",
+                value: _profitSummary?.weekProfit.toStringAsFixed(0) ?? '0',
+                color: Colors.blue,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildProfitCard(
+                context,
+                icon: Icons.calendar_month_outlined,
+                title: "Oy",
+                value: _profitSummary?.monthProfit.toStringAsFixed(0) ?? '0',
+                color: Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildProfitCard(
+                context,
+                icon: Icons.account_balance_wallet_outlined,
+                title: "Kassa",
+                value: _cashBalance?.cashInRegister.toStringAsFixed(0) ?? '0',
+                color: AppTheme.primary,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfitCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF64748B).withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$value so\'m',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMenuGrid(BuildContext context, dynamic user) {
     final l10n = AppLocalizations.of(context)!;
     final menuItems = [
@@ -262,6 +455,26 @@ class _DashboardScreenState extends State<DashboardScreen>
         icon: Icons.shopping_cart_outlined,
         color: MenuCardColors.sales,
         onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
+      ),
+      _MenuItemData(
+        title: 'Kunlik Savdolar',
+        subtitle: 'Bugungi savdo ro\'yxati',
+        icon: Icons.receipt_long_outlined,
+        color: Colors.purple,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DailySalesScreen()),
+        ),
+      ),
+      _MenuItemData(
+        title: 'Draft Savdolar',
+        subtitle: 'Tugatilmagan savdolar',
+        icon: Icons.edit_note_outlined,
+        color: Colors.orange,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DraftSalesScreen()),
+        ),
       ),
       _MenuItemData(
         title: l10n.customers,

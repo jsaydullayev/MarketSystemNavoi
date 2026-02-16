@@ -4,6 +4,7 @@ using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Application.Interfaces;
+using System.Linq.Expressions;
 
 namespace MarketSystem.Application.Services;
 
@@ -21,7 +22,7 @@ public class ReportService : IReportService
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
-    public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, CancellationToken cancellationToken = default)
+    public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
@@ -37,10 +38,10 @@ public class ReportService : IReportService
             z => z.CreatedAt >= start && z.CreatedAt < end && z.MarketId == marketId,
             cancellationToken);
 
-        return CalculateReport(sales, zakups, start, end);
+        return CalculateReport(sales, zakups, start, end, userRole);
     }
 
-    public async Task<DailySaleItemsResponseDto> GetDailySaleItemsAsync(DateTime date, CancellationToken cancellationToken = default)
+    public async Task<DailySaleItemsResponseDto> GetDailySaleItemsAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
@@ -51,6 +52,9 @@ public class ReportService : IReportService
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
+
+        // Determine if profit should be included (Owner only)
+        bool includeProfit = userRole == "Owner";
 
         // Group by product and aggregate
         var productGroups = new Dictionary<string, DailySaleItemDto>();
@@ -68,7 +72,7 @@ public class ReportService : IReportService
                 var salePrice = item.SalePrice;
                 var totalCost = costPrice * quantity;
                 var totalRevenue = salePrice * quantity;
-                var profit = totalRevenue - totalCost;
+                decimal? profit = includeProfit ? totalRevenue - totalCost : null;
 
                 if (productGroups.ContainsKey(productName))
                 {
@@ -78,7 +82,9 @@ public class ReportService : IReportService
                         Quantity = existing.Quantity + quantity,
                         TotalCost = existing.TotalCost + totalCost,
                         TotalRevenue = existing.TotalRevenue + totalRevenue,
-                        Profit = existing.Profit + profit
+                        Profit = existing.Profit.HasValue && profit.HasValue
+                            ? existing.Profit.Value + profit.Value
+                            : null
                     };
                 }
                 else
@@ -102,7 +108,7 @@ public class ReportService : IReportService
         );
     }
 
-    public async Task<PeriodReportDto> GetPeriodReportAsync(PeriodReportRequest request, CancellationToken cancellationToken = default)
+    public async Task<PeriodReportDto> GetPeriodReportAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
@@ -116,7 +122,7 @@ public class ReportService : IReportService
             z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate && z.MarketId == marketId,
             cancellationToken);
 
-        var report = CalculateReport(sales, zakups, request.StartDate, request.EndDate);
+        var report = CalculateReport(sales, zakups, request.StartDate, request.EndDate, userRole);
 
         // Calculate average sale
         decimal averageSale = report.TotalTransactions > 0
@@ -213,7 +219,7 @@ public class ReportService : IReportService
         return await package.GetAsByteArrayAsync();
     }
 
-    public async Task<ComprehensiveReportDto> GetComprehensiveReportAsync(DateTime date, CancellationToken cancellationToken = default)
+    public async Task<ComprehensiveReportDto> GetComprehensiveReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
@@ -235,41 +241,46 @@ public class ReportService : IReportService
             p => p.MarketId == marketId,
             cancellationToken);
 
-        // Get all users for seller reports (filtered by market)
-        var users = await _unitOfWork.Users.FindAsync(
-            u => u.MarketId == marketId,
-            cancellationToken);
-
         // Calculate daily report
         var dailyReport = CalculateReport(sales, zakups, start, end);
 
-        // Calculate seller reports
+        // Calculate seller reports - ONLY FOR OWNER
         var sellerReports = new List<SellerReportDto>();
-        foreach (var user in users.Where(u => u.Role == Role.Seller || u.Role == Role.Admin || u.Role == Role.Owner))
+
+        // Only Owner can see seller reports
+        if (userRole == "Owner")
         {
-            var userSales = sales.Where(s => s.SellerId == user.Id).ToList();
-            if (userSales.Any())
+            // Get all users for seller reports (filtered by market)
+            var users = await _unitOfWork.Users.FindAsync(
+                u => u.MarketId == marketId,
+                cancellationToken);
+
+            foreach (var user in users.Where(u => u.Role == Role.Seller || u.Role == Role.Admin || u.Role == Role.Owner))
             {
-                decimal totalSales = userSales.Sum(s => s.TotalAmount);
-                decimal totalProfit = 0;
-
-                foreach (var sale in userSales)
+                var userSales = sales.Where(s => s.SellerId == user.Id).ToList();
+                if (userSales.Any())
                 {
-                    foreach (var item in sale.SaleItems)
-                    {
-                        var itemCost = item.CostPrice * item.Quantity;
-                        var itemRevenue = item.SalePrice * item.Quantity;
-                        totalProfit += itemRevenue - itemCost;
-                    }
-                }
+                    decimal totalSales = userSales.Sum(s => s.TotalAmount);
+                    decimal totalProfit = 0;
 
-                sellerReports.Add(new SellerReportDto(
-                    user.Id,
-                    user.FullName,
-                    totalSales,
-                    totalProfit,
-                    userSales.Count
-                ));
+                    foreach (var sale in userSales)
+                    {
+                        foreach (var item in sale.SaleItems)
+                        {
+                            var itemCost = item.CostPrice * item.Quantity;
+                            var itemRevenue = item.SalePrice * item.Quantity;
+                            totalProfit += itemRevenue - itemCost;
+                        }
+                    }
+
+                    sellerReports.Add(new SellerReportDto(
+                        user.Id,
+                        user.FullName,
+                        totalSales,
+                        totalProfit,  // Already filtered since this is only called when userRole == "Owner"
+                        userSales.Count
+                    ));
+                }
             }
         }
 
@@ -278,11 +289,14 @@ public class ReportService : IReportService
         decimal totalInventoryCost = 0;
         decimal totalInventorySaleValue = 0;
 
+        // Determine if profit should be included (Owner only)
+        bool includeProfit = userRole == "Owner";
+
         foreach (var product in products)
         {
             var totalCostValue = product.Quantity * product.CostPrice;
             var totalSaleValue = product.Quantity * product.SalePrice;
-            var potentialProfit = totalSaleValue - totalCostValue;
+            decimal? potentialProfit = includeProfit ? totalSaleValue - totalCostValue : null;
 
             totalInventoryCost += totalCostValue;
             totalInventorySaleValue += totalSaleValue;
@@ -312,7 +326,8 @@ public class ReportService : IReportService
 
     public async Task<byte[]> ExportComprehensiveToExcelAsync(DateTime date, CancellationToken cancellationToken = default)
     {
-        var report = await GetComprehensiveReportAsync(date, cancellationToken);
+        // Export to Excel is Owner-only feature, so pass "Owner" role
+        var report = await GetComprehensiveReportAsync(date, "Owner", cancellationToken);
 
         using var package = new ExcelPackage();
 
@@ -403,12 +418,16 @@ public class ReportService : IReportService
         IEnumerable<Sale> sales,
         IEnumerable<Zakup> zakups,
         DateTime start,
-        DateTime end)
+        DateTime end,
+        string? userRole = null)
     {
         decimal totalSales = 0;
         decimal totalCost = 0;     // Cost of goods sold
         decimal totalProfit = 0;    // Actual profit from sales
         int totalTransactions = sales.Count();
+
+        // Determine if profit should be included (Owner only)
+        bool includeProfit = userRole == "Owner";
 
         // Calculate payment breakdown
         var paymentBreakdown = new Dictionary<string, decimal>();
@@ -427,7 +446,10 @@ public class ReportService : IReportService
                 var itemProfit = itemRevenue - itemCost;
 
                 totalCost += itemCost;
-                totalProfit += itemProfit;
+                if (includeProfit)
+                {
+                    totalProfit += itemProfit;
+                }
             }
 
             // Accumulate payment breakdown from payments
@@ -447,7 +469,8 @@ public class ReportService : IReportService
         decimal totalZakup = zakups.Sum(z => z.Quantity * z.CostPrice);
 
         // Net income = Profit - Operating expenses (currently 0)
-        decimal netIncome = totalProfit;
+        decimal? netIncome = includeProfit ? totalProfit : null;
+        decimal? profit = includeProfit ? totalProfit : null;
 
         // Convert to list of DTOs
         var paymentBreakdownList = paymentBreakdown
@@ -462,10 +485,193 @@ public class ReportService : IReportService
             start,
             totalSales,
             totalZakup,
-            totalProfit,
+            profit,
             netIncome,
             totalTransactions,
             paymentBreakdownList
         );
+    }
+
+    // New methods for role-based access control
+    public async Task<ProfitSummaryDto> GetProfitSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        var now = DateTime.UtcNow;
+
+        // Today
+        var todayStart = DateTime.SpecifyKind(now.Date, DateTimeKind.Utc);
+        var todayEnd = DateTime.SpecifyKind(now.Date.AddDays(1), DateTimeKind.Utc);
+
+        // Week
+        var weekStart = DateTime.SpecifyKind(now.Date.AddDays(-(int)now.DayOfWeek), DateTimeKind.Utc);
+
+        // Month
+        var monthStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, 1), DateTimeKind.Utc);
+
+        // All time
+        var allTimeStart = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+
+        var todaySales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= todayStart && s.CreatedAt < todayStart.AddDays(1) &&
+                 s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            cancellationToken,
+            includeProperties: "SaleItems");
+
+        var weekSales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= weekStart && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            cancellationToken,
+            includeProperties: "SaleItems");
+
+        var monthSales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= monthStart && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            cancellationToken,
+            includeProperties: "SaleItems");
+
+        var allSales = await _unitOfWork.Sales.FindAsync(
+            s => s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            cancellationToken,
+            includeProperties: "SaleItems");
+
+        return new ProfitSummaryDto(
+            CalculateProfitFromSales(todaySales),
+            CalculateProfitFromSales(weekSales),
+            CalculateProfitFromSales(monthSales),
+            CalculateProfitFromSales(allSales)
+        );
+    }
+
+    public async Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        var now = DateTime.UtcNow;
+
+        // Get today's date range in current market's timezone
+        var todayStart = DateTime.SpecifyKind(now.Date, DateTimeKind.Utc);
+        var todayEnd = DateTime.SpecifyKind(now.Date.AddDays(1), DateTimeKind.Utc);
+
+        // Get all payments for today
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= todayStart && s.CreatedAt < todayEnd &&
+                 s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            cancellationToken,
+            includeProperties: "Payments");
+
+        decimal cashInRegister = 0;
+        decimal cardPayments = 0;
+
+        foreach (var sale in sales)
+        {
+            foreach (var payment in sale.Payments)
+            {
+                if (payment.PaymentType == PaymentType.Cash)
+                {
+                    cashInRegister += payment.Amount;
+                }
+                else if (payment.PaymentType == PaymentType.Terminal)
+                {
+                    cardPayments += payment.Amount;
+                }
+            }
+        }
+
+        return new CashBalanceDto(
+            cashInRegister,
+            cardPayments,
+            cashInRegister + cardPayments
+        );
+    }
+
+    public async Task<DailySalesListDto> GetDailySalesListAsync(
+        DateTime date,
+        string? userRole = null,
+        Guid? userId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
+
+        // Build query with role-based filtering
+        // If Seller, filter by their own sales only
+        Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
+                              s.Status != SaleStatus.Cancelled &&
+                              s.MarketId == marketId &&
+                              (userRole != "Seller" || s.SellerId == userId);
+
+        var sales = await _unitOfWork.Sales.FindAsync(
+            salesQuery,
+            cancellationToken,
+            includeProperties: "SaleItems,Payments,Seller,Customer");
+
+        var salesListItems = new List<DailySalesListItemDto>();
+        decimal totalSales = 0;
+
+        // Determine if profit should be included (Owner only)
+        bool includeProfit = userRole == "Owner";
+
+        foreach (var sale in sales)
+        {
+            totalSales += sale.TotalAmount;
+
+            // Calculate profit for this sale
+            decimal? profit = null;
+            if (includeProfit)
+            {
+                profit = 0;
+                foreach (var item in sale.SaleItems)
+                {
+                    var itemCost = item.CostPrice * item.Quantity;
+                    var itemRevenue = item.SalePrice * item.Quantity;
+                    profit += itemRevenue - itemCost;
+                }
+            }
+
+            // Get primary payment type
+            var primaryPayment = sale.Payments.FirstOrDefault();
+            var paymentType = primaryPayment?.PaymentType.ToString() ?? "Cash";
+
+            salesListItems.Add(new DailySalesListItemDto(
+                sale.Id,
+                sale.CreatedAt,
+                sale.Seller?.FullName ?? "Unknown",
+                sale.TotalAmount,
+                paymentType,
+                sale.Status.ToString(),
+                profit,
+                sale.Customer?.FullName
+            ));
+        }
+
+        // Calculate summary profit for Owner only
+        decimal? summaryProfit = null;
+        if (includeProfit && salesListItems.Any())
+        {
+            summaryProfit = salesListItems.Sum(s => s.Profit ?? 0);
+        }
+
+        return new DailySalesListDto(
+            start,
+            salesListItems,
+            totalSales,
+            salesListItems.Count,
+            summaryProfit
+        );
+    }
+
+    private static decimal CalculateProfitFromSales(IEnumerable<Sale> sales)
+    {
+        decimal profit = 0;
+
+        foreach (var sale in sales)
+        {
+            foreach (var item in sale.SaleItems)
+            {
+                var itemCost = item.CostPrice * item.Quantity;
+                var itemRevenue = item.SalePrice * item.Quantity;
+                profit += itemRevenue - itemCost;
+            }
+        }
+
+        return profit;
     }
 }

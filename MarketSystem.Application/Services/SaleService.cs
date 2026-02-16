@@ -46,52 +46,141 @@ public class SaleService : ISaleService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.MarketId == marketId,
-            cancellationToken);
+        // ✅ OPTIMIZED: Single query with eager loading - no N+1 problem
+        var sales = await _context.Sales
+            .Include(s => s.Seller)
+            .Include(s => s.Customer)
+            .Include(s => s.SaleItems)
+                .ThenInclude(si => si.Product)
+            .Include(s => s.Payments)
+            .Where(s => s.MarketId == marketId)
+            .OrderByDescending(s => s.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
-        var result = new List<SaleDto>();
-
-        foreach (var sale in sales)
-        {
-            result.Add(await MapToDtoAsync(sale, cancellationToken));
-        }
-
-        return result;
+        return sales.Select(s => new SaleDto(
+            s.Id,
+            s.SellerId,
+            s.Seller?.FullName ?? "Unknown",
+            s.CustomerId,
+            s.Customer?.FullName,
+            s.Customer?.Phone,
+            s.Status.ToString(),
+            s.TotalAmount,
+            s.PaidAmount,
+            s.TotalAmount - s.PaidAmount,
+            s.CreatedAt,
+            s.SaleItems.Select(si => new SaleItemDto(
+                si.Id.ToString(),
+                si.SaleId.ToString(),
+                si.ProductId,
+                si.Product?.Name ?? "Unknown",
+                si.Quantity,
+                si.SalePrice,
+                si.Quantity * si.SalePrice, // TotalPrice
+                si.Comment
+            )).ToList(),
+            s.Payments.Select(p => new PaymentDto(
+                p.Id,
+                p.PaymentType.ToString(),
+                p.Amount,
+                p.CreatedAt
+            )).ToList()
+        ));
     }
 
     public async Task<IEnumerable<SaleDto>> GetSalesByDateRangeAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.MarketId == marketId && s.CreatedAt >= start && s.CreatedAt <= end,
-            cancellationToken);
+        // ✅ OPTIMIZED: Single query with eager loading
+        var sales = await _context.Sales
+            .Include(s => s.Seller)
+            .Include(s => s.Customer)
+            .Include(s => s.SaleItems)
+                .ThenInclude(si => si.Product)
+            .Include(s => s.Payments)
+            .Where(s => s.MarketId == marketId && s.CreatedAt >= start && s.CreatedAt <= end)
+            .OrderByDescending(s => s.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
-        var result = new List<SaleDto>();
-        foreach (var sale in sales)
-        {
-            result.Add(await MapToDtoAsync(sale, cancellationToken));
-        }
-
-        return result;
+        return sales.Select(s => new SaleDto(
+            s.Id,
+            s.SellerId,
+            s.Seller?.FullName ?? "Unknown",
+            s.CustomerId,
+            s.Customer?.FullName,
+            s.Customer?.Phone,
+            s.Status.ToString(),
+            s.TotalAmount,
+            s.PaidAmount,
+            s.TotalAmount - s.PaidAmount,
+            s.CreatedAt,
+            s.SaleItems.Select(si => new SaleItemDto(
+                si.Id.ToString(),
+                si.SaleId.ToString(),
+                si.ProductId,
+                si.Product?.Name ?? "Unknown",
+                si.Quantity,
+                si.SalePrice,
+                si.Quantity * si.SalePrice,
+                si.Comment
+            )).ToList(),
+            s.Payments.Select(p => new PaymentDto(
+                p.Id,
+                p.PaymentType.ToString(),
+                p.Amount,
+                p.CreatedAt
+            )).ToList()
+        ));
     }
 
     public async Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.MarketId == marketId && s.SellerId == sellerId && s.Status == SaleStatus.Draft,
-            cancellationToken);
+        // ✅ OPTIMIZED: Single query with eager loading
+        var sales = await _context.Sales
+            .Include(s => s.Seller)
+            .Include(s => s.Customer)
+            .Include(s => s.SaleItems)
+                .ThenInclude(si => si.Product)
+            .Include(s => s.Payments)
+            .Where(s => s.MarketId == marketId && s.SellerId == sellerId && s.Status == SaleStatus.Draft)
+            .OrderByDescending(s => s.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
-        var result = new List<SaleDto>();
-        foreach (var sale in sales)
-        {
-            result.Add(await MapToDtoAsync(sale, cancellationToken));
-        }
-
-        return result;
+        return sales.Select(s => new SaleDto(
+            s.Id,
+            s.SellerId,
+            s.Seller?.FullName ?? "Unknown",
+            s.CustomerId,
+            s.Customer?.FullName,
+            s.Customer?.Phone,
+            s.Status.ToString(),
+            s.TotalAmount,
+            s.PaidAmount,
+            s.TotalAmount - s.PaidAmount,
+            s.CreatedAt,
+            s.SaleItems.Select(si => new SaleItemDto(
+                si.Id.ToString(),
+                si.SaleId.ToString(),
+                si.ProductId,
+                si.Product?.Name ?? "Unknown",
+                si.Quantity,
+                si.SalePrice,
+                si.Quantity * si.SalePrice,
+                si.Comment
+            )).ToList(),
+            s.Payments.Select(p => new PaymentDto(
+                p.Id,
+                p.PaymentType.ToString(),
+                p.Amount,
+                p.CreatedAt
+            )).ToList()
+        ));
     }
 
     public async Task<SaleDto> CreateSaleAsync(CreateSaleDto request, Guid sellerId, CancellationToken cancellationToken = default)
@@ -227,6 +316,94 @@ public class SaleService : ISaleService
         }
     }
 
+    public async Task<SaleItemDto?> RemoveSaleItemAsync(Guid saleId, RemoveSaleItemDto request, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            // Get sale with MarketId filtering
+            var sales = await _unitOfWork.Sales.FindAsync(
+                s => s.Id == saleId && s.MarketId == marketId,
+                cancellationToken);
+            var sale = sales.FirstOrDefault();
+
+            if (sale is null || sale.Status != SaleStatus.Draft)
+                throw new InvalidOperationException("Sale not found or not in Draft status");
+
+            // Get sale item
+            var saleItemGuid = Guid.Parse(request.SaleItemId);
+            var saleItems = await _unitOfWork.SaleItems.FindAsync(
+                si => si.Id == saleItemGuid && si.SaleId == saleId,
+                cancellationToken);
+            var saleItem = saleItems.FirstOrDefault();
+
+            if (saleItem == null)
+                throw new InvalidOperationException("Sale item not found");
+
+            // Get product
+            var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
+            if (product is null)
+                throw new InvalidOperationException("Product not found");
+
+            // SECURITY: Verify product belongs to the same market as the sale
+            if (product.MarketId != sale.MarketId)
+                throw new InvalidOperationException("Product does not belong to this market");
+
+            SaleItem? resultSaleItem;
+            decimal itemTotal;
+
+            if (request.Quantity == 0 || request.Quantity >= saleItem.Quantity)
+            {
+                // Remove entire item from sale
+                _unitOfWork.SaleItems.Delete(saleItem);
+
+                // Restore full stock
+                product.Quantity += saleItem.Quantity;
+                _context.Entry(product).State = EntityState.Modified;
+                _unitOfWork.Products.Update(product);
+
+                // Update sale total
+                itemTotal = saleItem.Quantity * saleItem.SalePrice;
+                sale.TotalAmount -= itemTotal;
+                _unitOfWork.Sales.Update(sale);
+
+                resultSaleItem = saleItem; // Return deleted item info
+            }
+            else
+            {
+                // Partial quantity removal
+                var oldQuantity = saleItem.Quantity;
+                saleItem.Quantity -= request.Quantity;
+                _unitOfWork.SaleItems.Update(saleItem);
+
+                // Restore partial stock
+                product.Quantity += request.Quantity;
+                _context.Entry(product).State = EntityState.Modified;
+                _unitOfWork.Products.Update(product);
+
+                // Update sale total
+                var oldItemTotal = oldQuantity * saleItem.SalePrice;
+                itemTotal = saleItem.Quantity * saleItem.SalePrice;
+                sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
+                _unitOfWork.Sales.Update(sale);
+
+                resultSaleItem = saleItem;
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            return MapSaleItemToDto(resultSaleItem, product.Name);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+    }
+
     public async Task<PaymentDto?> AddPaymentAsync(Guid saleId, AddPaymentDto request, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
@@ -245,6 +422,13 @@ public class SaleService : ISaleService
             if (sale.Status == SaleStatus.Paid || sale.Status == SaleStatus.Closed || sale.Status == SaleStatus.Cancelled)
                 throw new InvalidOperationException($"Cannot add payment to sale with status: {sale.Status}");
 
+            // VALIDATION: Mijozsiz qarzga savdo taqiqlanadi
+            var newPaidAmount = sale.PaidAmount + request.Amount;
+            if (newPaidAmount < sale.TotalAmount && (!sale.CustomerId.HasValue || sale.CustomerId.Value == Guid.Empty))
+            {
+                throw new InvalidOperationException("Mijoz tanlanmagan savdoni qarzga yopib bo'lmaydi. Iltimos, mijoz tanlang yoki to'liq to'lov qiling.");
+            }
+
             var payment = new Payment
             {
                 Id = Guid.NewGuid(),
@@ -255,6 +439,21 @@ public class SaleService : ISaleService
             };
 
             await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
+
+            // ✅ NEW: Update cash register balance for cash payments
+            if (payment.PaymentType == PaymentType.Cash)
+            {
+                var cashRegister = await _context.CashRegisters
+                    .OrderByDescending(cr => cr.LastUpdated)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (cashRegister != null)
+                {
+                    cashRegister.CurrentBalance += request.Amount;
+                    cashRegister.LastUpdated = DateTime.UtcNow;
+                    _context.CashRegisters.Update(cashRegister);
+                }
+            }
 
             // Update sale paid amount
             sale.PaidAmount += request.Amount;
@@ -312,7 +511,8 @@ public class SaleService : ISaleService
                 // Mijozsiz savdo uchun debt record yaratilmaydi, lekin status "debt" bo'ladi
             }
 
-            _unitOfWork.Sales.Update(sale);
+            // Use DbContext to explicitly mark sale as modified
+            _context.Entry(sale).State = EntityState.Modified;
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
@@ -502,5 +702,120 @@ public class SaleService : ISaleService
             item.Quantity * item.SalePrice, // totalPrice
             item.Comment
         );
+    }
+
+    public async Task<SaleItemDto?> UpdateSaleItemPriceAsync(UpdateSaleItemPriceDto request, Guid userId, string userRole, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Validation
+        if (request.NewPrice <= 0)
+            throw new InvalidOperationException("Narx 0 yoki manfiy bo'lishi mumkin emas");
+
+        if (string.IsNullOrWhiteSpace(request.Comment))
+            throw new InvalidOperationException("Izoh (comment) majburiy");
+
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            // Get SaleItem with Sale and Debt
+            var saleItems = await _unitOfWork.SaleItems.FindAsync(
+                si => si.Id == request.SaleItemId,
+                cancellationToken,
+                includeProperties: "Sale");
+
+            var saleItem = saleItems.FirstOrDefault();
+            if (saleItem == null)
+                throw new InvalidOperationException("SaleItem topilmadi");
+
+            var sale = saleItem.Sale;
+            if (sale == null || sale.MarketId != marketId)
+                throw new InvalidOperationException("Sotuv topilmadi");
+
+            // Check if debt exists and get its status
+            Debt? debt = null;
+            if (sale.CustomerId.HasValue)
+            {
+                var debts = await _unitOfWork.Debts.FindAsync(
+                    d => d.SaleId == sale.Id && d.MarketId == marketId,
+                    cancellationToken);
+                debt = debts.FirstOrDefault();
+            }
+
+            // Role-based authorization
+            if (debt != null && debt.Status == DebtStatus.Closed)
+            {
+                // Only Owner and Admin can edit closed debts
+                if (userRole != "Owner" && userRole != "Admin")
+                {
+                    throw new UnauthorizedAccessException("Yopilgan qarzni tahrirlash huquqi yo'q (faqat Owner/Admin)");
+                }
+            }
+
+            // Store old price
+            var oldPrice = saleItem.SalePrice;
+
+            // Update SaleItem price
+            saleItem.SalePrice = request.NewPrice;
+            _unitOfWork.SaleItems.Update(saleItem);
+
+            // Recalculate Sale.TotalAmount
+            var allSaleItems = await _unitOfWork.SaleItems.FindAsync(
+                si => si.SaleId == sale.Id,
+                cancellationToken);
+
+            var newTotalAmount = 0m;
+            foreach (var item in allSaleItems)
+            {
+                newTotalAmount += item.SalePrice * item.Quantity;
+            }
+
+            var oldTotalAmount = sale.TotalAmount;
+            sale.TotalAmount = newTotalAmount;
+            _unitOfWork.Sales.Update(sale);
+
+            // Recalculate Debt if exists
+            if (debt != null)
+            {
+                var oldTotalDebt = debt.TotalDebt;
+                debt.TotalDebt = newTotalAmount;
+                debt.RemainingDebt = newTotalAmount - sale.PaidAmount;
+                _unitOfWork.Debts.Update(debt);
+
+                _logger.LogInformation($"Debt {debt.Id} recalculated: {oldTotalDebt} -> {newTotalAmount}");
+            }
+
+            // Create audit log
+            var auditLog = new DebtAuditLog
+            {
+                Id = Guid.NewGuid(),
+                SaleId = sale.Id,
+                SaleItemId = saleItem.Id,
+                OldPrice = oldPrice,
+                NewPrice = request.NewPrice,
+                ChangedByUserId = userId,
+                Comment = request.Comment,
+                MarketId = marketId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.DebtAuditLogs.AddAsync(auditLog, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            _logger.LogInformation($"SaleItem {saleItem.Id} price updated: {oldPrice} -> {request.NewPrice} by User {userId}");
+
+            // Get product name for response
+            var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
+
+            return MapSaleItemToDto(saleItem, product?.Name ?? "Unknown");
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
     }
 }

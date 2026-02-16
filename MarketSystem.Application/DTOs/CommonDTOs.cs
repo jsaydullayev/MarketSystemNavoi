@@ -125,12 +125,21 @@ public record AddSaleItemDto(
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("comment")] string? Comment
 );
+public record RemoveSaleItemDto(
+    [property: JsonPropertyName("saleItemId")] string SaleItemId,
+    [property: JsonPropertyName("quantity")] int Quantity  // Quantity to remove (0 = remove completely)
+);
 public record AddPaymentDto(
     [property: JsonPropertyName("paymentType")] string PaymentType,
     [property: JsonPropertyName("amount")] decimal Amount
 );
 public record CancelSaleDto(
     [property: JsonPropertyName("adminId")] string AdminId
+);
+public record UpdateSaleItemPriceDto(
+    [property: JsonPropertyName("saleItemId")] Guid SaleItemId,
+    [property: JsonPropertyName("newPrice")] decimal NewPrice,
+    [property: JsonPropertyName("comment")] string Comment
 );
 
 // Zakup DTOs
@@ -163,7 +172,7 @@ public record DailySaleItemDto(
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("totalCost")] decimal TotalCost,
     [property: JsonPropertyName("totalRevenue")] decimal TotalRevenue,
-    [property: JsonPropertyName("profit")] decimal Profit
+    [property: JsonPropertyName("profit")] decimal? Profit  // null for Admin/Seller
 );
 
 public record DailySaleItemsResponseDto(
@@ -175,8 +184,8 @@ public record DailyReportDto(
     [property: JsonPropertyName("date")] DateTime Date,
     [property: JsonPropertyName("totalSales")] decimal TotalSales,
     [property: JsonPropertyName("totalZakup")] decimal TotalZakup,
-    [property: JsonPropertyName("profit")] decimal Profit,
-    [property: JsonPropertyName("netIncome")] decimal NetIncome,
+    [property: JsonPropertyName("profit")] decimal? Profit,  // null for Admin/Seller
+    [property: JsonPropertyName("netIncome")] decimal? NetIncome,  // null for Admin/Seller
     [property: JsonPropertyName("totalTransactions")] int TotalTransactions,
     [property: JsonPropertyName("paymentBreakdown")] List<PaymentBreakdownDto> PaymentBreakdown
 );
@@ -189,8 +198,8 @@ public record PeriodReportDto(
     [property: JsonPropertyName("endDate")] DateTime EndDate,
     [property: JsonPropertyName("totalSales")] decimal TotalSales,
     [property: JsonPropertyName("totalZakup")] decimal TotalZakup,
-    [property: JsonPropertyName("profit")] decimal Profit,
-    [property: JsonPropertyName("netIncome")] decimal NetIncome,
+    [property: JsonPropertyName("profit")] decimal? Profit,  // null for Admin/Seller
+    [property: JsonPropertyName("netIncome")] decimal? NetIncome,  // null for Admin/Seller
     [property: JsonPropertyName("totalTransactions")] int TotalTransactions,
     [property: JsonPropertyName("averageSale")] decimal AverageSale,
     [property: JsonPropertyName("paymentBreakdown")] List<PaymentBreakdownDto> PaymentBreakdown
@@ -201,7 +210,7 @@ public record SellerReportDto(
     [property: JsonPropertyName("sellerId")] Guid SellerId,
     [property: JsonPropertyName("sellerName")] string SellerName,
     [property: JsonPropertyName("totalSales")] decimal TotalSales,
-    [property: JsonPropertyName("totalProfit")] decimal TotalProfit,
+    [property: JsonPropertyName("totalProfit")] decimal? TotalProfit,  // null for Admin/Seller
     [property: JsonPropertyName("transactionCount")] int TransactionCount
 );
 
@@ -215,7 +224,7 @@ public record InventoryReportDto(
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
     [property: JsonPropertyName("totalCostValue")] decimal TotalCostValue,
     [property: JsonPropertyName("totalSaleValue")] decimal TotalSaleValue,
-    [property: JsonPropertyName("potentialProfit")] decimal PotentialProfit
+    [property: JsonPropertyName("potentialProfit")] decimal? PotentialProfit  // null for Admin/Seller
 );
 
 // Comprehensive Report
@@ -250,4 +259,38 @@ public record PagedResponse<T>(
     [property: JsonPropertyName("totalCount")] int TotalCount,
     [property: JsonPropertyName("page")] int Page,
     [property: JsonPropertyName("pageSize")] int PageSize
+);
+
+// Profit and Cash Balance DTOs - Owner Only
+public record ProfitSummaryDto(
+    [property: JsonPropertyName("todayProfit")] decimal TodayProfit,
+    [property: JsonPropertyName("weekProfit")] decimal WeekProfit,
+    [property: JsonPropertyName("monthProfit")] decimal MonthProfit,
+    [property: JsonPropertyName("totalProfit")] decimal TotalProfit
+);
+
+public record CashBalanceDto(
+    [property: JsonPropertyName("cashInRegister")] decimal CashInRegister,
+    [property: JsonPropertyName("cardPayments")] decimal CardPayments,
+    [property: JsonPropertyName("totalBalance")] decimal TotalBalance
+);
+
+// Daily Sales List - Role-based visibility
+public record DailySalesListItemDto(
+    [property: JsonPropertyName("id")] Guid Id,
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+    [property: JsonPropertyName("sellerName")] string SellerName,
+    [property: JsonPropertyName("totalAmount")] decimal TotalAmount,
+    [property: JsonPropertyName("paymentType")] string PaymentType,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("profit")] decimal? Profit,  // null for Admin/Seller
+    [property: JsonPropertyName("customerName")] string? CustomerName
+);
+
+public record DailySalesListDto(
+    [property: JsonPropertyName("date")] DateTime Date,
+    [property: JsonPropertyName("sales")] List<DailySalesListItemDto> Sales,
+    [property: JsonPropertyName("totalSales")] decimal TotalSales,
+    [property: JsonPropertyName("totalTransactions")] int TotalTransactions,
+    [property: JsonPropertyName("summaryProfit")] decimal? SummaryProfit  // null for Admin/Seller
 );
