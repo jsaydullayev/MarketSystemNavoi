@@ -100,7 +100,15 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to add sale item: ${response.body}');
+      // Xatolik tafsilotlarini ko'rsatish
+      String errorMsg = 'Failed to add sale item';
+      try {
+        final errorData = jsonDecode(response.body);
+        errorMsg = errorData['message'] ?? errorData['title'] ?? response.body;
+      } catch (_) {
+        errorMsg = response.body.isNotEmpty ? response.body : 'Server error: ${response.statusCode}';
+      }
+      throw Exception('Failed to add sale item: $errorMsg (Status: ${response.statusCode})');
     }
   }
 
@@ -110,14 +118,17 @@ class SalesService {
     required String saleItemId,
     required int quantity,  // 0 = butunlay o'chirish, >0 = shunchaki miqdorni kamaytirish
   }) async {
+    final url = '${ApiConstants.sales}/RemoveSaleItem/$saleId';
     print('=== REMOVE SALE ITEM DEBUG ===');
+    print('URL: $url');
     print('Sale ID: $saleId');
     print('Sale Item ID: $saleItemId');
     print('Quantity to remove: $quantity');
+    print('Body: {"saleItemId": "$saleItemId", "quantity": $quantity}');
     print('============================');
 
     final response = await _httpService.post(
-      '${ApiConstants.sales}/remove-item/$saleId',
+      url,
       body: {
         'saleItemId': saleItemId,
         'quantity': quantity,
@@ -130,7 +141,15 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to remove sale item: ${response.body}');
+      // Xatolik tafsilotlarini ko'rsatish
+      String errorMsg = 'Failed to remove sale item';
+      try {
+        final errorData = jsonDecode(response.body);
+        errorMsg = errorData['message'] ?? errorData['title'] ?? response.body;
+      } catch (_) {
+        errorMsg = response.body.isNotEmpty ? response.body : 'Server error: ${response.statusCode}';
+      }
+      throw Exception('Failed to remove sale item: $errorMsg (Status: ${response.statusCode})');
     }
   }
 
@@ -209,6 +228,29 @@ class SalesService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to update sale item price: ${response.body}');
+    }
+  }
+
+  // Savdoni o'chirish
+  Future<dynamic> deleteSale({
+    required String saleId,
+  }) async {
+    print('=== DELETE SALE ===');
+    print('Sale ID: $saleId');
+    print('==================');
+
+    final response = await _httpService.post(
+      '${ApiConstants.sales}/DeleteSale/$saleId',
+    );
+
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+    print('==================');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to delete sale: ${response.body}');
     }
   }
 }

@@ -6,6 +6,7 @@ import '../../../data/services/product_service.dart';
 import '../../../data/services/customer_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
+import 'draft_sales_screen.dart';
 
 class NewSaleScreen extends StatefulWidget {
   const NewSaleScreen({super.key});
@@ -277,6 +278,15 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             }
           }
         },
+        onCancel: () {
+          // Savdo draft sifatida saqlandi, Draft Savdolarga o'tamiz
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const DraftSalesScreen()),
+              (route) => false,
+            );
+          }
+        },
       ),
     );
   }
@@ -312,7 +322,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           productId: item['productId'],
           quantity: item['quantity'],
           salePrice: item['salePrice'],
-          minSalePrice: item['minSalePrice'],  // ✅ Backendga minPrice yuborish
+          minSalePrice: item['minSalePrice'], // ✅ Backendga minPrice yuborish
           comment: item['comment'],
         );
       }
@@ -362,18 +372,126 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }
   }
 
+  // Savdoni draft sifatida saqlash
+  Future<void> _saveAsDraft() async {
+    if (_cartItems.isEmpty) {
+      return; // Bo'sh savdoni saqlash shart emas
+    }
+
+    try {
+      setState(() {
+        _isCreating = true;
+      });
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+
+      // 1. Create sale
+      final sale = await salesService.createSale(
+        customerId: _selectedCustomer?['id'],
+      );
+
+      // 2. Add all items to sale
+      for (var item in _cartItems) {
+        await salesService.addSaleItem(
+          saleId: sale['id'],
+          productId: item['productId'],
+          quantity: item['quantity'],
+          salePrice: item['salePrice'],
+          minSalePrice: item['minSalePrice'],
+          comment: item['comment'],
+        );
+      }
+
+      setState(() {
+        _isCreating = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Savdo draft sifatida saqlandi!'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isCreating = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Draft saqlashda xatolik: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Back button bosilganda
+  Future<bool> _onWillPop() async {
+    // Agar savda bo'sh bo'lsa, shunchaki chiqib ketamiz
+    if (_cartItems.isEmpty) {
+      return true;
+    }
+
+    // Agar mahsulotlar bor bo'lsa, draft saqlashni taklif qilamiz
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Savdani saqlash?'),
+        content: Text(
+          'Savatda ${_cartItems.length} ta mahsulot bor. Draft sifatida saqlashni xohlaysizmi?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false), // Saqlamasdan chiqish
+            child: const Text('Yo\'q, chiqib ketish'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Draft sifatida saqlash
+              Navigator.pop(context, true);
+            },
+            child: const Text('Ha, saqlash', style: TextStyle(color: Colors.orange)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await _saveAsDraft();
+    }
+
+    return true; // Har holda chiqib ketamiz
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Yangi sotuv',
-            style: TextStyle(fontWeight: FontWeight.w600)),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F7FA),
+        appBar: AppBar(
+          title: const Text('Yangi sotuv',
+              style: TextStyle(fontWeight: FontWeight.w600)),
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+        ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -721,7 +839,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            NumberFormatter.format(product['salePrice']),
+                                            NumberFormatter.format(
+                                                product['salePrice']),
                                             style: const TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
@@ -764,12 +883,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                                 color: Colors.transparent,
                                                 child: InkWell(
                                                   onTap: isInStock
-                                                      ? () => _addToCart(
-                                                          product)
+                                                      ? () =>
+                                                          _addToCart(product)
                                                       : null,
                                                   borderRadius:
-                                                      BorderRadius.circular(
-                                                          6),
+                                                      BorderRadius.circular(6),
                                                   child: Container(
                                                     width: 28,
                                                     height: 28,
@@ -780,8 +898,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                                           : Colors
                                                               .grey.shade200,
                                                       borderRadius:
-                                                          BorderRadius
-                                                              .circular(6),
+                                                          BorderRadius.circular(
+                                                              6),
                                                     ),
                                                     child: Center(
                                                       child: Icon(
@@ -858,6 +976,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 ),
               ],
             ),
+      ),
     );
   }
 
@@ -972,12 +1091,16 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, size: 20, color: Color(0xFFEF4444)),
+                  const Icon(Icons.warning_amber_rounded,
+                      size: 20, color: Color(0xFFEF4444)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Minimum narx: ${NumberFormatter.format(minPrice)}',
-                      style: const TextStyle(fontSize: 13, color: Color(0xFFDC2626), fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFFDC2626),
+                          fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -1096,8 +1219,7 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            final enteredPrice =
-                double.tryParse(_priceController.text) ?? 0.0;
+            final enteredPrice = double.tryParse(_priceController.text) ?? 0.0;
 
             if (enteredPrice <= 0) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1144,6 +1266,7 @@ class _PaymentDialog extends StatefulWidget {
   final double totalAmount;
   final Map<String, dynamic>? selectedCustomer;
   final Function(List<Map<String, dynamic>>, bool) onConfirm;
+  final VoidCallback? onCancel;
 
   const _PaymentDialog({
     super.key,
@@ -1151,6 +1274,7 @@ class _PaymentDialog extends StatefulWidget {
     required this.totalAmount,
     required this.selectedCustomer,
     required this.onConfirm,
+    this.onCancel,
   });
 
   @override
@@ -1191,7 +1315,8 @@ class _PaymentDialogState extends State<_PaymentDialog> {
     } else {
       // To'liq to'lash yoki partial payment
       // Mijozsiz partial payment uchun ruxsat: status "debt" bo'ladi
-      return _remainingAmount <= 0.01 || (_remainingAmount > 0.01 && _totalPaid > 0);
+      return _remainingAmount <= 0.01 ||
+          (_remainingAmount > 0.01 && _totalPaid > 0);
     }
   }
 
@@ -1206,7 +1331,8 @@ class _PaymentDialogState extends State<_PaymentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final customerDebt = (widget.selectedCustomer?['totalDebt'] ?? 0).toDouble();
+    final customerDebt =
+        (widget.selectedCustomer?['totalDebt'] ?? 0).toDouble();
 
     return AlertDialog(
       title: const Text('To\'lov usullari'),
@@ -1440,7 +1566,10 @@ class _PaymentDialogState extends State<_PaymentDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isProcessing ? null : () => Navigator.pop(context),
+          onPressed: _isProcessing ? null : () {
+            Navigator.pop(context);
+            widget.onCancel?.call();
+          },
           child: const Text('Bekor qilish'),
         ),
         ElevatedButton(
