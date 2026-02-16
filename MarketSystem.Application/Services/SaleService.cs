@@ -712,16 +712,20 @@ public class SaleService : ISaleService
         if (request.NewPrice <= 0)
             throw new InvalidOperationException("Narx 0 yoki manfiy bo'lishi mumkin emas");
 
-        if (string.IsNullOrWhiteSpace(request.Comment))
-            throw new InvalidOperationException("Izoh (comment) majburiy");
+        // Comment is optional for price update
+        // if (string.IsNullOrWhiteSpace(request.Comment))
+        //     throw new InvalidOperationException("Izoh (comment) majburiy");
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
+            // Parse saleItemId from string to Guid
+            var saleItemGuid = Guid.Parse(request.SaleItemId);
+
             // Get SaleItem with Sale and Debt
             var saleItems = await _unitOfWork.SaleItems.FindAsync(
-                si => si.Id == request.SaleItemId,
+                si => si.Id == saleItemGuid,
                 cancellationToken,
                 includeProperties: "Sale");
 
@@ -795,7 +799,7 @@ public class SaleService : ISaleService
                 OldPrice = oldPrice,
                 NewPrice = request.NewPrice,
                 ChangedByUserId = userId,
-                Comment = request.Comment,
+                Comment = request.Comment ?? "Narx o'zgartirildi",
                 MarketId = marketId,
                 CreatedAt = DateTime.UtcNow
             };

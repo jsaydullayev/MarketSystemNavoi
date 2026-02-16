@@ -182,4 +182,33 @@ class SalesService {
       throw Exception('Failed to cancel sale. Status: ${response.statusCode}, Body: ${response.body}');
     }
   }
+
+  // Savdo item narxini o'zgartirish
+  Future<dynamic> updateSaleItemPrice({
+    required String saleItemId,
+    required double newPrice,
+  }) async {
+    print('=== UPDATE SALE ITEM PRICE ===');
+    print('Sale Item ID: $saleItemId');
+    print('New Price: $newPrice');
+    print('==============================');
+
+    final response = await _httpService.patch(
+      '${ApiConstants.sales}/UpdateSaleItemPrice',
+      body: {
+        'saleItemId': saleItemId,
+        'newPrice': newPrice,
+      },
+    );
+
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+    print('==============================');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to update sale item price: ${response.body}');
+    }
+  }
 }
