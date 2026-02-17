@@ -8,6 +8,7 @@ public class CashWithdrawal : BaseEntity
     public decimal Amount { get; set; }
     public string Comment { get; set; } = string.Empty;
     public DateTime WithdrawalDate { get; set; }
+    public string WithdrawType { get; set; } = "cash"; // 'cash' or 'click'
     public Guid? UserId { get; set; } // Kim olgani
     public User? User { get; set; }
 }

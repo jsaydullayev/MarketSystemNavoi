@@ -49,8 +49,8 @@ public class PaymentService : IPaymentService
 
         if (totalPaid >= sale.TotalAmount)
         {
-            sale.Status = SaleStatus.Paid;
-            _logger.LogInformation("Sale {SaleId} fully paid. Status changed from {Previous} to Paid",
+            sale.Status = SaleStatus.Closed; // To'liq to'langanda Closed status
+            _logger.LogInformation("Sale {SaleId} fully paid. Status changed from {Previous} to Closed",
                 sale.Id, previousStatus);
         }
         else if (totalPaid > 0)

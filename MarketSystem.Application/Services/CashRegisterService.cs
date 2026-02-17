@@ -100,35 +100,72 @@ public class CashRegisterService : ICashRegisterService
                 return false;
             }
 
-            if (cashRegister.CurrentBalance < request.Amount)
+            _logger.LogInformation("WithdrawCashAsync called. Type: {Type}, Amount: {Amount}",
+                request.WithdrawType, request.Amount);
+
+            // Agar 'cash' bo'lsa, kassadan pul olinadi
+            if (request.WithdrawType == "cash")
             {
-                _logger.LogWarning("Insufficient funds. Balance: {Balance}, Requested: {Amount}",
-                    cashRegister.CurrentBalance, request.Amount);
+                if (cashRegister.CurrentBalance < request.Amount)
+                {
+                    _logger.LogWarning("Insufficient funds in cash register. Balance: {Balance}, Requested: {Amount}",
+                        cashRegister.CurrentBalance, request.Amount);
+                    return false;
+                }
+
+                // Withdrawal yaratish
+                var withdrawal = new CashWithdrawal
+                {
+                    Id = Guid.NewGuid(),
+                    Amount = request.Amount,
+                    Comment = request.Comment,
+                    WithdrawalDate = DateTime.UtcNow,
+                    UserId = userId,
+                    WithdrawType = "cash"
+                };
+
+                _context.CashWithdrawals.Add(withdrawal);
+
+                // Balansni kamaytirish
+                cashRegister.CurrentBalance -= request.Amount;
+                cashRegister.LastUpdated = DateTime.UtcNow;
+                cashRegister.LastWithdrawalId = withdrawal.Id;
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogInformation("Cash withdrawn successfully. Type: cash, Amount: {Amount}", request.Amount);
+            }
+            // Agar 'click' bo'lsa, tarixga yozib qo'ydi, balansga ta'sir qilmaydi
+            else if (request.WithdrawType == "click")
+            {
+                // Withdrawal yaratish (faqat tarix uchun, balansga ta'sir qilmaydi)
+                var withdrawal = new CashWithdrawal
+                {
+                    Id = Guid.NewGuid(),
+                    Amount = request.Amount,
+                    Comment = request.Comment,
+                    WithdrawalDate = DateTime.UtcNow,
+                    UserId = userId,
+                    WithdrawType = "click"
+                };
+
+                _context.CashWithdrawals.Add(withdrawal);
+
+                // Faqat yangilash
+                cashRegister.LastUpdated = DateTime.UtcNow;
+                cashRegister.LastWithdrawalId = withdrawal.Id;
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogInformation("Click withdrawal recorded. Type: click, Amount: {Amount}", request.Amount);
+            }
+            else
+            {
+                _logger.LogWarning("Invalid withdraw type: {Type}", request.WithdrawType);
                 return false;
             }
-
-            // Withdrawal yaratish
-            var withdrawal = new CashWithdrawal
-            {
-                Id = Guid.NewGuid(),
-                Amount = request.Amount,
-                Comment = request.Comment,
-                WithdrawalDate = DateTime.UtcNow,
-                UserId = userId
-            };
-
-            _context.CashWithdrawals.Add(withdrawal);
-
-            // Balansni yangilash
-            cashRegister.CurrentBalance -= request.Amount;
-            cashRegister.LastUpdated = DateTime.UtcNow;
-            cashRegister.LastWithdrawalId = withdrawal.Id;
-
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-
-            _logger.LogInformation("Cash withdrawn successfully. Amount: {Amount}, User: {UserId}",
-                request.Amount, userId);
 
             return true;
         }
