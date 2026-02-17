@@ -49,6 +49,18 @@ class SalesService {
     }
   }
 
+  // Mening tugatilmagan sotuvlarim (Draft + Debt)
+  Future<List<dynamic>> getMyUnfinishedSales() async {
+    final response = await _httpService.get('${ApiConstants.sales}/GetMyUnfinishedSales');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<dynamic>.from(data);
+    } else {
+      throw Exception('Failed to load unfinished sales: ${response.statusCode}');
+    }
+  }
+
   // Yangi sotuv yaratish
   Future<dynamic> createSale({String? customerId}) async {
     final response = await _httpService.post(

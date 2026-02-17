@@ -16,8 +16,12 @@ class DraftSalesScreen extends StatefulWidget {
 }
 
 class _DraftSalesScreenState extends State<DraftSalesScreen> {
-  List<dynamic> _draftSales = [];
+  List<dynamic> _unfinishedSales = [];
   bool _isLoading = true;
+
+  // Guruhlangan savdolar
+  List<dynamic> get _draftSales => _unfinishedSales.where((s) => s['status'] == 'Draft').toList();
+  List<dynamic> get _debtSales => _unfinishedSales.where((s) => s['status'] == 'Debt').toList();
 
   @override
   void initState() {
@@ -34,10 +38,10 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
 
-      final drafts = await salesService.getMyDraftSales();
+      final unfinished = await salesService.getMyUnfinishedSales();
 
       setState(() {
-        _draftSales = drafts;
+        _unfinishedSales = unfinished;
         _isLoading = false;
       });
     } catch (e) {
@@ -134,7 +138,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text(
-          'Draft Savdolar',
+          'Davom etayotgan savdolar',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
@@ -144,19 +148,78 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _draftSales.isEmpty
+          : _unfinishedSales.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
                   onRefresh: _loadDraftSales,
-                  child: ListView.builder(
+                  child: ListView(
                     padding: const EdgeInsets.all(16),
-                    itemCount: _draftSales.length,
-                    itemBuilder: (context, index) {
-                      final sale = _draftSales[index];
-                      return _buildDraftSaleCard(sale);
-                    },
+                    children: [
+                      // Davom etayotgan savdolar (Draft)
+                      if (_draftSales.isNotEmpty) ...[
+                        _buildSectionHeader('Davom etayotgan', Icons.edit_note, Colors.orange),
+                        const SizedBox(height: 8),
+                        ..._draftSales.map((sale) => _buildDraftSaleCard(sale)),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Qarz savdolar (Debt)
+                      if (_debtSales.isNotEmpty) ...[
+                        _buildSectionHeader('Qarz savdolar', Icons.money_off, Colors.red),
+                        const SizedBox(height: 8),
+                        ..._debtSales.map((sale) => _buildDraftSaleCard(sale)),
+                      ],
+
+                      // Ikkalasi ham bo'sh
+                      if (_draftSales.isEmpty && _debtSales.isEmpty)
+                        _buildEmptyState(),
+                    ],
                   ),
                 ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              title == 'Davom etayotgan' ? '${_draftSales.length}' : '${_debtSales.length}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -172,7 +235,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Draft savdolar yo\'q',
+            'Davom etayotgan savdolar yo\'q',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -195,6 +258,9 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   Widget _buildDraftSaleCard(dynamic sale) {
     final items = sale['items'] as List<dynamic>? ?? [];
     final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final paidAmount = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
+    final remainingAmount = (sale['remainingAmount'] as num?)?.toDouble() ?? 0.0;
+    final status = sale['status'] as String? ?? 'Draft';
     final createdAt = sale['createdAt'];
     final customerName = sale['customerName'];
 
@@ -209,6 +275,18 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       }
     }
 
+    // Status bo'yicha rang
+    Color getStatusColor() {
+      switch (status.toLowerCase()) {
+        case 'draft':
+          return Colors.orange;
+        case 'debt':
+          return Colors.red;
+        default:
+          return Colors.grey;
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -216,8 +294,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1.5,
+          color: getStatusColor().withValues(alpha: 0.4),
+          width: 2,
         ),
         boxShadow: [
           BoxShadow(
@@ -230,7 +308,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Date & Total
+          // Header: Date & Status
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -242,17 +320,40 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              Text(
-                NumberFormatter.formatDecimal(totalAmount),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF10B981),
+              // Status badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: getStatusColor().withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: getStatusColor(),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      status == 'Draft' ? Icons.edit_note : Icons.money_off,
+                      size: 14,
+                      color: getStatusColor(),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      status == 'Draft' ? 'Davom etmoqda' : 'Qarz',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: getStatusColor(),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           // Customer
           if (customerName != null) ...[
@@ -295,6 +396,93 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                 ),
               ),
             ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // To'lov ma'lumotlari
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.grey.shade200,
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Jami summa:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                    Text(
+                      NumberFormatter.formatDecimal(totalAmount),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                  ],
+                ),
+                if (paidAmount > 0 || remainingAmount > 0) ...[
+                  const SizedBox(height: 6),
+                  if (paidAmount > 0)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'To\'langan:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF10B981),
+                          ),
+                        ),
+                        Text(
+                          NumberFormatter.formatDecimal(paidAmount),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF10B981),
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (remainingAmount > 0)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          status == 'Debt' ? 'Qarz:' : 'Qolgan:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: status == 'Debt' ? Colors.red : Colors.orange,
+                          ),
+                        ),
+                        Text(
+                          NumberFormatter.formatDecimal(remainingAmount),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: status == 'Debt' ? Colors.red : Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ],
+            ),
           ),
 
           const SizedBox(height: 12),
