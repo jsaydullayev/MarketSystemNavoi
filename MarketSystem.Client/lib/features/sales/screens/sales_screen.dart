@@ -17,8 +17,6 @@ class SalesScreen extends StatefulWidget {
 }
 
 class _SalesScreenState extends State<SalesScreen> {
-  String _selectedStatus = 'all';
-
   @override
   void initState() {
     super.initState();
@@ -26,13 +24,17 @@ class _SalesScreenState extends State<SalesScreen> {
     context.read<SalesBloc>().add(const GetSalesEvent());
   }
 
-  List<dynamic> _filterSales(List<dynamic> sales) {
-    if (_selectedStatus == 'all') return sales;
+  // Guruhlarga ajratish
+  List<dynamic> _getDraftSales(List<dynamic> sales) {
+    return sales.where((s) => s['status']?.toString().toLowerCase() == 'draft').toList();
+  }
 
-    return sales
-        .where((sale) =>
-            sale['status']?.toString().toLowerCase() == _selectedStatus)
-        .toList();
+  List<dynamic> _getPaidSales(List<dynamic> sales) {
+    return sales.where((s) => s['status']?.toString().toLowerCase() == 'closed').toList();
+  }
+
+  List<dynamic> _getDebtSales(List<dynamic> sales) {
+    return sales.where((s) => s['status']?.toString().toLowerCase() == 'debt').toList();
   }
 
   @override
@@ -92,50 +94,87 @@ class _SalesScreenState extends State<SalesScreen> {
               );
             } else if (state is SalesLoaded) {
               final sales = state.sales.map((e) => e.toJson()).toList();
-              final filteredSales = _filterSales(sales);
 
-              return Column(
-                children: [
-                  // Status filter chips
-                  _buildFilterChips(),
-                  // Sales list
-                  Expanded(
-                    child: filteredSales.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.receipt_long_outlined,
-                                  size: 80,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Sotuvlar yo\'q',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
+              // Guruhlarga ajratish
+              final draftSales = _getDraftSales(sales);
+              final paidSales = _getPaidSales(sales);
+              final debtSales = _getDebtSales(sales);
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<SalesBloc>().add(const GetSalesEvent());
+                },
+                child: sales.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.receipt_long_outlined,
+                              size: 80,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Sotuvlar yo\'q',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          // Davom etayotgan savdolar (Draft)
+                          if (draftSales.isNotEmpty) ...[
+                            _buildSectionHeader('Davom etayotgan', Icons.edit_note, Colors.orange, draftSales.length),
+                            const SizedBox(height: 8),
+                            ...draftSales.map((sale) => _buildSaleCard(context, sale)),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Qarz savdolar (Debt)
+                          if (debtSales.isNotEmpty) ...[
+                            _buildSectionHeader('Qarz savdolar', Icons.money_off, Colors.red, debtSales.length),
+                            const SizedBox(height: 8),
+                            ...debtSales.map((sale) => _buildSaleCard(context, sale)),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Tugatilgan savdolar (Paid)
+                          if (paidSales.isNotEmpty) ...[
+                            _buildSectionHeader('Tugatilgan', Icons.check_circle, Colors.green, paidSales.length),
+                            const SizedBox(height: 8),
+                            ...paidSales.map((sale) => _buildSaleCard(context, sale)),
+                          ],
+
+                          // Agar barchasi bo'sh
+                          if (draftSales.isEmpty && debtSales.isEmpty && paidSales.isEmpty)
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.receipt_long_outlined,
+                                    size: 80,
+                                    color: Colors.grey[400],
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Sotuvlar yo\'q',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: () async {
-                              context.read<SalesBloc>().add(const GetSalesEvent());
-                            },
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: filteredSales.length,
-                              itemBuilder: (context, index) {
-                                final sale = filteredSales[index];
-                                return _buildSaleCard(context, sale);
-                              },
-                            ),
-                          ),
-                  ),
-                ],
+                        ],
+                      ),
               );
             }
 
@@ -156,61 +195,46 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildSectionHeader(String title, IconData icon, Color color, int count) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _buildFilterChip('Barchasi', 'all', Icons.receipt_long),
-            const SizedBox(width: 8),
-            _buildFilterChip('Davom etayotgan', 'draft', Icons.edit),
-            const SizedBox(width: 8),
-            _buildFilterChip('Yopilgan', 'paid', Icons.check_circle),
-            const SizedBox(width: 8),
-            _buildFilterChip('Qarz', 'debt', Icons.money_off),
-            const SizedBox(width: 8),
-            _buildFilterChip('Bekor qilingan', 'cancelled', Icons.cancel),
-          ],
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1.5,
         ),
       ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, String value, IconData icon) {
-    final isSelected = _selectedStatus == value;
-
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          Icon(icon, size: 16, color: isSelected ? Colors.white : null),
-          const SizedBox(width: 4),
-          Text(label),
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
         ],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedStatus = value;
-        });
-      },
-      selectedColor: Theme.of(context).colorScheme.primary,
-      backgroundColor: Colors.grey[200],
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.grey[700],
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
   }
@@ -228,7 +252,7 @@ class _SalesScreenState extends State<SalesScreen> {
       switch (status.toLowerCase()) {
         case 'draft':
           return Colors.orange;
-        case 'paid':
+        case 'closed':
           return Colors.green;
         case 'debt':
           return Colors.red;
@@ -243,8 +267,8 @@ class _SalesScreenState extends State<SalesScreen> {
       switch (status.toLowerCase()) {
         case 'draft':
           return 'Davom etayotgan';
-        case 'paid':
-          return 'To\'langan';
+        case 'closed':
+          return 'Tugatilgan';
         case 'debt':
           return 'Qarz';
         case 'cancelled':
@@ -509,7 +533,7 @@ class _SalesScreenState extends State<SalesScreen> {
     switch (status.toLowerCase()) {
       case 'draft':
         return Icons.edit_note;
-      case 'paid':
+      case 'closed':
         return Icons.check_circle;
       case 'debt':
         return Icons.money_off;
