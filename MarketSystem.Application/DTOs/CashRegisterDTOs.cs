@@ -33,6 +33,9 @@ public class CashWithdrawalDto
 
     [JsonPropertyName("userName")]
     public string? UserName { get; set; }
+
+    [JsonPropertyName("withdrawType")]
+    public string WithdrawType { get; set; } = "cash"; // 'cash' or 'click'
 }
 
 public class WithdrawCashRequest
@@ -42,6 +45,9 @@ public class WithdrawCashRequest
 
     [JsonPropertyName("comment")]
     public string Comment { get; set; } = string.Empty;
+
+    [JsonPropertyName("withdrawType")]
+    public string WithdrawType { get; set; } = "cash"; // 'cash' or 'click'
 }
 
 public class TodaySalesSummaryDto

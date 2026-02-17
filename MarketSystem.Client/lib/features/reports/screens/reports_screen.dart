@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../../data/services/reports_service.dart';
+import '../../../data/services/report_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
 import '../../../core/constants/api_constants.dart';
@@ -16,7 +16,7 @@ class ReportsScreen extends StatefulWidget {
 }
 
 class _ReportsScreenState extends State<ReportsScreen> {
-  late ReportsService _reportsService;
+  late ReportService _reportsService;
 
   DateTime _selectedDate = DateTime.now();
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
@@ -36,7 +36,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   void initState() {
     super.initState();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    _reportsService = ReportsService(authProvider: authProvider);
+    _reportsService = ReportService(authProvider: authProvider);
     _loadReports();
   }
 
@@ -210,14 +210,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
       return const Center(child: Text('Hisobotlar yo\'q'));
     }
 
-    final totalSales = (_dailyReport!['totalSales'] as num).toDouble();
-    final totalTransactions = _dailyReport!['totalTransactions'] as int;
-    final profit = _dailyReport!['profit'] != null
+    final totalSales = _dailyReport!['totalSales'] is num
+        ? (_dailyReport!['totalSales'] as num).toDouble()
+        : 0.0;
+    final totalTransactions = _dailyReport!['totalTransactions'] is int
+        ? _dailyReport!['totalTransactions'] as int
+        : 0;
+    final profit = _dailyReport!['profit'] != null && _dailyReport!['profit'] is num
         ? (_dailyReport!['profit'] as num).toDouble()
         : null;
 
     // Payment breakdown
-    final paymentBreakdown = _dailyReport!['paymentBreakdown'] as List<dynamic>? ?? [];
+    final paymentBreakdown = _dailyReport!['paymentBreakdown'] is List
+        ? _dailyReport!['paymentBreakdown'] as List<dynamic>
+        : <dynamic>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,9 +279,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
           const SizedBox(height: 12),
           ...paymentBreakdown.map((payment) {
-            final paymentType = payment['paymentType'] as String;
-            final amount = (payment['amount'] as num).toDouble();
-            final count = payment['count'] as int;
+            if (payment is! Map<String, dynamic>) return const SizedBox.shrink();
+
+            final paymentType = payment['paymentType']?.toString() ?? 'Unknown';
+            final amount = payment['amount'] is num
+                ? (payment['amount'] as num).toDouble()
+                : 0.0;
+            final count = payment['count'] is int
+                ? payment['count'] as int
+                : 0;
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -315,15 +327,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
       return const Center(child: Text('Hisobotlar yo\'q'));
     }
 
-    final totalSales = (_periodReport!['totalSales'] as num).toDouble();
-    final totalTransactions = _periodReport!['totalTransactions'] as int;
-    final profit = _periodReport!['profit'] != null
+    final totalSales = _periodReport!['totalSales'] is num
+        ? (_periodReport!['totalSales'] as num).toDouble()
+        : 0.0;
+    final totalTransactions = _periodReport!['totalTransactions'] is int
+        ? _periodReport!['totalTransactions'] as int
+        : 0;
+    final profit = _periodReport!['profit'] != null && _periodReport!['profit'] is num
         ? (_periodReport!['profit'] as num).toDouble()
         : null;
-    final avgSale = (_periodReport!['averageSale'] as num).toDouble();
+    final avgSale = _periodReport!['averageSale'] is num
+        ? (_periodReport!['averageSale'] as num).toDouble()
+        : 0.0;
 
     // Payment breakdown
-    final paymentBreakdown = _periodReport!['paymentBreakdown'] as List<dynamic>? ?? [];
+    final paymentBreakdown = _periodReport!['paymentBreakdown'] is List
+        ? _periodReport!['paymentBreakdown'] as List<dynamic>
+        : <dynamic>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,9 +412,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
           const SizedBox(height: 12),
           ...paymentBreakdown.map((payment) {
-            final paymentType = payment['paymentType'] as String;
-            final amount = (payment['amount'] as num).toDouble();
-            final count = payment['count'] as int;
+            if (payment is! Map<String, dynamic>) return const SizedBox.shrink();
+
+            final paymentType = payment['paymentType']?.toString() ?? 'Unknown';
+            final amount = payment['amount'] is num
+                ? (payment['amount'] as num).toDouble()
+                : 0.0;
+            final count = payment['count'] is int
+                ? payment['count'] as int
+                : 0;
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -434,16 +460,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
       return const Center(child: Text('Hisobotlar yo\'q'));
     }
 
-    final inventory = _comprehensiveReport!['inventoryReport'] as List<dynamic>? ?? [];
-    final totalInventoryCost = (_comprehensiveReport!['totalInventoryCost'] as num).toDouble();
-    final totalInventorySaleValue = (_comprehensiveReport!['totalInventorySaleValue'] as num).toDouble();
+    final inventory = _comprehensiveReport!['inventoryReport'] is List
+        ? _comprehensiveReport!['inventoryReport'] as List<dynamic>
+        : <dynamic>[];
+    final totalInventoryCost = _comprehensiveReport!['totalInventoryCost'] is num
+        ? (_comprehensiveReport!['totalInventoryCost'] as num).toDouble()
+        : 0.0;
+    final totalInventorySaleValue = _comprehensiveReport!['totalInventorySaleValue'] is num
+        ? (_comprehensiveReport!['totalInventorySaleValue'] as num).toDouble()
+        : 0.0;
 
     // Calculate potential profit (this will be shown to Owner only, hidden from Admin)
     final potentialProfit = totalInventorySaleValue - totalInventoryCost;
 
     // Check if user is Owner by looking at the first inventory item's potentialProfit field
     // If it's null in the response, user is not Owner
-    bool isOwner = inventory.isNotEmpty && inventory.first['potentialProfit'] != null;
+    bool isOwner = inventory.isNotEmpty &&
+        inventory.first is Map<String, dynamic> &&
+        (inventory.first as Map<String, dynamic>)['potentialProfit'] != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

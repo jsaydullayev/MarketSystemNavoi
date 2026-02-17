@@ -18,5 +18,11 @@ public interface ISaleService
     Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default);
     Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default);
     Task<bool> ValidateSalePriceAsync(Guid saleItemId, CancellationToken cancellationToken = default);
+
+    // Qarzdorlar uchun
+    Task<IEnumerable<DebtorDto>> GetDebtorsAsync(CancellationToken cancellationToken = default);
     Task<SaleItemDto?> UpdateSaleItemPriceAsync(UpdateSaleItemPriceDto request, Guid userId, string userRole, CancellationToken cancellationToken = default);
+
+    // Tovar vozvrat uchun
+    Task<SaleItemDto?> ReturnSaleItemAsync(Guid saleId, ReturnSaleItemRequest request, CancellationToken cancellationToken = default);
 }
