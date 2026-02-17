@@ -56,6 +56,17 @@ public class SalesController : ControllerBase
         return Ok(sales);
     }
 
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyUnfinishedSales()
+    {
+        var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(sellerIdStr) || !Guid.TryParse(sellerIdStr, out var sellerId))
+            return Unauthorized();
+
+        var sales = await _saleService.GetUnfinishedSalesBySellerAsync(sellerId);
+        return Ok(sales);
+    }
+
     [HttpPost]
     public async Task<ActionResult<SaleDto>> CreateSale([FromBody] CreateSaleDto request)
     {
