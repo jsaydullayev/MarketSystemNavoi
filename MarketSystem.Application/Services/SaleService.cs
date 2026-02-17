@@ -183,6 +183,54 @@ public class SaleService : ISaleService
         ));
     }
 
+    public async Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Draft va Debt statusdagi savdolarni olish
+        var sales = await _context.Sales
+            .Include(s => s.Seller)
+            .Include(s => s.Customer)
+            .Include(s => s.SaleItems)
+                .ThenInclude(si => si.Product)
+            .Include(s => s.Payments)
+            .Where(s => s.MarketId == marketId && s.SellerId == sellerId &&
+                       (s.Status == SaleStatus.Draft || s.Status == SaleStatus.Debt))
+            .OrderByDescending(s => s.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return sales.Select(s => new SaleDto(
+            s.Id,
+            s.SellerId,
+            s.Seller?.FullName ?? "Unknown",
+            s.CustomerId,
+            s.Customer?.FullName,
+            s.Customer?.Phone,
+            s.Status.ToString(),
+            s.TotalAmount,
+            s.PaidAmount,
+            s.TotalAmount - s.PaidAmount,
+            s.CreatedAt,
+            s.SaleItems.Select(si => new SaleItemDto(
+                si.Id.ToString(),
+                si.SaleId.ToString(),
+                si.ProductId,
+                si.Product?.Name ?? "Unknown",
+                si.Quantity,
+                si.SalePrice,
+                si.Quantity * si.SalePrice,
+                si.Comment
+            )).ToList(),
+            s.Payments.Select(p => new PaymentDto(
+                p.Id,
+                p.PaymentType.ToString(),
+                p.Amount,
+                p.CreatedAt
+            )).ToList()
+        ));
+    }
+
     public async Task<SaleDto> CreateSaleAsync(CreateSaleDto request, Guid sellerId, CancellationToken cancellationToken = default)
     {
         var sale = new Sale
