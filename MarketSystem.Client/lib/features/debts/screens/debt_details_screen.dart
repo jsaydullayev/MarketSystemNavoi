@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../data/services/sale_service.dart';
+import '../../../data/services/sales_service.dart';
 import '../../../data/services/debt_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
@@ -286,7 +286,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final saleService = SaleService(authProvider: authProvider);
+      final saleService = SalesService(authProvider: authProvider);
 
       final newPrice = double.parse(newPriceStr);
 

@@ -22,8 +22,11 @@ class DebtService {
     final response = await _httpService.get(url);
 
     if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return [];
+      }
       final data = jsonDecode(response.body);
-      return List<dynamic>.from(data);
+      return List<dynamic>.from(data ?? []);
     } else {
       throw Exception('Failed to load debts: ${response.statusCode}');
     }
@@ -36,7 +39,11 @@ class DebtService {
     );
 
     if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return [];
+      }
       final data = jsonDecode(response.body);
+      if (data == null) return [];
       return List<dynamic>.from(data);
     } else {
       throw Exception('Failed to load customer debts: ${response.statusCode}');
@@ -50,7 +57,10 @@ class DebtService {
     );
 
     if (response.statusCode == 200) {
-      return double.parse(response.body);
+      if (response.body.isEmpty) {
+        return 0.0;
+      }
+      return double.tryParse(response.body) ?? 0.0;
     } else {
       throw Exception('Failed to load customer total debt: ${response.statusCode}');
     }

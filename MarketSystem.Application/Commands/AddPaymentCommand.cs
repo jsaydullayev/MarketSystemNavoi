@@ -78,8 +78,8 @@ public class AddPaymentCommandHandler : IRequestHandler<AddPaymentCommand, Payme
                     sale.Debt.Status = DebtStatus.Closed;
                 }
 
-                sale.Status = SaleStatus.Paid;
-                _logger.LogInformation("Sale {SaleId} fully paid. Status changed to Paid", request.SaleId);
+                sale.Status = SaleStatus.Closed; // To'liq to'langanda Closed status
+                _logger.LogInformation("Sale {SaleId} fully paid. Status changed to Closed", request.SaleId);
             }
             else if (totalPaid > 0)
             {
