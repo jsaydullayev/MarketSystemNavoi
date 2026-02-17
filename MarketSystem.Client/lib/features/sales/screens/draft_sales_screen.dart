@@ -22,6 +22,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   // Guruhlangan savdolar
   List<dynamic> get _draftSales => _unfinishedSales.where((s) => s['status'] == 'Draft').toList();
   List<dynamic> get _debtSales => _unfinishedSales.where((s) => s['status'] == 'Debt').toList();
+  List<dynamic> get _closedSales => _unfinishedSales.where((s) => s['status'] == 'Closed').toList();
 
   @override
   void initState() {
@@ -170,8 +171,15 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                         ..._debtSales.map((sale) => _buildDraftSaleCard(sale)),
                       ],
 
+                      // Yopilgan savdolar (Closed) - vozvrat uchun
+                      if (_closedSales.isNotEmpty) ...[
+                        _buildSectionHeader('Yopilgan savdolar', Icons.assignment_return, Colors.grey),
+                        const SizedBox(height: 8),
+                        ..._closedSales.map((sale) => _buildDraftSaleCard(sale)),
+                      ],
+
                       // Ikkalasi ham bo'sh
-                      if (_draftSales.isEmpty && _debtSales.isEmpty)
+                      if (_draftSales.isEmpty && _debtSales.isEmpty && _closedSales.isEmpty)
                         _buildEmptyState(),
                     ],
                   ),
@@ -210,7 +218,9 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              title == 'Davom etayotgan' ? '${_draftSales.length}' : '${_debtSales.length}',
+              title == 'Davom etayotgan' ? '${_draftSales.length}' :
+              title == 'Qarz savdolar' ? '${_debtSales.length}' :
+              '${_closedSales.length}',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -282,6 +292,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
           return Colors.orange;
         case 'debt':
           return Colors.red;
+        case 'closed':
+          return Colors.grey;
         default:
           return Colors.grey;
       }
@@ -335,13 +347,17 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      status == 'Draft' ? Icons.edit_note : Icons.money_off,
+                      status == 'Draft' ? Icons.edit_note :
+                      status == 'Debt' ? Icons.money_off :
+                      Icons.assignment_return,
                       size: 14,
                       color: getStatusColor(),
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      status == 'Draft' ? 'Davom etmoqda' : 'Qarz',
+                      status == 'Draft' ? 'Davom etmoqda' :
+                      status == 'Debt' ? 'Qarz' :
+                      'Yopilgan',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -579,8 +595,12 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
   double get _totalAmount {
     return _cartItems.fold(0.0, (sum, item) {
-      final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-      final qty = (item['quantity'] as num?)?.toInt() ?? 0;
+      final price = item['salePrice'] is num
+          ? (item['salePrice'] as num).toDouble()
+          : double.tryParse(item['salePrice']?.toString() ?? '') ?? 0.0;
+      final qty = item['quantity'] is num
+          ? (item['quantity'] as num).toInt()
+          : int.tryParse(item['quantity']?.toString() ?? '') ?? 0;
       return sum + (price * qty);
     });
   }
@@ -676,6 +696,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     };
 
     print('⚡ Optimistic UI: Adding to cart locally');
+    if (!mounted) return;
     setState(() {
       _cartItems.add(newItem);
     });
@@ -774,6 +795,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     } catch (e) {
       print('❌ ERROR: $e');
       // Xatolik bo'lsa, itemni qayta qo'shamiz
+      if (!mounted) return;
       setState(() {
         _cartItems.insert(index, backupItem);
       });
@@ -897,6 +919,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           await salesService.updateSaleItemPrice(
             saleItemId: item['saleItemId'],
             newPrice: result,
+            comment: 'Narx yangilandi (Draft savdo)',
           );
 
           // Reload data
@@ -965,6 +988,81 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _returnItem(int index) async {
+    final item = _cartItems[index];
+    final currentQuantity = (item['quantity'] as num?)?.toInt() ?? 0;
+
+    print('↩️ === _returnItem START ===');
+    print('Index: $index');
+    print('Product: ${item['productName']}');
+    print('Current Quantity: $currentQuantity');
+
+    if (currentQuantity <= 0) {
+      print('⚠️ Quantity is 0, cannot return');
+      return;
+    }
+
+    // Qancha qaytarishni so'rash
+    final returnQuantity = await showDialog<int>(
+      context: context,
+      builder: (context) => _ReturnQuantityDialog(
+        productName: item['productName'],
+        maxQuantity: currentQuantity,
+      ),
+    );
+
+    if (returnQuantity == null || returnQuantity <= 0) {
+      print('⚠️ Return cancelled or invalid quantity');
+      return;
+    }
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+
+      print('📤 Calling returnSaleItem...');
+      print('Sale Item ID: ${item['saleItemId']}');
+      print('Return Quantity: $returnQuantity');
+
+      await salesService.returnSaleItem(
+        saleId: widget.saleId,
+        saleItemId: item['saleItemId'],
+        quantity: returnQuantity.toDouble(),
+      );
+
+      print('✅ returnSaleItem success!');
+      print('📥 Loading data...');
+
+      // Backenddan yangi ma'lumotni yuklash
+      await _loadData();
+
+      print('✅ Data loaded! Cart items: ${_cartItems.length}');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ ${returnQuantity} ta ${item['productName']} qaytarildi!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ ERROR: $e');
+      // Xatolik bo'lsa, data ni qayta yuklash
+      await _loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+    print('↩️ === _returnItem END ===');
   }
 
   @override
@@ -1084,56 +1182,86 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () async {
-                                    final currentQty = (item['quantity'] as num?)?.toInt() ?? 0;
-                                    await _updateQuantity(index, currentQty - 1);
-                                  },
-                                  child: Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF3F4F6),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Icon(Icons.remove, size: 14, color: Color(0xFF374151)),
+                            // Agar savdo yopilgan (Closed) bo'lsa, vozvrat tugmasi
+                            if (_sale?['status'] == 'Closed')
+                              GestureDetector(
+                                onTap: () => _returnItem(index),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.orange.shade300, width: 1),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.assignment_return, size: 14, color: Colors.orange.shade700),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Qaytarish',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.orange.shade700,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                                  child: Text(
-                                    '${item['quantity']}',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
+                              )
+                            else
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () async {
+                                      final currentQty = (item['quantity'] as num?)?.toInt() ?? 0;
+                                      await _updateQuantity(index, currentQty - 1);
+                                    },
+                                    child: Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF3F4F6),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Icon(Icons.remove, size: 14, color: Color(0xFF374151)),
                                     ),
                                   ),
-                                ),
-                                GestureDetector(
-                                  onTap: () async {
-                                    final currentQty = (item['quantity'] as num?)?.toInt() ?? 0;
-                                    await _updateQuantity(index, currentQty + 1);
-                                  },
-                                  child: Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF3F4F6),
-                                      borderRadius: BorderRadius.circular(6),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    child: Text(
+                                      '${item['quantity']}',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                    child: const Icon(Icons.add, size: 14, color: Color(0xFF374151)),
                                   ),
-                                ),
-                              ],
-                            ),
-                            GestureDetector(
-                              onTap: () async {
-                                await _removeFromCart(index);
-                              },
-                              child: const Icon(Icons.close, size: 14, color: Color(0xFFEF4444)),
-                            ),
+                                  GestureDetector(
+                                    onTap: () async {
+                                      final currentQty = (item['quantity'] as num?)?.toInt() ?? 0;
+                                      await _updateQuantity(index, currentQty + 1);
+                                    },
+                                    child: Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF3F4F6),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Icon(Icons.add, size: 14, color: Color(0xFF374151)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (_sale?['status'] != 'Closed')
+                              GestureDetector(
+                                onTap: () async {
+                                  await _removeFromCart(index);
+                                },
+                                child: const Icon(Icons.close, size: 14, color: Color(0xFFEF4444)),
+                              ),
                           ],
                         ),
                       ],
@@ -1348,23 +1476,25 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    onPressed: _cartItems.isEmpty ? null : _showPaymentDialog,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _cartItems.isEmpty ? const Color(0xFFD1D5DB) : const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFD1D5DB),
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                // Faqat yopilmagan savdolar uchun to'lov tugmasi
+                if (_sale?['status'] != 'Closed')
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: _cartItems.isEmpty ? null : _showPaymentDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _cartItems.isEmpty ? const Color(0xFFD1D5DB) : const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: const Color(0xFFD1D5DB),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.check_circle, size: 18),
+                      label: const Text('TO\'LOV QILISH', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
                     ),
-                    icon: const Icon(Icons.check_circle, size: 18),
-                    label: const Text('TO\'LOV QILISH', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
                   ),
-                ),
               ],
             ),
           ),
@@ -1763,6 +1893,92 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
                 }
               : null,
           child: const Text('Saqlash'),
+        ),
+      ],
+    );
+  }
+}
+
+// Return quantity dialog
+class _ReturnQuantityDialog extends StatefulWidget {
+  final String productName;
+  final int maxQuantity;
+
+  const _ReturnQuantityDialog({
+    required this.productName,
+    required this.maxQuantity,
+  });
+
+  @override
+  State<_ReturnQuantityDialog> createState() => _ReturnQuantityDialogState();
+}
+
+class _ReturnQuantityDialogState extends State<_ReturnQuantityDialog> {
+  late TextEditingController _quantityController;
+  int _returnQuantity = 1;
+  bool _isValid = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController = TextEditingController(text: '1');
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Mahsulotni qaytarish: ${widget.productName}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Mavjud: ${widget.maxQuantity} ta'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _quantityController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Qaytarish miqdori',
+              border: const OutlineInputBorder(),
+              errorText: _isValid ? null : 'Iltimos, to\'g\'ri miqdor kiriting',
+              suffixText: 'ta',
+            ),
+            onChanged: (value) {
+              setState(() {
+                _returnQuantity = int.tryParse(value) ?? 0;
+                _isValid = _returnQuantity > 0 && _returnQuantity <= widget.maxQuantity;
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Maksimal: ${widget.maxQuantity} ta',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Bekor qilish'),
+        ),
+        ElevatedButton(
+          onPressed: _isValid
+              ? () => Navigator.pop(context, _returnQuantity)
+              : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Qaytarish'),
         ),
       ],
     );

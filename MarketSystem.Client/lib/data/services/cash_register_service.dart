@@ -35,15 +35,24 @@ class CashRegisterService {
     }
   }
 
-  Future<bool> withdrawCash(double amount, String comment) async {
+  Future<bool> withdrawCash(double amount, String comment, [String withdrawType = 'cash']) async {
     try {
+      print('=== WITHDRAW CASH ===');
+      print('Amount: $amount');
+      print('Comment: $comment');
+      print('Type: $withdrawType');
+      print('==================');
+
       final response = await _httpService.post(
         '/CashRegister/withdraw',
         body: {
           'amount': amount,
           'comment': comment,
+          'withdrawType': withdrawType,
         },
       );
+
+      print('Response Status: ${response.statusCode}');
 
       return response.statusCode == 200;
     } catch (e) {

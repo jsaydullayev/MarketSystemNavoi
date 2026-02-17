@@ -58,59 +58,102 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
     }
   }
 
+  // Withdraw type
+  String? _selectedWithdrawType; // 'cash' or 'click'
+
   Future<void> _showWithdrawDialog() async {
     final l10n = AppLocalizations.of(context)!;
 
     _amountController.clear();
     _commentController.clear();
+    _selectedWithdrawType = null;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.withdrawCash),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.amount,
-                border: const OutlineInputBorder(),
-              ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text(l10n.withdrawCash),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Pul turi tanlash
+                const Text('Pul turi:', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: const Text('Naqd'),
+                        value: 'cash',
+                        groupValue: _selectedWithdrawType,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            _selectedWithdrawType = value;
+                          });
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: const Text('Click'),
+                        value: 'click',
+                        groupValue: _selectedWithdrawType,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            _selectedWithdrawType = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: l10n.amount,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _commentController,
+                  decoration: InputDecoration(
+                    labelText: l10n.comment,
+                    border: const OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _commentController,
-              decoration: InputDecoration(
-                labelText: l10n.comment,
-                border: const OutlineInputBorder(),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(l10n.cancel),
               ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: _isWithdrawing ? null : _withdrawCash,
-            child: _isWithdrawing
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(l10n.confirm),
-          ),
-        ],
+              ElevatedButton(
+                onPressed: (_selectedWithdrawType == null || _isWithdrawing) ? null : () {
+                  Navigator.pop(context);
+                  _withdrawCash(_selectedWithdrawType!);
+                },
+                child: _isWithdrawing
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(l10n.confirm),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Future<void> _withdrawCash() async {
+  Future<void> _withdrawCash(String withdrawType) async {
     final l10n = AppLocalizations.of(context)!;
 
     final amount = double.tryParse(_amountController.text);
@@ -121,19 +164,27 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
       return;
     }
 
-    if (_cashRegister != null && amount > _cashRegister!.currentBalance) {
+    // Balansni tekshirish
+    final cashBalance = _cashRegister?.currentBalance ?? 0;
+    final clickBalance = _todaySales?.clickPaid ?? 0;
+    final availableBalance = withdrawType == 'cash' ? cashBalance : clickBalance;
+
+    if (amount > availableBalance) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.insufficientFunds)),
+        SnackBar(
+          content: Text('Yetarli pul yo\'q! Mavjud: ${availableBalance.toStringAsFixed(2)} so\'m'),
+          backgroundColor: AppTheme.danger,
+        ),
       );
       return;
     }
 
     setState(() => _isWithdrawing = true);
-    Navigator.pop(context);
 
     final success = await _cashRegisterService.withdrawCash(
       amount,
       _commentController.text.trim(),
+      withdrawType,
     );
 
     setState(() => _isWithdrawing = false);
@@ -143,7 +194,7 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.withdrawSuccess),
+          content: Text('${withdrawType == 'cash' ? 'Naqd pul' : 'Click'} muvaffaqiyatli olindi'),
           backgroundColor: AppTheme.success,
         ),
       );
@@ -230,8 +281,9 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
+                          // Jami balans (naqd + click)
                           Text(
-                            '${_cashRegister?.currentBalance.toStringAsFixed(2) ?? '0.00'} so\'m',
+                            '${(_cashRegister?.currentBalance ?? 0) + (_todaySales?.clickPaid ?? 0)} so\'m',
                             style: const TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -246,6 +298,46 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                               color: Colors.white70,
                             ),
                           ),
+                          // Naqd pul va Click tushumlari
+                          if (_cashRegister != null && _todaySales != null) ...[
+                            const SizedBox(height: 16),
+                            Divider(color: Colors.white.withOpacity(0.3)),
+                            const SizedBox(height: 12),
+                            // Naqd pul
+                            if (_cashRegister!.currentBalance > 0)
+                              Row(
+                                children: [
+                                  const Icon(Icons.money, size: 16, color: Colors.white70),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Naqd: ',
+                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                  ),
+                                  Text(
+                                    '${_cashRegister!.currentBalance.toStringAsFixed(2)} so\'m',
+                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            // Click
+                            if (_todaySales!.clickPaid > 0) ...[
+                              if (_cashRegister!.currentBalance > 0) const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.phone_android, size: 16, color: Colors.white70),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Click: ',
+                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                  ),
+                                  Text(
+                                    '${_todaySales!.clickPaid.toStringAsFixed(2)} so\'m',
+                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ],
                       ),
                     ),

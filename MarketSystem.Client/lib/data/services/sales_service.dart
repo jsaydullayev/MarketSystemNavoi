@@ -17,8 +17,11 @@ class SalesService {
     final response = await _httpService.get('${ApiConstants.sales}/GetAllSales');
 
     if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return [];
+      }
       final data = jsonDecode(response.body);
-      return List<dynamic>.from(data);
+      return List<dynamic>.from(data ?? []);
     } else {
       throw Exception('Failed to load sales: ${response.statusCode}');
     }
@@ -29,7 +32,14 @@ class SalesService {
     final response = await _httpService.get('${ApiConstants.sales}/GetSale/$saleId');
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.body.isEmpty) {
+        throw Exception('Empty response from server');
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      throw Exception('Invalid response format: expected Map');
     } else if (response.statusCode == 404) {
       throw Exception('Sotuv topilmadi');
     } else {
@@ -42,8 +52,11 @@ class SalesService {
     final response = await _httpService.get('${ApiConstants.sales}/GetMyDraftSales');
 
     if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return [];
+      }
       final data = jsonDecode(response.body);
-      return List<dynamic>.from(data);
+      return List<dynamic>.from(data ?? []);
     } else {
       throw Exception('Failed to load draft sales: ${response.statusCode}');
     }
@@ -54,8 +67,11 @@ class SalesService {
     final response = await _httpService.get('${ApiConstants.sales}/GetMyUnfinishedSales');
 
     if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return [];
+      }
       final data = jsonDecode(response.body);
-      return List<dynamic>.from(data);
+      return List<dynamic>.from(data ?? []);
     } else {
       throw Exception('Failed to load unfinished sales: ${response.statusCode}');
     }
@@ -218,10 +234,12 @@ class SalesService {
   Future<dynamic> updateSaleItemPrice({
     required String saleItemId,
     required double newPrice,
+    required String comment,
   }) async {
     print('=== UPDATE SALE ITEM PRICE ===');
     print('Sale Item ID: $saleItemId');
     print('New Price: $newPrice');
+    print('Comment: $comment');
     print('==============================');
 
     final response = await _httpService.patch(
@@ -229,6 +247,7 @@ class SalesService {
       body: {
         'saleItemId': saleItemId,
         'newPrice': newPrice,
+        'comment': comment,
       },
     );
 
@@ -238,8 +257,49 @@ class SalesService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
+    } else if (response.statusCode == 403) {
+      throw Exception('Ruxsat yo\'q: Bu amalni bajarish huquqingiz yo\'q');
+    } else if (response.statusCode == 400) {
+      final errorBody = jsonDecode(response.body);
+      throw Exception(errorBody['message'] ?? 'Xatolik yuz berdi');
     } else {
-      throw Exception('Failed to update sale item price: ${response.body}');
+      throw Exception('Narxni yangilashda xatolik: ${response.statusCode}');
+    }
+  }
+
+  // Tovarni qaytarish (vozvrat)
+  Future<dynamic> returnSaleItem({
+    required String saleId,
+    required String saleItemId,
+    required double quantity,
+    String? comment,
+  }) async {
+    print('=== RETURN SALE ITEM ===');
+    print('Sale ID: $saleId');
+    print('Sale Item ID: $saleItemId');
+    print('Quantity: $quantity');
+    print('Comment: $comment');
+    print('=======================');
+
+    final response = await _httpService.post(
+      '${ApiConstants.sales}/$saleId/return-item',
+      body: {
+        'saleItemId': saleItemId,
+        'quantity': quantity,
+        'comment': comment ?? '',
+      },
+    );
+
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+    print('=======================');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 404) {
+      return null; // Item to'liq qaytarilgan va o'chirilgan
+    } else {
+      throw Exception('Failed to return sale item: ${response.body}');
     }
   }
 
@@ -263,6 +323,26 @@ class SalesService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to delete sale: ${response.body}');
+    }
+  }
+
+  // Qarzdorlarni olish
+  Future<List<dynamic>> getDebtors() async {
+    print('=== GET DEBTORS ===');
+
+    final response = await _httpService.get('${ApiConstants.sales}/GetDebtors');
+
+    print('Response Status: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return [];
+      }
+      final data = jsonDecode(response.body);
+      print('Debtors count: ${data?.length ?? 0}');
+      return List<dynamic>.from(data ?? []);
+    } else {
+      throw Exception('Failed to get debtors: ${response.statusCode}');
     }
   }
 }

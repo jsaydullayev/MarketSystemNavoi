@@ -96,7 +96,14 @@ class ReportService {
     );
 
     if (response.statusCode == 200) {
-      return ProfitSummaryModel.fromJson(jsonDecode(response.body));
+      if (response.body.isEmpty) {
+        throw Exception('Empty response body');
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded == null) {
+        throw Exception('Null response body');
+      }
+      return ProfitSummaryModel.fromJson(decoded as Map<String, dynamic>);
     } else if (response.statusCode == 403) {
       throw Exception('Sizga bu ma\'lumotni ko\'rish huquqi yo\'q');
     } else {
@@ -130,6 +137,30 @@ class ReportService {
       return DailySalesListModel.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to load daily sales list: ${response.statusCode}');
+    }
+  }
+
+  // Kunlik savdo detallari - shu kuni sotilgan barcha tovarlar ro'yxati
+  Future<List<Map<String, dynamic>>> getDailySaleItems(DateTime date) async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/GetDailySaleItems?date=$formattedDate',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return [];
+      }
+      final data = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (data == null) return [];
+      final items = data['saleItems'] as List<dynamic>? ?? [];
+      return items.map((item) => item as Map<String, dynamic>).toList();
+    } else if (response.statusCode == 403) {
+      throw Exception('Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin');
+    } else if (response.statusCode == 401) {
+      throw Exception('Avtorizatsiya xatosi: Tizimga qayta kiring');
+    } else {
+      throw Exception('Kunlik savdo detallarini yuklashda xatolik: ${response.statusCode}');
     }
   }
 }

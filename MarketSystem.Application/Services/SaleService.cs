@@ -187,7 +187,7 @@ public class SaleService : ISaleService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Draft va Debt statusdagi savdolarni olish
+        // Draft, Debt va Closed statusdagi savdolarni olish
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
@@ -195,7 +195,7 @@ public class SaleService : ISaleService
                 .ThenInclude(si => si.Product)
             .Include(s => s.Payments)
             .Where(s => s.MarketId == marketId && s.SellerId == sellerId &&
-                       (s.Status == SaleStatus.Draft || s.Status == SaleStatus.Debt))
+                       (s.Status == SaleStatus.Draft || s.Status == SaleStatus.Debt || s.Status == SaleStatus.Closed))
             .OrderByDescending(s => s.CreatedAt)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -509,7 +509,7 @@ public class SaleService : ISaleService
             // Determine new status
             if (sale.PaidAmount >= sale.TotalAmount)
             {
-                sale.Status = SaleStatus.Paid;
+                sale.Status = SaleStatus.Closed; // To'liq to'langanda Closed status
 
                 // Close any associated debt (filtered by market)
                 var existingDebtToClose = (await _unitOfWork.Debts.FindAsync(
@@ -930,5 +930,202 @@ public class SaleService : ISaleService
         _logger.LogInformation("=== DELETE SALE SUCCESS ===");
 
         return await MapToDtoAsync(sale, cancellationToken);
+    }
+
+    public async Task<IEnumerable<DebtorDto>> GetDebtorsAsync(CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Barcha Debt statusdagi savdolarni olish
+        var debtSales = await _context.Sales
+            .Include(s => s.Customer)
+            .Include(s => s.SaleItems)
+                .ThenInclude(si => si.Product)
+            .Include(s => s.Payments)
+            .Where(s => s.MarketId == marketId && s.Status == SaleStatus.Debt && s.CustomerId != null)
+            .OrderByDescending(s => s.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        // Mijoz bo'yicha guruhlash
+        var debtorGroups = debtSales
+            .GroupBy(s => s.CustomerId)
+            .Select(group => new DebtorDto(
+                group.Key!.Value,
+                group.First().Customer?.FullName,
+                group.First().Customer?.Phone,
+                group.Sum(s => s.TotalAmount), // Total debt (jami summa)
+                group.Sum(s => s.PaidAmount),  // Paid amount (to'langan)
+                group.Sum(s => s.TotalAmount - s.PaidAmount), // Remaining debt (qolgan qarz)
+                group.Count(), // Debt count (nechta savdo)
+                group.Min(s => s.CreatedAt), // Eng eski qarz sanasi
+                group.Select(s => new SaleDto(
+                    s.Id,
+                    s.SellerId,
+                    null, // SellerName - kerak emas
+                    s.CustomerId,
+                    s.Customer?.FullName,
+                    s.Customer?.Phone,
+                    s.Status.ToString(),
+                    s.TotalAmount,
+                    s.PaidAmount,
+                    s.TotalAmount - s.PaidAmount,
+                    s.CreatedAt,
+                    s.SaleItems.Select(si => new SaleItemDto(
+                        si.Id.ToString(),
+                        si.SaleId.ToString(),
+                        si.ProductId,
+                        si.Product?.Name ?? "Unknown",
+                        si.Quantity,
+                        si.SalePrice,
+                        si.Quantity * si.SalePrice,
+                        si.Comment
+                    )).ToList(),
+                    s.Payments.Select(p => new PaymentDto(
+                        p.Id,
+                        p.PaymentType.ToString(),
+                        p.Amount,
+                        p.CreatedAt
+                    )).ToList()
+                )).ToList()
+            ))
+            .OrderByDescending(d => d.OldestDebtDate)
+            .ToList();
+
+        return debtorGroups;
+    }
+
+    public async Task<SaleItemDto?> ReturnSaleItemAsync(Guid saleId, ReturnSaleItemRequest request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var marketId = _currentMarketService.GetCurrentMarketId();
+
+            // Savdo va sale itemni topish
+            var sale = await _context.Sales
+                .Include(s => s.SaleItems)
+                    .ThenInclude(si => si.Product)
+                .Include(s => s.Payments)
+                .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
+
+            if (sale == null)
+            {
+                _logger.LogWarning("Sale not found: {SaleId}", saleId);
+                return null;
+            }
+
+            var saleItem = sale.SaleItems.FirstOrDefault(si => si.Id.ToString() == request.SaleItemId);
+            if (saleItem == null)
+            {
+                _logger.LogWarning("Sale item not found: {SaleItemId}", request.SaleItemId);
+                return null;
+            }
+
+            if (request.Quantity <= 0 || request.Quantity > saleItem.Quantity)
+            {
+                _logger.LogWarning("Invalid return quantity: {Quantity}, Item quantity: {ItemQuantity}",
+                    request.Quantity, saleItem.Quantity);
+                return null;
+            }
+
+            var returnQuantity = request.Quantity;
+            var refundAmount = returnQuantity * saleItem.SalePrice;
+
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // 1. Sale item quantity yangilash yoki o'chirish
+            var returnQuantityInt = (int)returnQuantity;
+
+            if (returnQuantity < saleItem.Quantity)
+            {
+                // Qisman qaytarish - quantity kamaytirish
+                saleItem.Quantity -= returnQuantityInt;
+            }
+            else
+            {
+                // To'liq qaytarish - itemni o'chirish
+                _context.SaleItems.Remove(saleItem);
+            }
+
+            // 2. Mahsulot stock'iga qaytarish
+            if (saleItem.Product != null)
+            {
+                saleItem.Product.Quantity += returnQuantityInt;
+            }
+
+            // 3. Savdo summalarini yangilash
+            var oldTotalAmount = sale.TotalAmount;
+            sale.TotalAmount -= refundAmount;
+
+            // 4. Naqd to'lov bo'yicha qaytarish (faqat actual cash payments)
+            var cashPayments = sale.Payments
+                .Where(p => p.PaymentType == Domain.Enums.PaymentType.Cash)
+                .Sum(p => p.Amount);
+
+            var cashToRefund = 0m;
+            if (cashPayments > 0 && sale.PaidAmount > 0)
+            {
+                // Cash qisman qaytarish - proporsional hisob
+                var cashRatio = cashPayments / sale.PaidAmount;
+                cashToRefund = refundAmount * cashRatio;
+
+                // Cash registerdan pul ayrish
+                var cashRegister = await _context.CashRegisters.FirstOrDefaultAsync(cancellationToken);
+                if (cashRegister != null)
+                {
+                    cashRegister.CurrentBalance -= cashToRefund;
+                    cashRegister.LastUpdated = DateTime.UtcNow;
+                }
+            }
+
+            // 5. To'langan summani yangilash
+            if (sale.PaidAmount > refundAmount)
+            {
+                sale.PaidAmount -= refundAmount;
+            }
+            else
+            {
+                sale.PaidAmount = 0;
+            }
+
+            // 6. Status yangilash
+            if (sale.SaleItems.Count == 0 || (sale.SaleItems.Count == 1 && returnQuantity >= saleItem.Quantity))
+            {
+                sale.Status = SaleStatus.Closed;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            _logger.LogInformation("Item returned successfully. SaleId: {SaleId}, Item: {ItemId}, Quantity: {Quantity}, Refund: {RefundAmount}",
+                saleId, request.SaleItemId, returnQuantity, refundAmount);
+
+            // Updated sale item ni qaytarish
+            var updatedItem = returnQuantity < saleItem.Quantity
+                ? saleItem
+                : null;
+
+            if (updatedItem != null)
+            {
+                return new SaleItemDto(
+                    updatedItem.Id.ToString(),
+                    updatedItem.SaleId.ToString(),
+                    updatedItem.ProductId,
+                    updatedItem.Product?.Name ?? "Unknown",
+                    updatedItem.Quantity,
+                    updatedItem.SalePrice,
+                    updatedItem.Quantity * updatedItem.SalePrice,
+                    updatedItem.Comment
+                );
+            }
+
+            // Item to'liq o'chirilgan bo'lsa, null qaytaramiz
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error returning sale item");
+            throw;
+        }
     }
 }

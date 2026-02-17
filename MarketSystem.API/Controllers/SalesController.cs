@@ -228,4 +228,43 @@ public class SalesController : ControllerBase
             return StatusCode(500, "Xatolik yuz berdi");
         }
     }
+
+    [HttpPost("{saleId}/return-item")]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("ReturnSaleItem called for SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
+                saleId, request.SaleItemId, request.Quantity);
+
+            var result = await _saleService.ReturnSaleItemAsync(saleId, request);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ReturnSaleItem");
+            return StatusCode(500, "Tovarni qaytarishda xatolik");
+        }
+    }
+
+    [HttpGet]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<ActionResult<IEnumerable<DebtorDto>>> GetDebtors()
+    {
+        try
+        {
+            var debtors = await _saleService.GetDebtorsAsync();
+            return Ok(debtors);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting debtors");
+            return StatusCode(500, "Qarzdorlarni olishda xatolik");
+        }
+    }
 }
