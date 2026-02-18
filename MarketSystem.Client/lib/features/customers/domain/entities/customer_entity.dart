@@ -9,6 +9,7 @@ class CustomerEntity extends Equatable {
   final String phone;
   final String? fullName;
   final String? comment;
+  final double totalDebt;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -17,6 +18,7 @@ class CustomerEntity extends Equatable {
     required this.phone,
     this.fullName,
     this.comment,
+    this.totalDebt = 0,
     required this.createdAt,
     this.updatedAt,
   });
@@ -28,6 +30,11 @@ class CustomerEntity extends Equatable {
       phone: json['phone']?.toString() ?? '',
       fullName: json['fullName']?.toString(),
       comment: json['comment']?.toString(),
+      totalDebt: json['totalDebt'] != null
+          ? (json['totalDebt'] is num
+              ? (json['totalDebt'] as num).toDouble()
+              : double.tryParse(json['totalDebt'].toString()) ?? 0.0)
+          : 0.0,
       createdAt: json['createdAt'] != null
           ? (json['createdAt'] is DateTime
               ? json['createdAt'] as DateTime
@@ -61,11 +68,12 @@ class CustomerEntity extends Equatable {
       'phone': phone,
       'fullName': fullName,
       'comment': comment,
+      'totalDebt': totalDebt,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
   @override
-  List<Object?> get props => [id, phone, fullName, comment, createdAt, updatedAt];
+  List<Object?> get props => [id, phone, fullName, comment, totalDebt, createdAt, updatedAt];
 }

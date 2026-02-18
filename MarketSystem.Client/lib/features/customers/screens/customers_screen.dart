@@ -5,6 +5,7 @@ import '../../../screens/dashboard_screen.dart';
 import '../presentation/bloc/customers_bloc.dart';
 import '../presentation/bloc/events/customers_event.dart';
 import '../presentation/bloc/states/customers_state.dart';
+import 'customer_detail_screen.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -76,73 +77,182 @@ class _CustomersScreenState extends State<CustomersScreen> {
     final phoneController = TextEditingController();
     final fullNameController = TextEditingController();
     final commentController = TextEditingController();
+    final debtAmountController = TextEditingController();
+
+    // Qarz statusini tanlash (default: qarzsiz)
+    bool hasDebt = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Yangi mijoz'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Telefon raqami',
-                prefixIcon: Icon(Icons.phone),
-                border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Yangi mijoz'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Telefon raqami',
+                  prefixIcon: Icon(Icons.phone),
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
               ),
-              keyboardType: TextInputType.phone,
+              const SizedBox(height: 16),
+              TextField(
+                controller: fullNameController,
+                decoration: const InputDecoration(
+                  labelText: 'To\'liq ism (ixtiyoriy)',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Qarz statusini tanlash tugmalari
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        setDialogState(() {
+                          hasDebt = false;
+                          debtAmountController.clear();
+                        });
+                      },
+                      icon: Icon(hasDebt ? Icons.radio_button_unchecked : Icons.radio_button_checked),
+                      label: const Text('Qarzsiz'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: hasDebt ? Colors.grey : Colors.green,
+                        side: BorderSide(color: hasDebt ? Colors.grey : Colors.green),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        setDialogState(() {
+                          hasDebt = true;
+                        });
+                      },
+                      icon: Icon(hasDebt ? Icons.radio_button_checked : Icons.radio_button_unchecked),
+                      label: const Text('Qarzdor'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: hasDebt ? Colors.orange : Colors.grey,
+                        side: BorderSide(color: hasDebt ? Colors.orange : Colors.grey),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Agar qarzdor bo'lsa, qarz miqdorini kiritish field
+              if (hasDebt) ...[
+                const SizedBox(height: 16),
+                TextField(
+                  controller: debtAmountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Qarz miqdori (so\'m)',
+                    prefixIcon: Icon(Icons.money),
+                    border: OutlineInputBorder(),
+                    hintText: 'Misol: 100000',
+                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.orange.shade700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Bu mijoz uchun qarz yozuvi yaratiladi',
+                          style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+              TextField(
+                controller: commentController,
+                decoration: const InputDecoration(
+                  labelText: 'Izoh (ixtiyoriy)',
+                  prefixIcon: Icon(Icons.comment),
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+                textInputAction: TextInputAction.newline,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Bekor qilish'),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: fullNameController,
-              decoration: const InputDecoration(
-                labelText: 'To\'liq ism (ixtiyoriy)',
-                prefixIcon: Icon(Icons.person),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: commentController,
-              decoration: const InputDecoration(
-                labelText: 'Izoh (ixtiyoriy)',
-                prefixIcon: Icon(Icons.comment),
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-              textInputAction: TextInputAction.newline,
+            ElevatedButton(
+              onPressed: () {
+                if (phoneController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Telefon raqam kiritish shart'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                // Agar qarzdor bo'lsa, miqdorni tekshiramiz
+                if (hasDebt && debtAmountController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Qarz miqdorini kiritish shart'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                final initialDebt = hasDebt
+                    ? double.tryParse(debtAmountController.text.trim())
+                    : null;
+
+                // Agar qarzdor bo'lsa, miqdor musbat bo'lishi kerak
+                if (hasDebt && (initialDebt == null || initialDebt! <= 0)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Qarz miqdori musbat son bo\'lishi kerak'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                context.read<CustomersBloc>().add(CreateCustomerEvent(
+                  phone: phoneController.text.trim(),
+                  fullName: fullNameController.text.trim().isEmpty ? null : fullNameController.text.trim(),
+                  comment: commentController.text.trim().isEmpty ? null : commentController.text.trim(),
+                  initialDebt: initialDebt,
+                ));
+
+                Navigator.pop(context);
+              },
+              child: const Text('Qo\'shish'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Bekor qilish'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (phoneController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Telefon raqam kiritish shart'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              context.read<CustomersBloc>().add(CreateCustomerEvent(
-                phone: phoneController.text.trim(),
-                fullName: fullNameController.text.trim().isEmpty ? null : fullNameController.text.trim(),
-                comment: commentController.text.trim().isEmpty ? null : commentController.text.trim(),
-              ));
-
-              Navigator.pop(context);
-            },
-            child: const Text('Qo\'shish'),
-          ),
-        ],
       ),
     );
   }
@@ -348,73 +458,87 @@ class _CustomersScreenState extends State<CustomersScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      child: ListTile(
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: hasDebt ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.person,
-            color: hasDebt ? Colors.red : Colors.green,
-          ),
-        ),
-        title: Text(
-          customer['fullName'] ?? 'Noma\'lum',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('@${customer['phone'] ?? 'Noma\'lum'}'),
-            const SizedBox(height: 4),
-            if (hasDebt)
-              Text(
-                'Qarz: $totalDebt so\'m',
-                style: const TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-            else
-              const Text(
-                'Qarzsiz',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CustomerDetailScreen(
+                customerId: customer['id']?.toString() ?? '',
+                customerName: customer['fullName'] ?? '',
+                customerPhone: customer['phone'] ?? '',
               ),
-            if (hasComment)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  comment,
+            ),
+          );
+        },
+        child: ListTile(
+          leading: Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: hasDebt ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.person,
+              color: hasDebt ? Colors.red : Colors.green,
+            ),
+          ),
+          title: Text(
+            customer['fullName'] ?? 'Noma\'lum',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('@${customer['phone'] ?? 'Noma\'lum'}'),
+              const SizedBox(height: 4),
+              if (hasDebt)
+                Text(
+                  'Qarz: $totalDebt so\'m',
                   style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                    fontStyle: FontStyle.italic,
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                )
+              else
+                const Text(
+                  'Qarzsiz',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+              if (hasComment)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    comment,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+          ),
+          isThreeLine: hasComment ? true : false,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.info_outline),
+                onPressed: () => _showCustomerInfo(customer),
               ),
-          ],
-        ),
-        isThreeLine: hasComment ? true : false,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: () => _showCustomerInfo(customer),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteCustomer(customer),
-            ),
-          ],
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deleteCustomer(customer),
+              ),
+            ],
+          ),
         ),
       ),
     );

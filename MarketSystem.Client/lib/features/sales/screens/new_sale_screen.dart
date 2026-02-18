@@ -449,7 +449,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false), // Saqlamasdan chiqish
+            onPressed: () =>
+                Navigator.pop(context, false), // Saqlamasdan chiqish
             child: const Text('Yo\'q, chiqib ketish'),
           ),
           TextButton(
@@ -457,7 +458,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               // Draft sifatida saqlash
               Navigator.pop(context, true);
             },
-            child: const Text('Ha, saqlash', style: TextStyle(color: Colors.orange)),
+            child: const Text('Ha, saqlash',
+                style: TextStyle(color: Colors.orange)),
           ),
         ],
       ),
@@ -492,490 +494,498 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
         ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Customer & Total Section
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      // Customer selection
-                      InkWell(
-                        onTap: _showCustomerDialog,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: 18,
-                                color: _selectedCustomer != null
-                                    ? Colors.blue
-                                    : Colors.grey.shade400,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  _selectedCustomer != null
-                                      ? _selectedCustomer!['fullName'] ??
-                                          'Noma\'lum'
-                                      : 'Mijozni tanlang',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    color: _selectedCustomer != null
-                                        ? Colors.black87
-                                        : Colors.grey.shade500,
-                                  ),
-                                ),
-                              ),
-                              if (_selectedCustomer != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8),
-                                  child: Text(
-                                    _selectedCustomer!['phone'] ?? '',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade500),
-                                  ),
-                                ),
-                              Icon(Icons.chevron_right,
-                                  size: 18, color: Colors.grey.shade400),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Total amount - Highlighted
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0FDF4),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: const Color(0xFF10B981)
-                                  .withValues(alpha: 0.2)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Jami summa',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF374151),
-                              ),
-                            ),
-                            Text(
-                              NumberFormatter.formatDecimal(_totalAmount),
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF10B981),
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Cart items
-                if (_cartItems.isNotEmpty)
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  // Customer & Total Section
                   Container(
-                    height: 104,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _cartItems.length,
-                      itemBuilder: (context, index) {
-                        final item = _cartItems[index];
-                        final itemTotal = item['quantity'] * item['salePrice'];
-                        return Container(
-                          width: 160,
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item['productName'],
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                  color: Color(0xFF1F2937),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    color: Colors.white,
+                    child: Column(
+                      children: [
+                        // Customer selection
+                        InkWell(
+                          onTap: _showCustomerDialog,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              border:
+                                  Border.all(color: const Color(0xFFE5E7EB)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.person_outline,
+                                  size: 18,
+                                  color: _selectedCustomer != null
+                                      ? Colors.blue
+                                      : Colors.grey.shade400,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${item['quantity']} x ${NumberFormatter.format(item['salePrice'])}',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
-                              Text(
-                                NumberFormatter.formatDecimal(itemTotal),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF10B981),
-                                ),
-                              ),
-                              const Spacer(),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      _buildSmallButton(
-                                        icon: Icons.remove,
-                                        onTap: () => _updateQuantity(
-                                            index, item['quantity'] - 1),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8),
-                                        child: Text(
-                                          '${item['quantity']}',
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      _buildSmallButton(
-                                        icon: Icons.add,
-                                        onTap: () => _updateQuantity(
-                                            index, item['quantity'] + 1),
-                                      ),
-                                    ],
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => _editItemPrice(index, item),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFEEF2FF),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: const Color(0xFF10B981),
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.edit_rounded,
-                                            size: 12,
-                                            color: Color(0xFF10B981),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Narx',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFF10B981),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _selectedCustomer != null
+                                        ? _selectedCustomer!['fullName'] ??
+                                            'Noma\'lum'
+                                        : 'Mijozni tanlang',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                      color: _selectedCustomer != null
+                                          ? Colors.black87
+                                          : Colors.grey.shade500,
                                     ),
                                   ),
-                                  GestureDetector(
-                                    onTap: () => _removeFromCart(index),
-                                    child: const Icon(Icons.close,
-                                        size: 14, color: Color(0xFFEF4444)),
+                                ),
+                                if (_selectedCustomer != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 8),
+                                    child: Text(
+                                      _selectedCustomer!['phone'] ?? '',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade500),
+                                    ),
                                   ),
-                                ],
+                                Icon(Icons.chevron_right,
+                                    size: 18, color: Colors.grey.shade400),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Total amount - Highlighted
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Jami summa',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF374151),
+                                ),
+                              ),
+                              Text(
+                                NumberFormatter.formatDecimal(_totalAmount),
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF10B981),
+                                  letterSpacing: -0.5,
+                                ),
                               ),
                             ],
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
 
-                // Products section
-                Expanded(
-                  child: Column(
-                    children: [
-                      // Search bar
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                        child: SizedBox(
-                          height: 40,
-                          child: TextField(
-                            controller: _searchController,
-                            style: const TextStyle(fontSize: 15),
-                            decoration: InputDecoration(
-                              hintText: 'Mahsulot qidirish...',
-                              hintStyle: TextStyle(
-                                  color: Colors.grey.shade400, fontSize: 14),
-                              prefixIcon: const Icon(Icons.search,
-                                  size: 18, color: Color(0xFF9CA3AF)),
-                              suffixIcon: _searchController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 18),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        _filterProducts();
-                                      },
-                                    )
-                                  : null,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide:
-                                    const BorderSide(color: Color(0xFFE5E7EB)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide:
-                                    const BorderSide(color: Color(0xFFE5E7EB)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                    color: Color(0xFF3B82F6), width: 1.5),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Products grid
-                      Expanded(
-                        child: _filteredProducts.isEmpty
-                            ? const Center(
-                                child: Text('Mahsulotlar topilmadi',
-                                    style: TextStyle(color: Color(0xFF9CA3AF))))
-                            : GridView.builder(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  childAspectRatio: 1.85,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
+                  // Cart items
+                  if (_cartItems.isNotEmpty)
+                    Container(
+                      height: 104,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = _cartItems[index];
+                          final itemTotal =
+                              item['quantity'] * item['salePrice'];
+                          return Container(
+                            width: 160,
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border:
+                                  Border.all(color: const Color(0xFFE5E7EB)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
                                 ),
-                                itemCount: _filteredProducts.length,
-                                itemBuilder: (context, index) {
-                                  final product = _filteredProducts[index];
-                                  final quantity = product['quantity'] ?? 0;
-                                  final isInStock = quantity > 0;
-
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: isInStock
-                                            ? const Color(0xFFE5E7EB)
-                                            : Colors.grey.shade300,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.02),
-                                          blurRadius: 3,
-                                          offset: const Offset(0, 1),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['productName'],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                    color: Color(0xFF1F2937),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${item['quantity']} x ${NumberFormatter.format(item['salePrice'])}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                ),
+                                Text(
+                                  NumberFormatter.formatDecimal(itemTotal),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF10B981),
+                                  ),
+                                ),
+                                const Spacer(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        _buildSmallButton(
+                                          icon: Icons.remove,
+                                          onTap: () => _updateQuantity(
+                                              index, item['quantity'] - 1),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8),
+                                          child: Text(
+                                            '${item['quantity']}',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        _buildSmallButton(
+                                          icon: Icons.add,
+                                          onTap: () => _updateQuantity(
+                                              index, item['quantity'] + 1),
                                         ),
                                       ],
                                     ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            product['name'] ?? 'Noma\'lum',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12,
-                                              color: Color(0xFF1F2937),
-                                              height: 1.1,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                    GestureDetector(
+                                      onTap: () => _editItemPrice(index, item),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEEF2FF),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: const Color(0xFF10B981),
+                                            width: 1.5,
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            NumberFormatter.format(
-                                                product['salePrice']),
-                                            style: const TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w700,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.edit_rounded,
+                                              size: 12,
                                               color: Color(0xFF10B981),
                                             ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Narx',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF10B981),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => _removeFromCart(index),
+                                      child: const Icon(Icons.close,
+                                          size: 14, color: Color(0xFFEF4444)),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                  // Products section
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // Search bar
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                          child: SizedBox(
+                            height: 40,
+                            child: TextField(
+                              controller: _searchController,
+                              style: const TextStyle(fontSize: 15),
+                              decoration: InputDecoration(
+                                hintText: 'Mahsulot qidirish...',
+                                hintStyle: TextStyle(
+                                    color: Colors.grey.shade400, fontSize: 14),
+                                prefixIcon: const Icon(Icons.search,
+                                    size: 18, color: Color(0xFF9CA3AF)),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear, size: 18),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _filterProducts();
+                                        },
+                                      )
+                                    : null,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xFFE5E7EB)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xFFE5E7EB)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xFF3B82F6), width: 1.5),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Products grid
+                        Expanded(
+                          child: _filteredProducts.isEmpty
+                              ? const Center(
+                                  child: Text('Mahsulotlar topilmadi',
+                                      style:
+                                          TextStyle(color: Color(0xFF9CA3AF))))
+                              : GridView.builder(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    childAspectRatio: 1.85,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                  ),
+                                  itemCount: _filteredProducts.length,
+                                  itemBuilder: (context, index) {
+                                    final product = _filteredProducts[index];
+                                    final quantity = product['quantity'] ?? 0;
+                                    final isInStock = quantity > 0;
+
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: isInStock
+                                              ? const Color(0xFFE5E7EB)
+                                              : Colors.grey.shade300,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.02),
+                                            blurRadius: 3,
+                                            offset: const Offset(0, 1),
                                           ),
-                                          const SizedBox(height: 2),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.inventory_2_outlined,
-                                                    size: 10,
-                                                    color: quantity > 5
-                                                        ? const Color(
-                                                            0xFF10B981)
-                                                        : const Color(
-                                                            0xFFEF4444),
-                                                  ),
-                                                  const SizedBox(width: 3),
-                                                  Text(
-                                                    '$quantity',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
+                                        ],
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              product['name'] ?? 'Noma\'lum',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 12,
+                                                color: Color(0xFF1F2937),
+                                                height: 1.1,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              NumberFormatter.format(
+                                                  product['salePrice']),
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF10B981),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .inventory_2_outlined,
+                                                      size: 10,
                                                       color: quantity > 5
                                                           ? const Color(
                                                               0xFF10B981)
                                                           : const Color(
                                                               0xFFEF4444),
-                                                      fontWeight:
-                                                          FontWeight.w500,
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  onTap: isInStock
-                                                      ? () =>
-                                                          _addToCart(product)
-                                                      : null,
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  child: Container(
-                                                    width: 28,
-                                                    height: 28,
-                                                    decoration: BoxDecoration(
-                                                      color: isInStock
-                                                          ? const Color(
-                                                              0xFF3B82F6)
-                                                          : Colors
-                                                              .grey.shade200,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              6),
+                                                    const SizedBox(width: 3),
+                                                    Text(
+                                                      '$quantity',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: quantity > 5
+                                                            ? const Color(
+                                                                0xFF10B981)
+                                                            : const Color(
+                                                                0xFFEF4444),
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                     ),
-                                                    child: Center(
-                                                      child: Icon(
-                                                        Icons.add,
-                                                        size: 14,
+                                                  ],
+                                                ),
+                                                Material(
+                                                  color: Colors.transparent,
+                                                  child: InkWell(
+                                                    onTap: isInStock
+                                                        ? () =>
+                                                            _addToCart(product)
+                                                        : null,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            6),
+                                                    child: Container(
+                                                      width: 28,
+                                                      height: 28,
+                                                      decoration: BoxDecoration(
                                                         color: isInStock
-                                                            ? Colors.white
+                                                            ? const Color(
+                                                                0xFF3B82F6)
                                                             : Colors
-                                                                .grey.shade500,
+                                                                .grey.shade200,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
+                                                      ),
+                                                      child: Center(
+                                                        child: Icon(
+                                                          Icons.add,
+                                                          size: 14,
+                                                          color: isInStock
+                                                              ? Colors.white
+                                                              : Colors.grey
+                                                                  .shade500,
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                // Complete sale button
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      top: BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: _isCreating ? null : _completeSale,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _cartItems.isEmpty
-                            ? const Color(0xFFD1D5DB)
-                            : const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(0xFFD1D5DB),
-                        elevation: 0,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      icon: _isCreating
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.check_circle, size: 18),
-                      label: Text(
-                        _isCreating ? 'Sotilmoqda...' : 'SOTISH',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
+                  // Complete sale button
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        top: BorderSide(color: Color(0xFFE5E7EB)),
                       ),
                     ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: _isCreating ? null : _completeSale,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _cartItems.isEmpty
+                              ? const Color(0xFFD1D5DB)
+                              : const Color(0xFF10B981),
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: const Color(0xFFD1D5DB),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: _isCreating
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.check_circle, size: 18),
+                        label: Text(
+                          _isCreating ? 'Sotilmoqda...' : 'SOTISH',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
       ),
     );
   }
@@ -1566,10 +1576,12 @@ class _PaymentDialogState extends State<_PaymentDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isProcessing ? null : () {
-            Navigator.pop(context);
-            widget.onCancel?.call();
-          },
+          onPressed: _isProcessing
+              ? null
+              : () {
+                  Navigator.pop(context);
+                  widget.onCancel?.call();
+                },
           child: const Text('Bekor qilish'),
         ),
         ElevatedButton(

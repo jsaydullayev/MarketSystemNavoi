@@ -104,12 +104,14 @@ public class DebtsController : ControllerBase
                 return BadRequest($"Payment amount ({request.Amount}) exceeds remaining debt ({debt.RemainingDebt})");
 
             // Create payment record
+            var marketId = _currentMarketService.GetCurrentMarketId();
             var payment = new Payment
             {
                 Id = Guid.NewGuid(),
                 SaleId = debt.SaleId,
                 PaymentType = Enum.Parse<PaymentType>(request.PaymentType, true),
                 Amount = request.Amount,
+                MarketId = marketId,
                 CreatedAt = DateTime.UtcNow
             };
             await _unitOfWork.Payments.AddAsync(payment);

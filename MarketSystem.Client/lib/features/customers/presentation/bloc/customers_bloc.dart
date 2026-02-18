@@ -7,6 +7,7 @@ import '../../domain/usecases/delete_customer_usecase.dart';
 import '../../domain/usecases/get_customer_by_phone_usecase.dart';
 import '../../domain/usecases/get_customers_usecase.dart';
 import '../../domain/usecases/update_customer_usecase.dart';
+import '../../domain/usecases/get_customer_debts_usecase.dart';
 import 'events/customers_event.dart';
 import 'states/customers_state.dart';
 
@@ -17,6 +18,7 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
   final CreateCustomerUseCase createCustomerUseCase;
   final UpdateCustomerUseCase updateCustomerUseCase;
   final DeleteCustomerUseCase deleteCustomerUseCase;
+  final GetCustomerDebtsUseCase getCustomerDebtsUseCase;
 
   CustomersBloc({
     required this.getCustomersUseCase,
@@ -24,12 +26,14 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
     required this.createCustomerUseCase,
     required this.updateCustomerUseCase,
     required this.deleteCustomerUseCase,
+    required this.getCustomerDebtsUseCase,
   }) : super(const CustomersInitial()) {
     on<GetCustomersEvent>(_onGetCustomers);
     on<GetCustomerByPhoneEvent>(_onGetCustomerByPhone);
     on<CreateCustomerEvent>(_onCreateCustomer);
     on<UpdateCustomerEvent>(_onUpdateCustomer);
     on<DeleteCustomerEvent>(_onDeleteCustomer);
+    on<GetCustomerDebtsEvent>(_onGetCustomerDebts);
   }
 
   /// Get all customers
@@ -76,6 +80,7 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
       phone: event.phone,
       fullName: event.fullName,
       comment: event.comment,
+      initialDebt: event.initialDebt,
     );
 
     if (result.isSuccess && result.data != null) {
@@ -115,6 +120,21 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
       emit(const CustomerDeleted());
     } else {
       emit(CustomersError(result.error ?? 'Mijozni o\'chirishda xatolik'));
+    }
+  }
+
+  /// Get customer debts
+  Future<void> _onGetCustomerDebts(
+    GetCustomerDebtsEvent event,
+    Emitter<CustomersState> emit,
+  ) async {
+    emit(const CustomerDebtsLoading());
+    final result = await getCustomerDebtsUseCase(event.customerId);
+
+    if (result.isSuccess && result.data != null) {
+      emit(CustomerDebtsLoaded(result.data!));
+    } else {
+      emit(CustomersError(result.error ?? 'Mijoz qarzlarini yuklashda xatolik'));
     }
   }
 }
