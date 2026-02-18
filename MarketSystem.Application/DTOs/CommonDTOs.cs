@@ -77,7 +77,8 @@ public record CustomerDto(
 public record CreateCustomerDto(
     [property: JsonPropertyName("phone")] string Phone,
     [property: JsonPropertyName("fullName")] string? FullName,
-    [property: JsonPropertyName("comment")] string? Comment
+    [property: JsonPropertyName("comment")] string? Comment,
+    [property: JsonPropertyName("initialDebt")] decimal? InitialDebt
 );
 public record UpdateCustomerDto(
     [property: JsonPropertyName("phone")] string Phone,

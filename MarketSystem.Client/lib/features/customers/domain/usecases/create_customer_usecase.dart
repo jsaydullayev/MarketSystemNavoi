@@ -16,6 +16,7 @@ class CreateCustomerUseCase {
     required String phone,
     String? fullName,
     String? comment,
+    double? initialDebt,
   }) async {
     // Biznes validatsiyalar
     if (phone.isEmpty) {
@@ -32,10 +33,16 @@ class CreateCustomerUseCase {
       return ApiResult.failure('Mijoz ismi bo\'sh bo\'lishi mumkin emas');
     }
 
+    // Agar qarz miqdori berilgan bo'lsa, u musbat bo'lishi kerak
+    if (initialDebt != null && initialDebt < 0) {
+      return ApiResult.failure('Qarz miqdori manfiy bo\'lishi mumkin emas');
+    }
+
     return repository.createCustomer(
       phone: phone,
       fullName: fullName?.trim(),
       comment: comment?.trim(),
+      initialDebt: initialDebt,
     );
   }
 }

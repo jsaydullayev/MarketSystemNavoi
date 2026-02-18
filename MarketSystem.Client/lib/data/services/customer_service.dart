@@ -42,6 +42,7 @@ class CustomerService {
     required String phone,
     String? fullName,
     String? comment,
+    double? initialDebt,
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.customers}/CreateCustomer',
@@ -49,6 +50,7 @@ class CustomerService {
         'phone': phone,
         if (fullName != null) 'fullName': fullName,
         if (comment != null) 'comment': comment,
+        if (initialDebt != null) 'initialDebt': initialDebt,
       },
     );
 
@@ -85,6 +87,18 @@ class CustomerService {
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Failed to delete customer: ${response.body}');
+    }
+  }
+
+  // Mijoz qarzlarini olish
+  Future<List<Map<String, dynamic>>> getCustomerDebts(String customerId) async {
+    final response = await _httpService.get('${ApiConstants.debts}/customer/$customerId');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data);
+    } else {
+      throw Exception('Failed to load customer debts: ${response.statusCode}');
     }
   }
 }
