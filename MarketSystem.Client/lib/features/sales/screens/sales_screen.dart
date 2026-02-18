@@ -26,15 +26,21 @@ class _SalesScreenState extends State<SalesScreen> {
 
   // Guruhlarga ajratish
   List<dynamic> _getDraftSales(List<dynamic> sales) {
-    return sales.where((s) => s['status']?.toString().toLowerCase() == 'draft').toList();
+    return sales
+        .where((s) => s['status']?.toString().toLowerCase() == 'draft')
+        .toList();
   }
 
   List<dynamic> _getPaidSales(List<dynamic> sales) {
-    return sales.where((s) => s['status']?.toString().toLowerCase() == 'closed').toList();
+    return sales
+        .where((s) => s['status']?.toString().toLowerCase() == 'closed')
+        .toList();
   }
 
   List<dynamic> _getDebtSales(List<dynamic> sales) {
-    return sales.where((s) => s['status']?.toString().toLowerCase() == 'debt').toList();
+    return sales
+        .where((s) => s['status']?.toString().toLowerCase() == 'debt')
+        .toList();
   }
 
   @override
@@ -66,7 +72,8 @@ class _SalesScreenState extends State<SalesScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => context.read<SalesBloc>().add(const GetSalesEvent()),
+              onPressed: () =>
+                  context.read<SalesBloc>().add(const GetSalesEvent()),
             ),
           ],
         ),
@@ -86,7 +93,8 @@ class _SalesScreenState extends State<SalesScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => context.read<SalesBloc>().add(const GetSalesEvent()),
+                      onPressed: () =>
+                          context.read<SalesBloc>().add(const GetSalesEvent()),
                       child: const Text('Qayta urinish'),
                     ),
                   ],
@@ -130,29 +138,43 @@ class _SalesScreenState extends State<SalesScreen> {
                         children: [
                           // Davom etayotgan savdolar (Draft)
                           if (draftSales.isNotEmpty) ...[
-                            _buildSectionHeader('Davom etayotgan', Icons.edit_note, Colors.orange, draftSales.length),
+                            _buildSectionHeader(
+                                'Davom etayotgan',
+                                Icons.edit_note,
+                                Colors.orange,
+                                draftSales.length),
                             const SizedBox(height: 8),
-                            ...draftSales.map((sale) => _buildSaleCard(context, sale)),
+                            ...draftSales
+                                .map((sale) => _buildSaleCard(context, sale)),
                             const SizedBox(height: 16),
                           ],
 
                           // Qarz savdolar (Debt)
                           if (debtSales.isNotEmpty) ...[
-                            _buildSectionHeader('Qarz savdolar', Icons.money_off, Colors.red, debtSales.length),
+                            _buildSectionHeader('Qarz savdolar',
+                                Icons.money_off, Colors.red, debtSales.length),
                             const SizedBox(height: 8),
-                            ...debtSales.map((sale) => _buildSaleCard(context, sale)),
+                            ...debtSales
+                                .map((sale) => _buildSaleCard(context, sale)),
                             const SizedBox(height: 16),
                           ],
 
                           // Tugatilgan savdolar (Paid)
                           if (paidSales.isNotEmpty) ...[
-                            _buildSectionHeader('Tugatilgan', Icons.check_circle, Colors.green, paidSales.length),
+                            _buildSectionHeader(
+                                'Tugatilgan',
+                                Icons.check_circle,
+                                Colors.green,
+                                paidSales.length),
                             const SizedBox(height: 8),
-                            ...paidSales.map((sale) => _buildSaleCard(context, sale)),
+                            ...paidSales
+                                .map((sale) => _buildSaleCard(context, sale)),
                           ],
 
                           // Agar barchasi bo'sh
-                          if (draftSales.isEmpty && debtSales.isEmpty && paidSales.isEmpty)
+                          if (draftSales.isEmpty &&
+                              debtSales.isEmpty &&
+                              paidSales.isEmpty)
                             Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -195,7 +217,8 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, Color color, int count) {
+  Widget _buildSectionHeader(
+      String title, IconData icon, Color color, int count) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -240,10 +263,10 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Widget _buildSaleCard(BuildContext context, Map<String, dynamic> sale) {
-    final status = sale['status'] as String;
-    final totalAmount = (sale['totalAmount'] as num).toDouble();
-    final paidAmount = (sale['paidAmount'] as num).toDouble();
-    final remainingAmount = (sale['remainingAmount'] as num).toDouble();
+    final status = sale['status']?.toString() ?? '';
+    final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final paidAmount = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
+    final remainingAmount = totalAmount - paidAmount;
     final items = sale['items'] as List<dynamic>? ?? [];
     final itemsCount = items.length;
     final createdAt = sale['createdAt'];
@@ -257,9 +280,9 @@ class _SalesScreenState extends State<SalesScreen> {
         case 'debt':
           return Colors.red;
         case 'cancelled':
-          return Colors.grey;
+          return const Color.fromARGB(255, 243, 235, 3);
         default:
-          return Colors.grey;
+          return const Color.fromARGB(255, 6, 1, 68);
       }
     }
 
@@ -283,7 +306,8 @@ class _SalesScreenState extends State<SalesScreen> {
     if (createdAt != null) {
       try {
         final date = DateTime.parse(createdAt);
-        formattedDate = '${date.day}.${date.month}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+        formattedDate =
+            '${date.day}.${date.month}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
       } catch (e) {
         formattedDate = createdAt.toString();
       }
@@ -333,7 +357,8 @@ class _SalesScreenState extends State<SalesScreen> {
                     ),
                     // Status badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: getStatusColor().withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
@@ -431,9 +456,11 @@ class _SalesScreenState extends State<SalesScreen> {
                         ),
                         const SizedBox(height: 8),
                         ...items.take(3).map((item) {
-                          final productName = item['productName'] ?? 'Noma\'lum';
+                          final productName =
+                              item['productName'] ?? 'Noma\'lum';
                           final quantity = item['quantity'] ?? 0;
-                          final salePrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
+                          final salePrice =
+                              (item['salePrice'] as num?)?.toDouble() ?? 0.0;
                           final totalPrice = quantity * salePrice;
 
                           return Padding(

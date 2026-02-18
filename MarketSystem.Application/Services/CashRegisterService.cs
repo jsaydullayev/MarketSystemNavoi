@@ -275,3 +275,4 @@ public class CashRegisterService : ICashRegisterService
         }
     }
 }
+//new code

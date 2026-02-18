@@ -72,6 +72,21 @@ class CustomerDeleted extends CustomersState {
   const CustomerDeleted();
 }
 
+/// Customer debts loading state
+class CustomerDebtsLoading extends CustomersState {
+  const CustomerDebtsLoading();
+}
+
+/// Customer debts loaded state
+class CustomerDebtsLoaded extends CustomersState {
+  final List<Map<String, dynamic>> debts;
+
+  const CustomerDebtsLoaded(this.debts);
+
+  @override
+  List<Object?> get props => [debts];
+}
+
 /// Error state
 class CustomersError extends CustomersState {
   final String message;
