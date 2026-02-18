@@ -49,12 +49,14 @@ class CustomerRepositoryImpl implements CustomerRepositoryInterface {
     required String phone,
     String? fullName,
     String? comment,
+    double? initialDebt,
   }) async {
     try {
       final data = await remoteDataSource.createCustomer(
         phone: phone,
         fullName: fullName,
         comment: comment,
+        initialDebt: initialDebt,
       );
 
       final customer = CustomerEntity.fromJson(data as Map<String, dynamic>);
@@ -89,6 +91,16 @@ class CustomerRepositoryImpl implements CustomerRepositoryInterface {
       return ApiResult.success(null);
     } catch (e) {
       return ApiResult.failure('Mijozni o\'chirishda xatolik: $e');
+    }
+  }
+
+  @override
+  Future<ApiResult<List<Map<String, dynamic>>>> getCustomerDebts(String customerId) async {
+    try {
+      final data = await remoteDataSource.getCustomerDebts(customerId);
+      return ApiResult.success(data);
+    } catch (e) {
+      return ApiResult.failure('Mijoz qarzlarini yuklashda xatolik: $e');
     }
   }
 }

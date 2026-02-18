@@ -45,6 +45,7 @@ import '../../features/customers/domain/usecases/get_customer_by_phone_usecase.d
 import '../../features/customers/domain/usecases/create_customer_usecase.dart';
 import '../../features/customers/domain/usecases/update_customer_usecase.dart';
 import '../../features/customers/domain/usecases/delete_customer_usecase.dart';
+import '../../features/customers/domain/usecases/get_customer_debts_usecase.dart';
 import '../../features/customers/presentation/bloc/customers_bloc.dart';
 
 // Zakup Feature - Clean Architecture
@@ -153,6 +154,7 @@ void _initCustomersFeature() {
   sl.registerLazySingleton(() => CreateCustomerUseCase(sl()));
   sl.registerLazySingleton(() => UpdateCustomerUseCase(sl()));
   sl.registerLazySingleton(() => DeleteCustomerUseCase(sl()));
+  sl.registerLazySingleton(() => GetCustomerDebtsUseCase(sl()));
 
   // BLoC
   sl.registerFactory<CustomersBloc>(
@@ -162,6 +164,7 @@ void _initCustomersFeature() {
       createCustomerUseCase: sl(),
       updateCustomerUseCase: sl(),
       deleteCustomerUseCase: sl(),
+      getCustomerDebtsUseCase: sl(),
     ),
   );
 }

@@ -31,15 +31,17 @@ class CreateCustomerEvent extends CustomersEvent {
   final String phone;
   final String? fullName;
   final String? comment;
+  final double? initialDebt;
 
   const CreateCustomerEvent({
     required this.phone,
     this.fullName,
     this.comment,
+    this.initialDebt,
   });
 
   @override
-  List<Object?> get props => [phone, fullName, comment];
+  List<Object?> get props => [phone, fullName, comment, initialDebt];
 }
 
 /// Update customer event
@@ -64,4 +66,14 @@ class DeleteCustomerEvent extends CustomersEvent {
 
   @override
   List<Object?> get props => [id];
+}
+
+/// Get customer debts event
+class GetCustomerDebtsEvent extends CustomersEvent {
+  final String customerId;
+
+  const GetCustomerDebtsEvent(this.customerId);
+
+  @override
+  List<Object?> get props => [customerId];
 }
