@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/providers/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../screens/dashboard_screen.dart';
 import '../../../l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -56,51 +54,66 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
-      final l10n = AppLocalizations.of(context)!;
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
-
-      final success = await authProvider.register(
-        fullName: _fullNameController.text.trim(),
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
-        role: 'Owner',  // Always register as Owner
-        marketName: _marketNameController.text.trim(),
-        language: localeProvider.locale.languageCode,
-      );
-
+      // Registration is disabled - show admin approval message
       if (!mounted) return;
 
-      if (success) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
-      } else {
-        // Get error message based on error code
-        String errorText;
-        switch (authProvider.errorCode) {
-          case 'register_failed':
-            errorText = l10n.registerError;
-            break;
-          case 'network_error':
-            errorText = l10n.networkError;
-            break;
-          default:
-            errorText = l10n.error;
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorText),
-            backgroundColor: AppTheme.danger,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        );
-      }
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  size: 48,
+                  color: AppTheme.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Zapros adminga yuborildi',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Sizning so\'rovingiz administratorga yuborildi. Tasdiqlashdan keyin siz bilan bog\'lanamiz.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Go back to login
+                  },
+                  style: AppTheme.primaryButtonStyle,
+                  child: const Text('Orqaga'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
   }
 

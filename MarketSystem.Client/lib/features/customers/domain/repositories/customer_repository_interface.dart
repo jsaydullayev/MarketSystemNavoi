@@ -18,6 +18,7 @@ abstract class CustomerRepositoryInterface {
     required String phone,
     String? fullName,
     String? comment,
+    double? initialDebt,
   });
 
   /// Mijoz ma'lumotlarini yangilash
@@ -28,4 +29,7 @@ abstract class CustomerRepositoryInterface {
 
   /// Mijozni o'chirish
   Future<ApiResult<void>> deleteCustomer(String id);
+
+  /// Mijoz qarzlarini olish
+  Future<ApiResult<List<Map<String, dynamic>>>> getCustomerDebts(String customerId);
 }

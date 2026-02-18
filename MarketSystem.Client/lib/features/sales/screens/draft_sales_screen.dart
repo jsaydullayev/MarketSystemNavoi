@@ -17,6 +17,7 @@ class DraftSalesScreen extends StatefulWidget {
 
 class _DraftSalesScreenState extends State<DraftSalesScreen> {
   List<dynamic> _unfinishedSales = [];
+  List<dynamic> _debtors = [];
   bool _isLoading = true;
 
   // Guruhlangan savdolar
@@ -28,6 +29,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   void initState() {
     super.initState();
     _loadDraftSales();
+    _loadDebtors();
   }
 
   Future<void> _loadDraftSales() async {
@@ -58,6 +60,23 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _loadDebtors() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+
+      final debtors = await salesService.getDebtors();
+
+      if (mounted) {
+        setState(() {
+          _debtors = debtors;
+        });
+      }
+    } catch (e) {
+      print('Error loading debtors: $e');
     }
   }
 
@@ -149,13 +168,22 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _unfinishedSales.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadDraftSales,
+          : RefreshIndicator(
+                  onRefresh: () async {
+                    await _loadDraftSales();
+                    await _loadDebtors();
+                  },
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
+                      // Qarzdor mijozlar
+                      if (_debtors.isNotEmpty) ...[
+                        _buildSectionHeader('Qarzdor mijozlar', Icons.person_outline, Colors.red),
+                        const SizedBox(height: 8),
+                        ..._debtors.map((debtor) => _buildDebtorCard(debtor)),
+                        const SizedBox(height: 16),
+                      ],
+
                       // Davom etayotgan savdolar (Draft)
                       if (_draftSales.isNotEmpty) ...[
                         _buildSectionHeader('Davom etayotgan', Icons.edit_note, Colors.orange),
@@ -179,7 +207,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                       ],
 
                       // Ikkalasi ham bo'sh
-                      if (_draftSales.isEmpty && _debtSales.isEmpty && _closedSales.isEmpty)
+                      if (_draftSales.isEmpty && _debtSales.isEmpty && _closedSales.isEmpty && _debtors.isEmpty)
                         _buildEmptyState(),
                     ],
                   ),
@@ -188,6 +216,11 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   }
 
   Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    final count = title == 'Davom etayotgan' ? _draftSales.length :
+                  title == 'Qarz savdolar' ? _debtSales.length :
+                  title == 'Qarzdor mijozlar' ? _debtors.length :
+                  _closedSales.length;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -218,15 +251,547 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              title == 'Davom etayotgan' ? '${_draftSales.length}' :
-              title == 'Qarz savdolar' ? '${_debtSales.length}' :
-              '${_closedSales.length}',
+              '$count',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebtorCard(dynamic debtor) {
+    final customerName = debtor['customerName'] ?? 'Mijozsiz';
+    final customerPhone = debtor['customerPhone'];
+    final totalDebt = (debtor['totalDebt'] as num?)?.toDouble() ?? 0.0;
+    final remainingDebt = (debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
+    final customerId = debtor['customerId'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.red.withValues(alpha: 0.4),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Customer info
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.person,
+                  color: Colors.red,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customerName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    if (customerPhone != null)
+                      Text(
+                        customerPhone,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Qarz miqdori
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.red.shade200,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Qarz miqdori:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                Text(
+                  NumberFormatter.formatDecimal(remainingDebt),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Tugmalar: To'lov tarixi va To'lash
+          Row(
+            children: [
+              // To'lov tarixi tugmasi
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showPaymentHistory(debtor),
+                  icon: const Icon(Icons.history, size: 18),
+                  label: const Text('Tarix'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue,
+                    side: const BorderSide(color: Colors.blue, width: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // To'lash tugmasi
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showDebtorPaymentDialog(debtor),
+                  icon: const Icon(Icons.payment, size: 18),
+                  label: const Text('To\'lash'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDebtorPaymentDialog(dynamic debtor) {
+    final customerName = debtor['customerName'] ?? 'Mijozsiz';
+    final remainingDebt = (debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
+
+    final amountController = TextEditingController(text: remainingDebt.toString());
+    bool selectedCash = false;
+    bool selectedTerminal = false;
+    bool selectedTransfer = false;
+    bool selectedClick = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('To\'lash: $customerName'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Qarz miqdori
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Qarz:', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        NumberFormatter.formatDecimal(remainingDebt),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.red,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // To'lov miqdori
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'To\'lov miqdori',
+                    prefixText: 'so\'m ',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // To'lov usuli
+                const Text('To\'lov usuli:', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  title: const Text('Naqd'),
+                  value: selectedCash,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedCash = value ?? false;
+                      if (selectedCash) {
+                        selectedTerminal = false;
+                        selectedTransfer = false;
+                        selectedClick = false;
+                      }
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  title: const Text('Plastik karta'),
+                  value: selectedTerminal,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedTerminal = value ?? false;
+                      if (selectedTerminal) {
+                        selectedCash = false;
+                        selectedTransfer = false;
+                        selectedClick = false;
+                      }
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  title: const Text('Hisob raqam'),
+                  value: selectedTransfer,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedTransfer = value ?? false;
+                      if (selectedTransfer) {
+                        selectedCash = false;
+                        selectedTerminal = false;
+                        selectedClick = false;
+                      }
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  title: const Text('Click'),
+                  value: selectedClick,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedClick = value ?? false;
+                      if (selectedClick) {
+                        selectedCash = false;
+                        selectedTerminal = false;
+                        selectedTransfer = false;
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Bekor qilish'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = double.tryParse(amountController.text) ?? 0;
+                if (amount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Iltimos, to\'g\'ri miqdor kiriting'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                String paymentType = '';
+                if (selectedCash) paymentType = 'Cash';
+                else if (selectedTerminal) paymentType = 'Terminal';
+                else if (selectedTransfer) paymentType = 'Transfer';
+                else if (selectedClick) paymentType = 'Click';
+                else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Iltimos, to\'lov usulini tanlang'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  final salesService = SalesService(authProvider: authProvider);
+
+                  // Get debtor's customer ID and find their debt sales
+                  final customerId = debtor['customerId'];
+                  final debtorSales = _debtSales.where((sale) => sale['customerId'] == customerId).toList();
+
+                  if (debtorSales.isEmpty) {
+                    throw Exception('Qarz savdolari topilmadi');
+                  }
+
+                  // Use the oldest debt sale
+                  final saleId = debtorSales[0]['id'];
+
+                  await salesService.addPayment(
+                    saleId: saleId,
+                    paymentType: paymentType,
+                    amount: amount,
+                  );
+
+                  if (mounted) {
+                    Navigator.pop(dialogContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('✅ To\'lov muvaffaqiyatli amalga oshirildi: ${NumberFormatter.formatDecimal(amount)}'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    // Refresh lists
+                    _loadDraftSales();
+                    _loadDebtors();
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.pop(dialogContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Xatolik: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('To\'lash'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPaymentHistory(dynamic debtor) {
+    final customerName = debtor['customerName'] ?? 'Mijozsiz';
+    final customerId = debtor['customerId'];
+
+    // Get debtor's debt sales
+    final debtorSales = _debtSales.where((sale) => sale['customerId'] == customerId).toList();
+
+    if (debtorSales.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Qarz savdolari topilmadi'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('To\'lov tarixi: $customerName'),
+        content: SizedBox(
+          width: 500,
+          height: 400,
+          child: ListView.builder(
+            itemCount: debtorSales.length,
+            itemBuilder: (context, index) {
+              final sale = debtorSales[index];
+              final payments = sale['payments'] as List<dynamic>? ?? [];
+              final saleTotal = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+              final salePaid = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
+              final saleRemaining = (sale['remainingAmount'] as num?)?.toDouble() ?? 0.0;
+              final saleDate = sale['createdAt'];
+
+              // Format date
+              String formattedDate = 'Noma\'lum';
+              if (saleDate != null) {
+                try {
+                  final date = DateTime.parse(saleDate);
+                  formattedDate = '${date.day}.${date.month}.${date.year}';
+                } catch (e) {
+                  formattedDate = saleDate.toString();
+                }
+              }
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ExpansionTile(
+                  title: Text('Savdo #${sale['id'].toString().substring(0, 8)}'),
+                  subtitle: Text('$formattedDate • Jami: ${NumberFormatter.formatDecimal(saleTotal)}'),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Savdo summary
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Jami summa:'),
+                                    Text(NumberFormatter.formatDecimal(saleTotal)),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('To\'langan:', style: TextStyle(color: Colors.green)),
+                                    Text(
+                                      NumberFormatter.formatDecimal(salePaid),
+                                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Qolgan qarz:', style: TextStyle(color: Colors.red)),
+                                    Text(
+                                      NumberFormatter.formatDecimal(saleRemaining),
+                                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // To'lovlar ro'yxati
+                          if (payments.isEmpty)
+                            const Text('To\'lovlar yo\'q', style: TextStyle(color: Colors.grey))
+                          else
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('To\'lovlar:', style: TextStyle(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 8),
+                                ...payments.map<Widget>((payment) {
+                                  final amount = (payment['amount'] as num?)?.toDouble() ?? 0.0;
+                                  final paymentType = payment['paymentType'] ?? 'Noma\'lum';
+                                  final paymentDate = payment['createdAt'];
+
+                                  String formattedPaymentDate = '';
+                                  if (paymentDate != null) {
+                                    try {
+                                      final date = DateTime.parse(paymentDate);
+                                      formattedPaymentDate = '${date.day}.${date.month}.${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+                                    } catch (e) {
+                                      formattedPaymentDate = '';
+                                    }
+                                  }
+
+                                  // Payment type icon
+                                  IconData getPaymentIcon() {
+                                    switch (paymentType.toLowerCase()) {
+                                      case 'cash': return Icons.money;
+                                      case 'terminal': return Icons.credit_card;
+                                      case 'transfer': return Icons.account_balance;
+                                      case 'click': return Icons.touch_app;
+                                      default: return Icons.payment;
+                                    }
+                                  }
+
+                                  return Card(
+                                    elevation: 0,
+                                    color: Colors.green.shade50,
+                                    child: ListTile(
+                                      leading: Icon(getPaymentIcon(), color: Colors.green),
+                                      title: Text(
+                                        NumberFormatter.formatDecimal(amount),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        paymentType + (formattedPaymentDate.isNotEmpty ? ' • $formattedPaymentDate' : ''),
+                                        style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Yopish'),
           ),
         ],
       ),

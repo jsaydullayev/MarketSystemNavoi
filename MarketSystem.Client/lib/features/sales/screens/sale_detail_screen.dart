@@ -88,17 +88,17 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   }
 
   Widget _buildSaleDetail(Map<String, dynamic> sale) {
-    final status = sale['status'] as String;
-    final totalAmount = (sale['totalAmount'] as num).toDouble();
-    final paidAmount = (sale['paidAmount'] as num).toDouble();
-    final remainingAmount = (sale['remainingAmount'] as num).toDouble();
+    final status = sale['status']?.toString() ?? '';
+    final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final paidAmount = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
+    final remainingAmount = totalAmount - paidAmount;
     final items = sale['items'] as List<dynamic>? ?? [];
 
     Color getStatusColor() {
       switch (status.toLowerCase()) {
         case 'draft':
           return Colors.orange;
-        case 'paid':
+        case 'closed':
           return Colors.green;
         case 'debt':
           return Colors.red;
@@ -113,8 +113,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       switch (status.toLowerCase()) {
         case 'draft':
           return 'Davom etayotgan';
-        case 'paid':
-          return 'To\'langan';
+        case 'closed':
+          return 'Tugatilgan';
         case 'debt':
           return 'Qarz';
         case 'cancelled':

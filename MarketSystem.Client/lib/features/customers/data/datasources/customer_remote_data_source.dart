@@ -26,11 +26,13 @@ class CustomerRemoteDataSource {
     required String phone,
     String? fullName,
     String? comment,
+    double? initialDebt,
   }) async {
     return _customerService.createCustomer(
       phone: phone,
       fullName: fullName,
       comment: comment,
+      initialDebt: initialDebt,
     );
   }
 
@@ -48,5 +50,10 @@ class CustomerRemoteDataSource {
   /// Mijozni o'chirish
   Future<void> deleteCustomer(String id) async {
     return _customerService.deleteCustomer(id);
+  }
+
+  /// Mijoz qarzlarini olish
+  Future<List<Map<String, dynamic>>> getCustomerDebts(String customerId) async {
+    return _customerService.getCustomerDebts(customerId);
   }
 }
