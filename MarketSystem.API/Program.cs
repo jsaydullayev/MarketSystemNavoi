@@ -28,6 +28,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             npgsqlOptions.CommandTimeout(30);
         });
     options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
+
+    // Configure warnings to suppress pending model changes warning during development
+    // This allows manual SQL migrations without EF Core migration validation
+    options.ConfigureWarnings(warnings =>
+        warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
 
 // Add JWT Authentication
@@ -190,13 +195,13 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Marke
 
 var app = builder.Build();
 
-// Auto-apply database migrations
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
+// Auto-apply database migrations - DISABLED for manual SQL migrations
+// if (app.Environment.IsDevelopment())
+// {
+//     using var scope = app.Services.CreateScope();
+//     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//     await dbContext.Database.MigrateAsync();
+// }
 
 // Global Exception Handler - MUST be first middleware
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();

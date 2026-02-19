@@ -31,7 +31,7 @@ public class UnitOfWork : IUnitOfWork
         Customers = new CustomerRepository(context);
         Users = new UserRepository(context);
         Products = new ProductRepository(context);
-        ProductCategories = new Repository<ProductCategory>(context);  // ✅ NEW
+        ProductCategories = new ProductCategoryRepository(context);  // ✅ NEW
         Sales = new SaleRepository(context);
         SaleItems = new SaleItemRepository(context);
         Payments = new PaymentRepository(context);
