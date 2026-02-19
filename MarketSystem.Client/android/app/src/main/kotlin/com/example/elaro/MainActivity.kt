@@ -1,4 +1,4 @@
-package uz.elaro
+package uz.strotech
 
 import io.flutter.embedding.android.FlutterActivity
 
