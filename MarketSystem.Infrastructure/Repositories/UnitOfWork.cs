@@ -14,6 +14,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Customer> Customers { get; }
     public IUserRepository Users { get; }
     public IRepository<Product> Products { get; }
+    public IRepository<ProductCategory> ProductCategories { get; }  // ✅ NEW
     public ISaleRepository Sales { get; }
     public IRepository<SaleItem> SaleItems { get; }
     public IRepository<Payment> Payments { get; }
@@ -30,6 +31,7 @@ public class UnitOfWork : IUnitOfWork
         Customers = new CustomerRepository(context);
         Users = new UserRepository(context);
         Products = new ProductRepository(context);
+        ProductCategories = new Repository<ProductCategory>(context);  // ✅ NEW
         Sales = new SaleRepository(context);
         SaleItems = new SaleItemRepository(context);
         Payments = new PaymentRepository(context);

@@ -187,7 +187,7 @@ public class SaleService : ISaleService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Draft, Debt va Closed statusdagi savdolarni olish
+        // Draft, Debt va Paid statusdagi savdolarni olish
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
@@ -195,7 +195,7 @@ public class SaleService : ISaleService
                 .ThenInclude(si => si.Product)
             .Include(s => s.Payments)
             .Where(s => s.MarketId == marketId && s.SellerId == sellerId &&
-                       (s.Status == SaleStatus.Draft || s.Status == SaleStatus.Debt || s.Status == SaleStatus.Closed))
+                       (s.Status == SaleStatus.Draft || s.Status == SaleStatus.Debt || s.Status == SaleStatus.Paid))
             .OrderByDescending(s => s.CreatedAt)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -249,6 +249,42 @@ public class SaleService : ISaleService
 
         // Audit log (temporarily disabled for testing)
         // await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
+
+        return await MapToDtoAsync(sale, cancellationToken);
+    }
+
+    public async Task<SaleDto?> UpdateSaleCustomerAsync(Guid saleId, UpdateSaleCustomerDto request, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.Id == saleId && s.MarketId == marketId,
+            cancellationToken);
+        var sale = sales.FirstOrDefault();
+
+        if (sale is null)
+            return null;
+
+        // Faqat Draft va Debt statusdagi savdolarga mijoz qo'shish mumkin
+        if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Debt)
+            throw new InvalidOperationException("Faqat Draft va Debt statusdagi savdolarga mijoz qo'shish mumkin");
+
+        // Agar mijoz berilgan bo'lsa, u shu do'konga tegishli ekanligini tekshiramiz
+        if (request.CustomerId.HasValue)
+        {
+            var customers = await _unitOfWork.Customers.FindAsync(
+                c => c.Id == request.CustomerId.Value && c.MarketId == marketId,
+                cancellationToken);
+            var customer = customers.FirstOrDefault();
+
+            if (customer is null)
+                throw new InvalidOperationException("Mijoz topilmadi yoki bu do'konga tegishli emas");
+        }
+
+        // Mijozni yangilaymiz
+        sale.CustomerId = request.CustomerId;
+        _unitOfWork.Sales.Update(sale);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return await MapToDtoAsync(sale, cancellationToken);
     }
@@ -507,9 +543,13 @@ public class SaleService : ISaleService
             sale.PaidAmount += request.Amount;
 
             // Determine new status
+            _logger.LogInformation("Updating sale status: SaleId={SaleId}, PaidAmount={Paid}, TotalAmount={Total}, CurrentStatus={Status}",
+                saleId, sale.PaidAmount, sale.TotalAmount, sale.Status);
+
             if (sale.PaidAmount >= sale.TotalAmount)
             {
-                sale.Status = SaleStatus.Closed; // To'liq to'langanda Closed status
+                _logger.LogInformation("Sale {SaleId} is fully paid, setting status to Paid", saleId);
+                sale.Status = SaleStatus.Paid; // To'liq to'langanda Paid status
 
                 // Close any associated debt (filtered by market)
                 var existingDebtToClose = (await _unitOfWork.Debts.FindAsync(
@@ -525,6 +565,7 @@ public class SaleService : ISaleService
             }
             else if (sale.PaidAmount > 0)
             {
+                _logger.LogInformation("Sale {SaleId} has partial payment, setting status to Debt", saleId);
                 // Set status to Debt for partial payments
                 sale.Status = SaleStatus.Debt;
 
@@ -558,6 +599,12 @@ public class SaleService : ISaleService
                 }
                 // Mijozsiz savdo uchun debt record yaratilmaydi, lekin status "debt" bo'ladi
             }
+
+            // Explicitly update sale in unit of work
+            _unitOfWork.Sales.Update(sale);
+
+            _logger.LogInformation("Sale {SaleId} updated: Status={Status}, PaidAmount={Paid}, TotalAmount={Total}",
+                saleId, sale.Status, sale.PaidAmount, sale.TotalAmount);
 
             // Use DbContext to explicitly mark sale as modified
             _context.Entry(sale).State = EntityState.Modified;
@@ -891,10 +938,13 @@ public class SaleService : ISaleService
             return null;
         }
 
-        if (sale.Status != SaleStatus.Draft)
+        // Faqat Draft va Paid statusdagi savdolarni o'chirish mumkin
+        // Debt statusdagi savdolarni o'chirish mumkin emas, chunki ularda qarz bor
+        // Closed va Cancelled statusdagi savdolarni ham o'chirish mumkin emas
+        if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Paid)
         {
-            _logger.LogWarning("Sale is not in Draft status: {SaleId}, Status: {Status}", saleId, sale.Status);
-            throw new InvalidOperationException("Faqat draft savdolarini o'chirish mumkin!");
+            _logger.LogWarning("Sale cannot be deleted: {SaleId}, Status: {Status}", saleId, sale.Status);
+            throw new InvalidOperationException("Faqat draft yoki to'langan (Paid) savdolarini o'chirish mumkin! Qarzli savdolarni o'chirib bo'lmaydi.");
         }
 
         // Sale items ni o'chirish (cascade delete bo'lishi kerak)
@@ -1001,6 +1051,10 @@ public class SaleService : ISaleService
         {
             var marketId = _currentMarketService.GetCurrentMarketId();
 
+            _logger.LogInformation("=== RETURN SALE ITEM START ===");
+            _logger.LogInformation("SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}, Comment: {Comment}",
+                saleId, request.SaleItemId, request.Quantity, request.Comment);
+
             // Savdo va sale itemni topish
             var sale = await _context.Sales
                 .Include(s => s.SaleItems)
@@ -1031,31 +1085,53 @@ public class SaleService : ISaleService
             var returnQuantity = request.Quantity;
             var refundAmount = returnQuantity * saleItem.SalePrice;
 
+            _logger.LogInformation("Return Amount: {RefundAmount}, Sale Price: {SalePrice}, Return Qty: {ReturnQty}",
+                refundAmount, saleItem.SalePrice, returnQuantity);
+
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
             // 1. Sale item quantity yangilash yoki o'chirish
             var returnQuantityInt = (int)returnQuantity;
+            string originalComment = saleItem.Comment ?? "";
 
             if (returnQuantity < saleItem.Quantity)
             {
                 // Qisman qaytarish - quantity kamaytirish
+                _logger.LogInformation("Partial return: OldQty={OldQty}, ReturnQty={ReturnQty}, NewQty={NewQty}",
+                    saleItem.Quantity, returnQuantityInt, saleItem.Quantity - returnQuantityInt);
                 saleItem.Quantity -= returnQuantityInt;
+
+                // Izohga qaytarish haqida yozish
+                var returnComment = !string.IsNullOrEmpty(request.Comment)
+                    ? request.Comment
+                    : $"Qaytarildi: {returnQuantityInt} ta ({DateTime.UtcNow:dd.MM.yyyy HH:mm})";
+                saleItem.Comment = !string.IsNullOrEmpty(originalComment)
+                    ? $"{originalComment} | {returnComment}"
+                    : returnComment;
             }
             else
             {
                 // To'liq qaytarish - itemni o'chirish
+                _logger.LogInformation("Full return: Removing item completely");
                 _context.SaleItems.Remove(saleItem);
             }
 
             // 2. Mahsulot stock'iga qaytarish
             if (saleItem.Product != null)
             {
+                var oldStock = saleItem.Product.Quantity;
                 saleItem.Product.Quantity += returnQuantityInt;
+                _context.Products.Update(saleItem.Product);
+                _logger.LogInformation("Product stock updated: ProductId={ProductId}, OldStock={OldStock}, NewStock={NewStock}",
+                    saleItem.ProductId, oldStock, saleItem.Product.Quantity);
             }
 
             // 3. Savdo summalarini yangilash
             var oldTotalAmount = sale.TotalAmount;
             sale.TotalAmount -= refundAmount;
+
+            _logger.LogInformation("Sale total updated: SaleId={SaleId}, OldTotal={OldTotal}, NewTotal={NewTotal}",
+                saleId, oldTotalAmount, sale.TotalAmount);
 
             // 4. Naqd to'lov bo'yicha qaytarish (faqat actual cash payments)
             var cashPayments = sale.Payments
@@ -1069,16 +1145,24 @@ public class SaleService : ISaleService
                 var cashRatio = cashPayments / sale.PaidAmount;
                 cashToRefund = refundAmount * cashRatio;
 
+                _logger.LogInformation("Cash refund: CashPayments={CashPaid}, PaidAmount={Paid}, RefundAmount={Refund}, CashToRefund={CashRefund}",
+                    cashPayments, sale.PaidAmount, refundAmount, cashToRefund);
+
                 // Cash registerdan pul ayrish
-                var cashRegister = await _context.CashRegisters.FirstOrDefaultAsync(cancellationToken);
+                var cashRegister = await _context.CashRegisters.OrderByDescending(cr => cr.LastUpdated).FirstOrDefaultAsync(cancellationToken);
                 if (cashRegister != null)
                 {
+                    var oldBalance = cashRegister.CurrentBalance;
                     cashRegister.CurrentBalance -= cashToRefund;
                     cashRegister.LastUpdated = DateTime.UtcNow;
+                    _context.CashRegisters.Update(cashRegister);
+                    _logger.LogInformation("Cash register updated: OldBalance={OldBal}, NewBalance={NewBal}, Refund={Refund}",
+                        oldBalance, cashRegister.CurrentBalance, cashToRefund);
                 }
             }
 
             // 5. To'langan summani yangilash
+            var oldPaidAmount = sale.PaidAmount;
             if (sale.PaidAmount > refundAmount)
             {
                 sale.PaidAmount -= refundAmount;
@@ -1088,16 +1172,39 @@ public class SaleService : ISaleService
                 sale.PaidAmount = 0;
             }
 
+            _logger.LogInformation("Sale paid amount updated: SaleId={SaleId}, OldPaid={OldPaid}, NewPaid={NewPaid}",
+                saleId, oldPaidAmount, sale.PaidAmount);
+
             // 6. Status yangilash
-            if (sale.SaleItems.Count == 0 || (sale.SaleItems.Count == 1 && returnQuantity >= saleItem.Quantity))
+            var oldStatus = sale.Status;
+
+            // Qarz bo'lganida yana qarzga, yo'q bo'lsa draft qilish
+            if (sale.PaidAmount < sale.TotalAmount && sale.TotalAmount > 0)
             {
+                if (sale.Status != SaleStatus.Debt)
+                {
+                    _logger.LogInformation("Sale status changing to Debt: SaleId={SaleId}", saleId);
+                    sale.Status = SaleStatus.Debt;
+                }
+            }
+            else if (sale.SaleItems.Count == 0)
+            {
+                // Barcha itemlar qaytarilgan bo'lsa
+                _logger.LogInformation("All items returned, closing sale: SaleId={SaleId}", saleId);
                 sale.Status = SaleStatus.Closed;
             }
+
+            _logger.LogInformation("Sale status: SaleId={SaleId}, OldStatus={OldStatus}, NewStatus={NewStatus}",
+                saleId, oldStatus, sale.Status);
+
+            // Explicitly update sale
+            _context.Sales.Update(sale);
 
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
-            _logger.LogInformation("Item returned successfully. SaleId: {SaleId}, Item: {ItemId}, Quantity: {Quantity}, Refund: {RefundAmount}",
+            _logger.LogInformation("=== RETURN SALE ITEM SUCCESS ===");
+            _logger.LogInformation("SaleId: {SaleId}, Item: {ItemId}, Quantity: {Quantity}, Refund: {RefundAmount}",
                 saleId, request.SaleItemId, returnQuantity, refundAmount);
 
             // Updated sale item ni qaytarish

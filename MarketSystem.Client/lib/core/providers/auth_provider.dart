@@ -118,6 +118,21 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // ✅ NEW: Update access token (e.g., after market registration)
+  Future<void> updateToken(String newAccessToken) async {
+    try {
+      // Refresh token yangilanmaydi, faqat access token
+      await _authService.updateAccessToken(newAccessToken);
+
+      // User ma'lumotlarini yangilash
+      await fetchUserProfile();
+
+      notifyListeners();
+    } catch (e) {
+      print('Error updating token: $e');
+    }
+  }
+
   // Check authentication status
   Future<void> checkAuthStatus() async {
     final isAuth = await _authService.isAuthenticated();

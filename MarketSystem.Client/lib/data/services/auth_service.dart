@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
@@ -115,5 +116,25 @@ class AuthService {
   Future<bool> isAuthenticated() async {
     final token = await _httpService.getAccessToken();
     return token != null && token.isNotEmpty;
+  }
+
+  // ✅ NEW: Update access token only (for market registration)
+  Future<void> updateAccessToken(String newAccessToken) async {
+    try {
+      // Get current refresh token
+      final refreshToken = await _httpService.getRefreshToken();
+
+      if (refreshToken != null) {
+        // Save new access token with existing refresh token
+        await _httpService.saveTokens(newAccessToken, refreshToken);
+      } else {
+        // Fallback: save only access token
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', newAccessToken);
+      }
+    } catch (e) {
+      print('Error updating access token: $e');
+      rethrow;
+    }
   }
 }

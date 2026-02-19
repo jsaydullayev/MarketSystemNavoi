@@ -92,3 +92,22 @@ class GetSaleDetailEvent extends SalesEvent {
   @override
   List<Object?> get props => [saleId];
 }
+
+/// Return sale item event
+class ReturnSaleItemEvent extends SalesEvent {
+  final String saleId;
+  final String saleItemId;
+  final double quantity;
+  final String? comment;
+
+  const ReturnSaleItemEvent({
+    required this.saleId,
+    required this.saleItemId,
+    required this.quantity,
+    this.comment,
+  });
+
+  @override
+  List<Object?> get props => [saleId, saleItemId, quantity, comment];
+}
+

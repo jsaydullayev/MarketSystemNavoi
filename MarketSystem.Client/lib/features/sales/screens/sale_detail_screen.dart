@@ -19,6 +19,8 @@ class SaleDetailScreen extends StatefulWidget {
 }
 
 class _SaleDetailScreenState extends State<SaleDetailScreen> {
+  bool _showReturnSuccessMessage = false;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +43,23 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               backgroundColor: Colors.red,
             ),
           );
+        } else if (state is SaleItemReturned) {
+          // Muvaffaqiyatlik xabarni ko'rsatish
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tovar muvaffaqiyatli qaytarildi'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+          // Savdo detallarini qayta yuklash
+          _loadSaleDetails();
+        } else if (state is SaleDetailLoaded && _showReturnSuccessMessage) {
+          // Yangilangan ma'lumotlar kelgandan keyin yana xabar ko'rsatish
+          setState(() {
+            _showReturnSuccessMessage = false;
+          });
         }
       },
       child: Scaffold(
@@ -98,7 +117,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       switch (status.toLowerCase()) {
         case 'draft':
           return Colors.orange;
-        case 'closed':
+        case 'paid':
           return Colors.green;
         case 'debt':
           return Colors.red;
@@ -113,8 +132,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       switch (status.toLowerCase()) {
         case 'draft':
           return 'Davom etayotgan';
-        case 'closed':
-          return 'Tugatilgan';
+        case 'paid':
+          return 'To\'langan';
         case 'debt':
           return 'Qarz';
         case 'cancelled':
@@ -312,6 +331,13 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final salePrice = (item['salePrice'] as num).toDouble();
     final totalPrice = (item['totalPrice'] as num).toDouble();
 
+    // Savdo statusini olish - faqat yopilgan savdolarda vozvrat tugmasi ko'rsatiladi
+    final saleData = (context.read<SalesBloc>().state is SaleDetailLoaded)
+        ? (context.read<SalesBloc>().state as SaleDetailLoaded).sale
+        : null;
+    final status = saleData?['status']?.toString().toLowerCase() ?? '';
+    final canReturn = status == 'paid' || status == 'debt';
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -353,6 +379,13 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 ],
               ),
             ),
+            if (canReturn)
+              IconButton(
+                icon: const Icon(Icons.keyboard_return, color: Colors.orange),
+                tooltip: 'Tovarni qaytarish',
+                onPressed: () => _showReturnDialog(item),
+              ),
+            const SizedBox(width: 8),
             Text(
               '${NumberFormatter.formatDecimal(totalPrice)} so\'m',
               style: const TextStyle(
@@ -403,5 +436,236 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     }
 
     return '${dateTime.day}.${dateTime.month}.${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showReturnDialog(Map<String, dynamic> item) {
+    final productName = item['productName'] ?? 'Noma\'lum mahsulot';
+    final saleItemId = item['id']?.toString() ?? '';
+    final maxQuantity = item['quantity'] as int? ?? 0;
+    final salePrice = (item['salePrice'] as num).toDouble();
+
+    if (maxQuantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Qaytarish mumkin bo\'lgan miqdor yo\'q'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final quantityController = TextEditingController(text: '1');
+    final commentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.keyboard_return, color: Colors.orange),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tovarni qaytarish',
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Mahsulot ma'lumotlari
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          productName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Narxi: ${NumberFormatter.formatDecimal(salePrice)} so\'m',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        Text(
+                          'Maksimal miqdor: $maxQuantity ta',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Miqdor input
+                  const Text(
+                    'Qaytariladigan miqdor:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: quantityController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      hintText: '1',
+                      suffixText: 'ta',
+                      prefixIcon: const Icon(Icons.format_list_numbered),
+                    ),
+                    onChanged: (value) {
+                      setDialogState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Izoh input
+                  const Text(
+                    'Izoh (ixtiyoriy):',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: 'Qaytarish sababi...',
+                      prefixIcon: Icon(Icons.comment),
+                    ),
+                  ),
+
+                  // Jami summa
+                  if (quantityController.text.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Qaytariladigan summa:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              '${NumberFormatter.formatDecimal(_getReturnAmount(quantityController.text, salePrice))} so\'m',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Bekor qilish'),
+              ),
+              ElevatedButton(
+                onPressed: () => _processReturn(
+                  saleItemId,
+                  quantityController.text,
+                  commentController.text,
+                  maxQuantity,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Qaytarish'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  double _getReturnAmount(String quantityStr, double salePrice) {
+    final quantity = int.tryParse(quantityStr) ?? 0;
+    return quantity * salePrice;
+  }
+
+  void _processReturn(
+    String saleItemId,
+    String quantityStr,
+    String comment,
+    int maxQuantity,
+  ) {
+    final quantity = int.tryParse(quantityStr);
+
+    if (quantity == null || quantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Iltimos, to\'g\'ri miqdor kiriting'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (quantity > maxQuantity) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Maksimal miqdor: $maxQuantity ta'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Dialogni yopish
+    Navigator.of(context).pop();
+
+    // Flag qo'yish - yangilangan ma'lumotlar kelganda xabar ko'rsatamiz
+    _showReturnSuccessMessage = true;
+
+    // Vozvrat qilish
+    context.read<SalesBloc>().add(
+          ReturnSaleItemEvent(
+            saleId: widget.saleId,
+            saleItemId: saleItemId,
+            quantity: quantity.toDouble(),
+            comment: comment.isEmpty ? null : comment,
+          ),
+        );
   }
 }

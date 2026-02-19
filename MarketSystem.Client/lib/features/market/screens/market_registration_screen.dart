@@ -50,6 +50,11 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
             : _descriptionController.text.trim(),
       );
 
+      // ✅ NEW: Update access token if provided
+      if (response.accessToken != null) {
+        await authProvider.updateToken(response.accessToken!);
+      }
+
       setState(() {
         _isLoading = false;
       });

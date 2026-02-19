@@ -7,6 +7,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<Customer> Customers { get; }
     IUserRepository Users { get; }
     IRepository<Product> Products { get; }
+    IRepository<ProductCategory> ProductCategories { get; }  // ✅ NEW
     ISaleRepository Sales { get; }
     IRepository<SaleItem> SaleItems { get; }
     IRepository<Payment> Payments { get; }

@@ -10,6 +10,7 @@ import '../../domain/usecases/create_sale_usecase.dart';
 import '../../domain/usecases/get_my_draft_sales_usecase.dart';
 import '../../domain/usecases/get_sale_detail_usecase.dart';
 import '../../domain/usecases/get_sales_usecase.dart';
+import '../../domain/usecases/return_sale_item_usecase.dart';
 import 'events/sales_event.dart';
 import 'states/sales_state.dart';
 
@@ -22,6 +23,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final AddPaymentUseCase addPaymentUseCase;
   final CancelSaleUseCase cancelSaleUseCase;
   final GetSaleDetailUseCase getSaleDetailUseCase;
+  final ReturnSaleItemUseCase returnSaleItemUseCase;
 
   SalesBloc({
     required this.getSalesUseCase,
@@ -31,6 +33,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.addPaymentUseCase,
     required this.cancelSaleUseCase,
     required this.getSaleDetailUseCase,
+    required this.returnSaleItemUseCase,
   }) : super(const SalesInitial()) {
     on<GetSalesEvent>(_onGetSales);
     on<GetMyDraftSalesEvent>(_onGetMyDraftSales);
@@ -39,6 +42,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<AddPaymentEvent>(_onAddPayment);
     on<CancelSaleEvent>(_onCancelSale);
     on<GetSaleDetailEvent>(_onGetSaleDetail);
+    on<ReturnSaleItemEvent>(_onReturnSaleItem);
   }
 
   /// Get all sales
@@ -157,6 +161,25 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       emit(SaleDetailLoaded(result.data!));
     } else {
       emit(SalesError(result.error ?? 'Sotuvni yuklashda xatolik'));
+    }
+  }
+
+  /// Return sale item
+  Future<void> _onReturnSaleItem(
+    ReturnSaleItemEvent event,
+    Emitter<SalesState> emit,
+  ) async {
+    final result = await returnSaleItemUseCase(
+      saleId: event.saleId,
+      saleItemId: event.saleItemId,
+      quantity: event.quantity,
+      comment: event.comment,
+    );
+
+    if (result.isSuccess) {
+      emit(const SaleItemReturned());
+    } else {
+      emit(SalesError(result.error ?? 'Tovarni qaytarishda xatolik'));
     }
   }
 }
