@@ -451,6 +451,16 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       ),
       _MenuItemData(
+        title: 'Kategoriyalar',
+        subtitle: 'Mahsulot kategoriyalari',
+        icon: Icons.category_outlined,
+        color: Colors.teal,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CategoryManagementScreen()),
+        ),
+      ),
+      _MenuItemData(
         title: l10n.sales,
         subtitle: l10n.salesHistory,
         icon: Icons.shopping_cart_outlined,

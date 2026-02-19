@@ -36,7 +36,7 @@ ALTER TABLE "Products"
 ADD CONSTRAINT "FK_Products_ProductCategories_CategoryId"
 FOREIGN KEY ("CategoryId")
 REFERENCES "ProductCategories"("Id")
-ON DELETE SET NULL;  -- If category is deleted, product's CategoryId becomes NULL
+ON DELETE SET NULL;
 
 -- 7. Create index on CategoryId for faster filtering
 CREATE INDEX IF NOT EXISTS "IX_Products_CategoryId" ON "Products"("CategoryId");

@@ -105,11 +105,21 @@ public class AppDbContext : DbContext
             b.Property(x => x.Id).ValueGeneratedOnAdd();
             b.Property(x => x.Name).IsRequired().HasMaxLength(100);
             b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.MarketId).IsRequired();  // ✅ NOT NULL - required
             b.Property(x => x.IsActive).IsRequired();
+            b.Property(x => x.CreatedAt).IsRequired();
+            b.Property(x => x.UpdatedAt).IsRequired();
+            b.Property(x => x.IsDeleted).IsRequired();
+            b.Property(x => x.DeletedAt).IsRequired(false);
 
-            // Multi-tenancy
+            // Multi-tenancy - Market foreign key (no navigation property needed)
             b.HasIndex(x => x.MarketId);
+            b.HasIndex(x => x.Name);  // ✅ Index for searching by name
             b.HasQueryFilter(x => !x.IsDeleted);
+
+            // ✅ Navigation property
+            b.HasMany(x => x.Products).WithOne(p => p.Category).HasForeignKey(x => x.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);  // ✅ Category o'chirilsa, Product.CategoryId = NULL
         });
 
         // Configure Sale
