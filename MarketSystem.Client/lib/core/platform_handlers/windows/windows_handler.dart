@@ -10,7 +10,7 @@ class WindowsHandler {
   static Future<String> getDocumentsPath() async {
     // For Windows, return the app's documents directory
     final home = io.Platform.environment['USERPROFILE'] ?? '';
-    return '$home\\Documents\\ElaroApp';
+    return '$home\\Documents\\Strotech';
   }
 
   static Future<bool> requestPermissions() async {
