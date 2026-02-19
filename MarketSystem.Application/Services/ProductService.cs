@@ -42,7 +42,8 @@ public class ProductService : IProductService
 
         var products = await _unitOfWork.Products.FindAsync(
             p => p.MarketId == marketId,
-            cancellationToken);
+            cancellationToken,
+            includeProperties: "Category");  // ✅ Include Category
 
         return products.Select(MapToDto);
     }
@@ -53,7 +54,8 @@ public class ProductService : IProductService
 
         var products = await _unitOfWork.Products.FindAsync(
             p => p.MarketId == marketId && p.Quantity <= p.MinThreshold,
-            cancellationToken);
+            cancellationToken,
+            includeProperties: "Category");  // ✅ Include Category
 
         return products.Select(MapToDto);
     }
@@ -73,12 +75,13 @@ public class ProductService : IProductService
             Name = request.Name,
             IsTemporary = request.IsTemporary,
             CreatedBySellerId = sellerId,
-            CostPrice = request.CostPrice,
+            CostPrice = 0, // Zakup orqali belgilanadi
             SalePrice = request.SalePrice,
             MinSalePrice = request.MinSalePrice,
-            Quantity = request.Quantity,
+            Quantity = 0, // Zakup orqali belgilanadi
             MinThreshold = request.MinThreshold,
-            MarketId = marketId.Value  // Multi-tenancy
+            MarketId = marketId.Value,  // Multi-tenancy
+            CategoryId = request.CategoryId  // ✅ NEW
         };
 
         await _unitOfWork.Products.AddAsync(product, cancellationToken);
@@ -100,10 +103,11 @@ public class ProductService : IProductService
             return null;
 
         product.Name = request.Name;
-        product.CostPrice = request.CostPrice;
+        // CostPrice va Quantity faqat Zakup orqali yangilanadi
         product.SalePrice = request.SalePrice;
         product.MinSalePrice = request.MinSalePrice;
         product.MinThreshold = request.MinThreshold;
+        product.CategoryId = request.CategoryId;  // ✅ NEW
 
         _context.Entry(product).State = EntityState.Modified;
         _unitOfWork.Products.Update(product);
@@ -162,7 +166,9 @@ public class ProductService : IProductService
             product.SalePrice,
             product.MinSalePrice,
             product.Quantity,
-            product.MinThreshold
+            product.MinThreshold,
+            product.CategoryId,
+            product.Category?.Name
         );
     }
 }

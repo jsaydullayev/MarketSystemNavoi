@@ -85,6 +85,23 @@ public class SalesController : ControllerBase
         }
     }
 
+    [HttpPatch("UpdateSaleCustomer/{saleId}")]
+    public async Task<ActionResult<SaleDto>> UpdateSaleCustomer(Guid saleId, [FromBody] UpdateSaleCustomerDto request)
+    {
+        try
+        {
+            var sale = await _saleService.UpdateSaleCustomerAsync(saleId, request);
+            if (sale is null)
+                return NotFound();
+
+            return Ok(sale);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("{saleId}")]
     public async Task<ActionResult<SaleItemDto>> AddSaleItem(Guid saleId, [FromBody] AddSaleItemDto request)
     {
@@ -141,7 +158,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}")]
+    [HttpPost("DeleteSale/{saleId}")]
     [Authorize(Policy = "AllRoles")]
     public async Task<ActionResult<SaleDto>> DeleteSale(Guid saleId)
     {

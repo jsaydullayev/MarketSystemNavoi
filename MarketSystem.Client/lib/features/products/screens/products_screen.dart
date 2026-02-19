@@ -390,6 +390,17 @@ class _ProductsScreenState extends State<ProductsScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (product['categoryName'] != null) ...[
+              Text(
+                product['categoryName'],
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+            ],
             Text('${l10n.salePrice}: ${NumberFormatter.formatDecimal(product['salePrice'] ?? 0)}'),
             Text('${l10n.costPrice}: ${NumberFormatter.formatDecimal(product['costPrice'] ?? 0)}'),
             const SizedBox(height: 4),

@@ -93,6 +93,37 @@ class SalesService {
     }
   }
 
+  // Savdo uchun mijozni yangilash/qo'shish
+  Future<dynamic> updateSaleCustomer({
+    required String saleId,
+    String? customerId,
+  }) async {
+    print('=== UPDATE SALE CUSTOMER ===');
+    print('Sale ID: $saleId');
+    print('Customer ID: ${customerId ?? "null"}');
+    print('===========================');
+
+    final response = await _httpService.patch(
+      '${ApiConstants.sales}/UpdateSaleCustomer/$saleId',
+      body: {
+        if (customerId != null) 'customerId': customerId,
+      },
+    );
+
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+    print('===========================');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 400) {
+      final errorBody = jsonDecode(response.body);
+      throw Exception(errorBody['message'] ?? 'Xatolik yuz berdi');
+    } else {
+      throw Exception('Failed to update sale customer: ${response.statusCode}');
+    }
+  }
+
   // Sotuvga mahsulot qo'shish
   Future<dynamic> addSaleItem({
     required String saleId,

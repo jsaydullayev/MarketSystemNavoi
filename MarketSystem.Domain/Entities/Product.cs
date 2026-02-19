@@ -22,6 +22,10 @@ public class Product : BaseEntity
     public int MarketId { get; set; }
     public Market? Market { get; set; }
 
+    // ✅ Category
+    public int? CategoryId { get; set; }
+    public ProductCategory? Category { get; set; }
+
     // Navigation properties
     public User? CreatedBySeller { get; set; }
     public ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
