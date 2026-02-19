@@ -26,7 +26,7 @@ class CustomerService {
 
   // Telefon bo'yicha mijoz topish
   Future<dynamic> getCustomerByPhone(String phone) async {
-    final response = await _httpService.get('${ApiConstants.customers}/GetCustomerByPhone/$phone');
+    final response = await _httpService.get('${ApiConstants.customers}/phone/$phone');
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

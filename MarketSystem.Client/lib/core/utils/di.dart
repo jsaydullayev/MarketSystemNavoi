@@ -34,6 +34,7 @@ import '../../features/sales/domain/usecases/create_sale_usecase.dart';
 import '../../features/sales/domain/usecases/add_sale_item_usecase.dart';
 import '../../features/sales/domain/usecases/add_payment_usecase.dart';
 import '../../features/sales/domain/usecases/cancel_sale_usecase.dart';
+import '../../features/sales/domain/usecases/return_sale_item_usecase.dart';
 import '../../features/sales/presentation/bloc/sales_bloc.dart';
 
 // Customers Feature - Clean Architecture
@@ -122,6 +123,7 @@ void _initSalesFeature() {
   sl.registerLazySingleton(() => AddSaleItemUseCase(sl()));
   sl.registerLazySingleton(() => AddPaymentUseCase(sl()));
   sl.registerLazySingleton(() => CancelSaleUseCase(sl()));
+  sl.registerLazySingleton(() => ReturnSaleItemUseCase(sl()));
 
   // BLoC
   sl.registerFactory<SalesBloc>(
@@ -133,6 +135,7 @@ void _initSalesFeature() {
       addSaleItemUseCase: sl(),
       addPaymentUseCase: sl(),
       cancelSaleUseCase: sl(),
+      returnSaleItemUseCase: sl(),
     ),
   );
 }

@@ -13,6 +13,7 @@ import '../features/reports/screens/reports_screen.dart';
 import '../features/cash_register/screens/cash_register_screen.dart';
 import '../features/market/screens/market_registration_screen.dart';
 import '../features/daily_sales/screens/daily_sales_screen.dart';
+import '../features/categories/screens/category_management_screen.dart';
 import '../features/sales/screens/draft_sales_screen.dart';
 import '../l10n/app_localizations.dart';
 import '../core/routes/app_routes.dart';

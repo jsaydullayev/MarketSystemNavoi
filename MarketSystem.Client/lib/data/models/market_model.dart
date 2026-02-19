@@ -80,10 +80,12 @@ class RegisterMarketRequestModel {
 class RegisterMarketResponseModel {
   final MarketModel market;
   final UserMarketModel owner;
+  final String? accessToken;  // ✅ NEW: New JWT token with updated marketId
 
   RegisterMarketResponseModel({
     required this.market,
     required this.owner,
+    this.accessToken,  // ✅ NEW: Optional accessToken
   });
 
   /// Create from JSON
@@ -91,6 +93,7 @@ class RegisterMarketResponseModel {
     return RegisterMarketResponseModel(
       market: MarketModel.fromJson(json['market']),
       owner: UserMarketModel.fromJson(json['owner']),
+      accessToken: json['accessToken'] as String?,  // ✅ NEW: Parse accessToken
     );
   }
 }

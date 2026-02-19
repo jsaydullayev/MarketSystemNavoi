@@ -21,4 +21,8 @@
     <ProjectReference Include="..\MarketSystem.Infrastructure\MarketSystem.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\NewFolder\" />
+  </ItemGroup>
+
 </Project>

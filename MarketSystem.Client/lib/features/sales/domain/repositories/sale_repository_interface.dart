@@ -43,4 +43,12 @@ abstract class SaleRepositoryInterface {
     required String saleId,
     required String adminId,
   });
+
+  /// Sotilgan mahsulotni qaytarish
+  Future<ApiResult<void>> returnSaleItem({
+    required String saleId,
+    required String saleItemId,
+    required double quantity,
+    String? comment,
+  });
 }
