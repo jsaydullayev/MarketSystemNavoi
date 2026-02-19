@@ -27,6 +27,7 @@ class ApiConstants {
   static const String reports = '/Reports';
   static const String debts = '/Debts';
   static const String markets = '/Markets';
+  static const String cashRegister = '/CashRegister';
 
   // Auth endpoints
   static const String login = '$auth/Login';

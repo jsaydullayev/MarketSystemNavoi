@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Market> Markets => Set<Market>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();  // ✅ NEW
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
     public DbSet<Payment> Payments => Set<Payment>();
@@ -87,10 +88,28 @@ public class AppDbContext : DbContext
             b.Property(x => x.Quantity).IsRequired();
             b.Property(x => x.MinThreshold).IsRequired();
 
+            // ✅ Category relationship (optional)
+            b.HasOne(x => x.Category).WithMany(c => c.Products).HasForeignKey(x => x.CategoryId);
+
             b.HasOne(x => x.CreatedBySeller).WithMany(p => p.TemporaryProducts).HasForeignKey(x => x.CreatedBySellerId);
             b.HasOne(x => x.Market).WithMany(m => m.Products).HasForeignKey(x => x.MarketId);
             b.HasQueryFilter(x => !x.IsDeleted);
             b.HasIndex(x => x.MarketId);
+            b.HasIndex(x => x.CategoryId);  // ✅ Index for faster filtering
+        });
+
+        // ✅ Configure ProductCategory
+        modelBuilder.Entity<ProductCategory>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Id).ValueGeneratedOnAdd();
+            b.Property(x => x.Name).IsRequired().HasMaxLength(100);
+            b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.IsActive).IsRequired();
+
+            // Multi-tenancy
+            b.HasIndex(x => x.MarketId);
+            b.HasQueryFilter(x => !x.IsDeleted);
         });
 
         // Configure Sale
@@ -100,8 +119,14 @@ public class AppDbContext : DbContext
             b.Property(x => x.TotalAmount).HasPrecision(18, 2);
             b.Property(x => x.PaidAmount).HasPrecision(18, 2);
 
-            b.HasOne(x => x.Seller).WithMany(p => p.Sales).HasForeignKey(x => x.SellerId);
-            b.HasOne(x => x.Customer).WithMany(p => p.Sales).HasForeignKey(x => x.CustomerId);
+            // IMPORTANT: Seller/User o'chirilsa, Sale tarixi o'CHMASIN kerak
+            b.HasOne(x => x.Seller).WithMany(p => p.Sales).HasForeignKey(x => x.SellerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // IMPORTANT: Customer o'chirilsa, Sale tarixi o'CHMASIN kerak
+            b.HasOne(x => x.Customer).WithMany(p => p.Sales).HasForeignKey(x => x.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             b.HasOne(x => x.Market).WithMany(m => m.Sales).HasForeignKey(x => x.MarketId);
 
             b.HasOne(x => x.Debt).WithOne(x => x.Sale).HasForeignKey<Debt>(x => x.SaleId);
@@ -128,8 +153,12 @@ public class AppDbContext : DbContext
             b.Property(x => x.SalePrice).HasPrecision(18, 2);
             b.Property(x => x.Comment).HasMaxLength(500);
 
-            b.HasOne(x => x.Sale).WithMany(p => p.SaleItems).HasForeignKey(x => x.SaleId);
-            b.HasOne(x => x.Product).WithMany(p => p.SaleItems).HasForeignKey(x => x.ProductId);
+            b.HasOne(x => x.Sale).WithMany(p => p.SaleItems).HasForeignKey(x => x.SaleId)
+                .OnDelete(DeleteBehavior.Cascade); // Sale o'chirilsa, SaleItemlar ham o'chadi
+
+            // IMPORTANT: Product o'chirilganda SaleItemlar o'CHMASIN kerak (tarix saqlash uchun)
+            b.HasOne(x => x.Product).WithMany(p => p.SaleItems).HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict); // Product o'chirilsa, SaleItemlar qoladi
 
             // Index for performance
             b.HasIndex(x => new { x.SaleId, x.ProductId })
@@ -142,7 +171,9 @@ public class AppDbContext : DbContext
             b.HasKey(x => x.Id);
             b.Property(x => x.Amount).HasPrecision(18, 2);
 
-            b.HasOne(x => x.Sale).WithMany(p => p.Payments).HasForeignKey(x => x.SaleId);
+            b.HasOne(x => x.Sale).WithMany(p => p.Payments).HasForeignKey(x => x.SaleId)
+                .OnDelete(DeleteBehavior.Cascade); // Sale o'chirilsa, Paymentlar ham o'chadi
+
             b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId);
 
             // Index for performance
@@ -158,8 +189,13 @@ public class AppDbContext : DbContext
             b.Property(x => x.TotalDebt).HasPrecision(18, 2);
             b.Property(x => x.RemainingDebt).HasPrecision(18, 2);
 
-            b.HasOne(x => x.Sale).WithOne(x => x.Debt).HasForeignKey<Debt>(x => x.SaleId);
-            b.HasOne(x => x.Customer).WithMany(p => p.Debts).HasForeignKey(x => x.CustomerId);
+            b.HasOne(x => x.Sale).WithOne(x => x.Debt).HasForeignKey<Debt>(x => x.SaleId)
+                .OnDelete(DeleteBehavior.Cascade); // Sale o'chirilsa, Debt ham o'chadi
+
+            // IMPORTANT: Customer o'chirilsa, Debt tarixi o'CHMASIN kerak
+            b.HasOne(x => x.Customer).WithMany(p => p.Debts).HasForeignKey(x => x.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             b.HasOne(x => x.Market).WithMany(m => m.Debts).HasForeignKey(x => x.MarketId);
 
             // Index for performance
@@ -176,9 +212,16 @@ public class AppDbContext : DbContext
             b.Property(x => x.NewPrice).HasPrecision(18, 2);
             b.Property(x => x.Comment).IsRequired().HasMaxLength(500);
 
-            b.HasOne(x => x.Sale).WithMany().HasForeignKey(x => x.SaleId);
-            b.HasOne(x => x.SaleItem).WithMany().HasForeignKey(x => x.SaleItemId);
-            b.HasOne(x => x.ChangedByUser).WithMany().HasForeignKey(x => x.ChangedByUserId);
+            // IMPORTANT: Audit log tarixi hech qachon o'CHMASIN kerak
+            b.HasOne(x => x.Sale).WithMany().HasForeignKey(x => x.SaleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.SaleItem).WithMany().HasForeignKey(x => x.SaleItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.ChangedByUser).WithMany().HasForeignKey(x => x.ChangedByUserId)
+                .OnDelete(DeleteBehavior.Restrict); // User o'chirilsa, audit log qoladi
+
             b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId);
 
             // Indexes for performance
@@ -198,8 +241,13 @@ public class AppDbContext : DbContext
             b.Property(x => x.Quantity).HasPrecision(18, 3);
             b.Property(x => x.CostPrice).HasPrecision(18, 2);
 
-            b.HasOne(x => x.Product).WithMany(p => p.Zakups).HasForeignKey(x => x.ProductId);
-            b.HasOne(x => x.CreatedByAdmin).WithMany(p => p.Zakups).HasForeignKey(x => x.CreatedByAdminId);
+            // IMPORTANT: Product o'chirilganda Zakup tarixi o'CHMASIN kerak
+            b.HasOne(x => x.Product).WithMany(p => p.Zakups).HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.CreatedByAdmin).WithMany(p => p.Zakups).HasForeignKey(x => x.CreatedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict); // User o'chirilsa, Zakup tarixi qoladi
+
             b.HasOne(x => x.Market).WithMany(m => m.Zakups).HasForeignKey(x => x.MarketId);
             b.HasIndex(x => x.MarketId);
         });
@@ -212,7 +260,9 @@ public class AppDbContext : DbContext
             b.Property(x => x.Action).IsRequired().HasMaxLength(50);
             b.Property(x => x.Payload);
 
-            b.HasOne(x => x.User).WithMany(p => p.AuditLogs).HasForeignKey(x => x.UserId);
+            // IMPORTANT: Audit log tarixi hech qachon o'CHMASIN kerak
+            b.HasOne(x => x.User).WithMany(p => p.AuditLogs).HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Indexes for performance
             b.HasIndex(x => new { x.EntityType, x.EntityId, x.CreatedAt })

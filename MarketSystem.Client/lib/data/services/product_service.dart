@@ -36,22 +36,20 @@ class ProductService {
   Future<dynamic> createProduct({
     required String name,
     required bool isTemporary,
-    required double costPrice,
     required double salePrice,
     required double minSalePrice,
-    required int quantity,
     required int minThreshold,
+    int? categoryId,  // ✅ NEW
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.products}/CreateProduct',
       body: {
         'name': name,
         'isTemporary': isTemporary,
-        'costPrice': costPrice,
         'salePrice': salePrice,
         'minSalePrice': minSalePrice,
-        'quantity': quantity,
         'minThreshold': minThreshold,
+        if (categoryId != null) 'categoryId': categoryId,  // ✅ NEW
       },
     );
 
@@ -65,22 +63,20 @@ class ProductService {
   Future<dynamic> updateProduct({
     required String id,
     required String name,
-    required double costPrice,
     required double salePrice,
     required double minSalePrice,
-    required int quantity,
     required int minThreshold,
+    int? categoryId,  // ✅ NEW
   }) async {
     final response = await _httpService.put(
       '${ApiConstants.products}/UpdateProduct/$id',
       body: {
         'id': id,
         'name': name,
-        'costPrice': costPrice,
         'salePrice': salePrice,
         'minSalePrice': minSalePrice,
-        'quantity': quantity,
         'minThreshold': minThreshold,
+        if (categoryId != null) 'categoryId': categoryId,  // ✅ NEW
       },
     );
 

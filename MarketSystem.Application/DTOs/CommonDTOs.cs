@@ -45,25 +45,25 @@ public record ProductDto(
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
     [property: JsonPropertyName("quantity")] int Quantity,
-    [property: JsonPropertyName("minThreshold")] int MinThreshold
+    [property: JsonPropertyName("minThreshold")] int MinThreshold,
+    [property: JsonPropertyName("categoryId")] int? CategoryId,  // ✅ NEW
+    [property: JsonPropertyName("categoryName")] string? CategoryName  // ✅ NEW
 );
 public record CreateProductDto(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("isTemporary")] bool IsTemporary,
-    [property: JsonPropertyName("costPrice")] decimal CostPrice,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
-    [property: JsonPropertyName("quantity")] int Quantity,
-    [property: JsonPropertyName("minThreshold")] int MinThreshold
+    [property: JsonPropertyName("minThreshold")] int MinThreshold,
+    [property: JsonPropertyName("categoryId")] int? CategoryId  // ✅ NEW
 );
 public record UpdateProductDto(
     [property: JsonPropertyName("id")] Guid Id,
     [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("costPrice")] decimal CostPrice,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
-    [property: JsonPropertyName("quantity")] int Quantity,
-    [property: JsonPropertyName("minThreshold")] int MinThreshold
+    [property: JsonPropertyName("minThreshold")] int MinThreshold,
+    [property: JsonPropertyName("categoryId")] int? CategoryId  // ✅ NEW
 );
 
 // Customer DTOs
@@ -118,6 +118,9 @@ public record SaleDto(
     [property: JsonPropertyName("payments")] List<PaymentDto> Payments
 );
 public record CreateSaleDto(
+    [property: JsonPropertyName("customerId")] Guid? CustomerId
+);
+public record UpdateSaleCustomerDto(
     [property: JsonPropertyName("customerId")] Guid? CustomerId
 );
 public record AddSaleItemDto(

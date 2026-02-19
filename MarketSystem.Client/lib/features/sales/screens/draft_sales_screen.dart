@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../data/services/sales_service.dart';
 import '../../../data/services/product_service.dart';
+import '../../../data/services/customer_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
 
@@ -23,7 +24,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   // Guruhlangan savdolar
   List<dynamic> get _draftSales => _unfinishedSales.where((s) => s['status'] == 'Draft').toList();
   List<dynamic> get _debtSales => _unfinishedSales.where((s) => s['status'] == 'Debt').toList();
-  List<dynamic> get _closedSales => _unfinishedSales.where((s) => s['status'] == 'Closed').toList();
+  List<dynamic> get _paidSales => _unfinishedSales.where((s) => s['status'] == 'Paid').toList();
 
   @override
   void initState() {
@@ -152,6 +153,145 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 
+  void _showCustomerSelectionDialog(String saleId) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final customerService = CustomerService(authProvider: authProvider);
+
+    try {
+      // Load customers
+      final customersData = await customerService.getAllCustomers();
+
+      if (!mounted) return;
+
+      // Show customer selection dialog
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Mijoz tanlang'),
+          content: SizedBox(
+            width: 400,
+            height: 400,
+            child: customersData.isEmpty
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.person_outline, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('Mijozlar topilmadi', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: customersData.length,
+                    itemBuilder: (context, index) {
+                      final customer = customersData[index];
+                      final customerName = customer['fullName'] ?? 'Noma\'lum';
+                      final customerPhone = customer['phone'] ?? '';
+                      final customerId = customer['id']?.toString() ?? '';
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.blue.shade100,
+                            child: Icon(Icons.person, color: Colors.blue.shade700),
+                          ),
+                          title: Text(customerName),
+                          subtitle: Text(customerPhone),
+                          onTap: () async {
+                            // Close dialog
+                            Navigator.pop(dialogContext);
+
+                            // Update sale with selected customer
+                            try {
+                              final salesService = SalesService(authProvider: authProvider);
+                              await salesService.updateSaleCustomer(
+                                saleId: saleId,
+                                customerId: customerId,
+                              );
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('✅ Mijoz qo\'shildi: $customerName'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                // Reload sales
+                                _loadDraftSales();
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Xatolik: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            // Mijozni olib tashlash tugmasi
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+
+                // Mijozni olib tashlash (customerId ni null qilish)
+                try {
+                  final salesService = SalesService(authProvider: authProvider);
+                  await salesService.updateSaleCustomer(
+                    saleId: saleId,
+                    customerId: null, // null = mijozni olib tashlash
+                  );
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✅ Mijoz olib tashlandi'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    _loadDraftSales();
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Xatolik: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Mijozni olib tashlash', style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Bekor qilish'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Mijozlarni yuklashda xatolik: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -199,15 +339,15 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                         ..._debtSales.map((sale) => _buildDraftSaleCard(sale)),
                       ],
 
-                      // Yopilgan savdolar (Closed) - vozvrat uchun
-                      if (_closedSales.isNotEmpty) ...[
-                        _buildSectionHeader('Yopilgan savdolar', Icons.assignment_return, Colors.grey),
+                      // To'langan savdolar (Paid) - vozvrat uchun
+                      if (_paidSales.isNotEmpty) ...[
+                        _buildSectionHeader('To\'langan savdolar', Icons.assignment_turned_in, Colors.green),
                         const SizedBox(height: 8),
-                        ..._closedSales.map((sale) => _buildDraftSaleCard(sale)),
+                        ..._paidSales.map((sale) => _buildDraftSaleCard(sale)),
                       ],
 
                       // Ikkalasi ham bo'sh
-                      if (_draftSales.isEmpty && _debtSales.isEmpty && _closedSales.isEmpty && _debtors.isEmpty)
+                      if (_draftSales.isEmpty && _debtSales.isEmpty && _paidSales.isEmpty && _debtors.isEmpty)
                         _buildEmptyState(),
                     ],
                   ),
@@ -219,7 +359,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     final count = title == 'Davom etayotgan' ? _draftSales.length :
                   title == 'Qarz savdolar' ? _debtSales.length :
                   title == 'Qarzdor mijozlar' ? _debtors.length :
-                  _closedSales.length;
+                  _paidSales.length;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -624,22 +764,29 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 
-  void _showPaymentHistory(dynamic debtor) {
+  void _showPaymentHistory(dynamic debtor) async {
     final customerName = debtor['customerName'] ?? 'Mijozsiz';
     final customerId = debtor['customerId'];
+
+    // Refresh data first to get latest payments
+    await _loadDraftSales();
 
     // Get debtor's debt sales
     final debtorSales = _debtSales.where((sale) => sale['customerId'] == customerId).toList();
 
     if (debtorSales.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Qarz savdolari topilmadi'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Qarz savdolari topilmadi'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
       return;
     }
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -734,7 +881,24 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                                 const SizedBox(height: 8),
                                 ...payments.map<Widget>((payment) {
                                   final amount = (payment['amount'] as num?)?.toDouble() ?? 0.0;
-                                  final paymentType = payment['paymentType'] ?? 'Noma\'lum';
+                                  var paymentTypeRaw = payment['paymentType'];
+
+                                  // Debug - to show what we're getting
+                                  print('=== PAYMENT DEBUG ===');
+                                  print('Full payment object: $payment');
+                                  print('paymentType raw type: ${paymentTypeRaw.runtimeType}');
+                                  print('paymentType value: $paymentTypeRaw');
+
+                                  // Handle different types of paymentType
+                                  String paymentType;
+                                  if (paymentTypeRaw == null) {
+                                    paymentType = 'Noma\'lum';
+                                  } else if (paymentTypeRaw is String) {
+                                    paymentType = paymentTypeRaw.toString();
+                                  } else {
+                                    paymentType = paymentTypeRaw.toString();
+                                  }
+
                                   final paymentDate = payment['createdAt'];
 
                                   String formattedPaymentDate = '';
@@ -747,15 +911,24 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                                     }
                                   }
 
-                                  // Payment type icon
+                                  // Payment type icon and display text
                                   IconData getPaymentIcon() {
-                                    switch (paymentType.toLowerCase()) {
-                                      case 'cash': return Icons.money;
-                                      case 'terminal': return Icons.credit_card;
-                                      case 'transfer': return Icons.account_balance;
-                                      case 'click': return Icons.touch_app;
-                                      default: return Icons.payment;
-                                    }
+                                    final type = paymentType.toLowerCase().trim();
+                                    print('Getting icon for type: "$type"');
+                                    if (type == 'cash' || type.contains('naqd')) return Icons.money;
+                                    if (type == 'terminal' || type.contains('plastik') || type.contains('karta')) return Icons.credit_card;
+                                    if (type == 'transfer' || type.contains('hisob')) return Icons.account_balance;
+                                    if (type == 'click') return Icons.touch_app;
+                                    return Icons.payment;
+                                  }
+
+                                  String getPaymentTypeDisplay() {
+                                    final type = paymentType.toLowerCase().trim();
+                                    if (type == 'cash' || type.contains('naqd')) return 'Naqd';
+                                    if (type == 'terminal' || type.contains('plastik') || type.contains('karta')) return 'Plastik karta';
+                                    if (type == 'transfer' || type.contains('hisob')) return 'Hisob raqam';
+                                    if (type == 'click') return 'Click';
+                                    return paymentType; // Show original if no match
                                   }
 
                                   return Card(
@@ -771,7 +944,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                                         ),
                                       ),
                                       subtitle: Text(
-                                        paymentType + (formattedPaymentDate.isNotEmpty ? ' • $formattedPaymentDate' : ''),
+                                        '${getPaymentTypeDisplay()}${formattedPaymentDate.isNotEmpty ? ' • $formattedPaymentDate' : ''}',
                                         style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                                       ),
                                     ),
@@ -838,6 +1011,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     final status = sale['status'] as String? ?? 'Draft';
     final createdAt = sale['createdAt'];
     final customerName = sale['customerName'];
+    final customerId = sale['customerId'];
+    final hasCustomer = customerId != null;
 
     // Format date
     String formattedDate = 'Noma\'lum';
@@ -857,8 +1032,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
           return Colors.orange;
         case 'debt':
           return Colors.red;
-        case 'closed':
-          return Colors.grey;
+        case 'paid':
+          return Colors.green;
         default:
           return Colors.grey;
       }
@@ -937,7 +1112,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
           const SizedBox(height: 12),
 
           // Customer
-          if (customerName != null) ...[
+          if (hasCustomer) ...[
             Row(
               children: [
                 const Icon(
@@ -946,16 +1121,77 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   color: Color(0xFF6B7280),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  customerName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF374151),
+                Expanded(
+                  child: Text(
+                    customerName ?? 'Noma\'lum',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF374151),
+                    ),
                   ),
                 ),
+                // Mijozni o'zgartirish tugmasi - faqat Draft va Debt status uchun
+                if (status == 'Draft' || status == 'Debt')
+                  InkWell(
+                    onTap: () => _showCustomerSelectionDialog(sale['id']),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.edit, size: 12, color: Colors.blue.shade700),
+                          const SizedBox(width: 4),
+                          Text(
+                            'O\'zgartirish',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
+            const SizedBox(height: 8),
+          ] else ...[
+            // Show "Add Customer" button for Draft and Debt sales without customer
+            if (status == 'Draft' || status == 'Debt')
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: InkWell(
+                  onTap: () => _showCustomerSelectionDialog(sale['id']),
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_add, size: 18, color: Colors.amber.shade700),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Mijoz qo\'shish',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.amber.shade700,
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(Icons.arrow_forward_ios, size: 14, color: Colors.amber.shade700),
+                    ],
+                  ),
+                ),
+              ),
             const SizedBox(height: 8),
           ],
 
