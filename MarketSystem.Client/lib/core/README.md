@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Bu Flutter projecti **Elaro-App** strukturasiga asoslangan holda qayta tashkillashtirildi.
+Bu Flutter projecti **strotech** strukturasiga asoslangan holda qayta tashkillashtirildi.
 
 ## Yangi Struktura
 
