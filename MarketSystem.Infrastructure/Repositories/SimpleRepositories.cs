@@ -38,3 +38,8 @@ public class AuditLogRepository : BaseRepository<AuditLog>, IRepository<AuditLog
 {
     public AuditLogRepository(AppDbContext context) : base(context) { }
 }
+
+public class ProductCategoryRepository : BaseRepository<ProductCategory>, IRepository<ProductCategory>
+{
+    public ProductCategoryRepository(AppDbContext context) : base(context) { }
+}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/product_service.dart';
+import '../../../data/services/category_service.dart';
 import '../../../core/providers/auth_provider.dart';
 
 class AdminProductFormScreen extends StatefulWidget {
@@ -16,31 +17,50 @@ class AdminProductFormScreen extends StatefulWidget {
 class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _costPriceController = TextEditingController();
   final _salePriceController = TextEditingController();
   final _minSalePriceController = TextEditingController();
   final _minThresholdController = TextEditingController();
 
   bool _isTemporary = false;
   bool _isLoading = false;
+  List<dynamic> _categories = [];
+  dynamic _selectedCategory;
+  bool _isLoadingCategories = true;
 
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     if (widget.product != null) {
       _nameController.text = widget.product['name'] ?? '';
-      _costPriceController.text = (widget.product['costPrice'] ?? 0).toString();
       _salePriceController.text = (widget.product['salePrice'] ?? 0).toString();
       _minSalePriceController.text = (widget.product['minSalePrice'] ?? 0).toString();
       _minThresholdController.text = (widget.product['minThreshold'] ?? 0).toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
+      _selectedCategory = widget.product['categoryId'];
+    }
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final categoryService = CategoryService(authProvider: authProvider);
+      final categories = await categoryService.getAllCategories();
+      setState(() {
+        _categories = categories;
+        _isLoadingCategories = false;
+      });
+    } catch (e) {
+      print('Error loading categories: $e');
+      setState(() {
+        _isLoadingCategories = false;
+      });
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _costPriceController.dispose();
     _salePriceController.dispose();
     _minSalePriceController.dispose();
     _minThresholdController.dispose();
@@ -60,34 +80,31 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final productService = ProductService(authProvider: authProvider);
 
-      final costPrice = double.parse(_costPriceController.text);
       final salePrice = double.parse(_salePriceController.text);
       final minSalePrice = double.parse(_minSalePriceController.text);
       final minThreshold = int.parse(_minThresholdController.text);
 
       if (widget.product == null) {
-        // Create new product (with default quantity 0)
+        // Create new product (Admin cannot set costPrice or quantity)
         final name = _nameController.text.trim();
         await productService.createProduct(
           name: name,
           isTemporary: _isTemporary,
-          costPrice: costPrice,
           salePrice: salePrice,
           minSalePrice: minSalePrice,
-          quantity: 0, // Admin cannot set quantity, defaults to 0
           minThreshold: minThreshold,
+          categoryId: _selectedCategory,
         );
       } else {
-        // Update existing product - Admin can only update prices, isTemporary, minThreshold
-        // Not name or quantity
+        // Update existing product - Admin can only update prices and minThreshold
+        // Cannot update name, costPrice, or quantity
         await productService.updateProduct(
           id: widget.product['id'],
           name: widget.product['name'], // Keep original name
-          costPrice: costPrice,
           salePrice: salePrice,
           minSalePrice: minSalePrice,
-          quantity: widget.product['quantity'], // Keep original quantity
           minThreshold: minThreshold,
+          categoryId: _selectedCategory,
         );
       }
 
@@ -179,6 +196,37 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
               ),
             const SizedBox(height: 16),
 
+            // Category dropdown
+            _isLoadingCategories
+                ? const Center(child: CircularProgressIndicator())
+                : DropdownButtonFormField<dynamic>(
+                    value: _selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Kategoriya',
+                      prefixIcon: Icon(Icons.category_outlined),
+                      border: OutlineInputBorder(),
+                      hintText: 'Kategoriyani tanlang',
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Kategoriya tanlanmagan'),
+                      ),
+                      ..._categories.map<DropdownMenuItem<dynamic>>((category) {
+                        return DropdownMenuItem<dynamic>(
+                          value: category['id'],
+                          child: Text(category['name'] ?? ''),
+                        );
+                      }).toList(),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCategory = value;
+                      });
+                    },
+                  ),
+            const SizedBox(height: 16),
+
             // IsTemporary checkbox
             CheckboxListTile(
               title: const Text('Vaqtinchalik mahsulot'),
@@ -188,30 +236,6 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                 setState(() {
                   _isTemporary = value ?? false;
                 });
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Cost Price field
-            TextFormField(
-              controller: _costPriceController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Olingan narxi (so\'m)',
-                prefixIcon: Icon(Icons.money_off),
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Olingan narxni kiriting';
-                }
-                if (double.tryParse(value) == null) {
-                  return 'To\'g\'ri narx kiriting';
-                }
-                if (double.parse(value) < 0) {
-                  return 'Narx manfiy bo\'lmasligi kerak';
-                }
-                return null;
               },
             ),
             const SizedBox(height: 16),
