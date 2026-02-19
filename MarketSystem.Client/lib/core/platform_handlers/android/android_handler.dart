@@ -7,7 +7,7 @@ class AndroidHandler {
 
   static Future<String> getDocumentsPath() async {
     // For Android, return the app's documents directory
-    return '/data/user/0/uz.elaro/app_flutter/documents';
+    return '/data/user/0/uz.strotech/app_flutter/documents';
   }
 
   static Future<bool> requestPermissions() async {
