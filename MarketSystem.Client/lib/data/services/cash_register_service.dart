@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../models/cash_register_model.dart';
 import 'http_service.dart';
+import '../../core/constants/api_constants.dart';
 
 class CashRegisterService {
   final HttpService _httpService;
@@ -9,7 +10,7 @@ class CashRegisterService {
 
   Future<CashRegisterModel?> getCashRegister() async {
     try {
-      final response = await _httpService.get('/CashRegister');
+      final response = await _httpService.get(ApiConstants.cashRegister);
 
       if (response.statusCode == 200) {
         return CashRegisterModel.fromJson(jsonDecode(response.body));
@@ -23,7 +24,7 @@ class CashRegisterService {
 
   Future<TodaySalesSummaryModel?> getTodaySales() async {
     try {
-      final response = await _httpService.get('/CashRegister/today-sales');
+      final response = await _httpService.get('${ApiConstants.cashRegister}/today-sales');
 
       if (response.statusCode == 200) {
         return TodaySalesSummaryModel.fromJson(jsonDecode(response.body));
@@ -44,7 +45,7 @@ class CashRegisterService {
       print('==================');
 
       final response = await _httpService.post(
-        '/CashRegister/withdraw',
+        '${ApiConstants.cashRegister}/withdraw',
         body: {
           'amount': amount,
           'comment': comment,
@@ -64,7 +65,7 @@ class CashRegisterService {
   Future<bool> addCash(double amount) async {
     try {
       final response = await _httpService.post(
-        '/CashRegister/add',
+        '${ApiConstants.cashRegister}/add',
         body: amount.toString(),
       );
 

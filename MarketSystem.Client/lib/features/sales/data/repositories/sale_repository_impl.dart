@@ -125,4 +125,25 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
       return ApiResult.failure('Sotuvni bekor qilishda xatolik: $e');
     }
   }
+
+  @override
+  Future<ApiResult<void>> returnSaleItem({
+    required String saleId,
+    required String saleItemId,
+    required double quantity,
+    String? comment,
+  }) async {
+    try {
+      await remoteDataSource.returnSaleItem(
+        saleId: saleId,
+        saleItemId: saleItemId,
+        quantity: quantity,
+        comment: comment,
+      );
+
+      return ApiResult.success(null);
+    } catch (e) {
+      return ApiResult.failure('Tovarni qaytarishda xatolik: $e');
+    }
+  }
 }

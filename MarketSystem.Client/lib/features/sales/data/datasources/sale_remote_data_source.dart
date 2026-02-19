@@ -73,4 +73,19 @@ class SaleRemoteDataSource {
       adminId: adminId,
     );
   }
+
+  /// Sotilgan mahsulotni qaytarish
+  Future<dynamic> returnSaleItem({
+    required String saleId,
+    required String saleItemId,
+    required double quantity,
+    String? comment,
+  }) async {
+    return _salesService.returnSaleItem(
+      saleId: saleId,
+      saleItemId: saleItemId,
+      quantity: quantity,
+      comment: comment,
+    );
+  }
 }

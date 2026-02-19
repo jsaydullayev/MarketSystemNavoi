@@ -35,7 +35,7 @@ class DebtService {
   // Get customer debts
   Future<List<dynamic>> getCustomerDebts(String customerId) async {
     final response = await _httpService.get(
-      '${ApiConstants.debts}/GetCustomerDebts/customer/$customerId',
+      '${ApiConstants.debts}/customer/$customerId',
     );
 
     if (response.statusCode == 200) {
@@ -53,7 +53,7 @@ class DebtService {
   // Get customer total debt
   Future<double> getCustomerTotalDebt(String customerId) async {
     final response = await _httpService.get(
-      '${ApiConstants.debts}/GetCustomerTotalDebt/customer/$customerId/total',
+      '${ApiConstants.debts}/customer/$customerId/total',
     );
 
     if (response.statusCode == 200) {
@@ -73,7 +73,7 @@ class DebtService {
     required double amount,
   }) async {
     final response = await _httpService.post(
-      '${ApiConstants.debts}/PayDebt/$debtId/pay',
+      '${ApiConstants.debts}/$debtId/pay',
       body: {
         'paymentType': paymentType,
         'amount': amount,

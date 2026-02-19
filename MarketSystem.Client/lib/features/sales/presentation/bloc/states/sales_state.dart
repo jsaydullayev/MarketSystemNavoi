@@ -67,6 +67,11 @@ class SaleCancelled extends SalesState {
   const SaleCancelled();
 }
 
+/// Sale item returned state
+class SaleItemReturned extends SalesState {
+  const SaleItemReturned();
+}
+
 /// Sale detail loading state
 class SaleDetailLoading extends SalesState {
   const SaleDetailLoading();
