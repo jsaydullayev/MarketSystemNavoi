@@ -2,9 +2,11 @@
 /// Central app configuration with DI setup
 library;
 
+import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -26,14 +28,16 @@ import '../../data/services/auth_service.dart';
 
 /// Main App Widget
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final AdaptiveThemeMode? savedThemeMode;
+  const MainApp({super.key, this.savedThemeMode});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         // Auth Provider - must be first, others may depend on it
-        ChangeNotifierProvider(create: (_) => AuthProvider(authService: sl<AuthService>())),
+        ChangeNotifierProvider(
+            create: (_) => AuthProvider(authService: sl<AuthService>())),
         // Theme Provider
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         // Locale Provider
@@ -44,26 +48,32 @@ class MainApp extends StatelessWidget {
         BlocProvider(create: (_) => sl<ZakupBloc>()),
       ],
       child: Consumer<LocaleProvider>(
-        builder: (context, localeProvider, _) => MaterialApp(
-          title: AppStrings.appName,
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
-          navigatorKey: NavigationHandler.navigatorKey,
-          onGenerateRoute: generateRoute,
-          locale: localeProvider.locale, // ✅ Dynamic locale from LocaleProvider
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('uz'), // Uzbek
-            Locale('ru'), // Russian
-          ],
-          initialRoute: AppRoutes.welcome,
+        builder: (context, localeProvider, _) => AdaptiveTheme(
+          light: AppThemes.light,
+          dark: AppThemes.dark,
+          initial: savedThemeMode ?? AdaptiveThemeMode.light,
+          builder: (theme, darkTheme) => MaterialApp(
+            title: AppStrings.appName,
+            debugShowCheckedModeBanner: false,
+            theme: theme,
+            darkTheme: darkTheme,
+            themeMode: ThemeMode.system,
+            navigatorKey: NavigationHandler.navigatorKey,
+            onGenerateRoute: generateRoute,
+            locale:
+                localeProvider.locale, // ✅ Dynamic locale from LocaleProvider
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('uz'), // Uzbek
+              Locale('ru'), // Russian
+            ],
+            initialRoute: AppRoutes.splash,
+          ),
         ),
       ),
     );
