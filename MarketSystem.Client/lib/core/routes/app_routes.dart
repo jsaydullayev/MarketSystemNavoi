@@ -5,7 +5,8 @@ library;
 /// All app routes
 class AppRoutes {
   // Splash/Welcome
-  static const String welcome = '/';
+  static const String splash = '/';
+  static const String welcome = '/welcome';
   static const String login = '/login';
   static const String register = '/register';
 
