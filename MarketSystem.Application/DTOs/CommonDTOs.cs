@@ -100,7 +100,10 @@ public record PaymentDto(
     [property: JsonPropertyName("paymentId")] Guid PaymentId,
     [property: JsonPropertyName("paymentType")] string PaymentType,
     [property: JsonPropertyName("amount")] decimal Amount,
-    [property: JsonPropertyName("createdAt")] DateTime CreatedAt
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+    [property: JsonPropertyName("saleStatus")] string? SaleStatus,
+    [property: JsonPropertyName("salePaidAmount")] decimal? SalePaidAmount,
+    [property: JsonPropertyName("saleTotalAmount")] decimal? SaleTotalAmount
 );
 public record SaleDto(
     [property: JsonPropertyName("id")] Guid Id,
