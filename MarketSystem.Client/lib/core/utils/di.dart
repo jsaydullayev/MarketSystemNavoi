@@ -3,6 +3,8 @@
 library;
 
 import 'package:get_it/get_it.dart';
+import 'package:market_system_client/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:market_system_client/features/auth/domain/repositories/auth_repository_interface.dart';
 import 'package:provider/provider.dart';
 
 // Handlers
@@ -65,6 +67,7 @@ final sl = GetIt.instance;
 Future<void> setupDependencyInjection() async {
   await _initCore();
   _initServices();
+  _initAuthFeature();
   _initSalesFeature();
   _initCustomersFeature();
   _initZakupFeature();
@@ -88,13 +91,16 @@ Future<void> _initCore() async {
 /// Initialize services
 void _initServices() {
   // Auth Service - creates its own HttpService
-  sl.registerFactory<AuthService>(() => AuthService(httpService: HttpService()));
+  sl.registerFactory<AuthService>(
+      () => AuthService(httpService: HttpService()));
 
   // Auth Provider - needs AuthService (register after AuthService)
-  sl.registerLazySingleton<AuthProvider>(() => AuthProvider(authService: sl<AuthService>()));
+  sl.registerLazySingleton<AuthProvider>(
+      () => AuthProvider(authService: sl<AuthService>()));
 
   // Customer Service - needs AuthProvider
-  sl.registerFactory<CustomerService>(() => CustomerService(authProvider: sl()));
+  sl.registerFactory<CustomerService>(
+      () => CustomerService(authProvider: sl()));
 
   // Sales Service - needs AuthProvider
   sl.registerFactory<SalesService>(() => SalesService(authProvider: sl()));
@@ -198,4 +204,11 @@ void _initZakupFeature() {
 /// Reset all registered services (for testing)
 Future<void> resetDependencyInjection() async {
   await sl.reset();
+}
+
+void _initAuthFeature() {
+  // Repository
+  sl.registerFactory<AuthRepositoryInterface>(
+    () => AuthRepositoryImpl(),
+  );
 }
