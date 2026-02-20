@@ -82,7 +82,7 @@ public class SaleService : ISaleService
             )).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
-                p.PaymentType.ToString(),
+                p.PaymentType.ToString().ToLowerInvariant(),
                 p.Amount,
                 p.CreatedAt
             )).ToList()
@@ -129,7 +129,7 @@ public class SaleService : ISaleService
             )).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
-                p.PaymentType.ToString(),
+                p.PaymentType.ToString().ToLowerInvariant(),
                 p.Amount,
                 p.CreatedAt
             )).ToList()
@@ -176,7 +176,7 @@ public class SaleService : ISaleService
             )).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
-                p.PaymentType.ToString(),
+                p.PaymentType.ToString().ToLowerInvariant(),
                 p.Amount,
                 p.CreatedAt
             )).ToList()
@@ -224,7 +224,7 @@ public class SaleService : ISaleService
             )).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
-                p.PaymentType.ToString(),
+                p.PaymentType.ToString().ToLowerInvariant(),
                 p.Amount,
                 p.CreatedAt
             )).ToList()
@@ -616,7 +616,7 @@ public class SaleService : ISaleService
 
             return new PaymentDto(
                 payment.Id,
-                payment.PaymentType.ToString(),
+                payment.PaymentType.ToString().ToLowerInvariant(),
                 payment.Amount,
                 payment.CreatedAt
             );
@@ -759,7 +759,7 @@ public class SaleService : ISaleService
         var payments = await _unitOfWork.Payments.FindAsync(p => p.SaleId == sale.Id, cancellationToken);
         var paymentsDto = payments.Select(p => new PaymentDto(
             p.Id,
-            p.PaymentType.ToString(),
+            p.PaymentType.ToString().ToLowerInvariant(),
             p.Amount,
             p.CreatedAt
         )).ToList();
@@ -1093,8 +1093,17 @@ public class SaleService : ISaleService
             // 1. Sale item quantity yangilash yoki o'chirish
             var returnQuantityInt = (int)returnQuantity;
             string originalComment = saleItem.Comment ?? "";
+            var originalQuantity = saleItem.Quantity; // Saqlab qo'yymiz
+            var isFullReturn = returnQuantity >= saleItem.Quantity;
 
-            if (returnQuantity < saleItem.Quantity)
+            if (isFullReturn)
+            {
+                // To'liq qaytarish - itemni o'chirish
+                _logger.LogInformation("Full return: Removing item completely. OriginalQty={OriginalQty}, ReturnQty={ReturnQty}",
+                    originalQuantity, returnQuantityInt);
+                _context.SaleItems.Remove(saleItem);
+            }
+            else
             {
                 // Qisman qaytarish - quantity kamaytirish
                 _logger.LogInformation("Partial return: OldQty={OldQty}, ReturnQty={ReturnQty}, NewQty={NewQty}",
@@ -1108,12 +1117,6 @@ public class SaleService : ISaleService
                 saleItem.Comment = !string.IsNullOrEmpty(originalComment)
                     ? $"{originalComment} | {returnComment}"
                     : returnComment;
-            }
-            else
-            {
-                // To'liq qaytarish - itemni o'chirish
-                _logger.LogInformation("Full return: Removing item completely");
-                _context.SaleItems.Remove(saleItem);
             }
 
             // 2. Mahsulot stock'iga qaytarish
@@ -1148,16 +1151,36 @@ public class SaleService : ISaleService
                 _logger.LogInformation("Cash refund: CashPayments={CashPaid}, PaidAmount={Paid}, RefundAmount={Refund}, CashToRefund={CashRefund}",
                     cashPayments, sale.PaidAmount, refundAmount, cashToRefund);
 
-                // Cash registerdan pul ayrish
+                // Cash registerdan pul ayrish VA izoh yozish
                 var cashRegister = await _context.CashRegisters.OrderByDescending(cr => cr.LastUpdated).FirstOrDefaultAsync(cancellationToken);
                 if (cashRegister != null)
                 {
                     var oldBalance = cashRegister.CurrentBalance;
                     cashRegister.CurrentBalance -= cashToRefund;
                     cashRegister.LastUpdated = DateTime.UtcNow;
-                    _context.CashRegisters.Update(cashRegister);
-                    _logger.LogInformation("Cash register updated: OldBalance={OldBal}, NewBalance={NewBal}, Refund={Refund}",
-                        oldBalance, cashRegister.CurrentBalance, cashToRefund);
+
+                    // ✅ CashWithdrawal record yaratish - tovar nomi, vozvrat haqida va summasi bilan
+                    var withdrawal = new CashWithdrawal
+                    {
+                        Id = Guid.NewGuid(),
+                        Amount = cashToRefund,
+                        Comment = $"Vozvrat rovar: {saleItem.Product?.Name}, {returnQuantityInt} ta dona @{saleItem.SalePrice} so'm",
+                        WithdrawalDate = DateTime.UtcNow,
+                        UserId = null, // System transaction
+                        WithdrawType = "return"
+                    };
+
+                    // CashWithdrawal ni track qilish
+                    _context.CashWithdrawals.Add(withdrawal);
+                    _context.Entry(withdrawal).State = Microsoft.EntityFrameworkCore.EntityState.Added;
+
+                    cashRegister.LastWithdrawalId = withdrawal.Id;
+
+                    // CashRegisterni ham track qilish
+                    _context.Entry(cashRegister).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+
+                    _logger.LogInformation("Cash register updated with withdrawal record: OldBalance={OldBal}, NewBalance={NewBal}, Refund={Refund}, WithdrawalId={WithdrawalId}, Comment={Comment}",
+                        oldBalance, cashRegister.CurrentBalance, cashToRefund, withdrawal.Id, withdrawal.Comment);
                 }
             }
 
@@ -1207,26 +1230,22 @@ public class SaleService : ISaleService
             _logger.LogInformation("SaleId: {SaleId}, Item: {ItemId}, Quantity: {Quantity}, Refund: {RefundAmount}",
                 saleId, request.SaleItemId, returnQuantity, refundAmount);
 
-            // Updated sale item ni qaytarish
-            var updatedItem = returnQuantity < saleItem.Quantity
-                ? saleItem
-                : null;
-
-            if (updatedItem != null)
+            // Updated sale item ni qaytarish (faqat partial return bo'lsa)
+            if (!isFullReturn && saleItem != null)
             {
                 return new SaleItemDto(
-                    updatedItem.Id.ToString(),
-                    updatedItem.SaleId.ToString(),
-                    updatedItem.ProductId,
-                    updatedItem.Product?.Name ?? "Unknown",
-                    updatedItem.Quantity,
-                    updatedItem.SalePrice,
-                    updatedItem.Quantity * updatedItem.SalePrice,
-                    updatedItem.Comment
+                    saleItem.Id.ToString(),
+                    saleItem.SaleId.ToString(),
+                    saleItem.ProductId,
+                    saleItem.Product?.Name ?? "Unknown",
+                    saleItem.Quantity,
+                    saleItem.SalePrice,
+                    saleItem.Quantity * saleItem.SalePrice,
+                    saleItem.Comment
                 );
             }
 
-            // Item to'liq o'chirilgan bo'lsa, null qaytaramiz
+            // Item to'liq o'chirilgan bo'lsa, null qaytaramiz (bu normal holat)
             return null;
         }
         catch (Exception ex)

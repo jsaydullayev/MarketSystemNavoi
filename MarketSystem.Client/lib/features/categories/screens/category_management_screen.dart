@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/category_service.dart';
+import '../../../data/models/product_category_model.dart';
 import '../../../core/providers/auth_provider.dart';
 import 'category_form_screen.dart';
 
@@ -14,7 +15,7 @@ class CategoryManagementScreen extends StatefulWidget {
 class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   late final CategoryService _categoryService;
   late final AuthProvider _authProvider;
-  List<dynamic> _categories = [];
+  List<ProductCategoryModel> _categories = [];
   bool _isLoading = true;
   String? _error;
 
@@ -166,33 +167,30 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     );
   }
 
-  Widget _buildCategoryCard(dynamic category) {
-    final isActive = category['isActive'] ?? true;
-    final productCount = category['productCount'] ?? 0;
-
+  Widget _buildCategoryCard(ProductCategoryModel category) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: isActive ? Colors.green : Colors.grey,
+          backgroundColor: category.isActive ? Colors.green : Colors.grey,
           child: Icon(
-            isActive ? Icons.check_circle : Icons.category,
+            category.isActive ? Icons.check_circle : Icons.category,
             color: Colors.white,
           ),
         ),
         title: Text(
-          category['name'] ?? '',
+          category.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (category['description'] != null && category['description'].toString().isNotEmpty)
-              Text(category['description']),
+            if (category.description != null && category.description!.isNotEmpty)
+              Text(category.description!),
             const SizedBox(height: 4),
             Text(
-              'Mahsulotlar: $productCount',
+              'Mahsulotlar: ${category.productCount}',
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -210,7 +208,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => CategoryFormScreen(category: category),
+                    builder: (_) => CategoryFormScreen(category: category.toJson()),
                   ),
                 );
                 if (result == true && mounted) {
@@ -220,10 +218,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteCategory(
-                category['id'],
-                category['name'] ?? '',
-              ),
+              onPressed: () => _deleteCategory(category.id, category.name),
             ),
           ],
         ),

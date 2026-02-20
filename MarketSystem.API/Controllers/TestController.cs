@@ -88,4 +88,60 @@ public class TestController : ControllerBase
             role
         });
     }
+
+    [HttpGet("categories")]
+    [AllowAnonymous]
+    public async Task<IActionResult> TestCategories()
+    {
+        try
+        {
+            var allCategories = await _unitOfWork.ProductCategories.GetAllAsync();
+            var market4Categories = await _unitOfWork.ProductCategories.FindAsync(c => c.MarketId == 4);
+
+            return Ok(new
+            {
+                totalCategories = allCategories.Count(),
+                market4CategoriesCount = market4Categories.Count(),
+                categories = market4Categories.Select(c => new
+                {
+                    id = c.Id,
+                    name = c.Name,
+                    marketId = c.MarketId,
+                    isActive = c.IsActive,
+                    isDeleted = c.IsDeleted
+                })
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message, stackTrace = ex.StackTrace });
+        }
+    }
+
+    [HttpPost("seed-category")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SeedTestCategory()
+    {
+        try
+        {
+            var category = new MarketSystem.Domain.Entities.ProductCategory
+            {
+                Name = "Yog'och mahsulotlar",
+                Description = "Taxta, DSP, reka va boshqalar",
+                MarketId = 4,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.ProductCategories.AddAsync(category);
+            await _unitOfWork.SaveChangesAsync();
+
+            return Ok(new { message = "Test category created", id = category.Id, name = category.Name });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message, stackTrace = ex.StackTrace });
+        }
+    }
 }

@@ -85,7 +85,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPatch("UpdateSaleCustomer/{saleId}")]
+    [HttpPatch("{saleId}")]
     public async Task<ActionResult<SaleDto>> UpdateSaleCustomer(Guid saleId, [FromBody] UpdateSaleCustomerDto request)
     {
         try
@@ -246,7 +246,8 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}/return-item")]
+    [HttpPost]
+    [Route("~/api/Sales/{saleId}/return-item")]
     [Authorize(Policy = "AllRoles")]
     public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest request)
     {
@@ -257,9 +258,8 @@ public class SalesController : ControllerBase
 
             var result = await _saleService.ReturnSaleItemAsync(saleId, request);
 
-            if (result == null)
-                return NotFound();
-
+            // result null bo'lishi mumkin (full return bo'lganda), lekin bu muvaffaqiyatli amal
+            // Shuning uchun 200 OK qaytaramiz, result bo'lishi shart emas
             return Ok(result);
         }
         catch (Exception ex)
