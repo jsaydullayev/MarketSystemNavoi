@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/features/splash/splash_screen.dart';
 
 import 'app_routes.dart';
 
@@ -22,6 +23,9 @@ import '../../features/profile/screens/profile_screen.dart';
 /// Generate route
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
+    case AppRoutes.splash:
+      return MaterialPageRoute(builder: (_) => const SplashScreen());
+
     case AppRoutes.welcome:
       return MaterialPageRoute(builder: (_) => const WelcomeScreen());
 
@@ -32,7 +36,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(builder: (_) => const RegisterScreen());
 
     case AppRoutes.dashboard:
-      return MaterialPageRoute(builder: (_) => const DashboardScreen());
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const DashboardScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      );
 
     case AppRoutes.products:
       return MaterialPageRoute(builder: (_) => const ProductsScreen());
