@@ -626,9 +626,10 @@ public class ReportService : IReportService
                 }
             }
 
-            // Get primary payment type
+            // Get primary payment type - convert to lowercase format
             var primaryPayment = sale.Payments.FirstOrDefault();
-            var paymentType = primaryPayment?.PaymentType.ToString() ?? "Cash";
+            var paymentTypeRaw = primaryPayment?.PaymentType.ToString() ?? "Cash";
+            var paymentType = paymentTypeRaw.ToLowerInvariant();
 
             salesListItems.Add(new DailySalesListItemDto(
                 sale.Id,
