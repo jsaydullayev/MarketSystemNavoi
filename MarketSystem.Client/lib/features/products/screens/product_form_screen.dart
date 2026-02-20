@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../data/services/product_service.dart';
 import '../../../data/services/category_service.dart';
+import '../../../data/models/product_category_model.dart';
 import '../../../core/providers/auth_provider.dart';
 
 class ProductFormScreen extends StatefulWidget {
@@ -23,8 +24,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   bool _isTemporary = false;
   bool _isLoading = false;
-  List<dynamic> _categories = [];
-  dynamic _selectedCategory;
+  List<ProductCategoryModel> _categories = [];
+  int? _selectedCategory;
   bool _isLoadingCategories = true;
 
   @override
@@ -160,7 +161,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             // ✅ Category dropdown
             _isLoadingCategories
                 ? const Center(child: CircularProgressIndicator())
-                : DropdownButtonFormField<dynamic>(
+                : DropdownButtonFormField<int?>(
                     value: _selectedCategory,
                     decoration: const InputDecoration(
                       labelText: 'Kategoriya',
@@ -169,14 +170,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       hintText: 'Kategoriyani tanlang',
                     ),
                     items: [
-                      const DropdownMenuItem(
+                      const DropdownMenuItem<int?>(
                         value: null,
                         child: Text('Kategoriya tanlanmagan'),
                       ),
-                      ..._categories.map<DropdownMenuItem<dynamic>>((category) {
-                        return DropdownMenuItem<dynamic>(
-                          value: category['id'],
-                          child: Text(category['name'] ?? ''),
+                      ..._categories.map<DropdownMenuItem<int>>((category) {
+                        return DropdownMenuItem<int>(
+                          value: category.id,
+                          child: Text(category.name),
                         );
                       }).toList(),
                     ],

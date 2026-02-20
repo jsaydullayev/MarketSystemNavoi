@@ -6,24 +6,34 @@ import '../models/product_category_model.dart';
 
 class CategoryService {
   final AuthProvider authProvider;
-  late final HttpService _httpService;
+  final HttpService _httpService;
 
-  CategoryService({required this.authProvider}) {
-    _httpService = HttpService();
-  }
+  CategoryService({required this.authProvider, HttpService? httpService})
+      : _httpService = httpService ?? HttpService();
 
   /// Get all categories
   Future<List<ProductCategoryModel>> getAllCategories() async {
-    final response = await _httpService.get('${ApiConstants.baseUrl}/ProductCategories/GetAllCategories');
+    try {
+      final response = await _httpService.get('${ApiConstants.baseUrl}/ProductCategories/GetAllCategories');
 
-    if (response.statusCode == 200) {
-      if (response.body.isEmpty) {
-        return [];
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return [];
+        }
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => ProductCategoryModel.fromJson(json)).toList();
+      } else if (response.statusCode == 401) {
+        throw Exception('Avtorizatsiya xatosi: Iltimos, qayta tizimga kiring');
+      } else if (response.statusCode == 403) {
+        throw Exception('Ruxsat yo\'q: Faqat Admin va Owner kategoriyalarni ko\'rishi mumkin');
+      } else if (response.statusCode == 404) {
+        throw Exception('Endpoint topilmadi. Backend ishga tushganini tekshiring');
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Failed to load categories: ${response.statusCode}');
       }
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((json) => ProductCategoryModel.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load categories: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Kategoriyalarni yuklashda xatolik: $e');
     }
   }
 

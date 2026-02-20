@@ -167,6 +167,8 @@ class _SalesScreenState extends State<SalesScreen> {
         s['status']?.toString().toLowerCase() == 'draft').length;
     final paidCount = sales.where((s) =>
         s['status']?.toString().toLowerCase() == 'paid').length;
+    final closedCount = sales.where((s) =>
+        s['status']?.toString().toLowerCase() == 'closed').length;
     final debtCount = sales.where((s) =>
         s['status']?.toString().toLowerCase() == 'debt').length;
 
@@ -191,6 +193,8 @@ class _SalesScreenState extends State<SalesScreen> {
             _buildFilterButton('Davom etayotgan', 'draft', draftCount, Colors.orange),
             const SizedBox(width: 8),
             _buildFilterButton('To\'langan', 'paid', paidCount, Colors.green),
+            const SizedBox(width: 8),
+            _buildFilterButton('Yopilgan', 'closed', closedCount, Colors.blue),
             const SizedBox(width: 8),
             _buildFilterButton('Qarz', 'debt', debtCount, Colors.red),
           ],
@@ -269,6 +273,8 @@ class _SalesScreenState extends State<SalesScreen> {
           return Colors.orange;
         case 'paid':
           return Colors.green;
+        case 'closed':
+          return Colors.blue;
         case 'debt':
           return Colors.red;
         case 'cancelled':
@@ -284,6 +290,8 @@ class _SalesScreenState extends State<SalesScreen> {
           return 'Davom etayotgan';
         case 'paid':
           return 'To\'langan';
+        case 'closed':
+          return 'Yopilgan';
         case 'debt':
           return 'Qarz';
         case 'cancelled':
