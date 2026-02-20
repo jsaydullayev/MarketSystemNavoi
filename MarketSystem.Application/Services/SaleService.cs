@@ -84,7 +84,10 @@ public class SaleService : ISaleService
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
                 p.Amount,
-                p.CreatedAt
+                p.CreatedAt,
+                null,
+                null,
+                null
             )).ToList()
         ));
     }
@@ -131,7 +134,10 @@ public class SaleService : ISaleService
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
                 p.Amount,
-                p.CreatedAt
+                p.CreatedAt,
+                null,
+                null,
+                null
             )).ToList()
         ));
     }
@@ -178,7 +184,10 @@ public class SaleService : ISaleService
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
                 p.Amount,
-                p.CreatedAt
+                p.CreatedAt,
+                null,
+                null,
+                null
             )).ToList()
         ));
     }
@@ -226,7 +235,10 @@ public class SaleService : ISaleService
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
                 p.Amount,
-                p.CreatedAt
+                p.CreatedAt,
+                null,
+                null,
+                null
             )).ToList()
         ));
     }
@@ -618,7 +630,10 @@ public class SaleService : ISaleService
                 payment.Id,
                 payment.PaymentType.ToString().ToLowerInvariant(),
                 payment.Amount,
-                payment.CreatedAt
+                payment.CreatedAt,
+                sale.Status.ToString().ToLowerInvariant(), // Yangilangan sale status
+                sale.PaidAmount, // Yangilangan paid amount
+                sale.TotalAmount // Total amount
             );
         }
         catch
@@ -761,7 +776,10 @@ public class SaleService : ISaleService
             p.Id,
             p.PaymentType.ToString().ToLowerInvariant(),
             p.Amount,
-            p.CreatedAt
+            p.CreatedAt,
+            null, // SaleStatus not applicable in this context
+            null, // SalePaidAmount not applicable
+            null  // SaleTotalAmount not applicable
         )).ToList();
 
         // Get seller name
@@ -926,6 +944,8 @@ public class SaleService : ISaleService
 
         var marketId = _currentMarketService.GetCurrentMarketId();
 
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.Id == saleId && s.MarketId == marketId,
             cancellationToken);
@@ -935,6 +955,7 @@ public class SaleService : ISaleService
         if (sale is null)
         {
             _logger.LogWarning("Sale not found: {SaleId}", saleId);
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             return null;
         }
 
@@ -944,6 +965,7 @@ public class SaleService : ISaleService
         if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Paid)
         {
             _logger.LogWarning("Sale cannot be deleted: {SaleId}, Status: {Status}", saleId, sale.Status);
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw new InvalidOperationException("Faqat draft yoki to'langan (Paid) savdolarini o'chirish mumkin! Qarzli savdolarni o'chirib bo'lmaydi.");
         }
 
@@ -1035,7 +1057,10 @@ public class SaleService : ISaleService
                         p.Id,
                         p.PaymentType.ToString(),
                         p.Amount,
-                        p.CreatedAt
+                        p.CreatedAt,
+                        null,
+                        null,
+                        null
                     )).ToList()
                 )).ToList()
             ))
@@ -1136,53 +1161,11 @@ public class SaleService : ISaleService
             _logger.LogInformation("Sale total updated: SaleId={SaleId}, OldTotal={OldTotal}, NewTotal={NewTotal}",
                 saleId, oldTotalAmount, sale.TotalAmount);
 
-            // 4. Naqd to'lov bo'yicha qaytarish (faqat actual cash payments)
-            var cashPayments = sale.Payments
-                .Where(p => p.PaymentType == Domain.Enums.PaymentType.Cash)
-                .Sum(p => p.Amount);
-
-            var cashToRefund = 0m;
-            if (cashPayments > 0 && sale.PaidAmount > 0)
-            {
-                // Cash qisman qaytarish - proporsional hisob
-                var cashRatio = cashPayments / sale.PaidAmount;
-                cashToRefund = refundAmount * cashRatio;
-
-                _logger.LogInformation("Cash refund: CashPayments={CashPaid}, PaidAmount={Paid}, RefundAmount={Refund}, CashToRefund={CashRefund}",
-                    cashPayments, sale.PaidAmount, refundAmount, cashToRefund);
-
-                // Cash registerdan pul ayrish VA izoh yozish
-                var cashRegister = await _context.CashRegisters.OrderByDescending(cr => cr.LastUpdated).FirstOrDefaultAsync(cancellationToken);
-                if (cashRegister != null)
-                {
-                    var oldBalance = cashRegister.CurrentBalance;
-                    cashRegister.CurrentBalance -= cashToRefund;
-                    cashRegister.LastUpdated = DateTime.UtcNow;
-
-                    // ✅ CashWithdrawal record yaratish - tovar nomi, vozvrat haqida va summasi bilan
-                    var withdrawal = new CashWithdrawal
-                    {
-                        Id = Guid.NewGuid(),
-                        Amount = cashToRefund,
-                        Comment = $"Vozvrat rovar: {saleItem.Product?.Name}, {returnQuantityInt} ta dona @{saleItem.SalePrice} so'm",
-                        WithdrawalDate = DateTime.UtcNow,
-                        UserId = null, // System transaction
-                        WithdrawType = "return"
-                    };
-
-                    // CashWithdrawal ni track qilish
-                    _context.CashWithdrawals.Add(withdrawal);
-                    _context.Entry(withdrawal).State = Microsoft.EntityFrameworkCore.EntityState.Added;
-
-                    cashRegister.LastWithdrawalId = withdrawal.Id;
-
-                    // CashRegisterni ham track qilish
-                    _context.Entry(cashRegister).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-
-                    _logger.LogInformation("Cash register updated with withdrawal record: OldBalance={OldBal}, NewBalance={NewBal}, Refund={Refund}, WithdrawalId={WithdrawalId}, Comment={Comment}",
-                        oldBalance, cashRegister.CurrentBalance, cashToRefund, withdrawal.Id, withdrawal.Comment);
-                }
-            }
+            // 4. Naqd to'lov bo'yicha qaytarish - O'CHIRILDI
+            // Admin o'zi qo'lda summa kiritadi
+            // Avtomatik tarixga yozilmasin
+            _logger.LogInformation("Return item completed (no automatic cash withdrawal): SaleId={SaleId}, RefundAmount={Refund}",
+                saleId, refundAmount);
 
             // 5. To'langan summani yangilash
             var oldPaidAmount = sale.PaidAmount;
