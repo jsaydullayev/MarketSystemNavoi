@@ -23,6 +23,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   late final AuthProvider _authProvider;
 
   bool get _isEditing => widget.category != null;
+  int? _categoryId;
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     _categoryService = CategoryService(authProvider: _authProvider);
 
     if (_isEditing) {
+      _categoryId = widget.category!['id'] as int?;
       _nameController.text = widget.category!['name'] ?? '';
       _descriptionController.text = widget.category!['description'] ?? '';
       _isActive = widget.category!['isActive'] ?? true;
@@ -56,7 +58,7 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
     try {
       if (_isEditing) {
         await _categoryService.updateCategory(
-          id: widget.category!['id'],
+          id: _categoryId!,
           name: _nameController.text.trim(),
           description: _descriptionController.text.trim().isEmpty
               ? null

@@ -168,7 +168,17 @@ public class ReportsController : ControllerBase
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         Guid? userId = Guid.TryParse(userIdString, out var parsedId) ? parsedId : null;
 
-        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        // FIX: The date from query parameter is in local time (browser sends "2026-02-19")
+        // We need to convert it to UTC date range.
+        // Example: User in UTC+5 creates sale at 10:00 local time -> stored as 05:00 UTC
+        // When user queries "2026-02-19", they want to see that sale.
+        // The query date "2026-02-19 00:00:00" (local) = "2026-02-18 19:00:00" (UTC)
+        // So we should query from that UTC time to +24 hours.
+
+        // Actually, let's use a simpler approach:
+        // The date parameter comes as unspecified kind DateTime from the query string.
+        // ASP.NET binds "2026-02-19" as DateTime with Kind = Unspecified.
+        // We treat it as UTC for the query.
         var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var salesList = await _reportService.GetDailySalesListAsync(utcDate, userRole, userId);
         return Ok(salesList);

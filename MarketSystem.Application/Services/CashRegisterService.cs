@@ -48,9 +48,10 @@ public class CashRegisterService : ICashRegisterService
             }
 
             // Filter withdrawals by market (through User.MarketId)
+            // System withdrawals (UserId == null, like returns) should also be included
             var withdrawals = await _context.CashWithdrawals
                 .Include(x => x.User)
-                .Where(x => x.User != null && x.User.MarketId == marketId)
+                .Where(x => x.User == null || x.User.MarketId == marketId)
                 .OrderByDescending(x => x.WithdrawalDate)
                 .Take(50)
                 .ToListAsync(cancellationToken);
