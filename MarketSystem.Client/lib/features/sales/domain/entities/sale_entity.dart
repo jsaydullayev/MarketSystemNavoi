@@ -8,6 +8,7 @@ enum SaleStatus {
   draft,
   paid,
   debt,
+  closed,
   cancelled,
 }
 
@@ -81,6 +82,8 @@ class SaleEntity extends Equatable {
         return SaleStatus.paid;
       case 'debt':
         return SaleStatus.debt;
+      case 'closed':
+        return SaleStatus.closed;
       case 'cancelled':
         return SaleStatus.cancelled;
       default:
@@ -97,6 +100,8 @@ class SaleEntity extends Equatable {
         return 'paid';
       case SaleStatus.debt:
         return 'debt';
+      case SaleStatus.closed:
+        return 'closed';
       case SaleStatus.cancelled:
         return 'cancelled';
     }
