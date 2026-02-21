@@ -233,6 +233,20 @@ class SalesService {
     }
   }
 
+  // Savdoni qarzga yozish (Mark as Debt)
+  Future<dynamic> markSaleAsDebt(String saleId) async {
+    final response = await _httpService.post(
+      '${ApiConstants.sales}/MarkSaleAsDebt/$saleId',
+      body: {},
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to mark sale as debt: ${response.body}');
+    }
+  }
+
   // Sotuvni bekor qilish (Admin/Owner)
   Future<dynamic> cancelSale({
     required String saleId,
