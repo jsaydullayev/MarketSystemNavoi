@@ -151,7 +151,12 @@ class _SalesScreenState extends State<SalesScreen> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const NewSaleScreen()),
+              MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: context.read<SalesBloc>(),
+                  child: const NewSaleScreen(),
+                ),
+              ),
             );
           },
           icon: const Icon(Icons.add_shopping_cart),

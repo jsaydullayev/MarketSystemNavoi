@@ -125,7 +125,15 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     );
 
     if (result.isSuccess) {
-      emit(const PaymentAdded());
+      // ✅ Payment qo'shilgandan keyin sales listni yangilash
+      // Bu qarz statusga o'tgan savdolar ko'rinishi uchun kerak
+      final salesResult = await getSalesUseCase();
+      if (salesResult.isSuccess && salesResult.data != null) {
+        emit(SalesLoaded(salesResult.data!));
+      } else {
+        // Agar sales list yuklanmasa, payment added state ni qaytaramiz
+        emit(const PaymentAdded());
+      }
     } else {
       emit(SalesError(result.error ?? 'To\'lov qo\'shishda xatolik'));
     }
