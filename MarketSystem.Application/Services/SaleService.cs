@@ -507,16 +507,37 @@ public class SaleService : ISaleService
 
         try
         {
-            var sales = await _unitOfWork.Sales.FindAsync(
-                s => s.Id == saleId && s.MarketId == marketId,
-                cancellationToken);
-            var sale = sales.FirstOrDefault();
+            // CRITICAL FIX: Get sale WITH items to ensure TotalAmount is calculated
+            var sale = await _unitOfWork.Sales.GetWithItemsAsync(saleId, cancellationToken);
 
             if (sale is null)
                 throw new InvalidOperationException("Sale not found");
 
+            // Verify market ownership for multi-tenancy
+            if (sale.MarketId != marketId)
+                throw new InvalidOperationException("Sale not found in current market");
+
             if (sale.Status == SaleStatus.Paid || sale.Status == SaleStatus.Closed || sale.Status == SaleStatus.Cancelled)
                 throw new InvalidOperationException($"Cannot add payment to sale with status: {sale.Status}");
+
+            // DEBUG: Log sale details before payment
+            Console.WriteLine($"=== ADD PAYMENT DEBUG ===");
+            Console.WriteLine($"Sale ID: {sale.Id}");
+            Console.WriteLine($"TotalAmount: {sale.TotalAmount}");
+            Console.WriteLine($"PaidAmount (before): {sale.PaidAmount}");
+            Console.WriteLine($"Payment Amount: {request.Amount}");
+            Console.WriteLine($"Status (before): {sale.Status}");
+            Console.WriteLine($"Sale Items Count: {sale.SaleItems?.Count ?? 0}");
+
+            if (sale.SaleItems != null)
+            {
+                foreach (var item in sale.SaleItems)
+                {
+                    decimal itemTotal = item.SalePrice * item.Quantity;
+                    Console.WriteLine($"  Item: ProductId={item.ProductId}, Qty={item.Quantity}, SalePrice={item.SalePrice}, Total={itemTotal}");
+                }
+            }
+            Console.WriteLine($"========================");
 
             // VALIDATION: Mijozsiz qarzga savdo taqiqlanadi
             var newPaidAmount = sale.PaidAmount + request.Amount;
@@ -554,14 +575,36 @@ public class SaleService : ISaleService
             // Update sale paid amount
             sale.PaidAmount += request.Amount;
 
-            // Determine new status
-            _logger.LogInformation("Updating sale status: SaleId={SaleId}, PaidAmount={Paid}, TotalAmount={Total}, CurrentStatus={Status}",
-                saleId, sale.PaidAmount, sale.TotalAmount, sale.Status);
+            // CRITICAL: Recalculate TotalAmount from SaleItems before determining status
+            decimal calculatedTotal = sale.SaleItems?.Sum(si => si.SalePrice * si.Quantity) ?? 0;
+            Console.WriteLine($"Calculated TotalAmount from items: {calculatedTotal}");
 
-            if (sale.PaidAmount >= sale.TotalAmount)
+            // Update TotalAmount if it differs (this can happen if sale was created before items were added)
+            if (sale.TotalAmount != calculatedTotal)
             {
+                Console.WriteLine($"WARNING: TotalAmount mismatch! DB={sale.TotalAmount}, Calculated={calculatedTotal}. Updating...");
+                sale.TotalAmount = calculatedTotal;
+            }
+
+            Console.WriteLine($"Final values - TotalAmount: {sale.TotalAmount}, PaidAmount: {sale.PaidAmount}");
+
+            // Determine new status
+            Console.WriteLine($"=== DETERMINING STATUS ===");
+            Console.WriteLine($"Condition 1 (Paid): TotalAmount > 0 && PaidAmount >= TotalAmount");
+            Console.WriteLine($"  TotalAmount > 0: {sale.TotalAmount > 0} ({sale.TotalAmount})");
+            Console.WriteLine($"  PaidAmount >= TotalAmount: {sale.PaidAmount >= sale.TotalAmount} ({sale.PaidAmount} >= {sale.TotalAmount})");
+            Console.WriteLine($"Condition 2 (Debt): TotalAmount > 0 && PaidAmount > 0 && PaidAmount < TotalAmount");
+            Console.WriteLine($"  TotalAmount > 0: {sale.TotalAmount > 0}");
+            Console.WriteLine($"  PaidAmount > 0: {sale.PaidAmount > 0} ({sale.PaidAmount})");
+            Console.WriteLine($"  PaidAmount < TotalAmount: {sale.PaidAmount < sale.TotalAmount} ({sale.PaidAmount} < {sale.TotalAmount})");
+            Console.WriteLine($"========================");
+
+            // 1. To'liq to'langan savdo
+            if (sale.TotalAmount > 0 && sale.PaidAmount >= sale.TotalAmount)
+            {
+                Console.WriteLine($"✅ STATUS SET TO: PAID");
                 _logger.LogInformation("Sale {SaleId} is fully paid, setting status to Paid", saleId);
-                sale.Status = SaleStatus.Paid; // To'liq to'langanda Paid status
+                sale.Status = SaleStatus.Paid;
 
                 // Close any associated debt (filtered by market)
                 var existingDebtToClose = (await _unitOfWork.Debts.FindAsync(
@@ -575,10 +618,11 @@ public class SaleService : ISaleService
                     _unitOfWork.Debts.Update(existingDebtToClose);
                 }
             }
-            else if (sale.PaidAmount > 0)
+            // 2. Qisman to'langan savdo (qarzga yopilgan)
+            else if (sale.TotalAmount > 0 && sale.PaidAmount > 0 && sale.PaidAmount < sale.TotalAmount)
             {
+                Console.WriteLine($"✅ STATUS SET TO: DEBT");
                 _logger.LogInformation("Sale {SaleId} has partial payment, setting status to Debt", saleId);
-                // Set status to Debt for partial payments
                 sale.Status = SaleStatus.Debt;
 
                 // Create or update debt record - ONLY if there's a customer
@@ -611,6 +655,19 @@ public class SaleService : ISaleService
                 }
                 // Mijozsiz savdo uchun debt record yaratilmaydi, lekin status "debt" bo'ladi
             }
+            // 3. TotalAmount 0 bo'lsa (hali mahsulotlar qo'shilgan yo'q), status Draft da qoladi
+            else if (sale.TotalAmount == 0)
+            {
+                Console.WriteLine($"✅ STATUS REMAINS: DRAFT (TotalAmount is 0)");
+                _logger.LogInformation("Sale {SaleId} has TotalAmount=0, keeping Draft status", saleId);
+                // Status remains Draft - mahsulotlar qo'shilganda TotalAmount hisoblanadi
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ UNHANDLED CASE - TotalAmount: {sale.TotalAmount}, PaidAmount: {sale.PaidAmount}");
+            }
+
+            Console.WriteLine($"=== FINAL STATUS: {sale.Status} ===");
 
             // Explicitly update sale in unit of work
             _unitOfWork.Sales.Update(sale);
@@ -1234,6 +1291,65 @@ public class SaleService : ISaleService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error returning sale item");
+            throw;
+        }
+    }
+
+    public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        try
+        {
+            // Get sale with items
+            var sale = await _unitOfWork.Sales.GetWithItemsAsync(saleId, cancellationToken);
+
+            if (sale is null)
+                throw new InvalidOperationException("Sale not found");
+
+            if (sale.MarketId != marketId)
+                throw new InvalidOperationException("Sale not found in current market");
+
+            if (sale.Status != SaleStatus.Draft)
+                throw new InvalidOperationException($"Only Draft sales can be marked as Debt. Current status: {sale.Status}");
+
+            if (!sale.CustomerId.HasValue || sale.CustomerId.Value == Guid.Empty)
+                throw new InvalidOperationException("Cannot mark sale as Debt without a customer");
+
+            // Recalculate TotalAmount from SaleItems
+            decimal calculatedTotal = sale.SaleItems?.Sum(si => si.SalePrice * si.Quantity) ?? 0;
+
+            if (calculatedTotal == 0)
+                throw new InvalidOperationException("Cannot mark sale as Debt with zero total amount");
+
+            // Update sale
+            sale.TotalAmount = calculatedTotal;
+            sale.Status = SaleStatus.Debt;
+            _unitOfWork.Sales.Update(sale);
+
+            // Create debt record
+            var newDebt = new Debt
+            {
+                Id = Guid.NewGuid(),
+                SaleId = saleId,
+                CustomerId = sale.CustomerId.Value,
+                TotalDebt = sale.TotalAmount,
+                RemainingDebt = sale.TotalAmount - sale.PaidAmount, // Should be full amount since PaidAmount = 0
+                Status = DebtStatus.Open,
+                MarketId = sale.MarketId
+            };
+            await _unitOfWork.Debts.AddAsync(newDebt, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Sale {SaleId} marked as Debt. Total: {Total}, Customer: {CustomerId}",
+                saleId, sale.TotalAmount, sale.CustomerId);
+
+            return await MapToDtoAsync(sale, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error marking sale as Debt");
             throw;
         }
     }
