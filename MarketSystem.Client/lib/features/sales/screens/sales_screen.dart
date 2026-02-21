@@ -148,11 +148,21 @@ class _SalesScreenState extends State<SalesScreen> {
           },
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const NewSaleScreen()),
+              MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: context.read<SalesBloc>(),
+                  child: const NewSaleScreen(),
+                ),
+              ),
             );
+
+            // ✅ Savdo tugatilganda sales listni yangilash
+            if (result == true && mounted) {
+              context.read<SalesBloc>().add(const GetSalesEvent());
+            }
           },
           icon: const Icon(Icons.add_shopping_cart),
           label: const Text('Yangi sotuv'),
