@@ -118,6 +118,50 @@ class AuthService {
     return token != null && token.isNotEmpty;
   }
 
+  // ✅ Refresh access token using refresh token
+  Future<Map<String, dynamic>?> refreshToken() async {
+    try {
+      final refreshToken = await _httpService.getRefreshToken();
+      if (refreshToken == null) {
+        print('No refresh token available');
+        return null;
+      }
+
+      final response = await _httpService.post(
+        ApiConstants.refreshToken,
+        body: {
+          'refreshToken': refreshToken,
+        },
+      );
+
+      print('Refresh Token Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Yangi tokenlarni saqlash
+        await _httpService.saveTokens(
+          data['accessToken'],
+          data['refreshToken'],
+        );
+
+        print('Token refreshed successfully');
+        return data;
+      } else if (response.statusCode == 401) {
+        // Refresh token ham muddati tugagan - logout qilish kerak
+        print('Refresh token expired, user must login again');
+        await _httpService.clearTokens();
+        return null;
+      } else {
+        print('Refresh token failed with status: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Refresh token error: $e');
+      return null;
+    }
+  }
+
   // ✅ NEW: Update access token only (for market registration)
   Future<void> updateAccessToken(String newAccessToken) async {
     try {

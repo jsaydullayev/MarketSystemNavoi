@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/services/sales_service.dart';
 import '../../../data/services/product_service.dart';
 import '../../../data/services/customer_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
+import '../presentation/bloc/sales_bloc.dart';
+import '../presentation/bloc/events/sales_event.dart';
 import 'draft_sales_screen.dart';
 
 class NewSaleScreen extends StatefulWidget {
@@ -265,6 +268,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
             if (mounted) {
               Navigator.pop(context); // Close dialog
+
+              // ✅ Sales listni yangilash
+              try {
+                if (context.mounted) {
+                  context.read<SalesBloc>().add(const GetSalesEvent());
+                }
+              } catch (e) {
+                // SalesBloc topilmasa, xato yuz bermaydi
+              }
+
               await _completeSaleFinish(useDebt);
             }
           } catch (e) {
