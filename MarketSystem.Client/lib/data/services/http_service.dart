@@ -4,12 +4,36 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/api_constants.dart';
+import 'auth_service.dart';
+
+class _RetryRequest {
+  final String method;
+  final String endpoint;
+  final Map<String, String>? headers;
+  final Object? body;
+
+  _RetryRequest({
+    required this.method,
+    required this.endpoint,
+    this.headers,
+    this.body,
+  });
+}
+
 class HttpService {
   String? _accessToken;
+  AuthService? _authService;
+
+  bool _isRefreshing = false;
+  final List<_RetryRequest> _retryQueue = [];
 
   String get baseUrl => ApiConstants.baseUrl;
 
   HttpService();
+
+  void setAuthService(AuthService authService) {
+    _authService = authService;
+  }
 
   // Tokenlarni saqlash
   Future<void> saveTokens(String accessToken, String refreshToken) async {
@@ -40,8 +64,98 @@ class HttpService {
     _accessToken = null;
   }
 
+  // ✅ 401 xatolikni qayta ishlash va token refresh
+  Future<http.Response> _handleResponse(http.Response response, String method, String endpoint, {Object? body}) async {
+    // Agar 401 bo'lsa va refresh qilinayotgan bo'lmasa
+    if (response.statusCode == 401 && !_isRefreshing) {
+      _isRefreshing = true;
+
+      print('Access token expired, attempting refresh...');
+
+      // Tokenni refresh qilish
+      final refreshed = await _authService?.refreshToken();
+
+      _isRefreshing = false;
+
+      if (refreshed != null) {
+        print('Token refreshed successfully, retrying request...');
+
+        // So'rovni yangi token bilan qayta yuborish
+        return _retryRequest(method, endpoint, body);
+      } else {
+        print('Token refresh failed - user must login again');
+        // Queue'dagi barcha so'rovlarni o'chirish
+        _retryQueue.clear();
+        return response; // 401 qaytarish
+      }
+    }
+
+    return response;
+  }
+
+  // So'rovni qayta yuborish
+  Future<http.Response> _retryRequest(String method, String endpoint, Object? body) async {
+    final token = await getAccessToken();
+
+    switch (method.toUpperCase()) {
+      case 'GET':
+        return http.get(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        );
+      case 'POST':
+        final encodedBody = body != null ? jsonEncode(body) : null;
+        return http.post(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: encodedBody,
+        );
+      case 'PUT':
+        final encodedBody = body != null ? jsonEncode(body) : null;
+        return http.put(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: encodedBody,
+        );
+      case 'DELETE':
+        return http.delete(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        );
+      case 'PATCH':
+        final encodedBody = body != null ? jsonEncode(body) : null;
+        return http.patch(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: encodedBody,
+        );
+      default:
+        throw Exception('Unsupported method: $method');
+    }
+  }
+
   // GET request
   Future<http.Response> get(String endpoint) async {
+    final response = await _performGet(endpoint);
+    return _handleResponse(response, 'GET', endpoint);
+  }
+
+  Future<http.Response> _performGet(String endpoint) async {
     final token = await getAccessToken();
     return http.get(
       Uri.parse('$baseUrl$endpoint'),
@@ -54,6 +168,11 @@ class HttpService {
 
   // POST request
   Future<http.Response> post(String endpoint, {Object? body}) async {
+    final response = await _performPost(endpoint, body: body);
+    return _handleResponse(response, 'POST', endpoint, body: body);
+  }
+
+  Future<http.Response> _performPost(String endpoint, {Object? body}) async {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
 
@@ -75,6 +194,11 @@ class HttpService {
 
   // PUT request
   Future<http.Response> put(String endpoint, {Object? body}) async {
+    final response = await _performPut(endpoint, body: body);
+    return _handleResponse(response, 'PUT', endpoint, body: body);
+  }
+
+  Future<http.Response> _performPut(String endpoint, {Object? body}) async {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
 
@@ -119,6 +243,11 @@ class HttpService {
 
   // DELETE request
   Future<http.Response> delete(String endpoint) async {
+    final response = await _performDelete(endpoint);
+    return _handleResponse(response, 'DELETE', endpoint);
+  }
+
+  Future<http.Response> _performDelete(String endpoint) async {
     final token = await getAccessToken();
     return http.delete(
       Uri.parse('$baseUrl$endpoint'),
@@ -131,6 +260,11 @@ class HttpService {
 
   // PATCH request
   Future<http.Response> patch(String endpoint, {Object? body}) async {
+    final response = await _performPatch(endpoint, body: body);
+    return _handleResponse(response, 'PATCH', endpoint, body: body);
+  }
+
+  Future<http.Response> _performPatch(String endpoint, {Object? body}) async {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
 
@@ -193,7 +327,10 @@ class HttpService {
     print('File size: ${(length / 1024).toStringAsFixed(2)} KB');
     print('================');
 
-    final response = await request.send();
-    return http.Response.fromStream(response);
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    // Upload uchun ham 401 handle qilish
+    return _handleResponse(response, 'PUT', endpoint);
   }
 }
