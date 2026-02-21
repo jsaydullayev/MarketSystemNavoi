@@ -266,6 +266,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               );
             }
 
+            // Agar qarzga yozilsa, statusni Debt ga o'tkazish
+            if (useDebt && payments.isEmpty) {
+              await salesService.markSaleAsDebt(saleId);
+            }
+
             if (mounted) {
               Navigator.pop(context); // Close dialog
 

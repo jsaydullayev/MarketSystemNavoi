@@ -202,6 +202,26 @@ public class SalesController : ControllerBase
         }
     }
 
+    [HttpPost("{saleId}")]
+    public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId)
+    {
+        try
+        {
+            _logger.LogInformation("=== CONTROLLER: MarkSaleAsDebt called ===");
+            _logger.LogInformation("Sale ID: {SaleId}", saleId);
+
+            var sale = await _saleService.MarkSaleAsDebtAsync(saleId);
+            if (sale is null)
+                return NotFound();
+
+            return Ok(sale);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     /// <summary>
     /// Update sale item price - requires role-based permissions
     /// - Open debts: All roles can edit
