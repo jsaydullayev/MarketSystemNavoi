@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Helpers;
 
 namespace MarketSystem.API.Controllers;
 
@@ -109,5 +110,35 @@ public class ProductCategoriesController : ControllerBase
             return NotFound();
 
         return Ok(new { message = "Category muvaffaqiyatli o'chirildi" });
+    }
+
+    [HttpGet]
+    [Authorize] // All authenticated users can export categories
+    public async Task<IActionResult> ExportCategoriesToExcel(CancellationToken cancellationToken)
+    {
+        var categories = await _categoryService.GetAllCategoriesAsync(cancellationToken);
+
+        var headers = new[] { "ID", "Nomi", "Ta'rifi", "Holati", "Mahsulotlar soni" };
+
+        var csv = CsvHelper.GenerateCsv(
+            categories,
+            headers,
+            cat => new[]
+            {
+                cat.Id.ToString(),
+                cat.Name,
+                cat.Description ?? "",
+                cat.IsActive ? "Faol" : "Nofaol",
+                cat.ProductCount.ToString()
+            }
+        );
+
+        var content = CsvHelper.GenerateExcelCsv(csv);
+
+        return File(
+            content,
+            "text/csv",
+            $"kategoriyalar_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+        );
     }
 }

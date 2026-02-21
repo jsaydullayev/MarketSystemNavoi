@@ -1,6 +1,5 @@
 import 'dart:convert';
 import '../../core/providers/auth_provider.dart';
-import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
 import '../models/product_category_model.dart';
 
@@ -14,13 +13,17 @@ class CategoryService {
   /// Get all categories
   Future<List<ProductCategoryModel>> getAllCategories() async {
     try {
-      final response = await _httpService.get('${ApiConstants.baseUrl}/ProductCategories/GetAllCategories');
+      final response = await _httpService.get('/ProductCategories/GetAllCategories');
 
       if (response.statusCode == 200) {
-        if (response.body.isEmpty) {
+        // Bo'sh yoki whitespace-only javoblarni tekshirish
+        final trimmedBody = response.body.trim();
+        if (trimmedBody.isEmpty) {
           return [];
         }
-        final List<dynamic> data = jsonDecode(response.body);
+
+        // JSON ni parse qilish
+        final List<dynamic> data = jsonDecode(trimmedBody);
         return data.map((json) => ProductCategoryModel.fromJson(json)).toList();
       } else if (response.statusCode == 401) {
         throw Exception('Avtorizatsiya xatosi: Iltimos, qayta tizimga kiring');
@@ -39,7 +42,7 @@ class CategoryService {
 
   /// Get category by ID
   Future<ProductCategoryModel?> getCategoryById(int id) async {
-    final response = await _httpService.get('${ApiConstants.baseUrl}/ProductCategories/GetCategoryById/$id');
+    final response = await _httpService.get('/ProductCategories/GetCategoryById/$id');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -62,7 +65,7 @@ class CategoryService {
     );
 
     final response = await _httpService.post(
-      '${ApiConstants.baseUrl}/ProductCategories/CreateCategory',
+      '/ProductCategories/CreateCategory',
       body: request.toJson(),
     );
 
@@ -90,7 +93,7 @@ class CategoryService {
     );
 
     final response = await _httpService.put(
-      '${ApiConstants.baseUrl}/ProductCategories/UpdateCategory',
+      '/ProductCategories/UpdateCategory',
       body: request.toJson(),
     );
 
@@ -107,7 +110,7 @@ class CategoryService {
 
   /// Delete category
   Future<bool> deleteCategory(int id) async {
-    final response = await _httpService.delete('${ApiConstants.baseUrl}/ProductCategories/DeleteCategory/$id');
+    final response = await _httpService.delete('/ProductCategories/DeleteCategory/$id');
 
     if (response.statusCode == 200) {
       return true;
