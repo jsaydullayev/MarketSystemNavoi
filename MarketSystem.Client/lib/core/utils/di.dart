@@ -91,9 +91,17 @@ Future<void> _initCore() async {
 
 /// Initialize services
 void _initServices() {
-  // Auth Service - creates its own HttpService
-  sl.registerFactory<AuthService>(
-      () => AuthService(httpService: HttpService()));
+  // HttpService - shared singleton
+  sl.registerLazySingleton<HttpService>(() => HttpService());
+
+  // Auth Service - uses shared HttpService
+  sl.registerFactory<AuthService>(() {
+    final httpService = sl<HttpService>();
+    final authService = AuthService(httpService: httpService);
+    // AuthService'ni HttpService ga bog'lash (401 handler uchun)
+    httpService.setAuthService(authService);
+    return authService;
+  });
 
   // Auth Provider - needs AuthService (register after AuthService)
   sl.registerLazySingleton<AuthProvider>(
