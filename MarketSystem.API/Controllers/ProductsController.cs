@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.API.Helpers;
 using System.Security.Claims;
 
 namespace MarketSystem.API.Controllers;
@@ -87,5 +88,38 @@ public class ProductsController : ControllerBase
             return NotFound();
 
         return NoContent();
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportProductsToExcel()
+    {
+        var products = await _productService.GetAllProductsAsync();
+
+        var headers = new[] { "ID", "Nomi", "Kategoriya", "Xarid narxi", "Sotuv narxi", "Min. narx", "Miqdor", "Min. chegara", "Vaqtinchalik" };
+
+        var csv = CsvHelper.GenerateCsv(
+            products,
+            headers,
+            p => new[]
+            {
+                p.Id.ToString(),
+                p.Name,
+                p.CategoryName ?? "",
+                p.CostPrice.ToString("F2"),
+                p.SalePrice.ToString("F2"),
+                p.MinSalePrice.ToString("F2"),
+                p.Quantity.ToString(),
+                p.MinThreshold.ToString(),
+                p.IsTemporary ? "Ha" : "Yo'q"
+            }
+        );
+
+        var content = CsvHelper.GenerateExcelCsv(csv);
+
+        return File(
+            content,
+            "text/csv",
+            $"mahsulotlar_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+        );
     }
 }
