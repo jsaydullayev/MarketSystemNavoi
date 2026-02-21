@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.API.Helpers;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 
@@ -288,6 +289,46 @@ public class SalesController : ControllerBase
         {
             _logger.LogError(ex, "Error getting debtors");
             return StatusCode(500, "Qarzdorlarni olishda xatolik");
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportSalesToExcel()
+    {
+        try
+        {
+            var sales = await _saleService.GetAllSalesAsync();
+
+            var headers = new[] { "ID", "Sana", "Mijoz", "Sotuvchi", "Jami summa", "To'langan", "Qarz", "Holat" };
+
+            var csv = CsvHelper.GenerateCsv(
+                sales,
+                headers,
+                s => new[]
+                {
+                    s.Id.ToString(),
+                    s.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    s.CustomerName ?? "Mijoz yo'q",
+                    s.SellerName,
+                    s.TotalAmount.ToString("F2"),
+                    s.PaidAmount.ToString("F2"),
+                    (s.TotalAmount - s.PaidAmount).ToString("F2"),
+                    s.Status
+                }
+            );
+
+            var content = CsvHelper.GenerateExcelCsv(csv);
+
+            return File(
+                content,
+                "text/csv",
+                $"sotuvlar_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting sales");
+            return StatusCode(500, "Sotuvlarni eksport qilishda xatolik");
         }
     }
 }
