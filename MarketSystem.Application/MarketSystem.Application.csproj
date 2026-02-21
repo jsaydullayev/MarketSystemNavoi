@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <None Remove="nul" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MarketSystem.Infrastructure\MarketSystem.Infrastructure.csproj" />
   </ItemGroup>
 
