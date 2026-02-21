@@ -3,9 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/report_service.dart';
+import '../../../data/services/download_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
-import '../../../core/constants/api_constants.dart';
 import 'daily_sales_details_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -17,6 +17,7 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   late ReportService _reportsService;
+  late DownloadService _downloadService;
 
   DateTime _selectedDate = DateTime.now();
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
@@ -37,6 +38,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     super.initState();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     _reportsService = ReportService(authProvider: authProvider);
+    _downloadService = DownloadService();
     _loadReports();
   }
 
@@ -977,36 +979,43 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  void _exportToExcel(String reportType) {
-    String url = '';
-    String filename = '';
+  Future<void> _exportToExcel(String reportType) async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
 
-    if (reportType == 'daily') {
-      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      url = 'http://10.0.2.2:5137${ApiConstants.reports}/ExportToExcel?start=$dateStr&end=$dateStr';
-      filename = 'daily_report_${DateFormat('yyyyMMdd').format(_selectedDate)}.xlsx';
-    } else if (reportType == 'monthly') {
-      final startStr = DateFormat('yyyy-MM-dd').format(_startDate);
-      final endStr = DateFormat('yyyy-MM-dd').format(_endDate);
-      url = 'http://10.0.2.2:5137${ApiConstants.reports}/ExportToExcel?start=$startStr&end=$endStr';
-      filename = 'period_report_${DateFormat('yyyyMMdd').format(_startDate)}_${DateFormat('yyyyMMdd').format(_endDate)}.xlsx';
-    } else if (reportType == 'inventory') {
-      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      url = 'http://10.0.2.2:5137${ApiConstants.reports}/ExportComprehensiveToExcel?date=$dateStr';
-      filename = 'inventory_report_${DateFormat('yyyyMMdd').format(_selectedDate)}.xlsx';
+      if (reportType == 'daily') {
+        await _reportsService.exportComprehensiveToExcel(_selectedDate);
+      } else if (reportType == 'monthly') {
+        await _reportsService.exportPeriodReportToExcel(_startDate, _endDate);
+      } else if (reportType == 'inventory') {
+        await _reportsService.exportComprehensiveToExcel(_selectedDate);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Hisobot muvaffaqiyatli yuklab olindi!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Yuklab olishda xatolik: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Excel fayli yuklab olish:\n$filename\n\nURL: $url'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
-      ),
-    );
   }
 }
