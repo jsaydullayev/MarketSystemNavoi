@@ -249,10 +249,16 @@ public class SalesController : ControllerBase
     [HttpPost]
     [Route("~/api/Sales/{saleId}/return-item")]
     [Authorize(Policy = "AllRoles")]
-    public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest request)
+    public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest? request)
     {
         try
         {
+            if (request == null)
+            {
+                _logger.LogWarning("ReturnSaleItem called with null request body for SaleId: {SaleId}", saleId);
+                return BadRequest("Request body cannot be null");
+            }
+
             _logger.LogInformation("ReturnSaleItem called for SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
                 saleId, request.SaleItemId, request.Quantity);
 
