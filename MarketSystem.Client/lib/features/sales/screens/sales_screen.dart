@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/utils/number_formatter.dart';
 import '../../../screens/dashboard_screen.dart';
+import '../domain/entities/sale_entity.dart';
 import '../presentation/bloc/sales_bloc.dart';
 import '../presentation/bloc/events/sales_event.dart';
 import '../presentation/bloc/states/sales_state.dart';
@@ -26,10 +27,10 @@ class _SalesScreenState extends State<SalesScreen> {
     context.read<SalesBloc>().add(const GetSalesEvent());
   }
 
-  List<dynamic> _filterSales(List<dynamic> sales) {
+  List<SaleEntity> _filterSales(List<SaleEntity> sales) {
     if (_selectedStatus == 'all') return sales;
     return sales
-        .where((s) => s['status']?.toString().toLowerCase() == _selectedStatus)
+        .where((s) => s.getStatusText().toLowerCase() == _selectedStatus)
         .toList();
   }
 
@@ -91,7 +92,7 @@ class _SalesScreenState extends State<SalesScreen> {
                 ),
               );
             } else if (state is SalesLoaded) {
-              final sales = state.sales.map((e) => e.toJson()).toList();
+              final sales = state.sales;
               final filteredSales = _filterSales(sales);
 
               return Column(
@@ -171,16 +172,16 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _buildStatusFilters(List<dynamic> sales) {
+  Widget _buildStatusFilters(List<SaleEntity> sales) {
     final allCount = sales.length;
     final draftCount = sales.where((s) =>
-        s['status']?.toString().toLowerCase() == 'draft').length;
+        s.getStatusText().toLowerCase() == 'draft').length;
     final paidCount = sales.where((s) =>
-        s['status']?.toString().toLowerCase() == 'paid').length;
+        s.getStatusText().toLowerCase() == 'paid').length;
     final closedCount = sales.where((s) =>
-        s['status']?.toString().toLowerCase() == 'closed').length;
+        s.getStatusText().toLowerCase() == 'closed').length;
     final debtCount = sales.where((s) =>
-        s['status']?.toString().toLowerCase() == 'debt').length;
+        s.getStatusText().toLowerCase() == 'debt').length;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -268,17 +269,11 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _buildMinimalSaleCard(BuildContext context, Map<String, dynamic> sale) {
-    final status = sale['status']?.toString() ?? '';
-    final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
-    final paidAmount = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
-    final remainingAmount = totalAmount - paidAmount;
-    final items = sale['items'] as List<dynamic>? ?? [];
-    final itemsCount = items.length;
-    final createdAt = sale['createdAt'];
+  Widget _buildMinimalSaleCard(BuildContext context, SaleEntity sale) {
+    final remainingAmount = sale.remainingAmount;
 
     Color getStatusColor() {
-      switch (status.toLowerCase()) {
+      switch (sale.getStatusText().toLowerCase()) {
         case 'draft':
           return Colors.orange;
         case 'paid':
@@ -295,7 +290,7 @@ class _SalesScreenState extends State<SalesScreen> {
     }
 
     String getStatusText() {
-      switch (status.toLowerCase()) {
+      switch (sale.getStatusText().toLowerCase()) {
         case 'draft':
           return 'Davom etayotgan';
         case 'paid':
@@ -307,36 +302,12 @@ class _SalesScreenState extends State<SalesScreen> {
         case 'cancelled':
           return 'Bekor qilingan';
         default:
-          return status;
+          return sale.getStatusText();
       }
     }
 
     // Format date
-    String formattedDate = 'Noma\'lum';
-    if (createdAt != null) {
-      try {
-        final date = DateTime.parse(createdAt);
-        formattedDate =
-            '${date.day}.${date.month}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-      } catch (e) {
-        formattedDate = createdAt.toString();
-      }
-    }
-
-    // Build items preview text
-    String itemsPreview = '';
-    if (items.isNotEmpty) {
-      final previewItems = items.take(2).toList();
-      itemsPreview = previewItems.map((item) {
-        final productName = item['productName'] ?? 'Noma\'lum';
-        final quantity = item['quantity'] ?? 0;
-        return '$quantity x $productName';
-      }).join(', ');
-
-      if (items.length > 2) {
-        itemsPreview += ' +${items.length - 2} ta';
-      }
-    }
+    String formattedDate = '${sale.createdAt.day}.${sale.createdAt.month}.${sale.createdAt.year} ${sale.createdAt.hour.toString().padLeft(2, '0')}:${sale.createdAt.minute.toString().padLeft(2, '0')}';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -349,7 +320,7 @@ class _SalesScreenState extends State<SalesScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => SaleDetailScreen(saleId: sale['id']),
+              builder: (_) => SaleDetailScreen(saleId: sale.id),
             ),
           );
         },
@@ -387,7 +358,7 @@ class _SalesScreenState extends State<SalesScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          sale['customerName'] ?? 'Mijozsiz',
+                          sale.customerName ?? 'Mijozsiz',
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
@@ -421,23 +392,6 @@ class _SalesScreenState extends State<SalesScreen> {
                 ],
               ),
 
-              // Items preview
-              if (items.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Text(
-                    itemsPreview,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-
               const SizedBox(height: 8),
 
               // Amounts row
@@ -450,22 +404,6 @@ class _SalesScreenState extends State<SalesScreen> {
 
               Row(
                 children: [
-                  // Items count
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 14,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$itemsCount ta',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-
                   // Total amount
                   Icon(
                     Icons.payments_outlined,
@@ -474,7 +412,7 @@ class _SalesScreenState extends State<SalesScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    NumberFormatter.format(totalAmount),
+                    NumberFormatter.format(sale.totalAmount),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -500,7 +438,7 @@ class _SalesScreenState extends State<SalesScreen> {
                         color: Colors.red,
                       ),
                     ),
-                  ] else if (paidAmount > 0 && status.toLowerCase() != 'paid') ...[
+                  ] else if (sale.paidAmount > 0 && sale.getStatusText().toLowerCase() != 'paid') ...[
                     // Faqat Paid status bo'lmaganda "To'langan" labelini ko'rsatish
                     Icon(
                       Icons.check_circle,

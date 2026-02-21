@@ -23,6 +23,7 @@ public interface ISaleService
     // Qarzdorlar uchun
     Task<IEnumerable<DebtorDto>> GetDebtorsAsync(CancellationToken cancellationToken = default);
     Task<SaleItemDto?> UpdateSaleItemPriceAsync(UpdateSaleItemPriceDto request, Guid userId, string userRole, CancellationToken cancellationToken = default);
+    Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default);
 
     // Tovar vozvrat uchun
     Task<SaleItemDto?> ReturnSaleItemAsync(Guid saleId, ReturnSaleItemRequest request, CancellationToken cancellationToken = default);
