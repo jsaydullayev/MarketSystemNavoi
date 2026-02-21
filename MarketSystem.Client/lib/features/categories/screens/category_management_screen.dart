@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/category_service.dart';
+import '../../../data/services/download_service.dart';
 import '../../../data/models/product_category_model.dart';
 import '../../../core/providers/auth_provider.dart';
 import 'category_form_screen.dart';
@@ -15,6 +16,7 @@ class CategoryManagementScreen extends StatefulWidget {
 class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   late final CategoryService _categoryService;
   late final AuthProvider _authProvider;
+  late final DownloadService _downloadService;
   List<ProductCategoryModel> _categories = [];
   bool _isLoading = true;
   String? _error;
@@ -24,6 +26,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     super.initState();
     _authProvider = Provider.of<AuthProvider>(context, listen: false);
     _categoryService = CategoryService(authProvider: _authProvider);
+    _downloadService = DownloadService();
     _loadCategories();
   }
 
@@ -91,12 +94,40 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     }
   }
 
+  Future<void> _exportToExcel() async {
+    try {
+      await _downloadService.downloadCategories();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Kategoriyalar muvaffaqiyatli yuklab olindi!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Yuklab olishda xatolik: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kategoriyalar'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: 'Excelga yuklab olish',
+            onPressed: _exportToExcel,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadCategories,
