@@ -569,4 +569,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get accessDenied => 'У вас нет доступа к этому разделу';
+
+  @override
+  String get info => 'Информация';
+
+  @override
+  String get registrationPendingInfo =>
+      'Ваш запрос на регистрацию отправлен администратору. Скоро администратор разрешит регистрацию.';
+
+  @override
+  String get understand => 'Понятно';
 }

@@ -569,4 +569,14 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get accessDenied => 'Sizga bu bo\'limga kirish ruxsati yo\'q';
+
+  @override
+  String get info => 'Ma\'lumot';
+
+  @override
+  String get registrationPendingInfo =>
+      'Registratsiya uchun so\'rovingiz adminga yuborildi. Tez orada administrator registratsiyaga ruxsat beradi.';
+
+  @override
+  String get understand => 'Tushunarli';
 }
