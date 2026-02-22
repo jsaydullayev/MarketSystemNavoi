@@ -1,10 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/providers/locale_provider.dart';
+import 'package:market_system_client/core/theme/app_theme.dart';
+import 'package:market_system_client/screens/dashboard_screen.dart';
 import 'package:provider/provider.dart';
-
+import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/providers/locale_provider.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../screens/dashboard_screen.dart';
 import '../../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,43 +15,247 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
-    );
-    _animationController.forward();
-  }
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
-    _animationController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+    final primaryColor = AppColors.getPrimary(context);
+
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [const Color(0xFF0F172A), const Color(0xFF1E3A8A)]
+                : [const Color(0xFFF8FAFC), const Color(0xFFE2E8F0)],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: size.width * 0.06),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildLogo(context, isDark, size),
+                    SizedBox(height: size.height * 0.04),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: EdgeInsets.all(size.width * 0.06),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : Colors.white.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                                color: isDark ? Colors.white10 : Colors.white),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.login,
+                                style: TextStyle(
+                                    fontSize: size.width * 0.06,
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        isDark ? Colors.white : Colors.black87),
+                              ),
+                              SizedBox(height: size.height * 0.03),
+                              _buildTextField(
+                                controller: _usernameController,
+                                label: l10n.username,
+                                icon: Icons.person_outline_rounded,
+                                isDark: isDark,
+                                size: size,
+                                validator: (value) =>
+                                    (value == null || value.isEmpty)
+                                        ? l10n.enterUsername
+                                        : null,
+                              ),
+                              SizedBox(height: size.height * 0.02),
+                              _buildTextField(
+                                controller: _passwordController,
+                                label: l10n.password,
+                                icon: Icons.lock_outline_rounded,
+                                isDark: isDark,
+                                isPassword: true,
+                                size: size,
+                                validator: (value) =>
+                                    (value == null || value.isEmpty)
+                                        ? l10n.enterPassword
+                                        : null,
+                              ),
+                              SizedBox(height: size.height * 0.03),
+                              _buildLoginButton(
+                                  context, primaryColor, l10n, size),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: size.height * 0.03),
+                    TextButton(
+                      onPressed: () => _showRegisterInfo(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: isDark
+                            ? Colors.white.withOpacity(0.9)
+                            : primaryColor,
+                      ),
+                      child: Text(
+                        l10n.register,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: size.width * 0.038,
+                          decoration: TextDecoration.underline,
+                          decorationColor:
+                              isDark ? Colors.white70 : primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogo(BuildContext context, bool isDark, Size size) {
+    return Column(
+      children: [
+        Image.asset(
+          isDark
+              ? 'assets/images/blueLogo.png'
+              : 'assets/images/orangeLogo.png',
+          width: size.height * 0.12,
+          height: size.height * 0.12,
+          fit: BoxFit.contain,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    required Size size,
+    bool isPassword = false,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: TextStyle(
+                fontSize: size.width * 0.03,
+                color: isDark ? Colors.white70 : Colors.black54)),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          obscureText: isPassword ? _obscurePassword : false,
+          cursorColor: isDark ? Colors.white : Colors.blue,
+          validator: validator,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontSize: size.width * 0.04,
+          ),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: isDark
+                ? Colors.white.withOpacity(0.08)
+                : Colors.black.withOpacity(0.04),
+            prefixIcon: Icon(icon,
+                size: size.width * 0.05,
+                color: isDark ? Colors.white60 : Colors.black45),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        size: size.width * 0.05,
+                        color: isDark ? Colors.white60 : Colors.black45),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                  )
+                : null,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none),
+            contentPadding: EdgeInsets.symmetric(
+                vertical: size.height * 0.018, horizontal: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginButton(
+      BuildContext context, Color primaryColor, var l10n, Size size) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        return SizedBox(
+          width: double.infinity,
+          height: size.height * 0.065 > 56 ? 60 : 54,
+          child: ElevatedButton(
+            onPressed: auth.isLoading ? null : _login,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+            ),
+            child: auth.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : Text(l10n.login,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: size.width * 0.045)),
+          ),
+        );
+      },
+    );
   }
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
       final l10n = AppLocalizations.of(context)!;
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+      final localeProvider =
+          Provider.of<LocaleProvider>(context, listen: false);
 
       final success = await authProvider.login(
         _usernameController.text.trim(),
@@ -60,7 +265,6 @@ class _LoginScreenState extends State<LoginScreen>
       if (!mounted) return;
 
       if (success) {
-        // Update language from backend response
         final user = authProvider.user;
         if (user != null && user['language'] != null) {
           await localeProvider.setLocale(user['language']);
@@ -73,7 +277,6 @@ class _LoginScreenState extends State<LoginScreen>
           );
         }
       } else {
-        // Get error message based on error code
         String errorText;
         switch (authProvider.errorCode) {
           case 'login_failed':
@@ -91,229 +294,39 @@ class _LoginScreenState extends State<LoginScreen>
             content: Text(errorText),
             backgroundColor: AppTheme.danger,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  void _showRegisterInfo(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.store,
-                        size: 40,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Title
-                    Text(
-                      l10n.appTitle,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.welcome,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textSecondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Form card
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF64748B).withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Username field
-                          TextFormField(
-                            controller: _usernameController,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                            decoration: AppTheme.inputDecoration(
-                              label: l10n.username,
-                              icon: Icons.person_outline,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return l10n.enterUsername;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Password field
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: true,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
-                            decoration: AppTheme.inputDecoration(
-                              label: l10n.password,
-                              icon: Icons.lock_outline,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return l10n.enterPassword;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Login button
-                          Consumer<AuthProvider>(
-                            builder: (context, authProvider, child) {
-                              if (authProvider.isLoading) {
-                                return SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: null,
-                                    style: AppTheme.primaryButtonStyle,
-                                    child: const SizedBox(
-                                      height: 16,
-                                      width: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              return SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: _login,
-                                  style: AppTheme.primaryButtonStyle,
-                                  child: Text(l10n.login),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Register button - disabled with info message
-                    TextButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.shade50,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.info_outline,
-                                    size: 48,
-                                    color: Colors.orange.shade700,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'Ma\'lumot',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Registratsiya uchun so\'rovingiz adminga yuborildi. Tez orada administrator registratsiyaga ruxsat beradi.',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 20),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    style: AppTheme.primaryButtonStyle,
-                                    child: const Text('OK'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppTheme.primary,
-                      ),
-                      child: const Text('Ro\'yxatdan o\'tish'),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Footer
-                    const Text(
-                      '© 2026 Market System',
-                      style: AppTheme.caption,
-                    ),
-                  ],
-                ),
-              ),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.info_outline, size: 50, color: Colors.orange),
+            const SizedBox(height: 16),
+            Text(l10n.info,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Text(l10n.registrationPendingInfo, textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.getPrimary(context)),
+              child: Text(l10n.understand,
+                  style: const TextStyle(color: Colors.white)),
             ),
-          ),
+          ],
         ),
       ),
     );
