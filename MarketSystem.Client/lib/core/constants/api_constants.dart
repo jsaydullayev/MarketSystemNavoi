@@ -2,17 +2,54 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 
 class ApiConstants {
+  // =================== TEST UCHUN ===================
+
+  // Option 1: Ngrok link (internet orqali)
+  // Ngrok domain sizi sherga yozing (masalan: https://my-shop.ngrok-free.app)
+  static const String _ngrokUrl = 'https://my-shop.ngrok-free.app/api';
+
+  // Option 2: Local Wi-Fi IP (bir xil Wi-Fi tarmog'ida)
+  // IP manzilingizni bu yerga yozing (masalan: 192.168.1.5)
+  static const String _localIp = 'http://192.168.1.5:5137/api';
+
+  // Option 3: Railway/Production URL (Haqiqiy cloud)
+  // Railway URL sizi sherga yozing (masalan: https://market-system-api.up.railway.app)
+  static const String _prodUrl = 'https://market-system-api.up.railway.app/api';
+
   // Platformni aniqlab URL qaytaramiz
   static String get baseUrl {
+    // TEST REJIMNI TANLANG:
+    const bool useNgrok = false;      // true = Ngrok, false = Local Wi-Fi
+    const bool useLocalIp = false;    // true = Local Wi-Fi, false = Emulator
+    const bool useProduction = true;  // true = Railway/Production
+
+    // Production (Railway) uchun
+    if (useProduction) {
+      if (_prodUrl != 'https://market-system-api.up.railway.app/api') {
+        return _prodUrl;
+      }
+    }
+
+    // Ngrok uchun
+    if (useNgrok) {
+      if (_ngrokUrl != 'https://your-ngrok-link.ngrok-free.app/api') {
+        return _ngrokUrl;
+      }
+    }
+
+    // Local Wi-Fi IP uchun
+    if (useLocalIp) {
+      if (_localIp != 'http://192.168.1.5:5137/api') {
+        return _localIp;
+      }
+    }
+
+    // Default: Platform asosida
     if (kIsWeb) {
-      // Web - localhost
       return 'http://localhost:5137/api';
     } else if (Platform.isAndroid) {
-      // Android Emulator - 10.0.2.2
       return 'http://10.0.2.2:5137/api';
     } else {
-      // iOS yoki Real device - localhost (simulator) yoki haqiqiy IP
-      // TODO: Real device uchun IP manzilini o'zgartiring
       return 'http://localhost:5137/api';
     }
   }
