@@ -1,9 +1,10 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/routes/app_routes.dart';
 import 'package:market_system_client/features/auth/domain/repositories/auth_repository_interface.dart';
+import 'package:market_system_client/features/auth/screens/login_screen.dart';
 import 'package:market_system_client/features/auth/screens/welcome_screen.dart';
 import 'package:market_system_client/screens/dashboard_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/di.dart' as di;
 
 class SplashScreen extends StatefulWidget {
@@ -21,27 +22,27 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(milliseconds: 1500));
+    await Future.delayed(const Duration(seconds: 2));
+
+    final prefs = await SharedPreferences.getInstance();
+    final bool isFirstTime = prefs.getBool('is_first_time') ?? true;
 
     final authRepo = di.sl<AuthRepositoryInterface>();
     final bool isAuth = await authRepo.isAuthenticated();
 
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              isAuth ? const DashboardScreen() : const WelcomeScreen(),
-          transitionDuration: const Duration(milliseconds: 800),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-        ),
-      );
+    if (!mounted) return;
+
+    Widget nextScreen;
+    if (isFirstTime) {
+      nextScreen = const WelcomeScreen();
+    } else {
+      nextScreen = isAuth ? const DashboardScreen() : const LoginScreen();
     }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => nextScreen),
+    );
   }
 
   @override
@@ -57,15 +58,6 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Container(
-              // decoration: BoxDecoration(
-              //   boxShadow: [
-              //     BoxShadow(
-              //       color: Colors.black.withOpacity(0.05),
-              //       blurRadius: 20,
-              //       offset: const Offset(0, 10),
-              //     ),
-              //   ],
-              // ),
               child: Image.asset(
                 isDark ? 'assets/images/blue.png' : 'assets/images/splash.png',
                 fit: BoxFit.contain,
