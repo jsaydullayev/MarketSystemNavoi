@@ -1,6 +1,9 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/constants/app_colors.dart';
@@ -11,6 +14,7 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     final l10n = AppLocalizations.of(context)!;
     final isDark = AdaptiveTheme.of(context).mode.isDark;
     final primaryColor = AppColors.getPrimary(context);
@@ -20,7 +24,7 @@ class WelcomeScreen extends StatelessWidget {
           isDark ? const Color.fromARGB(255, 5, 9, 30) : Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: EdgeInsets.symmetric(horizontal: size.width * 0.06),
           child: Column(
             children: [
               Row(
@@ -35,67 +39,35 @@ class WelcomeScreen extends StatelessWidget {
                   _buildThemeToggle(context, isDark),
                 ],
               ),
-              const Spacer(),
-              // Hero(
-              //   tag: 'logo',
-              //   child: Image.asset(
-              //     'assets/images/logo.png',
-              //     width: MediaQuery.of(context).size.width * 0.75,
-              //   ),
-              // ),
-              // const SizedBox(height: 24),
-              // Text(
-              //   l10n.welcomeScreenSubtitle,
-              //   textAlign: TextAlign.center,
-              //   style: TextStyle(
-              //     fontSize: 16,
-              //     color: isDark ? Colors.white70 : Colors.black54,
-              //     fontWeight: FontWeight.w400,
-              //   ),
-              // ),
+              const Spacer(flex: 2),
               Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1),
-                      children: [
-                        TextSpan(
-                            text: "ST",
-                            style: TextStyle(
-                                color: AppColors.getPrimary(context))),
-                        TextSpan(
-                            text: "ROTECH",
-                            style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87)),
-                      ],
+                  Image.asset(
+                    isDark
+                        ? 'assets/images/blueLogo.png'
+                        : 'assets/images/orangeLogo.png',
+                    width: size.height * 0.15,
+                    height: size.height * 0.15,
+                    fit: BoxFit.contain,
+                  ),
+                  SizedBox(height: size.height * 0.03),
+                  Text(
+                    "STROTECH",
+                    style: TextStyle(
+                      fontSize: size.width * 0.07,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: size.width * 0.02,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 60,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.getPrimary(context),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  )
                 ],
               ),
-              const Spacer(),
+              const Spacer(flex: 3),
               SizedBox(
                 width: double.infinity,
-                height: 60,
+                height: size.height * 0.07 > 56 ? 60 : 54,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginScreen()),
-                    );
-                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     foregroundColor: Colors.white,
@@ -104,14 +76,27 @@ class WelcomeScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(18),
                     ),
                   ),
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('is_first_time', false);
+
+                    if (context.mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()),
+                      );
+                    }
+                  },
                   child: Text(
                     l10n.login,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: size.width * 0.045,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: size.height * 0.04),
             ],
           ),
         ),
