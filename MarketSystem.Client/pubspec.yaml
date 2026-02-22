@@ -31,7 +31,7 @@ dependencies:
   connectivity_plus: ^5.0.2
 
   # Local Storage
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.4
 
   # JSON Serialization
   json_annotation: ^4.8.1
@@ -44,12 +44,6 @@ dependencies:
   image_picker: ^1.0.7
   flutter_native_splash: ^2.4.7
   adaptive_theme: ^3.7.2
-
-# flutter_native_splash:
-#   color: "#ffffff"
-#   ios: true
-#   android: true
-#   image: assets/images/splash.png
 
 dev_dependencies:
   flutter_test:
