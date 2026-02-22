@@ -1213,6 +1213,24 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Sizga bu bo\'limga kirish ruxsati yo\'q'**
   String get accessDenied;
+
+  /// No description provided for @info.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumot'**
+  String get info;
+
+  /// No description provided for @registrationPendingInfo.
+  ///
+  /// In uz, this message translates to:
+  /// **'Registratsiya uchun so\'rovingiz adminga yuborildi. Tez orada administrator registratsiyaga ruxsat beradi.'**
+  String get registrationPendingInfo;
+
+  /// No description provided for @understand.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tushunarli'**
+  String get understand;
 }
 
 class _AppLocalizationsDelegate

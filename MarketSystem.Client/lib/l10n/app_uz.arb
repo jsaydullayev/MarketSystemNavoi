@@ -187,5 +187,8 @@
   "noWithdrawals": "Hali pul olish tarixi yo'q",
   "insufficientFunds": "Balans yetarli emas",
   "withdrawSuccess": "Pul muvaffaqiyatli olindi",
-  "accessDenied": "Sizga bu bo'limga kirish ruxsati yo'q"
+  "accessDenied": "Sizga bu bo'limga kirish ruxsati yo'q",
+  "info": "Ma'lumot",
+  "registrationPendingInfo": "Registratsiya uchun so'rovingiz adminga yuborildi. Tez orada administrator registratsiyaga ruxsat beradi.",
+  "understand": "Tushunarli"
 }
