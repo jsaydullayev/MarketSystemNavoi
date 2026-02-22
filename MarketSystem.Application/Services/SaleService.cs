@@ -520,24 +520,20 @@ public class SaleService : ISaleService
             if (sale.Status == SaleStatus.Paid || sale.Status == SaleStatus.Closed || sale.Status == SaleStatus.Cancelled)
                 throw new InvalidOperationException($"Cannot add payment to sale with status: {sale.Status}");
 
-            // DEBUG: Log sale details before payment
-            Console.WriteLine($"=== ADD PAYMENT DEBUG ===");
-            Console.WriteLine($"Sale ID: {sale.Id}");
-            Console.WriteLine($"TotalAmount: {sale.TotalAmount}");
-            Console.WriteLine($"PaidAmount (before): {sale.PaidAmount}");
-            Console.WriteLine($"Payment Amount: {request.Amount}");
-            Console.WriteLine($"Status (before): {sale.Status}");
-            Console.WriteLine($"Sale Items Count: {sale.SaleItems?.Count ?? 0}");
+            // Log payment details with structured properties
+            _logger.LogInformation("Adding payment {PaymentAmount} to sale {SaleId}, " +
+                "TotalAmount: {TotalAmount}, PaidAmount: {PaidAmount}, Status: {Status}, ItemsCount: {ItemsCount}",
+                request.Amount, sale.Id, sale.TotalAmount, sale.PaidAmount, sale.Status, sale.SaleItems?.Count ?? 0);
 
             if (sale.SaleItems != null)
             {
                 foreach (var item in sale.SaleItems)
                 {
                     decimal itemTotal = item.SalePrice * item.Quantity;
-                    Console.WriteLine($"  Item: ProductId={item.ProductId}, Qty={item.Quantity}, SalePrice={item.SalePrice}, Total={itemTotal}");
+                    _logger.LogDebug("Sale item: ProductId={ProductId}, Quantity={Quantity}, SalePrice={SalePrice}, Total={Total}",
+                        item.ProductId, item.Quantity, item.SalePrice, itemTotal);
                 }
             }
-            Console.WriteLine($"========================");
 
             // VALIDATION: Mijozsiz qarzga savdo taqiqlanadi
             var newPaidAmount = sale.PaidAmount + request.Amount;
@@ -577,32 +573,30 @@ public class SaleService : ISaleService
 
             // CRITICAL: Recalculate TotalAmount from SaleItems before determining status
             decimal calculatedTotal = sale.SaleItems?.Sum(si => si.SalePrice * si.Quantity) ?? 0;
-            Console.WriteLine($"Calculated TotalAmount from items: {calculatedTotal}");
+            _logger.LogDebug("Calculated TotalAmount from items: {CalculatedTotal}", calculatedTotal);
 
             // Update TotalAmount if it differs (this can happen if sale was created before items were added)
             if (sale.TotalAmount != calculatedTotal)
             {
-                Console.WriteLine($"WARNING: TotalAmount mismatch! DB={sale.TotalAmount}, Calculated={calculatedTotal}. Updating...");
+                _logger.LogWarning("TotalAmount mismatch for sale {SaleId}! DB={DbTotal}, Calculated={CalcTotal}. Updating...",
+                    sale.Id, sale.TotalAmount, calculatedTotal);
                 sale.TotalAmount = calculatedTotal;
             }
 
-            Console.WriteLine($"Final values - TotalAmount: {sale.TotalAmount}, PaidAmount: {sale.PaidAmount}");
+            _logger.LogDebug("Final values for sale {SaleId} - TotalAmount: {TotalAmount}, PaidAmount: {PaidAmount}",
+                sale.Id, sale.TotalAmount, sale.PaidAmount);
 
             // Determine new status
-            Console.WriteLine($"=== DETERMINING STATUS ===");
-            Console.WriteLine($"Condition 1 (Paid): TotalAmount > 0 && PaidAmount >= TotalAmount");
-            Console.WriteLine($"  TotalAmount > 0: {sale.TotalAmount > 0} ({sale.TotalAmount})");
-            Console.WriteLine($"  PaidAmount >= TotalAmount: {sale.PaidAmount >= sale.TotalAmount} ({sale.PaidAmount} >= {sale.TotalAmount})");
-            Console.WriteLine($"Condition 2 (Debt): TotalAmount > 0 && PaidAmount > 0 && PaidAmount < TotalAmount");
-            Console.WriteLine($"  TotalAmount > 0: {sale.TotalAmount > 0}");
-            Console.WriteLine($"  PaidAmount > 0: {sale.PaidAmount > 0} ({sale.PaidAmount})");
-            Console.WriteLine($"  PaidAmount < TotalAmount: {sale.PaidAmount < sale.TotalAmount} ({sale.PaidAmount} < {sale.TotalAmount})");
-            Console.WriteLine($"========================");
+            _logger.LogDebug("Determining new status for sale {SaleId}: " +
+                "TotalAmount={TotalAmount} (>0: {IsGreaterThan0}), " +
+                "PaidAmount={PaidAmount} (>=Total: {IsPaidInFull}, >0: {IsPaidPartial}, <Total: {IsPartialPayment})",
+                sale.Id, sale.TotalAmount, sale.TotalAmount > 0,
+                sale.PaidAmount, sale.PaidAmount >= sale.TotalAmount,
+                sale.PaidAmount > 0, sale.PaidAmount < sale.TotalAmount);
 
             // 1. To'liq to'langan savdo
             if (sale.TotalAmount > 0 && sale.PaidAmount >= sale.TotalAmount)
             {
-                Console.WriteLine($"✅ STATUS SET TO: PAID");
                 _logger.LogInformation("Sale {SaleId} is fully paid, setting status to Paid", saleId);
                 sale.Status = SaleStatus.Paid;
 
@@ -621,7 +615,6 @@ public class SaleService : ISaleService
             // 2. Qisman to'langan savdo (qarzga yopilgan)
             else if (sale.TotalAmount > 0 && sale.PaidAmount > 0 && sale.PaidAmount < sale.TotalAmount)
             {
-                Console.WriteLine($"✅ STATUS SET TO: DEBT");
                 _logger.LogInformation("Sale {SaleId} has partial payment, setting status to Debt", saleId);
                 sale.Status = SaleStatus.Debt;
 
@@ -658,16 +651,16 @@ public class SaleService : ISaleService
             // 3. TotalAmount 0 bo'lsa (hali mahsulotlar qo'shilgan yo'q), status Draft da qoladi
             else if (sale.TotalAmount == 0)
             {
-                Console.WriteLine($"✅ STATUS REMAINS: DRAFT (TotalAmount is 0)");
                 _logger.LogInformation("Sale {SaleId} has TotalAmount=0, keeping Draft status", saleId);
                 // Status remains Draft - mahsulotlar qo'shilganda TotalAmount hisoblanadi
             }
             else
             {
-                Console.WriteLine($"⚠️ UNHANDLED CASE - TotalAmount: {sale.TotalAmount}, PaidAmount: {sale.PaidAmount}");
+                _logger.LogWarning("Unhandled case for sale {SaleId}: TotalAmount={TotalAmount}, PaidAmount={PaidAmount}",
+                    sale.Id, sale.TotalAmount, sale.PaidAmount);
             }
 
-            Console.WriteLine($"=== FINAL STATUS: {sale.Status} ===");
+            _logger.LogInformation("Sale {SaleId} final status: {Status}", sale.Id, sale.Status);
 
             // Explicitly update sale in unit of work
             _unitOfWork.Sales.Update(sale);
