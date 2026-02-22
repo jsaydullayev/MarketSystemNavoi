@@ -11,13 +11,47 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Events;
 using System.Text;
 
 // Configure Npgsql to handle DateTime correctly with PostgreSQL timestamp with time zone
 // This prevents "Cannot write DateTime with Kind=Unspecified" errors
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 
-var builder = WebApplication.CreateBuilder(args);
+// ========================================
+// 🔧 SERILOG CONFIGURATION
+// ========================================
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "MarketSystem")
+    .WriteTo.Console(
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+        restrictedToMinimumLevel: LogEventLevel.Information
+    )
+    .WriteTo.PostgreSQL(
+        connectionString: "Host=localhost;Port=3030;Database=MarketSystemDB;Username=postgres;Password=postgres",
+        tableName: "Logs",
+        needAutoCreateTable: false,
+        restrictedToMinimumLevel: LogEventLevel.Information
+    )
+    .CreateLogger();
+
+try
+{
+    Log.Information("Starting Market System API");
+    Log.Information("Environment: {Environment}", "Development");
+    Log.Information("Logging to: PostgreSQL + Console");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+// Use Serilog
+builder.Host.UseSerilog();
 
 // Add DbContext with optimizations
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -195,6 +229,9 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Marke
 
 var app = builder.Build();
 
+// Local network test uchun barcha IP larda tinglash
+app.Urls.Add("http://0.0.0.0:5137");
+
 // Auto-apply database migrations - DISABLED for manual SQL migrations
 // if (app.Environment.IsDevelopment())
 // {
@@ -205,6 +242,9 @@ var app = builder.Build();
 
 // Global Exception Handler - MUST be first middleware
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
+// Serilog Request Logging
+app.UseSerilogRequestLogging();
 
 // Request logging middleware
 app.UseMiddleware<RequestLoggingMiddleware>();
@@ -344,5 +384,17 @@ if (app.Environment.IsDevelopment())
             }
         });
     }).WithName("Seed Database").AllowAnonymous();
+
+    app.Run();
 }
-app.Run();
+}
+
+// Final catch for Serilog
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application start-up failed");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
