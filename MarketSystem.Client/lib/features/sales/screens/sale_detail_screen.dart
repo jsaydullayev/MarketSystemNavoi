@@ -327,7 +327,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
   Widget _buildItemCard(Map<String, dynamic> item) {
     final productName = item['productName'] ?? 'Noma\'lum mahsulot';
-    final quantity = item['quantity'] as int;
+    final quantity = item['quantity'] is num ? (item['quantity'] as num).toDouble() : 0.0;  // ✅ DECIMAL
     final salePrice = (item['salePrice'] as num).toDouble();
     final totalPrice = (item['totalPrice'] as num).toDouble();
 
@@ -441,7 +441,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   void _showReturnDialog(Map<String, dynamic> item) {
     final productName = item['productName'] ?? 'Noma\'lum mahsulot';
     final saleItemId = item['id']?.toString() ?? '';
-    final maxQuantity = item['quantity'] as int? ?? 0;
+    final maxQuantity = item['quantity'] is num ? (item['quantity'] as num).toDouble() : 0.0;  // ✅ DECIMAL
     final salePrice = (item['salePrice'] as num).toDouble();
 
     if (maxQuantity <= 0) {
@@ -620,7 +620,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   }
 
   double _getReturnAmount(String quantityStr, double salePrice) {
-    final quantity = int.tryParse(quantityStr) ?? 0;
+    final quantity = double.tryParse(quantityStr) ?? 0.0;  // ✅ DECIMAL
     return quantity * salePrice;
   }
 
@@ -628,9 +628,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     String saleItemId,
     String quantityStr,
     String comment,
-    int maxQuantity,
+    double maxQuantity,  // ✅ DECIMAL
   ) {
-    final quantity = int.tryParse(quantityStr);
+    final quantity = double.tryParse(quantityStr);  // ✅ DECIMAL
 
     if (quantity == null || quantity <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -645,7 +645,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     if (quantity > maxQuantity) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Maksimal miqdor: $maxQuantity ta'),
+          content: Text('Maksimal miqdor: $maxQuantity'),  // ✅ "ta" olib tashlandi
           backgroundColor: Colors.red,
         ),
       );

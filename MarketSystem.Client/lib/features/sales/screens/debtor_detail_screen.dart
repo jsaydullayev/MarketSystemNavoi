@@ -359,14 +359,9 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                             final salePaid = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
                             final saleRemaining = (sale['remainingAmount'] as num?)?.toDouble() ?? 0.0;
 
-                            // Format date
-                            String formattedDate = 'Noma\'lum';
-                            try {
-                              final date = DateTime.parse(saleDate);
-                              formattedDate = '${date.day}.${date.month}.${date.year}';
-                            } catch (e) {
-                              formattedDate = saleDate.toString();
-                            }
+                            // Format date with GMT+5 (Tashkent time)
+                            final formattedDate = NumberFormatter.formatDateTime(saleDate, showTime: true);
+                            final formattedTime = NumberFormatter.formatTime(saleDate);
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 16),
@@ -401,13 +396,24 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          formattedDate,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.grey.shade700,
-                                          ),
+                                        // Sana va vaqt
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.access_time,
+                                              size: 14,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              formattedDate,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         Text(
                                           'Qarz: ${NumberFormatter.formatDecimal(saleRemaining)}',
