@@ -1,0 +1,26 @@
+services:
+  # Web Service
+  - type: web
+    name: market-system-api
+    env: dotnet
+    region: singapore
+    buildCommand: dotnet publish -c Release -o ./publish
+    publishDirectory: ./publish
+    startCommand: dotnet MarketSystem.API.dll
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: JWT__Secret
+        generateValue: true
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: marketdb
+          property: connectionString
+
+  # PostgreSQL Database
+  - type: pserv
+    name: marketdb
+    region: singapore
+    databaseName: marketdb
+    user: marketuser
+    plan: free  # Free tier: 1 GB, 90 days retention

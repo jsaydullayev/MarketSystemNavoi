@@ -6,7 +6,8 @@ import '../../core/constants/api_constants.dart';
 class CashRegisterService {
   final HttpService _httpService;
 
-  CashRegisterService({required HttpService httpService}) : _httpService = httpService;
+  CashRegisterService({required HttpService httpService})
+      : _httpService = httpService;
 
   Future<CashRegisterModel?> getCashRegister() async {
     try {
@@ -24,7 +25,8 @@ class CashRegisterService {
 
   Future<TodaySalesSummaryModel?> getTodaySales() async {
     try {
-      final response = await _httpService.get('${ApiConstants.cashRegister}/today-sales');
+      final response =
+          await _httpService.get('${ApiConstants.cashRegister}/today-sales');
 
       if (response.statusCode == 200) {
         return TodaySalesSummaryModel.fromJson(jsonDecode(response.body));
@@ -36,7 +38,8 @@ class CashRegisterService {
     }
   }
 
-  Future<bool> withdrawCash(double amount, String comment, [String withdrawType = 'cash']) async {
+  Future<bool> withdrawCash(double amount, String comment,
+      [String withdrawType = 'cash']) async {
     try {
       print('=== WITHDRAW CASH ===');
       print('Amount: $amount');
