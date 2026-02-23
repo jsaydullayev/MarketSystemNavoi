@@ -90,9 +90,20 @@ class CustomerService {
     }
   }
 
+  // Mijoz o'chirish ma'lumotlarini olish
+  Future<Map<String, dynamic>> getCustomerDeleteInfo(String id) async {
+    final response = await _httpService.get('${ApiConstants.customers}/GetCustomerDeleteInfo/$id');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to get customer delete info: ${response.body}');
+    }
+  }
+
   // Mijoz qarzlarini olish
   Future<List<Map<String, dynamic>>> getCustomerDebts(String customerId) async {
-    final response = await _httpService.get('${ApiConstants.debts}/customer/$customerId');
+    final response = await _httpService.get('${ApiConstants.debts}/GetCustomerDebts/$customerId');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);

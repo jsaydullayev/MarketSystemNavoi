@@ -25,7 +25,20 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
     _loadDebtors();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Screen focus qaytganda refresh qilish
+    if (mounted) {
+      print('🔄 DebtorsScreen: didChangeDependencies called, refreshing debtors...');
+      Future.delayed(Duration.zero, () {
+        _loadDebtors();
+      });
+    }
+  }
+
   Future<void> _loadDebtors() async {
+    print('📥 DebtorsScreen: _loadDebtors called...');
     setState(() {
       _isLoading = true;
     });
@@ -35,12 +48,14 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
       final salesService = SalesService(authProvider: authProvider);
 
       final debtors = await salesService.getDebtors();
+      print('✅ DebtorsScreen: Loaded ${debtors.length} debtors');
 
       setState(() {
         _debtors = debtors;
         _isLoading = false;
       });
     } catch (e) {
+      print('❌ DebtorsScreen: Error loading debtors: $e');
       setState(() {
         _isLoading = false;
       });
@@ -129,26 +144,28 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
     final debtCount = debtor['debtCount'] ?? 0;
     final oldestDebtDate = debtor['oldestDebtDate'];
 
-    // Format date
+    // Format date with GMT+5 (Tashkent time)
     String formattedDate = '';
     if (oldestDebtDate != null) {
       try {
         final date = DateTime.parse(oldestDebtDate);
-        final now = DateTime.now();
-        final difference = now.difference(date);
+        // Convert both dates to GMT+5 for comparison
+        final tashkentDate = date.toUtc().add(const Duration(hours: 5));
+        final tashkentNow = DateTime.now().toUtc().add(const Duration(hours: 5));
+        final difference = tashkentNow.difference(tashkentDate);
 
         if (difference.inDays == 0) {
-          formattedDate = 'Bugun';
+          formattedDate = 'Bugun ${NumberFormatter.formatTime(oldestDebtDate)}';
         } else if (difference.inDays == 1) {
-          formattedDate = 'Kecha';
+          formattedDate = 'Kecha ${NumberFormatter.formatTime(oldestDebtDate)}';
         } else if (difference.inDays < 30) {
-          formattedDate = '${difference.inDays} kun oldin';
+          formattedDate = '${difference.inDays} kun oldin, ${NumberFormatter.formatTime(oldestDebtDate)}';
         } else if (difference.inDays < 365) {
           final months = (difference.inDays / 30).floor();
-          formattedDate = '$months oy oldin';
+          formattedDate = '$months oy oldin, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
         } else {
           final years = (difference.inDays / 365).floor();
-          formattedDate = '$years yil oldin';
+          formattedDate = '$years yil oldin, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
         }
       } catch (e) {
         formattedDate = '';
@@ -161,7 +178,10 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
 
       try {
         final date = DateTime.parse(oldestDebtDate);
-        final difference = DateTime.now().difference(date);
+        // Convert both dates to GMT+5 for comparison
+        final tashkentDate = date.toUtc().add(const Duration(hours: 5));
+        final tashkentNow = DateTime.now().toUtc().add(const Duration(hours: 5));
+        final difference = tashkentNow.difference(tashkentDate);
 
         if (difference.inDays <= 30) {
           return Colors.orange; // 1 oy gacha

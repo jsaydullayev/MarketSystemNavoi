@@ -1,24 +1,33 @@
-import 'dart:html' as html;
-import 'package:http/http.dart' as http;
-import '../../core/constants/api_constants.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
+import 'package:universal_html/html.dart' as html;
+import 'http_service.dart';
 
 class DownloadService {
-  /// Kategoriyalarni Excel/CSV formatida yuklab olish
+  static DownloadService? _instance;
+  final HttpService _httpService;
+
+  DownloadService._internal(this._httpService);
+
+  static DownloadService getInstance(HttpService httpService) {
+    _instance ??= DownloadService._internal(httpService);
+    return _instance!;
+  }
+
+  /// Kategoriyalarni Excel formatida yuklab olish
   Future<void> downloadCategories() async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/ProductCategories/ExportCategoriesToExcel'),
-        headers: {
-          'Content-Type': 'application/csv',
-        },
-      );
+      final response = await _httpService.get('/Reports/ExportCategoriesToExcel');
 
       if (response.statusCode == 200) {
-        _downloadFile(
-          response.bodyBytes,
-          'kategoriyalar_${DateTime.now().millisecondsSinceEpoch}.csv',
-          'text/csv',
-        );
+        final filename = 'kategoriyalar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        if (kIsWeb) {
+          _downloadWeb(response.bodyBytes, filename);
+        } else {
+          await _downloadMobileDesktop(response.bodyBytes, filename);
+        }
       } else {
         throw Exception('Kategoriyalarni yuklab olishda xatolik: ${response.statusCode}');
       }
@@ -27,22 +36,18 @@ class DownloadService {
     }
   }
 
-  /// Mahsulotlarni Excel/CSV formatida yuklab olish
+  /// Mahsulotlarni Excel formatida yuklab olish
   Future<void> downloadProducts() async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/Products/ExportProductsToExcel'),
-        headers: {
-          'Content-Type': 'application/csv',
-        },
-      );
+      final response = await _httpService.get('/Products/ExportProductsToExcel');
 
       if (response.statusCode == 200) {
-        _downloadFile(
-          response.bodyBytes,
-          'mahsulotlar_${DateTime.now().millisecondsSinceEpoch}.csv',
-          'text/csv',
-        );
+        final filename = 'mahsulotlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        if (kIsWeb) {
+          _downloadWeb(response.bodyBytes, filename);
+        } else {
+          await _downloadMobileDesktop(response.bodyBytes, filename);
+        }
       } else {
         throw Exception('Mahsulotlarni yuklab olishda xatolik: ${response.statusCode}');
       }
@@ -51,22 +56,32 @@ class DownloadService {
     }
   }
 
-  /// Sotuvlarni Excel/CSV formatida yuklab olish
-  Future<void> downloadSales() async {
+  /// Sotuvlarni Excel formatida yuklab olish
+  Future<void> downloadSales({DateTime? startDate, DateTime? endDate}) async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/Sales/ExportSalesToExcel'),
-        headers: {
-          'Content-Type': 'application/csv',
-        },
-      );
+      String url = '/Reports/ExportSalesToExcel';
+
+      // Qo'shimcha parametrlarni qo'shish
+      if (startDate != null || endDate != null) {
+        url += '?';
+        if (startDate != null) {
+          url += 'startDate=${startDate.toIso8601String()}';
+          if (endDate != null) url += '&';
+        }
+        if (endDate != null) {
+          url += 'endDate=${endDate.toIso8601String()}';
+        }
+      }
+
+      final response = await _httpService.get(url);
 
       if (response.statusCode == 200) {
-        _downloadFile(
-          response.bodyBytes,
-          'sotuvlar_${DateTime.now().millisecondsSinceEpoch}.csv',
-          'text/csv',
-        );
+        final filename = 'sotuvlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        if (kIsWeb) {
+          _downloadWeb(response.bodyBytes, filename);
+        } else {
+          await _downloadMobileDesktop(response.bodyBytes, filename);
+        }
       } else {
         throw Exception('Sotuvlarni yuklab olishda xatolik: ${response.statusCode}');
       }
@@ -75,19 +90,100 @@ class DownloadService {
     }
   }
 
-  /// Faylni browser orqali yuklab olish
-  void _downloadFile(List<int> bytes, String filename, String mimeType) {
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
+  /// Umumiy hisobotni Excel formatida yuklab olish
+  Future<void> downloadComprehensiveReport({DateTime? date}) async {
+    try {
+      String url = '/Reports/ExportComprehensiveReportToExcel';
 
-    final anchor = html.AnchorElement()
-      ..href = url
-      ..download = filename
-      ..style.display = 'none';
+      // Sana parametrini qo'shish
+      if (date != null) {
+        url += '?date=${date.toIso8601String()}';
+      }
 
-    html.document.body?.append(anchor);
-    anchor.click();
-    anchor.remove();
-    html.Url.revokeObjectUrl(url);
+      final response = await _httpService.get(url);
+
+      if (response.statusCode == 200) {
+        final filename = 'hisobotlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        if (kIsWeb) {
+          _downloadWeb(response.bodyBytes, filename);
+        } else {
+          await _downloadMobileDesktop(response.bodyBytes, filename);
+        }
+      } else {
+        throw Exception('Hisobotlarni yuklab olishda xatolik: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Hisobotlarni yuklab olishda xatolik: $e');
+    }
+  }
+
+  /// Mijozlarni Excel formatida yuklab olish
+  Future<void> downloadCustomers() async {
+    try {
+      final response = await _httpService.get('/Reports/ExportCustomersToExcel');
+
+      if (response.statusCode == 200) {
+        final filename = 'mijozlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        if (kIsWeb) {
+          _downloadWeb(response.bodyBytes, filename);
+        } else {
+          await _downloadMobileDesktop(response.bodyBytes, filename);
+        }
+      } else {
+        throw Exception('Mijozlarni yuklab olishda xatolik: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Mijozlarni yuklab olishda xatolik: $e');
+    }
+  }
+
+  /// Faylni mobile/desktop device ga yuklab olish
+  Future<void> _downloadMobileDesktop(List<int> bytes, String filename) async {
+    try {
+      // Downloads papkasini olish
+      final directory = await getDownloadsDirectory();
+
+      if (directory != null) {
+        final filePath = '${directory.path}/$filename';
+        final file = File(filePath);
+
+        // Faylni yozish
+        await file.writeAsBytes(bytes);
+
+        // Faylni ochish - OS automatic ravishda default app (Excel, LibreOffice, etc) bilan ochadi
+        await OpenFile.open(filePath);
+      } else {
+        throw Exception('Downloads papkasini topib bo\'lmadi');
+      }
+    } catch (e) {
+      throw Exception('Faylni yuklab olishda xatolik: $e');
+    }
+  }
+
+  /// Faylni web browser orqali yuklab olish (Browser Download API)
+  void _downloadWeb(List<int> bytes, String filename) {
+    try {
+      // Blob yaratish
+      final blob = html.Blob([bytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+      // Download URL yaratish
+      final url = html.Url.createObjectUrlFromBlob(blob);
+
+      // Anchor element yaratish va click qilish
+      final anchor = html.AnchorElement()
+        ..href = url
+        ..download = filename
+        ..style.display = 'none';
+
+      // DOM ga qo'shish, click qilish, va o'chirish
+      html.document.body?.append(anchor);
+      anchor.click();
+      anchor.remove();
+
+      // URLni tozalash (memory leak oldini olish uchun)
+      html.Url.revokeObjectUrl(url);
+    } catch (e) {
+      throw Exception('Web download xatolik: $e');
+    }
   }
 }
