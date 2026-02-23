@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/services/auth_service.dart';
 import '../../data/services/user_service.dart';
+import '../../data/services/http_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
@@ -17,6 +18,7 @@ class AuthProvider extends ChangeNotifier {
   String? get errorCode => _errorCode;
   Map<String, dynamic>? get user => _user;
   bool get isAuthenticated => _user != null;
+  HttpService get httpService => _authService.httpService;
 
   // Login
   Future<bool> login(String username, String password) async {

@@ -119,7 +119,9 @@ class DailySalesListItemModel {
 class DailySalesListModel {
   final DateTime date;
   final List<DailySalesListItemModel> sales;
-  final double totalSales;
+  final double totalSales;       // Jami savdo (paid + debt)
+  final double totalPaidSales;   // To'langan savdolar ✅ NEW
+  final double totalDebtSales;   // Qarzga sotilgan ✅ NEW
   final int totalTransactions;
   final double? summaryProfit;
 
@@ -127,6 +129,8 @@ class DailySalesListModel {
     required this.date,
     required this.sales,
     required this.totalSales,
+    required this.totalPaidSales,
+    required this.totalDebtSales,
     required this.totalTransactions,
     this.summaryProfit,
   });
@@ -150,6 +154,16 @@ class DailySalesListModel {
           ? (json['totalSales'] is num
               ? (json['totalSales'] as num).toDouble()
               : double.tryParse(json['totalSales'].toString()) ?? 0.0)
+          : 0.0,
+      totalPaidSales: json['totalPaidSales'] != null
+          ? (json['totalPaidSales'] is num
+              ? (json['totalPaidSales'] as num).toDouble()
+              : double.tryParse(json['totalPaidSales'].toString()) ?? 0.0)
+          : 0.0,
+      totalDebtSales: json['totalDebtSales'] != null
+          ? (json['totalDebtSales'] is num
+              ? (json['totalDebtSales'] as num).toDouble()
+              : double.tryParse(json['totalDebtSales'].toString()) ?? 0.0)
           : 0.0,
       totalTransactions: json['totalTransactions'] ?? 0,
       summaryProfit: json['summaryProfit'] != null

@@ -33,6 +33,19 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     _loadDebtors();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Screen focus qaytganda refresh qilish
+    if (mounted) {
+      print('🔄 DraftSalesScreen: didChangeDependencies called, refreshing sales and debtors...');
+      Future.delayed(Duration.zero, () {
+        _loadDraftSales();
+        _loadDebtors();
+      });
+    }
+  }
+
   Future<void> _loadDraftSales() async {
     setState(() {
       _isLoading = true;
@@ -65,11 +78,13 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   }
 
   Future<void> _loadDebtors() async {
+    print('📥 DraftSalesScreen: _loadDebtors called...');
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
 
       final debtors = await salesService.getDebtors();
+      print('✅ DraftSalesScreen: Loaded ${debtors.length} debtors');
 
       if (mounted) {
         setState(() {
@@ -77,7 +92,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
         });
       }
     } catch (e) {
-      print('Error loading debtors: $e');
+      print('❌ DraftSalesScreen: Error loading debtors: $e');
     }
   }
 
@@ -1400,8 +1415,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           ? (item['salePrice'] as num).toDouble()
           : double.tryParse(item['salePrice']?.toString() ?? '') ?? 0.0;
       final qty = item['quantity'] is num
-          ? (item['quantity'] as num).toInt()
-          : int.tryParse(item['quantity']?.toString() ?? '') ?? 0;
+          ? (item['quantity'] as num).toDouble()  // ✅ DECIMAL
+          : double.tryParse(item['quantity']?.toString() ?? '') ?? 0.0;  // ✅ DECIMAL
       return sum + (price * qty);
     });
   }
@@ -1574,7 +1589,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       await salesService.removeSaleItem(
         saleId: widget.saleId,
         saleItemId: item['saleItemId'],
-        quantity: (item['quantity'] as num?)?.toInt() ?? 0, // Butunlay o'chirish
+        quantity: (item['quantity'] as num?)?.toDouble() ?? 0.0,  // ✅ DECIMAL - Butunlay o'chirish
       );
 
       print('✅ removeSaleItem success!');
@@ -1613,7 +1628,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     print('🗑️ === _removeFromCart END ===');
   }
 
-  Future<void> _updateQuantity(int index, int newQuantity) async {
+  Future<void> _updateQuantity(int index, double newQuantity) async {  // ✅ DECIMAL
     final item = _cartItems[index];
 
     print('🔢 === _updateQuantity START ===');
@@ -1627,7 +1642,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       return;
     }
 
-    final currentQuantity = (item['quantity'] as num?)?.toInt() ?? 0;
+    final currentQuantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;  // ✅ DECIMAL
 
     // quantityDiff == 0 bo'lsa, hech narsa qilmaymiz (quantity o'zgarmagan)
     if (newQuantity == currentQuantity) {
@@ -1656,7 +1671,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         await salesService.addSaleItem(
           saleId: widget.saleId,
           productId: item['productId'],
-          quantity: quantityDiff.toInt(),
+          quantity: quantityDiff,  // ✅ DECIMAL
           salePrice: item['salePrice'],
           minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
           comment: item['comment'] ?? '',
@@ -1664,11 +1679,11 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       } else {
         print('📤 DECREASING by ${quantityDiff.abs()}');
         // Quantity kamaytirish - backenddan removeSaleItem orqali kamaytiramiz
-        final quantityToRemove = quantityDiff.abs().toInt();
+        final quantityToRemove = quantityDiff.abs();  // ✅ DECIMAL
         await salesService.removeSaleItem(
           saleId: widget.saleId,
           saleItemId: item['saleItemId'],
-          quantity: quantityToRemove,
+          quantity: quantityToRemove,  // ✅ DECIMAL
         );
       }
 
@@ -1793,7 +1808,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
   Future<void> _returnItem(int index) async {
     final item = _cartItems[index];
-    final currentQuantity = (item['quantity'] as num?)?.toInt() ?? 0;
+    final currentQuantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;  // ✅ DECIMAL
 
     print('↩️ === _returnItem START ===');
     print('Index: $index');
@@ -1806,11 +1821,11 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     }
 
     // Qancha qaytarishni so'rash
-    final returnQuantity = await showDialog<int>(
+    final returnQuantity = await showDialog<double>(  // ✅ DECIMAL
       context: context,
       builder: (context) => _ReturnQuantityDialog(
         productName: item['productName'],
-        maxQuantity: currentQuantity,
+        maxQuantity: currentQuantity,  // ✅ DECIMAL
       ),
     );
 
@@ -2703,7 +2718,7 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
 // Return quantity dialog
 class _ReturnQuantityDialog extends StatefulWidget {
   final String productName;
-  final int maxQuantity;
+  final double maxQuantity;  // ✅ DECIMAL
 
   const _ReturnQuantityDialog({
     required this.productName,
@@ -2716,7 +2731,7 @@ class _ReturnQuantityDialog extends StatefulWidget {
 
 class _ReturnQuantityDialogState extends State<_ReturnQuantityDialog> {
   late TextEditingController _quantityController;
-  int _returnQuantity = 1;
+  double _returnQuantity = 1.0;  // ✅ DECIMAL
   bool _isValid = true;
 
   @override
@@ -2738,27 +2753,27 @@ class _ReturnQuantityDialogState extends State<_ReturnQuantityDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Mavjud: ${widget.maxQuantity} ta'),
+          Text('Mavjud: ${widget.maxQuantity}'),  // ✅ "ta" olib tashlandi
           const SizedBox(height: 16),
           TextField(
             controller: _quantityController,
-            keyboardType: TextInputType.number,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),  // ✅ DECIMAL
             decoration: InputDecoration(
               labelText: 'Qaytarish miqdori',
               border: const OutlineInputBorder(),
               errorText: _isValid ? null : 'Iltimos, to\'g\'ri miqdor kiriting',
-              suffixText: 'ta',
+              // suffixText: 'ta',  // ✅ Unit nomi backenddan keladi
             ),
             onChanged: (value) {
               setState(() {
-                _returnQuantity = int.tryParse(value) ?? 0;
+                _returnQuantity = double.tryParse(value) ?? 0.0;  // ✅ DECIMAL
                 _isValid = _returnQuantity > 0 && _returnQuantity <= widget.maxQuantity;
               });
             },
           ),
           const SizedBox(height: 8),
           Text(
-            'Maksimal: ${widget.maxQuantity} ta',
+            'Maksimal: ${widget.maxQuantity}',  // ✅ "ta" olib tashlandi
             style: TextStyle(
               fontSize: 13,
               color: Colors.grey.shade600,

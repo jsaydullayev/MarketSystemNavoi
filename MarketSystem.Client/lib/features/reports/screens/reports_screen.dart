@@ -38,7 +38,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     super.initState();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     _reportsService = ReportService(authProvider: authProvider);
-    _downloadService = DownloadService();
+    _downloadService = DownloadService.getInstance(authProvider.httpService);
     _loadReports();
   }
 
@@ -122,12 +122,84 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 
+  /// Excel hisobotini yuklab olish
+  Future<void> _downloadExcelReport() async {
+    try {
+      // Loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Excel yuklanmoqda...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      // Umumiy hisobotni yuklab olish (barcha ma'lumotlar birgalashtirilgan)
+      await _downloadService.downloadComprehensiveReport(
+        date: _selectedDate,
+      );
+
+      // Success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Hisobotlar muvaffaqiyatli yuklab olindi!\n\n📊 Excel faylga quyidagilar kiritilgan:\n• Sotuvlar ro\'yxati\n• Umumiy statistika\n• Jami savdo va foyda'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik: $e'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Qayta urinish',
+              textColor: Colors.white,
+              onPressed: _downloadExcelReport,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hisobotlar'),
         centerTitle: true,
+        actions: [
+          // Excel download button
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: 'Excel yuklab olish',
+            onPressed: _downloadExcelReport,
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Container(

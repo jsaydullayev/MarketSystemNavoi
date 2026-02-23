@@ -32,6 +32,8 @@ dependencies:
 
   # Local Storage
   shared_preferences: ^2.5.4
+  path_provider: ^2.1.1
+  open_file: ^3.3.2
 
   # JSON Serialization
   json_annotation: ^4.8.1
@@ -43,7 +45,8 @@ dependencies:
   # Image Picker
   image_picker: ^1.0.7
   flutter_native_splash: ^2.4.7
-  adaptive_theme: ^3.7.2
+  adaptive_theme: ^3.6.0
+  universal_html: ^2.3.0
 
 dev_dependencies:
   flutter_test:
