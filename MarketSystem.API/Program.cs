@@ -38,12 +38,8 @@ Log.Logger = new LoggerConfiguration()
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
         restrictedToMinimumLevel: LogEventLevel.Information
     )
-    .WriteTo.PostgreSQL(
-        connectionString: "Host=localhost;Port=3030;Database=MarketSystemDB;Username=postgres;Password=postgres",
-        tableName: "Logs",
-        needAutoCreateTable: false,
-        restrictedToMinimumLevel: LogEventLevel.Information
-    )
+    // ⭐ NOTE: PostgreSQL logging will be configured in Program.cs after connection string is loaded
+    // This avoids connection errors during startup
     .CreateLogger();
 
 try
@@ -233,16 +229,52 @@ try
 
     var app = builder.Build();
 
-    // Local network test uchun barcha IP larda tinglash
-    app.Urls.Add("http://0.0.0.0:5137");
+    // ⭐ Configure Serilog PostgreSQL logging dynamically
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (!string.IsNullOrEmpty(connectionString) && app.Environment.IsProduction())
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .Enrich.WithProperty("Application", "MarketSystem")
+            .WriteTo.Console(
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+            )
+            .WriteTo.PostgreSQL(
+                connectionString: connectionString,
+                tableName: "Logs",
+                needAutoCreateTable: true,
+                restrictedToMinimumLevel: LogEventLevel.Warning
+            )
+            .CreateLogger();
+    }
 
-    // Auto-apply database migrations - DISABLED for manual SQL migrations
-    // if (app.Environment.IsDevelopment())
-    // {
-    //     using var scope = app.Services.CreateScope();
-    //     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    //     await dbContext.Database.MigrateAsync();
-    // }
+    // ⭐ CRITICAL: Apply database migrations in Production
+    // This ensures tables are created when deploying to Render.com
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        try
+        {
+            Log.Information("Applying database migrations...");
+            await dbContext.Database.MigrateAsync();
+            Log.Information("Database migrations applied successfully");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to apply database migrations");
+            throw;
+        }
+    }
+
+    // Local network test uchun barcha IP larda tinglash (Development only)
+    if (app.Environment.IsDevelopment())
+    {
+        app.Urls.Add("http://0.0.0.0:5137");
+    }
 
     // Global Exception Handler - MUST be first middleware
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
