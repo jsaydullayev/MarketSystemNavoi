@@ -288,6 +288,10 @@ try
 
     app.MapControllers();
 
+    // Health check endpoint for Render.com
+    app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+        .ExcludeFromDescription();
+
     // Map SignalR Hub
     app.MapHub<MarketSystem.API.Hubs.SalesHub>("/hubs/sales");
 
