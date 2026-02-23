@@ -70,16 +70,7 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => new SaleItemDto(
-                si.Id.ToString(),
-                si.SaleId.ToString(),
-                si.ProductId,
-                si.Product?.Name ?? "Unknown",
-                si.Quantity,
-                si.SalePrice,
-                si.Quantity * si.SalePrice, // TotalPrice
-                si.Comment
-            )).ToList(),
+            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -120,16 +111,7 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => new SaleItemDto(
-                si.Id.ToString(),
-                si.SaleId.ToString(),
-                si.ProductId,
-                si.Product?.Name ?? "Unknown",
-                si.Quantity,
-                si.SalePrice,
-                si.Quantity * si.SalePrice,
-                si.Comment
-            )).ToList(),
+            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -170,16 +152,7 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => new SaleItemDto(
-                si.Id.ToString(),
-                si.SaleId.ToString(),
-                si.ProductId,
-                si.Product?.Name ?? "Unknown",
-                si.Quantity,
-                si.SalePrice,
-                si.Quantity * si.SalePrice,
-                si.Comment
-            )).ToList(),
+            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -221,16 +194,7 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => new SaleItemDto(
-                si.Id.ToString(),
-                si.SaleId.ToString(),
-                si.ProductId,
-                si.Product?.Name ?? "Unknown",
-                si.Quantity,
-                si.SalePrice,
-                si.Quantity * si.SalePrice,
-                si.Comment
-            )).ToList(),
+            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -861,8 +825,11 @@ public class SaleService : ISaleService
             item.ProductId,
             productName,
             item.Quantity,
+            item.CostPrice,
             item.SalePrice,
-            item.Quantity * item.SalePrice, // totalPrice
+            item.TotalPrice,  // Property from entity
+            item.Profit,      // Property from entity
+            "", // TODO: Get unit from product
             item.Comment
         );
     }
@@ -1093,16 +1060,7 @@ public class SaleService : ISaleService
                     s.PaidAmount,
                     s.TotalAmount - s.PaidAmount,
                     s.CreatedAt,
-                    s.SaleItems.Select(si => new SaleItemDto(
-                        si.Id.ToString(),
-                        si.SaleId.ToString(),
-                        si.ProductId,
-                        si.Product?.Name ?? "Unknown",
-                        si.Quantity,
-                        si.SalePrice,
-                        si.Quantity * si.SalePrice,
-                        si.Comment
-                    )).ToList(),
+                    s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
                     s.Payments.Select(p => new PaymentDto(
                         p.Id,
                         p.PaymentType.ToString(),
@@ -1166,7 +1124,6 @@ public class SaleService : ISaleService
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
             // 1. Sale item quantity yangilash yoki o'chirish
-            var returnQuantityInt = (int)returnQuantity;
             string originalComment = saleItem.Comment ?? "";
             var originalQuantity = saleItem.Quantity; // Saqlab qo'yymiz
             var isFullReturn = returnQuantity >= saleItem.Quantity;
@@ -1175,20 +1132,20 @@ public class SaleService : ISaleService
             {
                 // To'liq qaytarish - itemni o'chirish
                 _logger.LogInformation("Full return: Removing item completely. OriginalQty={OriginalQty}, ReturnQty={ReturnQty}",
-                    originalQuantity, returnQuantityInt);
+                    originalQuantity, returnQuantity);
                 _context.SaleItems.Remove(saleItem);
             }
             else
             {
                 // Qisman qaytarish - quantity kamaytirish
                 _logger.LogInformation("Partial return: OldQty={OldQty}, ReturnQty={ReturnQty}, NewQty={NewQty}",
-                    saleItem.Quantity, returnQuantityInt, saleItem.Quantity - returnQuantityInt);
-                saleItem.Quantity -= returnQuantityInt;
+                    saleItem.Quantity, returnQuantity, saleItem.Quantity - returnQuantity);
+                saleItem.Quantity -= returnQuantity;  // ✅ DECIMAL - 5.5 m qaytarilsa, 5.5 ayiriladi
 
                 // Izohga qaytarish haqida yozish
                 var returnComment = !string.IsNullOrEmpty(request.Comment)
                     ? request.Comment
-                    : $"Qaytarildi: {returnQuantityInt} ta ({DateTime.UtcNow:dd.MM.yyyy HH:mm})";
+                    : $"Qaytarildi: {returnQuantity} ({DateTime.UtcNow:dd.MM.yyyy HH:mm})";  // ✅ "ta" olib tashlandi
                 saleItem.Comment = !string.IsNullOrEmpty(originalComment)
                     ? $"{originalComment} | {returnComment}"
                     : returnComment;
@@ -1198,7 +1155,7 @@ public class SaleService : ISaleService
             if (saleItem.Product != null)
             {
                 var oldStock = saleItem.Product.Quantity;
-                saleItem.Product.Quantity += returnQuantityInt;
+                saleItem.Product.Quantity += returnQuantity;  // ✅ DECIMAL - 5.5 m qaytarilsa, 5.5 qo'shiladi
                 _context.Products.Update(saleItem.Product);
                 _logger.LogInformation("Product stock updated: ProductId={ProductId}, OldStock={OldStock}, NewStock={NewStock}",
                     saleItem.ProductId, oldStock, saleItem.Product.Quantity);
@@ -1218,18 +1175,15 @@ public class SaleService : ISaleService
                 saleId, refundAmount);
 
             // 5. To'langan summani yangilash
+            // ❌ NOTO'G'RI: PaidAmount ni kamaytirish mumkin emas!
+            // ✅ TO'G'RI: PaidAmount o'zgarmaydi, faqat TotalAmount kamayadi
+            // Client to'lagan pul uniki, uni qaytarib bo'lmaydi
             var oldPaidAmount = sale.PaidAmount;
-            if (sale.PaidAmount > refundAmount)
-            {
-                sale.PaidAmount -= refundAmount;
-            }
-            else
-            {
-                sale.PaidAmount = 0;
-            }
+            // PaidAmount o'zgarmaydi! Faqat TotalAmount kamaydi (yuqorida)
+            // refundAmount - bu qaytarilgan mahsulot narxi, lekin client pulini qaytarmaymiz
 
-            _logger.LogInformation("Sale paid amount updated: SaleId={SaleId}, OldPaid={OldPaid}, NewPaid={NewPaid}",
-                saleId, oldPaidAmount, sale.PaidAmount);
+            _logger.LogInformation("Sale paid amount unchanged: SaleId={SaleId}, PaidAmount={PaidAmount} (refund does not reduce paid amount)",
+                saleId, sale.PaidAmount);
 
             // 6. Status yangilash
             var oldStatus = sale.Status;
@@ -1253,6 +1207,59 @@ public class SaleService : ISaleService
             _logger.LogInformation("Sale status: SaleId={SaleId}, OldStatus={OldStatus}, NewStatus={NewStatus}",
                 saleId, oldStatus, sale.Status);
 
+            // 7. ⭐ DEBT JADVALINI YANGILASH (CRITICAL FIX!)
+            _logger.LogInformation("🔍 Debt Update Check: CustomerId={CustomerId}, SaleStatus={SaleStatus}, SaleTotalAmount={TotalAmount}, PaidAmount={PaidAmount}",
+                sale.CustomerId, sale.Status, sale.TotalAmount, sale.PaidAmount);
+
+            if (sale.CustomerId.HasValue && sale.Status == SaleStatus.Debt)
+            {
+                _logger.LogInformation("✅ Sale has CustomerId AND Debt status - attempting to update debt record...");
+
+                var existingDebt = await _context.Debts
+                    .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId, cancellationToken);
+
+                if (existingDebt != null)
+                {
+                    var oldDebtRemaining = existingDebt.RemainingDebt;
+                    var newRemainingDebt = sale.TotalAmount - sale.PaidAmount;
+
+                    existingDebt.TotalDebt = sale.TotalAmount;
+                    existingDebt.RemainingDebt = newRemainingDebt;
+
+                    _logger.LogInformation("💰 Debt updated: DebtId={DebtId}, SaleId={SaleId}, OldRemaining={OldRem}, NewRemaining={NewRem}",
+                        existingDebt.Id, saleId, oldDebtRemaining, newRemainingDebt);
+
+                    _context.Debts.Update(existingDebt);
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ Debt record not found for Debt status sale: SaleId={SaleId}, CustomerId={CustomerId}",
+                        saleId, sale.CustomerId);
+                }
+            }
+            else if (sale.CustomerId.HasValue && sale.Status != SaleStatus.Debt)
+            {
+                _logger.LogInformation("❌ Sale has CustomerId but NOT Debt status (Status={Status}) - should close debt record if exists", sale.Status);
+
+                // Savdo qarz statusda bo'lmasa, debt yopilgan bo'lishi mumkin
+                var debtToClose = await _context.Debts
+                    .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId && d.Status == DebtStatus.Open, cancellationToken);
+
+                if (debtToClose != null)
+                {
+                    _logger.LogInformation("🔒 Closing debt record (sale no longer in Debt status): DebtId={DebtId}, SaleId={SaleId}",
+                        debtToClose.Id, saleId);
+                    debtToClose.Status = DebtStatus.Closed;
+                    debtToClose.RemainingDebt = 0;
+                    debtToClose.TotalDebt = sale.TotalAmount;
+                    _context.Debts.Update(debtToClose);
+                }
+            }
+            else
+            {
+                _logger.LogInformation("⏭️ Sale has no CustomerId - skipping debt update");
+            }
+
             // Explicitly update sale
             _context.Sales.Update(sale);
 
@@ -1266,16 +1273,7 @@ public class SaleService : ISaleService
             // Updated sale item ni qaytarish (faqat partial return bo'lsa)
             if (!isFullReturn && saleItem != null)
             {
-                return new SaleItemDto(
-                    saleItem.Id.ToString(),
-                    saleItem.SaleId.ToString(),
-                    saleItem.ProductId,
-                    saleItem.Product?.Name ?? "Unknown",
-                    saleItem.Quantity,
-                    saleItem.SalePrice,
-                    saleItem.Quantity * saleItem.SalePrice,
-                    saleItem.Comment
-                );
+                return MapSaleItemToDto(saleItem, saleItem.Product?.Name ?? "Unknown");
             }
 
             // Item to'liq o'chirilgan bo'lsa, null qaytaramiz (bu normal holat)
@@ -1317,7 +1315,15 @@ public class SaleService : ISaleService
 
             // Update sale
             sale.TotalAmount = calculatedTotal;
+            var oldStatus = sale.Status;
             sale.Status = SaleStatus.Debt;
+
+            _logger.LogInformation("=== MARK SALE AS DEBT ===");
+            _logger.LogInformation("Sale ID: {SaleId}", saleId);
+            _logger.LogInformation("Old Status: {OldStatus}, New Status: {NewStatus}", oldStatus, sale.Status);
+            _logger.LogInformation("Total Amount: {Total}", calculatedTotal);
+            _logger.LogInformation("Customer ID: {CustomerId}", sale.CustomerId);
+
             _unitOfWork.Sales.Update(sale);
 
             // Create debt record
@@ -1335,6 +1341,7 @@ public class SaleService : ISaleService
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            _logger.LogInformation("=== SALE SAVED TO DATABASE ===");
             _logger.LogInformation("Sale {SaleId} marked as Debt. Total: {Total}, Customer: {CustomerId}",
                 saleId, sale.TotalAmount, sale.CustomerId);
 

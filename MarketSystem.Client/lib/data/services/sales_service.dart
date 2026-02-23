@@ -128,7 +128,7 @@ class SalesService {
   Future<dynamic> addSaleItem({
     required String saleId,
     required String productId,
-    required int quantity,
+    required double quantity,  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
     required double salePrice,
     required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,
@@ -175,7 +175,7 @@ class SalesService {
   Future<dynamic> removeSaleItem({
     required String saleId,
     required String saleItemId,
-    required int quantity,  // 0 = butunlay o'chirish, >0 = shunchaki miqdorni kamaytirish
+    required double quantity,  // ✅ DECIMAL - 0 = butunlay o'chirish, >0 = shunchaki miqdorni kamaytirish
   }) async {
     final url = '${ApiConstants.sales}/RemoveSaleItem/$saleId';
     print('=== REMOVE SALE ITEM DEBUG ===');

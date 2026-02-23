@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Constants;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.API.Helpers;
 using System.Security.Claims;
@@ -41,6 +42,16 @@ public class ProductsController : ControllerBase
     {
         var products = await _productService.GetLowStockProductsAsync();
         return Ok(products);
+    }
+
+    /// <summary>
+    /// Barcha o'lchov birliklarini olish (dona, kg, m)
+    /// </summary>
+    [HttpGet("units")]
+    [AllowAnonymous]
+    public ActionResult<List<UnitInfo>> GetUnits()
+    {
+        return Ok(UnitConstants.AllUnits);
     }
 
     [HttpPost]
@@ -122,4 +133,5 @@ public class ProductsController : ControllerBase
             $"mahsulotlar_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
         );
     }
+
 }

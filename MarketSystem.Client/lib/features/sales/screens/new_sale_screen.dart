@@ -106,9 +106,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         _cartItems.indexWhere((item) => item['productId'] == product['id']);
 
     if (existingIndex != -1) {
-      // Product exists - increase quantity
+      // Product exists - increase quantity by 1
+      final currentQty = _cartItems[existingIndex]['quantity'] as num? ?? 1.0;
       setState(() {
-        _cartItems[existingIndex]['quantity']++;
+        _cartItems[existingIndex]['quantity'] = currentQty.toDouble() + 1.0;  // ✅ DECIMAL
       });
     } else {
       // New product - show price input dialog
@@ -121,7 +122,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       context: context,
       builder: (dialogContext) => _PriceInputDialog(
         product: product,
-        onAddToCart: (enteredPrice, comment) {
+        onAddToCart: (enteredPrice, enteredQuantity, comment) {  // ✅ 3 parametr
           setState(() {
             _cartItems.add({
               'productId': product['id'],
@@ -129,8 +130,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               'salePrice': enteredPrice,
               'minSalePrice': product['minSalePrice'] ?? 0.0,
               'costPrice': product['costPrice'],
-              'quantity': 1,
-              'comment': comment ?? '',
+              'quantity': enteredQuantity,  // ✅ DECIMAL
+              'comment': comment,  // ✅ null check olib tashlandi
             });
           });
 
@@ -157,7 +158,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     });
   }
 
-  void _updateQuantity(int index, int newQuantity) {
+  void _updateQuantity(int index, double newQuantity) {  // ✅ DECIMAL
     if (newQuantity <= 0) {
       _removeFromCart(index);
     } else {
@@ -169,7 +170,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _editItemPrice(int index, Map<String, dynamic> item) {
     final currentPrice = item['salePrice'] ?? 0.0;
+    final currentQuantity = item['quantity'] is num ? (item['quantity'] as num).toDouble() : 1.0;  // ✅ Current quantity
     final minPrice = item['minSalePrice'] ?? 0.0;
+
+    // ✅ Get unit name from products list
+    final product = _products.firstWhere(
+      (p) => p['id'] == item['productId'],
+      orElse: () => {},
+    );
 
     showDialog(
       context: context,
@@ -179,11 +187,15 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           'salePrice': currentPrice,
           'minSalePrice': minPrice,
           'costPrice': item['costPrice'],
+          'id': item['productId'],
+          'unitName': product['unitName'] ?? 'dona',
+          'initialQuantity': currentQuantity,  // ✅ Joriy miqdorni beramiz
         },
-        onAddToCart: (newPrice, comment) {
+        onAddToCart: (newPrice, newQuantity, comment) {  // ✅ 3 parametr
           setState(() {
             _cartItems[index]['salePrice'] = newPrice;
-            if (comment != null) {
+            _cartItems[index]['quantity'] = newQuantity;  // ✅ Miqdorni ham yangilaymiz
+            if (comment != null && comment.isNotEmpty) {
               _cartItems[index]['comment'] = comment;
             }
           });
@@ -193,7 +205,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  '✅ ${item['productName']} narxi o\'zgartirildi!',
+                  '✅ ${item['productName']} o\'zgartirildi!',
                 ),
                 backgroundColor: Colors.green,
                 duration: const Duration(seconds: 1),
@@ -385,6 +397,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
+        // Pop back to DraftSalesScreen and refresh it
         Navigator.pop(context, true);
       }
     }
@@ -627,6 +640,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                           final item = _cartItems[index];
                           final itemTotal =
                               item['quantity'] * item['salePrice'];
+
+                          // ✅ Get unit name from products list
+                          final product = _products.firstWhere(
+                            (p) => p['id'] == item['productId'],
+                            orElse: () => {},
+                          );
+                          final unitName = product['unitName'] ?? 'dona';
+
                           return Container(
                             width: 160,
                             margin: const EdgeInsets.only(right: 8),
@@ -659,7 +680,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '${item['quantity']} x ${NumberFormatter.format(item['salePrice'])}',
+                                  '${item['quantity']} $unitName x ${NumberFormatter.format(item['salePrice'])}',  // ✅ Unit qo'shildi
                                   style: const TextStyle(
                                     fontSize: 10,
                                     color: Color(0xFF6B7280),
@@ -1028,7 +1049,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 // Price Input Dialog Widget
 class _PriceInputDialog extends StatefulWidget {
   final dynamic product;
-  final Function(double, String?) onAddToCart;
+  final Function(double, double, String?) onAddToCart;  // ✅ quantity qo'shildi
 
   const _PriceInputDialog({
     required this.product,
@@ -1041,6 +1062,7 @@ class _PriceInputDialog extends StatefulWidget {
 
 class _PriceInputDialogState extends State<_PriceInputDialog> {
   late TextEditingController _priceController;
+  late TextEditingController _quantityController;  // ✅ NEW
   late TextEditingController _commentController;
 
   @override
@@ -1050,12 +1072,17 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
     _priceController = TextEditingController(
       text: defaultPrice.toStringAsFixed(2),
     );
+    final initialQuantity = widget.product['initialQuantity'] ?? 1.0;  // ✅ Joriy miqdor
+    _quantityController = TextEditingController(
+      text: initialQuantity is double ? initialQuantity.toStringAsFixed(2) : '1',
+    );  // ✅ Joriy miqdorni qo'yamiz
     _commentController = TextEditingController();
   }
 
   @override
   void dispose() {
     _priceController.dispose();
+    _quantityController.dispose();  // ✅ NEW
     _commentController.dispose();
     super.dispose();
   }
@@ -1064,6 +1091,7 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
   Widget build(BuildContext context) {
     final defaultPrice = widget.product['salePrice'] ?? 0.0;
     final minPrice = widget.product['minSalePrice'] ?? 0.0;
+    final unitName = widget.product['unitName'] ?? 'dona';  // ✅ NEW
 
     return AlertDialog(
       title: Text(
@@ -1135,6 +1163,55 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
               ),
             ),
             const SizedBox(height: 16),
+            // ✅ NEW: Quantity input field
+            TextField(
+              controller: _quantityController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),  // ✅ DECIMAL
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                labelText: 'Miqdor',
+                labelStyle: const TextStyle(
+                  color: Color(0xFF059669),
+                  fontSize: 14,
+                ),
+                prefixIcon: const Icon(
+                  Icons.inventory_2_outlined,
+                  color: Color(0xFF10B981),
+                ),
+                suffixText: unitName,  // ✅ Unit nomi (dona, kg, m)
+                suffixStyle: const TextStyle(
+                  color: Color(0xFF059669),
+                  fontSize: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFD1D5DB),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF10B981),
+                    width: 2,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF10B981),
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFECFDF5),
+              ),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
             // Price input field
             TextField(
               controller: _priceController,
@@ -1248,6 +1325,7 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
         ElevatedButton(
           onPressed: () {
             final enteredPrice = double.tryParse(_priceController.text) ?? 0.0;
+            final enteredQuantity = double.tryParse(_quantityController.text) ?? 1.0;  // ✅ NEW
 
             if (enteredPrice <= 0) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1259,10 +1337,20 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
               return;
             }
 
+            if (enteredQuantity <= 0) {  // ✅ NEW
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Miqdor 0 dan katta bo\'lishi kerak!'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
+            }
+
             // Allow below minimum - no comment required
-            // Just send the price and optional comment
+            // Just send the price, quantity and optional comment
             // Dialogni onAddToCart ichida yopamiz, shuning uchun bu yerda pop qilmaymiz
-            widget.onAddToCart(enteredPrice, _commentController.text.trim());
+            widget.onAddToCart(enteredPrice, enteredQuantity, _commentController.text.trim());  // ✅ quantity qo'shildi
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF10B981),

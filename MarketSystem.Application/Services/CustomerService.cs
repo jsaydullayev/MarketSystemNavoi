@@ -39,11 +39,9 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var customers = await _unitOfWork.Customers.FindAsync(
-            c => c.Id == id && c.MarketId == marketId,
-            cancellationToken);
-
-        var customer = customers.FirstOrDefault();
+        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        var customer = await _context.Customers
+            .FirstOrDefaultAsync(c => c.Id == id && c.MarketId == marketId && !c.IsDeleted, cancellationToken);
 
         if (customer is null)
             return null;
@@ -55,11 +53,10 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var customers = await _unitOfWork.Customers.FindAsync(
-            c => c.Phone == phone && c.MarketId == marketId,
-            cancellationToken);
+        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        var customer = await _context.Customers
+            .FirstOrDefaultAsync(c => c.Phone == phone && c.MarketId == marketId && !c.IsDeleted, cancellationToken);
 
-        var customer = customers.FirstOrDefault();
         if (customer is null)
             return null;
 
@@ -70,15 +67,20 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var customers = await _unitOfWork.Customers.FindAsync(
-            c => c.MarketId == marketId,
-            cancellationToken);
+        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        // FindAsync caches results in memory, causing stale data issues
+        var customers = await _context.Customers
+            .Where(c => c.MarketId == marketId && !c.IsDeleted)
+            .OrderBy(c => c.FullName)
+            .ToListAsync(cancellationToken);
 
         var result = new List<CustomerDto>();
 
         foreach (var customer in customers)
         {
-            result.Add(await MapToDtoAsync(customer, cancellationToken));
+            var dto = await MapToDtoAsync(customer, cancellationToken);
+            Console.WriteLine($"📊 [Backend] Customer: {dto.FullName} ({dto.Phone}), TotalDebt: {dto.TotalDebt}");
+            result.Add(dto);
         }
 
         return result;
@@ -87,7 +89,7 @@ public class CustomerService : ICustomerService
     public async Task<CustomerDto> CreateCustomerAsync(CreateCustomerDto request, CancellationToken cancellationToken = default)
     {
         // Check if phone already exists
-        if (await _unitOfWork.Customers.AnyAsync(c => c.Phone == request.Phone, cancellationToken))
+        if (await _context.Customers.AnyAsync(c => c.Phone == request.Phone, cancellationToken))
             throw new InvalidOperationException($"Customer with phone '{request.Phone}' already exists");
 
         var customer = new Customer
@@ -100,8 +102,8 @@ public class CustomerService : ICustomerService
             MarketId = _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
         };
 
-        await _unitOfWork.Customers.AddAsync(customer, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _context.Customers.AddAsync(customer, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         // Agar initial debt bor bo'lsa, dummy Sale va Debt yozuvlarini yaratamiz
         if (request.InitialDebt.HasValue && request.InitialDebt.Value > 0)
@@ -128,8 +130,8 @@ public class CustomerService : ICustomerService
                 MarketId = marketId
             };
 
-            await _unitOfWork.Sales.AddAsync(dummySale, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _context.Sales.AddAsync(dummySale, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
             // Debt yozuvini yaratamiz
             var debt = new MarketSystem.Domain.Entities.Debt
@@ -144,8 +146,8 @@ public class CustomerService : ICustomerService
                 MarketId = marketId
             };
 
-            await _unitOfWork.Debts.AddAsync(debt, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _context.Debts.AddAsync(debt, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         return await MapToDtoAsync(customer, cancellationToken);
@@ -153,11 +155,11 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDto?> UpdateCustomerAsync(UpdateCustomerDto request, CancellationToken cancellationToken = default)
     {
-        // Find customer by phone number
-        var customers = await _unitOfWork.Customers.FindAsync(
-            c => c.Phone == request.Phone,
-            cancellationToken);
-        var customer = customers.FirstOrDefault();
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        var customer = await _context.Customers
+            .FirstOrDefaultAsync(c => c.Phone == request.Phone && c.MarketId == marketId, cancellationToken);
 
         if (customer is null)
             return null;
@@ -167,8 +169,8 @@ public class CustomerService : ICustomerService
         {
             customer.FullName = request.FullName;
             _context.Entry(customer).State = EntityState.Modified;
-            _unitOfWork.Customers.Update(customer);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         return await MapToDtoAsync(customer, cancellationToken);
@@ -178,37 +180,117 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var customers = await _unitOfWork.Customers.FindAsync(
-            c => c.Id == id && c.MarketId == marketId,
-            cancellationToken);
-        var customer = customers.FirstOrDefault();
+        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        var customer = await _context.Customers
+            .FirstOrDefaultAsync(c => c.Id == id && c.MarketId == marketId, cancellationToken);
 
         if (customer is null)
             return false;
 
+        // Soft delete related sales
+        var sales = await _context.Sales
+            .Where(s => s.CustomerId == id && s.MarketId == marketId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var sale in sales)
+        {
+            sale.IsDeleted = true;
+        }
+
+        // Close related debts (mark as Closed since Debt doesn't have IsDeleted)
+        var debts = await _context.Debts
+            .Where(d => d.CustomerId == id && d.MarketId == marketId && d.Status == DebtStatus.Open)
+            .ToListAsync(cancellationToken);
+
+        foreach (var debt in debts)
+        {
+            debt.Status = DebtStatus.Closed;
+        }
+
         // Use soft delete instead of hard delete to avoid foreign key constraint violations
         customer.IsDeleted = true;
-        _unitOfWork.Customers.Update(customer);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Customers.Update(customer);
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<CustomerDeleteInfoDto> GetCustomerDeleteInfoAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        var customer = await _context.Customers
+            .FirstOrDefaultAsync(c => c.Id == id && c.MarketId == marketId, cancellationToken);
+        if (customer is null)
+        {
+            return new CustomerDeleteInfoDto(
+                false,
+                0,
+                0,
+                0,
+                0,
+                "Mijoz topilmadi"
+            );
+        }
+
+        // Count all sales (including drafts)
+        var salesCount = await _context.Sales
+            .Where(s => s.CustomerId == id && s.MarketId == marketId && !s.IsDeleted)
+            .CountAsync(cancellationToken);
+
+        // Count draft sales
+        var draftSalesCount = await _context.Sales
+            .Where(s => s.CustomerId == id && s.MarketId == marketId && !s.IsDeleted && s.Status == SaleStatus.Draft)
+            .CountAsync(cancellationToken);
+
+        // Count open debts
+        var debtsCount = await _context.Debts
+            .Where(d => d.CustomerId == id && d.MarketId == marketId && d.Status == DebtStatus.Open)
+            .CountAsync(cancellationToken);
+
+        // Calculate total debt
+        var totalDebt = await _context.Debts
+            .Where(d => d.CustomerId == id && d.MarketId == marketId && d.Status == DebtStatus.Open)
+            .SumAsync(d => d.RemainingDebt, cancellationToken);
+
+        // Build warning message
+        var warningParts = new List<string>();
+        if (salesCount > 0)
+            warningParts.Add($"{salesCount} ta savdo");
+        if (debtsCount > 0)
+            warningParts.Add($"{debtsCount} ta qarz (jami {totalDebt:N0} so'm)");
+
+        var warningMessage = warningParts.Count > 0
+            ? $"Mijozni o'chirish bilan unga tegishli {string.Join(" va ", warningParts)} ham o'chib ketadi. Davom etasizmi?"
+            : null;
+
+        var canDelete = salesCount == 0 && debtsCount == 0;
+
+        return new CustomerDeleteInfoDto(
+            canDelete,
+            salesCount,
+            draftSalesCount,
+            debtsCount,
+            totalDebt,
+            warningMessage
+        );
     }
 
     public async Task<bool> SoftDeleteCustomerAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var customers = await _unitOfWork.Customers.FindAsync(
-            c => c.Id == id && c.MarketId == marketId,
-            cancellationToken);
-        var customer = customers.FirstOrDefault();
+        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        var customer = await _context.Customers
+            .FirstOrDefaultAsync(c => c.Id == id && c.MarketId == marketId, cancellationToken);
 
         if (customer is null)
             return false;
 
         customer.IsDeleted = true;
         _context.Entry(customer).State = EntityState.Modified;
-        _unitOfWork.Customers.Update(customer);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Customers.Update(customer);
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
@@ -223,7 +305,16 @@ public class CustomerService : ICustomerService
                 && d.Status == DebtStatus.Open)
             .ToListAsync(cancellationToken);
 
+        // 🔍 DEBUG: Log each debt found
+        Console.WriteLine($"🔍 [MapToDto] Customer: {customer.FullName} ({customer.Phone})");
+        Console.WriteLine($"   Found {debts.Count} open debts:");
+        foreach (var debt in debts)
+        {
+            Console.WriteLine($"   - DebtId: {debt.Id}, SaleId: {debt.SaleId}, TotalDebt: {debt.TotalDebt}, RemainingDebt: {debt.RemainingDebt}, Status: {debt.Status}");
+        }
+
         var totalDebt = debts.Sum(d => d.RemainingDebt);
+        Console.WriteLine($"   ✅ Calculated TotalDebt: {totalDebt}");
 
         return new CustomerDto(
             customer.Id,
