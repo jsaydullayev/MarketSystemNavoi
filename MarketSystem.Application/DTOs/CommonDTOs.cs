@@ -36,34 +36,25 @@ public record UpdateProfileImageDto(
     [property: JsonPropertyName("profileImage")] string ProfileImage
 );
 
-// Product DTOs
-public record ProductDto(
-    [property: JsonPropertyName("id")] Guid Id,
-    [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("isTemporary")] bool IsTemporary,
-    [property: JsonPropertyName("costPrice")] decimal CostPrice,
-    [property: JsonPropertyName("salePrice")] decimal SalePrice,
-    [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
-    [property: JsonPropertyName("quantity")] int Quantity,
-    [property: JsonPropertyName("minThreshold")] int MinThreshold,
-    [property: JsonPropertyName("categoryId")] int? CategoryId,  // ✅ NEW
-    [property: JsonPropertyName("categoryName")] string? CategoryName  // ✅ NEW
-);
+// Product DTOs - OLD VERSION (deprecated, use ProductDTOs.cs instead)
+// These are kept for backward compatibility with existing code
 public record CreateProductDto(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("isTemporary")] bool IsTemporary,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
-    [property: JsonPropertyName("minThreshold")] int MinThreshold,
-    [property: JsonPropertyName("categoryId")] int? CategoryId  // ✅ NEW
+    [property: JsonPropertyName("minThreshold")] decimal MinThreshold,
+    [property: JsonPropertyName("categoryId")] int? CategoryId,
+    [property: JsonPropertyName("unit")] int Unit = 1  // Default: Piece
 );
 public record UpdateProductDto(
     [property: JsonPropertyName("id")] Guid Id,
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
-    [property: JsonPropertyName("minThreshold")] int MinThreshold,
-    [property: JsonPropertyName("categoryId")] int? CategoryId  // ✅ NEW
+    [property: JsonPropertyName("minThreshold")] decimal MinThreshold,
+    [property: JsonPropertyName("categoryId")] int? CategoryId,
+    [property: JsonPropertyName("unit")] int Unit = 1  // Default: Piece
 );
 
 // Customer DTOs
@@ -85,15 +76,28 @@ public record UpdateCustomerDto(
     [property: JsonPropertyName("fullName")] string? FullName
 );
 
+// Customer Delete Info DTO
+public record CustomerDeleteInfoDto(
+    [property: JsonPropertyName("canDelete")] bool CanDelete,
+    [property: JsonPropertyName("salesCount")] int SalesCount,
+    [property: JsonPropertyName("draftSalesCount")] int DraftSalesCount,
+    [property: JsonPropertyName("debtsCount")] int DebtsCount,
+    [property: JsonPropertyName("totalDebt")] decimal TotalDebt,
+    [property: JsonPropertyName("warningMessage")] string? WarningMessage
+);
+
 // Sale DTOs
 public record SaleItemDto(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("saleId")] string SaleId,
     [property: JsonPropertyName("productId")] Guid ProductId,
     [property: JsonPropertyName("productName")] string ProductName,
-    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("quantity")] decimal Quantity,  // ✅ DECIMAL
+    [property: JsonPropertyName("costPrice")] decimal CostPrice,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("totalPrice")] decimal TotalPrice,
+    [property: JsonPropertyName("profit")] decimal Profit,
+    [property: JsonPropertyName("unit")] string Unit,  // "dona", "kg", "m"
     [property: JsonPropertyName("comment")] string? Comment
 );
 public record PaymentDto(
@@ -128,14 +132,14 @@ public record UpdateSaleCustomerDto(
 );
 public record AddSaleItemDto(
     [property: JsonPropertyName("productId")] Guid ProductId,
-    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("quantity")] decimal Quantity,  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,  // For validation, not stored in SaleItem
     [property: JsonPropertyName("comment")] string? Comment
 );
 public record RemoveSaleItemDto(
     [property: JsonPropertyName("saleItemId")] string SaleItemId,
-    [property: JsonPropertyName("quantity")] int Quantity  // Quantity to remove (0 = remove completely)
+    [property: JsonPropertyName("quantity")] decimal Quantity  // ✅ DECIMAL - Quantity to remove (0 = remove completely)
 );
 public record AddPaymentDto(
     [property: JsonPropertyName("paymentType")] string PaymentType,
@@ -175,7 +179,7 @@ public record PaymentBreakdownDto(
 
 public record DailySaleItemDto(
     [property: JsonPropertyName("productName")] string ProductName,
-    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("quantity")] decimal Quantity,  // ✅ DECIMAL
     [property: JsonPropertyName("costPrice")] decimal CostPrice,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("totalCost")] decimal TotalCost,
@@ -191,6 +195,8 @@ public record DailySaleItemsResponseDto(
 public record DailyReportDto(
     [property: JsonPropertyName("date")] DateTime Date,
     [property: JsonPropertyName("totalSales")] decimal TotalSales,
+    [property: JsonPropertyName("totalPaidSales")] decimal TotalPaidSales,  // To'langan savdolar
+    [property: JsonPropertyName("totalDebtSales")] decimal TotalDebtSales,  // Qarzga sotilgan
     [property: JsonPropertyName("totalZakup")] decimal TotalZakup,
     [property: JsonPropertyName("profit")] decimal? Profit,  // null for Admin/Seller
     [property: JsonPropertyName("netIncome")] decimal? NetIncome,  // null for Admin/Seller
@@ -226,7 +232,7 @@ public record SellerReportDto(
 public record InventoryReportDto(
     [property: JsonPropertyName("productId")] Guid ProductId,
     [property: JsonPropertyName("productName")] string ProductName,
-    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("quantity")] decimal Quantity,  // ✅ DECIMAL
     [property: JsonPropertyName("costPrice")] decimal CostPrice,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
@@ -254,7 +260,8 @@ public record DebtDto(
     [property: JsonPropertyName("totalDebt")] decimal TotalDebt,
     [property: JsonPropertyName("remainingDebt")] decimal RemainingDebt,
     [property: JsonPropertyName("status")] string Status,
-    [property: JsonPropertyName("createdAt")] DateTime CreatedAt
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+    [property: JsonPropertyName("saleItems")] List<SaleItemDto>? SaleItems
 );
 
 // Qarzdorlar uchun DTO
@@ -313,6 +320,8 @@ public record DailySalesListDto(
     [property: JsonPropertyName("date")] DateTime Date,
     [property: JsonPropertyName("sales")] List<DailySalesListItemDto> Sales,
     [property: JsonPropertyName("totalSales")] decimal TotalSales,
+    [property: JsonPropertyName("totalPaidSales")] decimal TotalPaidSales,    // To'langan savdolar ✅ NEW
+    [property: JsonPropertyName("totalDebtSales")] decimal TotalDebtSales,    // Qarzga sotilgan ✅ NEW
     [property: JsonPropertyName("totalTransactions")] int TotalTransactions,
     [property: JsonPropertyName("summaryProfit")] decimal? SummaryProfit  // null for Admin/Seller
 );

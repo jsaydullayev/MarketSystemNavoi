@@ -303,7 +303,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Soni: ${product['quantity'] ?? 0} (o\'zgarmas)',
+                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'} (o\'zgarmas)',  // ✅ UNIT
                   style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 12,

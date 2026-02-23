@@ -35,7 +35,7 @@ class DebtService {
   // Get customer debts
   Future<List<dynamic>> getCustomerDebts(String customerId) async {
     final response = await _httpService.get(
-      '${ApiConstants.debts}/customer/$customerId',
+      '${ApiConstants.debts}/GetCustomerDebts/$customerId',
     );
 
     if (response.statusCode == 200) {

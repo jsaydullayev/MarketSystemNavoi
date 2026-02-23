@@ -421,9 +421,12 @@ public class ReportService : IReportService
         DateTime end,
         string? userRole = null)
     {
-        decimal totalSales = 0;
-        decimal totalCost = 0;     // Cost of goods sold
-        decimal totalProfit = 0;    // Actual profit from sales
+        // ⭐ PROFESSIONAL VARIANT - Separate Paid and Debt sales
+        decimal totalPaidSales = 0;      // To'langan savdolar
+        decimal totalDebtSales = 0;      // Qarzga sotilgan
+        decimal totalAllSales = 0;       // Jami savdo (paid + debt)
+        decimal totalCost = 0;           // Cost of goods sold
+        decimal totalProfit = 0;         // Actual profit from sales
         int totalTransactions = sales.Count();
 
         // Determine if profit should be included (Owner only)
@@ -436,9 +439,15 @@ public class ReportService : IReportService
         // Calculate from sales and their items
         foreach (var sale in sales)
         {
-            totalSales += sale.TotalAmount;
+            var paidAmount = sale.Payments.Sum(p => p.Amount);
+            var debtAmount = sale.TotalAmount - paidAmount;
 
-            // Calculate cost and profit from each sale item
+            // Add to appropriate categories
+            totalPaidSales += paidAmount;
+            totalDebtSales += debtAmount;
+            totalAllSales += sale.TotalAmount;
+
+            // Calculate cost and profit from ALL sale items (both paid and debt)
             foreach (var item in sale.SaleItems)
             {
                 var itemCost = item.CostPrice * item.Quantity;
@@ -452,7 +461,7 @@ public class ReportService : IReportService
                 }
             }
 
-            // Accumulate payment breakdown from payments
+            // Accumulate payment breakdown from payments (only for paid sales)
             foreach (var payment in sale.Payments)
             {
                 var paymentType = payment.PaymentType.ToString();
@@ -481,9 +490,21 @@ public class ReportService : IReportService
             ))
             .ToList();
 
+        // Add "Qarz" to payment breakdown if there is any debt sales
+        if (totalDebtSales > 0)
+        {
+            paymentBreakdownList.Add(new PaymentBreakdownDto(
+                "Qarz",
+                totalDebtSales,
+                0  // Count doesn't apply to debt
+            ));
+        }
+
         return new DailyReportDto(
             start,
-            totalSales,
+            totalAllSales,     // Jami savdo (paid + debt)
+            totalPaidSales,    // To'langan savdolar
+            totalDebtSales,    // Qarzga sotilgan
             totalZakup,
             profit,
             netIncome,
@@ -604,25 +625,41 @@ public class ReportService : IReportService
             includeProperties: "SaleItems,Payments,Seller,Customer");
 
         var salesListItems = new List<DailySalesListItemDto>();
-        decimal totalSales = 0;
+
+        // ⭐ NEW: Separate tracking of paid and debt sales
+        decimal totalPaidSales = 0;      // To'langan savdolar
+        decimal totalDebtSales = 0;      // Qarzga sotilgan
+        decimal totalAllSales = 0;       // Jami savdo (paid + debt)
 
         // Determine if profit should be included (Owner only)
         bool includeProfit = userRole == "Owner";
 
         foreach (var sale in sales)
         {
-            totalSales += sale.TotalAmount;
+            // Calculate paid and debt amounts
+            var paidAmount = sale.Payments.Sum(p => p.Amount);
+            var debtAmount = sale.TotalAmount - paidAmount;
 
-            // Calculate profit for this sale
+            // Add to appropriate categories
+            totalPaidSales += paidAmount;
+            totalDebtSales += debtAmount;
+            totalAllSales += sale.TotalAmount;
+
+            // Calculate profit ONLY for PAID items (pro-rated by paid ratio)
             decimal? profit = null;
             if (includeProfit)
             {
                 profit = 0;
+                var paidRatio = sale.TotalAmount > 0 ? paidAmount / sale.TotalAmount : 0;
+
                 foreach (var item in sale.SaleItems)
                 {
                     var itemCost = item.CostPrice * item.Quantity;
                     var itemRevenue = item.SalePrice * item.Quantity;
-                    profit += itemRevenue - itemCost;
+                    var itemProfit = itemRevenue - itemCost;
+
+                    // Only count the portion that was actually paid
+                    profit += itemProfit * paidRatio;
                 }
             }
 
@@ -653,7 +690,9 @@ public class ReportService : IReportService
         return new DailySalesListDto(
             start,
             salesListItems,
-            totalSales,
+            totalAllSales,     // Jami savdo (paid + debt)
+            totalPaidSales,    // To'langan savdolar
+            totalDebtSales,    // Qarzga sotilgan
             salesListItems.Count,
             summaryProfit
         );
