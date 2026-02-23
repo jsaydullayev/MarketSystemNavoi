@@ -2,7 +2,7 @@ services:
   # Web Service
   - type: web
     name: market-system-api
-    env: dotnet
+    runtime: dotnet
     region: singapore
     buildCommand: dotnet publish -c Release -o ./publish
     publishDirectory: ./publish
