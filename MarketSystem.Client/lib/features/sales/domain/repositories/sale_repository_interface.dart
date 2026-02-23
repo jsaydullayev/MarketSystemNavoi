@@ -25,7 +25,7 @@ abstract class SaleRepositoryInterface {
   Future<ApiResult<void>> addSaleItem({
     required String saleId,
     required String productId,
-    required int quantity,
+    required double quantity,  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
     required double salePrice,
     required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,

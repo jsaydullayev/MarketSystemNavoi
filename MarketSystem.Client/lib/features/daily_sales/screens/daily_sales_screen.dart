@@ -238,52 +238,75 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     final isOwner = authProvider.user?['role'] == 'Owner';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isOwner ? AppTheme.primary : AppTheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _buildSummaryItem(
-            _dailySales!.sales.length.toString(),
-            'savdo',
-            isOwner ? Colors.white : AppTheme.primary,
+          // First row: Sales count and profit (Owner only)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSummaryItem(
+                _dailySales!.sales.length.toString(),
+                'savdo',
+                isOwner ? Colors.white : AppTheme.primary,
+              ),
+              if (isOwner)
+                _buildSummaryItem(
+                  _formatAmount(_dailySales!.summaryProfit ?? 0),
+                  'foyda',
+                  Colors.white,
+                ),
+            ],
           ),
+          const SizedBox(height: 8),
+          // Second row: Paid sales
           _buildSummaryItem(
-            _formatAmount(_dailySales!.totalSales),
-            'jami',
+            _formatAmount(_dailySales!.totalPaidSales),
+            'to\'langan',
             isOwner ? Colors.white : Colors.green,
           ),
-          if (isOwner)
-            _buildSummaryItem(
-              _formatAmount(_dailySales!.summaryProfit ?? 0),
-              'foyda',
-              Colors.white,
-            ),
+          const SizedBox(height: 6),
+          // Third row: Debt sales
+          _buildSummaryItem(
+            _formatAmount(_dailySales!.totalDebtSales),
+            'qarzga sotilgan',
+            isOwner ? Colors.white : Colors.orange.shade700,
+          ),
+          const SizedBox(height: 6),
+          // Fourth row: Total sales
+          _buildSummaryItem(
+            _formatAmount(_dailySales!.totalSales),
+            'jami savdo',
+            isOwner ? Colors.white : AppTheme.primary,
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSummaryItem(String value, String label, Color color) {
-    return Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
-            color: color,
-          ),
-        ),
         Text(
           label,
           style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: color.withValues(alpha: 0.8),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: color.withValues(alpha: 0.9),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            color: color,
           ),
         ),
       ],
@@ -668,8 +691,7 @@ class _SaleDetailSheet extends StatelessWidget {
   Widget _buildItemCard(dynamic item) {
     final productName = item['productName'] ?? 'Noma\'lum';
     final quantity = item['quantity'] ?? 0;
-    final price = (item['salePrice'] ?? 0).toDouble();
-    final total = price * quantity;
+    final total = (item['totalPrice'] ?? 0).toDouble();
     final comment = item['comment'];
 
     return Container(
@@ -707,10 +729,11 @@ class _SaleDetailSheet extends StatelessWidget {
                 ],
                 const SizedBox(height: 4),
                 Text(
-                  '$quantity x ${price.toStringAsFixed(0)} so\'m',
+                  '$quantity ta',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

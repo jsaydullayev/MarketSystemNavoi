@@ -40,6 +40,7 @@ class ProductService {
     required double minSalePrice,
     required int minThreshold,
     int? categoryId,  // ✅ NEW
+    required int unit,  // ✅ NEW: UNIT
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.products}/CreateProduct',
@@ -50,6 +51,7 @@ class ProductService {
         'minSalePrice': minSalePrice,
         'minThreshold': minThreshold,
         if (categoryId != null) 'categoryId': categoryId,  // ✅ NEW
+        'unit': unit,  // ✅ NEW: UNIT
       },
     );
 
@@ -67,6 +69,7 @@ class ProductService {
     required double minSalePrice,
     required int minThreshold,
     int? categoryId,  // ✅ NEW
+    required int unit,  // ✅ NEW: UNIT
   }) async {
     final response = await _httpService.put(
       '${ApiConstants.products}/UpdateProduct/$id',
@@ -77,6 +80,7 @@ class ProductService {
         'minSalePrice': minSalePrice,
         'minThreshold': minThreshold,
         if (categoryId != null) 'categoryId': categoryId,  // ✅ NEW
+        'unit': unit,  // ✅ NEW: UNIT
       },
     );
 

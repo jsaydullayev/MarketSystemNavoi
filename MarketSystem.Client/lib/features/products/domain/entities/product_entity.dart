@@ -12,8 +12,9 @@ class ProductEntity extends Equatable {
   final double costPrice;
   final double salePrice;
   final double minSalePrice;
-  final int quantity;
-  final int minThreshold;
+  final double quantity;      // ✅ DECIMAL - 1.5 kg bo'lishi mumkin
+  final double minThreshold;  // ✅ DECIMAL
+  final int unit;             // ✅ UNIT: 1=dona, 2=kg, 3=m
 
   const ProductEntity({
     required this.id,
@@ -24,6 +25,7 @@ class ProductEntity extends Equatable {
     required this.minSalePrice,
     required this.quantity,
     required this.minThreshold,
+    required this.unit,        // ✅ NEW
   });
 
   @override
@@ -36,6 +38,7 @@ class ProductEntity extends Equatable {
         minSalePrice,
         quantity,
         minThreshold,
+        unit,  // ✅ NEW
       ];
 
   /// Check if product is in low stock
@@ -46,4 +49,18 @@ class ProductEntity extends Equatable {
 
   /// Check if sale price is below minimum
   bool get isSalePriceInvalid => salePrice < minSalePrice;
+
+  /// Get unit name in Uzbek
+  String get unitName {
+    switch (unit) {
+      case 1:
+        return 'dona';
+      case 2:
+        return 'kg';
+      case 3:
+        return 'm';
+      default:
+        return 'noma\'lum';
+    }
+  }
 }

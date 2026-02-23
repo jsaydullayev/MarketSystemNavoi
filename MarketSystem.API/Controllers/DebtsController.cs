@@ -31,7 +31,7 @@ public class DebtsController : ControllerBase
     /// <summary>
     /// Get all open debts for a customer
     /// </summary>
-    [HttpGet("customer/{customerId}")]
+    [HttpGet("{customerId}")]
     public async Task<ActionResult<IEnumerable<DebtDto>>> GetCustomerDebts(Guid customerId)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
@@ -39,21 +39,45 @@ public class DebtsController : ControllerBase
         // ✅ OPTIMIZED: Single query with eager loading
         var debts = await _unitOfWork.Debts.GetQueryable()
             .Include(d => d.Sale)
+                .ThenInclude(s => s.SaleItems)
+                    .ThenInclude(si => si.Product)
             .Include(d => d.Customer)
             .Where(d => d.CustomerId == customerId && d.Status == DebtStatus.Open && d.MarketId == marketId)
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync(CancellationToken.None);
 
-        var result = debts.Select(debt => new DebtDto(
-            debt.Id,
-            debt.SaleId,
-            debt.CustomerId,
-            debt.Customer?.FullName,
-            debt.TotalDebt,
-            debt.RemainingDebt,
-            debt.Status.ToString(),
-            debt.Sale?.CreatedAt ?? DateTime.MinValue
-        )).ToList();
+        var result = debts.Select(debt => {
+            // Map sale items to DTOs
+            List<SaleItemDto>? saleItems = null;
+            if (debt.Sale?.SaleItems != null)
+            {
+                saleItems = debt.Sale.SaleItems.Select(si => new SaleItemDto(
+                    si.Id.ToString(),
+                    si.SaleId.ToString(),
+                    si.ProductId,
+                    si.Product?.Name ?? "Noma'lum mahsulot",
+                    si.Quantity,
+                    si.CostPrice,
+                    si.SalePrice,
+                    si.TotalPrice,
+                    si.Profit,
+                    "dona", // TODO: Get from product
+                    si.Comment
+                )).ToList();
+            }
+
+            return new DebtDto(
+                debt.Id,
+                debt.SaleId,
+                debt.CustomerId,
+                debt.Customer?.FullName,
+                debt.TotalDebt,
+                debt.RemainingDebt,
+                debt.Status.ToString(),
+                debt.Sale?.CreatedAt ?? DateTime.MinValue,
+                saleItems
+            );
+        }).ToList();
 
         return Ok(result);
     }
@@ -179,10 +203,14 @@ public class DebtsController : ControllerBase
         var debtsQuery = status.HasValue
             ? _unitOfWork.Debts.GetQueryable()
                 .Include(d => d.Sale)
+                    .ThenInclude(s => s.SaleItems)
+                        .ThenInclude(si => si.Product)
                 .Include(d => d.Customer)
                 .Where(d => d.Status == status.Value && d.MarketId == marketId)
             : _unitOfWork.Debts.GetQueryable()
                 .Include(d => d.Sale)
+                    .ThenInclude(s => s.SaleItems)
+                        .ThenInclude(si => si.Product)
                 .Include(d => d.Customer)
                 .Where(d => d.MarketId == marketId);
 
@@ -190,16 +218,38 @@ public class DebtsController : ControllerBase
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync(CancellationToken.None);
 
-        var result = debts.Select(debt => new DebtDto(
-            debt.Id,
-            debt.SaleId,
-            debt.CustomerId,
-            debt.Customer?.FullName,
-            debt.TotalDebt,
-            debt.RemainingDebt,
-            debt.Status.ToString(),
-            debt.Sale?.CreatedAt ?? DateTime.MinValue
-        )).ToList();
+        var result = debts.Select(debt => {
+            // Map sale items to DTOs
+            List<SaleItemDto>? saleItems = null;
+            if (debt.Sale?.SaleItems != null)
+            {
+                saleItems = debt.Sale.SaleItems.Select(si => new SaleItemDto(
+                    si.Id.ToString(),
+                    si.SaleId.ToString(),
+                    si.ProductId,
+                    si.Product?.Name ?? "Noma'lum mahsulot",
+                    si.Quantity,
+                    si.CostPrice,
+                    si.SalePrice,
+                    si.TotalPrice,
+                    si.Profit,
+                    "dona", // TODO: Get from product
+                    si.Comment
+                )).ToList();
+            }
+
+            return new DebtDto(
+                debt.Id,
+                debt.SaleId,
+                debt.CustomerId,
+                debt.Customer?.FullName,
+                debt.TotalDebt,
+                debt.RemainingDebt,
+                debt.Status.ToString(),
+                debt.Sale?.CreatedAt ?? DateTime.MinValue,
+                saleItems
+            );
+        }).ToList();
 
         return Ok(result);
     }

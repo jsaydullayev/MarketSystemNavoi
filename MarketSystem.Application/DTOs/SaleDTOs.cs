@@ -6,6 +6,6 @@ public record CreateSaleRequest(Guid SellerId, Guid? CustomerId);
 public record AddSaleItemRequest(Guid SaleId, Guid ProductId, decimal Quantity, decimal CostPrice, decimal SalePrice, string? Comment);
 public record ReturnSaleItemRequest(string SaleItemId, decimal Quantity, string? Comment);
 public record AddPaymentRequest(Guid SaleId, PaymentType PaymentType, decimal Amount);
-public record SaleItemResponse(Guid Id, Guid ProductId, string ProductName, decimal Quantity, decimal CostPrice, decimal SalePrice, decimal Profit, string? Comment);
+public record SaleItemResponse(Guid Id, Guid ProductId, string ProductName, decimal Quantity, decimal CostPrice, decimal SalePrice, decimal TotalPrice, decimal Profit, string Unit, string? Comment);
 public record PaymentResponse(Guid Id, PaymentType PaymentType, decimal Amount, DateTime CreatedAt);
 public record SaleResponse(Guid Id, Guid SellerId, SaleStatus Status, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount, ICollection<SaleItemResponse> Items, ICollection<PaymentResponse> Payments);

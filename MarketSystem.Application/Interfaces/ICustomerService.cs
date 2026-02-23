@@ -11,4 +11,5 @@ public interface ICustomerService
     Task<CustomerDto?> UpdateCustomerAsync(UpdateCustomerDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteCustomerAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> SoftDeleteCustomerAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<CustomerDeleteInfoDto> GetCustomerDeleteInfoAsync(Guid id, CancellationToken cancellationToken = default);
 }
