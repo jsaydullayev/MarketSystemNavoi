@@ -229,29 +229,6 @@ try
 
     var app = builder.Build();
 
-    // ⭐ Configure Serilog PostgreSQL logging dynamically
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (!string.IsNullOrEmpty(connectionString) && app.Environment.IsProduction())
-    {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-            .Enrich.FromLogContext()
-            .Enrich.WithProperty("Application", "MarketSystem")
-            .WriteTo.Console(
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
-            )
-            .WriteTo.PostgreSQL(
-                connectionString: connectionString,
-                tableName: "Logs",
-                needAutoCreateTable: true,
-                restrictedToMinimumLevel: LogEventLevel.Warning
-            )
-            .CreateLogger();
-    }
-
     // ⭐ CRITICAL: Apply database migrations in Production
     // This ensures tables are created when deploying to Render.com
     using (var scope = app.Services.CreateScope())

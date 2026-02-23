@@ -2,6 +2,7 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 EXPOSE 80
+ENV ASPNETCORE_URLS=http://+:80
 
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
@@ -20,4 +21,6 @@ RUN dotnet publish "MarketSystem.API.csproj" -c Release -o /app/publish /p:UseAp
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+# ⭐ CRITICAL: Set environment to Production
+ENV ASPNETCORE_ENVIRONMENT=Production
 ENTRYPOINT ["dotnet", "MarketSystem.API.dll"]
