@@ -46,4 +46,64 @@ class NumberFormatter {
 
     return formatter.format(number);
   }
+
+  /// Format DateTime to GMT+5 (Tashkent time)
+  /// Returns formatted string: "DD.MM.YYYY HH:MM" or "DD.MM.YYYY" (timeOnly=false)
+  static String formatDateTime(dynamic dateTime, {bool showTime = true}) {
+    if (dateTime == null) return 'Noma\'lum';
+
+    DateTime date;
+    if (dateTime is String) {
+      try {
+        date = DateTime.parse(dateTime);
+      } catch (e) {
+        return dateTime.toString();
+      }
+    } else if (dateTime is DateTime) {
+      date = dateTime;
+    } else {
+      return 'Noma\'lum';
+    }
+
+    // Convert to GMT+5 (Tashkent time)
+    final tashkentTime = date.toUtc().add(const Duration(hours: 5));
+
+    if (showTime) {
+      // Format: "23.02.2026 14:30"
+      return '${tashkentTime.day.toString().padLeft(2, '0')}.'
+             '${tashkentTime.month.toString().padLeft(2, '0')}.'
+             '${tashkentTime.year} '
+             '${tashkentTime.hour.toString().padLeft(2, '0')}:'
+             '${tashkentTime.minute.toString().padLeft(2, '0')}';
+    } else {
+      // Format: "23.02.2026"
+      return '${tashkentTime.day.toString().padLeft(2, '0')}.'
+             '${tashkentTime.month.toString().padLeft(2, '0')}.'
+             '${tashkentTime.year}';
+    }
+  }
+
+  /// Format time only (GMT+5): "14:30"
+  static String formatTime(dynamic dateTime) {
+    if (dateTime == null) return 'Noma\'lum';
+
+    DateTime date;
+    if (dateTime is String) {
+      try {
+        date = DateTime.parse(dateTime);
+      } catch (e) {
+        return dateTime.toString();
+      }
+    } else if (dateTime is DateTime) {
+      date = dateTime;
+    } else {
+      return 'Noma\'lum';
+    }
+
+    // Convert to GMT+5 (Tashkent time)
+    final tashkentTime = date.toUtc().add(const Duration(hours: 5));
+
+    return '${tashkentTime.hour.toString().padLeft(2, '0')}:'
+           '${tashkentTime.minute.toString().padLeft(2, '0')}';
+  }
 }

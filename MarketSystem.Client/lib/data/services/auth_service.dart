@@ -181,4 +181,7 @@ class AuthService {
       rethrow;
     }
   }
+
+  // HttpService getter
+  HttpService get httpService => _httpService;
 }

@@ -26,7 +26,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     super.initState();
     _authProvider = Provider.of<AuthProvider>(context, listen: false);
     _categoryService = CategoryService(authProvider: _authProvider);
-    _downloadService = DownloadService();
+    _downloadService = DownloadService.getInstance(_authProvider.httpService);
     _loadCategories();
   }
 

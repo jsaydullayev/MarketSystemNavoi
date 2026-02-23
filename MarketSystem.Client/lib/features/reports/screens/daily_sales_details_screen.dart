@@ -99,10 +99,7 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
   Widget _buildSaleItemCard(Map<String, dynamic> item) {
     final productName = item['productName'] as String? ?? 'Noma\'lum tovar';
     final quantity = item['quantity'] as int? ?? 0;
-    final costPrice = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
-    final salePrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-    final totalCost = costPrice * quantity;
-    final totalRevenue = salePrice * quantity;
+    final totalRevenue = (item['totalRevenue'] as num?)?.toDouble() ?? 0.0;
 
     // Profit is now nullable (only for Owner)
     final profit = item['profit'] != null
@@ -117,54 +114,34 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product name
-            Text(
-              productName,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+            // Product name and total in header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    productName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${NumberFormatter.formatDecimal(totalRevenue)} so\'m',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
             ),
             const Divider(height: 16),
 
             // Quantity
-            _buildInfoRow('Miqdor:', '$quantity dona', Icons.inventory),
-
-            const SizedBox(height: 8),
-
-            // Cost price
-            _buildInfoRow(
-              'Olingan narxi:',
-              '${NumberFormatter.formatDecimal(costPrice)} so\'m',
-              Icons.shopping_cart,
-              color: Colors.orange,
-            ),
-
-            // Sale price
-            _buildInfoRow(
-              'Sotilgan narxi:',
-              '${NumberFormatter.formatDecimal(salePrice)} so\'m',
-              Icons.sell,
-              color: Colors.blue,
-            ),
-
-            const Divider(height: 16),
-
-            // Total cost
-            _buildInfoRow(
-              'Jami xarajat:',
-              '${NumberFormatter.formatDecimal(totalCost)} so\'m',
-              Icons.money_off,
-              color: Colors.grey,
-            ),
-
-            // Total revenue
-            _buildInfoRow(
-              'Jami tushum:',
-              '${NumberFormatter.formatDecimal(totalRevenue)} so\'m',
-              Icons.attach_money,
-              color: Colors.green,
-            ),
+            _buildInfoRow('Miqdor:', '$quantity ta', Icons.inventory),
 
             // Only show profit if user is Owner (profit is not null)
             if (profit != null) ...[
@@ -192,10 +169,10 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Foyda:',
+                          'Sof foyda:',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                             color: profit >= 0 ? Colors.green[700] : Colors.red[700],
                           ),
                         ),
@@ -204,7 +181,7 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
                     Text(
                       '${NumberFormatter.formatDecimal(profit)} so\'m',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: profit >= 0 ? Colors.green[700] : Colors.red[700],
                       ),

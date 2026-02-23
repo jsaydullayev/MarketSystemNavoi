@@ -409,13 +409,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 Icon(
                   Icons.layers,
                   size: 16,
-                  color: _getStockColor(product['quantity']),
+                  color: _getStockColor(product['quantity']?.toDouble()),
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Soni: ${product['quantity'] ?? 0}',
+                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'}',  // ✅ UNIT
                   style: TextStyle(
-                    color: _getStockColor(product['quantity']),
+                    color: _getStockColor(product['quantity']?.toDouble()),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -487,7 +487,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
   }
 
-  Color _getStockColor(int? quantity) {
+  Color _getStockColor(double? quantity) {
     if (quantity == null || quantity <= 0) return Colors.red;
     if (quantity <= 10) return Colors.orange;
     return Colors.green;
