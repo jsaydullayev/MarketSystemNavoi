@@ -1,6 +1,7 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -80,8 +81,9 @@ public class ProductService : IProductService
             MinSalePrice = request.MinSalePrice,
             Quantity = 0, // Zakup orqali belgilanadi
             MinThreshold = request.MinThreshold,
+            Unit = (UnitType)request.Unit,  // ✅ NEW: Unit type
             MarketId = marketId.Value,  // Multi-tenancy
-            CategoryId = request.CategoryId  // ✅ NEW
+            CategoryId = request.CategoryId  // Category
         };
 
         await _unitOfWork.Products.AddAsync(product, cancellationToken);
@@ -107,7 +109,8 @@ public class ProductService : IProductService
         product.SalePrice = request.SalePrice;
         product.MinSalePrice = request.MinSalePrice;
         product.MinThreshold = request.MinThreshold;
-        product.CategoryId = request.CategoryId;  // ✅ NEW
+        product.Unit = (UnitType)request.Unit;  // ✅ NEW: Update unit
+        product.CategoryId = request.CategoryId;  // Category
 
         _context.Entry(product).State = EntityState.Modified;
         _unitOfWork.Products.Update(product);
@@ -133,7 +136,7 @@ public class ProductService : IProductService
         return true;
     }
 
-    public async Task<bool> UpdateStockAsync(Guid id, int quantityChange, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateStockAsync(Guid id, decimal quantityChange, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
@@ -146,10 +149,11 @@ public class ProductService : IProductService
             return false;
 
         // Check if new quantity would be negative
-        if (product.Quantity + quantityChange < 0)
-            throw new InvalidOperationException($"Insufficient stock. Current: {product.Quantity}, Change: {quantityChange}");
+        var newQuantity = product.Quantity + quantityChange;
+        if (newQuantity < 0)
+            throw new InvalidOperationException($"Insufficient stock. Current: {product.Quantity} {product.GetUnitName()}, Requested change: {quantityChange}");
 
-        product.Quantity += quantityChange;
+        product.Quantity = newQuantity;
         _context.Entry(product).State = EntityState.Modified;
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -161,14 +165,18 @@ public class ProductService : IProductService
         return new ProductDto(
             product.Id,
             product.Name,
-            product.IsTemporary,
             product.CostPrice,
             product.SalePrice,
             product.MinSalePrice,
             product.Quantity,
             product.MinThreshold,
+            (int)product.Unit,  // Cast enum to int
+            product.GetUnitName(),  // Unit name (dona/kg/m)
             product.CategoryId,
-            product.Category?.Name
+            product.Category?.Name,
+            product.IsTemporary,
+            product.IsInStock(1),  // Simplified check
+            product.IsLowStock
         );
     }
 }

@@ -85,6 +85,13 @@ public class CustomersController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("{id}/delete-info")]
+    public async Task<ActionResult<CustomerDeleteInfoDto>> GetCustomerDeleteInfo(Guid id)
+    {
+        var deleteInfo = await _customerService.GetCustomerDeleteInfoAsync(id);
+        return Ok(deleteInfo);
+    }
+
     [HttpPost("{id}/soft-delete")]
     public async Task<IActionResult> SoftDeleteCustomer(Guid id)
     {

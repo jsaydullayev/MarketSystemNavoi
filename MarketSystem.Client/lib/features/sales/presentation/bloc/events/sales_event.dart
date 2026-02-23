@@ -35,7 +35,7 @@ class CreateSaleEvent extends SalesEvent {
 class AddSaleItemEvent extends SalesEvent {
   final String saleId;
   final String productId;
-  final int quantity;
+  final double quantity;  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
   final double salePrice;
   final double minSalePrice;
   final String? comment;

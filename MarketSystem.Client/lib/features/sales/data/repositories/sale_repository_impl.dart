@@ -69,7 +69,7 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
   Future<ApiResult<void>> addSaleItem({
     required String saleId,
     required String productId,
-    required int quantity,
+    required double quantity,  // ✅ DECIMAL
     required double salePrice,
     required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,

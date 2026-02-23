@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../screens/dashboard_screen.dart';
+import '../../../data/services/customer_service.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../presentation/bloc/customers_bloc.dart';
 import '../presentation/bloc/events/customers_event.dart';
 import '../presentation/bloc/states/customers_state.dart';
@@ -16,13 +18,30 @@ class CustomersScreen extends StatefulWidget {
 
 class _CustomersScreenState extends State<CustomersScreen> {
   final _searchController = TextEditingController();
+  late final CustomerService _customerService;
 
   @override
   void initState() {
     super.initState();
+    // Initialize customer service
+    final authProvider = context.read<AuthProvider>();
+    _customerService = CustomerService(authProvider: authProvider);
+
     // Load customers on init
     context.read<CustomersBloc>().add(const GetCustomersEvent());
     _searchController.addListener(_filterCustomers);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Screen focus qaytganda refresh qilish
+    if (mounted) {
+      print('🔄 CustomersScreen: didChangeDependencies called, refreshing customers...');
+      Future.delayed(Duration.zero, () {
+        context.read<CustomersBloc>().add(const GetCustomersEvent());
+      });
+    }
   }
 
   @override
@@ -48,29 +67,113 @@ class _CustomersScreenState extends State<CustomersScreen> {
     }
   }
 
-  void _deleteCustomer(dynamic customer) {
-    showDialog<bool>(
+  void _deleteCustomer(dynamic customer) async {
+    // Show loading dialog
+    if (!mounted) return;
+
+    showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Mijozni o\'chirish'),
-        content: Text('${customer['fullName'] ?? customer['phone']} mijozini rostdan ham o\'chirmoqchimisiz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Yo\'q'),
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: CircularProgressIndicator(),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Ha'),
-          ),
-        ],
+        ),
       ),
-    ).then((confirmed) {
-      if (confirmed == true && mounted) {
-        context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
-      }
-    });
+    );
+
+    try {
+      // Get customer delete info first
+      final deleteInfo = await _customerService.getCustomerDeleteInfo(customer['id']);
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show confirmation dialog with warning
+      showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Mijozni o\'chirish'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${customer['fullName'] ?? customer['phone']} mijozini o\'chirmoqchimisiz?'),
+              if (deleteInfo['warningMessage'] != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          deleteInfo['warningMessage'],
+                          style: TextStyle(
+                            color: Colors.orange.shade900,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Yo\'q'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Ha, o\'chirish'),
+            ),
+          ],
+        ),
+      ).then((confirmed) {
+        if (confirmed == true && mounted) {
+          context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
+        }
+      });
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show error and proceed with simple delete
+      showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Mijozni o\'chirish'),
+          content: Text('${customer['fullName'] ?? customer['phone']} mijozini rostdan ham o\'chirmoqchimisiz?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Yo\'q'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Ha'),
+            ),
+          ],
+        ),
+      ).then((confirmed) {
+        if (confirmed == true && mounted) {
+          context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
+        }
+      });
+    }
   }
 
   void _showAddCustomerDialog() {
@@ -391,6 +494,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
                     );
                   } else if (state is CustomersLoaded) {
                     final customers = state.customers.map((e) => e.toJson()).toList();
+                    print('🏠 CustomersScreen: BlocBuilder rebuilt with ${customers.length} customers');
+                    for (var customer in customers) {
+                      print('  - ${customer['fullName']} (${customer['phone']}): ${customer['totalDebt']} so\'m qarz');
+                    }
                     final filteredCustomers = _getFilteredCustomers(customers);
 
                     if (filteredCustomers.isEmpty) {
@@ -459,8 +566,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => CustomerDetailScreen(
@@ -470,6 +577,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
               ),
             ),
           );
+          // Qaytganidan keyin refresh qilish
+          if (mounted) {
+            print('🔄 CustomerDetail returned, refreshing customers...');
+            context.read<CustomersBloc>().add(const GetCustomersEvent());
+          }
         },
         child: ListTile(
           leading: Container(

@@ -45,6 +45,10 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
     final result = await getCustomersUseCase();
 
     if (result.isSuccess && result.data != null) {
+      print('📊 CustomersBloc: Loaded ${result.data!.length} customers');
+      for (var customer in result.data!) {
+        print('  - ${customer.fullName} (${customer.phone}): ${customer.totalDebt} so\'m qarz');
+      }
       emit(CustomersLoaded(result.data!));
     } else {
       emit(CustomersError(result.error ?? 'Mijozlarni yuklashda xatolik'));

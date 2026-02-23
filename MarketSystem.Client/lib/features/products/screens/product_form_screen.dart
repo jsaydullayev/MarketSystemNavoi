@@ -28,6 +28,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   int? _selectedCategory;
   bool _isLoadingCategories = true;
 
+  // ✅ UNIT DROPDOWN
+  int _selectedUnit = 1; // Default: dona (Piece)
+  final List<Map<String, dynamic>> _units = [
+    {'value': 1, 'name': 'dona', 'icon': Icons.inventory_2_outlined},
+    {'value': 2, 'name': 'kg', 'icon': Icons.scale},
+    {'value': 3, 'name': 'm', 'icon': Icons.straighten},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +47,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _minThresholdController.text = (widget.product['minThreshold'] ?? 0).toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
       _selectedCategory = widget.product['categoryId'];
+      _selectedUnit = widget.product['unit'] ?? 1; // ✅ LOAD UNIT
     }
   }
 
@@ -94,7 +103,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           salePrice: salePrice,
           minSalePrice: minSalePrice,
           minThreshold: minThreshold,
-          categoryId: _selectedCategory,  // ✅ NEW
+          categoryId: _selectedCategory,
+          unit: _selectedUnit,  // ✅ NEW: UNIT
         );
       } else {
         // Update existing product
@@ -104,7 +114,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           salePrice: salePrice,
           minSalePrice: minSalePrice,
           minThreshold: minThreshold,
-          categoryId: _selectedCategory,  // ✅ NEW
+          categoryId: _selectedCategory,
+          unit: _selectedUnit,  // ✅ NEW: UNIT
         );
       }
 
@@ -187,6 +198,44 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       });
                     },
                   ),
+            const SizedBox(height: 16),
+
+            // ✅ UNIT DROPDOWN - NEW
+            DropdownButtonFormField<int>(
+              value: _selectedUnit,
+              decoration: const InputDecoration(
+                labelText: 'O\'lchov birligi',
+                prefixIcon: Icon(Icons.straighten),
+                border: OutlineInputBorder(),
+                hintText: 'Birligni tanlang',
+              ),
+              items: _units.map<DropdownMenuItem<int>>((unit) {
+                return DropdownMenuItem<int>(
+                  value: unit['value'] as int,
+                  child: Row(
+                    children: [
+                      Icon(unit['icon'] as IconData),
+                      const SizedBox(width: 12),
+                      Text(unit['name'] as String),
+                      const SizedBox(width: 8),
+                      Text(
+                        unit['value'] == 1 ? '(dona)' :
+                        unit['value'] == 2 ? '(kilogram)' :
+                        '(metr)',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedUnit = value;
+                  });
+                }
+              },
+            ),
             const SizedBox(height: 16),
 
             // IsTemporary checkbox
