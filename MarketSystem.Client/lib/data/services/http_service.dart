@@ -37,17 +37,34 @@ class HttpService {
 
   // Tokenlarni saqlash
   Future<void> saveTokens(String accessToken, String refreshToken) async {
+    print('=== SAVING TOKENS ===');
+    print('Access Token: ${accessToken.substring(0, 20)}...');
+    print('Refresh Token: ${refreshToken.substring(0, 20)}...');
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
     await prefs.setString('refresh_token', refreshToken);
     _accessToken = accessToken;
+
+    // Tekshirish: saqlanganni o'qib ko'ramiz
+    final saved = prefs.getString('access_token');
+    print('Token saved: ${saved != null ? "YES" : "NO"}');
+    print('====================');
   }
 
   // Tokenlarni olish
   Future<String?> getAccessToken() async {
-    if (_accessToken != null) return _accessToken;
+    if (_accessToken != null) {
+      print('✅ Token from memory: ${_accessToken!.substring(0, 20)}...');
+      return _accessToken;
+    }
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
+    if (_accessToken != null) {
+      print('✅ Token from SharedPreferences: ${_accessToken!.substring(0, 20)}...');
+    } else {
+      print('❌ NO TOKEN FOUND in SharedPreferences!');
+    }
     return _accessToken;
   }
 
@@ -157,6 +174,12 @@ class HttpService {
 
   Future<http.Response> _performGet(String endpoint) async {
     final token = await getAccessToken();
+
+    print('=== HTTP GET ===');
+    print('URL: $baseUrl$endpoint');
+    print('Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}');
+    print('================');
+
     return http.get(
       Uri.parse('$baseUrl$endpoint'),
       headers: {

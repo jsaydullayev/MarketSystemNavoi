@@ -9,7 +9,6 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
 import '../presentation/bloc/sales_bloc.dart';
 import '../presentation/bloc/events/sales_event.dart';
-import 'draft_sales_screen.dart';
 
 class NewSaleScreen extends StatefulWidget {
   const NewSaleScreen({super.key});
@@ -254,13 +253,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
-  void _showPaymentDialog(String saleId) {
+  void _showPaymentDialog(String? saleId) {
     // Agar qarzga sotmoqchi bo'lsa, mijoz majburiy
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => _PaymentDialog(
-        saleId: saleId,
+        saleId: saleId ?? '', // Empty string agar saleId null bo'lsa
         totalAmount: _totalAmount,
         selectedCustomer: _selectedCustomer,
         onConfirm: (payments, useDebt) async {
@@ -269,10 +268,41 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 Provider.of<AuthProvider>(context, listen: false);
             final salesService = SalesService(authProvider: authProvider);
 
+            String finalSaleId;
+
+            // Agar saleId null bo'lsa, savdo yaratamiz
+            if (saleId == null || saleId.isEmpty) {
+              // 1. Create sale
+              final sale = await salesService.createSale(
+                customerId: _selectedCustomer?['id'],
+              );
+
+              // 2. Add all items to sale
+              for (var item in _cartItems) {
+                await salesService.addSaleItem(
+                  saleId: sale['id'],
+                  productId: item['productId'],
+                  quantity: item['quantity'],
+                  salePrice: item['salePrice'],
+                  minSalePrice: item['minSalePrice'],
+                  comment: item['comment'],
+                );
+              }
+
+              finalSaleId = sale['id'];
+
+              // 3. Clear cart
+              setState(() {
+                _cartItems.clear();
+              });
+            } else {
+              finalSaleId = saleId;
+            }
+
             // Barcha to'lovlarni yuborish
             for (var payment in payments) {
               await salesService.addPayment(
-                saleId: saleId,
+                saleId: finalSaleId,
                 paymentType: payment['paymentType'],
                 amount: payment['amount'],
               );
@@ -280,7 +310,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
             // Agar qarzga yozilsa, statusni Debt ga o'tkazish
             if (useDebt && payments.isEmpty) {
-              await salesService.markSaleAsDebt(saleId);
+              await salesService.markSaleAsDebt(finalSaleId);
             }
 
             if (mounted) {
@@ -308,14 +338,38 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             }
           }
         },
-        onCancel: () {
-          // Savdo draft sifatida saqlandi, Draft Savdolarga o'tamiz
-          if (mounted) {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const DraftSalesScreen()),
-              (route) => false,
-            );
+        onCancel: () async {
+          // Savdo bekor qilindi
+          // Agar savdo allaqachon yaratilgan bo'lsa, o'chiramiz
+          if (saleId != null && saleId.isNotEmpty) {
+            try {
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              final salesService = SalesService(authProvider: authProvider);
+
+              // Savdani o'chiramiz
+              await salesService.deleteSale(saleId: saleId);
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✅ Savdo bekor qilindi'),
+                    backgroundColor: Colors.grey,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Savdo o\'chirishda xatolik: $e'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            }
           }
+          // Dialogni yopish - PaymentDialog o'zi yopibdi
         },
       ),
     );
@@ -332,53 +386,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       return;
     }
 
-    setState(() {
-      _isCreating = true;
-    });
+    // ⚠️ OLD FLOW: Avval savdo yaratilardi, keyin to'lov dialog
+    // NEW FLOW: Avval to'lov dialog, "Tasdiqlash" bosilganda savdo yaratiladi
 
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salesService = SalesService(authProvider: authProvider);
-
-      // 1. Create sale
-      final sale = await salesService.createSale(
-        customerId: _selectedCustomer?['id'],
-      );
-
-      // 2. Add all items to sale
-      for (var item in _cartItems) {
-        await salesService.addSaleItem(
-          saleId: sale['id'],
-          productId: item['productId'],
-          quantity: item['quantity'],
-          salePrice: item['salePrice'],
-          minSalePrice: item['minSalePrice'], // ✅ Backendga minPrice yuborish
-          comment: item['comment'],
-        );
-      }
-
-      setState(() {
-        _isCreating = false;
-      });
-
-      // 3. Show payment dialog
-      if (mounted) {
-        _showPaymentDialog(sale['id']);
-      }
-    } catch (e) {
-      setState(() {
-        _isCreating = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    // Demak, hozircha NULL yuboramiz, savdo yaratilmaydi
+    // "Tasdiqlash" bosilganda savdo yaratiladi
+    _showPaymentDialog(null);
   }
 
   Future<void> _completeSaleFinish(bool useDebt) async {
@@ -843,7 +856,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                   itemCount: _filteredProducts.length,
                                   itemBuilder: (context, index) {
                                     final product = _filteredProducts[index];
-                                    final quantity = product['quantity'] ?? 0;
+                                    final quantity = (product['quantity'] as num?)?.toDouble() ?? 0.0;
                                     final isInStock = quantity > 0;
 
                                     return Container(
@@ -1378,7 +1391,7 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
 
 // Payment Dialog Widget
 class _PaymentDialog extends StatefulWidget {
-  final String saleId;
+  final String saleId; // Nullable, lekin String bo'lishi kerak (empty string allowed)
   final double totalAmount;
   final Map<String, dynamic>? selectedCustomer;
   final Function(List<Map<String, dynamic>>, bool) onConfirm;
@@ -1429,10 +1442,18 @@ class _PaymentDialogState extends State<_PaymentDialog> {
       // Qarzga sotish - mijoz bo'lishi shart
       return widget.selectedCustomer != null && _totalPaid >= 0;
     } else {
-      // To'liq to'lash yoki partial payment
-      // Mijozsiz partial payment uchun ruxsat: status "debt" bo'ladi
-      return _remainingAmount <= 0.01 ||
-          (_remainingAmount > 0.01 && _totalPaid > 0);
+      // To'liq to'lash kerak
+      // Agar to'lov kiritilmagan bo'lsa (0), tasdiqlab bo'lmaydi
+      if (_totalPaid <= 0) {
+        return false;
+      }
+
+      // Qarz tanlanmagan bo'lsa, to'liq to'lash kerak
+      if (!_useDebt && _remainingAmount > 0.01) {
+        return false;
+      }
+
+      return true;
     }
   }
 
@@ -1443,6 +1464,22 @@ class _PaymentDialogState extends State<_PaymentDialog> {
     _transferController.dispose();
     _clickController.dispose();
     super.dispose();
+  }
+
+  void _showWarningDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1694,6 +1731,32 @@ class _PaymentDialogState extends State<_PaymentDialog> {
           onPressed: _isProcessing || !_canConfirm()
               ? null
               : () async {
+                  // Validation: Kam summa kiritilsa
+                  if (_totalPaid < widget.totalAmount && !_useDebt) {
+                    if (!mounted) return;
+                    _showWarningDialog(
+                      'Kam summa kiritildi!',
+                      'Jami summa: ${NumberFormatter.formatDecimal(widget.totalAmount)} so\'m\n'
+                      'Siz kiritdingiz: ${NumberFormatter.formatDecimal(_totalPaid)} so\'m\n'
+                      'Qolgan: ${NumberFormatter.formatDecimal(_remainingAmount)} so\'m\n\n'
+                      'Iltimos, to\'liq summani kiriting yoki "Qarzga yozish"ni tanlang.',
+                    );
+                    return;
+                  }
+
+                  // Validation: Ko'p summa kiritilsa
+                  if (_totalPaid > widget.totalAmount + 0.01) {
+                    if (!mounted) return;
+                    _showWarningDialog(
+                      'Ko\'p summa kiritildi!',
+                      'Jami summa: ${NumberFormatter.formatDecimal(widget.totalAmount)} so\'m\n'
+                      'Siz kiritdingiz: ${NumberFormatter.formatDecimal(_totalPaid)} so\'m\n'
+                      'Ortiqcha: ${NumberFormatter.formatDecimal(_totalPaid - widget.totalAmount)} so\'m\n\n'
+                      'Iltimos, to\'g\'ri summani kiriting.',
+                    );
+                    return;
+                  }
+
                   setState(() {
                     _isProcessing = true;
                   });

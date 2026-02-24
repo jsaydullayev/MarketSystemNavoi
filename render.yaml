@@ -1,17 +1,18 @@
 services:
-  # Web Service
+  # Web Service (Docker - RECOMMENDED for .NET 9.0)
   - type: web
     name: market-system-api
-    env: dotnet
+    env: docker
     region: singapore
-    buildCommand: dotnet publish -c Release -o ./publish
-    publishDirectory: ./publish
-    startCommand: dotnet MarketSystem.API.dll
+    plan: free
+    healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:80
       - key: JWT__Secret
-        generateValue: true
+        value: your_super_secret_jwt_key_minimum_32_characters_long_change_this_in_production
       - key: ConnectionStrings__DefaultConnection
         fromDatabase:
           name: marketdb
@@ -23,4 +24,5 @@ services:
     region: singapore
     databaseName: marketdb
     user: marketuser
-    plan: free  # Free tier: 1 GB, 90 days retention
+    plan: free
+    maxConnections: 10

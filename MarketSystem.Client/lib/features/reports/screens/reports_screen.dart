@@ -935,7 +935,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildInventoryItemCard(Map<String, dynamic> item, {bool isOwner = true}) {
     final productName = item['productName'] as String? ?? 'Noma\'lum';
-    final quantity = item['quantity'] as int? ?? 0;
+    final quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final costPrice = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
     final salePrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
     final totalCostValue = (item['totalCostValue'] as num?)?.toDouble() ?? 0.0;
@@ -973,7 +973,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ),
                   ),
                   child: Text(
-                    '$quantity dona',
+                    quantity == quantity.truncateToDouble() ? '${quantity.toInt()} dona' : '${quantity.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '')} dona',
                     style: TextStyle(
                       color: quantity > 0 ? Colors.green[700] : Colors.red[700],
                       fontWeight: FontWeight.w600,

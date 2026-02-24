@@ -31,7 +31,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
     final itemId = saleItem['id'];
     final productName = saleItem['productName'];
     final currentPrice = (saleItem['salePrice'] as num?)?.toDouble() ?? 0.0;
-    final quantity = saleItem['quantity'] ?? 0;
+    final quantity = (saleItem['quantity'] as num?)?.toDouble() ?? 0.0;
 
     final priceController = TextEditingController(text: currentPrice.toString());
     final commentController = TextEditingController();
@@ -431,7 +431,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                   ...items.map((item) {
                                     final itemName = item['productName'] ?? 'Noma\'lum';
                                     final itemPrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-                                    final itemQty = item['quantity'] ?? 0;
+                                    final itemQty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
                                     final itemTotal = itemPrice * itemQty;
 
                                     return Padding(
