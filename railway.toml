@@ -1,0 +1,8 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "./MarketSystem.API.dll/Dockerfile"
+
+[deploy]
+startCommand = "./dotnet", "./MarketSystem.API.dll"
+restartPolicyType = "always"
+healthcheckPath = "/health"
