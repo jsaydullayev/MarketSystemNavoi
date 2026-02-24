@@ -1,6 +1,6 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "./MarketSystem.API.dll/Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "./MarketSystem.API.dll"
