@@ -336,7 +336,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Soni: ${zakup['quantity'] ?? 0}'),
+            Text('Soni: ${(zakup['quantity'] as num?)?.toDouble() ?? 0.0}'),
             Text('Olingan narxi: ${NumberFormatter.format(zakup['costPrice'] ?? 0)} so\'m'),
             const SizedBox(height: 4),
             Row(
@@ -440,7 +440,7 @@ class _AddZakupDialogState extends State<_AddZakupDialog> {
                         return ListTile(
                           title: Text(product['name'] ?? 'Noma\'lum'),
                           subtitle: Text(
-                            'Soni: ${product['quantity'] ?? 0} | Narxi: ${NumberFormatter.format(product['salePrice'] ?? 0)} so\'m',
+                            'Soni: ${(product['quantity'] as num?)?.toDouble() ?? 0.0} | Narxi: ${NumberFormatter.format(product['salePrice'] ?? 0)} so\'m',
                           ),
                           onTap: () => Navigator.pop(context, product),
                         );

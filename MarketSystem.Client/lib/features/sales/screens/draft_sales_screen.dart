@@ -2147,7 +2147,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                           itemCount: _filteredProducts.length,
                           itemBuilder: (context, index) {
                             final product = _filteredProducts[index];
-                            final quantity = product['quantity'] ?? 0;
+                            final quantity = (product['quantity'] as num?)?.toDouble() ?? 0.0;
                             final isInStock = quantity > 0;
 
                             return Container(

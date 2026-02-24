@@ -314,6 +314,12 @@ abstract class AppLocalizations {
   /// **'Narxlarni boshqarish'**
   String get priceManagement;
 
+  /// No description provided for @profileSaved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Profil saqlandi'**
+  String get profileSaved;
+
   /// No description provided for @add.
   ///
   /// In uz, this message translates to:
@@ -607,6 +613,12 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'To\'liq ismni kiriting'**
   String get enterFullName;
+
+  /// No description provided for @enterName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ismni kiriting'**
+  String get enterName;
 
   /// No description provided for @enterPhone.
   ///

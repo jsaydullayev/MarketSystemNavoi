@@ -26,7 +26,7 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
     final totalProfit = widget.dailyReport['profit'] != null
         ? (widget.dailyReport['profit'] as num).toDouble()
         : null;
-    final totalTransactions = widget.dailyReport['totalTransactions'] as int;
+    final totalTransactions = (widget.dailyReport['totalTransactions'] as num?)?.toInt() ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -98,7 +98,7 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
 
   Widget _buildSaleItemCard(Map<String, dynamic> item) {
     final productName = item['productName'] as String? ?? 'Noma\'lum tovar';
-    final quantity = item['quantity'] as int? ?? 0;
+    final quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final totalRevenue = (item['totalRevenue'] as num?)?.toDouble() ?? 0.0;
 
     // Profit is now nullable (only for Owner)
@@ -141,7 +141,7 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
             const Divider(height: 16),
 
             // Quantity
-            _buildInfoRow('Miqdor:', '$quantity ta', Icons.inventory),
+            _buildInfoRow('Miqdor:', quantity == quantity.truncateToDouble() ? '${quantity.toInt()} ta' : '${quantity.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '')} ta', Icons.inventory),
 
             // Only show profit if user is Owner (profit is not null)
             if (profit != null) ...[
