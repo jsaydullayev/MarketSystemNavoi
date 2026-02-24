@@ -3,6 +3,6 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "./MarketSystem.API.dll"
+startCommand = "dotnet MarketSystem.API.dll"
 restartPolicyType = "always"
 healthcheckPath = "/health"
