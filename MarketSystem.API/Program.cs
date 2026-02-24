@@ -80,6 +80,12 @@ try
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    builder.WebHost.UseUrls($"http://*:{port}");
+
+    builder.Services.AddHealthChecks();
+
+
     // Add JWT Authentication
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
@@ -448,6 +454,8 @@ try
                 }
             });
         }).WithName("Seed Database").AllowAnonymous();
+
+        app.UseHealthChecks("/health");
 
         app.Run();
     }
