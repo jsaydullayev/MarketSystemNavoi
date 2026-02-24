@@ -19,14 +19,14 @@ class ApiConstants {
   // ⚠️ O'ZGARISH: Railway dashboard'dan to'g'ri URL ni oling!
   // Mislalar: https://market-system-v1.up.railway.app/api
   //           https://your-app-name.up.railway.app/api
-  static const String _prodUrl = 'https://YOUR-APP-NAME.up.railway.app/api'; // ⚠️ O'zgartiring!!!
+  static const String _prodUrl = 'https://market-system-api-production.up.railway.app/api'; // ✅ Actual Railway URL
 
   // Platformni aniqlab URL qaytaramiz
   static String get baseUrl {
     // TEST REJIMNI TANLANG:
     const bool useNgrok = false;       // Ngrok
     const bool useLocalIp = false;     // Local Wi-Fi IP
-    const bool useProduction = true;   // ✅ Railway/Production - Cloud server
+    const bool useProduction = false;  // ⏸️ Railway - Temporary disabled (fixing backend)
 
     // Default: Localhost ishlatiladi (boshqa device'lardan kirish shart emas)
 
