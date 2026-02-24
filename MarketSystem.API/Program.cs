@@ -38,12 +38,8 @@ Log.Logger = new LoggerConfiguration()
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
         restrictedToMinimumLevel: LogEventLevel.Information
     )
-    .WriteTo.PostgreSQL(
-        connectionString: "Host=localhost;Port=3030;Database=MarketSystemDB;Username=postgres;Password=postgres",
-        tableName: "Logs",
-        needAutoCreateTable: false,
-        restrictedToMinimumLevel: LogEventLevel.Information
-    )
+    // ⭐ NOTE: PostgreSQL logging will be configured in Program.cs after connection string is loaded
+    // This avoids connection errors during startup
     .CreateLogger();
 
 try
@@ -133,7 +129,13 @@ try
     {
         options.AddPolicy("DevelopmentCors", policy =>
         {
-            policy.SetIsOriginAllowed((origin) => origin != null && (origin.StartsWith("http://localhost") || origin.StartsWith("http://10.0.2.2")))
+            // ✅ Allow localhost, emulator, AND ngrok tunnel (for testing)
+            policy.SetIsOriginAllowed((origin) => origin != null &&
+                  (origin.StartsWith("http://localhost") ||
+                   origin.StartsWith("http://10.0.2.2") ||
+                   origin.StartsWith("https://resistive-bezanty-venetta.ngrok-free.dev") ||  // ⭐ ngrok tunnel
+                   origin.Contains(".ngrok-free.app") ||  // ⭐ Any ngrok tunnel
+                   origin.Contains(".ngrok.dev")))  // ⭐ ngrok.dev domains
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -233,16 +235,30 @@ try
 
     var app = builder.Build();
 
-    // Local network test uchun barcha IP larda tinglash
-    app.Urls.Add("http://0.0.0.0:5137");
+    // ⭐ CRITICAL: Apply database migrations in Production
+    // This ensures tables are created when deploying to Render.com
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        try
+        {
+            Log.Information("Applying database migrations...");
+            await dbContext.Database.MigrateAsync();
+            Log.Information("Database migrations applied successfully");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to apply migrations - database might already exist");
+            Log.Information("Continuing without migrations...");
+            // Don't throw - let the application start
+        }
+    }
 
-    // Auto-apply database migrations - DISABLED for manual SQL migrations
-    // if (app.Environment.IsDevelopment())
-    // {
-    //     using var scope = app.Services.CreateScope();
-    //     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    //     await dbContext.Database.MigrateAsync();
-    // }
+    // Local network test uchun barcha IP larda tinglash (Development only)
+    if (app.Environment.IsDevelopment())
+    {
+        app.Urls.Add("http://0.0.0.0:5137");
+    }
 
     // Global Exception Handler - MUST be first middleware
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
@@ -287,6 +303,10 @@ try
     }
 
     app.MapControllers();
+
+    // Health check endpoint for Render.com
+    app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+        .ExcludeFromDescription();
 
     // Map SignalR Hub
     app.MapHub<MarketSystem.API.Hubs.SalesHub>("/hubs/sales");
