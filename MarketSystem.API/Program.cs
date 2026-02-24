@@ -16,6 +16,13 @@ using Serilog;
 using Serilog.Events;
 using System.Text;
 
+// ========================================
+// 🕐 GMT+5 (TASHKENT TIME) CONFIGURATION
+// ========================================
+// Set the default time zone to GMT+5 for all DateTime operations
+// This ensures consistent time handling across the application
+TimeZoneInfo tashkentTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+
 // Configure Npgsql to handle DateTime correctly with PostgreSQL timestamp with time zone
 // This prevents "Cannot write DateTime with Kind=Unspecified" errors
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
@@ -47,11 +54,15 @@ try
     Log.Information("Starting Market System API");
     Log.Information("Environment: {Environment}", "Development");
     Log.Information("Logging to: PostgreSQL + Console");
+    Log.Information("Time Zone: GMT+5 (Tashkent Time)");
 
     var builder = WebApplication.CreateBuilder(args);
 
     // Use Serilog
     builder.Host.UseSerilog();
+
+    // ✅ Register GMT+5 Time Zone as Singleton
+    builder.Services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time"));
 
     // Add DbContext with optimizations
     builder.Services.AddDbContext<AppDbContext>(options =>
@@ -129,13 +140,8 @@ try
     {
         options.AddPolicy("DevelopmentCors", policy =>
         {
-            // ✅ Allow localhost, emulator, AND ngrok tunnel (for testing)
-            policy.SetIsOriginAllowed((origin) => origin != null &&
-                  (origin.StartsWith("http://localhost") ||
-                   origin.StartsWith("http://10.0.2.2") ||
-                   origin.StartsWith("https://resistive-bezanty-venetta.ngrok-free.dev") ||  // ⭐ ngrok tunnel
-                   origin.Contains(".ngrok-free.app") ||  // ⭐ Any ngrok tunnel
-                   origin.Contains(".ngrok.dev")))  // ⭐ ngrok.dev domains
+            // ✅ Allow ALL origins in development (localhost, emulator, ngrok, any device)
+            policy.SetIsOriginAllowed((origin) => true)  // ⭐ DEVELOPMENT ONLY - accept any origin
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -155,6 +161,11 @@ try
         .AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+
+            // ✅ Convert all DateTime to GMT+5 (Tashkent Time) when sending to client
+            // Database stores UTC, but API returns GMT+5
+            options.JsonSerializerOptions.Converters.Add(new MarketSystem.Domain.Extensions.TashkentTimeJsonConverter());
+            options.JsonSerializerOptions.Converters.Add(new MarketSystem.Domain.Extensions.TashkentTimeJsonConverterNullable());
         });
 
     // Configure Kestrel server limits for large image uploads
@@ -242,13 +253,37 @@ try
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         try
         {
-            Log.Information("Applying database migrations...");
-            await dbContext.Database.MigrateAsync();
-            Log.Information("Database migrations applied successfully");
+            // Check if database already has tables
+            var canConnect = await dbContext.Database.CanConnectAsync();
+            if (canConnect)
+            {
+                // Check if any tables exist
+                var tableCount = await dbContext.Database.ExecuteSqlRawAsync(@"
+                    SELECT COUNT(*) FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+                ");
+
+                if (tableCount > 0)
+                {
+                    Log.Information("Database already exists with {TableCount} tables. Skipping migrations.", tableCount);
+                }
+                else
+                {
+                    Log.Information("Applying database migrations...");
+                    await dbContext.Database.MigrateAsync();
+                    Log.Information("Database migrations applied successfully");
+                }
+            }
+            else
+            {
+                Log.Information("Applying database migrations...");
+                await dbContext.Database.MigrateAsync();
+                Log.Information("Database migrations applied successfully");
+            }
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to apply migrations - database might already exist");
+            Log.Warning(ex, "Failed to apply migrations - database might already exist or have conflicts");
             Log.Information("Continuing without migrations...");
             // Don't throw - let the application start
         }
@@ -273,8 +308,13 @@ try
     // Use CORS based on environment
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
 
-    // Only use HTTPS redirection in production
-    if (!app.Environment.IsDevelopment())
+    // ⚠️ HTTPS Redirect - DISABLE in development for ngrok compatibility
+    // ngrok already provides HTTPS, so we don't need this redirect
+    if (app.Environment.IsDevelopment())
+    {
+        // Development: No HTTPS redirect (ngrok handles it)
+    }
+    else if (!app.Environment.IsDevelopment())
     {
         app.UseHttpsRedirection();
     }
