@@ -377,7 +377,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                   Expanded(
                     child: Text(
                       isEditing
-                          ? 'Mahsulot soni: ${widget.product['quantity'] ?? 0} (o\'zgarmas)'
+                          ? 'Mahsulot soni: ${(widget.product['quantity'] as num?)?.toDouble() ?? 0.0} (o\'zgarmas)'
                           : 'Mahsulot soni 0 bilan yaratiladi, keyin Zakup orqali oshiriladi',
                       style: TextStyle(color: Colors.orange.shade700, fontSize: 12),
                     ),
