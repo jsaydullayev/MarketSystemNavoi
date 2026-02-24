@@ -6,7 +6,7 @@ class ApiConstants {
 
   // Option 1: Ngrok link (internet orqali)
   // Ngrok domain sizi sherga yozing (masalan: https://my-shop.ngrok-free.app)
-  static const String _ngrokUrl = 'https://my-shop.ngrok-free.app/api';
+  static const String _ngrokUrl = 'https://resistive-bezanty-venetta.ngrok-free.dev/api'; // ⚠️ 2 soatda o'zgaradi!
 
   // Option 2: Local Wi-Fi IP (bir xil Wi-Fi tarmog'ida)
   // IP manzilingizni bu yerga yozing (masalan: 192.168.1.5)
@@ -19,9 +19,9 @@ class ApiConstants {
   // Platformni aniqlab URL qaytaramiz
   static String get baseUrl {
     // TEST REJIMNI TANLANG:
-    const bool useNgrok = false;      // true = Ngrok, false = Local Wi-Fi
+    const bool useNgrok = false;      // true = Ngrok, false = Local Wi-Fi (⚠️ localStorage issue!)
     const bool useLocalIp = false;    // true = Local Wi-Fi, false = Emulator
-    const bool useProduction = true;  // true = Railway/Production
+    const bool useProduction = false;  // true = Railway/Production
 
     // Production (Railway) uchun
     if (useProduction) {

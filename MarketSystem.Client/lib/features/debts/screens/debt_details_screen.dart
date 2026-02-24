@@ -428,7 +428,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
 
   Widget _buildSaleItemCard(dynamic item, String? userRole, String debtStatus) {
     final productName = item['productName'] ?? 'Noma\'lum';
-    final quantity = item['quantity'] ?? 0;
+    final quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final salePrice = (item['salePrice'] as num).toDouble();
     final totalPrice = salePrice * quantity;
 
