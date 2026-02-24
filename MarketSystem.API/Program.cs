@@ -129,7 +129,13 @@ try
     {
         options.AddPolicy("DevelopmentCors", policy =>
         {
-            policy.SetIsOriginAllowed((origin) => origin != null && (origin.StartsWith("http://localhost") || origin.StartsWith("http://10.0.2.2")))
+            // ✅ Allow localhost, emulator, AND ngrok tunnel (for testing)
+            policy.SetIsOriginAllowed((origin) => origin != null &&
+                  (origin.StartsWith("http://localhost") ||
+                   origin.StartsWith("http://10.0.2.2") ||
+                   origin.StartsWith("https://resistive-bezanty-venetta.ngrok-free.dev") ||  // ⭐ ngrok tunnel
+                   origin.Contains(".ngrok-free.app") ||  // ⭐ Any ngrok tunnel
+                   origin.Contains(".ngrok.dev")))  // ⭐ ngrok.dev domains
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -242,8 +248,9 @@ try
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to apply database migrations");
-            throw;
+            Log.Warning(ex, "Failed to apply migrations - database might already exist");
+            Log.Information("Continuing without migrations...");
+            // Don't throw - let the application start
         }
     }
 

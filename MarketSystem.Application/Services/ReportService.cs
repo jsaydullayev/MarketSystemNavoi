@@ -56,8 +56,11 @@ public class ReportService : IReportService
         // Determine if profit should be included (Owner only)
         bool includeProfit = userRole == "Owner";
 
-        // Group by product and aggregate
-        var productGroups = new Dictionary<string, DailySaleItemDto>();
+        // Get all sale items (NOT grouped by product)
+        // This allows users to see individual sales with double quantities
+        var allItems = new List<DailySaleItemDto>();
+
+        Console.WriteLine($"📊 [GetDailySaleItems] Processing {sales.Count()} sales for {start:yyyy-MM-dd}");
 
         foreach (var sale in sales)
         {
@@ -68,43 +71,37 @@ public class ReportService : IReportService
 
                 var productName = product.Name;
                 var quantity = item.Quantity;
+
+                // Log double quantities
+                if (quantity % 1 != 0)
+                {
+                    Console.WriteLine($"  ➕ Double quantity: {productName} - {quantity} ta (Sale: {sale.Id})");
+                }
                 var costPrice = item.CostPrice;
                 var salePrice = item.SalePrice;
                 var totalCost = costPrice * quantity;
                 var totalRevenue = salePrice * quantity;
                 decimal? profit = includeProfit ? totalRevenue - totalCost : null;
 
-                if (productGroups.ContainsKey(productName))
-                {
-                    var existing = productGroups[productName];
-                    productGroups[productName] = existing with
-                    {
-                        Quantity = existing.Quantity + quantity,
-                        TotalCost = existing.TotalCost + totalCost,
-                        TotalRevenue = existing.TotalRevenue + totalRevenue,
-                        Profit = existing.Profit.HasValue && profit.HasValue
-                            ? existing.Profit.Value + profit.Value
-                            : null
-                    };
-                }
-                else
-                {
-                    productGroups[productName] = new DailySaleItemDto(
-                        productName,
-                        quantity,
-                        costPrice,
-                        salePrice,
-                        totalCost,
-                        totalRevenue,
-                        profit
-                    );
-                }
+                // Add each item individually (NO grouping)
+                allItems.Add(new DailySaleItemDto(
+                    productName,
+                    quantity,
+                    costPrice,
+                    salePrice,
+                    totalCost,
+                    totalRevenue,
+                    profit
+                ));
             }
         }
 
+        // Sort by quantity descending (to see larger quantities first)
+        var sortedItems = allItems.OrderByDescending(i => i.Quantity).ToList();
+
         return new DailySaleItemsResponseDto(
             start,
-            productGroups.Values.ToList()
+            sortedItems
         );
     }
 
