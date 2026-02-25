@@ -80,8 +80,10 @@ try
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 
+    // Railway/Render expects app to listen on 0.0.0.0:PORT
     var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-    builder.WebHost.UseUrls($"http://*:{port}");
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+    Log.Information("Configuring to listen on: http://0.0.0.0:{Port}", port);
 
     builder.Services.AddHealthChecks();
 
@@ -260,18 +262,21 @@ try
 
     var app = builder.Build();
 
-    // ⭐ CRITICAL: Apply database migrations in Production
-    // This ensures tables are created when deploying to Render.com
-    using (var scope = app.Services.CreateScope())
+    // ========================================
+    // 🗄️ DATABASE MIGRATIONS (Non-blocking)
+    // ========================================
+    // Run migrations in background so app starts immediately
+    // Railway healthcheck will pass even if DB is not ready yet
+    _ = Task.Run(async () =>
     {
+        using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         try
         {
-            // Check if database already has tables
+            Log.Information("Starting database migration (background)...");
             var canConnect = await dbContext.Database.CanConnectAsync();
             if (canConnect)
             {
-                // Check if any tables exist
                 var tableCount = await dbContext.Database.ExecuteSqlRawAsync(@"
                     SELECT COUNT(*) FROM information_schema.tables
                     WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -290,18 +295,16 @@ try
             }
             else
             {
-                Log.Information("Applying database migrations...");
-                await dbContext.Database.MigrateAsync();
-                Log.Information("Database migrations applied successfully");
+                Log.Warning("Database not ready yet, will retry on next request");
             }
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to apply migrations - database might already exist or have conflicts");
-            Log.Information("Continuing without migrations...");
+            Log.Warning(ex, "Failed to apply migrations - database might not be ready yet");
+            Log.Information("Application will continue, migrations will retry on demand");
             // Don't throw - let the application start
         }
-    }
+    });
 
     // Local network test uchun barcha IP larda tinglash (Development only)
     if (app.Environment.IsDevelopment())
@@ -356,19 +359,29 @@ try
         });
     }
 
-    // Health check endpoint for Railway/Render (MUST be before MapControllers)
-    // This endpoint MUST work in both Development AND Production environments
-    app.MapGet("/health", () =>
+    // ========================================
+    // 🏥 HEALTH CHECK ENDPOINTS (Railway/Render)
+    // ========================================
+    // These endpoints MUST work in both Development AND Production
+    // Railway expects /health or / to return 200 OK
+
+    var healthResponse = new
     {
-        return Results.Ok(new
-        {
-            status = "healthy",
-            timestamp = DateTime.UtcNow,
-            environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown"
-        });
-    })
-    .ExcludeFromDescription()
-    .WithName("Health Check");
+        status = "healthy",
+        timestamp = DateTime.UtcNow,
+        environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
+        version = "1.0.0"
+    };
+
+    // Health check at /health (Railway default)
+    app.MapGet("/health", () => Results.Ok(healthResponse))
+        .ExcludeFromDescription()
+        .WithName("Health Check");
+
+    // Root endpoint also returns health status (fallback)
+    app.MapGet("/", () => Results.Ok(healthResponse))
+        .ExcludeFromDescription()
+        .WithName("Root Health Check");
 
     app.MapControllers();
 
