@@ -9,7 +9,3 @@ dockerfilePath = "Dockerfile"
 # Health check configuration
 healthcheckPath = "/health"
 healthcheckTimeout = 60  # 60 seconds (1 minute)
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 10
-
-# Note: startCommand is NOT needed because Dockerfile has ENTRYPOINT
