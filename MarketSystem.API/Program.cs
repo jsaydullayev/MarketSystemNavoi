@@ -51,12 +51,12 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
+    var builder = WebApplication.CreateBuilder(args);
+
     Log.Information("Starting Market System API");
-    Log.Information("Environment: {Environment}", "Development");
+    Log.Information("Environment: {Environment}", builder.Environment.IsDevelopment() ? "Development" : "Production");
     Log.Information("Logging to: PostgreSQL + Console");
     Log.Information("Time Zone: GMT+5 (Tashkent Time)");
-
-    var builder = WebApplication.CreateBuilder(args);
 
     // Use Serilog
     builder.Host.UseSerilog();
@@ -155,9 +155,17 @@ try
 
         options.AddPolicy("ProductionCors", policy =>
         {
-            policy.WithOrigins("https://your-frontend-domain.com") // TODO: Update with actual domain
-                  .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH")
-                  .WithHeaders("Content-Type", "Authorization")
+            // Railway deployment - allow Railway's generated domains
+            policy.SetIsOriginAllowed((origin) =>
+                {
+                    // Allow Railway preview URLs and custom domains
+                    if (string.IsNullOrEmpty(origin)) return false;
+                    return origin.Contains(".railway.app") ||
+                           origin.Contains("railway.app") ||
+                           origin.Contains("localhost"); // For testing
+                })
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
                   .AllowCredentials();
         });
     });
@@ -348,11 +356,11 @@ try
         });
     }
 
-    app.MapControllers();
-
-    // Health check endpoint for Render.com
+    // Health check endpoint for Railway/Render (MUST be before MapControllers)
     app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
         .ExcludeFromDescription();
+
+    app.MapControllers();
 
     // Map SignalR Hub
     app.MapHub<MarketSystem.API.Hubs.SalesHub>("/hubs/sales");
@@ -454,8 +462,6 @@ try
                 }
             });
         }).WithName("Seed Database").AllowAnonymous();
-
-        app.UseHealthChecks("/health");
 
         app.Run();
     }
