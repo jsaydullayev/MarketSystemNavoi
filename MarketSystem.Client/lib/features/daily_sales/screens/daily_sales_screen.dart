@@ -690,8 +690,8 @@ class _SaleDetailSheet extends StatelessWidget {
 
   Widget _buildItemCard(dynamic item) {
     final productName = item['productName'] ?? 'Noma\'lum';
-    final quantity = item['quantity'] ?? 0;
-    final total = (item['totalPrice'] ?? 0).toDouble();
+    final quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+    final total = (item['totalPrice'] as num?)?.toDouble() ?? 0.0;
     final comment = item['comment'];
 
     return Container(
@@ -729,7 +729,7 @@ class _SaleDetailSheet extends StatelessWidget {
                 ],
                 const SizedBox(height: 4),
                 Text(
-                  '$quantity ta',
+                  '${quantity == quantity.toInt() ? quantity.toInt() : quantity} ta',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -753,7 +753,7 @@ class _SaleDetailSheet extends StatelessWidget {
   }
 
   Widget _buildPaymentCard(dynamic payment) {
-    final amount = (payment['amount'] ?? 0).toDouble();
+    final amount = (payment['amount'] as num?)?.toDouble() ?? 0.0;
     final type = payment['paymentType'] ?? 'cash';
     final time = payment['createdAt'] != null
         ? DateFormat('HH:mm').format(DateTime.parse(payment['createdAt']))
