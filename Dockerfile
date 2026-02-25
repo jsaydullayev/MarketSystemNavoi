@@ -2,8 +2,6 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 EXPOSE 8080
-# Railway automatically sets PORT env var
-# Don't set ASPNETCORE_URLS here - let Program.cs handle it
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Build stage
@@ -24,6 +22,4 @@ RUN dotnet publish "MarketSystem.API.csproj" -c $BUILD_CONFIGURATION -o /app/pub
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-# Set environment to Production
-ENV ASPNETCORE_ENVIRONMENT=Production
 ENTRYPOINT ["dotnet", "MarketSystem.API.dll"]
