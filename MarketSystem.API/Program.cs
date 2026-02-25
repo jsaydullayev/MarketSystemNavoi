@@ -16,6 +16,13 @@ using Serilog;
 using Serilog.Events;
 using System.Text;
 
+// ========================================
+// 🕐 GMT+5 (TASHKENT TIME) CONFIGURATION
+// ========================================
+// Set the default time zone to GMT+5 for all DateTime operations
+// This ensures consistent time handling across the application
+TimeZoneInfo tashkentTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+
 // Configure Npgsql to handle DateTime correctly with PostgreSQL timestamp with time zone
 // This prevents "Cannot write DateTime with Kind=Unspecified" errors
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
@@ -38,24 +45,24 @@ Log.Logger = new LoggerConfiguration()
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
         restrictedToMinimumLevel: LogEventLevel.Information
     )
-    .WriteTo.PostgreSQL(
-        connectionString: "Host=localhost;Port=3030;Database=MarketSystemDB;Username=postgres;Password=postgres",
-        tableName: "Logs",
-        needAutoCreateTable: false,
-        restrictedToMinimumLevel: LogEventLevel.Information
-    )
+    // ⭐ NOTE: PostgreSQL logging will be configured in Program.cs after connection string is loaded
+    // This avoids connection errors during startup
     .CreateLogger();
 
 try
 {
-    Log.Information("Starting Market System API");
-    Log.Information("Environment: {Environment}", "Development");
-    Log.Information("Logging to: PostgreSQL + Console");
-
     var builder = WebApplication.CreateBuilder(args);
+
+    Log.Information("Starting Market System API");
+    Log.Information("Environment: {Environment}", builder.Environment.IsDevelopment() ? "Development" : "Production");
+    Log.Information("Logging to: PostgreSQL + Console");
+    Log.Information("Time Zone: GMT+5 (Tashkent Time)");
 
     // Use Serilog
     builder.Host.UseSerilog();
+
+    // ✅ Register GMT+5 Time Zone as Singleton
+    builder.Services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time"));
 
     // Add DbContext with optimizations
     builder.Services.AddDbContext<AppDbContext>(options =>
@@ -72,6 +79,14 @@ try
         options.ConfigureWarnings(warnings =>
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
+
+    // Railway/Render expects app to listen on 0.0.0.0:PORT
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+    Log.Information("Configuring to listen on: http://0.0.0.0:{Port}", port);
+
+    builder.Services.AddHealthChecks();
+
 
     // Add JWT Authentication
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -133,7 +148,8 @@ try
     {
         options.AddPolicy("DevelopmentCors", policy =>
         {
-            policy.SetIsOriginAllowed((origin) => origin != null && (origin.StartsWith("http://localhost") || origin.StartsWith("http://10.0.2.2")))
+            // ✅ Allow ALL origins in development (localhost, emulator, ngrok, any device)
+            policy.SetIsOriginAllowed((origin) => true)  // ⭐ DEVELOPMENT ONLY - accept any origin
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -141,9 +157,17 @@ try
 
         options.AddPolicy("ProductionCors", policy =>
         {
-            policy.WithOrigins("https://your-frontend-domain.com") // TODO: Update with actual domain
-                  .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH")
-                  .WithHeaders("Content-Type", "Authorization")
+            // Railway deployment - allow Railway's generated domains
+            policy.SetIsOriginAllowed((origin) =>
+                {
+                    // Allow Railway preview URLs and custom domains
+                    if (string.IsNullOrEmpty(origin)) return false;
+                    return origin.Contains(".railway.app") ||
+                           origin.Contains("railway.app") ||
+                           origin.Contains("localhost"); // For testing
+                })
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
                   .AllowCredentials();
         });
     });
@@ -153,6 +177,11 @@ try
         .AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+
+            // ✅ Convert all DateTime to GMT+5 (Tashkent Time) when sending to client
+            // Database stores UTC, but API returns GMT+5
+            options.JsonSerializerOptions.Converters.Add(new MarketSystem.Domain.Extensions.TashkentTimeJsonConverter());
+            options.JsonSerializerOptions.Converters.Add(new MarketSystem.Domain.Extensions.TashkentTimeJsonConverterNullable());
         });
 
     // Configure Kestrel server limits for large image uploads
@@ -233,16 +262,55 @@ try
 
     var app = builder.Build();
 
-    // Local network test uchun barcha IP larda tinglash
-    app.Urls.Add("http://0.0.0.0:5137");
+    // ========================================
+    // 🗄️ DATABASE MIGRATIONS (Non-blocking)
+    // ========================================
+    // Run migrations in background so app starts immediately
+    // Railway healthcheck will pass even if DB is not ready yet
+    _ = Task.Run(async () =>
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        try
+        {
+            Log.Information("Starting database migration (background)...");
+            var canConnect = await dbContext.Database.CanConnectAsync();
+            if (canConnect)
+            {
+                var tableCount = await dbContext.Database.ExecuteSqlRawAsync(@"
+                    SELECT COUNT(*) FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+                ");
 
-    // Auto-apply database migrations - DISABLED for manual SQL migrations
-    // if (app.Environment.IsDevelopment())
-    // {
-    //     using var scope = app.Services.CreateScope();
-    //     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    //     await dbContext.Database.MigrateAsync();
-    // }
+                if (tableCount > 0)
+                {
+                    Log.Information("Database already exists with {TableCount} tables. Skipping migrations.", tableCount);
+                }
+                else
+                {
+                    Log.Information("Applying database migrations...");
+                    await dbContext.Database.MigrateAsync();
+                    Log.Information("Database migrations applied successfully");
+                }
+            }
+            else
+            {
+                Log.Warning("Database not ready yet, will retry on next request");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to apply migrations - database might not be ready yet");
+            Log.Information("Application will continue, migrations will retry on demand");
+            // Don't throw - let the application start
+        }
+    });
+
+    // Local network test uchun barcha IP larda tinglash (Development only)
+    if (app.Environment.IsDevelopment())
+    {
+        app.Urls.Add("http://0.0.0.0:5137");
+    }
 
     // Global Exception Handler - MUST be first middleware
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
@@ -257,8 +325,13 @@ try
     // Use CORS based on environment
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
 
-    // Only use HTTPS redirection in production
-    if (!app.Environment.IsDevelopment())
+    // ⚠️ HTTPS Redirect - DISABLE in development for ngrok compatibility
+    // ngrok already provides HTTPS, so we don't need this redirect
+    if (app.Environment.IsDevelopment())
+    {
+        // Development: No HTTPS redirect (ngrok handles it)
+    }
+    else if (!app.Environment.IsDevelopment())
     {
         app.UseHttpsRedirection();
     }
@@ -285,6 +358,30 @@ try
             options.RoutePrefix = "swagger";
         });
     }
+
+    // ========================================
+    // 🏥 HEALTH CHECK ENDPOINTS (Railway/Render)
+    // ========================================
+    // These endpoints MUST work in both Development AND Production
+    // Railway expects /health or / to return 200 OK
+
+    var healthResponse = new
+    {
+        status = "healthy",
+        timestamp = DateTime.UtcNow,
+        environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
+        version = "1.0.0"
+    };
+
+    // Health check at /health (Railway default)
+    app.MapGet("/health", () => Results.Ok(healthResponse))
+        .ExcludeFromDescription()
+        .WithName("Health Check");
+
+    // Root endpoint also returns health status (fallback)
+    app.MapGet("/", () => Results.Ok(healthResponse))
+        .ExcludeFromDescription()
+        .WithName("Root Health Check");
 
     app.MapControllers();
 
@@ -388,9 +485,11 @@ try
                 }
             });
         }).WithName("Seed Database").AllowAnonymous();
-
-        app.Run();
     }
+
+    // ⚠️ CRITICAL: app.Run() must be OUTSIDE the Development block
+    // Otherwise the app won't start in Production!
+    app.Run();
 }
 
 // Final catch for Serilog

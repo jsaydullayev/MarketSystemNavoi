@@ -117,6 +117,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get priceManagement => 'Управление ценами';
 
   @override
+  String get profileSaved => 'Профиль сохранен';
+
+  @override
   String get add => 'Добавить';
 
   @override
@@ -262,6 +265,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get enterFullName => 'Введите полное имя';
+
+  @override
+  String get enterName => 'Введите имя';
 
   @override
   String get enterPhone => 'Введите номер телефона';

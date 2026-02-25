@@ -1,0 +1,63 @@
+# .NET build outputs
+**/bin/
+**/obj/
+**/out/
+
+# Visual Studio
+.vs/
+.vscode/
+
+# User files
+*.user
+*.suo
+*.userosscache
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Flutter
+MarketSystem.Client/build/
+MarketSystem.Client/.dart_tool/
+MarketSystem.Client/.flutter-plugins
+MarketSystem.Client/.flutter-plugins-dependencies
+MarketSystem.Client/.packages
+
+# Node (agar backendda ishlatilsa)
+node_modules/
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test results
+TestResults/
+*.trx
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Docker
+# Don't ignore Dockerfile - Railway needs it!
+# docker-compose.yml
+# .dockerignore

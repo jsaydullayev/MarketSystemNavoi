@@ -5,23 +5,30 @@ class ApiConstants {
   // =================== TEST UCHUN ===================
 
   // Option 1: Ngrok link (internet orqali)
-  // Ngrok domain sizi sherga yozing (masalan: https://my-shop.ngrok-free.app)
-  static const String _ngrokUrl = 'https://my-shop.ngrok-free.app/api';
+  // ⚠️ HAR 2 SOATDA YANGILANG! ngrok terminalda yangi URL beradi
+  // Ngrok terminalingizni ochib, yangi URL ni sherga yozing:
+  // Masalan: Forwarding https://xxxx-xxxx-xxxx.ngrok-free.dev -> http://localhost:5137
+  static const String _ngrokUrl = 'https://resistive-bezanty-venetta.ngrok-free.dev/api'; // ✅ Current
 
   // Option 2: Local Wi-Fi IP (bir xil Wi-Fi tarmog'ida)
   // IP manzilingizni bu yerga yozing (masalan: 192.168.1.5)
-  static const String _localIp = 'http://192.168.1.5:5137/api';
+  static const String _localIp = 'http://192.168.1.25:5137/api'; // ✅ Updated
 
   // Option 3: Railway/Production URL (Haqiqiy cloud)
   // Railway URL sizi sherga yozing (masalan: https://market-system-api.up.railway.app)
-  static const String _prodUrl = 'https://market-system-api.up.railway.app/api';
+  // ⚠️ O'ZGARISH: Railway dashboard'dan to'g'ri URL ni oling!
+  // Mislalar: https://market-system-v1.up.railway.app/api
+  //           https://your-app-name.up.railway.app/api
+  static const String _prodUrl = 'https://market-system-api-production.up.railway.app/api'; // ✅ Actual Railway URL
 
   // Platformni aniqlab URL qaytaramiz
   static String get baseUrl {
     // TEST REJIMNI TANLANG:
-    const bool useNgrok = false;      // true = Ngrok, false = Local Wi-Fi
-    const bool useLocalIp = false;    // true = Local Wi-Fi, false = Emulator
-    const bool useProduction = true;  // true = Railway/Production
+    const bool useNgrok = false;       // Ngrok
+    const bool useLocalIp = false;     // Local Wi-Fi IP
+    const bool useProduction = false;  // ⏸️ Railway - Temporary disabled (fixing backend)
+
+    // Default: Localhost ishlatiladi (boshqa device'lardan kirish shart emas)
 
     // Production (Railway) uchun
     if (useProduction) {
@@ -30,21 +37,17 @@ class ApiConstants {
       }
     }
 
-    // Ngrok uchun
-    if (useNgrok) {
-      if (_ngrokUrl != 'https://your-ngrok-link.ngrok-free.app/api') {
-        return _ngrokUrl;
-      }
-    }
-
     // Local Wi-Fi IP uchun
     if (useLocalIp) {
-      if (_localIp != 'http://192.168.1.5:5137/api') {
-        return _localIp;
-      }
+      return _localIp;
     }
 
-    // Default: Platform asosida
+    // Ngrok uchun
+    if (useNgrok) {
+      return _ngrokUrl;
+    }
+
+    // Default: Localhost (faqat shu kompyuterda ishlash uchun)
     if (kIsWeb) {
       return 'http://localhost:5137/api';
     } else if (Platform.isAndroid) {

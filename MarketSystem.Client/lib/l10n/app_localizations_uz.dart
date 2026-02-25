@@ -117,6 +117,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get priceManagement => 'Narxlarni boshqarish';
 
   @override
+  String get profileSaved => 'Profil saqlandi';
+
+  @override
   String get add => 'Qo\'shish';
 
   @override
@@ -263,6 +266,9 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get enterFullName => 'To\'liq ismni kiriting';
+
+  @override
+  String get enterName => 'Ismni kiriting';
 
   @override
   String get enterPhone => 'Telefon raqamini kiriting';
