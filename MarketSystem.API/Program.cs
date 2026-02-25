@@ -357,8 +357,18 @@ try
     }
 
     // Health check endpoint for Railway/Render (MUST be before MapControllers)
-    app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
-        .ExcludeFromDescription();
+    // This endpoint MUST work in both Development AND Production environments
+    app.MapGet("/health", () =>
+    {
+        return Results.Ok(new
+        {
+            status = "healthy",
+            timestamp = DateTime.UtcNow,
+            environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown"
+        });
+    })
+    .ExcludeFromDescription()
+    .WithName("Health Check");
 
     app.MapControllers();
 
@@ -462,9 +472,11 @@ try
                 }
             });
         }).WithName("Seed Database").AllowAnonymous();
-
-        app.Run();
     }
+
+    // ⚠️ CRITICAL: app.Run() must be OUTSIDE the Development block
+    // Otherwise the app won't start in Production!
+    app.Run();
 }
 
 // Final catch for Serilog
