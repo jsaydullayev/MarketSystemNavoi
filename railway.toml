@@ -1,8 +1,15 @@
+# Railway Configuration for MarketSystem API
+# https://docs.railway.app/reference/railway-toml
+
 [build]
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "dotnet MarketSystem.API.dll"
-restartPolicyType = "always"
+# Health check configuration
 healthcheckPath = "/health"
+healthcheckTimeout = 60  # 60 seconds (1 minute)
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 10
+
+# Note: startCommand is NOT needed because Dockerfile has ENTRYPOINT
