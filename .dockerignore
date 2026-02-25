@@ -58,6 +58,6 @@ TestResults/
 packages/
 
 # Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
+# Don't ignore Dockerfile - Railway needs it!
+# docker-compose.yml
+# .dockerignore
