@@ -1,61 +1,62 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  market-system-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: market-system-api
-    ports:
-      - "5137:80"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:80
-      # Database connection - local PostgreSQL 3030 port
-      - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=host.docker.internal;Port=3030;Database=MarketSystemDB;Username=postgres;Password=postgres}
-      # JWT configuration
-      - Jwt__Key=${JWT_KEY:-YourSuperSecretKeyThatIsAtLeast32CharactersLongForDocker!}
-      - Jwt__Issuer=MarketSystemAPI
-      - Jwt__Audience=MarketSystemClient
-    # depends_on:
-    #   - postgres  # Disabled - using local PostgreSQL
-    networks:
-      - market-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    market-system-api:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: market-system-api
+        ports:
+            - "8080:8080"
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Production
+            - ASPNETCORE_URLS=http://+:8080
+            - PORT=8080
+            # Database connection - PostgreSQL
+            - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=postgres;Port=5432;Database=MarketSystemDB;Username=postgres;Password=postgres}
+            # JWT configuration
+            - Jwt__Key=${JWT_KEY:-YourSuperSecretKeyThatIsAtLeast32CharactersLongForDocker!}
+            - Jwt__Issuer=MarketSystemAPI
+            - Jwt__Audience=MarketSystemClient
+        # depends_on:
+        #   - postgres  # Disabled - using local PostgreSQL
+        networks:
+            - market-network
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
 
-  # PostgreSQL database (local development uchun)
-  postgres:
-    image: postgres:16-alpine
-    container_name: market-system-db
-    ports:
-      - "5433:5432"  # Changed from 3030 to 5433
-    environment:
-      - POSTGRES_DB=MarketSystemDB
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - market-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # PostgreSQL database (local development uchun)
+    postgres:
+        image: postgres:16-alpine
+        container_name: market-system-db
+        ports:
+            - "5433:5432" # Changed from 3030 to 5433
+        environment:
+            - POSTGRES_DB=MarketSystemDB
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        networks:
+            - market-network
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
 volumes:
-  postgres_data:
-    driver: local
+    postgres_data:
+        driver: local
 
 networks:
-  market-network:
-    driver: bridge
+    market-network:
+        driver: bridge
