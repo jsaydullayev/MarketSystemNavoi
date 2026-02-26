@@ -37,7 +37,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
     super.didChangeDependencies();
     // Screen focus qaytganda refresh qilish
     if (mounted) {
-      print('🔄 CustomersScreen: didChangeDependencies called, refreshing customers...');
+      print(
+          '🔄 CustomersScreen: didChangeDependencies called, refreshing customers...');
       Future.delayed(Duration.zero, () {
         context.read<CustomersBloc>().add(const GetCustomersEvent());
       });
@@ -54,7 +55,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
     setState(() {}); // Trigger rebuild for search filter
   }
 
-  List<Map<String, dynamic>> _getFilteredCustomers(List<Map<String, dynamic>> customers) {
+  List<Map<String, dynamic>> _getFilteredCustomers(
+      List<Map<String, dynamic>> customers) {
     final query = _searchController.text.toLowerCase();
     if (query.isEmpty) {
       return customers;
@@ -86,7 +88,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
     try {
       // Get customer delete info first
-      final deleteInfo = await _customerService.getCustomerDeleteInfo(customer['id']);
+      final deleteInfo =
+          await _customerService.getCustomerDeleteInfo(customer['id']);
 
       // Close loading dialog
       if (mounted) Navigator.pop(context);
@@ -100,7 +103,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${customer['fullName'] ?? customer['phone']} mijozini o\'chirmoqchimisiz?'),
+              Text(
+                  '${customer['fullName'] ?? customer['phone']} mijozini o\'chirmoqchimisiz?'),
               if (deleteInfo['warningMessage'] != null) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -112,7 +116,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+                      Icon(Icons.warning_amber_rounded,
+                          color: Colors.orange.shade700),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -143,7 +148,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
         ),
       ).then((confirmed) {
         if (confirmed == true && mounted) {
-          context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
+          context
+              .read<CustomersBloc>()
+              .add(DeleteCustomerEvent(customer['id']));
         }
       });
     } catch (e) {
@@ -155,7 +162,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('Mijozni o\'chirish'),
-          content: Text('${customer['fullName'] ?? customer['phone']} mijozini rostdan ham o\'chirmoqchimisiz?'),
+          content: Text(
+              '${customer['fullName'] ?? customer['phone']} mijozini rostdan ham o\'chirmoqchimisiz?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
@@ -170,7 +178,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
         ),
       ).then((confirmed) {
         if (confirmed == true && mounted) {
-          context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
+          context
+              .read<CustomersBloc>()
+              .add(DeleteCustomerEvent(customer['id']));
         }
       });
     }
@@ -224,11 +234,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           debtAmountController.clear();
                         });
                       },
-                      icon: Icon(hasDebt ? Icons.radio_button_unchecked : Icons.radio_button_checked),
+                      icon: Icon(hasDebt
+                          ? Icons.radio_button_unchecked
+                          : Icons.radio_button_checked),
                       label: const Text('Qarzsiz'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: hasDebt ? Colors.grey : Colors.green,
-                        side: BorderSide(color: hasDebt ? Colors.grey : Colors.green),
+                        side: BorderSide(
+                            color: hasDebt ? Colors.grey : Colors.green),
                       ),
                     ),
                   ),
@@ -240,11 +253,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           hasDebt = true;
                         });
                       },
-                      icon: Icon(hasDebt ? Icons.radio_button_checked : Icons.radio_button_unchecked),
+                      icon: Icon(hasDebt
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked),
                       label: const Text('Qarzdor'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: hasDebt ? Colors.orange : Colors.grey,
-                        side: BorderSide(color: hasDebt ? Colors.orange : Colors.grey),
+                        side: BorderSide(
+                            color: hasDebt ? Colors.orange : Colors.grey),
                       ),
                     ),
                   ),
@@ -274,12 +290,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.orange.shade700),
+                      Icon(Icons.info_outline,
+                          size: 16, color: Colors.orange.shade700),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Bu mijoz uchun qarz yozuvi yaratiladi',
-                          style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.orange.shade700),
                         ),
                       ),
                     ],
@@ -344,11 +362,15 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 }
 
                 context.read<CustomersBloc>().add(CreateCustomerEvent(
-                  phone: phoneController.text.trim(),
-                  fullName: fullNameController.text.trim().isEmpty ? null : fullNameController.text.trim(),
-                  comment: commentController.text.trim().isEmpty ? null : commentController.text.trim(),
-                  initialDebt: initialDebt,
-                ));
+                      phone: phoneController.text.trim(),
+                      fullName: fullNameController.text.trim().isEmpty
+                          ? null
+                          : fullNameController.text.trim(),
+                      comment: commentController.text.trim().isEmpty
+                          ? null
+                          : commentController.text.trim(),
+                      initialDebt: initialDebt,
+                    ));
 
                 Navigator.pop(context);
               },
@@ -372,9 +394,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
             Text('Telefon: ${customer['phone'] ?? 'Noma\'lum'}'),
             const SizedBox(height: 8),
             Text('Qarz: ${customer['totalDebt'] ?? 0} so\'m'),
-            if (customer['comment'] != null && customer['comment'].toString().isNotEmpty) ...[
+            if (customer['comment'] != null &&
+                customer['comment'].toString().isNotEmpty) ...[
               const SizedBox(height: 8),
-              const Text('Izoh:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Izoh:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               Text(customer['comment'] ?? ''),
             ],
           ],
@@ -427,7 +451,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.pushReplacement(
+              Navigator.pop(
                 context,
                 MaterialPageRoute(builder: (_) => const DashboardScreen()),
               );
@@ -436,7 +460,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => context.read<CustomersBloc>().add(const GetCustomersEvent()),
+              onPressed: () =>
+                  context.read<CustomersBloc>().add(const GetCustomersEvent()),
             ),
           ],
         ),
@@ -486,17 +511,22 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () => context.read<CustomersBloc>().add(const GetCustomersEvent()),
+                            onPressed: () => context
+                                .read<CustomersBloc>()
+                                .add(const GetCustomersEvent()),
                             child: const Text('Qayta urinish'),
                           ),
                         ],
                       ),
                     );
                   } else if (state is CustomersLoaded) {
-                    final customers = state.customers.map((e) => e.toJson()).toList();
-                    print('🏠 CustomersScreen: BlocBuilder rebuilt with ${customers.length} customers');
+                    final customers =
+                        state.customers.map((e) => e.toJson()).toList();
+                    print(
+                        '🏠 CustomersScreen: BlocBuilder rebuilt with ${customers.length} customers');
                     for (var customer in customers) {
-                      print('  - ${customer['fullName']} (${customer['phone']}): ${customer['totalDebt']} so\'m qarz');
+                      print(
+                          '  - ${customer['fullName']} (${customer['phone']}): ${customer['totalDebt']} so\'m qarz');
                     }
                     final filteredCustomers = _getFilteredCustomers(customers);
 
@@ -527,7 +557,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
                     return RefreshIndicator(
                       onRefresh: () async {
-                        context.read<CustomersBloc>().add(const GetCustomersEvent());
+                        context
+                            .read<CustomersBloc>()
+                            .add(const GetCustomersEvent());
                       },
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -588,7 +620,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: hasDebt ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+              color: hasDebt
+                  ? Colors.red.withOpacity(0.1)
+                  : Colors.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

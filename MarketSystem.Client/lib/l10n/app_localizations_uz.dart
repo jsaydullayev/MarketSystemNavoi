@@ -247,9 +247,6 @@ class AppLocalizationsUz extends AppLocalizations {
       'Ro\'yxatdan o\'tish xatosi. Qaytadan urinib ko\'ring.';
 
   @override
-  String get updateSuccess => 'Muvaffaqiyatli yangilandi!';
-
-  @override
   String get updateError => 'Yangilash xatosi.';
 
   @override
@@ -523,9 +520,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get lightMode => 'Yorqin';
 
   @override
-  String get darkMode => 'Qorong\'i';
-
-  @override
   String get usernameMinLength => 'Username kamida 3 ta belgi';
 
   @override
@@ -585,4 +579,25 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get understand => 'Tushunarli';
+
+  @override
+  String get categories => 'Kategoriyalar';
+
+  @override
+  String get dailySales => 'Kunlik savdo';
+
+  @override
+  String get drafts => 'Draftlar';
+
+  @override
+  String get darkMode => 'Qorong\'i rejim';
+
+  @override
+  String get user => 'Foydalanuvchi';
+
+  @override
+  String get security => 'Xavfsizlik';
+
+  @override
+  String get updateSuccess => 'Ma\'lumotlar muvaffaqiyatli yangilandi';
 }
