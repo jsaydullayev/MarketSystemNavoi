@@ -246,9 +246,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get registerError => 'Ошибка регистрации. Попробуйте еще раз.';
 
   @override
-  String get updateSuccess => 'Успешно обновлено!';
-
-  @override
   String get updateError => 'Ошибка обновления.';
 
   @override
@@ -523,9 +520,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lightMode => 'Светлая';
 
   @override
-  String get darkMode => 'Темная';
-
-  @override
   String get usernameMinLength => 'Имя пользователя минимум 3 символа';
 
   @override
@@ -585,4 +579,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get understand => 'Понятно';
+
+  @override
+  String get categories => 'Категории';
+
+  @override
+  String get dailySales => 'Ежедневные продажи';
+
+  @override
+  String get drafts => 'Черновики';
+
+  @override
+  String get darkMode => 'Темный режим';
+
+  @override
+  String get user => 'Пользователь';
+
+  @override
+  String get security => 'Безопасность';
+
+  @override
+  String get updateSuccess => 'Данные успешно обновлены';
 }

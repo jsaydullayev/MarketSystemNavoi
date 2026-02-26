@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_styles.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/services/user_service.dart';
 
@@ -21,223 +22,129 @@ class ProfileImagePicker extends StatefulWidget {
 }
 
 class _ProfileImagePickerState extends State<ProfileImagePicker> {
-  final ImagePicker _imagePicker = ImagePicker();
   bool _isUploading = false;
-
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 60, // Yaxshi sifat
-        maxWidth: 600,   // Yaxshi o'lcham
-        maxHeight: 600,  // Yaxshi o'lcham
-      );
-
-      if (image != null && mounted) {
-        setState(() => _isUploading = true);
-
-        // Upload image to server
-        try {
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
-          final userService = UserService(authProvider: authProvider);
-
-          final result = await userService.uploadProfileImage(image.path);
-
-          if (mounted) {
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profil rasmi muvaffaqiyatli yangilandi!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-
-            // Notify parent widget with the new image URL
-            if (widget.onImageUpdated != null && result != null) {
-              widget.onImageUpdated!(result['profileImage']);
-            }
-          }
-        } catch (uploadError) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Rasmni yuklashda xatolik: $uploadError'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        } finally {
-          if (mounted) {
-            setState(() => _isUploading = false);
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isUploading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Rasmni tanlashda xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  /// Helper method to build image from base64 or URL
-  Widget _buildProfileImage(String imageString) {
-    // Check if it's a base64 data URL
-    if (imageString.startsWith('data:image/')) {
-      try {
-        // Extract base64 data
-        final base64Data = imageString.split(',').last;
-        final imageBytes = base64Decode(base64Data);
-
-        return Image.memory(
-          imageBytes,
-          width: 120,
-          height: 120,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildDefaultAvatar();
-          },
-        );
-      } catch (e) {
-        // If base64 decode fails, show default avatar
-        return _buildDefaultAvatar();
-      }
-    }
-    // If it's a URL (http/https), use Image.network
-    else if (imageString.startsWith('http')) {
-      return Image.network(
-        imageString,
-        width: 120,
-        height: 120,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildDefaultAvatar();
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-      );
-    }
-    // Otherwise, try as raw base64
-    else {
-      try {
-        final imageBytes = base64Decode(imageString);
-        return Image.memory(
-          imageBytes,
-          width: 120,
-          height: 120,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildDefaultAvatar();
-          },
-        );
-      } catch (e) {
-        return _buildDefaultAvatar();
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthProvider>(context).user;
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
     final profileImage = widget.currentImageUrl ?? user?['profileImage'];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = AppColors.getPrimary(context);
 
     return GestureDetector(
-      onTap: _isUploading ? null : _pickImage,
+      onTap: _isUploading ? null : () => _handleImagePick(context),
       child: Stack(
+        alignment: Alignment.bottomRight,
         children: [
           Container(
-            width: 120,
-            height: 120,
+            width: 130,
+            height: 130,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(40),
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
               border: Border.all(
-                color: Colors.blue.shade300,
-                width: 3,
+                color: isDark ? Colors.white10 : Colors.white,
+                width: 2,
               ),
             ),
-            child: _isUploading
-                ? const Center(
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                : profileImage != null && profileImage.isNotEmpty
-                    ? ClipOval(
-                        child: _buildProfileImage(profileImage),
-                      )
-                    : _buildDefaultAvatar(),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(38),
               child: _isUploading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                  ? _buildLoadingOverlay()
+                  : (profileImage != null && profileImage.isNotEmpty)
+                      ? _buildSmartImage(profileImage)
+                      : _buildDefaultPlaceholder(user, primaryColor),
             ),
           ),
+          _buildEditIcon(primaryColor, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildDefaultAvatar() {
-    final user = Provider.of<AuthProvider>(context).user;
-    final initial = (user?['fullName'] ?? 'U')[0].toUpperCase();
+  Widget _buildSmartImage(String imageStr) {
+    if (imageStr.startsWith('http')) {
+      return Image.network(imageStr, fit: BoxFit.cover);
+    } else if (imageStr.startsWith('data:image') || imageStr.length > 100) {
+      try {
+        final base64Str =
+            imageStr.contains(',') ? imageStr.split(',').last : imageStr;
+        return Image.memory(base64Decode(base64Str), fit: BoxFit.cover);
+      } catch (_) {
+        return const Icon(Icons.broken_image_outlined);
+      }
+    }
+    return const Icon(Icons.person_outline);
+  }
 
+  Widget _buildDefaultPlaceholder(dynamic user, Color primary) {
+    final initial = (user?['fullName'] ?? 'U')[0].toUpperCase();
     return Container(
-      width: 120,
-      height: 120,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
+      decoration: BoxDecoration(
         gradient: LinearGradient(
+          colors: [primary, primary.withOpacity(0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.blue, Colors.purple],
         ),
       ),
       child: Center(
-        child: Text(
-          initial,
-          style: const TextStyle(
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        child: Text(initial,
+            style: AppStyles.brandTitle
+                .copyWith(fontSize: 40, color: Colors.white)),
       ),
     );
+  }
+
+  Widget _buildEditIcon(Color primary, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: primary,
+        shape: BoxShape.circle,
+        border: Border.all(
+            color: isDark ? const Color(0xFF0F172A) : Colors.white, width: 3),
+      ),
+      child:
+          const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 20),
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+  }
+
+  Future<void> _handleImagePick(BuildContext context) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+
+    if (image == null) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final result =
+          await UserService(authProvider: auth).uploadProfileImage(image.path);
+
+      if (widget.onImageUpdated != null && result != null) {
+        widget.onImageUpdated!(result['profileImage']);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
   }
 }
