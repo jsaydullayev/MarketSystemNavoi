@@ -346,28 +346,15 @@ try
     // Tenant resolution middleware - MUST be AFTER authentication
     app.UseMiddleware<TenantResolutionMiddleware>();
 
-    // Swagger (Development only)
-    if (app.Environment.IsDevelopment())
+    // Swagger - Enabled in both Development and Production
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
     {
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "MarketSystem API v1");
-            options.DocumentTitle = "MarketSystem API Documentation";
-            options.DefaultModelsExpandDepth(1);
-            options.RoutePrefix = "swagger";
-        });
-    }
-
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI(c =>
-        {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Market System API V1");
-            c.RoutePrefix = "swagger"; // Shu bilan swagger /swagger URL da bo‘ladi
-        });
-    }
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MarketSystem API v1");
+        options.DocumentTitle = "MarketSystem API Documentation";
+        options.DefaultModelsExpandDepth(1);
+        options.RoutePrefix = "swagger";
+    });
 
     var healthResponse = new
     {
