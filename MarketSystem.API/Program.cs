@@ -359,11 +359,15 @@ try
         });
     }
 
-    // ========================================
-    // 🏥 HEALTH CHECK ENDPOINTS (Railway/Render)
-    // ========================================
-    // These endpoints MUST work in both Development AND Production
-    // Railway expects /health or / to return 200 OK
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Market System API V1");
+            c.RoutePrefix = "swagger"; // Shu bilan swagger /swagger URL da bo‘ladi
+        });
+    }
 
     var healthResponse = new
     {

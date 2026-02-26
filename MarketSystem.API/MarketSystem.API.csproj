@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controllers\NewFolder\**" />
+    <Content Remove="Controllers\NewFolder\**" />
+    <EmbeddedResource Remove="Controllers\NewFolder\**" />
+    <None Remove="Controllers\NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="EPPlus" Version="7.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
@@ -27,10 +34,6 @@
   <ItemGroup>
     <ProjectReference Include="..\MarketSystem.Application\MarketSystem.Application.csproj" />
     <ProjectReference Include="..\MarketSystem.Infrastructure\MarketSystem.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\NewFolder\" />
   </ItemGroup>
 
 </Project>
