@@ -90,7 +90,9 @@ class _UsersScreenState extends State<UsersScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isActive ? 'User deaktivatsiya qilindi' : 'User aktivatsiya qilindi'),
+            content: Text(isActive
+                ? 'User deaktivatsiya qilindi'
+                : 'User aktivatsiya qilindi'),
             backgroundColor: Colors.green,
           ),
         );
@@ -128,7 +130,8 @@ class _UsersScreenState extends State<UsersScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Foydalanuvchini o\'chirish'),
-        content: Text('${user['fullName']} (${user['username']}) foydalanuvchisini rostdan ham o\'chirmoqchimisiz?'),
+        content: Text(
+            '${user['fullName']} (${user['username']}) foydalanuvchisini rostdan ham o\'chirmoqchimisiz?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -234,7 +237,7 @@ class _UsersScreenState extends State<UsersScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pushReplacement(
+            Navigator.pop(
               context,
               MaterialPageRoute(builder: (_) => const DashboardScreen()),
             );
