@@ -327,15 +327,8 @@ try
 
     // ⚠️ HTTPS Redirect - DISABLE in development for ngrok compatibility
     // ngrok already provides HTTPS, so we don't need this redirect
-    if (app.Environment.IsDevelopment())
-    {
-        // Development: No HTTPS redirect (ngrok handles it)
-    }
-    else if (!app.Environment.IsDevelopment())
-    {
-        app.UseHttpsRedirection();
-    }
-
+    app.Environment.IsDevelopment();
+   
     // Enable static files
     app.UseStaticFiles();
 
