@@ -80,7 +80,6 @@
   "loginError": "Kirish xatosi. Ma'lumotlaringizni tekshiring.",
   "registerSuccess": "Ro'yxatdan muvaffaqiyatli o'tdingiz!",
   "registerError": "Ro'yxatdan o'tish xatosi. Qaytadan urinib ko'ring.",
-  "updateSuccess": "Muvaffaqiyatli yangilandi!",
   "updateError": "Yangilash xatosi.",
   "deleteSuccess": "Muvaffaqiyatli o'chirildi!",
   "deleteError": "O'chirish xatosi.",
@@ -171,7 +170,6 @@
   "welcomeScreenTitle": "Market Tizimi",
   "welcomeScreenSubtitle": "Sizning biznes boshqaruv yechimingiz",
   "lightMode": "Yorqin",
-  "darkMode": "Qorong'i",
   "usernameMinLength": "Username kamida 3 ta belgi",
   "passwordMinLength": "Parol kamida 6 ta belgi",
   "passwordConfirm": "Parolni tasdiqlash",
@@ -192,5 +190,12 @@
   "accessDenied": "Sizga bu bo'limga kirish ruxsati yo'q",
   "info": "Ma'lumot",
   "registrationPendingInfo": "Registratsiya uchun so'rovingiz adminga yuborildi. Tez orada administrator registratsiyaga ruxsat beradi.",
-  "understand": "Tushunarli"
+  "understand": "Tushunarli",
+  "categories": "Kategoriyalar",
+  "dailySales": "Kunlik savdo",
+  "drafts": "Draftlar",
+  "darkMode": "Qorong'i rejim",
+  "user": "Foydalanuvchi",
+  "security": "Xavfsizlik",
+  "updateSuccess": "Ma'lumotlar muvaffaqiyatli yangilandi"
 }

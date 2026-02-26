@@ -572,12 +572,6 @@ abstract class AppLocalizations {
   /// **'Ro\'yxatdan o\'tish xatosi. Qaytadan urinib ko\'ring.'**
   String get registerError;
 
-  /// No description provided for @updateSuccess.
-  ///
-  /// In uz, this message translates to:
-  /// **'Muvaffaqiyatli yangilandi!'**
-  String get updateSuccess;
-
   /// No description provided for @updateError.
   ///
   /// In uz, this message translates to:
@@ -1118,12 +1112,6 @@ abstract class AppLocalizations {
   /// **'Yorqin'**
   String get lightMode;
 
-  /// No description provided for @darkMode.
-  ///
-  /// In uz, this message translates to:
-  /// **'Qorong\'i'**
-  String get darkMode;
-
   /// No description provided for @usernameMinLength.
   ///
   /// In uz, this message translates to:
@@ -1243,6 +1231,48 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Tushunarli'**
   String get understand;
+
+  /// No description provided for @categories.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kategoriyalar'**
+  String get categories;
+
+  /// No description provided for @dailySales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kunlik savdo'**
+  String get dailySales;
+
+  /// No description provided for @drafts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Draftlar'**
+  String get drafts;
+
+  /// No description provided for @darkMode.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qorong\'i rejim'**
+  String get darkMode;
+
+  /// No description provided for @user.
+  ///
+  /// In uz, this message translates to:
+  /// **'Foydalanuvchi'**
+  String get user;
+
+  /// No description provided for @security.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xavfsizlik'**
+  String get security;
+
+  /// No description provided for @updateSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotlar muvaffaqiyatli yangilandi'**
+  String get updateSuccess;
 }
 
 class _AppLocalizationsDelegate

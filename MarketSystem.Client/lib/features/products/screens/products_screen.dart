@@ -143,7 +143,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
 
     final quantityController = TextEditingController();
-    final costPriceController = TextEditingController(text: (product['costPrice'] ?? 0).toString());
+    final costPriceController =
+        TextEditingController(text: (product['costPrice'] ?? 0).toString());
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -242,7 +243,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pushReplacement(
+            Navigator.pop(
               context,
               MaterialPageRoute(builder: (_) => const DashboardScreen()),
             );
@@ -401,8 +402,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
               ),
               const SizedBox(height: 2),
             ],
-            Text('${l10n.salePrice}: ${NumberFormatter.formatDecimal(product['salePrice'] ?? 0)}'),
-            Text('${l10n.costPrice}: ${NumberFormatter.formatDecimal(product['costPrice'] ?? 0)}'),
+            Text(
+                '${l10n.salePrice}: ${NumberFormatter.formatDecimal(product['salePrice'] ?? 0)}'),
+            Text(
+                '${l10n.costPrice}: ${NumberFormatter.formatDecimal(product['costPrice'] ?? 0)}'),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -413,7 +416,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'}',  // ✅ UNIT
+                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'}', // ✅ UNIT
                   style: TextStyle(
                     color: _getStockColor(product['quantity']?.toDouble()),
                     fontWeight: FontWeight.bold,
