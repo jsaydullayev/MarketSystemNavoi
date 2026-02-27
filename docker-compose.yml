@@ -14,8 +14,8 @@ services:
             - ASPNETCORE_ENVIRONMENT=Production
             - ASPNETCORE_URLS=http://+:8080
             - PORT=8080
-            # Database connection - using Kamatera's PostgreSQL (defaulting to the local host PostgreSQL outside docker or the internal postgres container if active)
-            - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=host.docker.internal;Port=5432;Database=MarketSystemDB;Username=postgres;Password=postgres}
+            # Database connection - using Docker's internal PostgreSQL container
+            - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=postgres;Port=5432;Database=MarketSystemDB;Username=postgres;Password=postgres}
             # JWT configuration
             - Jwt__Key=${JWT_KEY:-YourSuperSecretKeyThatIsAtLeast32CharactersLongForDocker!}
             - Jwt__Issuer=MarketSystemAPI
