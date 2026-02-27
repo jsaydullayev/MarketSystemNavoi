@@ -72,6 +72,10 @@ try
             npgsqlOptions =>
             {
                 npgsqlOptions.CommandTimeout(30);
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorCodesToAdd: null);
             });
         options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
 
@@ -150,8 +154,7 @@ try
     {
         options.AddPolicy("DevelopmentCors", policy =>
         {
-            // ✅ Allow ALL origins in development (localhost, emulator, ngrok, any device)
-            policy.SetIsOriginAllowed((origin) => true)  // ⭐ DEVELOPMENT ONLY - accept any origin
+            policy.SetIsOriginAllowed((origin) => true)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -176,13 +179,10 @@ try
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
 
-            // ✅ Convert all DateTime to GMT+5 (Tashkent Time) when sending to client
-            // Database stores UTC, but API returns GMT+5
             options.JsonSerializerOptions.Converters.Add(new MarketSystem.Domain.Extensions.TashkentTimeJsonConverter());
             options.JsonSerializerOptions.Converters.Add(new MarketSystem.Domain.Extensions.TashkentTimeJsonConverterNullable());
         });
 
-    // Configure Kestrel server limits for large image uploads
     builder.WebHost.ConfigureKestrel(options =>
     {
         options.Limits.MaxRequestBodySize = 50 * 1024 * 1024; // 50 MB
@@ -190,7 +190,6 @@ try
 
     builder.Services.AddEndpointsApiExplorer();
 
-    // Add Swagger with JWT Authentication
     builder.Services.AddSwaggerGen(options =>
     {
         options.SwaggerDoc("v1", new OpenApiInfo
@@ -224,7 +223,6 @@ try
         }
         });
 
-        // Include XML comments (optional, for documentation)
         var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
         var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
         if (File.Exists(xmlPath))
@@ -233,21 +231,17 @@ try
         }
     });
 
-    // Add SignalR
     builder.Services.AddSignalR();
 
-    // Add Unit of Work and Repositories
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-    // Add HttpContextAccessor for CurrentMarketService
     builder.Services.AddHttpContextAccessor();
 
-    // Add Application Services
     builder.Services.AddScoped<IJwtService, JwtService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IProductService, ProductService>();
-    builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();  // ✅ NEW
+    builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
     builder.Services.AddScoped<ICustomerService, CustomerService>();
     builder.Services.AddScoped<ISaleService, SaleService>();
     builder.Services.AddScoped<IZakupService, ZakupService>();
@@ -260,11 +254,6 @@ try
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 
     var app = builder.Build();
-
-    // ========================================
-    // 🗄️ DATABASE MIGRATIONS (Non-blocking)
-    // ========================================
-    // Run migrations in background so app starts immediately
     _ = Task.Run(async () =>
     {
         using var scope = app.Services.CreateScope();
@@ -300,51 +289,28 @@ try
         {
             Log.Warning(ex, "Failed to apply migrations - database might not be ready yet");
             Log.Information("Application will continue, migrations will retry on demand");
-            // Don't throw - let the application start
+
         }
     });
 
-    // Local network test uchun barcha IP larda tinglash (Development only)
     if (app.Environment.IsDevelopment())
     {
         app.Urls.Add("http://0.0.0.0:5137");
     }
 
-    // Global Exception Handler - MUST be first middleware
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-
-    // Serilog Request Logging
     app.UseSerilogRequestLogging();
-
-    // Request logging middleware
     app.UseMiddleware<RequestLoggingMiddleware>();
-
-    // Configure the HTTP request pipeline
-    // Use CORS based on environment
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
 
-    // ⚠️ HTTPS Redirect - DISABLE in development for ngrok compatibility
-    // ngrok already provides HTTPS, so we don't need this redirect
-    if (app.Environment.IsDevelopment())
-    {
-        // Development: No HTTPS redirect (ngrok handles it)
-    }
-    else
-    {
-        app.UseHttpsRedirection();
-    }
+    app.Environment.IsDevelopment();
 
-    // Enable static files
     app.UseStaticFiles();
-
-    // Authentication & Authorization
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // Tenant resolution middleware - MUST be AFTER authentication
     app.UseMiddleware<TenantResolutionMiddleware>();
 
-    // Swagger - Enabled in both Development and Production
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
@@ -362,22 +328,17 @@ try
         version = "1.0.0"
     };
 
-    // Health check
     app.MapGet("/health", () => Results.Ok(healthResponse))
         .ExcludeFromDescription()
         .WithName("Health Check");
-
-    // Root endpoint also returns health status (fallback)
     app.MapGet("/", () => Results.Ok(healthResponse))
         .ExcludeFromDescription()
         .WithName("Root Health Check");
 
     app.MapControllers();
 
-    // Map SignalR Hub
     app.MapHub<MarketSystem.API.Hubs.SalesHub>("/hubs/sales");
 
-    // Seed data endpoint (development only)
     if (app.Environment.IsDevelopment())
     {
         app.MapGet("/seed", async (IConfiguration config, IServiceProvider services) =>
@@ -385,13 +346,10 @@ try
             var scope = services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            // Check if data exists
             if (await context.Markets.AnyAsync() || await context.Users.AnyAsync())
             {
                 return Results.Ok(new { message = "Database already seeded" });
             }
-
-            // 1. Create first Market
             var defaultMarket = new Market
             {
                 Name = "Demo Market",
@@ -403,7 +361,6 @@ try
             context.Markets.Add(defaultMarket);
             await context.SaveChangesAsync();
 
-            // 2. Create SuperAdmin (barcha marketlarni boshqaradi)
             var superAdmin = new User
             {
                 Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
@@ -413,11 +370,10 @@ try
                 Role = Role.SuperAdmin,
                 IsActive = true,
                 Language = Language.Uzbek,
-                MarketId = defaultMarket.Id // SuperAdmin ham bir marketga tegishli
+                MarketId = defaultMarket.Id
             };
             context.Users.Add(superAdmin);
 
-            // 3. Create Owner for default market
             var owner = new User
             {
                 Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
@@ -431,7 +387,6 @@ try
             };
             context.Users.Add(owner);
 
-            // 4. Create Admin user
             var admin = new User
             {
                 Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
@@ -445,7 +400,6 @@ try
             };
             context.Users.Add(admin);
 
-            // 5. Create Seller user
             var seller = new User
             {
                 Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
@@ -476,12 +430,9 @@ try
         }).WithName("Seed Database").AllowAnonymous();
     }
 
-    // ⚠️ CRITICAL: app.Run() must be OUTSIDE the Development block
-    // Otherwise the app won't start in Production!
     app.Run();
 }
 
-// Final catch for Serilog
 catch (Exception ex)
 {
     Log.Fatal(ex, "Application start-up failed");
