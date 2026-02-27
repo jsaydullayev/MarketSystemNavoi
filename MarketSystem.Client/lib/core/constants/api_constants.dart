@@ -2,45 +2,29 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 
 class ApiConstants {
-  // =================== TEST UCHUN ===================
+  // =================== SERVERS ===================
+  static const String _productionUrl = 'http://103.125.217.28:8080/api'; 
+  static const String _localUrl = 'http://localhost:5137/api';
+  static const String _androidLocalUrl = 'http://10.0.2.2:5137/api';
 
-  // Option 1: Ngrok link (internet orqali)
-  // ⚠️ HAR 2 SOATDA YANGILANG! ngrok terminalda yangi URL beradi
-  // Ngrok terminalingizni ochib, yangi URL ni sherga yozing:
-  // Masalan: Forwarding https://xxxx-xxxx-xxxx.ngrok-free.dev -> http://localhost:5137
-  static const String _ngrokUrl = 'https://resistive-bezanty-venetta.ngrok-free.dev/api'; // ✅ Current
-
-  // Option 2: Local Wi-Fi IP (bir xil Wi-Fi tarmog'ida)
-  // IP manzilingizni bu yerga yozing (masalan: 192.168.1.5)
-  static const String _localIp = 'http://192.168.1.25:5137/api'; // ✅ Updated
-
-  // Current Base URL setting
   static String get baseUrl {
-    // TEST REJIMNI TANLANG:
-    const bool useNgrok = false;       // Ngrok
-    const bool useLocalIp = false;     // Local Wi-Fi IP
+    // 🌍 SET TO PRODUCTION FOR KAMATERA SERVER
+    const bool useProduction = true;
 
-    // Default: Localhost ishlatiladi (boshqa device'lardan kirish shart emas)
-
-    // Local Wi-Fi IP uchun
-    if (useLocalIp) {
-      return _localIp;
-    }
-
-    // Ngrok uchun
-    if (useNgrok) {
-      return _ngrokUrl;
+    if (useProduction) {
+      return _productionUrl;
     }
 
     // Default: Localhost (faqat shu kompyuterda ishlash uchun)
     if (kIsWeb) {
-      return 'http://localhost:5137/api';
+      return _localUrl;
     } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5137/api';
+      return _androidLocalUrl;
     } else {
-      return 'http://localhost:5137/api';
+      return _localUrl;
     }
   }
+
 
   // Endpoints (Controller names must match)
   static const String auth = '/Auth';

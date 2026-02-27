@@ -79,9 +79,7 @@ try
                 npgsqlOptions.MigrationsAssembly("MarketSystem.Infrastructure");
             });
         options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
-
-        // Configure warnings to suppress pending model changes warning during development
-        // This allows manual SQL migrations without EF Core migration validation
+        
         options.ConfigureWarnings(warnings =>
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
