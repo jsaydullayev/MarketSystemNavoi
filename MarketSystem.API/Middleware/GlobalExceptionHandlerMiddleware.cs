@@ -65,20 +65,12 @@ public class GlobalExceptionHandlerMiddleware
 
             default:
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                response.Message = _env.IsDevelopment()
-                    ? exception.Message
-                    : "Serverda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.";
+                response.Message = $"Serverda xatolik yuz berdi: {exception.Message} (Ichki: {exception.InnerException?.Message})";
+                response.StackTrace = exception.StackTrace;
                 break;
         }
 
         response.StatusCode = context.Response.StatusCode;
-
-        // Include stack trace only in development
-        if (_env.IsDevelopment())
-        {
-            response.StackTrace = exception.StackTrace;
-            response.InnerExceptionMessage = exception.InnerException?.Message;
-        }
 
         var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
         {
