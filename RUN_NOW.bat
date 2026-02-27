@@ -9,7 +9,7 @@ docker ps | findstr "market-postgres" >nul
 if %errorlevel%==0 (
     echo ✅ PostgreSQL ishlayapti
 ) else (
-    docker run --name market-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=MarketSystemDB -p 3030:5432 -d postgres:16
+    docker run --name market-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=MarketSystemDB -p 5433:5432 -d postgres:16
     echo ✅ PostgreSQL ishga tushdi
 )
 
@@ -30,7 +30,7 @@ echo.
 echo ========================================
 echo ✅ BARCHA TAYYOR!
 echo ========================================
-echo 📦 PostgreSQL: http://localhost:3030
+echo 📦 PostgreSQL: http://localhost:5433
 echo 🚀 Backend:    http://localhost:5137
 echo 🌐 ngrok:      Yangi terminalda ko'ring
 echo.
