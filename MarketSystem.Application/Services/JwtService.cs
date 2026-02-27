@@ -25,6 +25,7 @@ public class JwtService(IConfiguration configuration) : IJwtService
         {
             new (ClaimTypes.NameIdentifier, user.Id.ToString()),
             new (ClaimTypes.Name, user.Username),
+            new ("role", user.Role.ToString()!), // Custom role literal mappings usually fix [Authorize(Roles="...")] misalignments, or Use ClaimTypes.Role but ASP.NET typically defaults RoleClaimType to ClaimTypes.Role.
             new (ClaimTypes.Role, user.Role.ToString()!)
         };
 
