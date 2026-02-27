@@ -76,6 +76,7 @@ try
                     maxRetryCount: 5,
                     maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorCodesToAdd: null);
+                npgsqlOptions.MigrationsAssembly("MarketSystem.Infrastructure");
             });
         options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
 
