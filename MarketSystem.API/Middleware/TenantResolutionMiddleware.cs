@@ -6,7 +6,6 @@ using MarketSystem.Infrastructure.Data;
 namespace MarketSystem.API.Middleware;
 
 /// <summary>
-/// Har bir request uchun marketni aniqlaydi (subdomain yoki JWT token orqali)
 /// </summary>
 public class TenantResolutionMiddleware
 {
@@ -21,7 +20,6 @@ public class TenantResolutionMiddleware
 
     public async Task InvokeAsync(HttpContext context, AppDbContext dbContext)
     {
-        // 1. Agar user logged in bo'lsa, JWT tokenidan MarketId olish
         var marketIdClaim = context.User?.FindFirst("MarketId")?.Value;
 
         _logger.LogInformation("TenantResolution: User={User}, MarketIdClaim={MarketIdClaim}",
@@ -35,10 +33,10 @@ public class TenantResolutionMiddleware
             return;
         }
 
-        // 2. Subdomain orqali aniqlash (market1.example.com)
         var host = context.Request.Host.Host;
         if (!host.Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
-            host.Contains('.'))
+            host.Contains('.') &&
+            !System.Net.IPAddress.TryParse(host, out _))
         {
             var subdomain = host.Split('.')[0];
             var market = await dbContext.Markets
@@ -49,7 +47,6 @@ public class TenantResolutionMiddleware
                 context.Items["MarketId"] = market.Id;
             }
         }
-
         await _next(context);
     }
 }
