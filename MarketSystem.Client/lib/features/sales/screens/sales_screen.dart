@@ -54,7 +54,7 @@ class _SalesScreenState extends State<SalesScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.pushReplacement(
+              Navigator.pop(
                 context,
                 MaterialPageRoute(builder: (_) => const DashboardScreen()),
               );
@@ -174,14 +174,14 @@ class _SalesScreenState extends State<SalesScreen> {
 
   Widget _buildStatusFilters(List<SaleEntity> sales) {
     final allCount = sales.length;
-    final draftCount = sales.where((s) =>
-        s.getStatusText().toLowerCase() == 'draft').length;
-    final paidCount = sales.where((s) =>
-        s.getStatusText().toLowerCase() == 'paid').length;
-    final closedCount = sales.where((s) =>
-        s.getStatusText().toLowerCase() == 'closed').length;
-    final debtCount = sales.where((s) =>
-        s.getStatusText().toLowerCase() == 'debt').length;
+    final draftCount =
+        sales.where((s) => s.getStatusText().toLowerCase() == 'draft').length;
+    final paidCount =
+        sales.where((s) => s.getStatusText().toLowerCase() == 'paid').length;
+    final closedCount =
+        sales.where((s) => s.getStatusText().toLowerCase() == 'closed').length;
+    final debtCount =
+        sales.where((s) => s.getStatusText().toLowerCase() == 'debt').length;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -201,7 +201,8 @@ class _SalesScreenState extends State<SalesScreen> {
           children: [
             _buildFilterButton('Barchasi', 'all', allCount, Colors.blue),
             const SizedBox(width: 8),
-            _buildFilterButton('Davom etayotgan', 'draft', draftCount, Colors.orange),
+            _buildFilterButton(
+                'Davom etayotgan', 'draft', draftCount, Colors.orange),
             const SizedBox(width: 8),
             _buildFilterButton('To\'langan', 'paid', paidCount, Colors.green),
             const SizedBox(width: 8),
@@ -214,7 +215,8 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _buildFilterButton(String label, String status, int count, Color color) {
+  Widget _buildFilterButton(
+      String label, String status, int count, Color color) {
     final isSelected = _selectedStatus == status;
 
     return InkWell(
@@ -307,7 +309,8 @@ class _SalesScreenState extends State<SalesScreen> {
     }
 
     // Format date
-    String formattedDate = '${sale.createdAt.day}.${sale.createdAt.month}.${sale.createdAt.year} ${sale.createdAt.hour.toString().padLeft(2, '0')}:${sale.createdAt.minute.toString().padLeft(2, '0')}';
+    String formattedDate =
+        '${sale.createdAt.day}.${sale.createdAt.month}.${sale.createdAt.year} ${sale.createdAt.hour.toString().padLeft(2, '0')}:${sale.createdAt.minute.toString().padLeft(2, '0')}';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -370,8 +373,8 @@ class _SalesScreenState extends State<SalesScreen> {
 
                   // Status badge
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: getStatusColor().withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -438,7 +441,8 @@ class _SalesScreenState extends State<SalesScreen> {
                         color: Colors.red,
                       ),
                     ),
-                  ] else if (sale.paidAmount > 0 && sale.getStatusText().toLowerCase() != 'paid') ...[
+                  ] else if (sale.paidAmount > 0 &&
+                      sale.getStatusText().toLowerCase() != 'paid') ...[
                     // Faqat Paid status bo'lmaganda "To'langan" labelini ko'rsatish
                     Icon(
                       Icons.check_circle,

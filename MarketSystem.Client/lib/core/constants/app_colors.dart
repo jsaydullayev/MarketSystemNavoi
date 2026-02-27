@@ -4,15 +4,13 @@ class AppColors {
   static const Color orangePrimary = Color(0xFFF28C33);
   static const Color darkBluePrimary = Color(0xFF1E3A8A);
   static Color getPrimary(BuildContext context) {
-    // Context orqali ilova hozir qaysi rejimdaligini aniqlaymiz
     return Theme.of(context).brightness == Brightness.light
         ? orangePrimary
-        : darkBluePrimary;
+        : const Color.fromARGB(255, 24, 67, 184);
   }
 }
 
 class AppThemes {
-  // Light Theme (Orange)
   static final light = ThemeData(
     brightness: Brightness.light,
     primaryColor: AppColors.orangePrimary,
@@ -26,11 +24,10 @@ class AppThemes {
     ),
   );
 
-  // Dark Theme (Deep Blue)
   static final dark = ThemeData(
     brightness: Brightness.dark,
     primaryColor: AppColors.darkBluePrimary,
-    scaffoldBackgroundColor: const Color(0xFF0F172A), // Juda to'q ko'k/qora fon
+    scaffoldBackgroundColor: const Color(0xFF0F172A),
     colorScheme: const ColorScheme.dark(
       primary: AppColors.darkBluePrimary,
       secondary: AppColors.darkBluePrimary,
