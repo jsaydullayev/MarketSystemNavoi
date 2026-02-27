@@ -15,7 +15,7 @@ services:
             - ASPNETCORE_URLS=http://+:8080
             - PORT=8080
             # Database connection - using Kamatera's PostgreSQL (defaulting to the local host PostgreSQL outside docker or the internal postgres container if active)
-            - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=postgres;Port=5432;Database=MarketSystemDB;Username=postgres;Password=postgres}
+            - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=host.docker.internal;Port=5432;Database=MarketSystemDB;Username=postgres;Password=postgres}
             # JWT configuration
             - Jwt__Key=${JWT_KEY:-YourSuperSecretKeyThatIsAtLeast32CharactersLongForDocker!}
             - Jwt__Issuer=MarketSystemAPI
@@ -26,7 +26,7 @@ services:
             - market-network
         restart: unless-stopped
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+            test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
             interval: 30s
             timeout: 10s
             retries: 3
@@ -48,7 +48,7 @@ services:
             - market-network
         restart: unless-stopped
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            test: [ "CMD-SHELL", "pg_isready -U postgres" ]
             interval: 10s
             timeout: 5s
             retries: 5
