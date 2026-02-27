@@ -14,28 +14,13 @@ class ApiConstants {
   // IP manzilingizni bu yerga yozing (masalan: 192.168.1.5)
   static const String _localIp = 'http://192.168.1.25:5137/api'; // ✅ Updated
 
-  // Option 3: Railway/Production URL (Haqiqiy cloud)
-  // Railway URL sizi sherga yozing (masalan: https://market-system-api.up.railway.app)
-  // ⚠️ O'ZGARISH: Railway dashboard'dan to'g'ri URL ni oling!
-  // Mislalar: https://market-system-v1.up.railway.app/api
-  //           https://your-app-name.up.railway.app/api
-  static const String _prodUrl = 'https://market-system-api-production.up.railway.app/api'; // ✅ Actual Railway URL
-
-  // Platformni aniqlab URL qaytaramiz
+  // Current Base URL setting
   static String get baseUrl {
     // TEST REJIMNI TANLANG:
     const bool useNgrok = false;       // Ngrok
     const bool useLocalIp = false;     // Local Wi-Fi IP
-    const bool useProduction = false;  // ⏸️ Railway - Temporary disabled (fixing backend)
 
     // Default: Localhost ishlatiladi (boshqa device'lardan kirish shart emas)
-
-    // Production (Railway) uchun
-    if (useProduction) {
-      if (_prodUrl != 'https://market-system-api.up.railway.app/api') {
-        return _prodUrl;
-      }
-    }
 
     // Local Wi-Fi IP uchun
     if (useLocalIp) {

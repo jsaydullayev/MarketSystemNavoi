@@ -13,6 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OfficeOpenXml;
 using Serilog;
+using System.Security.Claims;
 using Serilog.Events;
 using System.Text;
 
@@ -80,7 +81,6 @@ try
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 
-    // Railway/Render expects app to listen on 0.0.0.0:PORT
     var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
     Log.Information("Configuring to listen on: http://0.0.0.0:{Port}", port);
@@ -103,7 +103,9 @@ try
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuerSigningKey = true,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero,
+                RoleClaimType = ClaimTypes.Role,
+                NameClaimType = ClaimTypes.Name
             };
 
             options.Events = new JwtBearerEvents()
@@ -157,14 +159,10 @@ try
 
         options.AddPolicy("ProductionCors", policy =>
         {
-            // Railway deployment - allow Railway's generated domains
             policy.SetIsOriginAllowed((origin) =>
                 {
-                    // Allow Railway preview URLs and custom domains
                     if (string.IsNullOrEmpty(origin)) return false;
-                    return origin.Contains(".railway.app") ||
-                           origin.Contains("railway.app") ||
-                           origin.Contains("localhost"); // For testing
+                    return origin.Contains("localhost"); // For testing
                 })
                   .AllowAnyMethod()
                   .AllowAnyHeader()
@@ -267,7 +265,6 @@ try
     // 🗄️ DATABASE MIGRATIONS (Non-blocking)
     // ========================================
     // Run migrations in background so app starts immediately
-    // Railway healthcheck will pass even if DB is not ready yet
     _ = Task.Run(async () =>
     {
         using var scope = app.Services.CreateScope();
@@ -365,7 +362,7 @@ try
         version = "1.0.0"
     };
 
-    // Health check at /health (Railway default)
+    // Health check
     app.MapGet("/health", () => Results.Ok(healthResponse))
         .ExcludeFromDescription()
         .WithName("Health Check");
