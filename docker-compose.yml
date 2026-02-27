@@ -20,8 +20,9 @@ services:
             - Jwt__Key=${JWT_KEY:-YourSuperSecretKeyThatIsAtLeast32CharactersLongForDocker!}
             - Jwt__Issuer=MarketSystemAPI
             - Jwt__Audience=MarketSystemClient
-        # depends_on:
-        #   - postgres  # Activate this and remove comment if you want the API to wait for DB container
+        depends_on:
+            postgres:
+                condition: service_healthy
         networks:
             - market-network
         restart: unless-stopped
