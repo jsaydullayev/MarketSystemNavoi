@@ -19,7 +19,7 @@ public class JwtService(IConfiguration configuration) : IJwtService
 
     public TokenDto GenerateToken(User user, bool populateExp)
     {
-        var key = Encoding.UTF32.GetBytes(_jwtSetting.Key);
+        var key = Encoding.UTF8.GetBytes(_jwtSetting.Key);
         var credentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
         var claims = new List<Claim>()
         {
@@ -48,7 +48,7 @@ public class JwtService(IConfiguration configuration) : IJwtService
 
     public Tuple<bool, string?> ValidateAndGetUser(string token)
     {
-        var key = Encoding.UTF32.GetBytes(_jwtSetting.Key);
+        var key = Encoding.UTF8.GetBytes(_jwtSetting.Key);
         var options = new TokenValidationParameters()
         {
             ValidIssuer = _jwtSetting.Issuer,
