@@ -264,21 +264,9 @@ try
             var canConnect = await dbContext.Database.CanConnectAsync();
             if (canConnect)
             {
-                var tableCount = await dbContext.Database.ExecuteSqlRawAsync(@"
-                    SELECT COUNT(*) FROM information_schema.tables
-                    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-                ");
-
-                if (tableCount > 0)
-                {
-                    Log.Information("Database already exists with {TableCount} tables. Skipping migrations.", tableCount);
-                }
-                else
-                {
-                    Log.Information("Applying database migrations...");
-                    await dbContext.Database.MigrateAsync();
-                    Log.Information("Database migrations applied successfully");
-                }
+                Log.Information("Applying database migrations...");
+                await dbContext.Database.MigrateAsync();
+                Log.Information("Database migrations applied successfully");
             }
             else
             {
