@@ -19,7 +19,8 @@ import '../../features/zakup/screens/zakup_screen.dart';
 import '../../features/admin_products/screens/admin_products_screen.dart';
 import '../../features/users/screens/users_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
-
+import '../../features/reports/screens/reports_screen.dart';
+import '../../features/debts/screens/debts_screen.dart';
 /// Generate route
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
@@ -64,6 +65,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case AppRoutes.profile:
       return MaterialPageRoute(builder: (_) => const ProfileScreen());
+
+    case AppRoutes.reports:
+      return MaterialPageRoute(builder: (_) => const ReportsScreen());
+
+    case AppRoutes.debts:
+      return MaterialPageRoute(builder: (_) => const DebtsScreen());
 
     default:
       return MaterialPageRoute(
