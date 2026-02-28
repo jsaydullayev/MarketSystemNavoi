@@ -624,4 +624,19 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get number => 'Soni';
+
+  @override
+  String get addCategory => 'Kategoriya qo\'shish';
+
+  @override
+  String get editCategory => 'Kategoriyani tahrirlash';
+
+  @override
+  String get categoryName => 'Kategoriya nomi';
+
+  @override
+  String get description => 'Tavsif';
+
+  @override
+  String get isActive => 'Faol holatda';
 }
