@@ -197,5 +197,12 @@
   "darkMode": "Темный режим",
   "user": "Пользователь",
   "security": "Безопасность",
-  "updateSuccess": "Данные успешно обновлены"
+  "updateSuccess": "Данные успешно обновлены",
+  "category": "Категория",
+  "unit": "Ед. изм.",
+  "minPrice": "Мин. цена",
+  "temporaryProduct": "Временный",
+  "none": "Нет",
+  "stock": "Запас",
+  "zakupSuccess": "Закуп успешно добавлен!"
 }

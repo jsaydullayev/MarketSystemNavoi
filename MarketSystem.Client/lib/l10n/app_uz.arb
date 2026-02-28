@@ -197,5 +197,13 @@
   "darkMode": "Qorong'i rejim",
   "user": "Foydalanuvchi",
   "security": "Xavfsizlik",
-  "updateSuccess": "Ma'lumotlar muvaffaqiyatli yangilandi"
+  "updateSuccess": "Ma'lumotlar muvaffaqiyatli yangilandi",
+  "category": "Kategoriya",
+  "unit": "Birlik",
+  "minPrice": "Min. narx",
+  "temporaryProduct": "Vaqtinchalik",
+  "none": "Yo'q",
+  "stock": "Zaxira",
+  "zakupSuccess": "Zakup muvaffaqiyatli qo'shildi!",
+  "number": "Soni"
 }

@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/features/cash_register/screens/cash_register_screen.dart';
 import 'package:market_system_client/features/splash/splash_screen.dart';
 
 import 'app_routes.dart';
@@ -12,7 +13,7 @@ import '../../features/auth/screens/welcome_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../screens/dashboard_screen.dart';
-import '../../features/products/screens/products_screen.dart';
+import '../../features/products/presentation/screens/products_screen.dart';
 import '../../features/sales/screens/sales_screen.dart';
 import '../../features/customers/screens/customers_screen.dart';
 import '../../features/zakup/screens/zakup_screen.dart';
@@ -21,6 +22,7 @@ import '../../features/users/screens/users_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/debts/screens/debts_screen.dart';
+
 /// Generate route
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
@@ -71,6 +73,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case AppRoutes.debts:
       return MaterialPageRoute(builder: (_) => const DebtsScreen());
+
+    case AppRoutes.cashRegister:
+      return MaterialPageRoute(builder: (_) => const CashRegisterScreen());
 
     default:
       return MaterialPageRoute(
