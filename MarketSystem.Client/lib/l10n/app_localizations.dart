@@ -1321,6 +1321,36 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Soni'**
   String get number;
+
+  /// No description provided for @addCategory.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kategoriya qo\'shish'**
+  String get addCategory;
+
+  /// No description provided for @editCategory.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kategoriyani tahrirlash'**
+  String get editCategory;
+
+  /// No description provided for @categoryName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kategoriya nomi'**
+  String get categoryName;
+
+  /// No description provided for @description.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tavsif'**
+  String get description;
+
+  /// No description provided for @isActive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faol holatda'**
+  String get isActive;
 }
 
 class _AppLocalizationsDelegate

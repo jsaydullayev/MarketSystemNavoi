@@ -205,5 +205,10 @@
   "none": "Yo'q",
   "stock": "Zaxira",
   "zakupSuccess": "Zakup muvaffaqiyatli qo'shildi!",
-  "number": "Soni"
+  "number": "Soni",
+  "addCategory": "Kategoriya qo'shish",
+  "editCategory": "Kategoriyani tahrirlash",
+  "categoryName": "Kategoriya nomi",
+  "description": "Tavsif",
+  "isActive": "Faol holatda"
 }

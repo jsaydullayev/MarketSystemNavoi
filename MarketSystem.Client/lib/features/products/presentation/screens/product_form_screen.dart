@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../data/services/category_service.dart';
 import '../../../../data/models/product_category_model.dart';
 import '../../../../core/providers/auth_provider.dart';
-
-extension Spacing on num {
-  Widget get height => SizedBox(height: toDouble());
-  Widget get width => SizedBox(width: toDouble());
-}
 
 class ProductBottomSheet extends StatefulWidget {
   final dynamic product;
@@ -31,6 +27,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   bool _isLoading = false;
   List<ProductCategoryModel> _categories = [];
   int? _selectedCategory;
+  bool _isLoadingCategories = true;
 
   int _selectedUnit = 1;
   final List<Map<String, dynamic>> _units = [
