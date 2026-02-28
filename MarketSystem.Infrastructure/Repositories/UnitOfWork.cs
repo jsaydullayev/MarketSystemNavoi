@@ -72,6 +72,49 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
+    public async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await Microsoft.EntityFrameworkCore.ExecutionStrategyExtensions.ExecuteAsync(
+            strategy,
+            async () =>
+            {
+                await BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    var result = await operation();
+                    await CommitTransactionAsync(cancellationToken);
+                    return result;
+                }
+                catch
+                {
+                    await RollbackTransactionAsync(cancellationToken);
+                    throw;
+                }
+            });
+    }
+
+    public async Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await Microsoft.EntityFrameworkCore.ExecutionStrategyExtensions.ExecuteAsync(
+            strategy,
+            async () =>
+            {
+                await BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    await operation();
+                    await CommitTransactionAsync(cancellationToken);
+                }
+                catch
+                {
+                    await RollbackTransactionAsync(cancellationToken);
+                    throw;
+                }
+            });
+    }
+
     public void Dispose()
     {
         Dispose(true);

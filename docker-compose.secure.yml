@@ -1,0 +1,43 @@
+services:
+  market-system-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: market-system-api
+    ports:
+      - "5137:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=market-system-db;Port=5432;Database=MarketSystemDB;Username=postgres;Password=SuperSecur3MarketDB!2026
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - market-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: market-system-db
+    environment:
+      - POSTGRES_DB=MarketSystemDB
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=SuperSecur3MarketDB!2026
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - market-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d MarketSystemDB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  market-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

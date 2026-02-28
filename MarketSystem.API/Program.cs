@@ -17,27 +17,16 @@ using System.Security.Claims;
 using Serilog.Events;
 using System.Text;
 
-// ========================================
-// 🕐 GMT+5 (TASHKENT TIME) CONFIGURATION
-// ========================================
-// Set the default time zone to GMT+5 for all DateTime operations
-// This ensures consistent time handling across the application
 TimeZoneInfo tashkentTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
 
-// Configure Npgsql to handle DateTime correctly with PostgreSQL timestamp with time zone
-// This prevents "Cannot write DateTime with Kind=Unspecified" errors
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 
-// Set EPPlus license context (EPPlus 7.x)
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-// ========================================
-// 🔧 SERILOG CONFIGURATION
-// ========================================
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Information)
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
     .MinimumLevel.Override("System", LogEventLevel.Warning)
     .Enrich.FromLogContext()
@@ -46,8 +35,6 @@ Log.Logger = new LoggerConfiguration()
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
         restrictedToMinimumLevel: LogEventLevel.Information
     )
-    // ⭐ NOTE: PostgreSQL logging will be configured in Program.cs after connection string is loaded
-    // This avoids connection errors during startup
     .CreateLogger();
 
 try
@@ -59,13 +46,10 @@ try
     Log.Information("Logging to: PostgreSQL + Console");
     Log.Information("Time Zone: GMT+5 (Tashkent Time)");
 
-    // Use Serilog
     builder.Host.UseSerilog();
 
-    // ✅ Register GMT+5 Time Zone as Singleton
     builder.Services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time"));
 
-    // Add DbContext with optimizations
     builder.Services.AddDbContext<AppDbContext>(options =>
     {
         options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -131,24 +115,18 @@ try
 
     builder.Services.AddAuthorization(options =>
     {
-        // Owner only - full access
         options.AddPolicy("OwnerOnly", policy =>
             policy.RequireRole("Owner"));
 
-        // Admin or Owner - can manage purchases, cancel sales, view reports
         options.AddPolicy("AdminOrOwner", policy =>
             policy.RequireRole("Owner", "Admin"));
 
-        // Owner or SuperAdmin - can manage markets
         options.AddPolicy("OwnerOrSuperAdmin", policy =>
             policy.RequireRole("Owner", "SuperAdmin"));
 
-        // All authenticated users - can create sales, add items
         options.AddPolicy("AllRoles", policy =>
             policy.RequireRole("Owner", "Admin", "Seller"));
     });
-
-    // Add CORS
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("DevelopmentCors", policy =>
@@ -164,7 +142,7 @@ try
             policy.SetIsOriginAllowed((origin) =>
                 {
                     if (string.IsNullOrEmpty(origin)) return false;
-                    return origin.Contains("localhost"); // For testing
+                    return origin.Contains("localhost");
                 })
                   .AllowAnyMethod()
                   .AllowAnyHeader()
@@ -172,7 +150,6 @@ try
         });
     });
 
-    // Add Controllers with JSON configuration
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
         {
@@ -280,10 +257,7 @@ try
         }
     });
 
-    if (app.Environment.IsDevelopment())
-    {
-        app.Urls.Add("http://0.0.0.0:5137");
-    }
+
 
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
     app.UseSerilogRequestLogging();
@@ -298,7 +272,7 @@ try
 
     app.UseMiddleware<TenantResolutionMiddleware>();
 
-    app.UseSwagger();
+    app.MapSwagger();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "MarketSystem API v1");

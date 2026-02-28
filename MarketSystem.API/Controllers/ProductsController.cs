@@ -65,7 +65,7 @@ public class ProductsController : ControllerBase
             var product = await _productService.CreateProductAsync(request, sellerGuid);
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
         {
             return BadRequest(ex.Message);
         }
@@ -85,7 +85,7 @@ public class ProductsController : ControllerBase
 
             return Ok(product);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
         {
             return BadRequest(ex.Message);
         }

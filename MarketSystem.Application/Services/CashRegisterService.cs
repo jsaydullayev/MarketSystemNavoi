@@ -84,91 +84,90 @@ public class CashRegisterService : ICashRegisterService
     {
         try
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-            var cashRegister = await _context.CashRegisters
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (cashRegister == null)
+            return await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
-                _logger.LogWarning("Cash register not found");
-                return false;
-            }
+                var cashRegister = await _context.CashRegisters
+                    .FirstOrDefaultAsync(cancellationToken);
 
-            if (request.Amount <= 0)
-            {
-                _logger.LogWarning("Invalid withdrawal amount: {Amount}", request.Amount);
-                return false;
-            }
-
-            _logger.LogInformation("WithdrawCashAsync called. Type: {Type}, Amount: {Amount}",
-                request.WithdrawType, request.Amount);
-
-            // Agar 'cash' bo'lsa, kassadan pul olinadi
-            if (request.WithdrawType == "cash")
-            {
-                if (cashRegister.CurrentBalance < request.Amount)
+                if (cashRegister == null)
                 {
-                    _logger.LogWarning("Insufficient funds in cash register. Balance: {Balance}, Requested: {Amount}",
-                        cashRegister.CurrentBalance, request.Amount);
+                    _logger.LogWarning("Cash register not found");
                     return false;
                 }
 
-                // Withdrawal yaratish
-                var withdrawal = new CashWithdrawal
+                if (request.Amount <= 0)
                 {
-                    Id = Guid.NewGuid(),
-                    Amount = request.Amount,
-                    Comment = request.Comment,
-                    WithdrawalDate = DateTime.UtcNow,
-                    UserId = userId,
-                    WithdrawType = "cash"
-                };
+                    _logger.LogWarning("Invalid withdrawal amount: {Amount}", request.Amount);
+                    return false;
+                }
 
-                _context.CashWithdrawals.Add(withdrawal);
+                _logger.LogInformation("WithdrawCashAsync called. Type: {Type}, Amount: {Amount}",
+                    request.WithdrawType, request.Amount);
 
-                // Balansni kamaytirish
-                cashRegister.CurrentBalance -= request.Amount;
-                cashRegister.LastUpdated = DateTime.UtcNow;
-                cashRegister.LastWithdrawalId = withdrawal.Id;
-
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-
-                _logger.LogInformation("Cash withdrawn successfully. Type: cash, Amount: {Amount}", request.Amount);
-            }
-            // Agar 'click' bo'lsa, tarixga yozib qo'ydi, balansga ta'sir qilmaydi
-            else if (request.WithdrawType == "click")
-            {
-                // Withdrawal yaratish (faqat tarix uchun, balansga ta'sir qilmaydi)
-                var withdrawal = new CashWithdrawal
+                // Agar 'cash' bo'lsa, kassadan pul olinadi
+                if (request.WithdrawType == "cash")
                 {
-                    Id = Guid.NewGuid(),
-                    Amount = request.Amount,
-                    Comment = request.Comment,
-                    WithdrawalDate = DateTime.UtcNow,
-                    UserId = userId,
-                    WithdrawType = "click"
-                };
+                    if (cashRegister.CurrentBalance < request.Amount)
+                    {
+                        _logger.LogWarning("Insufficient funds in cash register. Balance: {Balance}, Requested: {Amount}",
+                            cashRegister.CurrentBalance, request.Amount);
+                        return false;
+                    }
 
-                _context.CashWithdrawals.Add(withdrawal);
+                    // Withdrawal yaratish
+                    var withdrawal = new CashWithdrawal
+                    {
+                        Id = Guid.NewGuid(),
+                        Amount = request.Amount,
+                        Comment = request.Comment,
+                        WithdrawalDate = DateTime.UtcNow,
+                        UserId = userId,
+                        WithdrawType = "cash"
+                    };
 
-                // Faqat yangilash
-                cashRegister.LastUpdated = DateTime.UtcNow;
-                cashRegister.LastWithdrawalId = withdrawal.Id;
+                    _context.CashWithdrawals.Add(withdrawal);
 
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
+                    // Balansni kamaytirish
+                    cashRegister.CurrentBalance -= request.Amount;
+                    cashRegister.LastUpdated = DateTime.UtcNow;
+                    cashRegister.LastWithdrawalId = withdrawal.Id;
 
-                _logger.LogInformation("Click withdrawal recorded. Type: click, Amount: {Amount}", request.Amount);
-            }
-            else
-            {
-                _logger.LogWarning("Invalid withdraw type: {Type}", request.WithdrawType);
-                return false;
-            }
+                    await _context.SaveChangesAsync(cancellationToken);
 
-            return true;
+                    _logger.LogInformation("Cash withdrawn successfully. Type: cash, Amount: {Amount}", request.Amount);
+                }
+                // Agar 'click' bo'lsa, tarixga yozib qo'ydi, balansga ta'sir qilmaydi
+                else if (request.WithdrawType == "click")
+                {
+                    // Withdrawal yaratish (faqat tarix uchun, balansga ta'sir qilmaydi)
+                    var withdrawal = new CashWithdrawal
+                    {
+                        Id = Guid.NewGuid(),
+                        Amount = request.Amount,
+                        Comment = request.Comment,
+                        WithdrawalDate = DateTime.UtcNow,
+                        UserId = userId,
+                        WithdrawType = "click"
+                    };
+
+                    _context.CashWithdrawals.Add(withdrawal);
+
+                    // Faqat yangilash
+                    cashRegister.LastUpdated = DateTime.UtcNow;
+                    cashRegister.LastWithdrawalId = withdrawal.Id;
+
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation("Click withdrawal recorded. Type: click, Amount: {Amount}", request.Amount);
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid withdraw type: {Type}", request.WithdrawType);
+                    return false;
+                }
+
+                return true;
+            }, cancellationToken);
         }
         catch (Exception ex)
         {
