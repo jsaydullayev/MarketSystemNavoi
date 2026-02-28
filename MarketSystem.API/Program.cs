@@ -1,3 +1,4 @@
+using MarketSystem.API;
 using MarketSystem.API.Middleware;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Application.Services;
@@ -391,6 +392,7 @@ try
         }).WithName("Seed Database").AllowAnonymous();
     }
 
+    await TestRunner.RunTestAsync(app.Services);
     app.Run();
 }
 
