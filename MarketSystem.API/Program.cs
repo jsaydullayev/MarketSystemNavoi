@@ -227,6 +227,7 @@ try
     builder.Services.AddScoped<ICashRegisterService, CashRegisterService>();
     builder.Services.AddScoped<IMarketService, MarketService>();
     builder.Services.AddScoped<ICurrentMarketService, CurrentMarketService>();
+    builder.Services.AddScoped<IExcelService, ExcelService>();
 
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 

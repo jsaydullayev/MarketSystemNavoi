@@ -7,6 +7,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../screens/dashboard_screen.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/utils/number_formatter.dart';
+import '../../../core/utils/file_helper.dart' as core_file_helper;
 import 'product_form_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
@@ -233,6 +234,57 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
+  Future<void> _exportExcel() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final productService = ProductService(authProvider: authProvider);
+
+      final bytes = await productService.downloadProductsExcel();
+      
+      if (bytes != null && bytes.isNotEmpty) {
+        // Core dagi fayl yordamchisini chaqiramiz (import qilish shart emas, chunki tepadagi path orqali beramiz)
+        final path = await core_file_helper.FileHelper.saveAndOpenExcel(bytes, 'Mahsulotlar.xlsx');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(path != null ? 'Fayl saqlandi: $path' : 'Faylni saqlashda xatolik yuz berdi'),
+              backgroundColor: path != null ? Colors.green : Colors.red,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(
+              content: Text('Ma\'lumotlarni yuklab olishda xatolik'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik yuz berdi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -250,6 +302,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
           },
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Excelga yuklash',
+            onPressed: _exportExcel,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadProducts,

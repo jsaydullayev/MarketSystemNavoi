@@ -8,7 +8,8 @@ import '../../../screens/dashboard_screen.dart';
 import '../../../data/services/product_service.dart';
 import '../presentation/bloc/zakup_bloc.dart';
 import '../presentation/bloc/events/zakup_event.dart';
-import '../presentation/bloc/states/zakup_state.dart';
+import '../../../core/utils/file_helper.dart' as core_file_helper;
+import '../presentation/bloc/zakup_state.dart';
 
 class ZakupScreen extends StatefulWidget {
   const ZakupScreen({super.key});
@@ -175,6 +176,58 @@ class _ZakupScreenState extends State<ZakupScreen> {
     ));
   }
 
+  bool _isExporting = false;
+
+  Future<void> _exportExcel() async {
+    setState(() {
+      _isExporting = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final zakupService = ZakupService(authProvider: authProvider);
+
+      final bytes = await zakupService.downloadZakupsExcel();
+      
+      if (bytes != null && bytes.isNotEmpty) {
+        final path = await core_file_helper.FileHelper.saveAndOpenExcel(bytes, 'Xaridlar.xlsx');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(path != null ? 'Fayl saqlandi: $path' : 'Faylni saqlashda xatolik yuz berdi'),
+              backgroundColor: path != null ? Colors.green : Colors.red,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(
+              content: Text('Ma\'lumotlarni yuklab olishda xatolik'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik yuz berdi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExporting = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -213,6 +266,23 @@ class _ZakupScreenState extends State<ZakupScreen> {
             },
           ),
           actions: [
+            if (_isExporting)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.file_download),
+                tooltip: 'Excelga yuklash',
+                onPressed: _exportExcel,
+              ),
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => context.read<ZakupBloc>().add(const GetZakupsEvent()),

@@ -60,4 +60,29 @@ public class ZakupsController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportZakupsToExcel([FromServices] MarketSystem.Application.Interfaces.IExcelService excelService)
+    {
+        var zakups = await _zakupService.GetAllZakupsAsync();
+
+        var exportData = zakups.Select(z => new
+        {
+            ID = z.Id.ToString(),
+            Mahsulot = z.ProductName,
+            Sana = z.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+            Xodim = z.CreatedBy,
+            Miqdor = z.Quantity,
+            Xarid_narxi = z.CostPrice,
+            Jami_summa = z.Quantity * z.CostPrice
+        });
+
+        var fileContent = excelService.GenerateExcel(exportData, "Xaridlar");
+
+        return File(
+            fileContent,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Xaridlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+        );
+    }
 }

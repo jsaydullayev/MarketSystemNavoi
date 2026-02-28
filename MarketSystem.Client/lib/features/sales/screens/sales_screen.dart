@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:provider/provider.dart';
+
 import '../../../core/utils/number_formatter.dart';
+import '../../../core/utils/file_helper.dart' as core_file_helper;
+import '../../../core/providers/auth_provider.dart';
+import '../../../data/services/sales_service.dart';
 import '../../../screens/dashboard_screen.dart';
 import '../domain/entities/sale_entity.dart';
 import '../presentation/bloc/sales_bloc.dart';
@@ -34,6 +39,58 @@ class _SalesScreenState extends State<SalesScreen> {
         .toList();
   }
 
+  bool _isExporting = false;
+
+  Future<void> _exportExcel() async {
+    setState(() {
+      _isExporting = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+
+      final bytes = await salesService.downloadSalesExcel();
+      
+      if (bytes != null && bytes.isNotEmpty) {
+        final path = await core_file_helper.FileHelper.saveAndOpenExcel(bytes, 'Sotuvlar.xlsx');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(path != null ? 'Fayl saqlandi: $path' : 'Faylni saqlashda xatolik yuz berdi'),
+              backgroundColor: path != null ? Colors.green : Colors.red,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(
+              content: Text('Ma\'lumotlarni yuklab olishda xatolik'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik yuz berdi: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExporting = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<SalesBloc, SalesState>(
@@ -61,6 +118,23 @@ class _SalesScreenState extends State<SalesScreen> {
             },
           ),
           actions: [
+            if (_isExporting)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.file_download),
+                tooltip: 'Excelga yuklash',
+                onPressed: _exportExcel,
+              ),
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () =>
