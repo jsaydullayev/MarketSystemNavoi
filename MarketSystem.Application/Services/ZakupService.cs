@@ -76,9 +76,8 @@ public class ZakupService : IZakupService
     public async Task<ZakupDto> CreateZakupAsync(CreateZakupDto request, Guid adminId, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             var products = await _unitOfWork.Products.FindAsync(
                 p => p.Id == request.ProductId && p.MarketId == marketId,
@@ -109,18 +108,12 @@ public class ZakupService : IZakupService
             _unitOfWork.Products.Update(product);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // Audit log
             await _auditLogService.LogZakupActionAsync(zakup.Id, adminId, cancellationToken);
 
             return await MapToDtoAsync(zakup, cancellationToken);
-        }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     private async Task<ZakupDto> MapToDtoAsync(Zakup zakup, CancellationToken cancellationToken)
