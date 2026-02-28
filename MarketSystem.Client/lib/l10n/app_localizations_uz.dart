@@ -600,4 +600,28 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get updateSuccess => 'Ma\'lumotlar muvaffaqiyatli yangilandi';
+
+  @override
+  String get category => 'Kategoriya';
+
+  @override
+  String get unit => 'Birlik';
+
+  @override
+  String get minPrice => 'Min. narx';
+
+  @override
+  String get temporaryProduct => 'Vaqtinchalik';
+
+  @override
+  String get none => 'Yo\'q';
+
+  @override
+  String get stock => 'Zaxira';
+
+  @override
+  String get zakupSuccess => 'Zakup muvaffaqiyatli qo\'shildi!';
+
+  @override
+  String get number => 'Soni';
 }

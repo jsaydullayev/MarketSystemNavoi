@@ -1273,6 +1273,54 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Ma\'lumotlar muvaffaqiyatli yangilandi'**
   String get updateSuccess;
+
+  /// No description provided for @category.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kategoriya'**
+  String get category;
+
+  /// No description provided for @unit.
+  ///
+  /// In uz, this message translates to:
+  /// **'Birlik'**
+  String get unit;
+
+  /// No description provided for @minPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Min. narx'**
+  String get minPrice;
+
+  /// No description provided for @temporaryProduct.
+  ///
+  /// In uz, this message translates to:
+  /// **'Vaqtinchalik'**
+  String get temporaryProduct;
+
+  /// No description provided for @none.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yo\'q'**
+  String get none;
+
+  /// No description provided for @stock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Zaxira'**
+  String get stock;
+
+  /// No description provided for @zakupSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Zakup muvaffaqiyatli qo\'shildi!'**
+  String get zakupSuccess;
+
+  /// No description provided for @number.
+  ///
+  /// In uz, this message translates to:
+  /// **'Soni'**
+  String get number;
 }
 
 class _AppLocalizationsDelegate

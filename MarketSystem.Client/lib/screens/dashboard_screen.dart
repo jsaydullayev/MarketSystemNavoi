@@ -10,7 +10,7 @@ import '../core/providers/locale_provider.dart';
 import '../core/routes/app_routes.dart';
 import '../l10n/app_localizations.dart';
 import '../features/auth/screens/welcome_screen.dart';
-import '../features/products/screens/products_screen.dart';
+import '../features/products/presentation/screens/products_screen.dart';
 import '../features/categories/screens/category_management_screen.dart';
 import '../features/daily_sales/screens/daily_sales_screen.dart';
 import '../features/sales/screens/draft_sales_screen.dart';
@@ -39,10 +39,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         return Scaffold(
           backgroundColor:
-              isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+              isDark ? const Color(0xFF121212) : const Color(0xFFF1F5F9),
           drawer: Drawer(
             width: isLargeScreen ? 320 : 280,
-            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.horizontal(right: Radius.circular(20)),
             ),
@@ -135,9 +135,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(20),
         margin: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: primary.withOpacity(0.1),
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: primary.withOpacity(0.1)),
+          border: Border.all(
+              color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: Row(
           children: [
@@ -270,8 +277,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'onTap': () => Navigator.pushNamed(context, AppRoutes.customers)
       },
     ];
+
     if (role == 'Admin' || role == 'Owner') {
       items.addAll([
+        {
+          'title': l10n.zakup,
+          'icon': Icons.add_business_rounded,
+          'onTap': () => Navigator.pushNamed(context, AppRoutes.zakup)
+        },
+        {
+          'title': l10n.cashRegister,
+          'icon': Icons.account_balance_wallet_rounded,
+          'onTap': () => Navigator.pushNamed(context, AppRoutes.cashRegister)
+        },
         {
           'title': l10n.reports,
           'icon': Icons.bar_chart_rounded,
@@ -300,7 +318,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
               color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
@@ -336,7 +354,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bool isDark, VoidCallback onTap) {
     return ListTile(
       onTap: onTap,
-      tileColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+      tileColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       leading: Icon(icon, color: primary),
       title: Text(title, style: AppStyles.cardTitle.copyWith(fontSize: 15)),
