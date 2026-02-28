@@ -143,7 +143,9 @@ try
             policy.SetIsOriginAllowed((origin) =>
                 {
                     if (string.IsNullOrEmpty(origin)) return false;
-                    return origin.Contains("localhost");
+                    return origin.Contains("localhost") ||
+                           origin.Contains("103.125.217.28") ||
+                           origin.Contains("10.0.1.201");
                 })
                   .AllowAnyMethod()
                   .AllowAnyHeader()
