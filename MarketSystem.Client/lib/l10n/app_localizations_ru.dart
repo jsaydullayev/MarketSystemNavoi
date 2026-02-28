@@ -600,4 +600,28 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get updateSuccess => 'Данные успешно обновлены';
+
+  @override
+  String get category => 'Категория';
+
+  @override
+  String get unit => 'Ед. изм.';
+
+  @override
+  String get minPrice => 'Мин. цена';
+
+  @override
+  String get temporaryProduct => 'Временный';
+
+  @override
+  String get none => 'Нет';
+
+  @override
+  String get stock => 'Запас';
+
+  @override
+  String get zakupSuccess => 'Закуп успешно добавлен!';
+
+  @override
+  String get number => 'Soni';
 }
