@@ -127,10 +127,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                         ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => _openCategoryForm(),
-        label: Text(l10n.addCategory),
-        icon: const Icon(Icons.add_rounded),
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
     );
   }
