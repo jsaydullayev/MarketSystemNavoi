@@ -21,4 +21,8 @@ public interface IUnitOfWork : IDisposable
     Task BeginTransactionAsync(CancellationToken cancellationToken = default);
     Task CommitTransactionAsync(CancellationToken cancellationToken = default);
     Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
+
+    // Xavfsiz Tranzaksiya qatlami (Execution Strategy Retry)
+    Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> operation, CancellationToken cancellationToken = default);
+    Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default);
 }

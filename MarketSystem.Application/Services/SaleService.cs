@@ -268,9 +268,8 @@ public class SaleService : ISaleService
     public async Task<SaleItemDto?> AddSaleItemAsync(Guid saleId, AddSaleItemDto request, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // Get sale with MarketId filtering
             var sales = await _unitOfWork.Sales.FindAsync(
@@ -365,23 +364,16 @@ public class SaleService : ISaleService
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             return MapSaleItemToDto(resultSaleItem, product.Name);
-        }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<SaleItemDto?> RemoveSaleItemAsync(Guid saleId, RemoveSaleItemDto request, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // Get sale with MarketId filtering
             var sales = await _unitOfWork.Sales.FindAsync(
@@ -453,23 +445,16 @@ public class SaleService : ISaleService
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             return MapSaleItemToDto(resultSaleItem, product.Name);
-        }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<PaymentDto?> AddPaymentAsync(Guid saleId, AddPaymentDto request, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // CRITICAL FIX: Get sale WITH items to ensure TotalAmount is calculated
             var sale = await _unitOfWork.Sales.GetWithItemsAsync(saleId, cancellationToken);
@@ -635,7 +620,6 @@ public class SaleService : ISaleService
             // Use DbContext to explicitly mark sale as modified
             _context.Entry(sale).State = EntityState.Modified;
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // Audit log
             await _auditLogService.LogPaymentActionAsync(payment.Id, sale.SellerId, cancellationToken);
@@ -649,12 +633,7 @@ public class SaleService : ISaleService
                 sale.PaidAmount, // Yangilangan paid amount
                 sale.TotalAmount // Total amount
             );
-        }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default)
@@ -673,9 +652,7 @@ public class SaleService : ISaleService
 
         _logger.LogInformation("Admin ID (parsed): {AdminGuid}", adminGuid);
 
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             var marketId = _currentMarketService.GetCurrentMarketId();
 
@@ -722,18 +699,12 @@ public class SaleService : ISaleService
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             // Audit log
             await _auditLogService.LogSaleActionAsync(saleId, "Cancel", adminGuid, cancellationToken);
 
             return await MapToDtoAsync(sale, cancellationToken);
-        }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
+        }, cancellationToken);
     }
 
     public async Task<bool> ValidateSalePriceAsync(Guid saleItemId, CancellationToken cancellationToken = default)

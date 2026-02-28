@@ -70,6 +70,12 @@ public class ProductService : IProductService
             throw new UnauthorizedAccessException("Siz hali market yaratmagansiz. Iltimos, avval market yaratiling.");
         }
 
+        var unitValue = request.Unit == 0 ? 1 : request.Unit;
+        if (!Enum.IsDefined(typeof(UnitType), unitValue))
+        {
+            throw new ArgumentException("Noto'g'ri o'lchov birligi tanlandi!");
+        }
+
         var product = new Product
         {
             Id = Guid.NewGuid(),
@@ -81,7 +87,7 @@ public class ProductService : IProductService
             MinSalePrice = request.MinSalePrice,
             Quantity = 0, // Zakup orqali belgilanadi
             MinThreshold = request.MinThreshold,
-            Unit = (UnitType)request.Unit,  // ✅ NEW: Unit type
+            Unit = (UnitType)unitValue,  // ✅ NEW: Unit type
             MarketId = marketId.Value,  // Multi-tenancy
             CategoryId = request.CategoryId  // Category
         };
@@ -104,12 +110,18 @@ public class ProductService : IProductService
         if (product is null)
             return null;
 
+        var unitValue = request.Unit == 0 ? 1 : request.Unit;
+        if (!Enum.IsDefined(typeof(UnitType), unitValue))
+        {
+            throw new ArgumentException("Noto'g'ri o'lchov birligi tanlandi!");
+        }
+
         product.Name = request.Name;
         // CostPrice va Quantity faqat Zakup orqali yangilanadi
         product.SalePrice = request.SalePrice;
         product.MinSalePrice = request.MinSalePrice;
         product.MinThreshold = request.MinThreshold;
-        product.Unit = (UnitType)request.Unit;  // ✅ NEW: Update unit
+        product.Unit = (UnitType)unitValue;  // ✅ NEW: Update unit
         product.CategoryId = request.CategoryId;  // Category
 
         _context.Entry(product).State = EntityState.Modified;
