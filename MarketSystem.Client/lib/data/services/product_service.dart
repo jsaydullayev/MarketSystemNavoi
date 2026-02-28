@@ -98,4 +98,8 @@ class ProductService {
       throw Exception('Failed to delete product: ${response.body}');
     }
   }
+
+  Future<List<int>?> downloadProductsExcel() async {
+    return await _httpService.downloadBytes('${ApiConstants.products}/ExportProductsToExcel');
+  }
 }

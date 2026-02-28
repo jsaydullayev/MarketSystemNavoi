@@ -356,4 +356,32 @@ class HttpService {
     // Upload uchun ham 401 handle qilish
     return _handleResponse(response, 'PUT', endpoint);
   }
+
+  // Fayl yuklab olish (byte array qaytaradi)
+  Future<List<int>?> downloadBytes(String endpoint) async {
+    try {
+      final token = await getAccessToken();
+
+      print('=== HTTP DOWNLOAD BYTES ===');
+      print('URL: $baseUrl$endpoint');
+      print('================');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      // Agar xato bo'lsa _handleResponse orqali tekshirish mumkin
+      // Lekin byte stream bo'lgani uchun oddiy tekshiramiz
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      }
+      return null;
+    } catch (e) {
+      print('Download bytes error: $e');
+      return null;
+    }
+  }
 }

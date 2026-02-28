@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 
 class ApiConstants {
   // =================== SERVERS ===================
-  static const String _productionUrl = 'http://103.125.217.28:5137/api'; 
+  static const String _productionUrl = 'http://103.125.217.28:8080/api'; 
   static const String _localUrl = 'http://localhost:5137/api';
   static const String _androidLocalUrl = 'http://10.0.2.2:5137/api';
 
