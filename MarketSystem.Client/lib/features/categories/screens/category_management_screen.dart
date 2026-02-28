@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
+import 'package:market_system_client/features/categories/screens/category_bottom_sheet.dart';
+import 'package:market_system_client/features/categories/widgets/categories_card.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/category_service.dart';
-import '../../../data/services/download_service.dart';
 import '../../../data/models/product_category_model.dart';
 import '../../../core/providers/auth_provider.dart';
-import 'category_form_screen.dart';
+import '../../../l10n/app_localizations.dart';
 
 class CategoryManagementScreen extends StatefulWidget {
   const CategoryManagementScreen({super.key});
 
   @override
-  State<CategoryManagementScreen> createState() => _CategoryManagementScreenState();
+  State<CategoryManagementScreen> createState() =>
+      _CategoryManagementScreenState();
 }
 
 class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
-  late final CategoryService _categoryService;
-  late final AuthProvider _authProvider;
-  late final DownloadService _downloadService;
   List<ProductCategoryModel> _categories = [];
   bool _isLoading = true;
   String? _error;
@@ -24,15 +24,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   @override
   void initState() {
     super.initState();
-    _authProvider = Provider.of<AuthProvider>(context, listen: false);
-    _categoryService = CategoryService(authProvider: _authProvider);
-    _downloadService = DownloadService.getInstance(_authProvider.httpService);
     _loadCategories();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   Future<void> _loadCategories() async {
@@ -40,9 +32,10 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       _isLoading = true;
       _error = null;
     });
-
     try {
-      final categories = await _categoryService.getAllCategories();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final categories =
+          await CategoryService(authProvider: authProvider).getAllCategories();
       setState(() {
         _categories = categories;
         _isLoading = false;
@@ -55,204 +48,113 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     }
   }
 
-  Future<void> _deleteCategory(int id, String name) async {
-    final confirm = await showDialog<bool>(
+  void _openCategoryForm({ProductCategoryModel? category}) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Kategoriyani o\'chirish'),
-        content: Text('$name categoriyasini o\'chirmoqchimisiz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Yo\'q'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Ha, o\'chirish'),
-          ),
-        ],
-      ),
-    );
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CategoryBottomSheet(category: category),
+    ).then((value) {
+      if (value == true) _loadCategories();
+    });
+  }
 
-    if (confirm == true) {
-      try {
-        await _categoryService.deleteCategory(id);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Category muvaffaqiyatli o\'chirildi')),
-          );
-          _loadCategories();
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-          );
-        }
-      }
+  Future<void> _deleteCategory(ProductCategoryModel category) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await CategoryService(authProvider: authProvider)
+          .deleteCategory(category.id);
+      _loadCategories();
+      _showSnackBar(l10n.deleteSuccess, Colors.green);
+    } catch (e) {
+      _showSnackBar(e.toString(), Colors.red);
     }
   }
 
-  Future<void> _exportToExcel() async {
-    try {
-      await _downloadService.downloadCategories();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kategoriyalar muvaffaqiyatli yuklab olindi!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Yuklab olishda xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  void _showSnackBar(String m, Color c) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(m), backgroundColor: c));
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Kategoriyalar'),
+        elevation: 0,
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(l10n.categories,
+            style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold)),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.download),
-            tooltip: 'Excelga yuklab olish',
-            onPressed: _exportToExcel,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh_rounded, color: theme.primaryColor),
             onPressed: _loadCategories,
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadCategories,
-                        child: const Text('Qayta yuklash'),
-                      ),
-                    ],
-                  ),
-                )
-              : _categories.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.category_outlined, size: 64, color: Colors.grey[400]),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Hali kategoriyalar yo\'q',
-                            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+      body: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: _isLoading && _categories.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? _buildErrorView(l10n)
+                  : _categories.isEmpty
+                      ? _buildEmptyView(l10n, theme.primaryColor)
+                      : LiquidPullToRefresh(
+                          onRefresh: _loadCategories,
+                          color: theme.primaryColor,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _categories.length,
+                            itemBuilder: (context, index) => CategoryCard(
+                              category: _categories[index],
+                              l10n: l10n,
+                              isDark: isDark,
+                              onEdit: (c) => _openCategoryForm(category: c),
+                              onDelete: (c) => _deleteCategory(c),
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Yangi kategoriya qo\'shish uchun pastki tugmani bosing',
-                            style: TextStyle(color: Colors.grey[500]),
-                          ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadCategories,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _categories.length,
-                        itemBuilder: (context, index) {
-                          final category = _categories[index];
-                          return _buildCategoryCard(category);
-                        },
-                      ),
-                    ),
+                        ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const CategoryFormScreen(),
-            ),
-          );
-          if (result == true && mounted) {
-            _loadCategories();
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Kategoriya'),
+        onPressed: () => _openCategoryForm(),
+        label: Text(l10n.addCategory),
+        icon: const Icon(Icons.add_rounded),
       ),
     );
   }
 
-  Widget _buildCategoryCard(ProductCategoryModel category) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: category.isActive ? Colors.green : Colors.grey,
-          child: Icon(
-            category.isActive ? Icons.check_circle : Icons.category,
-            color: Colors.white,
-          ),
-        ),
-        title: Text(
-          category.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (category.description != null && category.description!.isNotEmpty)
-              Text(category.description!),
-            const SizedBox(height: 4),
-            Text(
-              'Mahsulotlar: ${category.productCount}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CategoryFormScreen(category: category.toJson()),
-                  ),
-                );
-                if (result == true && mounted) {
-                  _loadCategories();
-                }
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteCategory(category.id, category.name),
-            ),
-          ],
-        ),
+  Widget _buildEmptyView(AppLocalizations l10n, Color color) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.category_outlined, size: 80, color: color.withOpacity(0.3)),
+        const SizedBox(height: 16),
+        Text(l10n.noData,
+            style: const TextStyle(fontSize: 18, color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildErrorView(AppLocalizations l10n) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(_error!, style: const TextStyle(color: Colors.red)),
+          ElevatedButton(onPressed: _loadCategories, child: Text(l10n.loading)),
+        ],
       ),
     );
   }
