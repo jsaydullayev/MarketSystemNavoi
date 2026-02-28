@@ -61,7 +61,7 @@ services:
             dockerfile: Dockerfile
         container_name: market-system-client
         ports:
-            - "80:80" # Maps port 80 of the host machine to port 80 of the Nginx container
+            - "8081:80" # Maps port 8081 of the host machine to port 80 of the Nginx container
         depends_on:
             - market-system-api
         networks:
