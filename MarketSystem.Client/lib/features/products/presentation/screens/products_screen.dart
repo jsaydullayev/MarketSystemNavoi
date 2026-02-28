@@ -9,11 +9,6 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../core/utils/file_helper.dart' as core_file_helper;
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 
-extension Spacing on num {
-  Widget get height => SizedBox(height: toDouble());
-  Widget get width => SizedBox(width: toDouble());
-}
-
 class ProductsScreen extends StatefulWidget {
   final bool isReadOnly;
   const ProductsScreen({super.key, this.isReadOnly = false});
