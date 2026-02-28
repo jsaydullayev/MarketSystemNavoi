@@ -624,4 +624,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get number => 'Soni';
+
+  @override
+  String get addCategory => 'Добавить категорию';
+
+  @override
+  String get editCategory => 'Редактировать категорию';
+
+  @override
+  String get categoryName => 'Название категории';
+
+  @override
+  String get description => 'Описание';
+
+  @override
+  String get isActive => 'Активен';
 }

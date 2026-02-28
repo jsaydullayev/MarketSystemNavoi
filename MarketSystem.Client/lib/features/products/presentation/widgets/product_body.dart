@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
@@ -224,7 +223,6 @@ class _ProductCard extends StatelessWidget {
     );
   }
 
-  // Swipe fonini chiroyli qilish (Ikonka + Yozuv)
   Widget _buildSwipeBg(
       {required Color color,
       required IconData icon,
