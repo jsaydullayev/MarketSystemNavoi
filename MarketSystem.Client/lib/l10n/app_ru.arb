@@ -204,5 +204,10 @@
   "temporaryProduct": "Временный",
   "none": "Нет",
   "stock": "Запас",
-  "zakupSuccess": "Закуп успешно добавлен!"
+  "zakupSuccess": "Закуп успешно добавлен!",
+  "addCategory": "Добавить категорию",
+  "editCategory": "Редактировать категорию",
+  "categoryName": "Название категории",
+  "description": "Описание",
+  "isActive": "Активен"
 }
