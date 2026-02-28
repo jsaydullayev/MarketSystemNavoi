@@ -6,10 +6,11 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
 import '../../../screens/dashboard_screen.dart';
 import '../../../data/services/product_service.dart';
+import '../../../data/services/zakup_service.dart';
 import '../presentation/bloc/zakup_bloc.dart';
 import '../presentation/bloc/events/zakup_event.dart';
 import '../../../core/utils/file_helper.dart' as core_file_helper;
-import '../presentation/bloc/zakup_state.dart';
+import '../presentation/bloc/states/zakup_state.dart';
 
 class ZakupScreen extends StatefulWidget {
   const ZakupScreen({super.key});
