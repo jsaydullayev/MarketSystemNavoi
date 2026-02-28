@@ -56,4 +56,8 @@ class ZakupService {
       throw Exception('Failed to create zakup: ${response.body}');
     }
   }
+
+  Future<List<int>?> downloadZakupsExcel() async {
+    return await _httpService.downloadBytes('${ApiConstants.zakups}/ExportZakupsToExcel');
+  }
 }

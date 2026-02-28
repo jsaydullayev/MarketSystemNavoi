@@ -312,37 +312,31 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> ExportSalesToExcel()
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportSalesToExcel([FromServices] MarketSystem.Application.Interfaces.IExcelService excelService)
     {
         try
         {
             var sales = await _saleService.GetAllSalesAsync();
 
-            var headers = new[] { "ID", "Sana", "Mijoz", "Sotuvchi", "Jami summa", "To'langan", "Qarz", "Holat" };
+            var exportData = sales.Select(s => new
+            {
+                ID = s.Id.ToString(),
+                Sana = s.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                Mijoz = s.CustomerName ?? "Mijoz yo'q",
+                Sotuvchi = s.SellerName,
+                Jami_summa = s.TotalAmount,
+                Tolangan = s.PaidAmount,
+                Qarz = s.TotalAmount - s.PaidAmount,
+                Holat = s.Status
+            });
 
-            var csv = CsvHelper.GenerateCsv(
-                sales,
-                headers,
-                s => new[]
-                {
-                    s.Id.ToString(),
-                    s.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                    s.CustomerName ?? "Mijoz yo'q",
-                    s.SellerName,
-                    s.TotalAmount.ToString("F2"),
-                    s.PaidAmount.ToString("F2"),
-                    (s.TotalAmount - s.PaidAmount).ToString("F2"),
-                    s.Status
-                }
-            );
-
-            var content = CsvHelper.GenerateExcelCsv(csv);
+            var fileContent = excelService.GenerateExcel(exportData, "Sotuvlar");
 
             return File(
-                content,
-                "text/csv",
-                $"sotuvlar_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+                fileContent,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Sotuvlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
             );
         }
         catch (Exception ex)

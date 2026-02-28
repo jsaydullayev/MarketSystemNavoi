@@ -390,4 +390,8 @@ class SalesService {
       throw Exception('Failed to get debtors: ${response.statusCode}');
     }
   }
+
+  Future<List<int>?> downloadSalesExcel() async {
+    return await _httpService.downloadBytes('${ApiConstants.sales}/ExportSalesToExcel');
+  }
 }

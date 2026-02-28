@@ -101,36 +101,31 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
-    [HttpGet]
-    public async Task<IActionResult> ExportProductsToExcel()
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportProductsToExcel([FromServices] MarketSystem.Application.Interfaces.IExcelService excelService)
     {
         var products = await _productService.GetAllProductsAsync();
+        
+        // Forma dagi ma'lumotlarni sodda va tushunarli qilish uchun yangi ro'yxat shakllantiramiz
+        var exportData = products.Select(p => new
+        {
+            ID = p.Id.ToString(),
+            Nomi = p.Name,
+            Kategoriya = p.CategoryName ?? "",
+            Xarid_narxi = p.CostPrice,
+            Sotuv_narxi = p.SalePrice,
+            Minimal_narx = p.MinSalePrice,
+            Miqdor = p.Quantity,
+            Minimal_chegara = p.MinThreshold,
+            Vaqtinchalik = p.IsTemporary ? "Ha" : "Yo'q"
+        });
 
-        var headers = new[] { "ID", "Nomi", "Kategoriya", "Xarid narxi", "Sotuv narxi", "Min. narx", "Miqdor", "Min. chegara", "Vaqtinchalik" };
-
-        var csv = CsvHelper.GenerateCsv(
-            products,
-            headers,
-            p => new[]
-            {
-                p.Id.ToString(),
-                p.Name,
-                p.CategoryName ?? "",
-                p.CostPrice.ToString("F2"),
-                p.SalePrice.ToString("F2"),
-                p.MinSalePrice.ToString("F2"),
-                p.Quantity.ToString(),
-                p.MinThreshold.ToString(),
-                p.IsTemporary ? "Ha" : "Yo'q"
-            }
-        );
-
-        var content = CsvHelper.GenerateExcelCsv(csv);
+        var fileContent = excelService.GenerateExcel(exportData, "Mahsulotlar");
 
         return File(
-            content,
-            "text/csv",
-            $"mahsulotlar_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            fileContent,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Mahsulotlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
         );
     }
 
