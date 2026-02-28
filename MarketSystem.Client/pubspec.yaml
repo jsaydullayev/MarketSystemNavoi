@@ -51,6 +51,7 @@ dependencies:
   zoom_tap_animation: ^1.1.0
   open_filex: ^4.7.0
   share_plus: ^12.0.1
+  liquid_pull_to_refresh: ^3.0.1
 
 dev_dependencies:
   flutter_test:

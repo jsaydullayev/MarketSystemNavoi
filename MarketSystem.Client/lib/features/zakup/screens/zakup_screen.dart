@@ -171,10 +171,10 @@ class _ZakupScreenState extends State<ZakupScreen> {
 
   void _createZakup(String productId, int quantity, double costPrice) {
     context.read<ZakupBloc>().add(CreateZakupEvent(
-      productId: productId,
-      quantity: quantity,
-      costPrice: costPrice,
-    ));
+          productId: productId,
+          quantity: quantity,
+          costPrice: costPrice,
+        ));
   }
 
   bool _isExporting = false;
@@ -189,14 +189,17 @@ class _ZakupScreenState extends State<ZakupScreen> {
       final zakupService = ZakupService(authProvider: authProvider);
 
       final bytes = await zakupService.downloadZakupsExcel();
-      
+
       if (bytes != null && bytes.isNotEmpty) {
-        final path = await core_file_helper.FileHelper.saveAndOpenExcel(bytes, 'Xaridlar.xlsx');
-        
+        final path = await core_file_helper.FileHelper.saveAndOpenExcel(
+            bytes, 'Xaridlar.xlsx');
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(path != null ? 'Fayl saqlandi: $path' : 'Faylni saqlashda xatolik yuz berdi'),
+              content: Text(path != null
+                  ? 'Fayl saqlandi: $path'
+                  : 'Faylni saqlashda xatolik yuz berdi'),
               backgroundColor: path != null ? Colors.green : Colors.red,
             ),
           );
@@ -204,7 +207,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-             const SnackBar(
+            const SnackBar(
               content: Text('Ma\'lumotlarni yuklab olishda xatolik'),
               backgroundColor: Colors.red,
             ),
@@ -260,7 +263,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.pushReplacement(
+              Navigator.pop(
                 context,
                 MaterialPageRoute(builder: (_) => const DashboardScreen()),
               );
@@ -286,7 +289,8 @@ class _ZakupScreenState extends State<ZakupScreen> {
               ),
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => context.read<ZakupBloc>().add(const GetZakupsEvent()),
+              onPressed: () =>
+                  context.read<ZakupBloc>().add(const GetZakupsEvent()),
             ),
           ],
         ),
@@ -317,7 +321,9 @@ class _ZakupScreenState extends State<ZakupScreen> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () => context.read<ZakupBloc>().add(const GetZakupsEvent()),
+                            onPressed: () => context
+                                .read<ZakupBloc>()
+                                .add(const GetZakupsEvent()),
                             child: const Text('Qayta urinish'),
                           ),
                         ],
@@ -408,7 +414,8 @@ class _ZakupScreenState extends State<ZakupScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Soni: ${(zakup['quantity'] as num?)?.toDouble() ?? 0.0}'),
-            Text('Olingan narxi: ${NumberFormatter.format(zakup['costPrice'] ?? 0)} so\'m'),
+            Text(
+                'Olingan narxi: ${NumberFormatter.format(zakup['costPrice'] ?? 0)} so\'m'),
             const SizedBox(height: 4),
             Row(
               children: [
