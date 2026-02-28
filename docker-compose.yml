@@ -15,7 +15,7 @@ services:
             - ASPNETCORE_URLS=http://+:8080
             - PORT=8080
             # Database connection - using Docker's internal PostgreSQL container
-            - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=market-system-db;Port=5432;Database=MarketSystemDB;Username=postgres;Password=postgres}
+            - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=market-system-db;Port=5432;Database=MarketSystemDB;Username=postgres;Password=SuperSecur3MarketDB!2026}
             # JWT configuration
             - Jwt__Key=${JWT_KEY:-YourSuperSecretKeyThatIsAtLeast32CharactersLongForDocker!}
             - Jwt__Issuer=MarketSystemAPI
@@ -42,7 +42,7 @@ services:
         environment:
             - POSTGRES_DB=MarketSystemDB
             - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=postgres
+            - POSTGRES_PASSWORD=SuperSecur3MarketDB!2026
         volumes:
             - postgres_data:/var/lib/postgresql/data
         networks:
