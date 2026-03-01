@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/features/products/presentation/screens/product_form_screen.dart';
 import 'package:market_system_client/features/products/presentation/widgets/product_body.dart';
 import 'package:provider/provider.dart';
@@ -194,8 +195,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final primaryColor = theme.primaryColor;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.getBg(isDark),
       appBar: _buildAppBar(l10n, primaryColor, isDark),
       body: ProductsBody(
         isLoading: _isLoading,
@@ -222,7 +222,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       AppLocalizations l10n, Color primary, bool isDark) {
     return AppBar(
       elevation: 0,
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      backgroundColor: AppColors.getCard(isDark),
       title: Text(l10n.products,
           style: TextStyle(
               color: isDark ? Colors.white : Colors.black,

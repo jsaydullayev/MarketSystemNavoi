@@ -192,9 +192,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get paid => 'To\'langan';
 
   @override
-  String get remaining => 'Qolgan';
-
-  @override
   String get date => 'Sana';
 
   @override
@@ -344,13 +341,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get card => 'Karta';
 
   @override
-  String get transfer => 'O\'tkazma';
-
-  @override
   String get selectProduct => 'Mahsulotni tanlang';
-
-  @override
-  String get selectCustomer => 'Mijozni tanlang';
 
   @override
   String get noProducts => 'Mahsulotlar yo\'q';
@@ -505,9 +496,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get loginScreenSubtitle => 'Davom etish uchun tizimga kiring';
 
   @override
-  String get registerScreenTitle => 'Ro\'yxatdan o\'tish';
-
-  @override
   String get registerScreenSubtitle => 'Boshlash uchun ro\'yxatdan o\'ting';
 
   @override
@@ -533,6 +521,9 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get passwordMismatch => 'Parollar mos emas';
+
+  @override
+  String get registerScreenTitle => 'Ro\'yxatdan o\'tish';
 
   @override
   String get createNewAccount => 'Yangi hisob yaratish';
@@ -639,4 +630,208 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get isActive => 'Faol holatda';
+
+  @override
+  String get newSale => 'Yangi sotuv';
+
+  @override
+  String get totalAmount => 'Umumiy summa';
+
+  @override
+  String get all => 'Barchasi';
+
+  @override
+  String get closed => 'Yopilgan';
+
+  @override
+  String get debt => 'Qarz';
+
+  @override
+  String get noCustomer => 'Mijozsiz';
+
+  @override
+  String get exportExcel => 'Excelga yuklash';
+
+  @override
+  String get saleDetails => 'Sotuv tafsilotlari';
+
+  @override
+  String get soldProducts => 'Sotilgan mahsulotlar';
+
+  @override
+  String get returnProduct => 'Tovarni qaytarish';
+
+  @override
+  String get returnAmount => 'Qaytariladigan summa';
+
+  @override
+  String get maxQuantity => 'Maksimal miqdor';
+
+  @override
+  String get returnSuccess => 'Muvaffaqiyatli qaytarildi';
+
+  @override
+  String get errorOccurred => 'Xatolik yuz berdi';
+
+  @override
+  String get unknown => 'Noma\'lum';
+
+  @override
+  String get totalSum => 'Jami summa';
+
+  @override
+  String get returnAction => 'Qaytarish';
+
+  @override
+  String get unknownProduct => 'Noma\'lum mahsulot';
+
+  @override
+  String get processReturn => 'Vozvrat qilish';
+
+  @override
+  String get maxReturn => 'Maksimal qaytarish';
+
+  @override
+  String get piece => 'dona';
+
+  @override
+  String get reasonOptional => 'Sababi (ixtiyoriy)';
+
+  @override
+  String get defect => 'Brak';
+
+  @override
+  String get invalidQuantity => 'Xato miqdor!';
+
+  @override
+  String get finishReturn => 'Vozvratni yakunlash';
+
+  @override
+  String get price => 'Narx';
+
+  @override
+  String get saleAsDebt => 'Qarzga yozildi';
+
+  @override
+  String get saleSuccess => 'Sotildi';
+
+  @override
+  String get cartEmptyWarning => 'Savat bo\'sh! Avval mahsulot qo\'shing';
+
+  @override
+  String get draftSaved => 'Savdo draft sifatida saqlandi!';
+
+  @override
+  String get returnText => 'Vozvrat';
+
+  @override
+  String get saleText => 'Sotuv';
+
+  @override
+  String get takeAsDebt => 'Qarzga olish';
+
+  @override
+  String get terminal => 'Terminal';
+
+  @override
+  String get transfer => 'O\'tkazma';
+
+  @override
+  String get click => 'Click';
+
+  @override
+  String get enterCorrectAmount => 'Iltimos, to\'g\'ri summani kiriting';
+
+  @override
+  String get changeAmount => 'Ortiqcha (Sdacha)';
+
+  @override
+  String get youEntered => 'Siz kiritdingiz';
+
+  @override
+  String get totalAmountLabel => 'Jami summa:';
+
+  @override
+  String get tooMuchAmount => 'Ko\'p summa kiritildi!';
+
+  @override
+  String get fullAmountWarning =>
+      'Iltimos, to\'liq summani kiriting yoki \"Qarzga yozish\"ni tanlang.';
+
+  @override
+  String get newDebt => 'Yangi qarz';
+
+  @override
+  String get onDebt => 'Qarzga:';
+
+  @override
+  String get remaining => 'Qolgan:';
+
+  @override
+  String get selectCustomerForDebt => 'Qarzga olish uchun avval mijoz tanlang';
+
+  @override
+  String get selectCustomer => 'Mijoz tanlang';
+
+  @override
+  String get clickPayment => 'Click to\'lov';
+
+  @override
+  String get transferAmount => 'Transfer summa (so\'m)';
+
+  @override
+  String get accountNumber => 'Hisob raqam';
+
+  @override
+  String get cardAmount => 'Plastik summa';
+
+  @override
+  String get currencySom => 'so\'m';
+
+  @override
+  String get bankCard => 'Plastik karta';
+
+  @override
+  String get cashAmount => 'Naqd summa';
+
+  @override
+  String get paymentMethods => 'To\'lov usullari';
+
+  @override
+  String get invalidPriceOrQty => 'Miqdor va narx xato!';
+
+  @override
+  String get customerNotSelected => 'Mijoz tanlanmagan';
+
+  @override
+  String get searchProduct => 'Mahsulot qidirish...';
+
+  @override
+  String get warehouse => 'Ombor';
+
+  @override
+  String get saveDraft => 'Ha, saqlash';
+
+  @override
+  String get discardSale => 'Yo\'q, chiqib ketish';
+
+  @override
+  String draftSavePrompt(Object count) {
+    return 'Savatda $count ta mahsulot bor. Draft sifatida saqlashni xohlaysizmi?';
+  }
+
+  @override
+  String get enterAmount => 'Summani kiriting';
+
+  @override
+  String get saveSaleTitle => 'Savdani saqlash?';
+
+  @override
+  String get selectCustomerTitle => 'Mijozni tanlang';
+
+  @override
+  String get noCustomersFound => 'Mijozlar topilmadi';
+
+  @override
+  String get itemUpdated => 'o\'zgartirildi';
 }

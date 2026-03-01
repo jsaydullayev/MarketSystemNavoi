@@ -71,15 +71,15 @@ class NumberFormatter {
     if (showTime) {
       // Format: "23.02.2026 14:30"
       return '${tashkentTime.day.toString().padLeft(2, '0')}.'
-             '${tashkentTime.month.toString().padLeft(2, '0')}.'
-             '${tashkentTime.year} '
-             '${tashkentTime.hour.toString().padLeft(2, '0')}:'
-             '${tashkentTime.minute.toString().padLeft(2, '0')}';
+          '${tashkentTime.month.toString().padLeft(2, '0')}.'
+          '${tashkentTime.year} '
+          '${tashkentTime.hour.toString().padLeft(2, '0')}:'
+          '${tashkentTime.minute.toString().padLeft(2, '0')}';
     } else {
       // Format: "23.02.2026"
       return '${tashkentTime.day.toString().padLeft(2, '0')}.'
-             '${tashkentTime.month.toString().padLeft(2, '0')}.'
-             '${tashkentTime.year}';
+          '${tashkentTime.month.toString().padLeft(2, '0')}.'
+          '${tashkentTime.year}';
     }
   }
 
@@ -104,6 +104,16 @@ class NumberFormatter {
     final tashkentTime = date.toUtc().add(const Duration(hours: 5));
 
     return '${tashkentTime.hour.toString().padLeft(2, '0')}:'
-           '${tashkentTime.minute.toString().padLeft(2, '0')}';
+        '${tashkentTime.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+extension CartTotal on List<Map<String, dynamic>> {
+  double get totalAmount {
+    return fold(0.0, (sum, item) {
+      final price = item['salePrice'] ?? 0.0;
+      final qty = item['quantity'] ?? 0.0;
+      return sum + (price * qty);
+    });
   }
 }
