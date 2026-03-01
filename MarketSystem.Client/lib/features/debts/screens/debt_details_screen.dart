@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/sales_service.dart';
@@ -78,7 +79,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     if (debtStatus == 'Closed' && userRole != 'Owner' && userRole != 'Admin') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)'),
+          content: Text(
+              'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)'),
           backgroundColor: Colors.red,
         ),
       );
@@ -153,7 +155,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: priceController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'Narx (so\'m)',
                       prefixIcon: Icon(Icons.money),
@@ -191,7 +194,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.warning, color: Colors.orange[700], size: 20),
+                          Icon(Icons.warning,
+                              color: Colors.orange[700], size: 20),
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text(
@@ -275,11 +279,13 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     );
 
     if (confirmed == true) {
-      await _updatePrice(saleItem, priceController.text, commentController.text);
+      await _updatePrice(
+          saleItem, priceController.text, commentController.text);
     }
   }
 
-  Future<void> _updatePrice(dynamic saleItem, String newPriceStr, String comment) async {
+  Future<void> _updatePrice(
+      dynamic saleItem, String newPriceStr, String comment) async {
     setState(() {
       _isLoading = true;
     });
@@ -328,6 +334,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userRole = authProvider.user?['role'];
     final debtStatus = widget.debt['status'];
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
@@ -338,7 +345,6 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Summary card
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -368,7 +374,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
                             style: const TextStyle(fontSize: 16),
                           ),
                           Text(
-                            'Qolgan: ${NumberFormatter.formatDecimal(widget.debt['remainingDebt'])} so\'m',
+                            '${l10n.remaining}: ${NumberFormatter.formatDecimal(widget.debt['remainingDebt'])} so\'m',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -381,7 +387,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: debtStatus == 'Open'
                                   ? Colors.green[100]
@@ -417,7 +424,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
                           itemCount: _saleItems.length,
                           itemBuilder: (context, index) {
                             final item = _saleItems[index];
-                            return _buildSaleItemCard(item, userRole, debtStatus);
+                            return _buildSaleItemCard(
+                                item, userRole, debtStatus);
                           },
                         ),
                 ),
