@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/draft_sale_card.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/return_quantity_dialog.dart';
 import 'package:provider/provider.dart';
 
-import '../../../data/services/sales_service.dart';
-import '../../../data/services/product_service.dart';
-import '../../../data/services/customer_service.dart';
-import '../../../core/providers/auth_provider.dart';
-import '../../../core/utils/number_formatter.dart';
+import '../../../../data/services/sales_service.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../data/services/customer_service.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/number_formatter.dart';
 
 /// Draft Savdolar Screeni
 /// Seller o'zining tugatilmagan savdolarini ko'radi va davom ettiradi
@@ -22,9 +24,12 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   bool _isLoading = true;
 
   // Guruhlangan savdolar
-  List<dynamic> get _draftSales => _unfinishedSales.where((s) => s['status'] == 'Draft').toList();
-  List<dynamic> get _debtSales => _unfinishedSales.where((s) => s['status'] == 'Debt').toList();
-  List<dynamic> get _paidSales => _unfinishedSales.where((s) => s['status'] == 'Paid').toList();
+  List<dynamic> get _draftSales =>
+      _unfinishedSales.where((s) => s['status'] == 'Draft').toList();
+  List<dynamic> get _debtSales =>
+      _unfinishedSales.where((s) => s['status'] == 'Debt').toList();
+  List<dynamic> get _paidSales =>
+      _unfinishedSales.where((s) => s['status'] == 'Paid').toList();
 
   @override
   void initState() {
@@ -38,7 +43,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     super.didChangeDependencies();
     // Screen focus qaytganda refresh qilish
     if (mounted) {
-      print('🔄 DraftSalesScreen: didChangeDependencies called, refreshing sales and debtors...');
+      print(
+          '🔄 DraftSalesScreen: didChangeDependencies called, refreshing sales and debtors...');
       Future.delayed(Duration.zero, () {
         _loadDraftSales();
         _loadDebtors();
@@ -134,7 +140,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                 print('=== DELETE SALE CLICKED ===');
                 print('Sale ID: $saleId');
 
-                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final authProvider =
+                    Provider.of<AuthProvider>(context, listen: false);
                 final salesService = SalesService(authProvider: authProvider);
                 await salesService.deleteSale(saleId: saleId);
 
@@ -161,7 +168,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                 }
               }
             },
-            child: const Text('O\'chirish', style: TextStyle(color: Colors.red)),
+            child:
+                const Text('O\'chirish', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -191,9 +199,11 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.person_outline, size: 64, color: Colors.grey),
+                        Icon(Icons.person_outline,
+                            size: 64, color: Colors.grey),
                         SizedBox(height: 16),
-                        Text('Mijozlar topilmadi', style: TextStyle(color: Colors.grey)),
+                        Text('Mijozlar topilmadi',
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   )
@@ -210,7 +220,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: Colors.blue.shade100,
-                            child: Icon(Icons.person, color: Colors.blue.shade700),
+                            child:
+                                Icon(Icons.person, color: Colors.blue.shade700),
                           ),
                           title: Text(customerName),
                           subtitle: Text(customerPhone),
@@ -220,7 +231,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
 
                             // Update sale with selected customer
                             try {
-                              final salesService = SalesService(authProvider: authProvider);
+                              final salesService =
+                                  SalesService(authProvider: authProvider);
                               await salesService.updateSaleCustomer(
                                 saleId: saleId,
                                 customerId: customerId,
@@ -229,7 +241,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('✅ Mijoz qo\'shildi: $customerName'),
+                                    content: Text(
+                                        '✅ Mijoz qo\'shildi: $customerName'),
                                     backgroundColor: Colors.green,
                                   ),
                                 );
@@ -286,7 +299,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   }
                 }
               },
-              child: const Text('Mijozni olib tashlash', style: TextStyle(color: Colors.red)),
+              child: const Text('Mijozni olib tashlash',
+                  style: TextStyle(color: Colors.red)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -324,57 +338,72 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-                  onRefresh: () async {
-                    await _loadDraftSales();
-                    await _loadDebtors();
-                  },
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Qarzdor mijozlar
-                      if (_debtors.isNotEmpty) ...[
-                        _buildSectionHeader('Qarzdor mijozlar', Icons.person_outline, Colors.red),
-                        const SizedBox(height: 8),
-                        ..._debtors.map((debtor) => _buildDebtorCard(debtor)),
-                        const SizedBox(height: 16),
-                      ],
+              onRefresh: () async {
+                await _loadDraftSales();
+                await _loadDebtors();
+              },
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Qarzdor mijozlar
+                  if (_debtors.isNotEmpty) ...[
+                    _buildSectionHeader(
+                        'Qarzdor mijozlar', Icons.person_outline, Colors.red),
+                    const SizedBox(height: 8),
+                    ..._debtors.map((debtor) => _buildDebtorCard(debtor)),
+                    const SizedBox(height: 16),
+                  ],
 
-                      // Davom etayotgan savdolar (Draft)
-                      if (_draftSales.isNotEmpty) ...[
-                        _buildSectionHeader('Davom etayotgan', Icons.edit_note, Colors.orange),
-                        const SizedBox(height: 8),
-                        ..._draftSales.map((sale) => _buildDraftSaleCard(sale)),
-                        const SizedBox(height: 16),
-                      ],
+                  // Davom etayotgan savdolar (Draft)
+                  if (_draftSales.isNotEmpty) ...[
+                    _buildSectionHeader(
+                        'Davom etayotgan', Icons.edit_note, Colors.orange),
+                    const SizedBox(height: 8),
+                    ..._draftSales.map((sale) => DraftSaleCard(
+                          sale: sale,
+                          onEdit: () => _openEditDialog(
+                              sale), // Tahrirlash logikasi mainda qoladi
+                          onDelete: () => _confirmDelete(sale['id']),
+                        )),
+                    const SizedBox(height: 16),
+                  ],
 
-                      // Qarz savdolar (Debt)
-                      if (_debtSales.isNotEmpty) ...[
-                        _buildSectionHeader('Qarz savdolar', Icons.money_off, Colors.red),
-                        const SizedBox(height: 8),
-                        ..._debtSales.map((sale) => _buildDraftSaleCard(sale)),
-                      ],
+                  // Qarz savdolar (Debt)
+                  if (_debtSales.isNotEmpty) ...[
+                    _buildSectionHeader(
+                        'Qarz savdolar', Icons.money_off, Colors.red),
+                    const SizedBox(height: 8),
+                    ..._debtSales.map((sale) => _buildDraftSaleCard(sale)),
+                  ],
 
-                      // To'langan savdolar (Paid) - vozvrat uchun
-                      if (_paidSales.isNotEmpty) ...[
-                        _buildSectionHeader('To\'langan savdolar', Icons.assignment_turned_in, Colors.green),
-                        const SizedBox(height: 8),
-                        ..._paidSales.map((sale) => _buildDraftSaleCard(sale)),
-                      ],
+                  // To'langan savdolar (Paid) - vozvrat uchun
+                  if (_paidSales.isNotEmpty) ...[
+                    _buildSectionHeader('To\'langan savdolar',
+                        Icons.assignment_turned_in, Colors.green),
+                    const SizedBox(height: 8),
+                    ..._paidSales.map((sale) => _buildDraftSaleCard(sale)),
+                  ],
 
-                      // Ikkalasi ham bo'sh
-                      if (_draftSales.isEmpty && _debtSales.isEmpty && _paidSales.isEmpty && _debtors.isEmpty)
-                        _buildEmptyState(),
-                    ],
-                  ),
-                ),
+                  // Ikkalasi ham bo'sh
+                  if (_draftSales.isEmpty &&
+                      _debtSales.isEmpty &&
+                      _paidSales.isEmpty &&
+                      _debtors.isEmpty)
+                    _buildEmptyState(),
+                ],
+              ),
+            ),
     );
   }
 
   Widget _buildSectionHeader(String title, IconData icon, Color color) {
-    final count = title == 'Davom etayotgan' ? _draftSales.length :
-                  title == 'Qarz savdolar' ? _debtSales.length :
-                  title == 'Qarzdor mijozlar' ? _debtors.length :
-                  _paidSales.length;
+    final count = title == 'Davom etayotgan'
+        ? _draftSales.length
+        : title == 'Qarz savdolar'
+            ? _debtSales.length
+            : title == 'Qarzdor mijozlar'
+                ? _debtors.length
+                : _paidSales.length;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -575,7 +604,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     final customerName = debtor['customerName'] ?? 'Mijozsiz';
     final remainingDebt = (debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
 
-    final amountController = TextEditingController(text: remainingDebt.toString());
+    final amountController =
+        TextEditingController(text: remainingDebt.toString());
     bool selectedCash = false;
     bool selectedTerminal = false;
     bool selectedTransfer = false;
@@ -601,7 +631,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Qarz:', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Text('Qarz:',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                       Text(
                         NumberFormatter.formatDecimal(remainingDebt),
                         style: const TextStyle(
@@ -628,7 +659,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                 const SizedBox(height: 16),
 
                 // To'lov usuli
-                const Text('To\'lov usuli:', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text('To\'lov usuli:',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 CheckboxListTile(
                   title: const Text('Naqd'),
@@ -708,10 +740,14 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                 }
 
                 String paymentType = '';
-                if (selectedCash) paymentType = 'Cash';
-                else if (selectedTerminal) paymentType = 'Terminal';
-                else if (selectedTransfer) paymentType = 'Transfer';
-                else if (selectedClick) paymentType = 'Click';
+                if (selectedCash)
+                  paymentType = 'Cash';
+                else if (selectedTerminal)
+                  paymentType = 'Terminal';
+                else if (selectedTransfer)
+                  paymentType = 'Transfer';
+                else if (selectedClick)
+                  paymentType = 'Click';
                 else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -723,12 +759,15 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                 }
 
                 try {
-                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  final authProvider =
+                      Provider.of<AuthProvider>(context, listen: false);
                   final salesService = SalesService(authProvider: authProvider);
 
                   // Get debtor's customer ID and find their debt sales
                   final customerId = debtor['customerId'];
-                  final debtorSales = _debtSales.where((sale) => sale['customerId'] == customerId).toList();
+                  final debtorSales = _debtSales
+                      .where((sale) => sale['customerId'] == customerId)
+                      .toList();
 
                   if (debtorSales.isEmpty) {
                     throw Exception('Qarz savdolari topilmadi');
@@ -747,7 +786,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                     Navigator.pop(dialogContext);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('✅ To\'lov muvaffaqiyatli amalga oshirildi: ${NumberFormatter.formatDecimal(amount)}'),
+                        content: Text(
+                            '✅ To\'lov muvaffaqiyatli amalga oshirildi: ${NumberFormatter.formatDecimal(amount)}'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -787,7 +827,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     await _loadDraftSales();
 
     // Get debtor's debt sales
-    final debtorSales = _debtSales.where((sale) => sale['customerId'] == customerId).toList();
+    final debtorSales =
+        _debtSales.where((sale) => sale['customerId'] == customerId).toList();
 
     if (debtorSales.isEmpty) {
       if (mounted) {
@@ -815,9 +856,11 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
             itemBuilder: (context, index) {
               final sale = debtorSales[index];
               final payments = sale['payments'] as List<dynamic>? ?? [];
-              final saleTotal = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+              final saleTotal =
+                  (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
               final salePaid = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
-              final saleRemaining = (sale['remainingAmount'] as num?)?.toDouble() ?? 0.0;
+              final saleRemaining =
+                  (sale['remainingAmount'] as num?)?.toDouble() ?? 0.0;
               final saleDate = sale['createdAt'];
 
               // Format date
@@ -834,8 +877,10 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ExpansionTile(
-                  title: Text('Savdo #${sale['id'].toString().substring(0, 8)}'),
-                  subtitle: Text('$formattedDate • Jami: ${NumberFormatter.formatDecimal(saleTotal)}'),
+                  title:
+                      Text('Savdo #${sale['id'].toString().substring(0, 8)}'),
+                  subtitle: Text(
+                      '$formattedDate • Jami: ${NumberFormatter.formatDecimal(saleTotal)}'),
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(16),
@@ -852,31 +897,42 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                             child: Column(
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text('Jami summa:'),
-                                    Text(NumberFormatter.formatDecimal(saleTotal)),
+                                    Text(NumberFormatter.formatDecimal(
+                                        saleTotal)),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('To\'langan:', style: TextStyle(color: Colors.green)),
+                                    const Text('To\'langan:',
+                                        style: TextStyle(color: Colors.green)),
                                     Text(
                                       NumberFormatter.formatDecimal(salePaid),
-                                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                                      style: const TextStyle(
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.w600),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Qolgan qarz:', style: TextStyle(color: Colors.red)),
+                                    const Text('Qolgan qarz:',
+                                        style: TextStyle(color: Colors.red)),
                                     Text(
-                                      NumberFormatter.formatDecimal(saleRemaining),
-                                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700),
+                                      NumberFormatter.formatDecimal(
+                                          saleRemaining),
+                                      style: const TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.w700),
                                     ),
                                   ],
                                 ),
@@ -887,21 +943,27 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
 
                           // To'lovlar ro'yxati
                           if (payments.isEmpty)
-                            const Text('To\'lovlar yo\'q', style: TextStyle(color: Colors.grey))
+                            const Text('To\'lovlar yo\'q',
+                                style: TextStyle(color: Colors.grey))
                           else
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('To\'lovlar:', style: TextStyle(fontWeight: FontWeight.w700)),
+                                const Text('To\'lovlar:',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 8),
                                 ...payments.map<Widget>((payment) {
-                                  final amount = (payment['amount'] as num?)?.toDouble() ?? 0.0;
+                                  final amount =
+                                      (payment['amount'] as num?)?.toDouble() ??
+                                          0.0;
                                   var paymentTypeRaw = payment['paymentType'];
 
                                   // Debug - to show what we're getting
                                   print('=== PAYMENT DEBUG ===');
                                   print('Full payment object: $payment');
-                                  print('paymentType raw type: ${paymentTypeRaw.runtimeType}');
+                                  print(
+                                      'paymentType raw type: ${paymentTypeRaw.runtimeType}');
                                   print('paymentType value: $paymentTypeRaw');
 
                                   // Handle different types of paymentType
@@ -920,7 +982,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                                   if (paymentDate != null) {
                                     try {
                                       final date = DateTime.parse(paymentDate);
-                                      formattedPaymentDate = '${date.day}.${date.month}.${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+                                      formattedPaymentDate =
+                                          '${date.day}.${date.month}.${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
                                     } catch (e) {
                                       formattedPaymentDate = '';
                                     }
@@ -928,20 +991,34 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
 
                                   // Payment type icon and display text
                                   IconData getPaymentIcon() {
-                                    final type = paymentType.toLowerCase().trim();
+                                    final type =
+                                        paymentType.toLowerCase().trim();
                                     print('Getting icon for type: "$type"');
-                                    if (type == 'cash' || type.contains('naqd')) return Icons.money;
-                                    if (type == 'terminal' || type.contains('plastik') || type.contains('karta')) return Icons.credit_card;
-                                    if (type == 'transfer' || type.contains('hisob')) return Icons.account_balance;
+                                    if (type == 'cash' || type.contains('naqd'))
+                                      return Icons.money;
+                                    if (type == 'terminal' ||
+                                        type.contains('plastik') ||
+                                        type.contains('karta'))
+                                      return Icons.credit_card;
+                                    if (type == 'transfer' ||
+                                        type.contains('hisob'))
+                                      return Icons.account_balance;
                                     if (type == 'click') return Icons.touch_app;
                                     return Icons.payment;
                                   }
 
                                   String getPaymentTypeDisplay() {
-                                    final type = paymentType.toLowerCase().trim();
-                                    if (type == 'cash' || type.contains('naqd')) return 'Naqd';
-                                    if (type == 'terminal' || type.contains('plastik') || type.contains('karta')) return 'Plastik karta';
-                                    if (type == 'transfer' || type.contains('hisob')) return 'Hisob raqam';
+                                    final type =
+                                        paymentType.toLowerCase().trim();
+                                    if (type == 'cash' || type.contains('naqd'))
+                                      return 'Naqd';
+                                    if (type == 'terminal' ||
+                                        type.contains('plastik') ||
+                                        type.contains('karta'))
+                                      return 'Plastik karta';
+                                    if (type == 'transfer' ||
+                                        type.contains('hisob'))
+                                      return 'Hisob raqam';
                                     if (type == 'click') return 'Click';
                                     return paymentType; // Show original if no match
                                   }
@@ -950,7 +1027,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                                     elevation: 0,
                                     color: Colors.green.shade50,
                                     child: ListTile(
-                                      leading: Icon(getPaymentIcon(), color: Colors.green),
+                                      leading: Icon(getPaymentIcon(),
+                                          color: Colors.green),
                                       title: Text(
                                         NumberFormatter.formatDecimal(amount),
                                         style: const TextStyle(
@@ -960,7 +1038,9 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                                       ),
                                       subtitle: Text(
                                         '${getPaymentTypeDisplay()}${formattedPaymentDate.isNotEmpty ? ' • $formattedPaymentDate' : ''}',
-                                        style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade700),
                                       ),
                                     ),
                                   );
@@ -1012,344 +1092,6 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
               fontSize: 14,
               color: Colors.grey.shade500,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDraftSaleCard(dynamic sale) {
-    final items = sale['items'] as List<dynamic>? ?? [];
-    final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
-    final paidAmount = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
-    final remainingAmount = (sale['remainingAmount'] as num?)?.toDouble() ?? 0.0;
-    final status = sale['status'] as String? ?? 'Draft';
-    final createdAt = sale['createdAt'];
-    final customerName = sale['customerName'];
-    final customerId = sale['customerId'];
-    final hasCustomer = customerId != null;
-
-    // Format date
-    String formattedDate = 'Noma\'lum';
-    if (createdAt != null) {
-      try {
-        final date = DateTime.parse(createdAt);
-        formattedDate = '${date.day}.${date.month}.${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-      } catch (e) {
-        formattedDate = createdAt.toString();
-      }
-    }
-
-    // Status bo'yicha rang
-    Color getStatusColor() {
-      switch (status.toLowerCase()) {
-        case 'draft':
-          return Colors.orange;
-        case 'debt':
-          return Colors.red;
-        case 'paid':
-          return Colors.green;
-        default:
-          return Colors.grey;
-      }
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: getStatusColor().withValues(alpha: 0.4),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Date & Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                formattedDate,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              // Status badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: getStatusColor().withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: getStatusColor(),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      status == 'Draft' ? Icons.edit_note :
-                      status == 'Debt' ? Icons.money_off :
-                      Icons.assignment_return,
-                      size: 14,
-                      color: getStatusColor(),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      status == 'Draft' ? 'Davom etmoqda' :
-                      status == 'Debt' ? 'Qarz' :
-                      'Yopilgan',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: getStatusColor(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Customer
-          if (hasCustomer) ...[
-            Row(
-              children: [
-                const Icon(
-                  Icons.person_outline,
-                  size: 16,
-                  color: Color(0xFF6B7280),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    customerName ?? 'Noma\'lum',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF374151),
-                    ),
-                  ),
-                ),
-                // Mijozni o'zgartirish tugmasi - faqat Draft va Debt status uchun
-                if (status == 'Draft' || status == 'Debt')
-                  InkWell(
-                    onTap: () => _showCustomerSelectionDialog(sale['id']),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.edit, size: 12, color: Colors.blue.shade700),
-                          const SizedBox(width: 4),
-                          Text(
-                            'O\'zgartirish',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ] else ...[
-            // Show "Add Customer" button for Draft and Debt sales without customer
-            if (status == 'Draft' || status == 'Debt')
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber.shade200),
-                ),
-                child: InkWell(
-                  onTap: () => _showCustomerSelectionDialog(sale['id']),
-                  child: Row(
-                    children: [
-                      Icon(Icons.person_add, size: 18, color: Colors.amber.shade700),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Mijoz qo\'shish',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.amber.shade700,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(Icons.arrow_forward_ios, size: 14, color: Colors.amber.shade700),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(height: 8),
-          ],
-
-          // Items count
-          Row(
-            children: [
-              Icon(
-                Icons.shopping_bag_outlined,
-                size: 16,
-                color: Colors.grey.shade600,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '${items.length} ta mahsulot',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // To'lov ma'lumotlari
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Colors.grey.shade200,
-                width: 1,
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Jami summa:',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF6B7280),
-                      ),
-                    ),
-                    Text(
-                      NumberFormatter.formatDecimal(totalAmount),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1F2937),
-                      ),
-                    ),
-                  ],
-                ),
-                if (paidAmount > 0 || remainingAmount > 0) ...[
-                  const SizedBox(height: 6),
-                  if (paidAmount > 0)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'To\'langan:',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF10B981),
-                          ),
-                        ),
-                        Text(
-                          NumberFormatter.formatDecimal(paidAmount),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF10B981),
-                          ),
-                        ),
-                      ],
-                    ),
-                  if (remainingAmount > 0)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          status == 'Debt' ? 'Qarz:' : 'Qolgan:',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: status == 'Debt' ? Colors.red : Colors.orange,
-                          ),
-                        ),
-                        Text(
-                          NumberFormatter.formatDecimal(remainingAmount),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: status == 'Debt' ? Colors.red : Colors.orange,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Actions
-          Row(
-            children: [
-              // Continue button
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _continueSale(sale),
-                  icon: const Icon(Icons.play_arrow, size: 18),
-                  label: const Text('Davom ettirish'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B82F6),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Delete button
-              IconButton(
-                onPressed: () => _showDeleteConfirmation(sale['id']),
-                icon: const Icon(Icons.delete_outline, color: Color(0xFFEF4444)),
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFFFEE2E2),
-                  padding: const EdgeInsets.all(12),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -1415,8 +1157,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           ? (item['salePrice'] as num).toDouble()
           : double.tryParse(item['salePrice']?.toString() ?? '') ?? 0.0;
       final qty = item['quantity'] is num
-          ? (item['quantity'] as num).toDouble()  // ✅ DECIMAL
-          : double.tryParse(item['quantity']?.toString() ?? '') ?? 0.0;  // ✅ DECIMAL
+          ? (item['quantity'] as num).toDouble() // ✅ DECIMAL
+          : double.tryParse(item['quantity']?.toString() ?? '') ??
+              0.0; // ✅ DECIMAL
       return sum + (price * qty);
     });
   }
@@ -1589,7 +1332,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       await salesService.removeSaleItem(
         saleId: widget.saleId,
         saleItemId: item['saleItemId'],
-        quantity: (item['quantity'] as num?)?.toDouble() ?? 0.0,  // ✅ DECIMAL - Butunlay o'chirish
+        quantity: (item['quantity'] as num?)?.toDouble() ??
+            0.0, // ✅ DECIMAL - Butunlay o'chirish
       );
 
       print('✅ removeSaleItem success!');
@@ -1628,7 +1372,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     print('🗑️ === _removeFromCart END ===');
   }
 
-  Future<void> _updateQuantity(int index, double newQuantity) async {  // ✅ DECIMAL
+  Future<void> _updateQuantity(int index, double newQuantity) async {
+    // ✅ DECIMAL
     final item = _cartItems[index];
 
     print('🔢 === _updateQuantity START ===');
@@ -1642,7 +1387,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       return;
     }
 
-    final currentQuantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;  // ✅ DECIMAL
+    final currentQuantity =
+        (item['quantity'] as num?)?.toDouble() ?? 0.0; // ✅ DECIMAL
 
     // quantityDiff == 0 bo'lsa, hech narsa qilmaymiz (quantity o'zgarmagan)
     if (newQuantity == currentQuantity) {
@@ -1671,7 +1417,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         await salesService.addSaleItem(
           saleId: widget.saleId,
           productId: item['productId'],
-          quantity: quantityDiff,  // ✅ DECIMAL
+          quantity: quantityDiff, // ✅ DECIMAL
           salePrice: item['salePrice'],
           minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
           comment: item['comment'] ?? '',
@@ -1679,11 +1425,11 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       } else {
         print('📤 DECREASING by ${quantityDiff.abs()}');
         // Quantity kamaytirish - backenddan removeSaleItem orqali kamaytiramiz
-        final quantityToRemove = quantityDiff.abs();  // ✅ DECIMAL
+        final quantityToRemove = quantityDiff.abs(); // ✅ DECIMAL
         await salesService.removeSaleItem(
           saleId: widget.saleId,
           saleItemId: item['saleItemId'],
-          quantity: quantityToRemove,  // ✅ DECIMAL
+          quantity: quantityToRemove, // ✅ DECIMAL
         );
       }
 
@@ -1729,7 +1475,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       // Narxni o'zgartirish
       if (item.containsKey('saleItemId')) {
         try {
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final authProvider =
+              Provider.of<AuthProvider>(context, listen: false);
           final salesService = SalesService(authProvider: authProvider);
 
           await salesService.updateSaleItemPrice(
@@ -1744,7 +1491,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('✅ Narx yangilandi: ${NumberFormatter.format(result)}'),
+                content: Text(
+                    '✅ Narx yangilandi: ${NumberFormatter.format(result)}'),
                 backgroundColor: Colors.green,
                 duration: const Duration(seconds: 2),
               ),
@@ -1776,7 +1524,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         selectedCustomer: _selectedCustomer,
         onConfirm: (payments, useDebt) async {
           try {
-            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
             final salesService = SalesService(authProvider: authProvider);
 
             for (var payment in payments) {
@@ -1808,7 +1557,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
   Future<void> _returnItem(int index) async {
     final item = _cartItems[index];
-    final currentQuantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;  // ✅ DECIMAL
+    final currentQuantity =
+        (item['quantity'] as num?)?.toDouble() ?? 0.0; // ✅ DECIMAL
 
     print('↩️ === _returnItem START ===');
     print('Index: $index');
@@ -1821,11 +1571,12 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     }
 
     // Qancha qaytarishni so'rash
-    final returnQuantity = await showDialog<double>(  // ✅ DECIMAL
+    final returnQuantity = await showDialog<double>(
+      // ✅ DECIMAL
       context: context,
-      builder: (context) => _ReturnQuantityDialog(
+      builder: (context) => ReturnQuantityDialog(
         productName: item['productName'],
-        maxQuantity: currentQuantity,  // ✅ DECIMAL
+        maxQuantity: currentQuantity, // ✅ DECIMAL
       ),
     );
 
@@ -1859,7 +1610,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ ${returnQuantity} ta ${item['productName']} qaytarildi!'),
+            content: Text(
+                '✅ ${returnQuantity} ta ${item['productName']} qaytarildi!'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -2003,16 +1755,21 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                               GestureDetector(
                                 onTap: () => _returnItem(index),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: Colors.orange.shade50,
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: Colors.orange.shade300, width: 1),
+                                    border: Border.all(
+                                        color: Colors.orange.shade300,
+                                        width: 1),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.assignment_return, size: 14, color: Colors.orange.shade700),
+                                      Icon(Icons.assignment_return,
+                                          size: 14,
+                                          color: Colors.orange.shade700),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Qaytarish',
@@ -2031,8 +1788,11 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                 children: [
                                   GestureDetector(
                                     onTap: () async {
-                                      final currentQty = (item['quantity'] as num?)?.toInt() ?? 0;
-                                      await _updateQuantity(index, currentQty - 1);
+                                      final currentQty =
+                                          (item['quantity'] as num?)?.toInt() ??
+                                              0;
+                                      await _updateQuantity(
+                                          index, currentQty - 1);
                                     },
                                     child: Container(
                                       width: 24,
@@ -2041,11 +1801,13 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                         color: const Color(0xFFF3F4F6),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
-                                      child: const Icon(Icons.remove, size: 14, color: Color(0xFF374151)),
+                                      child: const Icon(Icons.remove,
+                                          size: 14, color: Color(0xFF374151)),
                                     ),
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
                                     child: Text(
                                       '${item['quantity']}',
                                       style: const TextStyle(
@@ -2056,8 +1818,11 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                   ),
                                   GestureDetector(
                                     onTap: () async {
-                                      final currentQty = (item['quantity'] as num?)?.toInt() ?? 0;
-                                      await _updateQuantity(index, currentQty + 1);
+                                      final currentQty =
+                                          (item['quantity'] as num?)?.toInt() ??
+                                              0;
+                                      await _updateQuantity(
+                                          index, currentQty + 1);
                                     },
                                     child: Container(
                                       width: 24,
@@ -2066,7 +1831,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                         color: const Color(0xFFF3F4F6),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
-                                      child: const Icon(Icons.add, size: 14, color: Color(0xFF374151)),
+                                      child: const Icon(Icons.add,
+                                          size: 14, color: Color(0xFF374151)),
                                     ),
                                   ),
                                 ],
@@ -2076,7 +1842,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                 onTap: () async {
                                   await _removeFromCart(index);
                                 },
-                                child: const Icon(Icons.close, size: 14, color: Color(0xFFEF4444)),
+                                child: const Icon(Icons.close,
+                                    size: 14, color: Color(0xFFEF4444)),
                               ),
                           ],
                         ),
@@ -2101,8 +1868,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                       style: const TextStyle(fontSize: 15),
                       decoration: InputDecoration(
                         hintText: 'Mahsulot qidirish...',
-                        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                        prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF9CA3AF)),
+                        hintStyle: TextStyle(
+                            color: Colors.grey.shade400, fontSize: 14),
+                        prefixIcon: const Icon(Icons.search,
+                            size: 18, color: Color(0xFF9CA3AF)),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear, size: 18),
@@ -2114,19 +1883,23 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                             : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF3B82F6), width: 1.5),
                         ),
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
                       ),
                     ),
                   ),
@@ -2135,10 +1908,13 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 // Products grid
                 Expanded(
                   child: _filteredProducts.isEmpty
-                      ? const Center(child: Text('Mahsulotlar topilmadi', style: TextStyle(color: Color(0xFF9CA3AF))))
+                      ? const Center(
+                          child: Text('Mahsulotlar topilmadi',
+                              style: TextStyle(color: Color(0xFF9CA3AF))))
                       : GridView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
                             childAspectRatio: 1.85,
                             crossAxisSpacing: 8,
@@ -2147,7 +1923,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                           itemCount: _filteredProducts.length,
                           itemBuilder: (context, index) {
                             final product = _filteredProducts[index];
-                            final quantity = (product['quantity'] as num?)?.toDouble() ?? 0.0;
+                            final quantity =
+                                (product['quantity'] as num?)?.toDouble() ??
+                                    0.0;
                             final isInStock = quantity > 0;
 
                             return Container(
@@ -2171,7 +1949,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                 padding: const EdgeInsets.all(8),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       product['name'] ?? 'Noma\'lum',
@@ -2186,7 +1965,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      NumberFormatter.format(product['salePrice']),
+                                      NumberFormatter.format(
+                                          product['salePrice']),
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
@@ -2195,7 +1975,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Row(
                                           children: [
@@ -2222,10 +2003,13 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                         Material(
                                           color: Colors.transparent,
                                           child: InkWell(
-                                            onTap: isInStock ? () async {
-                                              await _addToCart(product);
-                                            } : null,
-                                            borderRadius: BorderRadius.circular(6),
+                                            onTap: isInStock
+                                                ? () async {
+                                                    await _addToCart(product);
+                                                  }
+                                                : null,
+                                            borderRadius:
+                                                BorderRadius.circular(6),
                                             child: Container(
                                               width: 28,
                                               height: 28,
@@ -2233,13 +2017,16 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                                 color: isInStock
                                                     ? const Color(0xFF3B82F6)
                                                     : Colors.grey.shade200,
-                                                borderRadius: BorderRadius.circular(6),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
                                               ),
                                               child: Center(
                                                 child: Icon(
                                                   Icons.add,
                                                   size: 14,
-                                                  color: isInStock ? Colors.white : Colors.grey.shade500,
+                                                  color: isInStock
+                                                      ? Colors.white
+                                                      : Colors.grey.shade500,
                                                 ),
                                               ),
                                             ),
@@ -2271,22 +2058,31 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
               children: [
                 // Total amount
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0FDF4),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+                    border: Border.all(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         'Jami summa',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151)),
                       ),
                       Text(
                         NumberFormatter.formatDecimal(_totalAmount),
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF10B981), letterSpacing: -0.5),
+                        style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF10B981),
+                            letterSpacing: -0.5),
                       ),
                     ],
                   ),
@@ -2300,15 +2096,22 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _cartItems.isEmpty ? null : _showPaymentDialog,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _cartItems.isEmpty ? const Color(0xFFD1D5DB) : const Color(0xFF10B981),
+                        backgroundColor: _cartItems.isEmpty
+                            ? const Color(0xFFD1D5DB)
+                            : const Color(0xFF10B981),
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: const Color(0xFFD1D5DB),
                         elevation: 0,
                         shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                       icon: const Icon(Icons.check_circle, size: 18),
-                      label: const Text('TO\'LOV QILISH', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+                      label: const Text('TO\'LOV QILISH',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3)),
                     ),
                   ),
               ],
@@ -2369,7 +2172,8 @@ class _ContinuePaymentDialogState extends State<_ContinuePaymentDialog> {
     if (_hasDebt) {
       return widget.selectedCustomer != null && _totalPaid >= 0;
     } else {
-      return _remainingAmount <= 0.01 || (_remainingAmount > 0.01 && _totalPaid > 0);
+      return _remainingAmount <= 0.01 ||
+          (_remainingAmount > 0.01 && _totalPaid > 0);
     }
   }
 
@@ -2635,168 +2439,5 @@ class _ContinuePaymentDialogState extends State<_ContinuePaymentDialog> {
 }
 
 // Price input dialog for editing item prices
-class _PriceInputDialog extends StatefulWidget {
-  final double currentPrice;
-  final String productName;
-
-  const _PriceInputDialog({
-    required this.currentPrice,
-    required this.productName,
-  });
-
-  @override
-  State<_PriceInputDialog> createState() => _PriceInputDialogState();
-}
-
-class _PriceInputDialogState extends State<_PriceInputDialog> {
-  late TextEditingController _priceController;
-  bool _isValid = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _priceController = TextEditingController(text: widget.currentPrice.toString());
-  }
-
-  @override
-  void dispose() {
-    _priceController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Narxni o\'zgartirish: ${widget.productName}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _priceController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: 'Yangi narx',
-              border: const OutlineInputBorder(),
-              errorText: _isValid ? null : 'Iltimos, to\'g\'ri narx kiriting',
-              suffixText: 'so\'m',
-            ),
-            onChanged: (value) {
-              setState(() {
-                _isValid = double.tryParse(value) != null && double.tryParse(value)! > 0;
-              });
-            },
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Hozirgi narx: ${NumberFormatter.format(widget.currentPrice)}',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Bekor qilish'),
-        ),
-        ElevatedButton(
-          onPressed: _isValid
-              ? () {
-                  final newPrice = double.tryParse(_priceController.text) ?? 0;
-                  Navigator.pop(context, newPrice);
-                }
-              : null,
-          child: const Text('Saqlash'),
-        ),
-      ],
-    );
-  }
-}
 
 // Return quantity dialog
-class _ReturnQuantityDialog extends StatefulWidget {
-  final String productName;
-  final double maxQuantity;  // ✅ DECIMAL
-
-  const _ReturnQuantityDialog({
-    required this.productName,
-    required this.maxQuantity,
-  });
-
-  @override
-  State<_ReturnQuantityDialog> createState() => _ReturnQuantityDialogState();
-}
-
-class _ReturnQuantityDialogState extends State<_ReturnQuantityDialog> {
-  late TextEditingController _quantityController;
-  double _returnQuantity = 1.0;  // ✅ DECIMAL
-  bool _isValid = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _quantityController = TextEditingController(text: '1');
-  }
-
-  @override
-  void dispose() {
-    _quantityController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Mahsulotni qaytarish: ${widget.productName}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Mavjud: ${widget.maxQuantity}'),  // ✅ "ta" olib tashlandi
-          const SizedBox(height: 16),
-          TextField(
-            controller: _quantityController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),  // ✅ DECIMAL
-            decoration: InputDecoration(
-              labelText: 'Qaytarish miqdori',
-              border: const OutlineInputBorder(),
-              errorText: _isValid ? null : 'Iltimos, to\'g\'ri miqdor kiriting',
-              // suffixText: 'ta',  // ✅ Unit nomi backenddan keladi
-            ),
-            onChanged: (value) {
-              setState(() {
-                _returnQuantity = double.tryParse(value) ?? 0.0;  // ✅ DECIMAL
-                _isValid = _returnQuantity > 0 && _returnQuantity <= widget.maxQuantity;
-              });
-            },
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Maksimal: ${widget.maxQuantity}',  // ✅ "ta" olib tashlandi
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Bekor qilish'),
-        ),
-        ElevatedButton(
-          onPressed: _isValid
-              ? () => Navigator.pop(context, _returnQuantity)
-              : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
-          ),
-          child: const Text('Qaytarish'),
-        ),
-      ],
-    );
-  }
-}

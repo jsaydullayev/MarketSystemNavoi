@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../data/services/sales_service.dart';
-import '../../../core/providers/auth_provider.dart';
-import '../../../core/utils/number_formatter.dart';
+import '../../../../data/services/sales_service.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/number_formatter.dart';
 import 'debtor_detail_screen.dart';
 
 /// Qarzdorlar Screeni
@@ -30,7 +30,8 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
     super.didChangeDependencies();
     // Screen focus qaytganda refresh qilish
     if (mounted) {
-      print('🔄 DebtorsScreen: didChangeDependencies called, refreshing debtors...');
+      print(
+          '🔄 DebtorsScreen: didChangeDependencies called, refreshing debtors...');
       Future.delayed(Duration.zero, () {
         _loadDebtors();
       });
@@ -151,7 +152,8 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
         final date = DateTime.parse(oldestDebtDate);
         // Convert both dates to GMT+5 for comparison
         final tashkentDate = date.toUtc().add(const Duration(hours: 5));
-        final tashkentNow = DateTime.now().toUtc().add(const Duration(hours: 5));
+        final tashkentNow =
+            DateTime.now().toUtc().add(const Duration(hours: 5));
         final difference = tashkentNow.difference(tashkentDate);
 
         if (difference.inDays == 0) {
@@ -159,13 +161,16 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
         } else if (difference.inDays == 1) {
           formattedDate = 'Kecha ${NumberFormatter.formatTime(oldestDebtDate)}';
         } else if (difference.inDays < 30) {
-          formattedDate = '${difference.inDays} kun oldin, ${NumberFormatter.formatTime(oldestDebtDate)}';
+          formattedDate =
+              '${difference.inDays} kun oldin, ${NumberFormatter.formatTime(oldestDebtDate)}';
         } else if (difference.inDays < 365) {
           final months = (difference.inDays / 30).floor();
-          formattedDate = '$months oy oldin, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
+          formattedDate =
+              '$months oy oldin, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
         } else {
           final years = (difference.inDays / 365).floor();
-          formattedDate = '$years yil oldin, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
+          formattedDate =
+              '$years yil oldin, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
         }
       } catch (e) {
         formattedDate = '';
@@ -180,7 +185,8 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
         final date = DateTime.parse(oldestDebtDate);
         // Convert both dates to GMT+5 for comparison
         final tashkentDate = date.toUtc().add(const Duration(hours: 5));
-        final tashkentNow = DateTime.now().toUtc().add(const Duration(hours: 5));
+        final tashkentNow =
+            DateTime.now().toUtc().add(const Duration(hours: 5));
         final difference = tashkentNow.difference(tashkentDate);
 
         if (difference.inDays <= 30) {
@@ -274,7 +280,8 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
                     ),
                     if (formattedDate.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: getDebtAgeColor().withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),

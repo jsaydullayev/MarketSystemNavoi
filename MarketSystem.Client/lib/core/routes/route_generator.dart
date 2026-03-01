@@ -14,7 +14,7 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../screens/dashboard_screen.dart';
 import '../../features/products/presentation/screens/products_screen.dart';
-import '../../features/sales/screens/sales_screen.dart';
+import '../../features/sales/presentation/screens/sales_screen.dart';
 import '../../features/customers/screens/customers_screen.dart';
 import '../../features/zakup/screens/zakup_screen.dart';
 import '../../features/admin_products/screens/admin_products_screen.dart';
