@@ -85,35 +85,34 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final productService = ProductService(authProvider: authProvider);
 
-      final data = {
-        'name': _nameController.text.trim(),
-        'salePrice': double.parse(_salePriceController.text),
-        'minSalePrice': double.parse(_minSalePriceController.text),
-        'minThreshold': int.parse(_minThresholdController.text),
-        'categoryId': _selectedCategory,
-        'unit': _selectedUnit,
-        'isTemporary': _isTemporary,
-      };
+      final String name = _nameController.text.trim();
+      final double salePrice =
+          double.tryParse(_salePriceController.text) ?? 0.0;
+      final double minSalePrice =
+          double.tryParse(_minSalePriceController.text) ?? 0.0;
+      final int minThreshold = int.tryParse(_minThresholdController.text) ?? 0;
+      final bool tempStatus = _isTemporary;
 
       if (widget.product == null) {
         await productService.createProduct(
-          name: data['name'] as String,
-          isTemporary: data['isTemporary'] as bool,
-          salePrice: data['salePrice'] as double,
-          minSalePrice: data['minSalePrice'] as double,
-          minThreshold: data['minThreshold'] as int,
-          categoryId: data['categoryId'] as int?,
-          unit: data['unit'] as int,
+          name: name,
+          isTemporary: tempStatus,
+          salePrice: salePrice,
+          minSalePrice: minSalePrice,
+          minThreshold: minThreshold,
+          categoryId: _selectedCategory,
+          unit: _selectedUnit,
         );
       } else {
         await productService.updateProduct(
           id: widget.product['id'],
-          name: data['name'] as String,
-          salePrice: data['salePrice'] as double,
-          minSalePrice: data['minSalePrice'] as double,
-          minThreshold: data['minThreshold'] as int,
-          categoryId: data['categoryId'] as int?,
-          unit: data['unit'] as int,
+          name: name,
+          salePrice: salePrice,
+          minSalePrice: minSalePrice,
+          minThreshold: minThreshold,
+          categoryId: _selectedCategory,
+          unit: _selectedUnit,
+          isTemporary: tempStatus,
         );
       }
 
@@ -121,8 +120,9 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Xatolik: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
