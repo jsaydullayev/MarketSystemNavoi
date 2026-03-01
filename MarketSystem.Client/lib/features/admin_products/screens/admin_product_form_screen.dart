@@ -42,8 +42,10 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     if (widget.product != null) {
       _nameController.text = widget.product['name'] ?? '';
       _salePriceController.text = (widget.product['salePrice'] ?? 0).toString();
-      _minSalePriceController.text = (widget.product['minSalePrice'] ?? 0).toString();
-      _minThresholdController.text = (widget.product['minThreshold'] ?? 0).toString();
+      _minSalePriceController.text =
+          (widget.product['minSalePrice'] ?? 0).toString();
+      _minThresholdController.text =
+          (widget.product['minThreshold'] ?? 0).toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
       _selectedCategory = widget.product['categoryId'];
       _selectedUnit = widget.product['unit'] ?? 1; // ✅ LOAD UNIT
@@ -103,7 +105,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           minSalePrice: minSalePrice,
           minThreshold: minThreshold,
           categoryId: _selectedCategory,
-          unit: _selectedUnit,  // ✅ NEW: UNIT
+          unit: _selectedUnit, // ✅ NEW: UNIT
         );
       } else {
         // Update existing product - Admin can only update prices and minThreshold
@@ -115,7 +117,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           minSalePrice: minSalePrice,
           minThreshold: minThreshold,
           categoryId: _selectedCategory,
-          unit: widget.product['unit'] ?? _selectedUnit,  // ✅ NEW: Keep original unit
+          unit: widget.product['unit'] ??
+              _selectedUnit, // ✅ NEW: Keep original unit
+          isTemporary: _isTemporary,
         );
       }
 
@@ -144,7 +148,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Admin: Mahsulotni tahrirlash' : 'Admin: Yangi mahsulot'),
+        title: Text(isEditing
+            ? 'Admin: Mahsulotni tahrirlash'
+            : 'Admin: Yangi mahsulot'),
         centerTitle: true,
       ),
       body: Form(
@@ -257,9 +263,11 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                       Text(unit['name'] as String),
                       const SizedBox(width: 8),
                       Text(
-                        unit['value'] == 1 ? '(dona)' :
-                        unit['value'] == 2 ? '(kilogram)' :
-                        '(metr)',
+                        unit['value'] == 1
+                            ? '(dona)'
+                            : unit['value'] == 2
+                                ? '(kilogram)'
+                                : '(metr)',
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
@@ -372,14 +380,16 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                  Icon(Icons.info_outline,
+                      color: Colors.orange.shade700, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       isEditing
                           ? 'Mahsulot soni: ${(widget.product['quantity'] as num?)?.toDouble() ?? 0.0} (o\'zgarmas)'
                           : 'Mahsulot soni 0 bilan yaratiladi, keyin Zakup orqali oshiriladi',
-                      style: TextStyle(color: Colors.orange.shade700, fontSize: 12),
+                      style: TextStyle(
+                          color: Colors.orange.shade700, fontSize: 12),
                     ),
                   ),
                 ],

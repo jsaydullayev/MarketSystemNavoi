@@ -13,7 +13,7 @@ import '../features/auth/screens/welcome_screen.dart';
 import '../features/products/presentation/screens/products_screen.dart';
 import '../features/categories/screens/category_management_screen.dart';
 import '../features/daily_sales/screens/daily_sales_screen.dart';
-import '../features/sales/screens/draft_sales_screen.dart';
+import '../features/sales/presentation/screens/draft_sales_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
