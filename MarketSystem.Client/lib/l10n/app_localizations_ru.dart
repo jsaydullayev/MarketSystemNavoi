@@ -192,9 +192,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get paid => 'Оплачено';
 
   @override
-  String get remaining => 'Остаток';
-
-  @override
   String get date => 'Дата';
 
   @override
@@ -343,13 +340,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get card => 'Карта';
 
   @override
-  String get transfer => 'Перевод';
-
-  @override
   String get selectProduct => 'Выберите товар';
-
-  @override
-  String get selectCustomer => 'Выберите клиента';
 
   @override
   String get noProducts => 'Нет товаров';
@@ -504,9 +495,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loginScreenSubtitle => 'Войдите, чтобы продолжить';
 
   @override
-  String get registerScreenTitle => 'Регистрация';
-
-  @override
   String get registerScreenSubtitle => 'Зарегистрируйтесь для начала';
 
   @override
@@ -533,6 +521,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get passwordMismatch => 'Пароли не совпадают';
+
+  @override
+  String get registerScreenTitle => 'Регистрация';
 
   @override
   String get createNewAccount => 'Создать новый аккаунт';
@@ -623,7 +614,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get zakupSuccess => 'Закуп успешно добавлен!';
 
   @override
-  String get number => 'Soni';
+  String get number => 'Номер';
 
   @override
   String get addCategory => 'Добавить категорию';
@@ -639,4 +630,209 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get isActive => 'Активен';
+
+  @override
+  String get newSale => 'Новая продажа';
+
+  @override
+  String get totalAmount => 'Общая сумма';
+
+  @override
+  String get all => 'Все';
+
+  @override
+  String get closed => 'Закрыто';
+
+  @override
+  String get debt => 'Долг';
+
+  @override
+  String get noCustomer => 'Без клиента';
+
+  @override
+  String get exportExcel => 'Экспорт в Excel';
+
+  @override
+  String get saleDetails => 'Детали продажи';
+
+  @override
+  String get soldProducts => 'Проданные товары';
+
+  @override
+  String get returnProduct => 'Возврат товара';
+
+  @override
+  String get returnAmount => 'Сумма возврата';
+
+  @override
+  String get maxQuantity => 'Макс. количество';
+
+  @override
+  String get returnSuccess => 'Успешно возвращено';
+
+  @override
+  String get errorOccurred => 'Произошла ошибка';
+
+  @override
+  String get unknown => 'Неизвестно';
+
+  @override
+  String get totalSum => 'Общая сумма';
+
+  @override
+  String get returnAction => 'Возврат';
+
+  @override
+  String get unknownProduct => 'Неизвестный товар';
+
+  @override
+  String get processReturn => 'Оформить возврат';
+
+  @override
+  String get maxReturn => 'Максимальный возврат';
+
+  @override
+  String get piece => 'шт';
+
+  @override
+  String get reasonOptional => 'Причина (опционально)';
+
+  @override
+  String get defect => 'Брак';
+
+  @override
+  String get invalidQuantity => 'Неверное количество!';
+
+  @override
+  String get finishReturn => 'Завершить возврат';
+
+  @override
+  String get price => 'Цена';
+
+  @override
+  String get saleAsDebt => 'Записано в долг';
+
+  @override
+  String get saleSuccess => 'Продано';
+
+  @override
+  String get cartEmptyWarning => 'Корзина пуста! Сначала добавьте товар';
+
+  @override
+  String get draftSaved => 'Продажа сохранена как черновик!';
+
+  @override
+  String get returnText => 'Возврат';
+
+  @override
+  String get saleText => 'Продажа';
+
+  @override
+  String get takeAsDebt => 'Взять в долг';
+
+  @override
+  String get terminal => 'Терминал';
+
+  @override
+  String get transfer => 'Перечисление';
+
+  @override
+  String get click => 'Click';
+
+  @override
+  String get enterCorrectAmount => 'Пожалуйста, введите правильную сумму';
+
+  @override
+  String get changeAmount => 'Сдача';
+
+  @override
+  String get youEntered => 'Вы ввели';
+
+  @override
+  String get totalAmountLabel => 'Общая сумма:';
+
+  @override
+  String get tooMuchAmount => 'Введена слишком большая сумма!';
+
+  @override
+  String get fullAmountWarning =>
+      'Пожалуйста, введите полную сумму или выберите \"Записать в долг\".';
+
+  @override
+  String get newDebt => 'Новый долг';
+
+  @override
+  String get onDebt => 'В долг:';
+
+  @override
+  String get remaining => 'Остаток';
+
+  @override
+  String get selectCustomerForDebt =>
+      'Для продажи в долг сначала выберите клиента';
+
+  @override
+  String get selectCustomer => 'Выберите клиента';
+
+  @override
+  String get clickPayment => 'Оплата через Click';
+
+  @override
+  String get transferAmount => 'Сумма перечисления (сум)';
+
+  @override
+  String get accountNumber => 'Номер счета';
+
+  @override
+  String get cardAmount => 'Сумма по карте';
+
+  @override
+  String get currencySom => 'сум';
+
+  @override
+  String get bankCard => 'Банковская карта';
+
+  @override
+  String get cashAmount => 'Сумма наличными';
+
+  @override
+  String get paymentMethods => 'Способы оплаты';
+
+  @override
+  String get invalidPriceOrQty => 'Ошибка количества или цены!';
+
+  @override
+  String get customerNotSelected => 'Клиент не выбран';
+
+  @override
+  String get searchProduct => 'Поиск товара...';
+
+  @override
+  String get warehouse => 'Склад';
+
+  @override
+  String get saveDraft => 'Да, сохранить';
+
+  @override
+  String get discardSale => 'Нет, выйти';
+
+  @override
+  String draftSavePrompt(Object count) {
+    return 'В корзине $count товаров. Хотите сохранить как черновик?';
+  }
+
+  @override
+  String get enterAmount => 'Введите сумму';
+
+  @override
+  String get saveSaleTitle => 'Сохранить продажу?';
+
+  @override
+  String get selectCustomerTitle => 'Выберите клиента';
+
+  @override
+  String get noCustomersFound => 'Клиенты не найдены';
+
+  @override
+  String get itemUpdated => 'изменено';
 }

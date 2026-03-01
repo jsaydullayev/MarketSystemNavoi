@@ -8,6 +8,23 @@ class AppColors {
         ? orangePrimary
         : const Color.fromARGB(255, 24, 67, 184);
   }
+
+  static const Color darkBg = Color(0xFF121212);
+  static const Color darkCard = Color(0xFF1E1E1E);
+  static const Color darkBorder = Colors.white10;
+
+  static const Color lightBg = Color(0xFFF5F7FA);
+  static const Color lightCard = Colors.white;
+  static const Color lightBorder = Color(0xFFEEEEEE);
+
+  static const Color primary = Colors.blue;
+  static const Color accent = Colors.orange;
+  static const Color success = Colors.green;
+  static const Color error = Colors.red;
+
+  static Color getBg(bool isDark) => isDark ? darkBg : lightBg;
+  static Color getCard(bool isDark) => isDark ? darkCard : lightCard;
+  static Color getBorder(bool isDark) => isDark ? darkBorder : lightBorder;
 }
 
 class AppThemes {

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-import '../../../data/services/sales_service.dart';
-import '../../../core/providers/auth_provider.dart';
-import '../../../core/utils/number_formatter.dart';
+import '../../../../data/services/sales_service.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/number_formatter.dart';
 
 /// Qarzdor Detail Screeni
 /// Mijozning qarzli savdolari va tovarlari
@@ -33,7 +34,8 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
     final currentPrice = (saleItem['salePrice'] as num?)?.toDouble() ?? 0.0;
     final quantity = (saleItem['quantity'] as num?)?.toDouble() ?? 0.0;
 
-    final priceController = TextEditingController(text: currentPrice.toString());
+    final priceController =
+        TextEditingController(text: currentPrice.toString());
     final commentController = TextEditingController();
 
     showDialog(
@@ -105,7 +107,8 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.info_outline, size: 16, color: Colors.orange.shade700),
+                            Icon(Icons.info_outline,
+                                size: 16, color: Colors.orange.shade700),
                             const SizedBox(width: 6),
                             Text(
                               'Jami: ${NumberFormatter.formatDecimal(newPrice * quantity)} so\'m',
@@ -165,36 +168,39 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
 
                         try {
                           setState(() {
-                          _isLoading = true;
-                        });
+                            _isLoading = true;
+                          });
 
-                        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                        final salesService = SalesService(authProvider: authProvider);
+                          final authProvider =
+                              Provider.of<AuthProvider>(context, listen: false);
+                          final salesService =
+                              SalesService(authProvider: authProvider);
 
-                        await salesService.updateSaleItemPrice(
-                          saleItemId: itemId,
-                          newPrice: newPrice,
-                          comment: commentController.text.trim().isEmpty
-                              ? 'Narx yangilandi'
-                              : commentController.text.trim(),
-                        );
-
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('$productName uchun narx o\'zgartirildi'),
-                              backgroundColor: Colors.green,
-                            ),
+                          await salesService.updateSaleItemPrice(
+                            saleItemId: itemId,
+                            newPrice: newPrice,
+                            comment: commentController.text.trim().isEmpty
+                                ? 'Narx yangilandi'
+                                : commentController.text.trim(),
                           );
-                          // Refresh data
-                          Navigator.pop(context, true);
-                        }
-                      } catch (e) {
-                        setState(() {
-                          _isLoading = false;
-                        });
 
-                        if (mounted) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    '$productName uchun narx o\'zgartirildi'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            // Refresh data
+                            Navigator.pop(context, true);
+                          }
+                        } catch (e) {
+                          setState(() {
+                            _isLoading = false;
+                          });
+
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('Xatolik: $e'),
@@ -219,10 +225,15 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final sales = widget.debtorData['sales'] as List<dynamic>? ?? [];
-    final totalDebt = (widget.debtorData['totalDebt'] as num?)?.toDouble() ?? 0.0;
-    final paidAmount = (widget.debtorData['paidAmount'] as num?)?.toDouble() ?? 0.0;
-    final remainingDebt = (widget.debtorData['remainingDebt'] as num?)?.toDouble() ?? 0.0;
+    final totalDebt =
+        (widget.debtorData['totalDebt'] as num?)?.toDouble() ?? 0.0;
+    final paidAmount =
+        (widget.debtorData['paidAmount'] as num?)?.toDouble() ?? 0.0;
+    final remainingDebt =
+        (widget.debtorData['remainingDebt'] as num?)?.toDouble() ?? 0.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -304,8 +315,8 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Qolgan:',
+                          Text(
+                            '${l10n.remaining}:',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.white70,
@@ -355,13 +366,21 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                             final sale = sales[saleIndex];
                             final items = sale['items'] as List<dynamic>? ?? [];
                             final saleDate = sale['createdAt'];
-                            final saleTotal = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
-                            final salePaid = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
-                            final saleRemaining = (sale['remainingAmount'] as num?)?.toDouble() ?? 0.0;
+                            final saleTotal =
+                                (sale['totalAmount'] as num?)?.toDouble() ??
+                                    0.0;
+                            final salePaid =
+                                (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
+                            final saleRemaining =
+                                (sale['remainingAmount'] as num?)?.toDouble() ??
+                                    0.0;
 
                             // Format date with GMT+5 (Tashkent time)
-                            final formattedDate = NumberFormatter.formatDateTime(saleDate, showTime: true);
-                            final formattedTime = NumberFormatter.formatTime(saleDate);
+                            final formattedDate =
+                                NumberFormatter.formatDateTime(saleDate,
+                                    showTime: true);
+                            final formattedTime =
+                                NumberFormatter.formatTime(saleDate);
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 16),
@@ -394,7 +413,8 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                       ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         // Sana va vaqt
                                         Row(
@@ -429,18 +449,26 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
 
                                   // Items
                                   ...items.map((item) {
-                                    final itemName = item['productName'] ?? 'Noma\'lum';
-                                    final itemPrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-                                    final itemQty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+                                    final itemName =
+                                        item['productName'] ?? 'Noma\'lum';
+                                    final itemPrice =
+                                        (item['salePrice'] as num?)
+                                                ?.toDouble() ??
+                                            0.0;
+                                    final itemQty = (item['quantity'] as num?)
+                                            ?.toDouble() ??
+                                        0.0;
                                     final itemTotal = itemPrice * itemQty;
 
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
                                       child: Row(
                                         children: [
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   itemName,
@@ -460,10 +488,12 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                             ),
                                           ),
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
                                             children: [
                                               Text(
-                                                NumberFormatter.formatDecimal(itemTotal),
+                                                NumberFormatter.formatDecimal(
+                                                    itemTotal),
                                                 style: const TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w700,
@@ -472,32 +502,43 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                               ),
                                               // Narxni o'zgartirish tugmasi
                                               InkWell(
-                                                onTap: () => _showPriceChangeDialog(item, sale['id']),
+                                                onTap: () =>
+                                                    _showPriceChangeDialog(
+                                                        item, sale['id']),
                                                 child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
                                                   decoration: BoxDecoration(
                                                     color: Colors.blue.shade50,
-                                                    borderRadius: BorderRadius.circular(4),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4),
                                                   ),
                                                   child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
                                                     children: [
-                                                              Icon(
-                                                                Icons.edit,
-                                                                size: 12,
-                                                                color: Colors.blue.shade700,
-                                                              ),
-                                                              const SizedBox(width: 4),
-                                                              Text(
-                                                                'Narxni o\'zgartirish',
-                                                                style: TextStyle(
-                                                                  fontSize: 10,
-                                                                  fontWeight: FontWeight.w600,
-                                                                  color: Colors.blue.shade700,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
+                                                      Icon(
+                                                        Icons.edit,
+                                                        size: 12,
+                                                        color: Colors
+                                                            .blue.shade700,
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        'Narxni o\'zgartirish',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Colors
+                                                              .blue.shade700,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                             ],

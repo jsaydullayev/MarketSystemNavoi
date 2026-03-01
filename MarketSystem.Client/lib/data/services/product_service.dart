@@ -13,7 +13,8 @@ class ProductService {
   }
 
   Future<List<dynamic>> getAllProducts() async {
-    final response = await _httpService.get('${ApiConstants.products}/GetAllProducts');
+    final response =
+        await _httpService.get('${ApiConstants.products}/GetAllProducts');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -24,7 +25,8 @@ class ProductService {
   }
 
   Future<dynamic> getProductById(String id) async {
-    final response = await _httpService.get('${ApiConstants.products}/GetProduct/$id');
+    final response =
+        await _httpService.get('${ApiConstants.products}/GetProduct/$id');
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -39,8 +41,8 @@ class ProductService {
     required double salePrice,
     required double minSalePrice,
     required int minThreshold,
-    int? categoryId,  // ✅ NEW
-    required int unit,  // ✅ NEW: UNIT
+    int? categoryId, // ✅ NEW
+    required int unit, // ✅ NEW: UNIT
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.products}/CreateProduct',
@@ -50,8 +52,8 @@ class ProductService {
         'salePrice': salePrice,
         'minSalePrice': minSalePrice,
         'minThreshold': minThreshold,
-        if (categoryId != null) 'categoryId': categoryId,  // ✅ NEW
-        'unit': unit,  // ✅ NEW: UNIT
+        if (categoryId != null) 'categoryId': categoryId, // ✅ NEW
+        'unit': unit, // ✅ NEW: UNIT
       },
     );
 
@@ -68,9 +70,15 @@ class ProductService {
     required double salePrice,
     required double minSalePrice,
     required int minThreshold,
-    int? categoryId,  // ✅ NEW
-    required int unit,  // ✅ NEW: UNIT
+    int? categoryId, // ✅ NEW
+    required int unit, // ✅ NEW: UNIT
+    required bool isTemporary,
   }) async {
+    print("Yuborilayotgan body: ${jsonEncode({
+          'id': id,
+          'name': name,
+          'isTemporary': isTemporary,
+        })}");
     final response = await _httpService.put(
       '${ApiConstants.products}/UpdateProduct/$id',
       body: {
@@ -79,11 +87,12 @@ class ProductService {
         'salePrice': salePrice,
         'minSalePrice': minSalePrice,
         'minThreshold': minThreshold,
-        if (categoryId != null) 'categoryId': categoryId,  // ✅ NEW
-        'unit': unit,  // ✅ NEW: UNIT
+        'isTemporary': isTemporary,
+        if (categoryId != null) 'categoryId': categoryId, // ✅ NEW
+        'unit': unit, // ✅ NEW: UNIT
       },
     );
-
+    print("API javobi: ${response.body}");
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -92,7 +101,8 @@ class ProductService {
   }
 
   Future<void> deleteProduct(String id) async {
-    final response = await _httpService.delete('${ApiConstants.products}/DeleteProduct/$id');
+    final response =
+        await _httpService.delete('${ApiConstants.products}/DeleteProduct/$id');
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Failed to delete product: ${response.body}');
@@ -100,6 +110,7 @@ class ProductService {
   }
 
   Future<List<int>?> downloadProductsExcel() async {
-    return await _httpService.downloadBytes('${ApiConstants.products}/ExportProductsToExcel');
+    return await _httpService
+        .downloadBytes('${ApiConstants.products}/ExportProductsToExcel');
   }
 }
