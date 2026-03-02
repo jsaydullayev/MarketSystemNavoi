@@ -3,8 +3,6 @@
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/sale_entity.dart';
-import '../entities/sale_item_entity.dart';
-import '../entities/payment_entity.dart';
 
 /// Sale Repository Interface
 /// Data layer implementation qilishi kerak bo'lgan metodlar
@@ -25,9 +23,9 @@ abstract class SaleRepositoryInterface {
   Future<ApiResult<void>> addSaleItem({
     required String saleId,
     required String productId,
-    required double quantity,  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
+    required double quantity, // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
     required double salePrice,
-    required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
+    required double minSalePrice, // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,
   });
 
