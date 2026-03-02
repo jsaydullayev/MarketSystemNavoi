@@ -167,7 +167,7 @@ public record ZakupDto(
 );
 public record CreateZakupDto(
     [property: JsonPropertyName("productId")] Guid ProductId,
-    [property: JsonPropertyName("quantity")] int Quantity,
+    [property: JsonPropertyName("quantity")] decimal Quantity,
     [property: JsonPropertyName("costPrice")] decimal CostPrice
 );
 

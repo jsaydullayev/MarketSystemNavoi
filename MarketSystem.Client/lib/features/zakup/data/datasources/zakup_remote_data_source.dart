@@ -24,7 +24,7 @@ class ZakupRemoteDataSource {
   /// Yangi xarid yaratish
   Future<dynamic> createZakup({
     required String productId,
-    required int quantity,
+    required double quantity,
     required double costPrice,
   }) async {
     return _zakupService.createZakup(
