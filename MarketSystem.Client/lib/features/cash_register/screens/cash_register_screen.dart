@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
@@ -78,7 +80,8 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Pul turi tanlash
-                const Text('Pul turi:', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text('Pul turi:',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -134,10 +137,12 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                 child: Text(l10n.cancel),
               ),
               ElevatedButton(
-                onPressed: (_selectedWithdrawType == null || _isWithdrawing) ? null : () {
-                  Navigator.pop(context);
-                  _withdrawCash(_selectedWithdrawType!);
-                },
+                onPressed: (_selectedWithdrawType == null || _isWithdrawing)
+                    ? null
+                    : () {
+                        Navigator.pop(context);
+                        _withdrawCash(_selectedWithdrawType!);
+                      },
                 child: _isWithdrawing
                     ? const SizedBox(
                         width: 16,
@@ -167,12 +172,14 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
     // Balansni tekshirish
     final cashBalance = _cashRegister?.currentBalance ?? 0;
     final clickBalance = _todaySales?.clickPaid ?? 0;
-    final availableBalance = withdrawType == 'cash' ? cashBalance : clickBalance;
+    final availableBalance =
+        withdrawType == 'cash' ? cashBalance : clickBalance;
 
     if (amount > availableBalance) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Yetarli pul yo\'q! Mavjud: ${availableBalance.toStringAsFixed(2)} so\'m'),
+          content: Text(
+              'Yetarli pul yo\'q! Mavjud: ${availableBalance.toStringAsFixed(2)} so\'m'),
           backgroundColor: AppTheme.danger,
         ),
       );
@@ -194,7 +201,8 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${withdrawType == 'cash' ? 'Naqd pul' : 'Click'} muvaffaqiyatli olindi'),
+          content: Text(
+              '${withdrawType == 'cash' ? 'Naqd pul' : 'Click'} muvaffaqiyatli olindi'),
           backgroundColor: AppTheme.success,
         ),
       );
@@ -213,14 +221,18 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Faqat admin va owner uchun
     final isAdmin = authProvider.user?['role'] == 'Admin' ||
-                    authProvider.user?['role'] == 'Owner';
+        authProvider.user?['role'] == 'Owner';
 
     if (!isAdmin) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.cashRegister)),
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.cashRegister,
+        ),
         body: Center(
           child: Text(
             l10n.accessDenied,
@@ -231,14 +243,10 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.cashRegister),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _isLoading ? null : _loadCashRegister,
-          ),
-        ],
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.cashRegister,
+        onRefresh: _isLoading ? null : _loadCashRegister,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -307,32 +315,43 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                             if (_cashRegister!.currentBalance > 0)
                               Row(
                                 children: [
-                                  const Icon(Icons.money, size: 16, color: Colors.white70),
+                                  const Icon(Icons.money,
+                                      size: 16, color: Colors.white70),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Naqd: ',
-                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Colors.white70),
                                   ),
                                   Text(
                                     '${_cashRegister!.currentBalance.toStringAsFixed(2)} so\'m',
-                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
                                   ),
                                 ],
                               ),
                             // Click
                             if (_todaySales!.clickPaid > 0) ...[
-                              if (_cashRegister!.currentBalance > 0) const SizedBox(height: 8),
+                              if (_cashRegister!.currentBalance > 0)
+                                const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  const Icon(Icons.phone_android, size: 16, color: Colors.white70),
+                                  const Icon(Icons.phone_android,
+                                      size: 16, color: Colors.white70),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Click: ',
-                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Colors.white70),
                                   ),
                                   Text(
                                     '${_todaySales!.clickPaid.toStringAsFixed(2)} so\'m',
-                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
                                   ),
                                 ],
                               ),
@@ -353,9 +372,9 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2)),
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2)),
                           ],
                           border: Border.all(
                             color: Colors.green.withOpacity(0.3),
@@ -384,14 +403,20 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            _buildStatRow('Soni:', '${_todaySales!.totalSales} ta'),
+                            _buildStatRow(
+                                'Soni:', '${_todaySales!.totalSales} ta'),
                             const SizedBox(height: 12),
-                            _buildStatRow('Jami summa:', '${_todaySales!.totalAmount.toStringAsFixed(2)} so\'m'),
+                            _buildStatRow('Jami summa:',
+                                '${_todaySales!.totalAmount.toStringAsFixed(2)} so\'m'),
                             const SizedBox(height: 12),
-                            _buildStatRow('To\'langan:', '${_todaySales!.totalPaid.toStringAsFixed(2)} so\'m', color: Colors.green),
+                            _buildStatRow('To\'langan:',
+                                '${_todaySales!.totalPaid.toStringAsFixed(2)} so\'m',
+                                color: Colors.green),
                             if (_todaySales!.debtAmount > 0) ...[
                               const SizedBox(height: 12),
-                              _buildStatRow('Qarzga:', '${_todaySales!.debtAmount.toStringAsFixed(2)} so\'m', color: Colors.orange),
+                              _buildStatRow('Qarzga:',
+                                  '${_todaySales!.debtAmount.toStringAsFixed(2)} so\'m',
+                                  color: Colors.orange),
                             ],
                           ],
                         ),
@@ -399,7 +424,10 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                     const SizedBox(height: 16),
 
                     // Bugungi tushumlar (Cash va Card)
-                    if (_todaySales != null && (_todaySales!.cashPaid > 0 || _todaySales!.cardPaid > 0 || _todaySales!.clickPaid > 0))
+                    if (_todaySales != null &&
+                        (_todaySales!.cashPaid > 0 ||
+                            _todaySales!.cardPaid > 0 ||
+                            _todaySales!.clickPaid > 0))
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
@@ -464,7 +492,8 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Naqd pul',
@@ -508,7 +537,8 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Plastik karta',
@@ -552,7 +582,8 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Click',
@@ -642,7 +673,8 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                             margin: const EdgeInsets.only(bottom: 12),
                             child: ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: AppTheme.danger.withOpacity(0.1),
+                                backgroundColor:
+                                    AppTheme.danger.withOpacity(0.1),
                                 child: Icon(
                                   Icons.arrow_back,
                                   color: AppTheme.danger,

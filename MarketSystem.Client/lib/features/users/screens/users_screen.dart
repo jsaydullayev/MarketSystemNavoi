@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
 import '../../../data/services/users_service.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../screens/dashboard_screen.dart';
 import 'add_user_screen.dart';
 
 class UsersScreen extends StatefulWidget {
@@ -229,26 +230,14 @@ class _UsersScreenState extends State<UsersScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final userRole = authProvider.user?['role'];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Foydalanuvchilar'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(
-              context,
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUsers,
-          ),
-        ],
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.users,
+        onRefresh: _loadUsers,
       ),
       body: Column(
         children: [

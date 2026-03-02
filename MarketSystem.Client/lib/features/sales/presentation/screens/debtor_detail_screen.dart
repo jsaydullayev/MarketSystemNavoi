@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -234,15 +236,12 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
         (widget.debtorData['paidAmount'] as num?)?.toDouble() ?? 0.0;
     final remainingDebt =
         (widget.debtorData['remainingDebt'] as num?)?.toDouble() ?? 0.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text(widget.customerName),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: widget.customerName,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

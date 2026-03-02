@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import '../../../core/utils/number_formatter.dart';
 
 /// Shu kuni sotilgan barcha tovarlar ro'yxati
@@ -16,7 +19,8 @@ class DailySalesDetailsScreen extends StatefulWidget {
   });
 
   @override
-  State<DailySalesDetailsScreen> createState() => _DailySalesDetailsScreenState();
+  State<DailySalesDetailsScreen> createState() =>
+      _DailySalesDetailsScreenState();
 }
 
 class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
@@ -26,16 +30,19 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
     final totalProfit = widget.dailyReport['profit'] != null
         ? (widget.dailyReport['profit'] as num).toDouble()
         : null;
-    final totalTransactions = (widget.dailyReport['totalTransactions'] as num?)?.toInt() ?? 0;
+    final totalTransactions =
+        (widget.dailyReport['totalTransactions'] as num?)?.toInt() ?? 0;
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Kunlik savdo - ${DateFormat('dd.MM.yyyy').format(widget.date)}'),
-        centerTitle: true,
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title:
+            "${l10n.dailySales} - ${DateFormat('dd.MM.yyyy').format(widget.date)}",
       ),
       body: Column(
         children: [
-          // Summary section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -50,7 +57,8 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
               children: [
                 Text(
                   'Jami savdo: ${NumberFormatter.formatDecimal(totalSales)} so\'m',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 // Only show profit if user is Owner
@@ -102,9 +110,8 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
     final totalRevenue = (item['totalRevenue'] as num?)?.toDouble() ?? 0.0;
 
     // Profit is now nullable (only for Owner)
-    final profit = item['profit'] != null
-        ? (item['profit'] as num).toDouble()
-        : null;
+    final profit =
+        item['profit'] != null ? (item['profit'] as num).toDouble() : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -141,7 +148,12 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
             const Divider(height: 16),
 
             // Quantity
-            _buildInfoRow('Miqdor:', quantity == quantity.truncateToDouble() ? '${quantity.toInt()} ta' : '${quantity.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '')} ta', Icons.inventory),
+            _buildInfoRow(
+                'Miqdor:',
+                quantity == quantity.truncateToDouble()
+                    ? '${quantity.toInt()} ta'
+                    : '${quantity.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '')} ta',
+                Icons.inventory),
 
             // Only show profit if user is Owner (profit is not null)
             if (profit != null) ...[
@@ -165,7 +177,8 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
                       children: [
                         Icon(
                           profit >= 0 ? Icons.trending_up : Icons.trending_down,
-                          color: profit >= 0 ? Colors.green[700] : Colors.red[700],
+                          color:
+                              profit >= 0 ? Colors.green[700] : Colors.red[700],
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -173,7 +186,9 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: profit >= 0 ? Colors.green[700] : Colors.red[700],
+                            color: profit >= 0
+                                ? Colors.green[700]
+                                : Colors.red[700],
                           ),
                         ),
                       ],
@@ -183,7 +198,8 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: profit >= 0 ? Colors.green[700] : Colors.red[700],
+                        color:
+                            profit >= 0 ? Colors.green[700] : Colors.red[700],
                       ),
                     ),
                   ],
@@ -196,7 +212,8 @@ class _DailySalesDetailsScreenState extends State<DailySalesDetailsScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon, {Color? color}) {
+  Widget _buildInfoRow(String label, String value, IconData icon,
+      {Color? color}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
