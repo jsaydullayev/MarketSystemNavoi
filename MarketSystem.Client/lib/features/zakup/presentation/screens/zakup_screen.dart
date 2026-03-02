@@ -163,14 +163,14 @@ class _ZakupScreenState extends State<ZakupScreen> {
       if (confirmed == true) {
         _createZakup(
           product['id'],
-          int.parse(quantityController.text),
+          double.tryParse(quantityController.text) ?? 0,
           double.parse(costPriceController.text),
         );
       }
     });
   }
 
-  void _createZakup(String productId, int quantity, double costPrice) {
+  void _createZakup(String productId, double quantity, double costPrice) {
     context.read<ZakupBloc>().add(CreateZakupEvent(
           productId: productId,
           quantity: quantity,
