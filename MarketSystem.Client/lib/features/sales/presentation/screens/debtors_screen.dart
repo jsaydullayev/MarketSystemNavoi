@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../data/services/sales_service.dart';
@@ -74,17 +77,13 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text(
-          'Qarzdorlar',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.debtors,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

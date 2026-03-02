@@ -150,4 +150,9 @@ class AuthProvider extends ChangeNotifier {
     _errorCode = null;
     notifyListeners();
   }
+
+  void setUserFromStorage(Map<String, dynamic> userData) {
+    _user = userData;
+    notifyListeners();
+  }
 }

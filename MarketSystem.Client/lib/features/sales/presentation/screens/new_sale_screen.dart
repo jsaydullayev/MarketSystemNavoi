@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/payment_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/price_input_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/sale_body.dart';
@@ -535,9 +536,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.getBg(isDark),
-        appBar: AppBar(
-            backgroundColor: AppColors.getCard(isDark),
-            title: Text(l10n.newSale)),
+        appBar: CommonAppBar(
+          title: l10n.newSale,
+        ),
         body: SaleBody(
           isLoading: _isLoading,
           filteredProducts: _filteredProducts,

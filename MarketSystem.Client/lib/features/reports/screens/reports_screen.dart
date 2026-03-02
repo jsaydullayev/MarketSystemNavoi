@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/report_service.dart';
@@ -52,10 +55,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final daily = await _reportsService.getDailyReport(_selectedDate);
 
       // Load period report (last 30 days)
-      final period = await _reportsService.getPeriodReport(_startDate, _endDate);
+      final period =
+          await _reportsService.getPeriodReport(_startDate, _endDate);
 
       // Load comprehensive report
-      final comprehensive = await _reportsService.getComprehensiveReport(_selectedDate);
+      final comprehensive =
+          await _reportsService.getComprehensiveReport(_selectedDate);
 
       setState(() {
         _dailyReport = daily;
@@ -157,7 +162,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Hisobotlar muvaffaqiyatli yuklab olindi!\n\n📊 Excel faylga quyidagilar kiritilgan:\n• Sotuvlar ro\'yxati\n• Umumiy statistika\n• Jami savdo va foyda'),
+            content: Text(
+                '✅ Hisobotlar muvaffaqiyatli yuklab olindi!\n\n📊 Excel faylga quyidagilar kiritilgan:\n• Sotuvlar ro\'yxati\n• Umumiy statistika\n• Jami savdo va foyda'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 4),
             action: SnackBarAction(
@@ -187,18 +193,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hisobotlar'),
-        centerTitle: true,
-        actions: [
-          // Excel download button
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.reports,
+        extraActions: [
           IconButton(
-            icon: const Icon(Icons.download),
+            icon: const Icon(Icons.download_rounded),
             tooltip: 'Excel yuklab olish',
             onPressed: _downloadExcelReport,
           ),
-          const SizedBox(width: 8),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
@@ -249,7 +256,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: isSelected ? Colors.white : Colors.grey[700]),
+              Icon(icon,
+                  size: 18,
+                  color: isSelected ? Colors.white : Colors.grey[700]),
               const SizedBox(width: 6),
               Text(
                 label,
@@ -296,9 +305,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final totalDebtSales = _dailyReport!['totalDebtSales'] is num
         ? (_dailyReport!['totalDebtSales'] as num).toDouble()
         : 0.0;
-    final profit = _dailyReport!['profit'] != null && _dailyReport!['profit'] is num
-        ? (_dailyReport!['profit'] as num).toDouble()
-        : null;
+    final profit =
+        _dailyReport!['profit'] != null && _dailyReport!['profit'] is num
+            ? (_dailyReport!['profit'] as num).toDouble()
+            : null;
 
     // Payment breakdown
     final paymentBreakdown = _dailyReport!['paymentBreakdown'] is List
@@ -384,15 +394,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
           const SizedBox(height: 12),
           ...paymentBreakdown.map((payment) {
-            if (payment is! Map<String, dynamic>) return const SizedBox.shrink();
+            if (payment is! Map<String, dynamic>)
+              return const SizedBox.shrink();
 
             final paymentType = payment['paymentType']?.toString() ?? 'Unknown';
             final amount = payment['amount'] is num
                 ? (payment['amount'] as num).toDouble()
                 : 0.0;
-            final count = payment['count'] is int
-                ? payment['count'] as int
-                : 0;
+            final count = payment['count'] is int ? payment['count'] as int : 0;
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -444,9 +453,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final totalDebtSales = _periodReport!['totalDebtSales'] is num
         ? (_periodReport!['totalDebtSales'] as num).toDouble()
         : 0.0;
-    final profit = _periodReport!['profit'] != null && _periodReport!['profit'] is num
-        ? (_periodReport!['profit'] as num).toDouble()
-        : null;
+    final profit =
+        _periodReport!['profit'] != null && _periodReport!['profit'] is num
+            ? (_periodReport!['profit'] as num).toDouble()
+            : null;
     final avgSale = _periodReport!['averageSale'] is num
         ? (_periodReport!['averageSale'] as num).toDouble()
         : 0.0;
@@ -548,15 +558,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
           const SizedBox(height: 12),
           ...paymentBreakdown.map((payment) {
-            if (payment is! Map<String, dynamic>) return const SizedBox.shrink();
+            if (payment is! Map<String, dynamic>)
+              return const SizedBox.shrink();
 
             final paymentType = payment['paymentType']?.toString() ?? 'Unknown';
             final amount = payment['amount'] is num
                 ? (payment['amount'] as num).toDouble()
                 : 0.0;
-            final count = payment['count'] is int
-                ? payment['count'] as int
-                : 0;
+            final count = payment['count'] is int ? payment['count'] as int : 0;
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -599,12 +608,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final inventory = _comprehensiveReport!['inventoryReport'] is List
         ? _comprehensiveReport!['inventoryReport'] as List<dynamic>
         : <dynamic>[];
-    final totalInventoryCost = _comprehensiveReport!['totalInventoryCost'] is num
-        ? (_comprehensiveReport!['totalInventoryCost'] as num).toDouble()
-        : 0.0;
-    final totalInventorySaleValue = _comprehensiveReport!['totalInventorySaleValue'] is num
-        ? (_comprehensiveReport!['totalInventorySaleValue'] as num).toDouble()
-        : 0.0;
+    final totalInventoryCost =
+        _comprehensiveReport!['totalInventoryCost'] is num
+            ? (_comprehensiveReport!['totalInventoryCost'] as num).toDouble()
+            : 0.0;
+    final totalInventorySaleValue =
+        _comprehensiveReport!['totalInventorySaleValue'] is num
+            ? (_comprehensiveReport!['totalInventorySaleValue'] as num)
+                .toDouble()
+            : 0.0;
 
     // Calculate potential profit (this will be shown to Owner only, hidden from Admin)
     final potentialProfit = totalInventorySaleValue - totalInventoryCost;
@@ -752,16 +764,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
+            Icon(Icons.calendar_today,
+                color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Sana', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text('Sana',
+                      style: TextStyle(fontSize: 12, color: Colors.grey)),
                   Text(
                     DateFormat('dd.MM.yyyy').format(_selectedDate),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -770,21 +785,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
                 setState(() {
-                  _selectedDate = _selectedDate.subtract(const Duration(days: 1));
+                  _selectedDate =
+                      _selectedDate.subtract(const Duration(days: 1));
                 });
                 _loadReports();
               },
             ),
             IconButton(
               icon: const Icon(Icons.arrow_forward),
-              onPressed: _selectedDate.isBefore(DateTime(now.year, now.month, now.day))
-                  ? () {
-                      setState(() {
-                        _selectedDate = _selectedDate.add(const Duration(days: 1));
-                      });
-                      _loadReports();
-                    }
-                  : null, // Disable if today
+              onPressed:
+                  _selectedDate.isBefore(DateTime(now.year, now.month, now.day))
+                      ? () {
+                          setState(() {
+                            _selectedDate =
+                                _selectedDate.add(const Duration(days: 1));
+                          });
+                          _loadReports();
+                        }
+                      : null, // Disable if today
             ),
             TextButton(
               onPressed: () async {
@@ -792,11 +810,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   context: context,
                   initialDate: _selectedDate,
                   firstDate: DateTime(2020),
-                  lastDate: DateTime(now.year, now.month, now.day), // Only today and past
+                  lastDate: DateTime(
+                      now.year, now.month, now.day), // Only today and past
                 );
                 if (picked != null) {
                   setState(() {
-                    _selectedDate = DateTime(picked.year, picked.month, picked.day);
+                    _selectedDate =
+                        DateTime(picked.year, picked.month, picked.day);
                   });
                   _loadReports();
                 }
@@ -820,16 +840,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
+                Icon(Icons.calendar_today,
+                    color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Dan', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const Text('Dan',
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
                       Text(
                         DateFormat('dd.MM.yyyy').format(_startDate),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -840,10 +863,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text('Gacha', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const Text('Gacha',
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
                       Text(
                         DateFormat('dd.MM.yyyy').format(_endDate),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -854,13 +879,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     final picked = await showDateRangePicker(
                       context: context,
                       firstDate: DateTime(2020),
-                      lastDate: DateTime(now.year, now.month, now.day), // Only today and past
-                      initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
+                      lastDate: DateTime(
+                          now.year, now.month, now.day), // Only today and past
+                      initialDateRange:
+                          DateTimeRange(start: _startDate, end: _endDate),
                     );
                     if (picked != null) {
                       setState(() {
-                        _startDate = DateTime(picked.start.year, picked.start.month, picked.start.day);
-                        _endDate = DateTime(picked.end.year, picked.end.month, picked.end.day);
+                        _startDate = DateTime(picked.start.year,
+                            picked.start.month, picked.start.day);
+                        _endDate = DateTime(
+                            picked.end.year, picked.end.month, picked.end.day);
                       });
                       _loadReports();
                     }
@@ -944,21 +973,32 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildPaymentCard(String paymentType, double amount, int count, double totalSales) {
+  Widget _buildPaymentCard(
+      String paymentType, double amount, int count, double totalSales) {
     // Map payment type to Uzbek and icon/color
     final Map<String, Map<String, dynamic>> paymentConfig = {
       'Cash': {'name': 'Naqd', 'icon': Icons.money, 'color': Colors.green},
-      'Terminal': {'name': 'Terminal', 'icon': Icons.credit_card, 'color': Colors.orange},
-      'Transfer': {'name': 'Hisob raqam', 'icon': Icons.account_balance, 'color': Colors.purple},
+      'Terminal': {
+        'name': 'Terminal',
+        'icon': Icons.credit_card,
+        'color': Colors.orange
+      },
+      'Transfer': {
+        'name': 'Hisob raqam',
+        'icon': Icons.account_balance,
+        'color': Colors.purple
+      },
       'Click': {'name': 'Click', 'icon': Icons.touch_app, 'color': Colors.blue},
     };
 
-    final config = paymentConfig[paymentType] ?? {'name': paymentType, 'icon': Icons.payment, 'color': Colors.grey};
+    final config = paymentConfig[paymentType] ??
+        {'name': paymentType, 'icon': Icons.payment, 'color': Colors.grey};
     final icon = config['icon'] as IconData;
     final color = config['color'] as Color;
     final name = config['name'] as String;
 
-    final percentage = totalSales > 0 ? (amount / totalSales * 100).toStringAsFixed(1) : '0.0';
+    final percentage =
+        totalSales > 0 ? (amount / totalSales * 100).toStringAsFixed(1) : '0.0';
 
     return Card(
       elevation: 2,
@@ -995,7 +1035,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildInventoryItemCard(Map<String, dynamic> item, {bool isOwner = true}) {
+  Widget _buildInventoryItemCard(Map<String, dynamic> item,
+      {bool isOwner = true}) {
     final productName = item['productName'] as String? ?? 'Noma\'lum';
     final quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final costPrice = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
@@ -1026,16 +1067,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: quantity > 0 ? Colors.green[50] : Colors.red[50],
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: quantity > 0 ? Colors.green[300]! : Colors.red[300]!,
+                      color:
+                          quantity > 0 ? Colors.green[300]! : Colors.red[300]!,
                     ),
                   ),
                   child: Text(
-                    quantity == quantity.truncateToDouble() ? '${quantity.toInt()} dona' : '${quantity.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '')} dona',
+                    quantity == quantity.truncateToDouble()
+                        ? '${quantity.toInt()} dona'
+                        : '${quantity.toStringAsFixed(1).replaceAll(RegExp(r'\.?0+$'), '')} dona',
                     style: TextStyle(
                       color: quantity > 0 ? Colors.green[700] : Colors.red[700],
                       fontWeight: FontWeight.w600,
@@ -1049,16 +1094,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoColumn('Xarid narxi', '${NumberFormatter.formatDecimal(costPrice)} so\'m'),
-                _buildInfoColumn('Sotuv narxi', '${NumberFormatter.formatDecimal(salePrice)} so\'m'),
+                _buildInfoColumn('Xarid narxi',
+                    '${NumberFormatter.formatDecimal(costPrice)} so\'m'),
+                _buildInfoColumn('Sotuv narxi',
+                    '${NumberFormatter.formatDecimal(salePrice)} so\'m'),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoColumn('Jami xarajat', '${NumberFormatter.formatDecimal(totalCostValue)} so\'m'),
-                _buildInfoColumn('Jami qiymat', '${NumberFormatter.formatDecimal(totalSaleValue)} so\'m'),
+                _buildInfoColumn('Jami xarajat',
+                    '${NumberFormatter.formatDecimal(totalCostValue)} so\'m'),
+                _buildInfoColumn('Jami qiymat',
+                    '${NumberFormatter.formatDecimal(totalSaleValue)} so\'m'),
               ],
             ),
             // Only show potential profit for Owner
@@ -1068,23 +1117,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: potentialProfit > 0 ? Colors.green[50] : Colors.red[50],
+                  color:
+                      potentialProfit > 0 ? Colors.green[50] : Colors.red[50],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      potentialProfit > 0 ? Icons.trending_up : Icons.trending_down,
+                      potentialProfit > 0
+                          ? Icons.trending_up
+                          : Icons.trending_down,
                       size: 18,
-                      color: potentialProfit > 0 ? Colors.green[700] : Colors.red[700],
+                      color: potentialProfit > 0
+                          ? Colors.green[700]
+                          : Colors.red[700],
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Potensial foyda: ${NumberFormatter.formatDecimal(potentialProfit)} so\'m',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: potentialProfit > 0 ? Colors.green[700] : Colors.red[700],
+                        color: potentialProfit > 0
+                            ? Colors.green[700]
+                            : Colors.red[700],
                       ),
                     ),
                   ],

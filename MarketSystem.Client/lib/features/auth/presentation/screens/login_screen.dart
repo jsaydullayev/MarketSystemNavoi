@@ -6,9 +6,10 @@ import 'package:market_system_client/core/providers/locale_provider.dart';
 import 'package:market_system_client/core/theme/app_theme.dart';
 import 'package:market_system_client/screens/dashboard_screen.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/providers/auth_provider.dart';
-import '../../../l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -245,6 +246,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (success) {
         final user = authProvider.user;
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_role', user?['role'] ?? '');
+        await prefs.setString('user_full_name', user?['fullName'] ?? '');
+        await prefs.setString('user_username', user?['username'] ?? '');
+
         if (user != null && user['language'] != null) {
           await localeProvider.setLocale(user['language']);
         }

@@ -1735,6 +1735,36 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'o\'zgartirildi'**
   String get itemUpdated;
+
+  /// No description provided for @draftSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Davom etayotgan savdolar'**
+  String get draftSales;
+
+  /// No description provided for @newUser.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi foydalanuvchi'**
+  String get newUser;
+
+  /// No description provided for @debtDetails.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz detallari'**
+  String get debtDetails;
+
+  /// No description provided for @draftSale.
+  ///
+  /// In uz, this message translates to:
+  /// **'Draft savdo'**
+  String get draftSale;
+
+  /// No description provided for @debtors.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzdorlar'**
+  String get debtors;
 }
 
 class _AppLocalizationsDelegate
