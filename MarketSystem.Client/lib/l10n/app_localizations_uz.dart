@@ -849,4 +849,81 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get debtors => 'Qarzdorlar';
+
+  @override
+  String get noDebts => 'Qarzlar yo\'q';
+
+  @override
+  String get debtHistory => 'Qarzlar tarixi';
+
+  @override
+  String get retry => 'Qayta urinish';
+
+  @override
+  String get customerDeleted => 'Mijoz muvaffaqiyatli o\'chirildi';
+
+  @override
+  String get customerAdded => 'Mijoz muvaffaqiyatli qo\'shildi';
+
+  @override
+  String get addNewCustomer => 'Yangi mijoz';
+
+  @override
+  String get searchCustomer => 'Mijoz qidirish...';
+
+  @override
+  String get customerNotFound => 'Mijoz topilmadi';
+
+  @override
+  String get phoneNumber => 'Telefon raqami';
+
+  @override
+  String get fullNameOptional => 'To\'liq ism (ixtiyoriy)';
+
+  @override
+  String get commentOptional => 'Izoh (ixtiyoriy)';
+
+  @override
+  String get debtStatus => 'Qarz holati';
+
+  @override
+  String get debtAmountSom => 'Qarz miqdori (so\'m)';
+
+  @override
+  String get debtAmountRequired => 'Qarz miqdorini kiritish shart';
+
+  @override
+  String get debtAmountPositive => 'Qarz musbat son bo\'lishi kerak';
+
+  @override
+  String get debtRecordWillBeCreated => 'Bu mijoz uchun qarz yozuvi yaratiladi';
+
+  @override
+  String get noDebt => 'Qarzsiz';
+
+  @override
+  String get yesDelete => 'Ha, o\'chirish';
+
+  @override
+  String deleteCustomerConfirm(Object name) {
+    return '$name o\'chirilsinmi?';
+  }
+
+  @override
+  String get deleteCustomer => 'Mijozni o\'chirish';
+
+  @override
+  String get noProductsFound => 'Mahsulotlar mavjud emas';
+
+  @override
+  String get inDebt => 'Qarzda';
+
+  @override
+  String get debtor => 'Qarzdor';
+
+  @override
+  String get phoneRequired => 'Telefon raqam kiritish shart';
+
+  @override
+  String get phoneFormatHint => 'Format: 998XXXXXXXXX (12 ta raqam)';
 }
