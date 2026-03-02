@@ -89,7 +89,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           'salePrice': (item['salePrice'] as num?)?.toDouble() ?? 0.0,
           'minSalePrice': (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
           'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
-          'quantity': (item['quantity'] as num?)?.toInt() ?? 0,
+          'quantity': (item['quantity'] as num?)?.toDouble() ?? 0.0,
           'comment': item['comment'] ?? '',
         };
       }).toList();
@@ -122,7 +122,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       'salePrice': product['salePrice'] ?? 0.0,
       'minSalePrice': (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
       'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
-      'quantity': 1,
+      'quantity': 1.0,
       'comment': '',
     };
 
@@ -134,7 +134,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       await salesService.addSaleItem(
         saleId: widget.saleId,
         productId: product['id'],
-        quantity: 1,
+        quantity: 1.0,
         salePrice: product['salePrice'] ?? 0.0,
         minSalePrice: (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
         comment: '',
@@ -428,12 +428,12 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                     onReturn: () => _returnItem(index),
                     onDecrement: () async {
                       final qty =
-                          (_cartItems[index]['quantity'] as num?)?.toInt() ?? 0;
+                          (_cartItems[index]['quantity'] as num?)?.toDouble() ?? 0.0;
                       await _updateQuantity(index, qty - 1);
                     },
                     onIncrement: () async {
                       final qty =
-                          (_cartItems[index]['quantity'] as num?)?.toInt() ?? 0;
+                          (_cartItems[index]['quantity'] as num?)?.toDouble() ?? 0.0;
                       await _updateQuantity(index, qty + 1);
                     },
                     onRemove: () => _removeFromCart(index),
