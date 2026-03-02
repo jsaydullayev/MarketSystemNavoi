@@ -758,12 +758,6 @@ abstract class AppLocalizations {
   /// **'Karta'**
   String get card;
 
-  /// No description provided for @selectProduct.
-  ///
-  /// In uz, this message translates to:
-  /// **'Mahsulotni tanlang'**
-  String get selectProduct;
-
   /// No description provided for @noProducts.
   ///
   /// In uz, this message translates to:
@@ -1915,6 +1909,90 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Format: 998XXXXXXXXX (12 ta raqam)'**
   String get phoneFormatHint;
+
+  /// No description provided for @productNotFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot topilmadi'**
+  String get productNotFound;
+
+  /// No description provided for @priceSom.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narxi: {price} so\'m'**
+  String priceSom(Object price);
+
+  /// No description provided for @selectProduct.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot tanlang'**
+  String get selectProduct;
+
+  /// No description provided for @addedBy.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qo\'shdi: {user}'**
+  String addedBy(Object user);
+
+  /// No description provided for @costPriceSom.
+  ///
+  /// In uz, this message translates to:
+  /// **'Olingan narxi: {price} so\'m'**
+  String costPriceSom(Object price);
+
+  /// No description provided for @addPurchase.
+  ///
+  /// In uz, this message translates to:
+  /// **'Zakup qo\'shish'**
+  String get addPurchase;
+
+  /// No description provided for @noPurchases.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xaridlar yo\'q'**
+  String get noPurchases;
+
+  /// No description provided for @errorLoadingData.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotlarni yuklab olishda xatolik'**
+  String get errorLoadingData;
+
+  /// No description provided for @fileSaved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Fayl saqlandi'**
+  String get fileSaved;
+
+  /// No description provided for @fileSaveError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faylni saqlashda xatolik yuz berdi'**
+  String get fileSaveError;
+
+  /// No description provided for @costPriceField.
+  ///
+  /// In uz, this message translates to:
+  /// **'Olingan narxi (so\'m)'**
+  String get costPriceField;
+
+  /// No description provided for @noProductsAddFirst.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotlar yo\'q. Avval mahsulot qo\'shing'**
+  String get noProductsAddFirst;
+
+  /// No description provided for @onlyAdminOwnerCanAdd.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faqat Admin va Owner zakup qo\'sha oladi'**
+  String get onlyAdminOwnerCanAdd;
+
+  /// No description provided for @fillAmountAndPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Miqdor va narxni to\'ldiring'**
+  String get fillAmountAndPrice;
 }
 
 class _AppLocalizationsDelegate

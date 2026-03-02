@@ -110,7 +110,6 @@
   "addPayment": "To'lov qo'shish",
   "cash": "Naqd",
   "card": "Karta",
-  "selectProduct": "Mahsulotni tanlang",
   "noProducts": "Mahsulotlar yo'q",
   "noCustomers": "Mijozlar yo'q",
   "createSale": "Sotuv yaratish",
@@ -308,5 +307,19 @@
   "inDebt": "Qarzda",
   "debtor": "Qarzdor",
   "phoneRequired": "Telefon raqam kiritish shart",
-  "phoneFormatHint": "Format: 998XXXXXXXXX (12 ta raqam)"
+  "phoneFormatHint": "Format: 998XXXXXXXXX (12 ta raqam)",
+  "productNotFound": "Mahsulot topilmadi",
+  "priceSom": "Narxi: {price} so'm",
+  "selectProduct": "Mahsulot tanlang",
+  "addedBy": "Qo'shdi: {user}",
+  "costPriceSom": "Olingan narxi: {price} so'm",
+  "addPurchase": "Zakup qo'shish",
+  "noPurchases": "Xaridlar yo'q",
+  "errorLoadingData": "Ma'lumotlarni yuklab olishda xatolik",
+  "fileSaved": "Fayl saqlandi",
+  "fileSaveError": "Faylni saqlashda xatolik yuz berdi",
+  "costPriceField": "Olingan narxi (so'm)",
+  "noProductsAddFirst": "Mahsulotlar yo'q. Avval mahsulot qo'shing",
+  "onlyAdminOwnerCanAdd": "Faqat Admin va Owner zakup qo'sha oladi",
+  "fillAmountAndPrice": "Miqdor va narxni to'ldiring"
 }
