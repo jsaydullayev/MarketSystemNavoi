@@ -29,7 +29,7 @@ class ZakupEntity extends Equatable {
       id: json['id'] as String,
       productId: json['productId'] as String,
       productName: json['productName'] as String? ?? '',
-      quantity: (json['quantity'] as num).toInt(),
+      quantity: (json['quantity'] as num).toDouble(),
       costPrice: (json['costPrice'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       createdBy: json['createdBy'] as String? ?? 'Noma\'lum',
