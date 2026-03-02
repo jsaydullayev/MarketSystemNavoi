@@ -8,7 +8,7 @@ class ZakupEntity extends Equatable {
   final String id;
   final String productId;
   final String productName;
-  final int quantity;
+  final double quantity;
   final double costPrice;
   final DateTime createdAt;
   final String createdBy;

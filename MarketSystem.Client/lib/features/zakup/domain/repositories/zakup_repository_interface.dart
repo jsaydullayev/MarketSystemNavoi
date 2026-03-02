@@ -19,7 +19,7 @@ abstract class ZakupRepositoryInterface {
   /// Yangi xarid yaratish
   Future<ApiResult<ZakupEntity>> createZakup({
     required String productId,
-    required int quantity,
+    required double quantity,
     required double costPrice,
   });
 }
