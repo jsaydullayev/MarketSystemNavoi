@@ -835,4 +835,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get itemUpdated => 'изменено';
+
+  @override
+  String get draftSales => 'Продолжающиеся продажи';
+
+  @override
+  String get newUser => 'Новый пользователь';
+
+  @override
+  String get debtDetails => 'Детали долга';
+
+  @override
+  String get draftSale => 'Черновик продажи';
+
+  @override
+  String get debtors => 'Должники';
 }

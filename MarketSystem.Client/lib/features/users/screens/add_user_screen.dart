@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/users_service.dart';
@@ -170,11 +173,13 @@ class _AddUserScreenState extends State<AddUserScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final currentUserRole = authProvider.user?['role'];
     final availableRoles = _getAvailableRoles();
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Yangi foydalanuvchi'),
-        centerTitle: true,
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.newUser,
       ),
       body: Form(
         key: _formKey,
@@ -192,14 +197,16 @@ class _AddUserScreenState extends State<AddUserScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                  Icon(Icons.info_outline,
+                      color: Colors.blue.shade700, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       currentUserRole == 'Admin'
                           ? 'Admin sifatida siz Seller va Admin qo\'sha olasiz (Owner emas)'
                           : 'Owner sifatida siz hamma rollarni qo\'sha olasiz',
-                      style: TextStyle(color: Colors.blue.shade700, fontSize: 12),
+                      style:
+                          TextStyle(color: Colors.blue.shade700, fontSize: 12),
                     ),
                   ),
                 ],

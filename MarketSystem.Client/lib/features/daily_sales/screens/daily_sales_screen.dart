@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/features/daily_sales/widgets/daily_summary_card.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_detail_sheet.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_grid_item.dart';
@@ -122,18 +123,9 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.getBg(isDark),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.getCard(isDark),
-        title: Text(
-          l10n.dailySales,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
+      appBar: CommonAppBar(
+        title: l10n.dailySales,
+        extraActions: [
           IconButton(
             icon: Icon(Icons.calendar_month_rounded, color: theme.primaryColor),
             onPressed: _selectDate,

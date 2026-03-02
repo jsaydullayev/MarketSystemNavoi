@@ -278,5 +278,10 @@
   "saveSaleTitle": "Savdani saqlash?",
   "selectCustomerTitle": "Mijozni tanlang",
   "noCustomersFound": "Mijozlar topilmadi",
-  "itemUpdated": "o'zgartirildi"
+  "itemUpdated": "o'zgartirildi",
+  "draftSales": "Davom etayotgan savdolar",
+  "newUser": "Yangi foydalanuvchi",
+  "debtDetails": "Qarz detallari",
+  "draftSale": "Draft savdo",
+  "debtors": "Qarzdorlar"
 }

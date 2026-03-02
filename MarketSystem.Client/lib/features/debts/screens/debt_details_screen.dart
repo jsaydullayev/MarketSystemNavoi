@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -337,9 +338,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Qarz Detallari'),
-        centerTitle: true,
+      appBar: CommonAppBar(
+        title: l10n.debtDetails,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

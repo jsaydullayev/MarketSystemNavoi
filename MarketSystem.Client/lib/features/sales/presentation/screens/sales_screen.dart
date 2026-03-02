@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/number_formatter.dart';
@@ -117,27 +118,25 @@ class _SalesScreenState extends State<SalesScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.getBg(isDark),
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: AppColors.getCard(isDark),
-          title: Text(l10n.sales,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          centerTitle: true,
-          actions: [
-            if (_isExporting)
-              const Center(
-                  child: Padding(
-                      padding: EdgeInsets.all(16),
+        appBar: CommonAppBar(
+          title: l10n.sales,
+          onRefresh: _loadSales,
+          extraActions: [
+            _isExporting
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
                       child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2))))
-            else
-              IconButton(
-                  icon: const Icon(Icons.file_download_outlined),
-                  onPressed: _exportExcel),
-            IconButton(
-                icon: const Icon(Icons.refresh_rounded), onPressed: _loadSales),
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.file_download_outlined),
+                    onPressed: _exportExcel,
+                  ),
           ],
         ),
         body: Center(
