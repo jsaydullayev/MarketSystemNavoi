@@ -117,6 +117,7 @@ public class ProductService : IProductService
         }
 
         product.Name = request.Name;
+        product.IsTemporary = request.IsTemporary;
         // CostPrice va Quantity faqat Zakup orqali yangilanadi
         product.SalePrice = request.SalePrice;
         product.MinSalePrice = request.MinSalePrice;

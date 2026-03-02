@@ -260,6 +260,7 @@ public class CashRegisterService : ICashRegisterService
                 TotalSales = todaySales.Count,
                 TotalAmount = todaySales.Sum(s => s.TotalAmount),
                 TotalPaid = todaySales.Sum(s => s.PaidAmount),
+                DebtAmount = todaySales.Sum(s => s.TotalAmount > s.PaidAmount ? s.TotalAmount - s.PaidAmount : 0),
                 CashPaid = cashPaid,
                 CardPaid = cardPaid,
                 ClickPaid = clickPaid,
