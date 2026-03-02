@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/features/daily_sales/widgets/daily_summary_card.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_detail_sheet.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_grid_item.dart';
@@ -120,10 +121,10 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: AppColors.getBg(isDark),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: theme.appBarTheme.backgroundColor,
+        backgroundColor: AppColors.getCard(isDark),
         title: Text(
           l10n.dailySales,
           style: TextStyle(
