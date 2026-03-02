@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+<<<<<<< robiya
+import 'package:market_system_client/features/sales/presentation/screens/%20continue_sale_screen.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/customer_selection_dialog.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/debtor_payment_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/draft_sale_card.dart';
-import 'package:market_system_client/features/sales/presentation/widgets/return_quantity_dialog.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/section_header.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/debtor_card.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/empty_state.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/payment_history_dialog.dart';
+=======
+>>>>>>> master
 import 'package:provider/provider.dart';
 import '../../../../data/services/sales_service.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -146,13 +155,6 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 
-  void _openEditDialog(dynamic sale) {
-    _continueSale(sale);
-  }
-
-  void _confirmDelete(String saleId) {
-    _showDeleteConfirmation(saleId);
-  }
 
   Widget _buildDraftSaleCard(dynamic sale) {
     return DraftSaleCard(
@@ -303,1030 +305,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 }
-
-/// Draft savdoni davom ettirish screeni
-class ContinueSaleScreen extends StatefulWidget {
-  final String saleId;
-
-  const ContinueSaleScreen({super.key, required this.saleId});
-
-  @override
-  State<ContinueSaleScreen> createState() => _ContinueSaleScreenState();
-}
-
-class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
-  Map<String, dynamic>? _sale;
-  List<Map<String, dynamic>> _cartItems = [];
-  List<dynamic> _products = [];
-  Map<String, dynamic>? _selectedCustomer;
-  bool _isLoading = true;
-
-  // Search & Filter
-  final _searchController = TextEditingController();
-  List<dynamic> _filteredProducts = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _filteredProducts = _products;
-    // _loadData() ni async chaqiramiz
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
-    _searchController.addListener(_filterProducts);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _filterProducts() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredProducts = _products;
-      } else {
-        _filteredProducts = _products.where((product) {
-          final name = (product['name'] ?? '').toLowerCase();
-          return name.contains(query);
-        }).toList();
-      }
-    });
-  }
-
-  double get _totalAmount {
-    return _cartItems.fold(0.0, (sum, item) {
-      final price = item['salePrice'] is num
-          ? (item['salePrice'] as num).toDouble()
-          : double.tryParse(item['salePrice']?.toString() ?? '') ?? 0.0;
-      final qty = item['quantity'] is num
-          ? (item['quantity'] as num).toDouble() // ✅ DECIMAL
-          : double.tryParse(item['quantity']?.toString() ?? '') ??
-              0.0; // ✅ DECIMAL
-      return sum + (price * qty);
-    });
-  }
-
-  Future<void> _loadData() async {
-    print('📥 === _loadData START ===');
-    print('Sale ID: ${widget.saleId}');
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salesService = SalesService(authProvider: authProvider);
-      final productService = ProductService(authProvider: authProvider);
-
-      print('📤 Fetching sale data...');
-      final sale = await salesService.getSaleById(widget.saleId);
-
-      print('📤 Fetching products...');
-      final products = await productService.getAllProducts();
-
-      // Mavjud sale items ni cart ga yuklash
-      final items = sale['items'] as List<dynamic>? ?? [];
-      print('📦 Sale items count: ${items.length}');
-
-      final cartItems = items.map((item) {
-        return {
-          'saleItemId': item['id'],
-          'productId': item['productId'],
-          'productName': item['productName'],
-          'salePrice': (item['salePrice'] as num?)?.toDouble() ?? 0.0,
-          'minSalePrice': (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-          'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
-          'quantity': (item['quantity'] as num?)?.toInt() ?? 0,
-          'comment': item['comment'] ?? '',
-        };
-      }).toList();
-
-      print('✅ Data fetched successfully!');
-      print('📊 Cart items: ${cartItems.length}');
-
-      setState(() {
-        _sale = sale;
-        _products = products;
-        _filteredProducts = products;
-        _cartItems = cartItems;
-        _selectedCustomer = sale['customerName'] != null
-            ? {
-                'id': sale['customerId'],
-                'fullName': sale['customerName'],
-              }
-            : null;
-        _isLoading = false;
-      });
-
-      print('✅ setState complete!');
-    } catch (e) {
-      print('❌ ERROR in _loadData: $e');
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        Navigator.pop(context);
-      }
-    }
-    print('📥 === _loadData END ===');
-  }
-
-  Future<void> _addToCart(dynamic product) async {
-    print('🛒 === _addToCart START ===');
-    print('Product: ${product['name']}');
-    print('Sale ID: ${widget.saleId}');
-
-    // ⚡ OPTIMISTIK UI - Yangi mahsulotni cartga qo'shamiz
-    final newItem = {
-      'productId': product['id'],
-      'productName': product['name'],
-      'salePrice': product['salePrice'] ?? 0.0,
-      'minSalePrice': (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-      'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
-      'quantity': 1,
-      'comment': '',
-      // saleItemId yo'q - hali backendda yo'q
-    };
-
-    print('⚡ Optimistic UI: Adding to cart locally');
-    if (!mounted) return;
-    setState(() {
-      _cartItems.add(newItem);
-    });
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salesService = SalesService(authProvider: authProvider);
-
-      print('📤 Calling addSaleItem...');
-
-      // Backendga 1 ta mahsulot qo'shamiz
-      // Backend avtomatik ravishda mavjud itemni topib quantity oshiradi
-      await salesService.addSaleItem(
-        saleId: widget.saleId,
-        productId: product['id'],
-        quantity: 1,
-        salePrice: product['salePrice'] ?? 0.0,
-        minSalePrice: (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-        comment: '',
-      );
-
-      print('✅ addSaleItem success!');
-      print('📥 Loading data...');
-
-      // Backenddan yangi ma'lumotni yuklash
-      await _loadData();
-
-      print('✅ Data loaded! Cart items: ${_cartItems.length}');
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ ${product['name']} savatga qo\'shildi!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ ERROR: $e');
-      // Xatolik bo'lsa, data ni qayta yuklash
-      await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-    print('🛒 === _addToCart END ===');
-  }
-
-  Future<void> _removeFromCart(int index) async {
-    final item = _cartItems[index];
-
-    print('🗑️ === _removeFromCart START ===');
-    print('Index: $index');
-    print('Product: ${item['productName']}');
-    print('SaleItemId: ${item['saleItemId']}');
-    print('Quantity: ${item['quantity']}');
-
-    // Itemni backup qilamiz (xatolik bo'lsa, qayta qo'shish uchun)
-    final backupItem = Map<String, dynamic>.from(item);
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salesService = SalesService(authProvider: authProvider);
-
-      print('📤 Calling removeSaleItem...');
-
-      // Backenddan o'chiramiz
-      await salesService.removeSaleItem(
-        saleId: widget.saleId,
-        saleItemId: item['saleItemId'],
-        quantity: (item['quantity'] as num?)?.toDouble() ??
-            0.0, // ✅ DECIMAL - Butunlay o'chirish
-      );
-
-      print('✅ removeSaleItem success!');
-      print('📥 Loading data...');
-
-      // Backenddan yangi ma'lumotni yuklash
-      await _loadData();
-
-      print('✅ Data loaded! Cart items: ${_cartItems.length}');
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Mahsulot olib tashlandi'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ ERROR: $e');
-      // Xatolik bo'lsa, itemni qayta qo'shamiz
-      if (!mounted) return;
-      setState(() {
-        _cartItems.insert(index, backupItem);
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-    print('🗑️ === _removeFromCart END ===');
-  }
-
-  Future<void> _updateQuantity(int index, double newQuantity) async {
-    // ✅ DECIMAL
-    final item = _cartItems[index];
-
-    print('🔢 === _updateQuantity START ===');
-    print('Index: $index');
-    print('Product: ${item['productName']}');
-    print('Current: ${item['quantity']} → New: $newQuantity');
-
-    if (newQuantity <= 0) {
-      print('⚠️ Quantity <= 0, removing...');
-      await _removeFromCart(index);
-      return;
-    }
-
-    final currentQuantity =
-        (item['quantity'] as num?)?.toDouble() ?? 0.0; // ✅ DECIMAL
-
-    // quantityDiff == 0 bo'lsa, hech narsa qilmaymiz (quantity o'zgarmagan)
-    if (newQuantity == currentQuantity) {
-      print('⚠️ Quantity unchanged, skipping');
-      return;
-    }
-
-    final quantityDiff = newQuantity - currentQuantity;
-    print('Diff: $quantityDiff');
-
-    // ⚡ OPTIMISTIK UI YANGILASH - Darhol UI ni yangilaymiz!
-    if (item.containsKey('saleItemId')) {
-      print('⚡ Optimistic UI update: ${item['quantity']} → $newQuantity');
-      setState(() {
-        _cartItems[index]['quantity'] = newQuantity;
-      });
-    }
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salesService = SalesService(authProvider: authProvider);
-
-      if (quantityDiff > 0) {
-        print('📤 INCREASING by $quantityDiff');
-        // Quantity oshirish - backendga yangi item qo'shamiz
-        await salesService.addSaleItem(
-          saleId: widget.saleId,
-          productId: item['productId'],
-          quantity: quantityDiff, // ✅ DECIMAL
-          salePrice: item['salePrice'],
-          minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-          comment: item['comment'] ?? '',
-        );
-      } else {
-        print('📤 DECREASING by ${quantityDiff.abs()}');
-        // Quantity kamaytirish - backenddan removeSaleItem orqali kamaytiramiz
-        final quantityToRemove = quantityDiff.abs(); // ✅ DECIMAL
-        await salesService.removeSaleItem(
-          saleId: widget.saleId,
-          saleItemId: item['saleItemId'],
-          quantity: quantityToRemove, // ✅ DECIMAL
-        );
-      }
-
-      print('✅ API call success!');
-      print('📥 Loading data...');
-
-      // Backenddan yangi ma'lumotni yuklash
-      await _loadData();
-
-      print('✅ Data loaded! Cart items: ${_cartItems.length}');
-    } catch (e) {
-      print('❌ ERROR: $e');
-      // Xatolik bo'lsa, data ni qayta yuklash
-      await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-    print('🔢 === _updateQuantity END ===');
-  }
-
-  Future<void> _updateItemPrice(int index) async {
-    final item = _cartItems[index];
-    final currentPrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-
-    // Narx kiritish dialogi
-    final result = await showDialog<double>(
-      context: context,
-      builder: (context) => _PriceInputDialog(
-        currentPrice: currentPrice,
-        productName: item['productName'],
-      ),
-    );
-
-    if (!mounted) return;
-
-    if (result != null && result != currentPrice) {
-      // Narxni o'zgartirish
-      if (item.containsKey('saleItemId')) {
-        try {
-          final authProvider =
-              Provider.of<AuthProvider>(context, listen: false);
-          final salesService = SalesService(authProvider: authProvider);
-
-          await salesService.updateSaleItemPrice(
-            saleItemId: item['saleItemId'],
-            newPrice: result,
-            comment: 'Narx yangilandi (Draft savdo)',
-          );
-
-          // Reload data
-          await _loadData();
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    '✅ Narx yangilandi: ${NumberFormatter.format(result)}'),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Xatolik: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      }
-    }
-  }
-
-  void _showPaymentDialog() {
-    final totalAmount = (_sale!['totalAmount'] as num?)?.toDouble() ?? 0.0;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => _ContinuePaymentDialog(
-        saleId: widget.saleId,
-        totalAmount: totalAmount,
-        selectedCustomer: _selectedCustomer,
-        onConfirm: (payments, useDebt) async {
-          try {
-            final authProvider =
-                Provider.of<AuthProvider>(context, listen: false);
-            final salesService = SalesService(authProvider: authProvider);
-
-            for (var payment in payments) {
-              await salesService.addPayment(
-                saleId: widget.saleId,
-                paymentType: payment['paymentType'],
-                amount: payment['amount'],
-              );
-            }
-
-            if (mounted) {
-              Navigator.pop(dialogContext); // Close dialog
-              Navigator.pop(context, true); // Close sale screen with success
-            }
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Xatolik: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          }
-        },
-      ),
-    );
-  }
-
-  Future<void> _returnItem(int index) async {
-    final item = _cartItems[index];
-    final currentQuantity =
-        (item['quantity'] as num?)?.toDouble() ?? 0.0; // ✅ DECIMAL
-
-    print('↩️ === _returnItem START ===');
-    print('Index: $index');
-    print('Product: ${item['productName']}');
-    print('Current Quantity: $currentQuantity');
-
-    if (currentQuantity <= 0) {
-      print('⚠️ Quantity is 0, cannot return');
-      return;
-    }
-
-    // Qancha qaytarishni so'rash
-    final returnQuantity = await showDialog<double>(
-      // ✅ DECIMAL
-      context: context,
-      builder: (context) => ReturnQuantityDialog(
-        productName: item['productName'],
-        maxQuantity: currentQuantity, // ✅ DECIMAL
-      ),
-    );
-
-    if (returnQuantity == null || returnQuantity <= 0) {
-      print('⚠️ Return cancelled or invalid quantity');
-      return;
-    }
-
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salesService = SalesService(authProvider: authProvider);
-
-      print('📤 Calling returnSaleItem...');
-      print('Sale Item ID: ${item['saleItemId']}');
-      print('Return Quantity: $returnQuantity');
-
-      await salesService.returnSaleItem(
-        saleId: widget.saleId,
-        saleItemId: item['saleItemId'],
-        quantity: returnQuantity.toDouble(),
-      );
-
-      print('✅ returnSaleItem success!');
-      print('📥 Loading data...');
-
-      // Backenddan yangi ma'lumotni yuklash
-      await _loadData();
-
-      print('✅ Data loaded! Cart items: ${_cartItems.length}');
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '✅ ${returnQuantity} ta ${item['productName']} qaytarildi!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ ERROR: $e');
-      // Xatolik bo'lsa, data ni qayta yuklash
-      await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-    print('↩️ === _returnItem END ===');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Draft Savdo')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_sale == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Draft Savdo')),
-        body: const Center(child: Text('Savdo topilmadi')),
-      );
-    }
-
-    final customerName = _sale!['customerName'];
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Draft Savdo'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-      ),
-      body: Column(
-        children: [
-          // Customer info
-          if (customerName != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.white,
-              child: Row(
-                children: [
-                  const Icon(Icons.person, color: Color(0xFF3B82F6)),
-                  const SizedBox(width: 12),
-                  Text(
-                    customerName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Cart items
-          if (_cartItems.isNotEmpty)
-            Container(
-              height: 104,
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _cartItems.length,
-                itemBuilder: (context, index) {
-                  final item = _cartItems[index];
-                  final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-                  final qty = (item['quantity'] as num?)?.toInt() ?? 0;
-                  final itemTotal = price * qty;
-                  return Container(
-                    width: 160,
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['productName'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                            color: Color(0xFF1F2937),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${item['quantity']} x ${NumberFormatter.format(item['salePrice'])}',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              NumberFormatter.formatDecimal(itemTotal),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF10B981),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            GestureDetector(
-                              onTap: () => _updateItemPrice(index),
-                              child: const Icon(
-                                Icons.edit,
-                                size: 14,
-                                color: Color(0xFF3B82F6),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Agar savdo yopilgan (Closed) bo'lsa, vozvrat tugmasi
-                            if (_sale?['status'] == 'Closed')
-                              GestureDetector(
-                                onTap: () => _returnItem(index),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.shade50,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                        color: Colors.orange.shade300,
-                                        width: 1),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.assignment_return,
-                                          size: 14,
-                                          color: Colors.orange.shade700),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Qaytarish',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.orange.shade700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            else
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () async {
-                                      final currentQty =
-                                          (item['quantity'] as num?)?.toInt() ??
-                                              0;
-                                      await _updateQuantity(
-                                          index, currentQty - 1);
-                                    },
-                                    child: Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF3F4F6),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Icon(Icons.remove,
-                                          size: 14, color: Color(0xFF374151)),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                    child: Text(
-                                      '${item['quantity']}',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      final currentQty =
-                                          (item['quantity'] as num?)?.toInt() ??
-                                              0;
-                                      await _updateQuantity(
-                                          index, currentQty + 1);
-                                    },
-                                    child: Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF3F4F6),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Icon(Icons.add,
-                                          size: 14, color: Color(0xFF374151)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            if (_sale?['status'] != 'Closed')
-                              GestureDetector(
-                                onTap: () async {
-                                  await _removeFromCart(index);
-                                },
-                                child: const Icon(Icons.close,
-                                    size: 14, color: Color(0xFFEF4444)),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-
-          // Products section
-          Expanded(
-            child: Column(
-              children: [
-                // Search bar
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                  child: SizedBox(
-                    height: 40,
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(fontSize: 15),
-                      decoration: InputDecoration(
-                        hintText: 'Mahsulot qidirish...',
-                        hintStyle: TextStyle(
-                            color: Colors.grey.shade400, fontSize: 14),
-                        prefixIcon: const Icon(Icons.search,
-                            size: 18, color: Color(0xFF9CA3AF)),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _filterProducts();
-                                },
-                              )
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE5E7EB)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE5E7EB)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF3B82F6), width: 1.5),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Products grid
-                Expanded(
-                  child: _filteredProducts.isEmpty
-                      ? const Center(
-                          child: Text('Mahsulotlar topilmadi',
-                              style: TextStyle(color: Color(0xFF9CA3AF))))
-                      : GridView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 1.85,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                          ),
-                          itemCount: _filteredProducts.length,
-                          itemBuilder: (context, index) {
-                            final product = _filteredProducts[index];
-                            final quantity =
-                                (product['quantity'] as num?)?.toDouble() ??
-                                    0.0;
-                            final isInStock = quantity > 0;
-
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isInStock
-                                      ? const Color(0xFFE5E7EB)
-                                      : Colors.grey.shade300,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.02),
-                                    blurRadius: 3,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      product['name'] ?? 'Noma\'lum',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                        color: Color(0xFF1F2937),
-                                        height: 1.1,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      NumberFormatter.format(
-                                          product['salePrice']),
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF10B981),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.inventory_2_outlined,
-                                              size: 10,
-                                              color: quantity > 5
-                                                  ? const Color(0xFF10B981)
-                                                  : const Color(0xFFEF4444),
-                                            ),
-                                            const SizedBox(width: 3),
-                                            Text(
-                                              '$quantity',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: quantity > 5
-                                                    ? const Color(0xFF10B981)
-                                                    : const Color(0xFFEF4444),
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Material(
-                                          color: Colors.transparent,
-                                          child: InkWell(
-                                            onTap: isInStock
-                                                ? () async {
-                                                    await _addToCart(product);
-                                                  }
-                                                : null,
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                            child: Container(
-                                              width: 28,
-                                              height: 28,
-                                              decoration: BoxDecoration(
-                                                color: isInStock
-                                                    ? const Color(0xFF3B82F6)
-                                                    : Colors.grey.shade200,
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                              ),
-                                              child: Center(
-                                                child: Icon(
-                                                  Icons.add,
-                                                  size: 14,
-                                                  color: isInStock
-                                                      ? Colors.white
-                                                      : Colors.grey.shade500,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-
-          // Total & Checkout button
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                top: BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-            ),
-            child: Column(
-              children: [
-                // Total amount
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Jami summa',
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF374151)),
-                      ),
-                      Text(
-                        NumberFormatter.formatDecimal(_totalAmount),
-                        style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF10B981),
-                            letterSpacing: -0.5),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Faqat yopilmagan savdolar uchun to'lov tugmasi
-                if (_sale?['status'] != 'Closed')
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: _cartItems.isEmpty ? null : _showPaymentDialog,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _cartItems.isEmpty
-                            ? const Color(0xFFD1D5DB)
-                            : const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(0xFFD1D5DB),
-                        elevation: 0,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                      ),
-                      icon: const Icon(Icons.check_circle, size: 18),
-                      label: const Text('TO\'LOV QILISH',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.3)),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+<<<<<<< robiya
+=======
 
 // Payment Dialog for Continue Sale
 class _ContinuePaymentDialog extends StatefulWidget {
@@ -1643,6 +623,245 @@ class _ContinuePaymentDialogState extends State<_ContinuePaymentDialog> {
   }
 }
 
-// Price input dialog for editing item prices
 
-// Return quantity dialog
+class _PriceInputDialog extends StatefulWidget {
+  final double currentPrice;
+  final String productName;
+
+  const _PriceInputDialog({
+    Key? key,
+    required this.currentPrice,
+    required this.productName,
+  }) : super(key: key);
+
+  @override
+  State<_PriceInputDialog> createState() => _PriceInputDialogState();
+}
+
+class _PriceInputDialogState extends State<_PriceInputDialog> {
+  late TextEditingController _priceController;
+
+  @override
+  void initState() {
+    super.initState();
+    _priceController =
+        TextEditingController(text: widget.currentPrice.toStringAsFixed(0));
+  }
+
+  @override
+  void dispose() {
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.productName),
+      content: TextField(
+        controller: _priceController,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: const InputDecoration(
+          labelText: 'Yangi narx (so\'m)',
+          border: OutlineInputBorder(),
+        ),
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Bekor qilish'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final price = double.tryParse(_priceController.text);
+            if (price != null && price > 0) {
+              Navigator.pop(context, price);
+            }
+          },
+          child: const Text('Saqlash'),
+        ),
+      ],
+    );
+  }
+}
+
+class ReturnQuantityDialog extends StatefulWidget {
+  final double maxQuantity;
+  final String productName;
+
+  const ReturnQuantityDialog({
+    Key? key,
+    required this.maxQuantity,
+    required this.productName,
+  }) : super(key: key);
+
+  @override
+  State<ReturnQuantityDialog> createState() => _ReturnQuantityDialogState();
+}
+
+class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
+  late TextEditingController _quantityController;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController = TextEditingController(text: '1');
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Qaytarish'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(widget.productName,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text('Maksimal: ${widget.maxQuantity}'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _quantityController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Qaytariladigan miqdor',
+              border: OutlineInputBorder(),
+            ),
+            autofocus: true,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Bekor qilish'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final qty = double.tryParse(_quantityController.text);
+            if (qty != null && qty > 0 && qty <= widget.maxQuantity) {
+              Navigator.pop(context, qty);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Noto\'g\'ri miqdor kiritildi')),
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('Qaytarish'),
+        ),
+      ],
+    );
+  }
+}
+
+class DraftSaleCard extends StatelessWidget {
+  final dynamic sale;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const DraftSaleCard({
+    Key? key,
+    required this.sale,
+    required this.onEdit,
+    required this.onDelete,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final customerName = sale['customerName'] ?? 'Noma\'lum mijoz';
+    final itemsCount = sale['itemsCount'] ?? 0;
+    final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final date = DateTime.tryParse(sale['createdAt'] ?? '') ?? DateTime.now();
+    final formattedDate =
+        '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    customerName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  formattedDate,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '$itemsCount ta mahsulot',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                Text(
+                  '${NumberFormatter.formatDecimal(totalAmount)} so\'m',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 18),
+                  label: const Text('O\'chirish',
+                      style: TextStyle(color: Colors.red)),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text('Davom etish'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+>>>>>>> master
