@@ -14,14 +14,16 @@ class NumberFormatter {
       number = 0;
     }
 
+    final bool hasDecimals = number is double && number != number.truncateToDouble();
+
     // Use NumberFormat.currency with custom symbol to get space separator
     final formatter = NumberFormat.currency(
       locale: 'ru_RU',
       symbol: '',
-      decimalDigits: 0,
+      decimalDigits: hasDecimals ? 2 : 0,
     );
 
-    return formatter.format(number);
+    return formatter.format(number).trim();
   }
 
   /// Format decimal number with space separator (e.g., 15000.50 -> "15 000.50")
