@@ -130,6 +130,8 @@ public class ReportService : IReportService
             request.StartDate,
             request.EndDate,
             report.TotalSales,
+            report.TotalPaidSales,
+            report.TotalDebtSales,
             report.TotalZakup,
             report.Profit,
             report.NetIncome,
