@@ -308,9 +308,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 }
-<<<<<<< robiya
-=======
-
+}
 // Payment Dialog for Continue Sale
 class _ContinuePaymentDialog extends StatefulWidget {
   final String saleId;
@@ -877,4 +875,3 @@ class DraftSaleCard extends StatelessWidget {
     );
   }
 }
->>>>>>> master
