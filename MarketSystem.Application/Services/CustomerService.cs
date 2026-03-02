@@ -324,4 +324,30 @@ public class CustomerService : ICustomerService
             totalDebt
         );
     }
+
+    /// <summary>
+    /// Gets customer's available credit from negative payments (refunds)
+    /// This is used to auto-apply credits to new sales
+    /// </summary>
+    public async Task<decimal> GetAvailableCreditAsync(Guid customerId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Find all sales for this customer
+        var saleIds = await _context.Sales
+            .Where(s => s.CustomerId == customerId && s.MarketId == marketId)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
+
+        if (saleIds.Count == 0)
+            return 0;
+
+        // Sum all negative payments (refunds) for these sales
+        var availableCredit = await _context.Payments
+            .Where(p => saleIds.Contains(p.SaleId) && p.MarketId == marketId && p.Amount < 0)
+            .SumAsync(p => p.Amount, cancellationToken);
+
+        // Convert negative sum to positive credit amount
+        return Math.Abs(availableCredit);
+    }
 }

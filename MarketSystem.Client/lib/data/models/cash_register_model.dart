@@ -63,6 +63,7 @@ class TodaySalesSummaryModel {
   final double cashPaid;
   final double cardPaid;
   final double clickPaid;
+  final double debtAmount;
   final DateTime date;
 
   TodaySalesSummaryModel({
@@ -72,6 +73,7 @@ class TodaySalesSummaryModel {
     required this.cashPaid,
     required this.cardPaid,
     required this.clickPaid,
+    required this.debtAmount,
     required this.date,
   });
 
@@ -102,6 +104,11 @@ class TodaySalesSummaryModel {
           ? (json['clickPaid'] is num
               ? (json['clickPaid'] as num).toDouble()
               : double.tryParse(json['clickPaid'].toString()) ?? 0.0)
+          : 0.0,
+      debtAmount: json['debtAmount'] != null
+          ? (json['debtAmount'] is num
+              ? (json['debtAmount'] as num).toDouble()
+              : double.tryParse(json['debtAmount'].toString()) ?? 0.0)
           : 0.0,
       date: json['date'] != null
           ? (json['date'] is DateTime

@@ -290,6 +290,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final totalTransactions = _dailyReport!['totalTransactions'] is int
         ? _dailyReport!['totalTransactions'] as int
         : 0;
+    final totalPaidSales = _dailyReport!['totalPaidSales'] is num
+        ? (_dailyReport!['totalPaidSales'] as num).toDouble()
+        : 0.0;
+    final totalDebtSales = _dailyReport!['totalDebtSales'] is num
+        ? (_dailyReport!['totalDebtSales'] as num).toDouble()
+        : 0.0;
     final profit = _dailyReport!['profit'] != null && _dailyReport!['profit'] is num
         ? (_dailyReport!['profit'] as num).toDouble()
         : null;
@@ -337,6 +343,31 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
               ),
             ],
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        // Added Row for Paid and Debt Daily
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                'To\'langan',
+                NumberFormatter.formatDecimal(totalPaidSales),
+                Icons.check_circle,
+                Colors.green,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                'Qarzga',
+                NumberFormatter.formatDecimal(totalDebtSales),
+                Icons.warning_amber,
+                Colors.red,
+              ),
+            ),
           ],
         ),
 
@@ -407,6 +438,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final totalTransactions = _periodReport!['totalTransactions'] is int
         ? _periodReport!['totalTransactions'] as int
         : 0;
+    final totalPaidSales = _periodReport!['totalPaidSales'] is num
+        ? (_periodReport!['totalPaidSales'] as num).toDouble()
+        : 0.0;
+    final totalDebtSales = _periodReport!['totalDebtSales'] is num
+        ? (_periodReport!['totalDebtSales'] as num).toDouble()
+        : 0.0;
     final profit = _periodReport!['profit'] != null && _periodReport!['profit'] is num
         ? (_periodReport!['profit'] as num).toDouble()
         : null;
@@ -445,6 +482,31 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 '$totalTransactions ta',
                 Icons.shopping_cart,
                 Colors.orange,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        // Added Row for Paid and Debt Monthly
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                'To\'langan',
+                NumberFormatter.formatDecimal(totalPaidSales),
+                Icons.check_circle,
+                Colors.green,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                'Qarzga',
+                NumberFormatter.formatDecimal(totalDebtSales),
+                Icons.warning_amber,
+                Colors.red,
               ),
             ),
           ],

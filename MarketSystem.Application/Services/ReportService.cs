@@ -130,6 +130,8 @@ public class ReportService : IReportService
             request.StartDate,
             request.EndDate,
             report.TotalSales,
+            report.TotalPaidSales,
+            report.TotalDebtSales,
             report.TotalZakup,
             report.Profit,
             report.NetIncome,
@@ -436,7 +438,10 @@ public class ReportService : IReportService
         // Calculate from sales and their items
         foreach (var sale in sales)
         {
-            var paidAmount = sale.Payments.Sum(p => p.Amount);
+            // IMPORTANT: Use sale.PaidAmount directly instead of summing payments
+            // This ensures credit applications (which don't create payment records)
+            // are not incorrectly counted in reports
+            var paidAmount = sale.PaidAmount;
             var debtAmount = sale.TotalAmount - paidAmount;
 
             // Add to appropriate categories
@@ -634,7 +639,10 @@ public class ReportService : IReportService
         foreach (var sale in sales)
         {
             // Calculate paid and debt amounts
-            var paidAmount = sale.Payments.Sum(p => p.Amount);
+            // IMPORTANT: Use sale.PaidAmount directly instead of summing payments
+            // This ensures credit applications (which don't create payment records)
+            // are not incorrectly counted in reports
+            var paidAmount = sale.PaidAmount;
             var debtAmount = sale.TotalAmount - paidAmount;
 
             // Add to appropriate categories
@@ -710,5 +718,97 @@ public class ReportService : IReportService
         }
 
         return profit;
+    }
+
+    public async Task<MonthlyCategorySalesResponseDto> GetMonthlyCategorySalesAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        
+        // Calculate start and end of the month based on the provided date (which is in UTC)
+        var start = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end = start.AddMonths(1);
+
+        // Get all categories for the market
+        var categories = await _unitOfWork.ProductCategories.FindAsync(
+            c => c.MarketId == marketId && c.IsActive && !c.IsDeleted,
+            cancellationToken);
+
+        // Get all sales for the month that are not cancelled
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            cancellationToken,
+            includeProperties: "SaleItems");
+
+        // Get all products to avoid N+1 queries
+        var products = await _unitOfWork.Products.FindAsync(
+            p => p.MarketId == marketId, 
+            cancellationToken);
+        var productDict = products.ToDictionary(p => p.Id);
+
+        bool includeProfit = userRole == "Owner";
+        
+        // Dictionary to hold category sales
+        var categorySales = new Dictionary<int, CategorySalesDto>();
+
+        // Initialize dictionary with all categories (even those with 0 sales)
+        foreach (var category in categories)
+        {
+            categorySales[category.Id] = new CategorySalesDto(category.Id, category.Name, 0, 0, includeProfit ? 0 : null);
+        }
+        
+        // Add "Other" category for products without a category
+        int otherCategoryId = -1;
+        categorySales[otherCategoryId] = new CategorySalesDto(otherCategoryId, "Boshqa", 0, 0, includeProfit ? 0 : null);
+
+        decimal totalSalesOverall = 0;
+        decimal totalProfitOverall = 0;
+
+        foreach (var sale in sales)
+        {
+            foreach (var item in sale.SaleItems)
+            {
+                // Get the product from the pre-loaded dictionary
+                var product = productDict.GetValueOrDefault(item.ProductId);
+                int catId = product?.CategoryId ?? otherCategoryId;
+
+                if (!categorySales.TryGetValue(catId, out var currentCat))
+                {
+                    catId = otherCategoryId;
+                    currentCat = categorySales[catId];
+                }
+
+                decimal itemSales = item.Quantity * item.SalePrice;
+                decimal itemProfit = (item.SalePrice - item.CostPrice) * item.Quantity;
+
+                decimal? newTotalProfit = includeProfit ? (currentCat.TotalProfit ?? 0) + itemProfit : null;
+
+                categorySales[catId] = new CategorySalesDto(
+                    currentCat.CategoryId,
+                    currentCat.CategoryName,
+                    currentCat.TotalSales + itemSales,
+                    currentCat.TotalQuantity + item.Quantity,
+                    newTotalProfit
+                );
+
+                totalSalesOverall += itemSales;
+                if (includeProfit)
+                {
+                    totalProfitOverall += itemProfit;
+                }
+            }
+        }
+
+        // Remove "Other" category if it has no sales
+        if (categorySales[otherCategoryId].TotalSales == 0)
+        {
+            categorySales.Remove(otherCategoryId);
+        }
+
+        return new MonthlyCategorySalesResponseDto(
+            date,
+            categorySales.Values.OrderByDescending(c => c.TotalSales).ToList(),
+            totalSalesOverall,
+            includeProfit ? totalProfitOverall : null
+        );
     }
 }

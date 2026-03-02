@@ -61,6 +61,9 @@ public class TodaySalesSummaryDto
     [JsonPropertyName("totalPaid")]
     public decimal TotalPaid { get; set; }
 
+    [JsonPropertyName("debtAmount")]
+    public decimal DebtAmount { get; set; }
+
     [JsonPropertyName("cashPaid")]
     public decimal CashPaid { get; set; }
 

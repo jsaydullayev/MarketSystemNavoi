@@ -85,7 +85,7 @@ public class DebtsController : ControllerBase
     /// <summary>
     /// Get total debt amount for a customer
     /// </summary>
-    [HttpGet("customer/{customerId}/total")]
+    [HttpGet("~/api/Debts/customer/{customerId}/total")]
     public async Task<ActionResult<decimal>> GetCustomerTotalDebt(Guid customerId)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
@@ -101,7 +101,7 @@ public class DebtsController : ControllerBase
     /// <summary>
     /// Make a payment towards a debt
     /// </summary>
-    [HttpPost("{debtId}/pay")]
+    [HttpPost("~/api/Debts/{debtId}/pay")]
     public async Task<IActionResult> PayDebt(Guid debtId, [FromBody] PayDebtDto request)
     {
         var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

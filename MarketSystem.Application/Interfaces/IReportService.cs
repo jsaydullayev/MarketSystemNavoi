@@ -15,4 +15,5 @@ public interface IReportService
     Task<ProfitSummaryDto> GetProfitSummaryAsync(CancellationToken cancellationToken = default);
     Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default);
     Task<DailySalesListDto> GetDailySalesListAsync(DateTime date, string? userRole = null, Guid? userId = null, CancellationToken cancellationToken = default);
+    Task<MonthlyCategorySalesResponseDto> GetMonthlyCategorySalesAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default);
 }

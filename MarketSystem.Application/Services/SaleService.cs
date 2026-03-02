@@ -16,14 +16,16 @@ public class SaleService : ISaleService
     private readonly AppDbContext _context;
     private readonly ILogger<SaleService> _logger;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly ICustomerService _customerService;
 
-    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService)
+    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService, ICustomerService customerService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
         _context = context;
         _logger = logger;
         _currentMarketService = currentMarketService;
+        _customerService = customerService;
     }
 
     public async Task<SaleDto?> GetSaleByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -47,6 +49,7 @@ public class SaleService : ISaleService
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         // ✅ OPTIMIZED: Single query with eager loading - no N+1 problem
+        // ✅ FIX: Add Distinct() to prevent duplicate sales from being returned
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
@@ -55,6 +58,7 @@ public class SaleService : ISaleService
             .Include(s => s.Payments)
             .Where(s => s.MarketId == marketId)
             .OrderByDescending(s => s.CreatedAt)
+            .Distinct()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -88,6 +92,7 @@ public class SaleService : ISaleService
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         // ✅ OPTIMIZED: Single query with eager loading
+        // ✅ FIX: Add Distinct() to prevent duplicate sales from being returned
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
@@ -96,6 +101,7 @@ public class SaleService : ISaleService
             .Include(s => s.Payments)
             .Where(s => s.MarketId == marketId && s.CreatedAt >= start && s.CreatedAt <= end)
             .OrderByDescending(s => s.CreatedAt)
+            .Distinct()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -223,6 +229,12 @@ public class SaleService : ISaleService
         await _unitOfWork.Sales.AddAsync(sale, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // If customer is specified, apply any available credit
+        if (request.CustomerId.HasValue)
+        {
+            await ApplyCustomerCreditAsync(sale.Id, request.CustomerId.Value, cancellationToken);
+        }
+
         // Audit log (temporarily disabled for testing)
         // await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
 
@@ -261,6 +273,12 @@ public class SaleService : ISaleService
         sale.CustomerId = request.CustomerId;
         _unitOfWork.Sales.Update(sale);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // If customer is specified, apply any available credit
+        if (request.CustomerId.HasValue)
+        {
+            await ApplyCustomerCreditAsync(saleId, request.CustomerId.Value, cancellationToken);
+        }
 
         return await MapToDtoAsync(sale, cancellationToken);
     }
@@ -738,6 +756,50 @@ public class SaleService : ISaleService
         return saleItem.SalePrice >= product.MinSalePrice || !string.IsNullOrWhiteSpace(saleItem.Comment);
     }
 
+    /// <summary>
+    /// Applies customer's available credit (from negative payments/refunds) to a sale.
+    /// This is called when a customer is associated with a sale or when finalizing a sale.
+    /// </summary>
+    private async Task ApplyCustomerCreditAsync(Guid saleId, Guid customerId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Get available credit for the customer
+        var availableCredit = await _customerService.GetAvailableCreditAsync(customerId, cancellationToken);
+
+        if (availableCredit <= 0)
+            return; // No credit available
+
+        // Get the sale
+        var sale = await _context.Sales
+            .Include(s => s.Payments)
+            .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
+
+        if (sale == null)
+            return;
+
+        // Calculate how much credit can be applied (cannot exceed TotalAmount - PaidAmount)
+        var creditToApply = Math.Min(availableCredit, sale.TotalAmount - sale.PaidAmount);
+
+        if (creditToApply <= 0)
+            return; // No credit can be applied (either sale already fully paid or TotalAmount is 0)
+
+        _logger.LogInformation("Applying customer credit: SaleId={SaleId}, CustomerId={CustomerId}, CreditToApply={CreditToApply}, AvailableCredit={AvailableCredit}",
+            saleId, customerId, creditToApply, availableCredit);
+
+        // Apply the credit to the sale
+        // IMPORTANT: DO NOT create a payment record for credit application
+        // Creating a payment would cause it to be counted in reports as "paid sales"
+        // even though it's just a credit transfer, not actual revenue
+        sale.PaidAmount += creditToApply;
+
+        _context.Sales.Update(sale);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Credit applied successfully: SaleId={SaleId}, NewPaidAmount={NewPaidAmount}",
+            saleId, sale.PaidAmount);
+    }
+
     private async Task<SaleDto> MapToDtoAsync(Sale sale, CancellationToken cancellationToken)
     {
         // Get sale items
@@ -1092,169 +1154,180 @@ public class SaleService : ISaleService
             _logger.LogInformation("Return Amount: {RefundAmount}, Sale Price: {SalePrice}, Return Qty: {ReturnQty}",
                 refundAmount, saleItem.SalePrice, returnQuantity);
 
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-            // 1. Sale item quantity yangilash yoki o'chirish
-            string originalComment = saleItem.Comment ?? "";
-            var originalQuantity = saleItem.Quantity; // Saqlab qo'yymiz
-            var isFullReturn = returnQuantity >= saleItem.Quantity;
-
-            if (isFullReturn)
+            // Execute in transaction with execution strategy
+            return await _unitOfWork.ExecuteInTransactionAsync<SaleItemDto?>(async () =>
             {
-                // To'liq qaytarish - itemni o'chirish
-                _logger.LogInformation("Full return: Removing item completely. OriginalQty={OriginalQty}, ReturnQty={ReturnQty}",
-                    originalQuantity, returnQuantity);
-                _context.SaleItems.Remove(saleItem);
-            }
-            else
-            {
-                // Qisman qaytarish - quantity kamaytirish
-                _logger.LogInformation("Partial return: OldQty={OldQty}, ReturnQty={ReturnQty}, NewQty={NewQty}",
-                    saleItem.Quantity, returnQuantity, saleItem.Quantity - returnQuantity);
-                saleItem.Quantity -= returnQuantity;  // ✅ DECIMAL - 5.5 m qaytarilsa, 5.5 ayiriladi
+                // 1. Sale item quantity yangilash yoki o'chirish
+                string originalComment = saleItem.Comment ?? "";
+                var originalQuantity = saleItem.Quantity; // Saqlab qo'yymiz
+                var isFullReturn = returnQuantity >= saleItem.Quantity;
 
-                // Izohga qaytarish haqida yozish
-                var returnComment = !string.IsNullOrEmpty(request.Comment)
-                    ? request.Comment
-                    : $"Qaytarildi: {returnQuantity} ({DateTime.UtcNow:dd.MM.yyyy HH:mm})";  // ✅ "ta" olib tashlandi
-                saleItem.Comment = !string.IsNullOrEmpty(originalComment)
-                    ? $"{originalComment} | {returnComment}"
-                    : returnComment;
-            }
-
-            // 2. Mahsulot stock'iga qaytarish
-            if (saleItem.Product != null)
-            {
-                var oldStock = saleItem.Product.Quantity;
-                saleItem.Product.Quantity += returnQuantity;  // ✅ DECIMAL - 5.5 m qaytarilsa, 5.5 qo'shiladi
-                _context.Products.Update(saleItem.Product);
-                _logger.LogInformation("Product stock updated: ProductId={ProductId}, OldStock={OldStock}, NewStock={NewStock}",
-                    saleItem.ProductId, oldStock, saleItem.Product.Quantity);
-            }
-
-            // 3. Savdo summalarini yangilash
-            var oldTotalAmount = sale.TotalAmount;
-            sale.TotalAmount -= refundAmount;
-
-            _logger.LogInformation("Sale total updated: SaleId={SaleId}, OldTotal={OldTotal}, NewTotal={NewTotal}",
-                saleId, oldTotalAmount, sale.TotalAmount);
-
-            // 4. Naqd to'lov bo'yicha qaytarish - O'CHIRILDI
-            // Admin o'zi qo'lda summa kiritadi
-            // Avtomatik tarixga yozilmasin
-            _logger.LogInformation("Return item completed (no automatic cash withdrawal): SaleId={SaleId}, RefundAmount={Refund}",
-                saleId, refundAmount);
-
-            // 5. To'langan summani yangilash
-            // ❌ NOTO'G'RI: PaidAmount ni kamaytirish mumkin emas!
-            // ✅ TO'G'RI: PaidAmount o'zgarmaydi, faqat TotalAmount kamayadi
-            // Client to'lagan pul uniki, uni qaytarib bo'lmaydi
-            var oldPaidAmount = sale.PaidAmount;
-            // PaidAmount o'zgarmaydi! Faqat TotalAmount kamaydi (yuqorida)
-            // refundAmount - bu qaytarilgan mahsulot narxi, lekin client pulini qaytarmaymiz
-
-            _logger.LogInformation("Sale paid amount unchanged: SaleId={SaleId}, PaidAmount={PaidAmount} (refund does not reduce paid amount)",
-                saleId, sale.PaidAmount);
-
-            // 6. Status yangilash
-            var oldStatus = sale.Status;
-
-            // Qarz bo'lganida yana qarzga, yo'q bo'lsa draft qilish
-            if (sale.PaidAmount < sale.TotalAmount && sale.TotalAmount > 0)
-            {
-                if (sale.Status != SaleStatus.Debt)
+                if (isFullReturn)
                 {
-                    _logger.LogInformation("Sale status changing to Debt: SaleId={SaleId}", saleId);
-                    sale.Status = SaleStatus.Debt;
-                }
-            }
-            else if (sale.SaleItems.Count == 0)
-            {
-                // Barcha itemlar qaytarilgan bo'lsa
-                _logger.LogInformation("All items returned, closing sale: SaleId={SaleId}", saleId);
-                sale.Status = SaleStatus.Closed;
-            }
-
-            _logger.LogInformation("Sale status: SaleId={SaleId}, OldStatus={OldStatus}, NewStatus={NewStatus}",
-                saleId, oldStatus, sale.Status);
-
-            // 7. ⭐ DEBT JADVALINI YANGILASH (CRITICAL FIX!)
-            _logger.LogInformation("🔍 Debt Update Check: CustomerId={CustomerId}, SaleStatus={SaleStatus}, SaleTotalAmount={TotalAmount}, PaidAmount={PaidAmount}",
-                sale.CustomerId, sale.Status, sale.TotalAmount, sale.PaidAmount);
-
-            if (sale.CustomerId.HasValue && sale.Status == SaleStatus.Debt)
-            {
-                _logger.LogInformation("✅ Sale has CustomerId AND Debt status - attempting to update debt record...");
-
-                var existingDebt = await _context.Debts
-                    .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId, cancellationToken);
-
-                if (existingDebt != null)
-                {
-                    var oldDebtRemaining = existingDebt.RemainingDebt;
-                    var newRemainingDebt = sale.TotalAmount - sale.PaidAmount;
-
-                    existingDebt.TotalDebt = sale.TotalAmount;
-                    existingDebt.RemainingDebt = newRemainingDebt;
-
-                    _logger.LogInformation("💰 Debt updated: DebtId={DebtId}, SaleId={SaleId}, OldRemaining={OldRem}, NewRemaining={NewRem}",
-                        existingDebt.Id, saleId, oldDebtRemaining, newRemainingDebt);
-
-                    _context.Debts.Update(existingDebt);
+                    // To'liq qaytarish - itemni o'chirish
+                    _logger.LogInformation("Full return: Removing item completely. OriginalQty={OriginalQty}, ReturnQty={ReturnQty}",
+                        originalQuantity, returnQuantity);
+                    _context.SaleItems.Remove(saleItem);
                 }
                 else
                 {
-                    _logger.LogWarning("⚠️ Debt record not found for Debt status sale: SaleId={SaleId}, CustomerId={CustomerId}",
-                        saleId, sale.CustomerId);
+                    // Qisman qaytarish - quantity kamaytirish
+                    _logger.LogInformation("Partial return: OldQty={OldQty}, ReturnQty={ReturnQty}, NewQty={NewQty}",
+                        saleItem.Quantity, returnQuantity, saleItem.Quantity - returnQuantity);
+                    saleItem.Quantity -= returnQuantity;  // ✅ DECIMAL
+
+                    // Izohga qaytarish haqida yozish
+                    var returnComment = !string.IsNullOrEmpty(request.Comment)
+                        ? request.Comment
+                        : $"Qaytarildi: {returnQuantity} ({DateTime.UtcNow:dd.MM.yyyy HH:mm})";
+                    saleItem.Comment = !string.IsNullOrEmpty(originalComment)
+                        ? $"{originalComment} | {returnComment}"
+                        : returnComment;
                 }
-            }
-            else if (sale.CustomerId.HasValue && sale.Status != SaleStatus.Debt)
-            {
-                _logger.LogInformation("❌ Sale has CustomerId but NOT Debt status (Status={Status}) - should close debt record if exists", sale.Status);
 
-                // Savdo qarz statusda bo'lmasa, debt yopilgan bo'lishi mumkin
-                var debtToClose = await _context.Debts
-                    .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId && d.Status == DebtStatus.Open, cancellationToken);
-
-                if (debtToClose != null)
+                // 2. Mahsulot stock'iga qaytarish
+                if (saleItem.Product != null)
                 {
-                    _logger.LogInformation("🔒 Closing debt record (sale no longer in Debt status): DebtId={DebtId}, SaleId={SaleId}",
-                        debtToClose.Id, saleId);
-                    debtToClose.Status = DebtStatus.Closed;
-                    debtToClose.RemainingDebt = 0;
-                    debtToClose.TotalDebt = sale.TotalAmount;
-                    _context.Debts.Update(debtToClose);
+                    var oldStock = saleItem.Product.Quantity;
+                    saleItem.Product.Quantity += returnQuantity;  // ✅ DECIMAL
+                    _context.Products.Update(saleItem.Product);
+                    _logger.LogInformation("Product stock updated: ProductId={ProductId}, OldStock={OldStock}, NewStock={NewStock}",
+                        saleItem.ProductId, oldStock, saleItem.Product.Quantity);
                 }
-            }
-            else
-            {
-                _logger.LogInformation("⏭️ Sale has no CustomerId - skipping debt update");
-            }
 
-            // Explicitly update sale
-            _context.Sales.Update(sale);
+                // 3. Savdo summalarini yangilash
+                var oldTotalAmount = sale.TotalAmount;
+                sale.TotalAmount -= refundAmount;
 
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+                _logger.LogInformation("Sale total updated: SaleId={SaleId}, OldTotal={OldTotal}, NewTotal={NewTotal}",
+                    saleId, oldTotalAmount, sale.TotalAmount);
 
-            _logger.LogInformation("=== RETURN SALE ITEM SUCCESS ===");
-            _logger.LogInformation("SaleId: {SaleId}, Item: {ItemId}, Quantity: {Quantity}, Refund: {RefundAmount}",
-                saleId, request.SaleItemId, returnQuantity, refundAmount);
+                // 4. To'langan summani tartibga solish (Negative debt va xato balans paydo bo'lmasligi u.n)
+                if (sale.PaidAmount > sale.TotalAmount)
+                {
+                    var overpaid = sale.PaidAmount - sale.TotalAmount;
+                    _logger.LogInformation("PaidAmount ({PaidAmount}) exceeds NewTotal ({NewTotal}). Adjusting PaidAmount to {NewTotal} & refunding {Overpaid}.", 
+                        sale.PaidAmount, sale.TotalAmount, sale.TotalAmount, overpaid);
+                    
+                    sale.PaidAmount = sale.TotalAmount;
 
-            // Updated sale item ni qaytarish (faqat partial return bo'lsa)
-            if (!isFullReturn && saleItem != null)
-            {
-                return MapSaleItemToDto(saleItem, saleItem.Product?.Name ?? "Unknown");
-            }
+                    // Balans (hisobotlarda) to'g'ri chiqishi uchun manfiy payment qayd etiladi
+                    var refundPayment = new Payment
+                    {
+                        Id = Guid.NewGuid(),
+                        SaleId = sale.Id,
+                        PaymentType = PaymentType.Cash, 
+                        Amount = -overpaid,
+                        MarketId = marketId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Payments.Add(refundPayment);
 
-            // Item to'liq o'chirilgan bo'lsa, null qaytaramiz (bu normal holat)
-            return null;
+                    // Kassadan pulni ham yechib olish va tarixga yozish
+                    var cashRegister = await _context.CashRegisters.FirstOrDefaultAsync(cancellationToken);
+                    if (cashRegister != null)
+                    {
+                        cashRegister.CurrentBalance -= overpaid; // Kassadagi pulni ham qaytarish
+                        cashRegister.LastUpdated = DateTime.UtcNow;
+                        _context.CashRegisters.Update(cashRegister);
+                    }
+
+                    // Tizimda chiqim sifatida "-5000" tushishi uchun manfiy kiritiladi yoki commentga yoziladi
+                    var withdrawal = new CashWithdrawal
+                    {
+                        Id = Guid.NewGuid(),
+                        Amount = -overpaid, // Mijoz "pul olish tarixiga -5000 qo'shib qo'y" degani uchun
+                        Comment = $"Mahsulot qaytarilgani sababli mijozga qaytarildi (Savdo: {sale.Id})",
+                        WithdrawalDate = DateTime.UtcNow,
+                        UserId = null,  // Tizim tomonidan qilingan avtomatik qaytarish
+                        WithdrawType = "cash"
+                    };
+                    _context.CashWithdrawals.Add(withdrawal);
+                }
+
+                // 5. Status yangilash
+                var oldStatus = sale.Status;
+
+                if (sale.TotalAmount == 0 || sale.SaleItems.Count == 0)
+                {
+                    sale.Status = SaleStatus.Closed;
+                }
+                else if (sale.PaidAmount < sale.TotalAmount)
+                {
+                    sale.Status = SaleStatus.Debt;
+                }
+                else
+                {
+                    sale.Status = SaleStatus.Paid;
+                }
+
+                _logger.LogInformation("Sale status: SaleId={SaleId}, OldStatus={OldStatus}, NewStatus={NewStatus}",
+                    saleId, oldStatus, sale.Status);
+
+                // 6. DEBT JADVALINI YANGILASH
+                if (sale.CustomerId.HasValue)
+                {
+                    var existingDebt = await _context.Debts
+                        .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId, cancellationToken);
+
+                    if (existingDebt != null)
+                    {
+                        var newRemainingDebt = sale.TotalAmount - sale.PaidAmount;
+                        existingDebt.TotalDebt = sale.TotalAmount;
+                        existingDebt.RemainingDebt = newRemainingDebt > 0 ? newRemainingDebt : 0;
+                        existingDebt.Status = newRemainingDebt > 0 ? DebtStatus.Open : DebtStatus.Closed;
+
+                        _context.Debts.Update(existingDebt);
+                    }
+                }
+
+                // Explicitly update sale
+                _context.Sales.Update(sale);
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("=== RETURN SALE ITEM SUCCESS ===");
+                
+                // Updated sale item ni qaytarish (faqat partial return bo'lsa)
+                if (!isFullReturn && saleItem != null)
+                {
+                    return MapSaleItemToDto(saleItem, saleItem.Product?.Name ?? "Unknown");
+                }
+
+                return null;
+            }, cancellationToken);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error returning sale item");
             throw;
         }
+    }
+
+    /// <summary>
+    /// Applies customer's available credit (from negative payments/refunds) to a sale.
+    /// This is a public method that can be called manually to apply credit to an existing sale.
+    /// </summary>
+    public async Task<SaleDto?> ApplyCustomerCreditAsync(Guid saleId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Get the sale
+        var sale = await _context.Sales
+            .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
+
+        if (sale == null)
+            return null;
+
+        if (!sale.CustomerId.HasValue)
+        {
+            _logger.LogWarning("Cannot apply credit: Sale {SaleId} has no customer", saleId);
+            return null;
+        }
+
+        await ApplyCustomerCreditAsync(saleId, sale.CustomerId.Value, cancellationToken);
+
+        return await MapToDtoAsync(sale, cancellationToken);
     }
 
     public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default)
