@@ -785,7 +785,17 @@ class DraftSaleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final customerName = sale['customerName'] ?? 'Noma\'lum mijoz';
-    final itemsCount = sale['itemsCount'] ?? 0;
+
+    // To'g'ri hisoblash: Har bir item ning quantity sini qo'shib chiqish
+    double itemsCount = 0;
+    if (sale['items'] != null && sale['items'] is List) {
+      for (var item in sale['items']) {
+        itemsCount += (item['quantity'] as num?)?.toDouble() ?? 0.0;
+      }
+    } else {
+      itemsCount = (sale['itemsCount'] as num?)?.toDouble() ?? 0.0;
+    }
+
     final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
     final date = DateTime.tryParse(sale['createdAt'] ?? '') ?? DateTime.now();
     final formattedDate =
@@ -825,7 +835,7 @@ class DraftSaleCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '$itemsCount ta mahsulot',
+                  '${NumberFormatter.formatQuantity(itemsCount)} ta mahsulot',
                   style: const TextStyle(color: Colors.grey),
                 ),
                 Text(
