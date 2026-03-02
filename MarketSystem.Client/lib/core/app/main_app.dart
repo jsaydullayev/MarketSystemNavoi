@@ -9,15 +9,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
-
 import '../utils/di.dart';
 import '../constants/app_strings.dart';
 import '../handlers/navigation_handler.dart';
 import '../routes/app_routes.dart';
 import '../routes/route_generator.dart';
-import '../theme/app_theme.dart';
-
-// Import BLoCs
 import '../../features/sales/presentation/bloc/sales_bloc.dart';
 import '../../features/customers/presentation/bloc/customers_bloc.dart';
 import '../../features/zakup/presentation/bloc/zakup_bloc.dart';
