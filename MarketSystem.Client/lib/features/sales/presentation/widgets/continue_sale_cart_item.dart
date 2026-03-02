@@ -24,7 +24,7 @@ class ContinueSaleCartItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-    final qty = (item['quantity'] as num?)?.toInt() ?? 0;
+    final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final itemTotal = price * qty;
 
     return Container(
