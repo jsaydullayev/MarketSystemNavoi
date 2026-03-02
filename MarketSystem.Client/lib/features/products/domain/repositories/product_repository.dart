@@ -2,7 +2,6 @@
 /// Domain repository interface for products
 library;
 
-import '../../../../core/failure/failures.dart';
 import '../entities/product_entity.dart';
 
 /// Result type for operations that can fail

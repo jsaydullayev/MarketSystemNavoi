@@ -2,7 +2,6 @@
 /// Domain repository interface for authentication operations
 library;
 
-import '../../../../core/failure/failures.dart';
 import '../entities/user_entity.dart';
 
 /// Result type for operations that can fail

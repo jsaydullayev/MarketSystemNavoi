@@ -3,10 +3,8 @@ import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
 import '../../../data/services/users_service.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../screens/dashboard_screen.dart';
 import 'add_user_screen.dart';
 
 class UsersScreen extends StatefulWidget {
