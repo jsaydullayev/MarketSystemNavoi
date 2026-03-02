@@ -139,7 +139,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await ZakupService(authProvider: authProvider).createZakup(
           productId: product['id'],
-          quantity: int.parse(qtyController.text),
+          quantity: double.parse(qtyController.text),
           costPrice: double.parse(costController.text),
         );
         _loadProducts();
