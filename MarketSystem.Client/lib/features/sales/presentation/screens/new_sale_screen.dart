@@ -99,29 +99,51 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _addToCart(dynamic product) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => PriceInputDialog(
-        product: product,
-        onConfirm: (price, qty, comment) {
-          setState(() {
-            _cartItems.add({
-              'productId': product['id'],
-              'productName': product['name'],
-              'salePrice': price,
-              'quantity': qty,
-              'comment': comment,
-            });
-          });
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => PriceInputDialog(
+    //     product: product,
+    //     onConfirm: (price, qty, comment) {
+    //       setState(() {
+    //         _cartItems.add({
+    //           'productId': product['id'],
+    //           'productName': product['name'],
+    //           'salePrice': price,
+    //           'quantity': qty,
+    //           'comment': comment,
+    //         });
+    //       });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("${product['name']} ${l10n.returnSuccess}"),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        },
-      ),
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         SnackBar(
+    //           content: Text("${product['name']} ${l10n.returnSuccess}"),
+    //           backgroundColor: AppColors.success,
+    //         ),
+    //       );
+    //     },
+    //   ),
+    // );
+    PriceInputSheet.show(
+      context,
+      product: product,
+      onConfirm: (price, qty, comment) {
+        setState(() {
+          _cartItems.add({
+            'productId': product['id'],
+            'productName': product['name'],
+            'salePrice': price,
+            'quantity': qty,
+            'comment': comment,
+          });
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("${product['name']} ${l10n.returnSuccess}"),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      },
     );
   }
 
@@ -154,44 +176,36 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       orElse: () => {},
     );
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) => PriceInputDialog(
-        product: {
-          'name': item['productName'] ?? 'Noma\'lum mahsulot',
-          'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
-          'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
-          'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
-          'id': item['productId'] ?? '',
-          // BU YERDA: product o'zgaruvchisi null bo'lsa xato bermasligi uchun:
-          'unitName': (item['unitName'] ?? 'dona'),
-          'initialQuantity': (currentQuantity ?? 1.0).toDouble(),
-        },
-        onConfirm: (newPrice, newQuantity, comment) {
-          setState(() {
-            _cartItems[index]['salePrice'] = newPrice;
-            _cartItems[index]['quantity'] =
-                newQuantity; // ✅ Miqdorni ham yangilaymiz
-            if (comment != null && comment.isNotEmpty) {
-              _cartItems[index]['comment'] = comment;
-            }
-          });
-
-          if (mounted) {
-            Navigator.pop(dialogContext);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '✅ ${item['productName']} ${l10n.itemUpdated}!',
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          }
-        },
-      ),
-    );
+    PriceInputSheet.show(context, product: {
+      'name': item['productName'] ?? 'Noma\'lum mahsulot',
+      'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
+      'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
+      'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
+      'id': item['productId'] ?? '',
+      // BU YERDA: product o'zgaruvchisi null bo'lsa xato bermasligi uchun:
+      'unitName': (item['unitName'] ?? 'dona'),
+      'initialQuantity': (currentQuantity ?? 1.0).toDouble(),
+    }, onConfirm: (newPrice, newQuantity, comment) {
+      setState(() {
+        _cartItems[index]['salePrice'] = newPrice;
+        _cartItems[index]['quantity'] =
+            newQuantity; // ✅ Miqdorni ham yangilaymiz
+        if (comment != null && comment.isNotEmpty) {
+          _cartItems[index]['comment'] = comment;
+        }
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '✅ ${item['productName']} ${l10n.itemUpdated}!',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    });
   }
 
   void _showCustomerDialog() {
