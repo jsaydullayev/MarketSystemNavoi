@@ -303,4 +303,3 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 }
-}
