@@ -4,8 +4,8 @@ FROM ghcr.io/cirruslabs/flutter:stable AS build
 # Set the working directory
 WORKDIR /app
 
-# Copy the pubspec files and install dependencies
-COPY pubspec.* ./
+# Copy only the pubspec.yaml to avoid corrupted lockfile issues
+COPY pubspec.yaml ./
 RUN flutter pub get
 
 # Copy the rest of the application code

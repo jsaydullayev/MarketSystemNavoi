@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-<<<<<<< robiya
 import 'package:market_system_client/features/sales/presentation/screens/%20continue_sale_screen.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/customer_selection_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/debtor_payment_dialog.dart';
@@ -8,8 +6,6 @@ import 'package:market_system_client/features/sales/presentation/widgets/section
 import 'package:market_system_client/features/sales/presentation/widgets/debtor_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/empty_state.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/payment_history_dialog.dart';
-=======
->>>>>>> master
 import 'package:provider/provider.dart';
 import '../../../../data/services/sales_service.dart';
 import '../../../../core/providers/auth_provider.dart';
