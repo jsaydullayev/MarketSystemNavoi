@@ -2,8 +2,6 @@
 /// Business logic for deleting a product
 
 import 'package:equatable/equatable.dart';
-
-import '../../../../core/failure/failures.dart';
 import '../repositories/product_repository.dart';
 
 /// Delete Product Use Case

@@ -1,8 +1,6 @@
 /// Android-specific notification handler
 library;
 
-import 'dart:io';
-
 import '../platform_interface.dart';
 
 /// Android Notification Handler

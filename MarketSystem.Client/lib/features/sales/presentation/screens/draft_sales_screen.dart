@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/providers/auth_provider.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/data/services/sales_service.dart';
 import 'package:market_system_client/features/sales/presentation/screens/%20continue_sale_screen.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/customer_selection_dialog.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/debtor_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/debtor_payment_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/draft_sale_card.dart';
-import 'package:market_system_client/features/sales/presentation/widgets/section_header.dart';
-import 'package:market_system_client/features/sales/presentation/widgets/debtor_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/empty_state.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/payment_history_dialog.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/section_header.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import '../../../../data/services/sales_service.dart';
-import '../../../../core/providers/auth_provider.dart';
 
-/// Draft Savdolar Screeni
-/// Seller o'zining tugatilmagan savdolarini ko'radi va davom ettiradi
 class DraftSalesScreen extends StatefulWidget {
   const DraftSalesScreen({super.key});
 
@@ -153,7 +153,6 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 
-
   Widget _buildDraftSaleCard(dynamic sale) {
     return DraftSaleCard(
       sale: sale,
@@ -164,17 +163,13 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text(
-          'Davom etayotgan savdolar',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.draftSales,
+        onRefresh: _loadDraftSales,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -303,3 +298,562 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 }
+// <<<<<<< robiya
+// =======
+
+// // Payment Dialog for Continue Sale
+// class _ContinuePaymentDialog extends StatefulWidget {
+//   final String saleId;
+//   final double totalAmount;
+//   final Map<String, dynamic>? selectedCustomer;
+//   final Function(List<Map<String, dynamic>>, bool) onConfirm;
+
+//   const _ContinuePaymentDialog({
+//     required this.saleId,
+//     required this.totalAmount,
+//     required this.selectedCustomer,
+//     required this.onConfirm,
+//   });
+
+//   @override
+//   State<_ContinuePaymentDialog> createState() => _ContinuePaymentDialogState();
+// }
+
+// class _ContinuePaymentDialogState extends State<_ContinuePaymentDialog> {
+//   bool _useCash = false;
+//   bool _useTerminal = false;
+//   bool _useTransfer = false;
+//   bool _useClick = false;
+//   bool _useDebt = false;
+
+//   final TextEditingController _cashController = TextEditingController();
+//   final TextEditingController _terminalController = TextEditingController();
+//   final TextEditingController _transferController = TextEditingController();
+//   final TextEditingController _clickController = TextEditingController();
+
+//   bool _isProcessing = false;
+
+//   double get _totalPaid {
+//     double total = 0;
+//     if (_useCash) total += double.tryParse(_cashController.text) ?? 0;
+//     if (_useTerminal) total += double.tryParse(_terminalController.text) ?? 0;
+//     if (_useTransfer) total += double.tryParse(_transferController.text) ?? 0;
+//     if (_useClick) total += double.tryParse(_clickController.text) ?? 0;
+//     return total;
+//   }
+
+//   double get _remainingAmount => widget.totalAmount - _totalPaid;
+
+//   bool get _hasDebt => _useDebt && _remainingAmount > 0.01;
+
+//   bool _canConfirm() {
+//     if (_hasDebt) {
+//       return widget.selectedCustomer != null && _totalPaid >= 0;
+//     } else {
+//       return _remainingAmount <= 0.01 ||
+//           (_remainingAmount > 0.01 && _totalPaid > 0);
+//     }
+//   }
+
+//   @override
+//   void dispose() {
+//     _cashController.dispose();
+//     _terminalController.dispose();
+//     _transferController.dispose();
+//     _clickController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return AlertDialog(
+//       title: const Text('To\'lov usullari'),
+//       content: SizedBox(
+//         width: 400,
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             // Naqd
+//             CheckboxListTile(
+//               title: const Text('Naqd'),
+//               value: _useCash,
+//               onChanged: (value) {
+//                 setState(() {
+//                   _useCash = value ?? false;
+//                   if (!_useCash) _cashController.clear();
+//                 });
+//               },
+//               controlAffinity: ListTileControlAffinity.leading,
+//               contentPadding: EdgeInsets.zero,
+//             ),
+//             if (_useCash)
+//               Padding(
+//                 padding: const EdgeInsets.only(left: 16, bottom: 12),
+//                 child: TextField(
+//                   controller: _cashController,
+//                   keyboardType: TextInputType.number,
+//                   decoration: const InputDecoration(
+//                     labelText: 'Naqd summa (so\'m)',
+//                     border: OutlineInputBorder(),
+//                   ),
+//                   onChanged: (_) => setState(() {}),
+//                 ),
+//               ),
+
+//             // Terminal
+//             CheckboxListTile(
+//               title: const Text('Plastik karta'),
+//               value: _useTerminal,
+//               onChanged: (value) {
+//                 setState(() {
+//                   _useTerminal = value ?? false;
+//                   if (!_useTerminal) _terminalController.clear();
+//                 });
+//               },
+//               controlAffinity: ListTileControlAffinity.leading,
+//               contentPadding: EdgeInsets.zero,
+//             ),
+//             if (_useTerminal)
+//               Padding(
+//                 padding: const EdgeInsets.only(left: 16, bottom: 12),
+//                 child: TextField(
+//                   controller: _terminalController,
+//                   keyboardType: TextInputType.number,
+//                   decoration: const InputDecoration(
+//                     labelText: 'Plastik summa (so\'m)',
+//                     border: OutlineInputBorder(),
+//                   ),
+//                   onChanged: (_) => setState(() {}),
+//                 ),
+//               ),
+
+//             // Transfer
+//             CheckboxListTile(
+//               title: const Text('Hisob raqam'),
+//               value: _useTransfer,
+//               onChanged: (value) {
+//                 setState(() {
+//                   _useTransfer = value ?? false;
+//                   if (!_useTransfer) _transferController.clear();
+//                 });
+//               },
+//               controlAffinity: ListTileControlAffinity.leading,
+//               contentPadding: EdgeInsets.zero,
+//             ),
+//             if (_useTransfer)
+//               Padding(
+//                 padding: const EdgeInsets.only(left: 16, bottom: 12),
+//                 child: TextField(
+//                   controller: _transferController,
+//                   keyboardType: TextInputType.number,
+//                   decoration: const InputDecoration(
+//                     labelText: 'Transfer summa (so\'m)',
+//                     border: OutlineInputBorder(),
+//                   ),
+//                   onChanged: (_) => setState(() {}),
+//                 ),
+//               ),
+
+//             // Click
+//             CheckboxListTile(
+//               title: const Text('Click'),
+//               value: _useClick,
+//               onChanged: (value) {
+//                 setState(() {
+//                   _useClick = value ?? false;
+//                   if (!_useClick) _clickController.clear();
+//                 });
+//               },
+//               controlAffinity: ListTileControlAffinity.leading,
+//               contentPadding: EdgeInsets.zero,
+//             ),
+//             if (_useClick)
+//               Padding(
+//                 padding: const EdgeInsets.only(left: 16, bottom: 12),
+//                 child: TextField(
+//                   controller: _clickController,
+//                   keyboardType: TextInputType.number,
+//                   decoration: const InputDecoration(
+//                     labelText: 'Click summa (so\'m)',
+//                     border: OutlineInputBorder(),
+//                   ),
+//                   onChanged: (_) => setState(() {}),
+//                 ),
+//               ),
+
+//             // Qarzga
+//             CheckboxListTile(
+//               title: const Text('Qarzga olish'),
+//               value: _useDebt,
+//               onChanged: (value) {
+//                 if (widget.selectedCustomer == null) {
+//                   ScaffoldMessenger.of(context).showSnackBar(
+//                     const SnackBar(
+//                       content: Text('Qarzga olish uchun mijoz tanlang!'),
+//                       backgroundColor: Colors.orange,
+//                     ),
+//                   );
+//                   return;
+//                 }
+//                 setState(() {
+//                   _useDebt = value ?? false;
+//                 });
+//               },
+//               controlAffinity: ListTileControlAffinity.leading,
+//               contentPadding: EdgeInsets.zero,
+//             ),
+
+//             const SizedBox(height: 12),
+
+//             // Summary
+//             Container(
+//               padding: const EdgeInsets.all(12),
+//               decoration: BoxDecoration(
+//                 color: Colors.grey.shade200,
+//                 borderRadius: BorderRadius.circular(8),
+//               ),
+//               child: Column(
+//                 children: [
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                     children: [
+//                       const Text('Jami:'),
+//                       Text(NumberFormatter.formatDecimal(widget.totalAmount)),
+//                     ],
+//                   ),
+//                   const SizedBox(height: 4),
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                     children: [
+//                       const Text('To\'langan:'),
+//                       Text(
+//                         NumberFormatter.formatDecimal(_totalPaid),
+//                         style: const TextStyle(color: Colors.green),
+//                       ),
+//                     ],
+//                   ),
+//                   const SizedBox(height: 4),
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                     children: [
+//                       Text(_hasDebt ? 'Qarzga:' : 'Qolgan:'),
+//                       Text(
+//                         NumberFormatter.formatDecimal(_remainingAmount),
+//                         style: TextStyle(
+//                           color: _hasDebt ? Colors.orange : Colors.green,
+//                           fontWeight: FontWeight.bold,
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//       actions: [
+//         TextButton(
+//           onPressed: _isProcessing ? null : () => Navigator.pop(context),
+//           child: const Text('Bekor qilish'),
+//         ),
+//         ElevatedButton(
+//           onPressed: _isProcessing || !_canConfirm()
+//               ? null
+//               : () async {
+//                   setState(() {
+//                     _isProcessing = true;
+//                   });
+
+//                   List<Map<String, dynamic>> payments = [];
+
+//                   if (_useCash && (_cashController.text.isNotEmpty)) {
+//                     payments.add({
+//                       'paymentType': 'Cash',
+//                       'amount': double.tryParse(_cashController.text) ?? 0,
+//                     });
+//                   }
+
+//                   if (_useTerminal && (_terminalController.text.isNotEmpty)) {
+//                     payments.add({
+//                       'paymentType': 'Terminal',
+//                       'amount': double.tryParse(_terminalController.text) ?? 0,
+//                     });
+//                   }
+
+//                   if (_useTransfer && (_transferController.text.isNotEmpty)) {
+//                     payments.add({
+//                       'paymentType': 'Transfer',
+//                       'amount': double.tryParse(_transferController.text) ?? 0,
+//                     });
+//                   }
+
+//                   if (_useClick && (_clickController.text.isNotEmpty)) {
+//                     payments.add({
+//                       'paymentType': 'Click',
+//                       'amount': double.tryParse(_clickController.text) ?? 0,
+//                     });
+//                   }
+
+//                   try {
+//                     widget.onConfirm(payments, _hasDebt);
+//                   } catch (e) {
+//                     setState(() {
+//                       _isProcessing = false;
+//                     });
+//                   }
+//                 },
+//           child: _isProcessing
+//               ? const SizedBox(
+//                   width: 20,
+//                   height: 20,
+//                   child: CircularProgressIndicator(strokeWidth: 2),
+//                 )
+//               : Text(_hasDebt ? 'Qarzga olish' : 'Tasdiqlash'),
+//         ),
+//       ],
+//     );
+//   }
+// }
+
+// class _PriceInputDialog extends StatefulWidget {
+//   final double currentPrice;
+//   final String productName;
+
+//   const _PriceInputDialog({
+//     Key? key,
+//     required this.currentPrice,
+//     required this.productName,
+//   }) : super(key: key);
+
+//   @override
+//   State<_PriceInputDialog> createState() => _PriceInputDialogState();
+// }
+
+// class _PriceInputDialogState extends State<_PriceInputDialog> {
+//   late TextEditingController _priceController;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _priceController =
+//         TextEditingController(text: widget.currentPrice.toStringAsFixed(0));
+//   }
+
+//   @override
+//   void dispose() {
+//     _priceController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return AlertDialog(
+//       title: Text(widget.productName),
+//       content: TextField(
+//         controller: _priceController,
+//         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+//         decoration: const InputDecoration(
+//           labelText: 'Yangi narx (so\'m)',
+//           border: OutlineInputBorder(),
+//         ),
+//         autofocus: true,
+//       ),
+//       actions: [
+//         TextButton(
+//           onPressed: () => Navigator.pop(context),
+//           child: const Text('Bekor qilish'),
+//         ),
+//         ElevatedButton(
+//           onPressed: () {
+//             final price = double.tryParse(_priceController.text);
+//             if (price != null && price > 0) {
+//               Navigator.pop(context, price);
+//             }
+//           },
+//           child: const Text('Saqlash'),
+//         ),
+//       ],
+//     );
+//   }
+// }
+
+// class ReturnQuantityDialog extends StatefulWidget {
+//   final double maxQuantity;
+//   final String productName;
+
+//   const ReturnQuantityDialog({
+//     Key? key,
+//     required this.maxQuantity,
+//     required this.productName,
+//   }) : super(key: key);
+
+//   @override
+//   State<ReturnQuantityDialog> createState() => _ReturnQuantityDialogState();
+// }
+
+// class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
+//   late TextEditingController _quantityController;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _quantityController = TextEditingController(text: '1');
+//   }
+
+//   @override
+//   void dispose() {
+//     _quantityController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return AlertDialog(
+//       title: const Text('Qaytarish'),
+//       content: Column(
+//         mainAxisSize: MainAxisSize.min,
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Text(widget.productName,
+//               style: const TextStyle(fontWeight: FontWeight.bold)),
+//           const SizedBox(height: 8),
+//           Text('Maksimal: ${widget.maxQuantity}'),
+//           const SizedBox(height: 16),
+//           TextField(
+//             controller: _quantityController,
+//             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+//             decoration: const InputDecoration(
+//               labelText: 'Qaytariladigan miqdor',
+//               border: OutlineInputBorder(),
+//             ),
+//             autofocus: true,
+//           ),
+//         ],
+//       ),
+//       actions: [
+//         TextButton(
+//           onPressed: () => Navigator.pop(context),
+//           child: const Text('Bekor qilish'),
+//         ),
+//         ElevatedButton(
+//           onPressed: () {
+//             final qty = double.tryParse(_quantityController.text);
+//             if (qty != null && qty > 0 && qty <= widget.maxQuantity) {
+//               Navigator.pop(context, qty);
+//             } else {
+//               ScaffoldMessenger.of(context).showSnackBar(
+//                 const SnackBar(content: Text('Noto\'g\'ri miqdor kiritildi')),
+//               );
+//             }
+//           },
+//           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+//           child: const Text('Qaytarish'),
+//         ),
+//       ],
+//     );
+//   }
+// }
+
+// class DraftSaleCard extends StatelessWidget {
+//   final dynamic sale;
+//   final VoidCallback onEdit;
+//   final VoidCallback onDelete;
+
+//   const DraftSaleCard({
+//     Key? key,
+//     required this.sale,
+//     required this.onEdit,
+//     required this.onDelete,
+//   }) : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final customerName = sale['customerName'] ?? 'Noma\'lum mijoz';
+//     final itemsCount = sale['itemsCount'] ?? 0;
+//     final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+//     final date = DateTime.tryParse(sale['createdAt'] ?? '') ?? DateTime.now();
+//     final formattedDate =
+//         '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+//     return Card(
+//       margin: const EdgeInsets.only(bottom: 12),
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//       elevation: 2,
+//       child: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: [
+//                 Expanded(
+//                   child: Text(
+//                     customerName,
+//                     style: const TextStyle(
+//                       fontWeight: FontWeight.bold,
+//                       fontSize: 16,
+//                     ),
+//                     maxLines: 1,
+//                     overflow: TextOverflow.ellipsis,
+//                   ),
+//                 ),
+//                 Text(
+//                   formattedDate,
+//                   style: const TextStyle(color: Colors.grey, fontSize: 12),
+//                 ),
+//               ],
+//             ),
+//             const SizedBox(height: 8),
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: [
+//                 Text(
+//                   '$itemsCount ta mahsulot',
+//                   style: const TextStyle(color: Colors.grey),
+//                 ),
+//                 Text(
+//                   '${NumberFormatter.formatDecimal(totalAmount)} so\'m',
+//                   style: const TextStyle(
+//                     fontWeight: FontWeight.bold,
+//                     color: Colors.green,
+//                     fontSize: 16,
+//                   ),
+//                 ),
+//               ],
+//             ),
+//             const SizedBox(height: 12),
+//             const Divider(height: 1),
+//             const SizedBox(height: 8),
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.end,
+//               children: [
+//                 TextButton.icon(
+//                   onPressed: onDelete,
+//                   icon: const Icon(Icons.delete, color: Colors.red, size: 18),
+//                   label: const Text('O\'chirish',
+//                       style: TextStyle(color: Colors.red)),
+//                 ),
+//                 const SizedBox(width: 8),
+//                 ElevatedButton.icon(
+//                   onPressed: onEdit,
+//                   icon: const Icon(Icons.edit, size: 18),
+//                   label: const Text('Davom etish'),
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.blue,
+//                     foregroundColor: Colors.white,
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(8),
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+// >>>>>>> master

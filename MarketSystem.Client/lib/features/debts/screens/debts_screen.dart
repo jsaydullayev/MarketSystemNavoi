@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/debt_service.dart';
@@ -92,7 +95,10 @@ class _DebtsScreenState extends State<DebtsScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Qolgan qarz: ${debt['remainingDebt']} so\'m',
-                  style: const TextStyle(fontSize: 16, color: Colors.red, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -105,7 +111,8 @@ class _DebtsScreenState extends State<DebtsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('To\'lov turi:', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text('To\'lov turi:',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
                 RadioListTile<String>(
                   title: const Text('Naqd (Cash)'),
                   value: 'Cash',
@@ -158,7 +165,8 @@ class _DebtsScreenState extends State<DebtsScreen> {
                 }
 
                 try {
-                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  final authProvider =
+                      Provider.of<AuthProvider>(context, listen: false);
                   final debtService = DebtService(authProvider: authProvider);
                   await debtService.payDebt(
                     debtId: debt['id'],
@@ -170,7 +178,8 @@ class _DebtsScreenState extends State<DebtsScreen> {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('✅ To\'lov muvaffaqiyatli amalga oshirildi!'),
+                        content:
+                            Text('✅ To\'lov muvaffaqiyatli amalga oshirildi!'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -197,14 +206,13 @@ class _DebtsScreenState extends State<DebtsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Qarzdorlik', style: TextStyle(fontWeight: FontWeight.w600)),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.debts,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -213,11 +221,13 @@ class _DebtsScreenState extends State<DebtsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.account_balance_wallet, size: 64, color: Color(0xFF9CA3AF)),
+                      Icon(Icons.account_balance_wallet,
+                          size: 64, color: Color(0xFF9CA3AF)),
                       SizedBox(height: 16),
                       Text(
                         'Qarzdorliklar yo\'q',
-                        style: TextStyle(fontSize: 18, color: Color(0xFF6B7280)),
+                        style:
+                            TextStyle(fontSize: 18, color: Color(0xFF6B7280)),
                       ),
                     ],
                   ),
@@ -230,14 +240,16 @@ class _DebtsScreenState extends State<DebtsScreen> {
                     itemBuilder: (context, index) {
                       final customerId = _debtsByCustomer.keys.elementAt(index);
                       final customerDebts = _debtsByCustomer[customerId]!;
-                      final customerName = _customerNames[customerId] ?? 'Noma\'lum';
+                      final customerName =
+                          _customerNames[customerId] ?? 'Noma\'lum';
 
                       // Calculate totals for this customer
                       double totalDebt = 0;
                       double remainingDebt = 0;
                       for (var debt in customerDebts) {
                         totalDebt += (debt['totalDebt'] as num).toDouble();
-                        remainingDebt += (debt['remainingDebt'] as num).toDouble();
+                        remainingDebt +=
+                            (debt['remainingDebt'] as num).toDouble();
                       }
 
                       return Card(
@@ -267,7 +279,8 @@ class _DebtsScreenState extends State<DebtsScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.person, size: 20, color: Color(0xFF3B82F6)),
+                                    const Icon(Icons.person,
+                                        size: 20, color: Color(0xFF3B82F6)),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -280,9 +293,12 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                       ),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: remainingDebt > 0 ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5),
+                                        color: remainingDebt > 0
+                                            ? const Color(0xFFFEE2E2)
+                                            : const Color(0xFFD1FAE5),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -290,7 +306,9 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
-                                          color: remainingDebt > 0 ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                                          color: remainingDebt > 0
+                                              ? const Color(0xFFDC2626)
+                                              : const Color(0xFF059669),
                                         ),
                                       ),
                                     ),
@@ -298,14 +316,18 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const Text(
                                           'Jami qarz:',
-                                          style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF6B7280)),
                                         ),
                                         Text(
                                           '${totalDebt.toStringAsFixed(0)} so\'m',
@@ -318,11 +340,14 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                       ],
                                     ),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
                                       children: [
                                         const Text(
                                           'Qolgan qarz:',
-                                          style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF6B7280)),
                                         ),
                                         Text(
                                           '${remainingDebt.toStringAsFixed(0)} so\'m',
@@ -341,15 +366,19 @@ class _DebtsScreenState extends State<DebtsScreen> {
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton.icon(
-                                      onPressed: () => _showPayDebtDialog(customerDebts.first),
+                                      onPressed: () => _showPayDebtDialog(
+                                          customerDebts.first),
                                       icon: const Icon(Icons.payment, size: 18),
                                       label: const Text('To\'lash'),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF10B981),
+                                        backgroundColor:
+                                            const Color(0xFF10B981),
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                       ),
                                     ),

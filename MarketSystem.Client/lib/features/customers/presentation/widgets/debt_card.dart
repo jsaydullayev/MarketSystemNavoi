@@ -1,211 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
-import '../../../core/utils/number_formatter.dart';
-import '../presentation/bloc/customers_bloc.dart';
-import '../presentation/bloc/events/customers_event.dart';
-import '../presentation/bloc/states/customers_state.dart';
-
-class CustomerDetailScreen extends StatefulWidget {
-  final String customerId;
-  final String customerName;
-  final String customerPhone;
-
-  const CustomerDetailScreen({
-    super.key,
-    required this.customerId,
-    required this.customerName,
-    required this.customerPhone,
-  });
-
-  @override
-  State<CustomerDetailScreen> createState() => _CustomerDetailScreenState();
-}
-
-class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Load customer debts
-    context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Screen focus qaytganda refresh qilish
-    if (mounted) {
-      print('🔄 CustomerDetailScreen: didChangeDependencies called, refreshing debts...');
-      Future.delayed(Duration.zero, () {
-        context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
-      });
-    }
-  }
+class DebtCard extends StatelessWidget {
+  final Map<String, dynamic> debt;
+  const DebtCard({super.key, required this.debt});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.customerName.isNotEmpty ? widget.customerName : widget.customerPhone),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
-            },
-          ),
-        ],
-      ),
-      body: BlocListener<CustomersBloc, CustomersState>(
-        listener: (context, state) {
-          if (state is CustomersError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-        child: BlocBuilder<CustomersBloc, CustomersState>(
-          builder: (context, state) {
-            if (state is CustomerDebtsLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is CustomerDebtsLoaded) {
-              return _buildDebtsList(state.debts);
-            } else if (state is CustomersError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
-                      },
-                      child: const Text('Qayta urinish'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return const Center(child: CircularProgressIndicator());
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDebtsList(List<Map<String, dynamic>> debts) {
-    if (debts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.account_balance_wallet_outlined,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Qarzlar yo\'q',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Calculate total remaining debt
-    final totalRemainingDebt = debts.fold<double>(
-      0,
-      (sum, debt) => sum + ((debt['remainingDebt'] as num?)?.toDouble() ?? 0.0),
-    );
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
-      },
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Total debt card
-          Card(
-            elevation: 4,
-            color: Colors.red.shade50,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(Icons.account_balance_wallet, size: 32, color: Colors.red.shade700),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Jami qarz',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.red.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          NumberFormatter.format(totalRemainingDebt),
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: Colors.red.shade700,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Debts list
-          Text(
-            'Qarzlar tarixi (${debts.length})',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          ...debts.map((debt) => _buildDebtCard(debt)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDebtCard(Map<String, dynamic> debt) {
     final totalDebt = (debt['totalDebt'] as num?)?.toDouble() ?? 0.0;
     final remainingDebt = (debt['remainingDebt'] as num?)?.toDouble() ?? 0.0;
     final status = debt['status']?.toString() ?? 'Open';
     final createdAt = debt['createdAt'];
     final saleItems = debt['saleItems'] as List<dynamic>?;
+    final l10n = AppLocalizations.of(context)!;
 
-    // Format date with GMT+5 (Tashkent time)
-    final formattedDate = NumberFormatter.formatDateTime(createdAt, showTime: true);
+    final formattedDate =
+        NumberFormatter.formatDateTime(createdAt, showTime: true);
 
     final isOpen = status.toLowerCase() == 'open';
     final hasProducts = saleItems != null && saleItems.isNotEmpty;
@@ -236,11 +47,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Date + Status badge
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Date
                   Text(
                     formattedDate,
                     style: TextStyle(
@@ -249,11 +58,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  // Status badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isOpen ? Colors.red.shade100 : Colors.green.shade100,
+                      color:
+                          isOpen ? Colors.red.shade100 : Colors.green.shade100,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isOpen ? Colors.red : Colors.green,
@@ -270,7 +80,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          isOpen ? 'Qarzda' : 'Tugatilgan',
+                          isOpen ? l10n.inDebt : l10n.completed,
                           style: TextStyle(
                             color: isOpen ? Colors.red : Colors.green,
                             fontWeight: FontWeight.w700,
@@ -285,20 +95,19 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
               const SizedBox(height: 12),
 
-              // Amounts
               Row(
                 children: [
                   Expanded(
-                    child: _buildAmountColumn(
-                      label: 'Jami summa',
+                    child: _BuildAmountColumn(
+                      label: l10n.totalSum,
                       amount: totalDebt,
                       color: Colors.grey,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildAmountColumn(
-                      label: 'Qolgan qarz',
+                    child: _BuildAmountColumn(
+                      label: l10n.remainingDebt,
                       amount: remainingDebt,
                       color: isOpen ? Colors.red : Colors.green,
                       isMain: true,
@@ -322,7 +131,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Mahsulotlar (${saleItems.length})',
+                      '${l10n.products} (${saleItems.length})',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -347,12 +156,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                ...saleItems.map((item) => _buildSaleItem(item)),
+                ...saleItems.map((item) => _BuildSaleItem(item: item)),
               ] else if (!hasProducts && isOpen) ...[
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    'Mahsulotlar mavjud emas',
+                    l10n.noProductsFound,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.orange.shade700,
@@ -367,25 +176,29 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       ),
     );
   }
+}
 
-  Widget _buildSaleItem(dynamic item) {
-    final productName = item['productName']?.toString() ?? 'Noma\'lum mahsulot';
+class _BuildSaleItem extends StatelessWidget {
+  final dynamic item;
+  const _BuildSaleItem({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final productName = item['productName']?.toString() ?? l10n.unknownProduct;
     final quantity = item['quantity'] as num? ?? 0;
     final salePrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
     final totalPrice = (item['totalPrice'] as num?)?.toDouble() ?? 0.0;
     final comment = item['comment']?.toString();
 
-    // Decimal quantity formatting
     final quantityDisplay = quantity == quantity.truncateToDouble()
         ? quantity.toInt().toString()
         : quantity.toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '');
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product icon
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
@@ -399,7 +212,6 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Product details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,14 +227,15 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.green.shade50,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: Colors.green.shade200),
                       ),
                       child: Text(
-                        '$quantityDisplay ta',
+                        '$quantityDisplay ${l10n.piece}',
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.green.shade700,
@@ -454,7 +267,6 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
               ],
             ),
           ),
-          // Total price
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -467,7 +279,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 ),
               ),
               Text(
-                'so\'m',
+                l10n.currencySom,
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.grey.shade500,
@@ -479,13 +291,21 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       ),
     );
   }
+}
 
-  Widget _buildAmountColumn({
-    required String label,
-    required double amount,
-    required Color color,
-    bool isMain = false,
-  }) {
+class _BuildAmountColumn extends StatelessWidget {
+  final String label;
+  final double amount;
+  final Color color;
+  final bool isMain;
+  const _BuildAmountColumn(
+      {required this.label,
+      required this.amount,
+      required this.color,
+      this.isMain = false});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

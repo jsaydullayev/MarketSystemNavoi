@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
-import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 

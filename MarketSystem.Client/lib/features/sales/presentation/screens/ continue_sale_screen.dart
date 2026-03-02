@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_payment_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_cart_item.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_product_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_bottom_bar.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../../data/services/sales_service.dart';
 import '../../../../data/services/product_service.dart';
@@ -361,16 +364,25 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Draft Savdo')),
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.draftSales, // Arb faylga qo'shdik: "Draft Savdo"
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_sale == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Draft Savdo')),
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.draftSales, // Arb faylga qo'shdik: "Draft Savdo"
+        ),
         body: const Center(child: Text('Savdo topilmadi')),
       );
     }
@@ -379,13 +391,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     final isClosed = _sale?['status'] == 'Closed';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Draft Savdo'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.draftSale,
       ),
       body: Column(
         children: [

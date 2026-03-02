@@ -1,5 +1,4 @@
 import '../../../../core/failure/api_result.dart';
-import '../entities/customer_entity.dart';
 import '../repositories/customer_repository_interface.dart';
 
 /// Get customer debts use case

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/features/products/presentation/screens/product_form_screen.dart';
 import 'package:market_system_client/features/products/presentation/widgets/product_body.dart';
 import 'package:provider/provider.dart';
@@ -210,7 +211,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.getBg(isDark),
-      appBar: _buildAppBar(l10n, primaryColor, isDark),
+      appBar: CommonAppBar(
+        title: l10n.products,
+        onRefresh: _loadProducts,
+        extraActions: [
+          IconButton(
+            icon: Icon(Icons.file_download_outlined, color: primaryColor),
+            onPressed: _exportExcel,
+          ),
+        ],
+      ),
       body: ProductsBody(
         isLoading: _isLoading,
         errorMessage: _errorMessage,
@@ -229,32 +239,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
               child: const Icon(Icons.add, color: Colors.white, size: 30),
             )
           : null,
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(
-      AppLocalizations l10n, Color primary, bool isDark) {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: AppColors.getCard(isDark),
-      title: Text(l10n.products,
-          style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
-              fontWeight: FontWeight.bold)),
-      centerTitle: true,
-      leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new,
-              color: isDark ? Colors.white : Colors.black),
-          onPressed: () => Navigator.pop(context)),
-      actions: [
-        IconButton(
-            icon: Icon(Icons.file_download_outlined, color: primary),
-            onPressed: _exportExcel),
-        IconButton(
-            icon: Icon(Icons.refresh_rounded, color: primary),
-            onPressed: _loadProducts),
-        8.width,
-      ],
     );
   }
 }
