@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:market_system_client/features/sales/presentation/widgets/draft_sale_card.dart';
-import 'package:market_system_client/features/sales/presentation/widgets/return_quantity_dialog.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../data/services/sales_service.dart';
@@ -319,6 +317,22 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
         );
       }
     }
+  }
+
+  void _openEditDialog(dynamic sale) {
+    _continueSale(sale);
+  }
+
+  void _confirmDelete(String saleId) {
+    _showDeleteConfirmation(saleId);
+  }
+
+  Widget _buildDraftSaleCard(dynamic sale) {
+    return DraftSaleCard(
+      sale: sale,
+      onEdit: () => _openEditDialog(sale),
+      onDelete: () => _confirmDelete(sale['id']),
+    );
   }
 
   @override
@@ -2438,6 +2452,244 @@ class _ContinuePaymentDialogState extends State<_ContinuePaymentDialog> {
   }
 }
 
-// Price input dialog for editing item prices
 
-// Return quantity dialog
+class _PriceInputDialog extends StatefulWidget {
+  final double currentPrice;
+  final String productName;
+
+  const _PriceInputDialog({
+    Key? key,
+    required this.currentPrice,
+    required this.productName,
+  }) : super(key: key);
+
+  @override
+  State<_PriceInputDialog> createState() => _PriceInputDialogState();
+}
+
+class _PriceInputDialogState extends State<_PriceInputDialog> {
+  late TextEditingController _priceController;
+
+  @override
+  void initState() {
+    super.initState();
+    _priceController =
+        TextEditingController(text: widget.currentPrice.toStringAsFixed(0));
+  }
+
+  @override
+  void dispose() {
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.productName),
+      content: TextField(
+        controller: _priceController,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: const InputDecoration(
+          labelText: 'Yangi narx (so\'m)',
+          border: OutlineInputBorder(),
+        ),
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Bekor qilish'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final price = double.tryParse(_priceController.text);
+            if (price != null && price > 0) {
+              Navigator.pop(context, price);
+            }
+          },
+          child: const Text('Saqlash'),
+        ),
+      ],
+    );
+  }
+}
+
+class ReturnQuantityDialog extends StatefulWidget {
+  final double maxQuantity;
+  final String productName;
+
+  const ReturnQuantityDialog({
+    Key? key,
+    required this.maxQuantity,
+    required this.productName,
+  }) : super(key: key);
+
+  @override
+  State<ReturnQuantityDialog> createState() => _ReturnQuantityDialogState();
+}
+
+class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
+  late TextEditingController _quantityController;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController = TextEditingController(text: '1');
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Qaytarish'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(widget.productName,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text('Maksimal: ${widget.maxQuantity}'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _quantityController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Qaytariladigan miqdor',
+              border: OutlineInputBorder(),
+            ),
+            autofocus: true,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Bekor qilish'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final qty = double.tryParse(_quantityController.text);
+            if (qty != null && qty > 0 && qty <= widget.maxQuantity) {
+              Navigator.pop(context, qty);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Noto\'g\'ri miqdor kiritildi')),
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('Qaytarish'),
+        ),
+      ],
+    );
+  }
+}
+
+class DraftSaleCard extends StatelessWidget {
+  final dynamic sale;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const DraftSaleCard({
+    Key? key,
+    required this.sale,
+    required this.onEdit,
+    required this.onDelete,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final customerName = sale['customerName'] ?? 'Noma\'lum mijoz';
+    final itemsCount = sale['itemsCount'] ?? 0;
+    final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final date = DateTime.tryParse(sale['createdAt'] ?? '') ?? DateTime.now();
+    final formattedDate =
+        '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    customerName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  formattedDate,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '$itemsCount ta mahsulot',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                Text(
+                  '${NumberFormatter.formatDecimal(totalAmount)} so\'m',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 18),
+                  label: const Text('O\'chirish',
+                      style: TextStyle(color: Colors.red)),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text('Davom etish'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

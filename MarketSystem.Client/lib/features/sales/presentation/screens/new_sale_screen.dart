@@ -7,13 +7,10 @@ import 'package:market_system_client/features/sales/presentation/widgets/price_i
 import 'package:market_system_client/features/sales/presentation/widgets/sale_body.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../data/services/sales_service.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../data/services/customer_service.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../bloc/sales_bloc.dart';
-import '../bloc/events/sales_event.dart';
 
 class NewSaleScreen extends StatefulWidget {
   const NewSaleScreen({super.key});
@@ -382,9 +379,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               _selectedCustomer = null;
             });
 
-            try {
-              context.read<SalesBloc>().add(const GetSalesEvent());
-            } catch (_) {}
+            // ✅ Removed GetSalesEvent call to prevent duplicate API calls
+            // Sales screen will reload sales when user returns (line 188 in sales_screen.dart)
 
             navigator.pop();
 

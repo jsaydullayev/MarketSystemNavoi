@@ -49,6 +49,7 @@ public class SaleService : ISaleService
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         // ✅ OPTIMIZED: Single query with eager loading - no N+1 problem
+        // ✅ FIX: Add Distinct() to prevent duplicate sales from being returned
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
@@ -57,6 +58,7 @@ public class SaleService : ISaleService
             .Include(s => s.Payments)
             .Where(s => s.MarketId == marketId)
             .OrderByDescending(s => s.CreatedAt)
+            .Distinct()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -90,6 +92,7 @@ public class SaleService : ISaleService
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         // ✅ OPTIMIZED: Single query with eager loading
+        // ✅ FIX: Add Distinct() to prevent duplicate sales from being returned
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
@@ -98,6 +101,7 @@ public class SaleService : ISaleService
             .Include(s => s.Payments)
             .Where(s => s.MarketId == marketId && s.CreatedAt >= start && s.CreatedAt <= end)
             .OrderByDescending(s => s.CreatedAt)
+            .Distinct()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
