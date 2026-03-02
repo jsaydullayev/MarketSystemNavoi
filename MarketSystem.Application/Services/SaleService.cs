@@ -16,14 +16,16 @@ public class SaleService : ISaleService
     private readonly AppDbContext _context;
     private readonly ILogger<SaleService> _logger;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly ICustomerService _customerService;
 
-    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService)
+    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService, ICustomerService customerService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
         _context = context;
         _logger = logger;
         _currentMarketService = currentMarketService;
+        _customerService = customerService;
     }
 
     public async Task<SaleDto?> GetSaleByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -223,6 +225,12 @@ public class SaleService : ISaleService
         await _unitOfWork.Sales.AddAsync(sale, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // If customer is specified, apply any available credit
+        if (request.CustomerId.HasValue)
+        {
+            await ApplyCustomerCreditAsync(sale.Id, request.CustomerId.Value, cancellationToken);
+        }
+
         // Audit log (temporarily disabled for testing)
         // await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
 
@@ -261,6 +269,12 @@ public class SaleService : ISaleService
         sale.CustomerId = request.CustomerId;
         _unitOfWork.Sales.Update(sale);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // If customer is specified, apply any available credit
+        if (request.CustomerId.HasValue)
+        {
+            await ApplyCustomerCreditAsync(saleId, request.CustomerId.Value, cancellationToken);
+        }
 
         return await MapToDtoAsync(sale, cancellationToken);
     }
@@ -736,6 +750,50 @@ public class SaleService : ISaleService
 
         // Returns true if price is valid (>= min price) or comment is provided
         return saleItem.SalePrice >= product.MinSalePrice || !string.IsNullOrWhiteSpace(saleItem.Comment);
+    }
+
+    /// <summary>
+    /// Applies customer's available credit (from negative payments/refunds) to a sale.
+    /// This is called when a customer is associated with a sale or when finalizing a sale.
+    /// </summary>
+    private async Task ApplyCustomerCreditAsync(Guid saleId, Guid customerId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Get available credit for the customer
+        var availableCredit = await _customerService.GetAvailableCreditAsync(customerId, cancellationToken);
+
+        if (availableCredit <= 0)
+            return; // No credit available
+
+        // Get the sale
+        var sale = await _context.Sales
+            .Include(s => s.Payments)
+            .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
+
+        if (sale == null)
+            return;
+
+        // Calculate how much credit can be applied (cannot exceed TotalAmount - PaidAmount)
+        var creditToApply = Math.Min(availableCredit, sale.TotalAmount - sale.PaidAmount);
+
+        if (creditToApply <= 0)
+            return; // No credit can be applied (either sale already fully paid or TotalAmount is 0)
+
+        _logger.LogInformation("Applying customer credit: SaleId={SaleId}, CustomerId={CustomerId}, CreditToApply={CreditToApply}, AvailableCredit={AvailableCredit}",
+            saleId, customerId, creditToApply, availableCredit);
+
+        // Apply the credit to the sale
+        // IMPORTANT: DO NOT create a payment record for credit application
+        // Creating a payment would cause it to be counted in reports as "paid sales"
+        // even though it's just a credit transfer, not actual revenue
+        sale.PaidAmount += creditToApply;
+
+        _context.Sales.Update(sale);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Credit applied successfully: SaleId={SaleId}, NewPaidAmount={NewPaidAmount}",
+            saleId, sale.PaidAmount);
     }
 
     private async Task<SaleDto> MapToDtoAsync(Sale sale, CancellationToken cancellationToken)
@@ -1240,6 +1298,32 @@ public class SaleService : ISaleService
             _logger.LogError(ex, "Error returning sale item");
             throw;
         }
+    }
+
+    /// <summary>
+    /// Applies customer's available credit (from negative payments/refunds) to a sale.
+    /// This is a public method that can be called manually to apply credit to an existing sale.
+    /// </summary>
+    public async Task<SaleDto?> ApplyCustomerCreditAsync(Guid saleId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Get the sale
+        var sale = await _context.Sales
+            .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
+
+        if (sale == null)
+            return null;
+
+        if (!sale.CustomerId.HasValue)
+        {
+            _logger.LogWarning("Cannot apply credit: Sale {SaleId} has no customer", saleId);
+            return null;
+        }
+
+        await ApplyCustomerCreditAsync(saleId, sale.CustomerId.Value, cancellationToken);
+
+        return await MapToDtoAsync(sale, cancellationToken);
     }
 
     public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default)
