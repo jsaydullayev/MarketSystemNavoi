@@ -438,7 +438,10 @@ public class ReportService : IReportService
         // Calculate from sales and their items
         foreach (var sale in sales)
         {
-            var paidAmount = sale.Payments.Sum(p => p.Amount);
+            // IMPORTANT: Use sale.PaidAmount directly instead of summing payments
+            // This ensures credit applications (which don't create payment records)
+            // are not incorrectly counted in reports
+            var paidAmount = sale.PaidAmount;
             var debtAmount = sale.TotalAmount - paidAmount;
 
             // Add to appropriate categories
@@ -636,7 +639,10 @@ public class ReportService : IReportService
         foreach (var sale in sales)
         {
             // Calculate paid and debt amounts
-            var paidAmount = sale.Payments.Sum(p => p.Amount);
+            // IMPORTANT: Use sale.PaidAmount directly instead of summing payments
+            // This ensures credit applications (which don't create payment records)
+            // are not incorrectly counted in reports
+            var paidAmount = sale.PaidAmount;
             var debtAmount = sale.TotalAmount - paidAmount;
 
             // Add to appropriate categories

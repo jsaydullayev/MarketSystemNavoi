@@ -27,4 +27,10 @@ public interface ISaleService
 
     // Tovar vozvrat uchun
     Task<SaleItemDto?> ReturnSaleItemAsync(Guid saleId, ReturnSaleItemRequest request, CancellationToken cancellationToken = default);
+
+    // Customer credit application
+    /// <summary>
+    /// Applies customer's available credit (from negative payments/refunds) to a sale.
+    /// </summary>
+    Task<SaleDto?> ApplyCustomerCreditAsync(Guid saleId, CancellationToken cancellationToken = default);
 }
