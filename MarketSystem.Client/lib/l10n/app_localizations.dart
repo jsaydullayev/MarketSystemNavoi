@@ -1735,6 +1735,186 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'o\'zgartirildi'**
   String get itemUpdated;
+
+  /// No description provided for @draftSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Davom etayotgan savdolar'**
+  String get draftSales;
+
+  /// No description provided for @newUser.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi foydalanuvchi'**
+  String get newUser;
+
+  /// No description provided for @debtDetails.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz detallari'**
+  String get debtDetails;
+
+  /// No description provided for @draftSale.
+  ///
+  /// In uz, this message translates to:
+  /// **'Draft savdo'**
+  String get draftSale;
+
+  /// No description provided for @debtors.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzdorlar'**
+  String get debtors;
+
+  /// No description provided for @noDebts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzlar yo\'q'**
+  String get noDebts;
+
+  /// No description provided for @debtHistory.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzlar tarixi'**
+  String get debtHistory;
+
+  /// No description provided for @retry.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qayta urinish'**
+  String get retry;
+
+  /// No description provided for @customerDeleted.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz muvaffaqiyatli o\'chirildi'**
+  String get customerDeleted;
+
+  /// No description provided for @customerAdded.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz muvaffaqiyatli qo\'shildi'**
+  String get customerAdded;
+
+  /// No description provided for @addNewCustomer.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi mijoz'**
+  String get addNewCustomer;
+
+  /// No description provided for @searchCustomer.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz qidirish...'**
+  String get searchCustomer;
+
+  /// No description provided for @customerNotFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz topilmadi'**
+  String get customerNotFound;
+
+  /// No description provided for @phoneNumber.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telefon raqami'**
+  String get phoneNumber;
+
+  /// No description provided for @fullNameOptional.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'liq ism (ixtiyoriy)'**
+  String get fullNameOptional;
+
+  /// No description provided for @commentOptional.
+  ///
+  /// In uz, this message translates to:
+  /// **'Izoh (ixtiyoriy)'**
+  String get commentOptional;
+
+  /// No description provided for @debtStatus.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz holati'**
+  String get debtStatus;
+
+  /// No description provided for @debtAmountSom.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz miqdori (so\'m)'**
+  String get debtAmountSom;
+
+  /// No description provided for @debtAmountRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz miqdorini kiritish shart'**
+  String get debtAmountRequired;
+
+  /// No description provided for @debtAmountPositive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz musbat son bo\'lishi kerak'**
+  String get debtAmountPositive;
+
+  /// No description provided for @debtRecordWillBeCreated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu mijoz uchun qarz yozuvi yaratiladi'**
+  String get debtRecordWillBeCreated;
+
+  /// No description provided for @noDebt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzsiz'**
+  String get noDebt;
+
+  /// No description provided for @yesDelete.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ha, o\'chirish'**
+  String get yesDelete;
+
+  /// No description provided for @deleteCustomerConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} o\'chirilsinmi?'**
+  String deleteCustomerConfirm(Object name);
+
+  /// No description provided for @deleteCustomer.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijozni o\'chirish'**
+  String get deleteCustomer;
+
+  /// No description provided for @noProductsFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotlar mavjud emas'**
+  String get noProductsFound;
+
+  /// No description provided for @inDebt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzda'**
+  String get inDebt;
+
+  /// No description provided for @debtor.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzdor'**
+  String get debtor;
+
+  /// No description provided for @phoneRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telefon raqam kiritish shart'**
+  String get phoneRequired;
+
+  /// No description provided for @phoneFormatHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Format: 998XXXXXXXXX (12 ta raqam)'**
+  String get phoneFormatHint;
 }
 
 class _AppLocalizationsDelegate

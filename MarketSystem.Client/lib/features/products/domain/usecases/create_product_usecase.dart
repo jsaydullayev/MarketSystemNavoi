@@ -2,8 +2,6 @@
 /// Business logic for creating a product
 
 import 'package:equatable/equatable.dart';
-
-import '../../../../core/failure/failures.dart';
 import '../entities/product_entity.dart';
 import '../repositories/product_repository.dart';
 

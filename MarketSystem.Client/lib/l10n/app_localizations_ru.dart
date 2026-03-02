@@ -186,7 +186,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get close => 'Закрыть';
 
   @override
-  String get total => 'Всего';
+  String get total => 'Итого';
 
   @override
   String get paid => 'Оплачено';
@@ -835,4 +835,98 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get itemUpdated => 'изменено';
+
+  @override
+  String get draftSales => 'Продолжающиеся продажи';
+
+  @override
+  String get newUser => 'Новый пользователь';
+
+  @override
+  String get debtDetails => 'Детали долга';
+
+  @override
+  String get draftSale => 'Черновик продажи';
+
+  @override
+  String get debtors => 'Должники';
+
+  @override
+  String get noDebts => 'Долгов нет';
+
+  @override
+  String get debtHistory => 'История долгов';
+
+  @override
+  String get retry => 'Повторить попытку';
+
+  @override
+  String get customerDeleted => 'Клиент успешно удален';
+
+  @override
+  String get customerAdded => 'Клиент успешно добавлен';
+
+  @override
+  String get addNewCustomer => 'Новый клиент';
+
+  @override
+  String get searchCustomer => 'Поиск клиента...';
+
+  @override
+  String get customerNotFound => 'Клиент не найден';
+
+  @override
+  String get phoneNumber => 'Номер телефона';
+
+  @override
+  String get fullNameOptional => 'Полное имя (необязательно)';
+
+  @override
+  String get commentOptional => 'Примечание (необязательно)';
+
+  @override
+  String get debtStatus => 'Статус долга';
+
+  @override
+  String get debtAmountSom => 'Сумма долга (сум)';
+
+  @override
+  String get debtAmountRequired => 'Необходимо ввести сумму долга';
+
+  @override
+  String get debtAmountPositive =>
+      'Сумма долга должна быть положительным числом';
+
+  @override
+  String get debtRecordWillBeCreated =>
+      'Для этого клиента будет создана запись о долге';
+
+  @override
+  String get noDebt => 'Без долга';
+
+  @override
+  String get yesDelete => 'Да, удалить';
+
+  @override
+  String deleteCustomerConfirm(Object name) {
+    return 'Удалить $name?';
+  }
+
+  @override
+  String get deleteCustomer => 'Удалить клиента';
+
+  @override
+  String get noProductsFound => 'Товары отсутствуют';
+
+  @override
+  String get inDebt => 'В долгу';
+
+  @override
+  String get debtor => 'Должник';
+
+  @override
+  String get phoneRequired => 'Необходимо ввести номер телефона';
+
+  @override
+  String get phoneFormatHint => 'Формат: 998XXXXXXXXX (12 цифр)';
 }
