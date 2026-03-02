@@ -40,10 +40,10 @@ class PaymentDialogState extends State<PaymentDialog> {
 
   double get _totalPaid {
     double total = 0;
-    if (_useCash) total += double.tryParse(_cashController.text) ?? 0;
-    if (_useTerminal) total += double.tryParse(_terminalController.text) ?? 0;
-    if (_useTransfer) total += double.tryParse(_transferController.text) ?? 0;
-    if (_useClick) total += double.tryParse(_clickController.text) ?? 0;
+    if (_useCash) total += double.tryParse(_cashController.text.replaceAll(',', '.')) ?? 0;
+    if (_useTerminal) total += double.tryParse(_terminalController.text.replaceAll(',', '.')) ?? 0;
+    if (_useTransfer) total += double.tryParse(_transferController.text.replaceAll(',', '.')) ?? 0;
+    if (_useClick) total += double.tryParse(_clickController.text.replaceAll(',', '.')) ?? 0;
     return total;
   }
 
@@ -269,22 +269,22 @@ class PaymentDialogState extends State<PaymentDialog> {
     if (_useCash)
       payments.add({
         'paymentType': 'CASH',
-        'amount': double.tryParse(_cashController.text) ?? 0
+        'amount': double.tryParse(_cashController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useTerminal)
       payments.add({
         'paymentType': 'CARD',
-        'amount': double.tryParse(_terminalController.text) ?? 0
+        'amount': double.tryParse(_terminalController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useTransfer)
       payments.add({
         'paymentType': 'TRANSFER',
-        'amount': double.tryParse(_transferController.text) ?? 0
+        'amount': double.tryParse(_transferController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useClick)
       payments.add({
         'paymentType': 'CLICK',
-        'amount': double.tryParse(_clickController.text) ?? 0
+        'amount': double.tryParse(_clickController.text.replaceAll(',', '.')) ?? 0
       });
 
     setState(() => _isProcessing = true);

@@ -218,7 +218,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final newPrice = double.tryParse(priceController.text) ?? 0;
+                final newPrice = double.tryParse(priceController.text.replaceAll(',', '.')) ?? 0;
                 final comment = commentController.text.trim();
 
                 if (newPrice <= 0) {

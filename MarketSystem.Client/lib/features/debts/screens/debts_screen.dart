@@ -153,7 +153,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final amount = double.tryParse(amountController.text) ?? 0;
+                final amount = double.tryParse(amountController.text.replaceAll(',', '.')) ?? 0;
                 if (amount <= 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
