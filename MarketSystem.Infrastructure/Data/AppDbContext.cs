@@ -85,8 +85,8 @@ public class AppDbContext : DbContext
             b.Property(x => x.CostPrice).HasPrecision(18, 2).IsRequired();
             b.Property(x => x.SalePrice).HasPrecision(18, 2).IsRequired();
             b.Property(x => x.MinSalePrice).HasPrecision(18, 2).IsRequired();
-            b.Property(x => x.Quantity).IsRequired();
-            b.Property(x => x.MinThreshold).IsRequired();
+            b.Property(x => x.Quantity).HasPrecision(18, 3).IsRequired();
+            b.Property(x => x.MinThreshold).HasPrecision(18, 3).IsRequired();
 
             // ✅ Category relationship (optional)
             b.HasOne(x => x.Category).WithMany(c => c.Products).HasForeignKey(x => x.CategoryId);
@@ -158,7 +158,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SaleItem>(b =>
         {
             b.HasKey(x => x.Id);
-            b.Property(x => x.Quantity).IsRequired();
+            b.Property(x => x.Quantity).HasPrecision(18, 3).IsRequired();
             b.Property(x => x.CostPrice).HasPrecision(18, 2);
             b.Property(x => x.SalePrice).HasPrecision(18, 2);
             b.Property(x => x.Comment).HasMaxLength(500);
