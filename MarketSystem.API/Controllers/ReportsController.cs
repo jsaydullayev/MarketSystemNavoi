@@ -477,4 +477,22 @@ public class ReportsController : ControllerBase
             return StatusCode(500, new { message = "Xatolik yuz berdi", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Get monthly category sales report
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<ActionResult<MonthlyCategorySalesResponseDto>> GetMonthlyCategorySales([FromQuery] DateTime date, CancellationToken cancellationToken = default)
+    {
+        // Get user role from JWT token
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        
+        var report = await _reportService.GetMonthlyCategorySalesAsync(utcDate, userRole, cancellationToken);
+        return Ok(report);
+    }
 }
+
