@@ -212,6 +212,8 @@ public record PeriodReportDto(
     [property: JsonPropertyName("startDate")] DateTime StartDate,
     [property: JsonPropertyName("endDate")] DateTime EndDate,
     [property: JsonPropertyName("totalSales")] decimal TotalSales,
+    [property: JsonPropertyName("totalPaidSales")] decimal TotalPaidSales,
+    [property: JsonPropertyName("totalDebtSales")] decimal TotalDebtSales,
     [property: JsonPropertyName("totalZakup")] decimal TotalZakup,
     [property: JsonPropertyName("profit")] decimal? Profit,  // null for Admin/Seller
     [property: JsonPropertyName("netIncome")] decimal? NetIncome,  // null for Admin/Seller
