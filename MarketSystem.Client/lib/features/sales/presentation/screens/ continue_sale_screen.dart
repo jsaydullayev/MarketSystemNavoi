@@ -578,7 +578,7 @@ class _PriceInputDialogState extends State<_PriceInputDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            final price = double.tryParse(_controller.text);
+            final price = double.tryParse(_controller.text.replaceAll(',', '.'));
             if (price != null && price > 0) {
               Navigator.pop(context, price);
             }

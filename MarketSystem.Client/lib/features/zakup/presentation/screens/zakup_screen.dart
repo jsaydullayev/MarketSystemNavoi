@@ -163,7 +163,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
       if (confirmed == true) {
         _createZakup(
           product['id'],
-          double.tryParse(quantityController.text) ?? 0,
+          double.tryParse(quantityController.text.replaceAll(',', '.')) ?? 0,
           double.parse(costPriceController.text),
         );
       }
