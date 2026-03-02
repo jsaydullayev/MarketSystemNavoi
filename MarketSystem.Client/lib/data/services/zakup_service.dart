@@ -38,7 +38,7 @@ class ZakupService {
 
   Future<dynamic> createZakup({
     required String productId,
-    required int quantity,
+    required double quantity,
     required double costPrice,
   }) async {
     final response = await _httpService.post(
