@@ -87,9 +87,9 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
       final String name = _nameController.text.trim();
       final double salePrice =
-          double.tryParse(_salePriceController.text) ?? 0.0;
+          double.tryParse(_salePriceController.text.replaceAll(',', '.')) ?? 0.0;
       final double minSalePrice =
-          double.tryParse(_minSalePriceController.text) ?? 0.0;
+          double.tryParse(_minSalePriceController.text.replaceAll(',', '.')) ?? 0.0;
       final int minThreshold = int.tryParse(_minThresholdController.text) ?? 0;
       final bool tempStatus = _isTemporary;
 

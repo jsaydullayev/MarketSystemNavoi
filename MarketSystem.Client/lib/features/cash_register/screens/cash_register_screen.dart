@@ -161,7 +161,7 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
   Future<void> _withdrawCash(String withdrawType) async {
     final l10n = AppLocalizations.of(context)!;
 
-    final amount = double.tryParse(_amountController.text);
+    final amount = double.tryParse(_amountController.text.replaceAll(',', '.'));
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.invalidInput)),
