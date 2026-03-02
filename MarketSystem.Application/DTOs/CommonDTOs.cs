@@ -54,7 +54,8 @@ public record UpdateProductDto(
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
     [property: JsonPropertyName("minThreshold")] decimal MinThreshold,
     [property: JsonPropertyName("categoryId")] int? CategoryId,
-    [property: JsonPropertyName("unit")] int Unit = 1  // Default: Piece
+    [property: JsonPropertyName("unit")] int Unit = 1,  // Default: Piece
+    [property: JsonPropertyName("isTemporary")] bool IsTemporary = false
 );
 
 // Customer DTOs
@@ -324,4 +325,20 @@ public record DailySalesListDto(
     [property: JsonPropertyName("totalDebtSales")] decimal TotalDebtSales,    // Qarzga sotilgan ✅ NEW
     [property: JsonPropertyName("totalTransactions")] int TotalTransactions,
     [property: JsonPropertyName("summaryProfit")] decimal? SummaryProfit  // null for Admin/Seller
+);
+
+// Category Sales Report
+public record CategorySalesDto(
+    [property: JsonPropertyName("categoryId")] int CategoryId,
+    [property: JsonPropertyName("categoryName")] string CategoryName,
+    [property: JsonPropertyName("totalSales")] decimal TotalSales,
+    [property: JsonPropertyName("totalQuantity")] decimal TotalQuantity,
+    [property: JsonPropertyName("totalProfit")] decimal? TotalProfit
+);
+
+public record MonthlyCategorySalesResponseDto(
+    [property: JsonPropertyName("date")] DateTime Date,
+    [property: JsonPropertyName("categories")] List<CategorySalesDto> Categories,
+    [property: JsonPropertyName("totalSales")] decimal TotalSales,
+    [property: JsonPropertyName("totalProfit")] decimal? TotalProfit
 );
