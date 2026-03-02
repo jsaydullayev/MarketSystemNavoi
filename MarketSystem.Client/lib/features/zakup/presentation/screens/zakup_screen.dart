@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/providers/auth_provider.dart';
-import '../../../core/utils/number_formatter.dart';
-import '../../../screens/dashboard_screen.dart';
-import '../../../data/services/product_service.dart';
-import '../../../data/services/zakup_service.dart';
-import '../presentation/bloc/zakup_bloc.dart';
-import '../presentation/bloc/events/zakup_event.dart';
-import '../../../core/utils/file_helper.dart' as core_file_helper;
-import '../presentation/bloc/states/zakup_state.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/number_formatter.dart';
+import '../../../../screens/dashboard_screen.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../data/services/zakup_service.dart';
+import '../bloc/zakup_bloc.dart';
+import '../bloc/events/zakup_event.dart';
+import '../../../../core/utils/file_helper.dart' as core_file_helper;
+import '../bloc/states/zakup_state.dart';
 
 class ZakupScreen extends StatefulWidget {
   const ZakupScreen({super.key});
@@ -237,6 +240,8 @@ class _ZakupScreenState extends State<ZakupScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final userRole = authProvider.user?['role'];
     final canAdd = userRole == 'Admin' || userRole == 'Owner';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return BlocListener<ZakupBloc, ZakupState>(
       listener: (context, state) {
@@ -257,41 +262,28 @@ class _ZakupScreenState extends State<ZakupScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Xaridlar (Zakup)'),
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(
-                context,
-                MaterialPageRoute(builder: (_) => const DashboardScreen()),
-              );
-            },
-          ),
-          actions: [
-            if (_isExporting)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.zakup,
+          onRefresh: () =>
+              context.read<ZakupBloc>().add(const GetZakupsEvent()),
+          extraActions: [
+            _isExporting
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.file_download_outlined),
+                    tooltip: 'Excelga yuklash',
+                    onPressed: _exportExcel,
                   ),
-                ),
-              )
-            else
-              IconButton(
-                icon: const Icon(Icons.file_download),
-                tooltip: 'Excelga yuklash',
-                onPressed: _exportExcel,
-              ),
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () =>
-                  context.read<ZakupBloc>().add(const GetZakupsEvent()),
-            ),
           ],
         ),
         body: Column(

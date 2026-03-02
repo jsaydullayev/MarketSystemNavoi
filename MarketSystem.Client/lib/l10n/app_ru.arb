@@ -279,5 +279,10 @@
   "selectCustomerTitle": "Выберите клиента",
   "noCustomersFound": "Клиенты не найдены",
   "itemUpdated": "изменено",
-  "enterAmount": "Введите сумму"
+  "enterAmount": "Введите сумму",
+  "draftSales": "Продолжающиеся продажи",
+  "newUser": "Новый пользователь",
+  "debtDetails": "Детали долга",
+  "draftSale": "Черновик продажи",
+  "debtors": "Должники"
 }

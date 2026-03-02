@@ -834,4 +834,19 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get itemUpdated => 'o\'zgartirildi';
+
+  @override
+  String get draftSales => 'Davom etayotgan savdolar';
+
+  @override
+  String get newUser => 'Yangi foydalanuvchi';
+
+  @override
+  String get debtDetails => 'Qarz detallari';
+
+  @override
+  String get draftSale => 'Draft savdo';
+
+  @override
+  String get debtors => 'Qarzdorlar';
 }

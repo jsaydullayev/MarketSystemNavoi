@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/features/categories/screens/category_bottom_sheet.dart';
 import 'package:market_system_client/features/categories/widgets/categories_card.dart';
 import 'package:provider/provider.dart';
@@ -86,20 +87,9 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     return Scaffold(
       backgroundColor:
           isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        title: Text(l10n.categories,
-            style: TextStyle(
-                color: isDark ? Colors.white : Colors.black,
-                fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh_rounded, color: theme.primaryColor),
-            onPressed: _loadCategories,
-          ),
-        ],
+      appBar: CommonAppBar(
+        title: l10n.categories,
+        onRefresh: _loadCategories,
       ),
       body: Center(
         child: Container(
