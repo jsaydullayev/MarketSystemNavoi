@@ -341,9 +341,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get card => 'Karta';
 
   @override
-  String get selectProduct => 'Mahsulotni tanlang';
-
-  @override
   String get noProducts => 'Mahsulotlar yo\'q';
 
   @override
@@ -926,4 +923,53 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get phoneFormatHint => 'Format: 998XXXXXXXXX (12 ta raqam)';
+
+  @override
+  String get productNotFound => 'Mahsulot topilmadi';
+
+  @override
+  String priceSom(Object price) {
+    return 'Narxi: $price so\'m';
+  }
+
+  @override
+  String get selectProduct => 'Mahsulot tanlang';
+
+  @override
+  String addedBy(Object user) {
+    return 'Qo\'shdi: $user';
+  }
+
+  @override
+  String costPriceSom(Object price) {
+    return 'Olingan narxi: $price so\'m';
+  }
+
+  @override
+  String get addPurchase => 'Zakup qo\'shish';
+
+  @override
+  String get noPurchases => 'Xaridlar yo\'q';
+
+  @override
+  String get errorLoadingData => 'Ma\'lumotlarni yuklab olishda xatolik';
+
+  @override
+  String get fileSaved => 'Fayl saqlandi';
+
+  @override
+  String get fileSaveError => 'Faylni saqlashda xatolik yuz berdi';
+
+  @override
+  String get costPriceField => 'Olingan narxi (so\'m)';
+
+  @override
+  String get noProductsAddFirst =>
+      'Mahsulotlar yo\'q. Avval mahsulot qo\'shing';
+
+  @override
+  String get onlyAdminOwnerCanAdd => 'Faqat Admin va Owner zakup qo\'sha oladi';
+
+  @override
+  String get fillAmountAndPrice => 'Miqdor va narxni to\'ldiring';
 }

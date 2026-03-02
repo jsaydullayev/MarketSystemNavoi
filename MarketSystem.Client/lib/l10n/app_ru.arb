@@ -307,5 +307,18 @@
   "inDebt": "В долгу",
   "debtor": "Должник",
   "phoneRequired": "Необходимо ввести номер телефона",
-  "phoneFormatHint": "Формат: 998XXXXXXXXX (12 цифр)"
+  "phoneFormatHint": "Формат: 998XXXXXXXXX (12 цифр)",
+  "productNotFound": "Товар не найден",
+  "priceSom": "Цена: {price} сум",
+  "addedBy": "Добавил: {user}",
+  "costPriceSom": "Цена покупки: {price} сум",
+  "addPurchase": "Добавить закуп",
+  "noPurchases": "Закупок нет",
+  "errorLoadingData": "Ошибка при загрузке данных",
+  "fileSaved": "Файл сохранен",
+  "fileSaveError": "Ошибка при сохранении файла",
+  "costPriceField": "Цена покупки (сум)",
+  "noProductsAddFirst": "Товаров нет. Сначала добавьте товар",
+  "onlyAdminOwnerCanAdd": "Только Админ и Владелец могут добавлять закуп",
+  "fillAmountAndPrice": "Заполните количество и цену"
 }
