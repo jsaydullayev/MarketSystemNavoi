@@ -1160,6 +1160,27 @@ public class SaleService : ISaleService
                         CreatedAt = DateTime.UtcNow
                     };
                     _context.Payments.Add(refundPayment);
+
+                    // Kassadan pulni ham yechib olish va tarixga yozish
+                    var cashRegister = await _context.CashRegisters.FirstOrDefaultAsync(cancellationToken);
+                    if (cashRegister != null)
+                    {
+                        cashRegister.CurrentBalance -= overpaid; // Kassadagi pulni ham qaytarish
+                        cashRegister.LastUpdated = DateTime.UtcNow;
+                        _context.CashRegisters.Update(cashRegister);
+                    }
+
+                    // Tizimda chiqim sifatida "-5000" tushishi uchun manfiy kiritiladi yoki commentga yoziladi
+                    var withdrawal = new CashWithdrawal
+                    {
+                        Id = Guid.NewGuid(),
+                        Amount = -overpaid, // Mijoz "pul olish tarixiga -5000 qo'shib qo'y" degani uchun
+                        Comment = $"Mahsulot qaytarilgani sababli mijozga qaytarildi (Savdo: {sale.Id})",
+                        WithdrawalDate = DateTime.UtcNow,
+                        UserId = null,  // Tizim tomonidan qilingan avtomatik qaytarish
+                        WithdrawType = "cash"
+                    };
+                    _context.CashWithdrawals.Add(withdrawal);
                 }
 
                 // 5. Status yangilash
