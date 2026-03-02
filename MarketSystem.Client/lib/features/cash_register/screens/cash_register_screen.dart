@@ -389,6 +389,10 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                             _buildStatRow('Jami summa:', '${_todaySales!.totalAmount.toStringAsFixed(2)} so\'m'),
                             const SizedBox(height: 12),
                             _buildStatRow('To\'langan:', '${_todaySales!.totalPaid.toStringAsFixed(2)} so\'m', color: Colors.green),
+                            if (_todaySales!.debtAmount > 0) ...[
+                              const SizedBox(height: 12),
+                              _buildStatRow('Qarzga:', '${_todaySales!.debtAmount.toStringAsFixed(2)} so\'m', color: Colors.orange),
+                            ],
                           ],
                         ),
                       ),
