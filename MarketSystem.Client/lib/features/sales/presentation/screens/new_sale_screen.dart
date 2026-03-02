@@ -160,13 +160,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       context: context,
       builder: (dialogContext) => PriceInputDialog(
         product: {
-          'name': item['productName'],
-          'salePrice': currentPrice,
-          'minSalePrice': minPrice,
-          'costPrice': item['costPrice'],
-          'id': item['productId'],
-          'unitName': product['unitName'] ?? 'dona',
-          'initialQuantity': currentQuantity, // ✅ Joriy miqdorni beramiz
+          'name': item['productName'] ?? 'Noma\'lum mahsulot',
+          'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
+          'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
+          'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
+          'id': item['productId'] ?? '',
+          // BU YERDA: product o'zgaruvchisi null bo'lsa xato bermasligi uchun:
+          'unitName': (item['unitName'] ?? 'dona'),
+          'initialQuantity': (currentQuantity ?? 1.0).toDouble(),
         },
         onConfirm: (newPrice, newQuantity, comment) {
           setState(() {
