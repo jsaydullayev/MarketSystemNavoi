@@ -340,9 +340,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get card => 'Карта';
 
   @override
-  String get selectProduct => 'Выберите товар';
-
-  @override
   String get noProducts => 'Нет товаров';
 
   @override
@@ -929,4 +926,53 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get phoneFormatHint => 'Формат: 998XXXXXXXXX (12 цифр)';
+
+  @override
+  String get productNotFound => 'Товар не найден';
+
+  @override
+  String priceSom(Object price) {
+    return 'Цена: $price сум';
+  }
+
+  @override
+  String get selectProduct => 'Выберите товар';
+
+  @override
+  String addedBy(Object user) {
+    return 'Добавил: $user';
+  }
+
+  @override
+  String costPriceSom(Object price) {
+    return 'Цена покупки: $price сум';
+  }
+
+  @override
+  String get addPurchase => 'Добавить закуп';
+
+  @override
+  String get noPurchases => 'Закупок нет';
+
+  @override
+  String get errorLoadingData => 'Ошибка при загрузке данных';
+
+  @override
+  String get fileSaved => 'Файл сохранен';
+
+  @override
+  String get fileSaveError => 'Ошибка при сохранении файла';
+
+  @override
+  String get costPriceField => 'Цена покупки (сум)';
+
+  @override
+  String get noProductsAddFirst => 'Товаров нет. Сначала добавьте товар';
+
+  @override
+  String get onlyAdminOwnerCanAdd =>
+      'Только Админ и Владелец могут добавлять закуп';
+
+  @override
+  String get fillAmountAndPrice => 'Заполните количество и цену';
 }
