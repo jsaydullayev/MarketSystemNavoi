@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 
-import '../../../core/utils/number_formatter.dart';
-import '../presentation/bloc/customers_bloc.dart';
-import '../presentation/bloc/events/customers_event.dart';
-import '../presentation/bloc/states/customers_state.dart';
+import '../../../../core/utils/number_formatter.dart';
+import '../bloc/customers_bloc.dart';
+import '../bloc/events/customers_event.dart';
+import '../bloc/states/customers_state.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final String customerId;
@@ -35,27 +37,31 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     super.didChangeDependencies();
     // Screen focus qaytganda refresh qilish
     if (mounted) {
-      print('🔄 CustomerDetailScreen: didChangeDependencies called, refreshing debts...');
+      print(
+          '🔄 CustomerDetailScreen: didChangeDependencies called, refreshing debts...');
       Future.delayed(Duration.zero, () {
-        context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
+        context
+            .read<CustomersBloc>()
+            .add(GetCustomerDebtsEvent(widget.customerId));
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.customerName.isNotEmpty ? widget.customerName : widget.customerPhone),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
-            },
-          ),
-        ],
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: widget.customerName.isNotEmpty
+            ? widget.customerName
+            : widget.customerPhone,
+        onRefresh: () {
+          context
+              .read<CustomersBloc>()
+              .add(GetCustomerDebtsEvent(widget.customerId));
+        },
       ),
       body: BlocListener<CustomersBloc, CustomersState>(
         listener: (context, state) {
@@ -87,7 +93,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
+                        context
+                            .read<CustomersBloc>()
+                            .add(GetCustomerDebtsEvent(widget.customerId));
                       },
                       child: const Text('Qayta urinish'),
                     ),
@@ -135,7 +143,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
+        context
+            .read<CustomersBloc>()
+            .add(GetCustomerDebtsEvent(widget.customerId));
       },
       child: ListView(
         padding: const EdgeInsets.all(16),
@@ -148,7 +158,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Icon(Icons.account_balance_wallet, size: 32, color: Colors.red.shade700),
+                  Icon(Icons.account_balance_wallet,
+                      size: 32, color: Colors.red.shade700),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -205,7 +216,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     final saleItems = debt['saleItems'] as List<dynamic>?;
 
     // Format date with GMT+5 (Tashkent time)
-    final formattedDate = NumberFormatter.formatDateTime(createdAt, showTime: true);
+    final formattedDate =
+        NumberFormatter.formatDateTime(createdAt, showTime: true);
 
     final isOpen = status.toLowerCase() == 'open';
     final hasProducts = saleItems != null && saleItems.isNotEmpty;
@@ -251,9 +263,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   ),
                   // Status badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isOpen ? Colors.red.shade100 : Colors.green.shade100,
+                      color:
+                          isOpen ? Colors.red.shade100 : Colors.green.shade100,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isOpen ? Colors.red : Colors.green,
@@ -415,7 +429,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.green.shade50,
                         borderRadius: BorderRadius.circular(4),

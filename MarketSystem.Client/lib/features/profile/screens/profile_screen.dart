@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -10,7 +11,7 @@ import '../../../data/services/user_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../widgets/profile_image_picker.dart';
 import '../widgets/profile_widgets.dart';
-import '../../auth/screens/welcome_screen.dart';
+import '../../auth/presentation/screens/welcome_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -60,9 +61,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final primaryColor = AppColors.getPrimary(context);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-      appBar: _buildAppBar(isDark, l10n),
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(
+        title: l10n.profile,
+        extraActions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            onPressed: () => _handleLogout(l10n),
+          ),
+        ],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
@@ -258,32 +266,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  PreferredSizeWidget _buildAppBar(bool isDark, var l10n) {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      title: Text(l10n.profile,
-          style: AppStyles.brandTitle.copyWith(fontSize: 20)),
-      centerTitle: true,
-      leading: IconButton(
-        icon: Icon(Icons.arrow_back_ios_new_rounded,
-            color: isDark ? Colors.white : Colors.black87, size: 20),
-        onPressed: () => Navigator.pop(context),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-          onPressed: () => _handleLogout(l10n),
-        ),
-      ],
-    );
-  }
-
   Widget _buildBottomAction(Color primary, var l10n, bool isDark) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        color: AppColors.getBg(isDark),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.05),

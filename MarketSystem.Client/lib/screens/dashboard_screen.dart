@@ -9,7 +9,7 @@ import '../core/providers/auth_provider.dart';
 import '../core/providers/locale_provider.dart';
 import '../core/routes/app_routes.dart';
 import '../l10n/app_localizations.dart';
-import '../features/auth/screens/welcome_screen.dart';
+import '../features/auth/presentation/screens/welcome_screen.dart';
 import '../features/products/presentation/screens/products_screen.dart';
 import '../features/categories/screens/category_management_screen.dart';
 import '../features/daily_sales/screens/daily_sales_screen.dart';

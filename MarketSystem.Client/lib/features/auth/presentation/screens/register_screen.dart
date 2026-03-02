@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/providers/auth_provider.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../l10n/app_localizations.dart';
+import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -188,7 +188,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                           // Full Name field
                           TextFormField(
                             controller: _fullNameController,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                            style: const TextStyle(
+                                color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
                               label: l10n.fullName,
                               icon: Icons.person_outline,
@@ -205,7 +206,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                           // Username field
                           TextFormField(
                             controller: _usernameController,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                            style: const TextStyle(
+                                color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
                               label: l10n.username,
                               icon: Icons.account_circle_outlined,
@@ -226,7 +228,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                           TextFormField(
                             controller: _passwordController,
                             obscureText: true,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                            style: const TextStyle(
+                                color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
                               label: l10n.password,
                               icon: Icons.lock_outline,
@@ -247,7 +250,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                           TextFormField(
                             controller: _confirmPasswordController,
                             obscureText: true,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                            style: const TextStyle(
+                                color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
                               label: l10n.passwordConfirm,
                               icon: Icons.lock_outline,
@@ -267,7 +271,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                           // Market Name field
                           TextFormField(
                             controller: _marketNameController,
-                            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                            style: const TextStyle(
+                                color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
                               label: 'Market nomi',
                               icon: Icons.store_outlined,
