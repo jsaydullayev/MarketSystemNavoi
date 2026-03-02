@@ -72,13 +72,27 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<void> _deleteProduct(dynamic product) async {
+    setState(() {
+      _products.removeWhere((p) => p['id'] == product['id']);
+      _filteredProducts.removeWhere((p) => p['id'] == product['id']);
+    });
+
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await ProductService(authProvider: authProvider)
           .deleteProduct(product['id']);
-      _loadProducts();
     } catch (e) {
-      _showSnackBar(e.toString(), Colors.red);
+      setState(() {
+        _products.add(product);
+        _filteredProducts.add(product);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text(
+              'Bu mahsulot savdolarda ishlatilgan, o\'chirib bo\'lmaydi'),
+          backgroundColor: Colors.red,
+        ));
+      }
     }
   }
 

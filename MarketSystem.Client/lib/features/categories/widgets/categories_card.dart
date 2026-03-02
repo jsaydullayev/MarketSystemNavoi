@@ -32,10 +32,14 @@ class CategoryCard extends StatelessWidget {
             onEdit(category);
             return false;
           } else {
-            return await _showConfirmDialog(context);
+            final confirmed = await _showConfirmDialog(context);
+            if (confirmed) {
+              onDelete(category);
+            }
+            return false;
           }
         },
-        onDismissed: (dir) => onDelete(category),
+        onDismissed: (dir) => {},
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E1E1E) : Colors.white,

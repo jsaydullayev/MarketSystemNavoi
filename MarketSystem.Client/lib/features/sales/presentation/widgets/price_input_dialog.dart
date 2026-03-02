@@ -44,134 +44,142 @@ class _PriceInputDialogState extends State<PriceInputDialog> {
     final minPrice = widget.product['minSalePrice']?.toDouble() ?? 0.0;
     final unitName = widget.product['unitName'] ?? l10n.piece;
 
-    return Dialog(
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppColors.getCard(isDark),
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundColor: AppColors.primary,
-                      child: Icon(Icons.shopping_bag_outlined,
-                          color: Colors.white),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        widget.product['name'] ?? l10n.unknown,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
+      body: Center(
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.getCard(isDark),
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildStyledField(
-                      controller: _qtyController,
-                      label: l10n.amount,
-                      icon: Icons.add_box_outlined,
-                      suffix: unitName,
-                      isNum: true,
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          backgroundColor: AppColors.primary,
+                          child: Icon(Icons.shopping_bag_outlined,
+                              color: Colors.white),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            widget.product['name'] ?? l10n.unknown,
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 3,
-                    child: _buildStyledField(
-                      controller: _priceController,
-                      label: l10n.price,
-                      icon: Icons.payments_outlined,
-                      suffix: l10n.currencySom,
-                      isNum: true,
-                    ),
-                  ),
-                ],
-              ),
-              if (minPrice > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, left: 4),
-                  child: Row(
+                  const SizedBox(height: 24),
+                  Row(
                     children: [
-                      const Icon(Icons.info_outline,
-                          size: 14, color: Colors.orange),
-                      const SizedBox(width: 4),
-                      Text(
-                        "${l10n.minPrice}: ${NumberFormatter.format(minPrice)}",
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange,
-                            fontWeight: FontWeight.w500),
+                      Expanded(
+                        flex: 2,
+                        child: _buildStyledField(
+                          controller: _qtyController,
+                          label: l10n.amount,
+                          icon: Icons.add_box_outlined,
+                          suffix: unitName,
+                          isNum: true,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 3,
+                        child: _buildStyledField(
+                          controller: _priceController,
+                          label: l10n.price,
+                          icon: Icons.payments_outlined,
+                          suffix: l10n.currencySom,
+                          isNum: true,
+                        ),
                       ),
                     ],
                   ),
-                ),
-              16.height,
-              _buildStyledField(
-                controller: _commentController,
-                label: l10n.reasonOptional,
-                icon: Icons.edit_note,
-                isNum: false,
-              ),
-              32.height,
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        side: BorderSide(color: theme.dividerColor),
+                  if (minPrice > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline,
+                              size: 14, color: Colors.orange),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${l10n.minPrice}: ${NumberFormatter.format(minPrice)}",
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ],
                       ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(l10n.cancel,
-                          style: TextStyle(color: theme.hintColor)),
                     ),
+                  16.height,
+                  _buildStyledField(
+                    controller: _commentController,
+                    label: l10n.reasonOptional,
+                    icon: Icons.edit_note,
+                    isNum: false,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
+                  32.height,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            side: BorderSide(color: theme.dividerColor),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(l10n.cancel,
+                              style: TextStyle(color: theme.hintColor)),
+                        ),
                       ),
-                      onPressed: () {
-                        final p = double.tryParse(_priceController.text) ?? 0;
-                        final q = double.tryParse(_qtyController.text) ?? 1;
-                        widget.onConfirm(p, q, _commentController.text);
-                        Navigator.pop(context);
-                      },
-                      child: Text(l10n.add,
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                          onPressed: () {
+                            final p =
+                                double.tryParse(_priceController.text) ?? 0;
+                            final q = double.tryParse(_qtyController.text) ?? 1;
+                            widget.onConfirm(p, q, _commentController.text);
+                            Navigator.pop(context);
+                          },
+                          child: Text(l10n.add,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
