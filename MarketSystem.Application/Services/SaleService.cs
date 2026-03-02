@@ -1140,57 +1140,61 @@ public class SaleService : ISaleService
                 _logger.LogInformation("Sale total updated: SaleId={SaleId}, OldTotal={OldTotal}, NewTotal={NewTotal}",
                     saleId, oldTotalAmount, sale.TotalAmount);
 
-                // 4. To'langan summani yangilash (unchanged)
-                var oldPaidAmount = sale.PaidAmount;
+                // 4. To'langan summani tartibga solish (Negative debt va xato balans paydo bo'lmasligi u.n)
+                if (sale.PaidAmount > sale.TotalAmount)
+                {
+                    var overpaid = sale.PaidAmount - sale.TotalAmount;
+                    _logger.LogInformation("PaidAmount ({PaidAmount}) exceeds NewTotal ({NewTotal}). Adjusting PaidAmount to {NewTotal} & refunding {Overpaid}.", 
+                        sale.PaidAmount, sale.TotalAmount, sale.TotalAmount, overpaid);
+                    
+                    sale.PaidAmount = sale.TotalAmount;
+
+                    // Balans (hisobotlarda) to'g'ri chiqishi uchun manfiy payment qayd etiladi
+                    var refundPayment = new Payment
+                    {
+                        Id = Guid.NewGuid(),
+                        SaleId = sale.Id,
+                        PaymentType = PaymentType.Cash, 
+                        Amount = -overpaid,
+                        MarketId = marketId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.Payments.Add(refundPayment);
+                }
 
                 // 5. Status yangilash
                 var oldStatus = sale.Status;
 
-                if (sale.PaidAmount < sale.TotalAmount && sale.TotalAmount > 0)
+                if (sale.TotalAmount == 0 || sale.SaleItems.Count == 0)
                 {
-                    if (sale.Status != SaleStatus.Debt)
-                    {
-                        _logger.LogInformation("Sale status changing to Debt: SaleId={SaleId}", saleId);
-                        sale.Status = SaleStatus.Debt;
-                    }
-                }
-                else if (sale.SaleItems.Count == 0)
-                {
-                    _logger.LogInformation("All items returned, closing sale: SaleId={SaleId}", saleId);
                     sale.Status = SaleStatus.Closed;
+                }
+                else if (sale.PaidAmount < sale.TotalAmount)
+                {
+                    sale.Status = SaleStatus.Debt;
+                }
+                else
+                {
+                    sale.Status = SaleStatus.Paid;
                 }
 
                 _logger.LogInformation("Sale status: SaleId={SaleId}, OldStatus={OldStatus}, NewStatus={NewStatus}",
                     saleId, oldStatus, sale.Status);
 
                 // 6. DEBT JADVALINI YANGILASH
-                if (sale.CustomerId.HasValue && sale.Status == SaleStatus.Debt)
+                if (sale.CustomerId.HasValue)
                 {
                     var existingDebt = await _context.Debts
                         .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId, cancellationToken);
 
                     if (existingDebt != null)
                     {
-                        var oldDebtRemaining = existingDebt.RemainingDebt;
                         var newRemainingDebt = sale.TotalAmount - sale.PaidAmount;
-
                         existingDebt.TotalDebt = sale.TotalAmount;
-                        existingDebt.RemainingDebt = newRemainingDebt;
+                        existingDebt.RemainingDebt = newRemainingDebt > 0 ? newRemainingDebt : 0;
+                        existingDebt.Status = newRemainingDebt > 0 ? DebtStatus.Open : DebtStatus.Closed;
 
                         _context.Debts.Update(existingDebt);
-                    }
-                }
-                else if (sale.CustomerId.HasValue && sale.Status != SaleStatus.Debt)
-                {
-                    var debtToClose = await _context.Debts
-                        .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId && d.Status == DebtStatus.Open, cancellationToken);
-
-                    if (debtToClose != null)
-                    {
-                        debtToClose.Status = DebtStatus.Closed;
-                        debtToClose.RemainingDebt = 0;
-                        debtToClose.TotalDebt = sale.TotalAmount;
-                        _context.Debts.Update(debtToClose);
                     }
                 }
 
