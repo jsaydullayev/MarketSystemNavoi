@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
+import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../bloc/sales_bloc.dart';
@@ -64,24 +65,13 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.getBg(isDark),
-        appBar: AppBar(
-          backgroundColor: AppColors.getCard(isDark),
-          elevation: 0,
-          title: Text(l10n.sales,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
-            onPressed: () {
-              context.read<SalesBloc>().add(const GetSalesEvent());
-              Navigator.pop(context);
-            },
-          ),
-          actions: [
-            IconButton(
-                icon: const Icon(Icons.refresh_rounded),
-                onPressed: _loadSaleDetails),
-          ],
+        appBar: CommonAppBar(
+          title: l10n.sales,
+          onRefresh: _loadSaleDetails,
+          onBackPressed: () {
+            context.read<SalesBloc>().add(const GetSalesEvent());
+            Navigator.pop(context);
+          },
         ),
         body: BlocBuilder<SalesBloc, SalesState>(
           builder: (context, state) {
