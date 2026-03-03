@@ -65,8 +65,84 @@ class _ZakupScreenState extends State<ZakupScreen> {
       return;
     }
 
-    AddZakupSheet.show(context, products: _products);
+    final selectedProduct = await showDialog<dynamic>(
+      context: context,
+      builder: (context) => _AddZakupDialog(products: filteredProducts),
+    );
+
+    if (selectedProduct != null && mounted) {
+      _showQuantityAndPriceDialog(selectedProduct);
+    }
   }
+
+  void _showQuantityAndPriceDialog(dynamic product) {
+    final quantityController = TextEditingController();
+    final costPriceController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${product['name']} - Zakup'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: quantityController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Soni',
+                prefixIcon: Icon(Icons.layers),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: costPriceController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Olingan narxi (so\'m)',
+                prefixIcon: Icon(Icons.money_off),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Bekor qilish'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (quantityController.text.isNotEmpty &&
+                  costPriceController.text.isNotEmpty) {
+                Navigator.pop(context, true);
+              }
+            },
+            child: const Text('Qo\'shish'),
+          ),
+        ],
+      ),
+    ).then((confirmed) {
+      if (confirmed == true) {
+        _createZakup(
+          product['id'],
+          int.parse(quantityController.text),
+          double.parse(costPriceController.text),
+        );
+      }
+    });
+  }
+
+  void _createZakup(String productId, int quantity, double costPrice) {
+    context.read<ZakupBloc>().add(CreateZakupEvent(
+          productId: productId,
+          quantity: quantity,
+          costPrice: costPrice,
+        ));
+  }
+
+  bool _isExporting = false;
 
   Future<void> _exportExcel() async {
     final l10n = AppLocalizations.of(context)!;

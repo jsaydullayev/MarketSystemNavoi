@@ -509,11 +509,19 @@ public class SaleService : ISaleService
                 throw new InvalidOperationException("Mijoz tanlanmagan savdoni qarzga yopib bo'lmaydi. Iltimos, mijoz tanlang yoki to'liq to'lov qiling.");
             }
 
+            
+            // Map frontend's "CARD" to backend's "Terminal"
+            var paymentTypeStr = request.PaymentType;
+            if (string.Equals(paymentTypeStr, "CARD", StringComparison.OrdinalIgnoreCase))
+            {
+                paymentTypeStr = "Terminal";
+            }
+
             var payment = new Payment
             {
                 Id = Guid.NewGuid(),
                 SaleId = saleId,
-                PaymentType = Enum.Parse<PaymentType>(request.PaymentType, true),
+                PaymentType = Enum.Parse<PaymentType>(paymentTypeStr, true),
                 Amount = request.Amount,
                 MarketId = sale.MarketId  // Multi-tenancy - inherit from Sale
             };

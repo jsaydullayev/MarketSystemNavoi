@@ -76,7 +76,7 @@ class ProductRepositoryImpl implements ProductRepository {
     required double costPrice,
     required double salePrice,
     required double minSalePrice,
-    required int quantity,
+    required double quantity,
     required int minThreshold,
   }) async {
     try {
@@ -109,7 +109,7 @@ class ProductRepositoryImpl implements ProductRepository {
     required double costPrice,
     required double salePrice,
     required double minSalePrice,
-    required int quantity,
+    required double quantity,
     required int minThreshold,
   }) async {
     try {
