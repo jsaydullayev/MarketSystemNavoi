@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:http/http.dart' as http;
 import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
 
@@ -127,33 +127,25 @@ class AuthService {
         return null;
       }
 
-      final response = await _httpService.post(
-        ApiConstants.refreshToken,
-        body: {
-          'refreshToken': refreshToken,
-        },
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshToken}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
       );
 
       print('Refresh Token Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        // Yangi tokenlarni saqlash
         await _httpService.saveTokens(
           data['accessToken'],
           data['refreshToken'],
         );
-
         print('Token refreshed successfully');
         return data;
-      } else if (response.statusCode == 401) {
-        // Refresh token ham muddati tugagan - logout qilish kerak
+      } else {
         print('Refresh token expired, user must login again');
         await _httpService.clearTokens();
-        return null;
-      } else {
-        print('Refresh token failed with status: ${response.statusCode}');
         return null;
       }
     } catch (e) {

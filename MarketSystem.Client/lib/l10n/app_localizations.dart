@@ -1993,6 +1993,102 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Miqdor va narxni to\'ldiring'**
   String get fillAmountAndPrice;
+
+  /// No description provided for @activated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Aktivatsiya qilindi'**
+  String get activated;
+
+  /// No description provided for @deactivated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Deaktivatsiya qilindi'**
+  String get deactivated;
+
+  /// No description provided for @cannotDeleteSelf.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'zingizni o\'chira olmaysiz'**
+  String get cannotDeleteSelf;
+
+  /// No description provided for @deleteUser.
+  ///
+  /// In uz, this message translates to:
+  /// **'Foydalanuvchini o\'chirish'**
+  String get deleteUser;
+
+  /// No description provided for @deleteUserConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} ni o\'chirmoqchimisiz?'**
+  String deleteUserConfirm(Object name);
+
+  /// No description provided for @searchUser.
+  ///
+  /// In uz, this message translates to:
+  /// **'Foydalanuvchi qidirish...'**
+  String get searchUser;
+
+  /// No description provided for @userNotFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Foydalanuvchi topilmadi'**
+  String get userNotFound;
+
+  /// No description provided for @noUsersFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Foydalanuvchilar yo\'q'**
+  String get noUsersFound;
+
+  /// No description provided for @nameRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ism kiritish shart'**
+  String get nameRequired;
+
+  /// No description provided for @usernameRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Username shart'**
+  String get usernameRequired;
+
+  /// No description provided for @minThreeChars.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kamida 3 ta belgi'**
+  String get minThreeChars;
+
+  /// No description provided for @noSpacesAllowed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bo\'sh joy bo\'lmasin'**
+  String get noSpacesAllowed;
+
+  /// No description provided for @passwordRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Parol shart'**
+  String get passwordRequired;
+
+  /// No description provided for @confirmPasswordRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tasdiqlash shart'**
+  String get confirmPasswordRequired;
+
+  /// No description provided for @userCreatedSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muvaffaqiyatli yaratildi!'**
+  String get userCreatedSuccess;
+
+  /// No description provided for @giveCredentialsToUser.
+  ///
+  /// In uz, this message translates to:
+  /// **'Username va parolni yangi foydalanuvchiga bering'**
+  String get giveCredentialsToUser;
 }
 
 class _AppLocalizationsDelegate

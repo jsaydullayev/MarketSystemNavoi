@@ -975,4 +975,55 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get fillAmountAndPrice => 'Заполните количество и цену';
+
+  @override
+  String get activated => 'Активировано';
+
+  @override
+  String get deactivated => 'Деактивировано';
+
+  @override
+  String get cannotDeleteSelf => 'Вы не можете удалить самого себя';
+
+  @override
+  String get deleteUser => 'Удалить пользователя';
+
+  @override
+  String deleteUserConfirm(Object name) {
+    return 'Вы действительно хотите удалить $name?';
+  }
+
+  @override
+  String get searchUser => 'Поиск пользователя...';
+
+  @override
+  String get userNotFound => 'Пользователь не найден';
+
+  @override
+  String get noUsersFound => 'Пользователи не найдены';
+
+  @override
+  String get nameRequired => 'Имя обязательно';
+
+  @override
+  String get usernameRequired => 'Username обязателен';
+
+  @override
+  String get minThreeChars => 'Минимум 3 символа';
+
+  @override
+  String get noSpacesAllowed => 'Пробелы не допускаются';
+
+  @override
+  String get passwordRequired => 'Пароль обязателен';
+
+  @override
+  String get confirmPasswordRequired => 'Подтверждение обязательно';
+
+  @override
+  String get userCreatedSuccess => 'Успешно создано!';
+
+  @override
+  String get giveCredentialsToUser =>
+      'Передайте имя пользователя и пароль новому пользователю';
 }
