@@ -1,7 +1,8 @@
+// lib/features/zakup/presentation/screens/zakup_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
-import 'package:market_system_client/core/theme/app_theme.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -65,84 +66,8 @@ class _ZakupScreenState extends State<ZakupScreen> {
       return;
     }
 
-    final selectedProduct = await showDialog<dynamic>(
-      context: context,
-      builder: (context) => _AddZakupDialog(products: filteredProducts),
-    );
-
-    if (selectedProduct != null && mounted) {
-      _showQuantityAndPriceDialog(selectedProduct);
-    }
+    AddZakupSheet.show(context, products: _products);
   }
-
-  void _showQuantityAndPriceDialog(dynamic product) {
-    final quantityController = TextEditingController();
-    final costPriceController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('${product['name']} - Zakup'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: quantityController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Soni',
-                prefixIcon: Icon(Icons.layers),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: costPriceController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Olingan narxi (so\'m)',
-                prefixIcon: Icon(Icons.money_off),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Bekor qilish'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (quantityController.text.isNotEmpty &&
-                  costPriceController.text.isNotEmpty) {
-                Navigator.pop(context, true);
-              }
-            },
-            child: const Text('Qo\'shish'),
-          ),
-        ],
-      ),
-    ).then((confirmed) {
-      if (confirmed == true) {
-        _createZakup(
-          product['id'],
-          int.parse(quantityController.text),
-          double.parse(costPriceController.text),
-        );
-      }
-    });
-  }
-
-  void _createZakup(String productId, int quantity, double costPrice) {
-    context.read<ZakupBloc>().add(CreateZakupEvent(
-          productId: productId,
-          quantity: quantity,
-          costPrice: costPrice,
-        ));
-  }
-
-  bool _isExporting = false;
 
   Future<void> _exportExcel() async {
     final l10n = AppLocalizations.of(context)!;
@@ -268,7 +193,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
         floatingActionButton: canAdd
             ? FloatingActionButton.extended(
                 onPressed: () => _openAddSheet(context),
-                backgroundColor: AppTheme.primaryDark,
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 2,
                 icon: const Icon(Icons.add_rounded),
@@ -299,11 +224,11 @@ class _EmptyView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppTheme.primaryDark.withOpacity(0.08),
+              color: AppColors.primary.withOpacity(0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.shopping_bag_outlined,
-                size: 48, color: AppTheme.primaryDark),
+                size: 48, color: AppColors.primary),
           ),
           const SizedBox(height: 16),
           Text(
@@ -341,7 +266,7 @@ class _ErrorView extends StatelessWidget {
             ElevatedButton(
               onPressed: onRetry,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryDark,
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
               ),
               child: Text(l10n.retry),

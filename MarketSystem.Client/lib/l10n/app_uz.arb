@@ -321,5 +321,21 @@
   "costPriceField": "Olingan narxi (so'm)",
   "noProductsAddFirst": "Mahsulotlar yo'q. Avval mahsulot qo'shing",
   "onlyAdminOwnerCanAdd": "Faqat Admin va Owner zakup qo'sha oladi",
-  "fillAmountAndPrice": "Miqdor va narxni to'ldiring"
+  "fillAmountAndPrice": "Miqdor va narxni to'ldiring",
+  "activated": "Aktivatsiya qilindi",
+  "deactivated": "Deaktivatsiya qilindi",
+  "cannotDeleteSelf": "O'zingizni o'chira olmaysiz",
+  "deleteUser": "Foydalanuvchini o'chirish",
+  "deleteUserConfirm": "{name} ni o'chirmoqchimisiz?",
+  "searchUser": "Foydalanuvchi qidirish...",
+  "userNotFound": "Foydalanuvchi topilmadi",
+  "noUsersFound": "Foydalanuvchilar yo'q",
+  "nameRequired": "Ism kiritish shart",
+  "usernameRequired": "Username shart",
+  "minThreeChars": "Kamida 3 ta belgi",
+  "noSpacesAllowed": "Bo'sh joy bo'lmasin",
+  "passwordRequired": "Parol shart",
+  "confirmPasswordRequired": "Tasdiqlash shart",
+  "userCreatedSuccess": "Muvaffaqiyatli yaratildi!",
+  "giveCredentialsToUser": "Username va parolni yangi foydalanuvchiga bering"
 }

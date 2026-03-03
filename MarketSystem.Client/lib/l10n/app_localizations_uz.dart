@@ -972,4 +972,55 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get fillAmountAndPrice => 'Miqdor va narxni to\'ldiring';
+
+  @override
+  String get activated => 'Aktivatsiya qilindi';
+
+  @override
+  String get deactivated => 'Deaktivatsiya qilindi';
+
+  @override
+  String get cannotDeleteSelf => 'O\'zingizni o\'chira olmaysiz';
+
+  @override
+  String get deleteUser => 'Foydalanuvchini o\'chirish';
+
+  @override
+  String deleteUserConfirm(Object name) {
+    return '$name ni o\'chirmoqchimisiz?';
+  }
+
+  @override
+  String get searchUser => 'Foydalanuvchi qidirish...';
+
+  @override
+  String get userNotFound => 'Foydalanuvchi topilmadi';
+
+  @override
+  String get noUsersFound => 'Foydalanuvchilar yo\'q';
+
+  @override
+  String get nameRequired => 'Ism kiritish shart';
+
+  @override
+  String get usernameRequired => 'Username shart';
+
+  @override
+  String get minThreeChars => 'Kamida 3 ta belgi';
+
+  @override
+  String get noSpacesAllowed => 'Bo\'sh joy bo\'lmasin';
+
+  @override
+  String get passwordRequired => 'Parol shart';
+
+  @override
+  String get confirmPasswordRequired => 'Tasdiqlash shart';
+
+  @override
+  String get userCreatedSuccess => 'Muvaffaqiyatli yaratildi!';
+
+  @override
+  String get giveCredentialsToUser =>
+      'Username va parolni yangi foydalanuvchiga bering';
 }

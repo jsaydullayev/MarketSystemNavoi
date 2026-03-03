@@ -320,5 +320,21 @@
   "costPriceField": "Цена покупки (сум)",
   "noProductsAddFirst": "Товаров нет. Сначала добавьте товар",
   "onlyAdminOwnerCanAdd": "Только Админ и Владелец могут добавлять закуп",
-  "fillAmountAndPrice": "Заполните количество и цену"
+  "fillAmountAndPrice": "Заполните количество и цену",
+  "activated": "Активировано",
+  "deactivated": "Деактивировано",
+  "cannotDeleteSelf": "Вы не можете удалить самого себя",
+  "deleteUser": "Удалить пользователя",
+  "deleteUserConfirm": "Вы действительно хотите удалить {name}?",
+  "searchUser": "Поиск пользователя...",
+  "userNotFound": "Пользователь не найден",
+  "noUsersFound": "Пользователи не найдены",
+  "nameRequired": "Имя обязательно",
+  "usernameRequired": "Username обязателен",
+  "minThreeChars": "Минимум 3 символа",
+  "noSpacesAllowed": "Пробелы не допускаются",
+  "passwordRequired": "Пароль обязателен",
+  "confirmPasswordRequired": "Подтверждение обязательно",
+  "userCreatedSuccess": "Успешно создано!",
+  "giveCredentialsToUser": "Передайте имя пользователя и пароль новому пользователю"
 }

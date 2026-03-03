@@ -1,7 +1,8 @@
+// lib/features/zakup/presentation/widgets/add_zakup_sheet.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
-import 'package:market_system_client/core/theme/app_theme.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import '../bloc/zakup_bloc.dart';
@@ -89,7 +90,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
 
     context.read<ZakupBloc>().add(CreateZakupEvent(
           productId: _selectedProduct['id'],
-          quantity: qty,
+          quantity: qty.toDouble(),
           costPrice: price,
         ));
     Navigator.pop(context);
@@ -191,11 +192,11 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                               width: 38,
                               height: 38,
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryDark.withOpacity(0.1),
+                                color: AppColors.primary.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(Icons.inventory_2_rounded,
-                                  color: AppTheme.primaryDark, size: 18),
+                                  color: AppColors.primary, size: 18),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -266,7 +267,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryDark.withOpacity(0.08),
+                    color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -274,7 +275,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                       Container(
                         padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryDark,
+                          color: AppColors.primary,
                           borderRadius: BorderRadius.circular(9),
                         ),
                         child: const Icon(Icons.shopping_bag_rounded,
@@ -350,7 +351,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                 flex: 2,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     elevation: 0,
@@ -479,7 +480,7 @@ class _InputField extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: isDark ? Colors.white : const Color(0xFF111111)),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 18, color: AppTheme.primaryDark),
+            prefixIcon: Icon(icon, size: 18, color: AppColors.primary),
             suffixText: suffix,
             filled: true,
             fillColor:
@@ -491,7 +492,7 @@ class _InputField extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide:
-                  const BorderSide(color: AppTheme.primaryDark, width: 1.5),
+                  const BorderSide(color: AppColors.primary, width: 1.5),
             ),
             contentPadding: const EdgeInsets.all(14),
           ),
