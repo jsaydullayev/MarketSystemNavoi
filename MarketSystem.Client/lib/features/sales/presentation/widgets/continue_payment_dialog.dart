@@ -34,10 +34,10 @@ class _ContinuePaymentDialogState extends State<ContinuePaymentDialog> {
 
   double get _totalPaid {
     double total = 0;
-    if (_useCash) total += double.tryParse(_cashController.text) ?? 0;
-    if (_useTerminal) total += double.tryParse(_terminalController.text) ?? 0;
-    if (_useTransfer) total += double.tryParse(_transferController.text) ?? 0;
-    if (_useClick) total += double.tryParse(_clickController.text) ?? 0;
+    if (_useCash) total += double.tryParse(_cashController.text.replaceAll(',', '.')) ?? 0;
+    if (_useTerminal) total += double.tryParse(_terminalController.text.replaceAll(',', '.')) ?? 0;
+    if (_useTransfer) total += double.tryParse(_transferController.text.replaceAll(',', '.')) ?? 0;
+    if (_useClick) total += double.tryParse(_clickController.text.replaceAll(',', '.')) ?? 0;
     return total;
   }
 
@@ -234,25 +234,25 @@ class _ContinuePaymentDialogState extends State<ContinuePaymentDialog> {
     if (_useCash && _cashController.text.isNotEmpty) {
       payments.add({
         'paymentType': 'Cash',
-        'amount': double.tryParse(_cashController.text) ?? 0,
+        'amount': double.tryParse(_cashController.text.replaceAll(',', '.')) ?? 0,
       });
     }
     if (_useTerminal && _terminalController.text.isNotEmpty) {
       payments.add({
         'paymentType': 'Terminal',
-        'amount': double.tryParse(_terminalController.text) ?? 0,
+        'amount': double.tryParse(_terminalController.text.replaceAll(',', '.')) ?? 0,
       });
     }
     if (_useTransfer && _transferController.text.isNotEmpty) {
       payments.add({
         'paymentType': 'Transfer',
-        'amount': double.tryParse(_transferController.text) ?? 0,
+        'amount': double.tryParse(_transferController.text.replaceAll(',', '.')) ?? 0,
       });
     }
     if (_useClick && _clickController.text.isNotEmpty) {
       payments.add({
         'paymentType': 'Click',
-        'amount': double.tryParse(_clickController.text) ?? 0,
+        'amount': double.tryParse(_clickController.text.replaceAll(',', '.')) ?? 0,
       });
     }
 

@@ -127,13 +127,19 @@ public class DebtsController : ControllerBase
             if (request.Amount > debt.RemainingDebt)
                 return BadRequest($"Payment amount ({request.Amount}) exceeds remaining debt ({debt.RemainingDebt})");
 
+            var paymentTypeStr = request.PaymentType;
+            if (string.Equals(paymentTypeStr, "CARD", StringComparison.OrdinalIgnoreCase))
+            {
+                paymentTypeStr = "Terminal";
+            }
+
             // Create payment record
             var marketId = _currentMarketService.GetCurrentMarketId();
             var payment = new Payment
             {
                 Id = Guid.NewGuid(),
                 SaleId = debt.SaleId,
-                PaymentType = Enum.Parse<PaymentType>(request.PaymentType, true),
+                PaymentType = Enum.Parse<PaymentType>(paymentTypeStr, true),
                 Amount = request.Amount,
                 MarketId = marketId,
                 CreatedAt = DateTime.UtcNow

@@ -159,7 +159,7 @@ class _DebtorPaymentDialogState extends State<DebtorPaymentDialog> {
   }
 
   Future<void> _onConfirm() async {
-    final amount = double.tryParse(_amountController.text) ?? 0;
+    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0;
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

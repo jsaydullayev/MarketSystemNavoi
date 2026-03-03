@@ -35,7 +35,7 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
     if (!_formKey.currentState!.validate()) return;
 
     final initialDebt =
-        _hasDebt ? double.tryParse(_debtAmountController.text.trim()) : null;
+        _hasDebt ? double.tryParse(_debtAmountController.text.trim().replaceAll(',', '.')) : null;
 
     context.read<CustomersBloc>().add(
           CreateCustomerEvent(

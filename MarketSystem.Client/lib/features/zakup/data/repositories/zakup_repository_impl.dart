@@ -50,7 +50,7 @@ class ZakupRepositoryImpl implements ZakupRepositoryInterface {
   @override
   Future<ApiResult<ZakupEntity>> createZakup({
     required String productId,
-    required int quantity,
+    required double quantity,
     required double costPrice,
   }) async {
     try {

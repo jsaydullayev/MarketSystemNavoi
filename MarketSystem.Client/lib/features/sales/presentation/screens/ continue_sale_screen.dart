@@ -12,6 +12,7 @@ import '../../../../data/services/product_service.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../sales/presentation/widgets/return_quantity_dialog.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/price_input_dialog.dart';
 
 class ContinueSaleScreen extends StatefulWidget {
   final String saleId;
@@ -116,47 +117,53 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
   }
 
   Future<void> _addToCart(dynamic product) async {
-    final newItem = {
-      'productId': product['id'],
-      'productName': product['name'],
-      'salePrice': product['salePrice'] ?? 0.0,
-      'minSalePrice': (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-      'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
-      'quantity': 1.0,
-      'comment': '',
-    };
+    PriceInputSheet.show(
+      context,
+      product: product,
+      onConfirm: (price, qty, comment) async {
+        final newItem = {
+          'productId': product['id'],
+          'productName': product['name'],
+          'salePrice': price,
+          'minSalePrice': (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+          'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
+          'quantity': qty,
+          'comment': comment ?? '',
+        };
 
-    setState(() => _cartItems.add(newItem));
+        setState(() => _cartItems.add(newItem));
 
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salesService = SalesService(authProvider: authProvider);
-      await salesService.addSaleItem(
-        saleId: widget.saleId,
-        productId: product['id'],
-        quantity: 1.0,
-        salePrice: product['salePrice'] ?? 0.0,
-        minSalePrice: (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-        comment: '',
-      );
-      await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ ${product['name']} savatga qo\'shildi!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      }
-    } catch (e) {
-      await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
+        try {
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final salesService = SalesService(authProvider: authProvider);
+          await salesService.addSaleItem(
+            saleId: widget.saleId,
+            productId: product['id'],
+            quantity: qty,
+            salePrice: price,
+            minSalePrice: (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+            comment: comment,
+          );
+          await _loadData();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('✅ ${product['name']} savatga qo\'shildi!'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          }
+        } catch (e) {
+          await _loadData();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      },
+    );
   }
 
   Future<void> _removeFromCart(int index) async {
@@ -240,45 +247,79 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
   Future<void> _updateItemPrice(int index) async {
     final item = _cartItems[index];
     final currentPrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
+    final currentQuantity = (item['quantity'] as num?)?.toDouble() ?? 1.0;
 
-    final result = await showDialog<double>(
-      context: context,
-      builder: (context) => _PriceInputDialog(
-        currentPrice: currentPrice,
-        productName: item['productName'],
-      ),
+    PriceInputSheet.show(
+      context,
+      product: {
+        'name': item['productName'] ?? 'Noma\'lum mahsulot',
+        'salePrice': currentPrice,
+        'minSalePrice': (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+        'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
+        'id': item['productId'] ?? '',
+        'unitName': item['unitName'] ?? 'dona',
+        'initialQuantity': currentQuantity,
+        'comment': item['comment'] ?? '',
+      },
+      onConfirm: (newPrice, newQuantity, comment) async {
+        if (!mounted || (newPrice == currentPrice && newQuantity == currentQuantity && comment == item['comment'])) return;
+
+        if (item.containsKey('saleItemId')) {
+          try {
+            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+            final salesService = SalesService(authProvider: authProvider);
+
+            // Calculate quantity diff
+            final quantityDiff = newQuantity - currentQuantity;
+
+            // Update price
+            if (newPrice != currentPrice || comment != item['comment']) {
+               await salesService.updateSaleItemPrice(
+                 saleItemId: item['saleItemId'],
+                 newPrice: newPrice,
+                 comment: comment ?? 'Narx/Izoh yangilandi (Draft savdo)',
+               );
+            }
+
+            // Update quantity if changed
+            if (quantityDiff > 0) {
+               await salesService.addSaleItem(
+                 saleId: widget.saleId,
+                 productId: item['productId'],
+                 quantity: quantityDiff,
+                 salePrice: newPrice,
+                 minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+                 comment: comment ?? '',
+               );
+            } else if (quantityDiff < 0) {
+               await salesService.removeSaleItem(
+                 saleId: widget.saleId,
+                 saleItemId: item['saleItemId'],
+                 quantity: quantityDiff.abs(),
+               );
+            }
+
+            await _loadData();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('✅ Mahsulot yangilandi'),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            await _loadData();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
+              );
+            }
+          }
+        }
+      },
     );
-
-    if (!mounted || result == null || result == currentPrice) return;
-
-    if (item.containsKey('saleItemId')) {
-      try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final salesService = SalesService(authProvider: authProvider);
-        await salesService.updateSaleItemPrice(
-          saleItemId: item['saleItemId'],
-          newPrice: result,
-          comment: 'Narx yangilandi (Draft savdo)',
-        );
-        await _loadData();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text('✅ Narx yangilandi: ${NumberFormatter.format(result)}'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-          );
-        }
-      }
-    }
   }
 
   Future<void> _returnItem(int index) async {
@@ -528,64 +569,4 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
   }
 }
 
-// Bu faqat ContinueSaleScreen uchun private dialog - alohida chiqarilmaydi
-class _PriceInputDialog extends StatefulWidget {
-  final double currentPrice;
-  final String productName;
 
-  const _PriceInputDialog({
-    required this.currentPrice,
-    required this.productName,
-  });
-
-  @override
-  State<_PriceInputDialog> createState() => _PriceInputDialogState();
-}
-
-class _PriceInputDialogState extends State<_PriceInputDialog> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller =
-        TextEditingController(text: widget.currentPrice.toStringAsFixed(2));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.productName),
-      content: TextField(
-        controller: _controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: const InputDecoration(
-          labelText: 'Yangi narx',
-          suffixText: 'so\'m',
-          border: OutlineInputBorder(),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Bekor qilish'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final price = double.tryParse(_controller.text);
-            if (price != null && price > 0) {
-              Navigator.pop(context, price);
-            }
-          },
-          child: const Text('Saqlash'),
-        ),
-      ],
-    );
-  }
-}
