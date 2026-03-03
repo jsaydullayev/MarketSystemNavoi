@@ -33,7 +33,7 @@ class GetZakupsByDateRangeEvent extends ZakupEvent {
 /// Create zakup event
 class CreateZakupEvent extends ZakupEvent {
   final String productId;
-  final int quantity;
+  final double quantity;
   final double costPrice;
 
   const CreateZakupEvent({

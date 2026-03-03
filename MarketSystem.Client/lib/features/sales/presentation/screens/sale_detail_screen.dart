@@ -357,8 +357,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
-          final l10n = AppLocalizations.of(context)!;
-          double currentQty = double.tryParse(quantityController.text) ?? 0.0;
+          final qtyText = quantityController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+          double currentQty = double.tryParse(qtyText) ?? 0.0;
           double returnSum = currentQty * salePrice;
 
           return Container(
@@ -463,7 +463,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-                      final qty = double.tryParse(quantityController.text);
+                      final qtyText = quantityController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+                      final qty = double.tryParse(qtyText);
                       if (qty == null || qty <= 0 || qty > maxQuantity) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text(l10n.invalidQuantity),

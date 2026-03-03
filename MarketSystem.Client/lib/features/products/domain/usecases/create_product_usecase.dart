@@ -12,7 +12,7 @@ class CreateProductParams extends Equatable {
   final double costPrice;
   final double salePrice;
   final double minSalePrice;
-  final int quantity;
+  final double quantity;
   final int minThreshold;
 
   const CreateProductParams({

@@ -14,7 +14,7 @@ class CreateZakupUseCase {
   /// Yangi xarid yaratish
   Future<ApiResult<ZakupEntity>> call({
     required String productId,
-    required int quantity,
+    required double quantity,
     required double costPrice,
   }) async {
     // Biznes validatsiyalar

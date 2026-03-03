@@ -25,7 +25,7 @@ abstract class ProductRepository {
     required double costPrice,
     required double salePrice,
     required double minSalePrice,
-    required int quantity,
+    required double quantity,
     required int minThreshold,
   });
 
@@ -37,7 +37,7 @@ abstract class ProductRepository {
     required double costPrice,
     required double salePrice,
     required double minSalePrice,
-    required int quantity,
+    required double quantity,
     required int minThreshold,
   });
 
