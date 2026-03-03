@@ -7,7 +7,8 @@ class NumberFormatter {
 
     num number;
     if (value is String) {
-      number = num.tryParse(value) ?? 0;
+      final cleanVal = value.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+      number = num.tryParse(cleanVal) ?? 0;
     } else if (value is num) {
       number = value;
     } else {
@@ -32,7 +33,8 @@ class NumberFormatter {
 
     num number;
     if (value is String) {
-      number = num.tryParse(value) ?? 0;
+      final cleanVal = value.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+      number = num.tryParse(cleanVal) ?? 0;
     } else if (value is num) {
       number = value;
     } else {
