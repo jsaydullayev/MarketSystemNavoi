@@ -38,18 +38,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final primaryColor = AppColors.getPrimary(context);
 
     return Scaffold(
-      body: Container(
+      backgroundColor: AppColors.getBg(isDark),
+      body: SizedBox(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [const Color(0xFF0F172A), const Color(0xFF1E3A8A)]
-                : [const Color(0xFFF8FAFC), const Color(0xFFE2E8F0)],
-          ),
-        ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(

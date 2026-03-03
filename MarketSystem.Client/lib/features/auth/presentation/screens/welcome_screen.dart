@@ -20,8 +20,7 @@ class WelcomeScreen extends StatelessWidget {
     final primaryColor = AppColors.getPrimary(context);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color.fromARGB(255, 5, 9, 30) : Colors.white,
+      backgroundColor: AppColors.getBg(isDark),
       body: SafeArea(
         child: Center(
           child: Padding(
