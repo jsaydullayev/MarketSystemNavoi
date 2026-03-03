@@ -446,12 +446,6 @@ abstract class AppLocalizations {
   /// **'Tasdiqlash'**
   String get confirm;
 
-  /// No description provided for @close.
-  ///
-  /// In uz, this message translates to:
-  /// **'Yopish'**
-  String get close;
-
   /// No description provided for @total.
   ///
   /// In uz, this message translates to:
@@ -613,12 +607,6 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Telefon raqamini kiriting'**
   String get enterPhone;
-
-  /// No description provided for @priceMustBePositive.
-  ///
-  /// In uz, this message translates to:
-  /// **'Narx musbat bo\'lishi kerak'**
-  String get priceMustBePositive;
 
   /// No description provided for @quantityMustBePositive.
   ///
@@ -1346,11 +1334,11 @@ abstract class AppLocalizations {
   /// **'Barchasi'**
   String get all;
 
-  /// No description provided for @closed.
+  /// No description provided for @close.
   ///
   /// In uz, this message translates to:
   /// **'Yopilgan'**
-  String get closed;
+  String get close;
 
   /// No description provided for @debt.
   ///
@@ -2089,6 +2077,144 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Username va parolni yangi foydalanuvchiga bering'**
   String get giveCredentialsToUser;
+
+  /// No description provided for @noPermissionToEditClosed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)'**
+  String get noPermissionToEditClosed;
+
+  /// No description provided for @priceUpdatedSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narx muvaffaqiyatli yangilandi'**
+  String get priceUpdatedSuccess;
+
+  /// No description provided for @allDebtsPaid.
+  ///
+  /// In uz, this message translates to:
+  /// **'Barcha qarzlar to\'langan'**
+  String get allDebtsPaid;
+
+  /// No description provided for @debtCount.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta qarz'**
+  String debtCount(Object count);
+
+  /// No description provided for @pay.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lash'**
+  String get pay;
+
+  /// No description provided for @cls.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yopiq'**
+  String get cls;
+
+  /// No description provided for @open.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ochiq'**
+  String get open;
+
+  /// No description provided for @closedDebtAudit.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu qarz yopiq. O\'zgartirish audit logga yoziladi.'**
+  String get closedDebtAudit;
+
+  /// No description provided for @exampleComment.
+  ///
+  /// In uz, this message translates to:
+  /// **'Masalan: Xato narx qo\'yilgan'**
+  String get exampleComment;
+
+  /// No description provided for @commentRequiredLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Izoh (majburiy)'**
+  String get commentRequiredLabel;
+
+  /// No description provided for @priceWithCurrency.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narx (so\'m)'**
+  String get priceWithCurrency;
+
+  /// No description provided for @newPriceLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi narx'**
+  String get newPriceLabel;
+
+  /// No description provided for @productQuantityAndOldPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'{quantity} dona  ·  Eski narx: {price} so\'m'**
+  String productQuantityAndOldPrice(Object price, Object quantity);
+
+  /// No description provided for @editPriceTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narxni tahrirlash'**
+  String get editPriceTitle;
+
+  /// No description provided for @product.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot'**
+  String get product;
+
+  /// No description provided for @yesConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ha, tasdiqlayman'**
+  String get yesConfirm;
+
+  /// No description provided for @confirmPriceChangeDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narxni {price} so\'mga o\'zgartirmoqchimisiz?'**
+  String confirmPriceChangeDesc(Object price);
+
+  /// No description provided for @commentRequiredError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Izoh kiritish majburiy'**
+  String get commentRequiredError;
+
+  /// No description provided for @priceMustBePositive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narx 0 dan katta bo\'lishi kerak'**
+  String get priceMustBePositive;
+
+  /// No description provided for @paymentSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov muvaffaqiyatli amalga oshirildi!'**
+  String get paymentSuccess;
+
+  /// No description provided for @paymentAmountLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov summasi'**
+  String get paymentAmountLabel;
+
+  /// No description provided for @payingTooMuchWarning.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz miqdoridan {amount} so\'m ko\'p to\'layapsiz'**
+  String payingTooMuchWarning(Object amount);
+
+  /// No description provided for @processPayment.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lovni amalga oshirish'**
+  String get processPayment;
 }
 
 class _AppLocalizationsDelegate

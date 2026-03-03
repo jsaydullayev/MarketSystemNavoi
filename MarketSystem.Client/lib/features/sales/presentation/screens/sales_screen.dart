@@ -260,7 +260,7 @@ class _SalesScreenState extends State<SalesScreen> {
       },
       {
         'id': 'closed',
-        'label': l10n.closed,
+        'label': l10n.close,
         'icon': Icons.archive_outlined,
         'color': Colors.blue
       },

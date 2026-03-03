@@ -183,9 +183,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get confirm => 'Tasdiqlash';
 
   @override
-  String get close => 'Yopish';
-
-  @override
   String get total => 'Jami';
 
   @override
@@ -266,9 +263,6 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get enterPhone => 'Telefon raqamini kiriting';
-
-  @override
-  String get priceMustBePositive => 'Narx musbat bo\'lishi kerak';
 
   @override
   String get quantityMustBePositive => 'Miqdor musbat bo\'lishi kerak';
@@ -638,7 +632,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get all => 'Barchasi';
 
   @override
-  String get closed => 'Yopilgan';
+  String get close => 'Yopilgan';
 
   @override
   String get debt => 'Qarz';
@@ -1023,4 +1017,83 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get giveCredentialsToUser =>
       'Username va parolni yangi foydalanuvchiga bering';
+
+  @override
+  String get noPermissionToEditClosed =>
+      'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)';
+
+  @override
+  String get priceUpdatedSuccess => 'Narx muvaffaqiyatli yangilandi';
+
+  @override
+  String get allDebtsPaid => 'Barcha qarzlar to\'langan';
+
+  @override
+  String debtCount(Object count) {
+    return '$count ta qarz';
+  }
+
+  @override
+  String get pay => 'To\'lash';
+
+  @override
+  String get cls => 'Yopiq';
+
+  @override
+  String get open => 'Ochiq';
+
+  @override
+  String get closedDebtAudit =>
+      'Bu qarz yopiq. O\'zgartirish audit logga yoziladi.';
+
+  @override
+  String get exampleComment => 'Masalan: Xato narx qo\'yilgan';
+
+  @override
+  String get commentRequiredLabel => 'Izoh (majburiy)';
+
+  @override
+  String get priceWithCurrency => 'Narx (so\'m)';
+
+  @override
+  String get newPriceLabel => 'Yangi narx';
+
+  @override
+  String productQuantityAndOldPrice(Object price, Object quantity) {
+    return '$quantity dona  ·  Eski narx: $price so\'m';
+  }
+
+  @override
+  String get editPriceTitle => 'Narxni tahrirlash';
+
+  @override
+  String get product => 'Mahsulot';
+
+  @override
+  String get yesConfirm => 'Ha, tasdiqlayman';
+
+  @override
+  String confirmPriceChangeDesc(Object price) {
+    return 'Narxni $price so\'mga o\'zgartirmoqchimisiz?';
+  }
+
+  @override
+  String get commentRequiredError => 'Izoh kiritish majburiy';
+
+  @override
+  String get priceMustBePositive => 'Narx 0 dan katta bo\'lishi kerak';
+
+  @override
+  String get paymentSuccess => 'To\'lov muvaffaqiyatli amalga oshirildi!';
+
+  @override
+  String get paymentAmountLabel => 'To\'lov summasi';
+
+  @override
+  String payingTooMuchWarning(Object amount) {
+    return 'Qarz miqdoridan $amount so\'m ko\'p to\'layapsiz';
+  }
+
+  @override
+  String get processPayment => 'To\'lovni amalga oshirish';
 }
