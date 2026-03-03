@@ -5,7 +5,6 @@ library;
 import 'package:get_it/get_it.dart';
 import 'package:market_system_client/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:market_system_client/features/auth/domain/repositories/auth_repository_interface.dart';
-import 'package:provider/provider.dart';
 
 // Handlers
 import '../handlers/auth_handler.dart';

@@ -38,8 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         bool isLargeScreen = constraints.maxWidth > 900;
 
         return Scaffold(
-          backgroundColor:
-              isDark ? const Color(0xFF121212) : const Color(0xFFF1F5F9),
+          backgroundColor: AppColors.getBg(isDark),
           drawer: Drawer(
             width: isLargeScreen ? 320 : 280,
             backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,

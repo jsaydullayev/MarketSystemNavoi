@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/features/debts/widgets/debt_summary_header.dart';
+import 'package:market_system_client/features/debts/widgets/edit_price_bottomsheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
 import '../../../data/services/sales_service.dart';
-import '../../../data/services/debt_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/utils/number_formatter.dart';
 
-/// Qarz detallari va tovarlarni tahrirlash screeni
 class DebtDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> debt;
   final String customerName;
@@ -25,7 +25,6 @@ class DebtDetailsScreen extends StatefulWidget {
 
 class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
   bool _isLoading = false;
-  Map<String, dynamic>? _saleDetails;
   List<dynamic> _saleItems = [];
 
   @override
@@ -35,298 +34,74 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
   }
 
   Future<void> _loadSaleDetails() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final debtService = DebtService(authProvider: authProvider);
-
-      final saleId = widget.debt['saleId'];
-      // Get sale details - you'll need to implement this in DebtService or SaleService
-      // For now, we'll use the items from debt if available
-
-      // TODO: Load sale details from API
-      // For now, assuming debt contains saleItems or we can fetch from SaleService
-
       setState(() {
-        _isLoading = false;
-        // Mock data for now - replace with actual API call
         _saleItems = widget.debt['saleItems'] ?? [];
+        _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      setState(() => _isLoading = false);
+      if (mounted) _showError('Xatolik: $e');
     }
   }
 
-  Future<void> _showEditPriceDialog(dynamic saleItem) async {
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  void _openEditSheet(dynamic saleItem) {
+    final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userRole = authProvider.user?['role'];
     final debtStatus = widget.debt['status'];
 
-    // Role-based check
     if (debtStatus == 'Closed' && userRole != 'Owner' && userRole != 'Admin') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError(l10n.noPermissionToEditClosed);
       return;
     }
 
-    final priceController = TextEditingController(
-      text: (saleItem['salePrice'] as num).toDouble().toString(),
-    );
-    final commentController = TextEditingController();
-
-    if (!mounted) return;
-
-    final confirmed = await showDialog<bool>(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.edit, size: 24, color: Colors.blue),
-              const SizedBox(width: 8),
-              const Expanded(child: Text('Narxni tahrirlash')),
-            ],
-          ),
-          content: SizedBox(
-            width: 400,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Product info
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          saleItem['productName'] ?? 'Mahsulot',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Miqdor: ${saleItem['quantity']} dona',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Eski narx: ${NumberFormatter.formatDecimal(saleItem['salePrice'])} so\'m',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // New price input
-                  const Text(
-                    'Yangi narx:',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: priceController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Narx (so\'m)',
-                      prefixIcon: Icon(Icons.money),
-                      border: OutlineInputBorder(),
-                      suffixText: "so'm",
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Comment input (required)
-                  const Text(
-                    'Izoh (majburiy):',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: commentController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Nima uchun o\'zgartiryapsiz?',
-                      border: OutlineInputBorder(),
-                      hintText: 'Masalan: Xato narx qo\'yilgan',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Warning for closed debts
-                  if (debtStatus == 'Closed')
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange[300]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.warning,
-                              color: Colors.orange[700], size: 20),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Diqqat: Bu qarz yopiq bo\'lgan. O\'zgartirish audit logga yoziladi.',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Bekor qilish'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final newPrice = double.tryParse(priceController.text.replaceAll(',', '.')) ?? 0;
-                final comment = commentController.text.trim();
-
-                if (newPrice <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Narx 0 dan katta bo\'lishi kerak'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                if (comment.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Izoh kiritish majburiy'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                // Confirm dialog
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Tasdiqlash'),
-                    content: Text(
-                      'Rostdan ham narxni ${NumberFormatter.formatDecimal(newPrice)} so\'mga o\'zgartirmoqchimisiz?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Yo\'q'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                        ),
-                        child: const Text('Ha, tasdiqlayman'),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirm == true && mounted) {
-                  Navigator.pop(context, true);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-              ),
-              child: const Text('Saqlash'),
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EditPriceBottomSheet(
+        saleItem: saleItem,
+        debtStatus: debtStatus,
+        userRole: userRole,
+        onSave: (newPrice, comment) async {
+          await _updatePrice(saleItem, newPrice, comment);
+        },
       ),
     );
-
-    if (confirmed == true) {
-      await _updatePrice(
-          saleItem, priceController.text, commentController.text);
-    }
   }
 
   Future<void> _updatePrice(
-      dynamic saleItem, String newPriceStr, String comment) async {
-    setState(() {
-      _isLoading = true;
-    });
-
+      dynamic saleItem, double newPrice, String comment) async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final saleService = SalesService(authProvider: authProvider);
-
-      final newPrice = double.parse(newPriceStr);
-
       await saleService.updateSaleItemPrice(
         saleItemId: saleItem['id'],
         newPrice: newPrice,
         comment: comment,
       );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Narz muvaffaqiyatli yangilandi'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Reload data
-        _loadSaleDetails();
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
+            content: Text(l10n.priceUpdatedSuccess),
+            backgroundColor: const Color(0xFF10B981),
           ),
         );
+        _loadSaleDetails();
       }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) _showError('${l10n.error}: $e');
     }
   }
 
@@ -336,181 +111,183 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     final userRole = authProvider.user?['role'];
     final debtStatus = widget.debt['status'];
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: CommonAppBar(
-        title: l10n.debtDetails,
+      backgroundColor: AppColors.getBg(isDark),
+      appBar: CommonAppBar(title: l10n.debtDetails),
+      body: Column(
+        children: [
+          DebtSummaryHeader(
+            customerName: widget.customerName,
+            debt: widget.debt,
+            debtStatus: debtStatus,
+            l10n: l10n,
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _saleItems.isEmpty
+                    ? const _EmptySaleItemsView()
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                        itemCount: _saleItems.length,
+                        itemBuilder: (context, index) {
+                          final item = _saleItems[index];
+                          return _SaleItemCard(
+                            item: item,
+                            userRole: userRole,
+                            debtStatus: debtStatus,
+                            onEdit: () => _openEditSheet(item),
+                          );
+                        },
+                      ),
+          ),
+        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.blue[50],
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.person, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          Text(
-                            widget.customerName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Jami qarz: ${NumberFormatter.formatDecimal(widget.debt['totalDebt'])} so\'m',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          Text(
-                            '${l10n.remaining}: ${NumberFormatter.formatDecimal(widget.debt['remainingDebt'])} so\'m',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: debtStatus == 'Open'
-                                  ? Colors.green[100]
-                                  : Colors.grey[300],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              debtStatus == 'Open' ? 'Ochiq' : 'Yopiq',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: debtStatus == 'Open'
-                                    ? Colors.green[700]
-                                    : Colors.grey[700],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Sale items list
-                Expanded(
-                  child: _saleItems.isEmpty
-                      ? const Center(
-                          child: Text('Mahsulotlar yo\'q'),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _saleItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _saleItems[index];
-                            return _buildSaleItemCard(
-                                item, userRole, debtStatus);
-                          },
-                        ),
-                ),
-              ],
-            ),
     );
   }
+}
 
-  Widget _buildSaleItemCard(dynamic item, String? userRole, String debtStatus) {
-    final productName = item['productName'] ?? 'Noma\'lum';
+class _SaleItemCard extends StatelessWidget {
+  final dynamic item;
+  final String? userRole;
+  final String debtStatus;
+  final VoidCallback onEdit;
+
+  const _SaleItemCard({
+    required this.item,
+    required this.userRole,
+    required this.debtStatus,
+    required this.onEdit,
+  });
+
+  bool get _canEdit {
+    if (debtStatus == 'Open') return userRole != null;
+    return userRole == 'Owner' || userRole == 'Admin';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final productName = item['productName'] ?? l10n.unknown;
     final quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final salePrice = (item['salePrice'] as num).toDouble();
     final totalPrice = salePrice * quantity;
 
-    // Role-based button visibility
-    bool canEdit = false;
-    if (debtStatus == 'Open') {
-      // Open debts: All roles can edit
-      canEdit = userRole != null;
-    } else {
-      // Closed debts: Only Owner and Admin can edit
-      canEdit = userRole == 'Owner' || userRole == 'Admin';
-    }
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        productName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$quantity dona × ${NumberFormatter.formatDecimal(salePrice)} so\'m',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (canEdit)
-                  IconButton(
-                    onPressed: () => _showEditPriceDialog(item),
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    tooltip: 'Narxni tahrirlash',
-                  ),
-              ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.getCard(isDark),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: const Icon(Icons.inventory_2_rounded,
+                color: Color(0xFF3B82F6), size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Jami:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
                 Text(
-                  '${NumberFormatter.formatDecimal(totalPrice)} so\'m',
+                  productName,
                   style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.3),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${quantity.toStringAsFixed(0)} ${l10n.piece} × ${NumberFormatter.format(salePrice)} ${l10n.currencySom}',
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${NumberFormatter.format(totalPrice)} ${l10n.currencySom}',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1D4ED8),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              if (_canEdit) ...[
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: onEdit,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.edit_rounded,
+                            size: 12, color: Color(0xFF3B82F6)),
+                        const SizedBox(width: 4),
+                        Text(
+                          l10n.edit,
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF3B82F6)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptySaleItemsView extends StatelessWidget {
+  const _EmptySaleItemsView();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.inventory_2_rounded,
+              size: 52, color: Color(0xFF9CA3AF)),
+          const SizedBox(height: 12),
+          Text(l10n.noProducts,
+              style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280))),
+        ],
       ),
     );
   }

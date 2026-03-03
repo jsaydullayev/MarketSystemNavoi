@@ -183,9 +183,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get confirm => 'Подтвердить';
 
   @override
-  String get close => 'Закрыть';
-
-  @override
   String get total => 'Итого';
 
   @override
@@ -265,9 +262,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get enterPhone => 'Введите номер телефона';
-
-  @override
-  String get priceMustBePositive => 'Цена должна быть положительной';
 
   @override
   String get quantityMustBePositive => 'Количество должно быть положительным';
@@ -638,7 +632,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get all => 'Все';
 
   @override
-  String get closed => 'Закрыто';
+  String get close => 'Закрыто';
 
   @override
   String get debt => 'Долг';
@@ -1026,4 +1020,83 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get giveCredentialsToUser =>
       'Передайте имя пользователя и пароль новому пользователю';
+
+  @override
+  String get noPermissionToEditClosed =>
+      'Нет прав для редактирования закрытого долга (только Owner/Admin)';
+
+  @override
+  String get priceUpdatedSuccess => 'Цена успешно обновлена';
+
+  @override
+  String get allDebtsPaid => 'Все долги оплачены';
+
+  @override
+  String debtCount(Object count) {
+    return '$count долгов';
+  }
+
+  @override
+  String get pay => 'Оплатить';
+
+  @override
+  String get cls => 'Закрыто';
+
+  @override
+  String get open => 'Открыто';
+
+  @override
+  String get closedDebtAudit =>
+      'Этот долг закрыт. Изменение будет записано в аудит-лог.';
+
+  @override
+  String get exampleComment => 'Например: Была указана неверная цена';
+
+  @override
+  String get commentRequiredLabel => 'Комментарий (обязательно)';
+
+  @override
+  String get priceWithCurrency => 'Цена (сум)';
+
+  @override
+  String get newPriceLabel => 'Новая цена';
+
+  @override
+  String productQuantityAndOldPrice(Object price, Object quantity) {
+    return '$quantity шт  ·  Старая цена: $price сум';
+  }
+
+  @override
+  String get editPriceTitle => 'Редактировать цену';
+
+  @override
+  String get product => 'Продукт';
+
+  @override
+  String get yesConfirm => 'Да, подтверждаю';
+
+  @override
+  String confirmPriceChangeDesc(Object price) {
+    return 'Вы хотите изменить цену на $price сум?';
+  }
+
+  @override
+  String get commentRequiredError => 'Введите комментарий';
+
+  @override
+  String get priceMustBePositive => 'Цена должна быть больше 0';
+
+  @override
+  String get paymentSuccess => 'Оплата успешно произведена!';
+
+  @override
+  String get paymentAmountLabel => 'Сумма оплаты';
+
+  @override
+  String payingTooMuchWarning(Object amount) {
+    return 'Вы платите на $amount сум больше суммы долга';
+  }
+
+  @override
+  String get processPayment => 'Произвести оплату';
 }

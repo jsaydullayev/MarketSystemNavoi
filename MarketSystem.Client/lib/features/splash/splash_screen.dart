@@ -1,5 +1,6 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/data/services/auth_service.dart';
 import 'package:market_system_client/features/auth/presentation/screens/login_screen.dart';
@@ -67,8 +68,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final isDark = AdaptiveTheme.of(context).mode.isDark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color.fromARGB(255, 5, 9, 30) : Colors.white,
+      backgroundColor: AppColors.getBg(isDark),
       body: Center(
         child: FadeTransition(
           opacity: const AlwaysStoppedAnimation(1.0),
