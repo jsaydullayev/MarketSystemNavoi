@@ -186,6 +186,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get total => 'Итого';
 
   @override
+  String get from => 'С';
+
+  @override
+  String get to => 'По';
+
+  @override
   String get paid => 'Оплачено';
 
   @override
@@ -1099,4 +1105,76 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get processPayment => 'Произвести оплату';
+
+  @override
+  String salesCount(Object count) {
+    return '$count продаж';
+  }
+
+  @override
+  String get netProfit => 'Чистая прибыль';
+
+  @override
+  String get noSalesToday => 'В этот день продаж нет';
+
+  @override
+  String get downloadExcel => 'Скачать Excel';
+
+  @override
+  String get reportDownloaded => 'Отчет загружен';
+
+  @override
+  String get downloadError => 'Ошибка при загрузке';
+
+  @override
+  String get reportDownloadSuccess => 'Отчет успешно загружен!';
+
+  @override
+  String get byPaymentType => 'По видам оплаты';
+
+  @override
+  String get select => 'Выбрать';
+
+  @override
+  String get noReports => 'Отчетов нет';
+
+  @override
+  String get totalValue => 'Общая стоимость';
+
+  @override
+  String get sellingPrice => 'Цена продажи';
+
+  @override
+  String get productCount => 'Количество товаров';
+
+  @override
+  String get incomingPrice => 'Приходная цена';
+
+  @override
+  String andMoreProducts(Object count) {
+    return 'И еще $count товаров...';
+  }
+
+  @override
+  String get totalSale => 'Общие продажи';
+
+  @override
+  String get saleCount => 'Количество продаж';
+
+  @override
+  String get averageSale => 'Средний чек';
+
+  @override
+  String get averageTransactionValue => 'Средняя сумма каждой продажи';
+
+  @override
+  String transactionStats(Object count, Object percentage) {
+    return '$count транзакций  •  $percentage%';
+  }
+
+  @override
+  String get daily => 'Ежедневно';
+
+  @override
+  String get monthly => 'Ежемесячно';
 }

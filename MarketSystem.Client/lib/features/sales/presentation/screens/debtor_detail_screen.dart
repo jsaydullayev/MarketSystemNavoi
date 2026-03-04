@@ -3,13 +3,10 @@ import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-
 import '../../../../data/services/sales_service.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/number_formatter.dart';
 
-/// Qarzdor Detail Screeni
-/// Mijozning qarzli savdolari va tovarlari
 class DebtorDetailScreen extends StatefulWidget {
   final String customerId;
   final String customerName;
