@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_payment_dialog.dart';
+
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_cart_item.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_product_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_bottom_bar.dart';
@@ -10,7 +11,6 @@ import 'package:provider/provider.dart';
 import '../../../../data/services/sales_service.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/utils/number_formatter.dart';
 import '../../../sales/presentation/widgets/return_quantity_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/price_input_dialog.dart';
 
@@ -52,54 +52,55 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     setState(() {
       _filteredProducts = query.isEmpty
           ? _products
-          : _products.where((p) {
-              final name = (p['name'] ?? '').toLowerCase();
-              return name.contains(query);
-            }).toList();
+          : _products
+              .where((p) => (p['name'] ?? '').toLowerCase().contains(query))
+              .toList();
     });
   }
 
-  double get _totalAmount {
-    return _cartItems.fold(0.0, (sum, item) {
-      final price = item['salePrice'] is num
-          ? (item['salePrice'] as num).toDouble()
-          : double.tryParse(item['salePrice']?.toString() ?? '') ?? 0.0;
-      final qty = item['quantity'] is num
-          ? (item['quantity'] as num).toDouble()
-          : double.tryParse(item['quantity']?.toString() ?? '') ?? 0.0;
-      return sum + (price * qty);
-    });
-  }
+  double get _totalAmount => _cartItems.fold(0.0, (sum, item) {
+        final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
+        final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+        return sum + (price * qty);
+      });
 
   Future<void> _loadData() async {
+    final l10n = AppLocalizations.of(context)!;
+
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
       final productService = ProductService(authProvider: authProvider);
 
-      final sale = await salesService.getSaleById(widget.saleId);
-      final products = await productService.getAllProducts();
+      final results = await Future.wait([
+        salesService.getSaleById(widget.saleId),
+        productService.getAllProducts(),
+      ]);
 
+      final sale = results[0] as Map<String, dynamic>;
+      final products = results[1] as List<dynamic>;
       final items = sale['items'] as List<dynamic>? ?? [];
-      final cartItems = items.map((item) {
-        return {
-          'saleItemId': item['id'],
-          'productId': item['productId'],
-          'productName': item['productName'],
-          'salePrice': (item['salePrice'] as num?)?.toDouble() ?? 0.0,
-          'minSalePrice': (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-          'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
-          'quantity': (item['quantity'] as num?)?.toDouble() ?? 0.0,
-          'comment': item['comment'] ?? '',
-        };
-      }).toList();
+
+      final cartItems = items
+          .map<Map<String, dynamic>>((item) => {
+                'saleItemId': item['id'],
+                'productId': item['productId'],
+                'productName': item['productName'],
+                'salePrice': (item['salePrice'] as num?)?.toDouble() ?? 0.0,
+                'minSalePrice':
+                    (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+                'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
+                'quantity': (item['quantity'] as num?)?.toDouble() ?? 0.0,
+                'comment': item['comment'] ?? '',
+              })
+          .toList();
 
       setState(() {
         _sale = sale;
         _products = products;
         _filteredProducts = products;
-        _cartItems = List<Map<String, dynamic>>.from(cartItems);
+        _cartItems = cartItems;
         _selectedCustomer = sale['customerName'] != null
             ? {'id': sale['customerId'], 'fullName': sale['customerName']}
             : null;
@@ -108,33 +109,33 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-        );
+        _showSnack('${l10n.error}: $e', isError: true);
         Navigator.pop(context);
       }
     }
   }
 
   Future<void> _addToCart(dynamic product) async {
+    final l10n = AppLocalizations.of(context)!;
+
     PriceInputSheet.show(
       context,
       product: product,
       onConfirm: (price, qty, comment) async {
-        final newItem = {
-          'productId': product['id'],
-          'productName': product['name'],
-          'salePrice': price,
-          'minSalePrice': (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-          'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
-          'quantity': qty,
-          'comment': comment ?? '',
-        };
-
-        setState(() => _cartItems.add(newItem));
+        setState(() => _cartItems.add({
+              'productId': product['id'],
+              'productName': product['name'],
+              'salePrice': price,
+              'minSalePrice':
+                  (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+              'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
+              'quantity': qty,
+              'comment': comment ?? '',
+            }));
 
         try {
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final authProvider =
+              Provider.of<AuthProvider>(context, listen: false);
           final salesService = SalesService(authProvider: authProvider);
           await salesService.addSaleItem(
             saleId: widget.saleId,
@@ -146,27 +147,19 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           );
           await _loadData();
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('✅ ${product['name']} savatga qo\'shildi!'),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 1),
-              ),
-            );
+            _showSnack("${product['name']} savatga qo'shildi", isError: false);
           }
         } catch (e) {
           await _loadData();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-            );
-          }
+          if (mounted) _showSnack('${l10n.error}: $e', isError: true);
         }
       },
     );
   }
 
   Future<void> _removeFromCart(int index) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final item = _cartItems[index];
     final backup = Map<String, dynamic>.from(item);
 
@@ -179,49 +172,37 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         quantity: (item['quantity'] as num?)?.toDouble() ?? 0.0,
       );
       await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Mahsulot olib tashlandi'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      if (mounted) _showSnack('Mahsulot olib tashlandi', isError: false);
     } catch (e) {
       if (!mounted) return;
       setState(() => _cartItems.insert(index, backup));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-      );
+      _showSnack('${l10n.error}: $e', isError: true);
     }
   }
 
-  Future<void> _updateQuantity(int index, double newQuantity) async {
+  Future<void> _updateQuantity(int index, double newQty) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final item = _cartItems[index];
+    if (newQty <= 0) return _removeFromCart(index);
 
-    if (newQuantity <= 0) {
-      await _removeFromCart(index);
-      return;
-    }
+    final currentQty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+    if (newQty == currentQty) return;
 
-    final currentQuantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
-    if (newQuantity == currentQuantity) return;
-
-    final quantityDiff = newQuantity - currentQuantity;
-
+    final diff = newQty - currentQty;
     if (item.containsKey('saleItemId')) {
-      setState(() => _cartItems[index]['quantity'] = newQuantity);
+      setState(() => _cartItems[index]['quantity'] = newQty);
     }
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
 
-      if (quantityDiff > 0) {
+      if (diff > 0) {
         await salesService.addSaleItem(
           saleId: widget.saleId,
           productId: item['productId'],
-          quantity: quantityDiff,
+          quantity: diff,
           salePrice: item['salePrice'],
           minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
           comment: item['comment'] ?? '',
@@ -230,112 +211,98 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         await salesService.removeSaleItem(
           saleId: widget.saleId,
           saleItemId: item['saleItemId'],
-          quantity: quantityDiff.abs(),
+          quantity: diff.abs(),
         );
       }
       await _loadData();
     } catch (e) {
       await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     }
   }
 
   Future<void> _updateItemPrice(int index) async {
+    final l10n = AppLocalizations.of(context)!;
     final item = _cartItems[index];
     final currentPrice = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-    final currentQuantity = (item['quantity'] as num?)?.toDouble() ?? 1.0;
+    final currentQty = (item['quantity'] as num?)?.toDouble() ?? 1.0;
 
     PriceInputSheet.show(
       context,
       product: {
-        'name': item['productName'] ?? 'Noma\'lum mahsulot',
+        'name': item['productName'] ?? l10n.unknown,
         'salePrice': currentPrice,
         'minSalePrice': (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
         'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
         'id': item['productId'] ?? '',
         'unitName': item['unitName'] ?? 'dona',
-        'initialQuantity': currentQuantity,
+        'initialQuantity': currentQty,
         'comment': item['comment'] ?? '',
       },
-      onConfirm: (newPrice, newQuantity, comment) async {
-        if (!mounted || (newPrice == currentPrice && newQuantity == currentQuantity && comment == item['comment'])) return;
+      onConfirm: (newPrice, newQty, comment) async {
+        if (!mounted) return;
+        if (newPrice == currentPrice &&
+            newQty == currentQty &&
+            comment == item['comment']) return;
 
-        if (item.containsKey('saleItemId')) {
-          try {
-            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-            final salesService = SalesService(authProvider: authProvider);
+        if (!item.containsKey('saleItemId')) return;
 
-            // Calculate quantity diff
-            final quantityDiff = newQuantity - currentQuantity;
+        try {
+          final authProvider =
+              Provider.of<AuthProvider>(context, listen: false);
+          final salesService = SalesService(authProvider: authProvider);
+          final diff = newQty - currentQty;
 
-            // Update price
-            if (newPrice != currentPrice || comment != item['comment']) {
-               await salesService.updateSaleItemPrice(
-                 saleItemId: item['saleItemId'],
-                 newPrice: newPrice,
-                 comment: comment ?? 'Narx/Izoh yangilandi (Draft savdo)',
-               );
-            }
-
-            // Update quantity if changed
-            if (quantityDiff > 0) {
-               await salesService.addSaleItem(
-                 saleId: widget.saleId,
-                 productId: item['productId'],
-                 quantity: quantityDiff,
-                 salePrice: newPrice,
-                 minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-                 comment: comment ?? '',
-               );
-            } else if (quantityDiff < 0) {
-               await salesService.removeSaleItem(
-                 saleId: widget.saleId,
-                 saleItemId: item['saleItemId'],
-                 quantity: quantityDiff.abs(),
-               );
-            }
-
-            await _loadData();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('✅ Mahsulot yangilandi'),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          } catch (e) {
-            await _loadData();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-              );
-            }
+          if (newPrice != currentPrice || comment != item['comment']) {
+            await salesService.updateSaleItemPrice(
+              saleItemId: item['saleItemId'],
+              newPrice: newPrice,
+              comment: comment ?? 'Narx yangilandi',
+            );
           }
+
+          if (diff > 0) {
+            await salesService.addSaleItem(
+              saleId: widget.saleId,
+              productId: item['productId'],
+              quantity: diff,
+              salePrice: newPrice,
+              minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+              comment: comment ?? '',
+            );
+          } else if (diff < 0) {
+            await salesService.removeSaleItem(
+              saleId: widget.saleId,
+              saleItemId: item['saleItemId'],
+              quantity: diff.abs(),
+            );
+          }
+
+          await _loadData();
+          if (mounted) _showSnack('Mahsulot yangilandi', isError: false);
+        } catch (e) {
+          await _loadData();
+          if (mounted) _showSnack('${l10n.error}: $e', isError: true);
         }
       },
     );
   }
 
   Future<void> _returnItem(int index) async {
+    final l10n = AppLocalizations.of(context)!;
     final item = _cartItems[index];
-    final currentQuantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
-    if (currentQuantity <= 0) return;
+    final currentQty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+    if (currentQty <= 0) return;
 
-    final returnQuantity = await showDialog<double>(
+    final returnQty = await showDialog<double>(
       context: context,
-      builder: (context) => ReturnQuantityDialog(
+      builder: (_) => ReturnQuantityDialog(
         productName: item['productName'],
-        maxQuantity: currentQuantity,
+        maxQuantity: currentQty,
       ),
     );
 
-    if (returnQuantity == null || returnQuantity <= 0) return;
+    if (returnQty == null || returnQty <= 0) return;
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -343,64 +310,57 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       await salesService.returnSaleItem(
         saleId: widget.saleId,
         saleItemId: item['saleItemId'],
-        quantity: returnQuantity,
+        quantity: returnQty,
       );
       await _loadData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '✅ ${item['productName']} qaytarildi: $returnQuantity ${item['unitName'] ?? ''}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      if (mounted) _showSnack('Mahsulot qaytarildi', isError: false);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     }
   }
 
-  void _showPaymentDialog() {
+  void _showPaymentSheet() {
+    final l10n = AppLocalizations.of(context)!;
     final totalAmount = (_sale!['totalAmount'] as num?)?.toDouble() ?? 0.0;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => ContinuePaymentDialog(
-        saleId: widget.saleId,
-        totalAmount: totalAmount,
-        selectedCustomer: _selectedCustomer,
-        onConfirm: (payments, useDebt) async {
-          try {
-            final authProvider =
-                Provider.of<AuthProvider>(context, listen: false);
-            final salesService = SalesService(authProvider: authProvider);
-            for (var payment in payments) {
-              await salesService.addPayment(
-                saleId: widget.saleId,
-                paymentType: payment['paymentType'],
-                amount: payment['amount'],
-              );
-            }
-            if (mounted) {
-              Navigator.pop(dialogContext);
-              Navigator.pop(context, true);
-            }
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text('Xatolik: $e'), backgroundColor: Colors.red),
-              );
-            }
+    showContinuePaymentSheet(
+      context,
+      saleId: widget.saleId,
+      totalAmount: totalAmount,
+      selectedCustomer: _selectedCustomer,
+      onConfirm: (payments, useDebt) async {
+        try {
+          final authProvider =
+              Provider.of<AuthProvider>(context, listen: false);
+          final salesService = SalesService(authProvider: authProvider);
+          for (var payment in payments) {
+            await salesService.addPayment(
+              saleId: widget.saleId,
+              paymentType: payment['paymentType'],
+              amount: payment['amount'],
+            );
           }
-        },
-      ),
+          if (mounted) {
+            Navigator.pop(context); // sheet yopish
+            Navigator.pop(context, true); // ekrandan chiqish
+          }
+        } catch (e) {
+          if (mounted) _showSnack('${l10n.error}: $e', isError: true);
+        }
+      },
     );
+  }
+
+  void _showSnack(String msg, {required bool isError}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: isError ? Colors.red : Colors.green,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+      duration: const Duration(seconds: 2),
+    ));
   }
 
   @override
@@ -411,9 +371,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(
-          title: l10n.draftSales, // Arb faylga qo'shdik: "Draft Savdo"
-        ),
+        appBar: CommonAppBar(title: l10n.draftSale),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -421,152 +379,177 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     if (_sale == null) {
       return Scaffold(
         backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(
-          title: l10n.draftSales, // Arb faylga qo'shdik: "Draft Savdo"
-        ),
+        appBar: CommonAppBar(title: l10n.draftSale),
         body: const Center(child: Text('Savdo topilmadi')),
       );
     }
 
-    final customerName = _sale!['customerName'];
+    final customerName = _sale!['customerName'] as String?;
     final isClosed = _sale?['status'] == 'Closed';
 
     return Scaffold(
       backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.draftSale,
-      ),
+      appBar: CommonAppBar(title: l10n.draftSale),
       body: Column(
         children: [
           if (customerName != null)
             Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF0F9FF),
               child: Row(
                 children: [
-                  const Icon(Icons.person, color: Color(0xFF3B82F6)),
-                  const SizedBox(width: 12),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: const Icon(Icons.person_rounded,
+                        color: Color(0xFF3B82F6), size: 17),
+                  ),
+                  const SizedBox(width: 10),
                   Text(
                     customerName,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
+                        fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             ),
+
+          // Savat (gorizontal scroll) — ✅ OVERFLOW YO'Q: fixed height
           if (_cartItems.isNotEmpty)
-            Container(
-              height: 104,
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            SizedBox(
+              height: 110,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 itemCount: _cartItems.length,
-                itemBuilder: (context, index) {
-                  return ContinueSaleCartItem(
-                    item: _cartItems[index],
-                    isClosed: isClosed,
-                    onEditPrice: () => _updateItemPrice(index),
-                    onReturn: () => _returnItem(index),
-                    onDecrement: () async {
-                      final qty =
-                          (_cartItems[index]['quantity'] as num?)?.toDouble() ?? 0.0;
-                      await _updateQuantity(index, qty - 1);
-                    },
-                    onIncrement: () async {
-                      final qty =
-                          (_cartItems[index]['quantity'] as num?)?.toDouble() ?? 0.0;
-                      await _updateQuantity(index, qty + 1);
-                    },
-                    onRemove: () => _removeFromCart(index),
-                  );
-                },
+                itemBuilder: (context, index) => ContinueSaleCartItem(
+                  item: _cartItems[index],
+                  isClosed: isClosed,
+                  onEditPrice: () => _updateItemPrice(index),
+                  onReturn: () => _returnItem(index),
+                  onDecrement: () async {
+                    final qty =
+                        (_cartItems[index]['quantity'] as num?)?.toDouble() ??
+                            0.0;
+                    await _updateQuantity(index, qty - 1);
+                  },
+                  onIncrement: () async {
+                    final qty =
+                        (_cartItems[index]['quantity'] as num?)?.toDouble() ??
+                            0.0;
+                    await _updateQuantity(index, qty + 1);
+                  },
+                  onRemove: () => _removeFromCart(index),
+                ),
               ),
             ),
+
+          // Qidiruv + Grid — ✅ Expanded ichida to'g'ri joylashgan
           Expanded(
             child: Column(
               children: [
+                // Search
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                  child: SizedBox(
-                    height: 40,
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(fontSize: 15),
-                      decoration: InputDecoration(
-                        hintText: 'Mahsulot qidirish...',
-                        hintStyle: TextStyle(
-                            color: Colors.grey.shade400, fontSize: 14),
-                        prefixIcon: const Icon(Icons.search,
-                            size: 18, color: Color(0xFF9CA3AF)),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _filterProducts();
-                                },
-                              )
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE5E7EB)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE5E7EB)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF3B82F6), width: 1.5),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Mahsulot qidirish...',
+                      hintStyle:
+                          TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                      prefixIcon: const Icon(Icons.search_rounded,
+                          size: 18, color: Color(0xFF9CA3AF)),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 16),
+                              onPressed: () {
+                                _searchController.clear();
+                                _filterProducts();
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor:
+                          isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.08)
+                                : const Color(0xFFE5E7EB)),
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.08)
+                                : const Color(0xFFE5E7EB)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF3B82F6), width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                     ),
                   ),
                 ),
+
+                // Mahsulotlar grid
                 Expanded(
                   child: _filteredProducts.isEmpty
-                      ? const Center(
-                          child: Text('Mahsulotlar topilmadi',
-                              style: TextStyle(color: Color(0xFF9CA3AF))))
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.search_off_rounded,
+                                  size: 48, color: Colors.grey[300]),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Mahsulotlar topilmadi',
+                                style: TextStyle(
+                                    color: Colors.grey[400], fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        )
                       : GridView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
-                            childAspectRatio: 1.85,
+                            // ✅ childAspectRatio oshirildi — overflow yo'qoladi
+                            childAspectRatio: 1.6,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
                           ),
                           itemCount: _filteredProducts.length,
-                          itemBuilder: (context, index) {
-                            final product = _filteredProducts[index];
-                            return ContinueSaleProductCard(
-                              product: product,
-                              onTap: () => _addToCart(product),
-                            );
-                          },
+                          itemBuilder: (context, index) =>
+                              ContinueSaleProductCard(
+                            product: _filteredProducts[index],
+                            onTap: () => _addToCart(_filteredProducts[index]),
+                          ),
                         ),
                 ),
               ],
             ),
           ),
+
+          // Bottom bar
           ContinueSaleBottomBar(
             totalAmount: _totalAmount,
             cartIsEmpty: _cartItems.isEmpty,
             isClosed: isClosed,
-            onCheckout: _showPaymentDialog,
+            onCheckout: _showPaymentSheet,
           ),
         ],
       ),
     );
   }
 }
-
-

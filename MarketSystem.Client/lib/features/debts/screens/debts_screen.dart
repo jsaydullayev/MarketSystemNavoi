@@ -22,10 +22,8 @@ class _DebtsScreenState extends State<DebtsScreen> {
   Map<String, List<dynamic>> _debtsByCustomer = {};
   Map<String, String> _customerNames = {};
   bool _isLoading = false;
-  bool _initialized = false; // ← birinchi yuklash flagı
+  bool _initialized = false;
 
-  // ← initState o'rniga didChangeDependencies ishlatamiz
-  // Sabab: initState da context.watch/l10n ishonchli emas
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -46,7 +44,6 @@ class _DebtsScreenState extends State<DebtsScreen> {
 
       if (!mounted) return;
 
-      // l10n ni await dan KEYIN chaqiramiz (context tayyor bo'lganda)
       final l10n = AppLocalizations.of(context)!;
 
       final Map<String, List<dynamic>> grouped = {};
@@ -104,7 +101,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _debtsByCustomer.isEmpty
-              ? _EmptyDebtsView(onRefresh: _loadData) // ← refresh tugmasi
+              ? _EmptyDebtsView(onRefresh: _loadData)
               : RefreshIndicator(
                   onRefresh: _loadData,
                   child: ListView.builder(
@@ -147,7 +144,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
 }
 
 class _EmptyDebtsView extends StatelessWidget {
-  final Future<void> Function() onRefresh; // ← refresh uchun
+  final Future<void> Function() onRefresh;
 
   const _EmptyDebtsView({required this.onRefresh});
 
@@ -155,7 +152,7 @@ class _EmptyDebtsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return RefreshIndicator(
-      onRefresh: onRefresh, // ← bo'sh ekranda ham pull-to-refresh ishlaydi
+      onRefresh: onRefresh,
       child: ListView(
         children: [
           SizedBox(

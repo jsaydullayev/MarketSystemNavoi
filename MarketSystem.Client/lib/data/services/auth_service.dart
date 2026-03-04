@@ -115,7 +115,38 @@ class AuthService {
   // Token borligini tekshirish
   Future<bool> isAuthenticated() async {
     final token = await _httpService.getAccessToken();
-    return token != null && token.isNotEmpty;
+    if (token == null || token.isEmpty) return false;
+
+    if (_isTokenExpired(token)) {
+      print('Access token expired, attempting refresh...');
+      final refreshed = await refreshToken();
+
+      if (refreshed == null) {
+        print('Token refresh failed - user must login again');
+        await _httpService.clearTokens();
+        return false;
+      }
+      return true;
+    }
+
+    return true;
+  }
+
+  bool _isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+
+      final payload =
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final data = jsonDecode(payload);
+      final exp = data['exp'] as int;
+
+      final expiryDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      return DateTime.now().isAfter(expiryDate);
+    } catch (e) {
+      return true;
+    }
   }
 
   // ✅ Refresh access token using refresh token

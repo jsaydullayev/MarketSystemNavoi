@@ -452,6 +452,18 @@ abstract class AppLocalizations {
   /// **'Jami'**
   String get total;
 
+  /// No description provided for @from.
+  ///
+  /// In uz, this message translates to:
+  /// **'Dan'**
+  String get from;
+
+  /// No description provided for @to.
+  ///
+  /// In uz, this message translates to:
+  /// **'Gacha'**
+  String get to;
+
   /// No description provided for @paid.
   ///
   /// In uz, this message translates to:
@@ -2215,6 +2227,138 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'To\'lovni amalga oshirish'**
   String get processPayment;
+
+  /// No description provided for @salesCount.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta savdo'**
+  String salesCount(Object count);
+
+  /// No description provided for @netProfit.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sof foyda'**
+  String get netProfit;
+
+  /// No description provided for @noSalesToday.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu kunda sotuvlar yo\'q'**
+  String get noSalesToday;
+
+  /// No description provided for @downloadExcel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Excel yuklab olish'**
+  String get downloadExcel;
+
+  /// No description provided for @reportDownloaded.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hisobot yuklab olindi'**
+  String get reportDownloaded;
+
+  /// No description provided for @downloadError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yuklab olishda xatolik'**
+  String get downloadError;
+
+  /// No description provided for @reportDownloadSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hisobot muvaffaqiyatli yuklab olindi!'**
+  String get reportDownloadSuccess;
+
+  /// No description provided for @byPaymentType.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov turlari bo\'yicha'**
+  String get byPaymentType;
+
+  /// No description provided for @select.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tanlash'**
+  String get select;
+
+  /// No description provided for @noReports.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hisobotlar yo\'q'**
+  String get noReports;
+
+  /// No description provided for @totalValue.
+  ///
+  /// In uz, this message translates to:
+  /// **'Jami qiymat'**
+  String get totalValue;
+
+  /// No description provided for @sellingPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuv narxi'**
+  String get sellingPrice;
+
+  /// No description provided for @productCount.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotlar soni'**
+  String get productCount;
+
+  /// No description provided for @incomingPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kelgan narxi'**
+  String get incomingPrice;
+
+  /// No description provided for @andMoreProducts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Va yana {count} ta mahsulot bor...'**
+  String andMoreProducts(Object count);
+
+  /// No description provided for @totalSale.
+  ///
+  /// In uz, this message translates to:
+  /// **'Jami savdo'**
+  String get totalSale;
+
+  /// No description provided for @saleCount.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savdolar soni'**
+  String get saleCount;
+
+  /// No description provided for @averageSale.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'rtacha savdo'**
+  String get averageSale;
+
+  /// No description provided for @averageTransactionValue.
+  ///
+  /// In uz, this message translates to:
+  /// **'Har bir savdoning o\'rtacha summasi'**
+  String get averageTransactionValue;
+
+  /// No description provided for @transactionStats.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta tranzaksiya  •  {percentage}%'**
+  String transactionStats(Object count, Object percentage);
+
+  /// No description provided for @daily.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kunlik'**
+  String get daily;
+
+  /// No description provided for @monthly.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oylik'**
+  String get monthly;
 }
 
 class _AppLocalizationsDelegate

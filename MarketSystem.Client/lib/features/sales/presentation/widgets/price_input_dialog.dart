@@ -61,7 +61,9 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
   }
 
   void _onPriceChanged() {
-    final cleanText = _priceController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+    final cleanText = _priceController.text
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(',', '.');
     final price = double.tryParse(cleanText) ?? 0.0;
     final shouldShow = _minPrice > 0 && price < _minPrice;
     if (shouldShow != _showMinPrice) {
@@ -79,9 +81,12 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
   }
 
   void _submit() {
-    final cleanPriceText = _priceController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
-    final cleanQtyText = _qtyController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
-    
+    final cleanPriceText = _priceController.text
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(',', '.');
+    final cleanQtyText =
+        _qtyController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+
     final price = double.tryParse(cleanPriceText) ?? 0;
     final qty = double.tryParse(cleanQtyText) ?? 1;
     widget.onConfirm(price, qty, _commentController.text);
