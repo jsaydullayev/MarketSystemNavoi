@@ -186,6 +186,12 @@ class AppLocalizationsUz extends AppLocalizations {
   String get total => 'Jami';
 
   @override
+  String get from => 'Dan';
+
+  @override
+  String get to => 'Gacha';
+
+  @override
   String get paid => 'To\'langan';
 
   @override
@@ -1096,4 +1102,76 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get processPayment => 'To\'lovni amalga oshirish';
+
+  @override
+  String salesCount(Object count) {
+    return '$count ta savdo';
+  }
+
+  @override
+  String get netProfit => 'Sof foyda';
+
+  @override
+  String get noSalesToday => 'Bu kunda sotuvlar yo\'q';
+
+  @override
+  String get downloadExcel => 'Excel yuklab olish';
+
+  @override
+  String get reportDownloaded => 'Hisobot yuklab olindi';
+
+  @override
+  String get downloadError => 'Yuklab olishda xatolik';
+
+  @override
+  String get reportDownloadSuccess => 'Hisobot muvaffaqiyatli yuklab olindi!';
+
+  @override
+  String get byPaymentType => 'To\'lov turlari bo\'yicha';
+
+  @override
+  String get select => 'Tanlash';
+
+  @override
+  String get noReports => 'Hisobotlar yo\'q';
+
+  @override
+  String get totalValue => 'Jami qiymat';
+
+  @override
+  String get sellingPrice => 'Sotuv narxi';
+
+  @override
+  String get productCount => 'Mahsulotlar soni';
+
+  @override
+  String get incomingPrice => 'Kelgan narxi';
+
+  @override
+  String andMoreProducts(Object count) {
+    return 'Va yana $count ta mahsulot bor...';
+  }
+
+  @override
+  String get totalSale => 'Jami savdo';
+
+  @override
+  String get saleCount => 'Savdolar soni';
+
+  @override
+  String get averageSale => 'O\'rtacha savdo';
+
+  @override
+  String get averageTransactionValue => 'Har bir savdoning o\'rtacha summasi';
+
+  @override
+  String transactionStats(Object count, Object percentage) {
+    return '$count ta tranzaksiya  •  $percentage%';
+  }
+
+  @override
+  String get daily => 'Kunlik';
+
+  @override
+  String get monthly => 'Oylik';
 }

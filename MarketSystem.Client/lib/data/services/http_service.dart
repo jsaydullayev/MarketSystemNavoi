@@ -52,19 +52,15 @@ class HttpService {
     print('====================');
   }
 
-  // Tokenlarni olish
   Future<String?> getAccessToken() async {
-    if (_accessToken != null) {
-      print('✅ Token from memory: ${_accessToken!.substring(0, 20)}...');
-      return _accessToken;
-    }
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
+
     if (_accessToken != null) {
       print(
           '✅ Token from SharedPreferences: ${_accessToken!.substring(0, 20)}...');
     } else {
-      print('❌ NO TOKEN FOUND in SharedPreferences!');
+      print('❌ NO TOKEN FOUND!');
     }
     return _accessToken;
   }
