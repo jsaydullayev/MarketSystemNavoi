@@ -1346,11 +1346,11 @@ abstract class AppLocalizations {
   /// **'Barchasi'**
   String get all;
 
-  /// No description provided for @close.
+  /// No description provided for @d.
   ///
   /// In uz, this message translates to:
   /// **'Yopilgan'**
-  String get close;
+  String get d;
 
   /// No description provided for @debt.
   ///
@@ -1381,12 +1381,6 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Sotilgan mahsulotlar'**
   String get soldProducts;
-
-  /// No description provided for @returnProduct.
-  ///
-  /// In uz, this message translates to:
-  /// **'Tovarni qaytarish'**
-  String get returnProduct;
 
   /// No description provided for @returnAmount.
   ///
@@ -1465,12 +1459,6 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Brak'**
   String get defect;
-
-  /// No description provided for @invalidQuantity.
-  ///
-  /// In uz, this message translates to:
-  /// **'Xato miqdor!'**
-  String get invalidQuantity;
 
   /// No description provided for @finishReturn.
   ///
@@ -1589,7 +1577,7 @@ abstract class AppLocalizations {
   /// No description provided for @onDebt.
   ///
   /// In uz, this message translates to:
-  /// **'Qarzga:'**
+  /// **'Qarzga'**
   String get onDebt;
 
   /// No description provided for @remaining.
@@ -2090,11 +2078,11 @@ abstract class AppLocalizations {
   /// **'Username va parolni yangi foydalanuvchiga bering'**
   String get giveCredentialsToUser;
 
-  /// No description provided for @noPermissionToEditClosed.
+  /// No description provided for @noPermissionToEditdd.
   ///
   /// In uz, this message translates to:
   /// **'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)'**
-  String get noPermissionToEditClosed;
+  String get noPermissionToEditdd;
 
   /// No description provided for @priceUpdatedSuccess.
   ///
@@ -2132,11 +2120,11 @@ abstract class AppLocalizations {
   /// **'Ochiq'**
   String get open;
 
-  /// No description provided for @closedDebtAudit.
+  /// No description provided for @ddDebtAudit.
   ///
   /// In uz, this message translates to:
   /// **'Bu qarz yopiq. O\'zgartirish audit logga yoziladi.'**
-  String get closedDebtAudit;
+  String get ddDebtAudit;
 
   /// No description provided for @exampleComment.
   ///
@@ -2359,6 +2347,378 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Oylik'**
   String get monthly;
+
+  /// No description provided for @insufficientFundsWithBalance.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yetarli pul yo\'q! Mavjud: {balance} so\'m'**
+  String insufficientFundsWithBalance(Object balance);
+
+  /// No description provided for @withdrawalSuccessType.
+  ///
+  /// In uz, this message translates to:
+  /// **'{type} muvaffaqiyatli olindi'**
+  String withdrawalSuccessType(Object type);
+
+  /// No description provided for @totalBalance.
+  ///
+  /// In uz, this message translates to:
+  /// **'Umumiy balans'**
+  String get totalBalance;
+
+  /// No description provided for @updatedAt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangilandi: {time}'**
+  String updatedAt(Object time);
+
+  /// No description provided for @todaysIncomes.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugungi tushumlar'**
+  String get todaysIncomes;
+
+  /// No description provided for @cashMoney.
+  ///
+  /// In uz, this message translates to:
+  /// **'Naqd pul'**
+  String get cashMoney;
+
+  /// No description provided for @todaysSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugungi savdolar'**
+  String get todaysSales;
+
+  /// No description provided for @itemsCount.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta'**
+  String itemsCount(Object count);
+
+  /// No description provided for @selectPaymentTypeAndAmount.
+  ///
+  /// In uz, this message translates to:
+  /// **'Pul turini va miqdorini tanlang'**
+  String get selectPaymentTypeAndAmount;
+
+  /// No description provided for @paymentTypeLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Pul turi'**
+  String get paymentTypeLabel;
+
+  /// No description provided for @waiting.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kutilmoqda...'**
+  String get waiting;
+
+  /// No description provided for @productRemoved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot olib tashlandi'**
+  String get productRemoved;
+
+  /// No description provided for @priceUpdated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narx yangilandi'**
+  String get priceUpdated;
+
+  /// No description provided for @productReturned.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot qaytarildi'**
+  String get productReturned;
+
+  /// No description provided for @saleNotFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savdo topilmadi'**
+  String get saleNotFound;
+
+  /// No description provided for @productsNotFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotlar topilmadi'**
+  String get productsNotFound;
+
+  /// No description provided for @productAddedToCart.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} savatga qo\'shildi'**
+  String productAddedToCart(Object name);
+
+  /// No description provided for @changePrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narxni o\'zgartirish'**
+  String get changePrice;
+
+  /// No description provided for @currentPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozirgi narx'**
+  String get currentPrice;
+
+  /// No description provided for @quantityCount.
+  ///
+  /// In uz, this message translates to:
+  /// **'Miqdor: {quantity} ta'**
+  String quantityCount(Object quantity);
+
+  /// No description provided for @priceChangedFor.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} uchun narx o\'zgartirildi'**
+  String priceChangedFor(Object name);
+
+  /// No description provided for @noSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savdolar yo\'q'**
+  String get noSales;
+
+  /// No description provided for @debtAmount.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz: {amount}'**
+  String debtAmount(Object amount);
+
+  /// No description provided for @noDebtors.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzdorlar yo\'q'**
+  String get noDebtors;
+
+  /// No description provided for @debtorsWillBeShownHere.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzli mijozlar bu yerda ko\'rsatiladi'**
+  String get debtorsWillBeShownHere;
+
+  /// No description provided for @today.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kecha'**
+  String get yesterday;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} kun oldin'**
+  String daysAgo(Object count);
+
+  /// No description provided for @monthsAgo.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} oy oldin'**
+  String monthsAgo(Object count);
+
+  /// No description provided for @yearsAgo.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} yil oldin'**
+  String yearsAgo(Object count);
+
+  /// No description provided for @deleteSale.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savdoni o\'chirish'**
+  String get deleteSale;
+
+  /// No description provided for @deleteSaleConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'Haqiqatan ham bu savdoni o\'chirmoqchimisiz?'**
+  String get deleteSaleConfirm;
+
+  /// No description provided for @noDebtSalesFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz savdolari topilmadi'**
+  String get noDebtSalesFound;
+
+  /// No description provided for @debtorCustomers.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzdor mijozlar'**
+  String get debtorCustomers;
+
+  /// No description provided for @ongoing.
+  ///
+  /// In uz, this message translates to:
+  /// **'Davom etayotgan'**
+  String get ongoing;
+
+  /// No description provided for @debtSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz savdolar'**
+  String get debtSales;
+
+  /// No description provided for @paidSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'langan savdolar'**
+  String get paidSales;
+
+  /// No description provided for @saleDeleted.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savdo o\'chirildi'**
+  String get saleDeleted;
+
+  /// No description provided for @draftSaveError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Draft saqlashda xatolik'**
+  String get draftSaveError;
+
+  /// No description provided for @enterQuantityHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Miqdor kiriting...'**
+  String get enterQuantityHint;
+
+  /// No description provided for @selectCustomerForDebtWarning.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzga olish uchun mijoz tanlang!'**
+  String get selectCustomerForDebtWarning;
+
+  /// No description provided for @makePayment.
+  ///
+  /// In uz, this message translates to:
+  /// **'TO\'LOV QILISH'**
+  String get makePayment;
+
+  /// No description provided for @closed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yopish'**
+  String get closed;
+
+  /// No description provided for @customerRemoved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz olib tashlandi'**
+  String get customerRemoved;
+
+  /// No description provided for @removeCustomer.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijozni olib tashlash'**
+  String get removeCustomer;
+
+  /// No description provided for @paymentMethod.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov usuli'**
+  String get paymentMethod;
+
+  /// No description provided for @paymentAmount.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov miqdori'**
+  String get paymentAmount;
+
+  /// No description provided for @selectPaymentMethod.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov usulini tanlang'**
+  String get selectPaymentMethod;
+
+  /// No description provided for @enterValidAmount.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'g\'ri miqdor kiriting'**
+  String get enterValidAmount;
+
+  /// No description provided for @continueAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Davom etish'**
+  String get continueAction;
+
+  /// No description provided for @saleIdTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savdo #{id}'**
+  String saleIdTitle(Object id);
+
+  /// No description provided for @noOngoingSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Davom etayotgan savdolar yo\'q'**
+  String get noOngoingSales;
+
+  /// No description provided for @initialSalesWillBeShownHere.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshlang\'ich savdolar bu yerda ko\'rsatiladi'**
+  String get initialSalesWillBeShownHere;
+
+  /// No description provided for @returnProduct.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotni qaytarish'**
+  String get returnProduct;
+
+  /// No description provided for @availableQuantity.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mavjud miqdor'**
+  String get availableQuantity;
+
+  /// No description provided for @returnQuantity.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish miqdori'**
+  String get returnQuantity;
+
+  /// No description provided for @invalidQuantity.
+  ///
+  /// In uz, this message translates to:
+  /// **'Noto\'g\'ri miqdor'**
+  String get invalidQuantity;
+
+  /// No description provided for @paymentHistory.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov tarixi'**
+  String get paymentHistory;
+
+  /// No description provided for @hasDebt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz bor'**
+  String get hasDebt;
+
+  /// No description provided for @noPayments.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lovlar yo\'q'**
+  String get noPayments;
+
+  /// No description provided for @noPermissionToEditClosed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yopilgan qarzni tahrirlash uchun huquqingiz yo\'q (faqat Egasi/Admin)'**
+  String get noPermissionToEditClosed;
+
+  /// No description provided for @closedDebtAudit.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yopilgan qarzlar auditi'**
+  String get closedDebtAudit;
 }
 
 class _AppLocalizationsDelegate

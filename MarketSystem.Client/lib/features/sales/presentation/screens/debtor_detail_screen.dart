@@ -26,12 +26,12 @@ class DebtorDetailScreen extends StatefulWidget {
 class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
   bool _isLoading = false;
 
-  // Narxni o'zgartirish dialogi
   void _showPriceChangeDialog(dynamic saleItem, String saleId) {
     final itemId = saleItem['id'];
     final productName = saleItem['productName'];
     final currentPrice = (saleItem['salePrice'] as num?)?.toDouble() ?? 0.0;
     final quantity = (saleItem['quantity'] as num?)?.toDouble() ?? 0.0;
+    final l10n = AppLocalizations.of(context)!;
 
     final priceController =
         TextEditingController(text: currentPrice.toString());
@@ -44,7 +44,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
           double newPrice = currentPrice;
 
           return AlertDialog(
-            title: Text('Narxni o\'zgartirish: $productName'),
+            title: Text('${l10n.changePrice}: $productName'),
             content: SizedBox(
               width: 400,
               child: Column(
@@ -60,7 +60,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Hozirgi narx:'),
+                        Text('${l10n.currentPrice}:'),
                         Text(
                           NumberFormatter.formatDecimal(currentPrice),
                           style: const TextStyle(
@@ -77,10 +77,10 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                   TextField(
                     controller: priceController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Yangi narx (so\'m)',
-                      prefixIcon: Icon(Icons.money),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.newPriceLabel,
+                      prefixIcon: const Icon(Icons.money),
+                      border: const OutlineInputBorder(),
                     ),
                     onChanged: (value) {
                       setDialogState(() {
@@ -110,7 +110,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                 size: 16, color: Colors.orange.shade700),
                             const SizedBox(width: 6),
                             Text(
-                              'Jami: ${NumberFormatter.formatDecimal(newPrice * quantity)} so\'m',
+                              '${l10n.total}: ${NumberFormatter.formatDecimal(newPrice * quantity)} ${l10n.currencySom}',
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 color: Colors.orange.shade700,
@@ -120,7 +120,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Miqdor: $quantity ta',
+                          l10n.quantityCount(quantity),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade700,
@@ -134,10 +134,10 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                   // Izoh
                   TextField(
                     controller: commentController,
-                    decoration: const InputDecoration(
-                      labelText: 'Izoh (ixtiyoriy)',
-                      prefixIcon: Icon(Icons.comment),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.commentOptional,
+                      prefixIcon: const Icon(Icons.comment),
+                      border: const OutlineInputBorder(),
                     ),
                     maxLines: 2,
                   ),
@@ -147,7 +147,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Bekor qilish'),
+                child: Text(l10n.cancel),
               ),
               ElevatedButton(
                 onPressed: _isLoading
@@ -155,8 +155,8 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                     : () async {
                         if (newPrice <= 0) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Narx musbat bo\'lishi kerak!'),
+                            SnackBar(
+                              content: Text(l10n.priceMustBePositive),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -179,15 +179,15 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                             saleItemId: itemId,
                             newPrice: newPrice,
                             comment: commentController.text.trim().isEmpty
-                                ? 'Narx yangilandi'
+                                ? l10n.priceUpdated
                                 : commentController.text.trim(),
                           );
 
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(
-                                    '$productName uchun narx o\'zgartirildi'),
+                                content:
+                                    Text(l10n.priceChangedFor(productName)),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -202,7 +202,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Xatolik: $e'),
+                                content: Text('${l10n.error}: $e'),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -213,7 +213,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Saqlash'),
+                child: Text(l10n.save),
               ),
             ],
           );
@@ -268,9 +268,9 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Jami qarz:',
-                            style: TextStyle(
+                          Text(
+                            '${l10n.totalDebt}:',
+                            style: const TextStyle(
                               fontSize: 14,
                               color: Colors.white70,
                               fontWeight: FontWeight.w500,
@@ -290,9 +290,9 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'To\'langan:',
-                            style: TextStyle(
+                          Text(
+                            '${l10n.paid}:',
+                            style: const TextStyle(
                               fontSize: 12,
                               color: Colors.white70,
                             ),
@@ -346,7 +346,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Savdolar yo\'q',
+                                l10n.noSales,
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey.shade600,
@@ -432,7 +432,9 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                           ],
                                         ),
                                         Text(
-                                          'Qarz: ${NumberFormatter.formatDecimal(saleRemaining)}',
+                                          l10n.debtAmount(
+                                              NumberFormatter.formatDecimal(
+                                                  saleRemaining)),
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w700,
@@ -446,7 +448,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                   // Items
                                   ...items.map((item) {
                                     final itemName =
-                                        item['productName'] ?? 'Noma\'lum';
+                                        item['productName'] ?? l10n.unknown;
                                     final itemPrice =
                                         (item['salePrice'] as num?)
                                                 ?.toDouble() ??
@@ -524,7 +526,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                                                       ),
                                                       const SizedBox(width: 4),
                                                       Text(
-                                                        'Narxni o\'zgartirish',
+                                                        l10n.changePrice,
                                                         style: TextStyle(
                                                           fontSize: 10,
                                                           fontWeight:

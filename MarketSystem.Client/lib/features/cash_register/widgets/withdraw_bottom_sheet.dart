@@ -43,7 +43,6 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle bar
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 12, bottom: 20),
@@ -55,8 +54,6 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
               ),
             ),
           ),
-
-          // Sarlavha
           Row(
             children: [
               Container(
@@ -86,15 +83,13 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
             ],
           ),
           const SizedBox(height: 24),
-
-          // Pul turi
           const Text('Pul turi',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
           Row(
             children: [
               _TypeChip(
-                label: 'Naqd',
+                label: l10n.cash,
                 icon: Icons.payments_outlined,
                 value: 'cash',
                 balance: widget.cashBalance,
@@ -103,7 +98,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
               ),
               const SizedBox(width: 12),
               _TypeChip(
-                label: 'Click',
+                label: l10n.click,
                 icon: Icons.phone_android_outlined,
                 value: 'click',
                 balance: widget.clickBalance,
@@ -113,8 +108,6 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Miqdor
           TextField(
             controller: widget.amountController,
             keyboardType: TextInputType.number,
@@ -139,8 +132,6 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
             ),
           ),
           const SizedBox(height: 12),
-
-          // Izoh
           TextField(
             controller: widget.commentController,
             maxLines: 2,
@@ -165,8 +156,6 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Tugmalar
           Row(
             children: [
               Expanded(
@@ -236,6 +225,8 @@ class _TypeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -264,7 +255,7 @@ class _TypeChip extends StatelessWidget {
                     color: selected ? AppTheme.primary : Colors.grey[700],
                   )),
               Text(
-                '${balance.toStringAsFixed(0)} so\'m',
+                '${balance.toStringAsFixed(0)} ${l10n.currencySom}',
                 style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                 overflow: TextOverflow.ellipsis,
               ),

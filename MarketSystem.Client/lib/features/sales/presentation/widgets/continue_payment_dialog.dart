@@ -1,26 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
-
-// Helper funksiya
-Future<void> showContinuePaymentSheet(
-  BuildContext context, {
-  required String saleId,
-  required double totalAmount,
-  required Map<String, dynamic>? selectedCustomer,
-  required Function(List<Map<String, dynamic>>, bool) onConfirm,
-}) {
-  return showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => ContinuePaymentSheet(
-      saleId: saleId,
-      totalAmount: totalAmount,
-      selectedCustomer: selectedCustomer,
-      onConfirm: onConfirm,
-    ),
-  );
-}
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ContinuePaymentSheet extends StatefulWidget {
   final String saleId;
@@ -184,6 +164,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       decoration: BoxDecoration(
@@ -225,11 +206,11 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("To'lov usullari",
-                        style: TextStyle(
+                    Text(l10n.paymentMethods,
+                        style: const TextStyle(
                             fontSize: 17, fontWeight: FontWeight.w800)),
                     Text(
-                      "Jami: ${NumberFormatter.formatDecimal(widget.totalAmount)} so'm",
+                      "${l10n.total}: ${NumberFormatter.formatDecimal(widget.totalAmount)} ${l10n.currencySom}",
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                   ],
@@ -253,8 +234,8 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
             GestureDetector(
               onTap: () {
                 if (widget.selectedCustomer == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Qarzga olish uchun mijoz tanlang!'),
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(l10n.selectCustomerForDebtWarning),
                     backgroundColor: Colors.orange,
                     behavior: SnackBarBehavior.floating,
                   ));
@@ -287,7 +268,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Qarzga olish',
+                        l10n.takeAsDebt,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -328,22 +309,23 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
               child: Column(
                 children: [
                   _SummaryRow(
-                      label: 'Jami',
+                      label: l10n.total,
                       value:
-                          "${NumberFormatter.formatDecimal(widget.totalAmount)} so'm"),
+                          "${NumberFormatter.formatDecimal(widget.totalAmount)} ${l10n.currencySom}"),
                   const SizedBox(height: 8),
                   _SummaryRow(
-                      label: "To'langan",
+                      label: l10n.paid,
                       value:
-                          "${NumberFormatter.formatDecimal(_totalPaid)} so'm",
+                          "${NumberFormatter.formatDecimal(_totalPaid)} ${l10n.currencySom}",
                       valueColor: Colors.green),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: Divider(height: 1),
                   ),
                   _SummaryRow(
-                    label: _hasDebt ? 'Qarzga' : 'Qolgan',
-                    value: "${NumberFormatter.formatDecimal(_remaining)} so'm",
+                    label: _hasDebt ? l10n.onDebt : l10n.remaining,
+                    value:
+                        "${NumberFormatter.formatDecimal(_remaining)} ${l10n.currencySom}",
                     valueColor: _hasDebt
                         ? Colors.orange
                         : (_remaining <= 0 ? Colors.green : Colors.red),
@@ -367,7 +349,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                           borderRadius: BorderRadius.circular(14)),
                       side: BorderSide(color: Colors.grey.withOpacity(0.3)),
                     ),
-                    child: Text('Bekor qilish',
+                    child: Text(l10n.cancel,
                         style: TextStyle(color: Colors.grey[600])),
                   ),
                 ),
@@ -394,7 +376,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                                 strokeWidth: 2, color: Colors.white),
                           )
                         : Text(
-                            _hasDebt ? 'Qarzga olish' : 'Tasdiqlash',
+                            _hasDebt ? l10n.takeAsDebt : l10n.confirm,
                             style: const TextStyle(
                                 fontSize: 15, fontWeight: FontWeight.w700),
                           ),
@@ -409,7 +391,6 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
   }
 }
 
-// ─── Payment Method Row ───
 class _PaymentMethodRow extends StatelessWidget {
   final _PaymentOption option;
   final bool isActive;
@@ -429,6 +410,7 @@ class _PaymentMethodRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
@@ -495,8 +477,8 @@ class _PaymentMethodRow extends StatelessWidget {
                 style:
                     const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: "Miqdor kiriting...",
-                  suffixText: "so'm",
+                  hintText: l10n.enterQuantityHint,
+                  suffixText: l10n.currencySom,
                   filled: true,
                   fillColor: isDark
                       ? Colors.white.withOpacity(0.05)
@@ -563,4 +545,24 @@ class _PaymentOption {
       required this.label,
       required this.icon,
       required this.color});
+}
+
+Future<void> showContinuePaymentSheet(
+  BuildContext context, {
+  required String saleId,
+  required double totalAmount,
+  required Map<String, dynamic>? selectedCustomer,
+  required Function(List<Map<String, dynamic>>, bool) onConfirm,
+}) {
+  return showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => ContinuePaymentSheet(
+      saleId: saleId,
+      totalAmount: totalAmount,
+      selectedCustomer: selectedCustomer,
+      onConfirm: onConfirm,
+    ),
+  );
 }

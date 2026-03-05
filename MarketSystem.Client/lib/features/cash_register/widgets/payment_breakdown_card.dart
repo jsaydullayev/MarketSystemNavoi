@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/data/models/cash_register_model.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class PaymentBreakdownCard extends StatelessWidget {
   final TodaySalesSummaryModel todaySales;
@@ -9,6 +10,7 @@ class PaymentBreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       width: double.infinity,
@@ -36,9 +38,9 @@ class PaymentBreakdownCard extends StatelessWidget {
                     color: Colors.blue, size: 20),
               ),
               const SizedBox(width: 10),
-              const Text(
-                'Bugungi tushumlar',
-                style: TextStyle(
+              Text(
+                l10n.todaysIncomes,
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -49,21 +51,21 @@ class PaymentBreakdownCard extends StatelessWidget {
           if (todaySales.cashPaid > 0)
             _PaymentRow(
               icon: Icons.payments_outlined,
-              label: 'Naqd pul',
+              label: l10n.cashMoney,
               amount: todaySales.cashPaid,
               color: Colors.green,
             ),
           if (todaySales.cardPaid > 0)
             _PaymentRow(
               icon: Icons.credit_card_outlined,
-              label: 'Plastik karta',
+              label: l10n.bankCard,
               amount: todaySales.cardPaid,
               color: Colors.blue,
             ),
           if (todaySales.clickPaid > 0)
             _PaymentRow(
               icon: Icons.phone_android_outlined,
-              label: 'Click',
+              label: l10n.click,
               amount: todaySales.clickPaid,
               color: Colors.purple,
             ),
@@ -88,6 +90,8 @@ class _PaymentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -108,7 +112,7 @@ class _PaymentRow extends StatelessWidget {
             ),
           ),
           Text(
-            '${amount.toStringAsFixed(0)} so\'m',
+            '${amount.toStringAsFixed(0)} ${l10n.currencySom}',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
