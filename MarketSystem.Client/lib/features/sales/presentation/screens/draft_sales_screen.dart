@@ -50,6 +50,8 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   }
 
   Future<void> _loadDraftSales() async {
+    final l10n = AppLocalizations.of(context)!;
+
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -57,7 +59,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       final unfinished = await salesService.getMyUnfinishedSales();
       if (mounted) setState(() => _unfinishedSales = unfinished);
     } catch (e) {
-      if (mounted) _showSnack('Xatolik: $e', isError: true);
+      if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -84,18 +86,19 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   }
 
   void _confirmDelete(String saleId) {
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Savdoni o'chirish",
-            style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text("Haqiqatan ham bu savdoni o'chirmoqchimisiz?"),
+        title: Text(l10n.deleteSale,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        content: Text(l10n.deleteSaleConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child:
-                Text('Bekor qilish', style: TextStyle(color: Colors.grey[600])),
+            child: Text(l10n.cancel, style: TextStyle(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -106,12 +109,12 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                 final salesService = SalesService(authProvider: authProvider);
                 await salesService.deleteSale(saleId: saleId);
                 if (mounted) {
-                  _showSnack("Savdo o'chirildi", isError: false);
+                  _showSnack(l10n.saleDeleted, isError: false);
                   _loadDraftSales();
                 }
               } catch (e) {
                 if (mounted)
-                  _showSnack("O'chirishda xatolik: $e", isError: true);
+                  _showSnack("${l10n.deleteError}: $e", isError: true);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -121,7 +124,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text("O'chirish"),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -148,13 +151,15 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   }
 
   void _showPaymentHistory(dynamic debtor) async {
+    final l10n = AppLocalizations.of(context)!;
+
     await _loadDraftSales();
     final customerId = debtor['customerId'];
     final debtorSales =
         _debtSales.where((sale) => sale['customerId'] == customerId).toList();
 
     if (debtorSales.isEmpty) {
-      _showSnack('Qarz savdolari topilmadi', isError: false);
+      _showSnack(l10n.noDebtSalesFound, isError: false);
       return;
     }
 
@@ -162,7 +167,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
 
     showPaymentHistorySheet(
       context,
-      customerName: debtor['customerName'] ?? 'Mijozsiz',
+      customerName: debtor['customerName'] ?? l10n.noCustomer,
       debtorSales: debtorSales,
     );
   }
@@ -205,7 +210,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   // Qarzdor mijozlar
                   if (_debtors.isNotEmpty) ...[
                     SectionHeader(
-                      title: 'Qarzdor mijozlar',
+                      title: l10n.debtorCustomers,
                       icon: Icons.person_outline,
                       color: Colors.red,
                       count: _debtors.length,
@@ -222,7 +227,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   // Draft savdolar
                   if (_draftSales.isNotEmpty) ...[
                     SectionHeader(
-                      title: 'Davom etayotgan',
+                      title: l10n.ongoing,
                       icon: Icons.edit_note_rounded,
                       color: Colors.orange,
                       count: _draftSales.length,
@@ -239,7 +244,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   // Qarz savdolar
                   if (_debtSales.isNotEmpty) ...[
                     SectionHeader(
-                      title: 'Qarz savdolar',
+                      title: l10n.debtSales,
                       icon: Icons.money_off_rounded,
                       color: Colors.red,
                       count: _debtSales.length,
@@ -256,7 +261,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
                   // To'langan savdolar
                   if (_paidSales.isNotEmpty) ...[
                     SectionHeader(
-                      title: "To'langan savdolar",
+                      title: l10n.paidSales,
                       icon: Icons.assignment_turned_in_outlined,
                       color: Colors.green,
                       count: _paidSales.length,

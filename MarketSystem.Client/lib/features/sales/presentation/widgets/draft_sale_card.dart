@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DraftSaleCard extends StatelessWidget {
   final dynamic sale;
@@ -15,9 +16,10 @@ class DraftSaleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final saleId = sale['id']?.toString() ?? '';
-    final customerName = sale['customerName'] ?? 'Mijozsiz';
+    final customerName = sale['customerName'] ?? l10n.noCustomer;
     final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
     final status = sale['status'] ?? '';
     final items = sale['items'] as List<dynamic>? ?? [];
@@ -34,7 +36,7 @@ class DraftSaleCard extends StatelessWidget {
       }
     }
 
-    final statusConfig = _statusConfig(status);
+    final statusConfig = _statusConfig(status, l10n);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -72,7 +74,9 @@ class DraftSaleCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Savdo #${saleId.length >= 8 ? saleId.substring(0, 8).toUpperCase() : saleId.toUpperCase()}',
+                  l10n.saleIdTitle(saleId.length >= 8
+                      ? saleId.substring(0, 8).toUpperCase()
+                      : saleId.toUpperCase()),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -128,7 +132,7 @@ class DraftSaleCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 _InfoChip(
                   icon: Icons.inventory_2_outlined,
-                  label: '${items.length} ta',
+                  label: l10n.itemsCount(items.length),
                   isDark: isDark,
                 ),
                 if (formattedDate.isNotEmpty) ...[
@@ -151,12 +155,12 @@ class DraftSaleCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Jami summa',
+                      l10n.totalSum,
                       style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${NumberFormatter.formatDecimal(totalAmount)} so\'m',
+                      '${NumberFormatter.formatDecimal(totalAmount)} ${l10n.currencySom}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -169,7 +173,7 @@ class DraftSaleCard extends StatelessWidget {
                 ElevatedButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_note_rounded, size: 17),
-                  label: const Text('Davom etish'),
+                  label: Text(l10n.continueAction),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3B82F6),
                     foregroundColor: Colors.white,
@@ -190,14 +194,14 @@ class DraftSaleCard extends StatelessWidget {
     );
   }
 
-  _StatusConfig _statusConfig(String status) {
+  _StatusConfig _statusConfig(String status, AppLocalizations l10n) {
     switch (status) {
       case 'Debt':
-        return _StatusConfig(color: Colors.red, label: 'Qarz');
+        return _StatusConfig(color: Colors.red, label: l10n.debt);
       case 'Paid':
-        return _StatusConfig(color: Colors.green, label: "To'langan");
+        return _StatusConfig(color: Colors.green, label: l10n.paid);
       default:
-        return _StatusConfig(color: Colors.orange, label: 'Draft');
+        return _StatusConfig(color: Colors.orange, label: l10n.draft);
     }
   }
 }

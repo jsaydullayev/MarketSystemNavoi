@@ -63,6 +63,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   double get _totalAmount => _cartItems.totalAmount;
 
   Future<void> _loadData() async {
+    final l10n = AppLocalizations.of(context)!;
+
     setState(() {
       _isLoading = true;
     });
@@ -89,7 +91,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Xatolik: $e'),
+            content: Text('${l10n.error}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -99,30 +101,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _addToCart(dynamic product) {
     final l10n = AppLocalizations.of(context)!;
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => PriceInputDialog(
-    //     product: product,
-    //     onConfirm: (price, qty, comment) {
-    //       setState(() {
-    //         _cartItems.add({
-    //           'productId': product['id'],
-    //           'productName': product['name'],
-    //           'salePrice': price,
-    //           'quantity': qty,
-    //           'comment': comment,
-    //         });
-    //       });
-
-    //       ScaffoldMessenger.of(context).showSnackBar(
-    //         SnackBar(
-    //           content: Text("${product['name']} ${l10n.returnSuccess}"),
-    //           backgroundColor: AppColors.success,
-    //         ),
-    //       );
-    //     },
-    //   ),
-    // );
     PriceInputSheet.show(
       context,
       product: product,
@@ -177,7 +155,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
 
     PriceInputSheet.show(context, product: {
-      'name': item['productName'] ?? 'Noma\'lum mahsulot',
+      'name': item['productName'] ?? l10n.unknownProduct,
       'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
       'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
       'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
@@ -411,7 +389,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             navigator.pop();
 
             scaffoldMessenger.showSnackBar(SnackBar(
-                content: Text('Xato: $e'), backgroundColor: Colors.red));
+                content: Text('${l10n.error}: $e'),
+                backgroundColor: Colors.red));
           }
         },
       ),
@@ -486,7 +465,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Draft saqlashda xatolik: $e'),
+            content: Text('${l10n.draftSaveError}: $e'),
             backgroundColor: Colors.red,
           ),
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/theme/app_theme.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class BalanceCard extends StatelessWidget {
   final double cashBalance;
@@ -16,6 +17,7 @@ class BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = cashBalance + clickBalance;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       width: double.infinity,
@@ -51,7 +53,7 @@ class BalanceCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'Umumiy balans',
+                l10n.totalBalance,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.white.withOpacity(0.85),
@@ -62,7 +64,7 @@ class BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '${_formatAmount(total)} so\'m',
+            '${_formatAmount(total)} ${l10n.currencySom}',
             style: const TextStyle(
               fontSize: 34,
               fontWeight: FontWeight.w800,
@@ -73,7 +75,7 @@ class BalanceCard extends StatelessWidget {
           if (lastUpdated != null) ...[
             const SizedBox(height: 6),
             Text(
-              'Yangilandi: ${_formatDate(lastUpdated)}',
+              l10n.updatedAt(_formatDate(lastUpdated)),
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.white.withOpacity(0.65),
@@ -93,7 +95,7 @@ class BalanceCard extends StatelessWidget {
                   Expanded(
                     child: _BalanceChip(
                       icon: Icons.payments_outlined,
-                      label: 'Naqd',
+                      label: l10n.cash,
                       amount: cashBalance,
                     ),
                   ),
@@ -103,7 +105,7 @@ class BalanceCard extends StatelessWidget {
                   Expanded(
                     child: _BalanceChip(
                       icon: Icons.phone_android_outlined,
-                      label: 'Click',
+                      label: l10n.click,
                       amount: clickBalance,
                     ),
                   ),
@@ -141,6 +143,8 @@ class _BalanceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -160,7 +164,7 @@ class _BalanceChip extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 11, color: Colors.white.withOpacity(0.7))),
                 Text(
-                  '${amount.toStringAsFixed(0)} so\'m',
+                  '${amount.toStringAsFixed(0)} ${l10n.currencySom}',
                   style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,

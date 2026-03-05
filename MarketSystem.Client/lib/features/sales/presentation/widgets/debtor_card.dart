@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtorCard extends StatelessWidget {
   final dynamic debtor;
@@ -15,8 +16,9 @@ class DebtorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final customerName = debtor['customerName'] ?? 'Mijozsiz';
+    final customerName = debtor['customerName'] ?? l10n.noCustomer;
     final customerPhone = debtor['customerPhone'];
     final remainingDebt = (debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
 
@@ -107,7 +109,7 @@ class DebtorCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${NumberFormatter.formatDecimal(remainingDebt)} so\'m',
+                      '${NumberFormatter.formatDecimal(remainingDebt)} ${l10n.currencySom}',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

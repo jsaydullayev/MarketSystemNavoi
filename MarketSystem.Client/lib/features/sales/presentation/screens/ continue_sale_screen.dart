@@ -147,7 +147,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           );
           await _loadData();
           if (mounted) {
-            _showSnack("${product['name']} savatga qo'shildi", isError: false);
+            _showSnack(l10n.productAddedToCart(product['name']),
+                isError: false);
           }
         } catch (e) {
           await _loadData();
@@ -172,7 +173,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         quantity: (item['quantity'] as num?)?.toDouble() ?? 0.0,
       );
       await _loadData();
-      if (mounted) _showSnack('Mahsulot olib tashlandi', isError: false);
+      if (mounted) _showSnack(l10n.productRemoved, isError: false);
     } catch (e) {
       if (!mounted) return;
       setState(() => _cartItems.insert(index, backup));
@@ -235,7 +236,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         'minSalePrice': (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
         'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
         'id': item['productId'] ?? '',
-        'unitName': item['unitName'] ?? 'dona',
+        'unitName': item['unitName'] ?? l10n.piece,
         'initialQuantity': currentQty,
         'comment': item['comment'] ?? '',
       },
@@ -257,7 +258,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             await salesService.updateSaleItemPrice(
               saleItemId: item['saleItemId'],
               newPrice: newPrice,
-              comment: comment ?? 'Narx yangilandi',
+              comment: comment ?? l10n.priceUpdated,
             );
           }
 
@@ -279,7 +280,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           }
 
           await _loadData();
-          if (mounted) _showSnack('Mahsulot yangilandi', isError: false);
+          if (mounted) _showSnack(l10n.productUpdated, isError: false);
         } catch (e) {
           await _loadData();
           if (mounted) _showSnack('${l10n.error}: $e', isError: true);
@@ -313,7 +314,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         quantity: returnQty,
       );
       await _loadData();
-      if (mounted) _showSnack('Mahsulot qaytarildi', isError: false);
+      if (mounted) _showSnack(l10n.productReturned, isError: false);
     } catch (e) {
       if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     }
@@ -341,8 +342,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             );
           }
           if (mounted) {
-            Navigator.pop(context); // sheet yopish
-            Navigator.pop(context, true); // ekrandan chiqish
+            Navigator.pop(context);
+            Navigator.pop(context, true);
           }
         } catch (e) {
           if (mounted) _showSnack('${l10n.error}: $e', isError: true);
@@ -380,7 +381,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       return Scaffold(
         backgroundColor: AppColors.getBg(isDark),
         appBar: CommonAppBar(title: l10n.draftSale),
-        body: const Center(child: Text('Savdo topilmadi')),
+        body: Center(child: Text(l10n.saleNotFound)),
       );
     }
 
@@ -417,8 +418,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 ],
               ),
             ),
-
-          // Savat (gorizontal scroll) — ✅ OVERFLOW YO'Q: fixed height
           if (_cartItems.isNotEmpty)
             SizedBox(
               height: 110,
@@ -447,19 +446,16 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 ),
               ),
             ),
-
-          // Qidiruv + Grid — ✅ Expanded ichida to'g'ri joylashgan
           Expanded(
             child: Column(
               children: [
-                // Search
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                   child: TextField(
                     controller: _searchController,
                     style: const TextStyle(fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: 'Mahsulot qidirish...',
+                      hintText: l10n.searchProduct,
                       hintStyle:
                           TextStyle(color: Colors.grey.shade400, fontSize: 14),
                       prefixIcon: const Icon(Icons.search_rounded,
@@ -500,8 +496,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                     ),
                   ),
                 ),
-
-                // Mahsulotlar grid
                 Expanded(
                   child: _filteredProducts.isEmpty
                       ? Center(
@@ -512,7 +506,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                   size: 48, color: Colors.grey[300]),
                               const SizedBox(height: 8),
                               Text(
-                                'Mahsulotlar topilmadi',
+                                l10n.productsNotFound,
                                 style: TextStyle(
                                     color: Colors.grey[400], fontSize: 14),
                               ),
@@ -524,7 +518,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
-                            // ✅ childAspectRatio oshirildi — overflow yo'qoladi
                             childAspectRatio: 1.6,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
@@ -540,8 +533,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
               ],
             ),
           ),
-
-          // Bottom bar
           ContinueSaleBottomBar(
             totalAmount: _totalAmount,
             cartIsEmpty: _cartItems.isEmpty,

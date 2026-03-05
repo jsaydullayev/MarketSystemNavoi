@@ -68,7 +68,7 @@ class _SalesScreenState extends State<SalesScreen> {
       case 'paid':
         return l10n.paid;
       case 'closed':
-        return l10n.close;
+        return l10n.closed;
       case 'debt':
         return l10n.debt;
       default:
@@ -260,7 +260,7 @@ class _SalesScreenState extends State<SalesScreen> {
       },
       {
         'id': 'closed',
-        'label': l10n.close,
+        'label': l10n.closed,
         'icon': Icons.archive_outlined,
         'color': Colors.blue
       },

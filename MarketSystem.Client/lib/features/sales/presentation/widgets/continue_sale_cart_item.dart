@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ContinueSaleCartItem extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -27,6 +28,7 @@ class ContinueSaleCartItem extends StatelessWidget {
     final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
     final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final itemTotal = price * qty;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       width: 155,
@@ -134,7 +136,7 @@ class ContinueSaleCartItem extends StatelessWidget {
                           size: 12, color: Colors.orange.shade700),
                       const SizedBox(width: 4),
                       Text(
-                        'Qaytarish',
+                        l10n.returnAction,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
