@@ -207,7 +207,11 @@ class _ProductCard extends StatelessWidget {
                     8.height,
                     _PriceRow(product: product, l10n: l10n, isDark: isDark),
                     8.height,
-                    _StockBadge(product: product, isDark: isDark),
+                    _StockBadge(
+                      product: product,
+                      isDark: isDark,
+                      l10n: l10n,
+                    ),
                   ],
                 ),
               ),
@@ -343,7 +347,9 @@ class _Badge extends StatelessWidget {
 class _StockBadge extends StatelessWidget {
   final dynamic product;
   final bool isDark;
-  const _StockBadge({required this.product, required this.isDark});
+  final AppLocalizations l10n;
+  const _StockBadge(
+      {required this.product, required this.isDark, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +367,7 @@ class _StockBadge extends StatelessWidget {
         children: [
           Icon(Icons.layers_rounded, size: 14, color: color),
           4.width,
-          Text('$qty ${product['unitName'] ?? 'dona'}',
+          Text('$qty ${product['unitName'] ?? l10n.piece}',
               style: TextStyle(
                   color: color, fontWeight: FontWeight.bold, fontSize: 12)),
         ],

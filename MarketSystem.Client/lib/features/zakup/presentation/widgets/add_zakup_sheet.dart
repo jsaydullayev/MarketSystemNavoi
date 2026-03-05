@@ -1,5 +1,3 @@
-// lib/features/zakup/presentation/widgets/add_zakup_sheet.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
@@ -371,8 +369,6 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
     );
   }
 }
-
-// ─── Shared small widgets ──────────────────────────────────────────────────────
 
 class _Handle extends StatelessWidget {
   @override

@@ -76,7 +76,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Mahsulotni o\'chirish'),
-        content: Text('${product['name']} mahsulotini rostdan ham o\'chirmoqchimisiz?'),
+        content: Text(
+            '${product['name']} mahsulotini rostdan ham o\'chirmoqchimisiz?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -303,7 +304,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'} (o\'zgarmas)',  // ✅ UNIT
+                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'} (o\'zgarmas)', // ✅ UNIT
                   style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 12,

@@ -54,8 +54,6 @@ class _ReportsScreenState extends State<ReportsScreen>
   }
 
   Future<void> _loadReports() async {
-    final l10n = AppLocalizations.of(context)!;
-
     setState(() => _isLoading = true);
     try {
       final results = await Future.wait([
@@ -70,6 +68,7 @@ class _ReportsScreenState extends State<ReportsScreen>
         _isLoading = false;
       });
     } catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() => _isLoading = false);
       if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     }

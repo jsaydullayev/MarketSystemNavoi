@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
-import 'package:market_system_client/l10n/app_localizations.dart'; // ← import
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class EditPriceBottomSheet extends StatefulWidget {
   final dynamic saleItem;

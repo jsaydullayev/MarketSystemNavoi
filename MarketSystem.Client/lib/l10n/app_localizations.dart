@@ -1346,12 +1346,6 @@ abstract class AppLocalizations {
   /// **'Barchasi'**
   String get all;
 
-  /// No description provided for @d.
-  ///
-  /// In uz, this message translates to:
-  /// **'Yopilgan'**
-  String get d;
-
   /// No description provided for @debt.
   ///
   /// In uz, this message translates to:
@@ -2719,6 +2713,174 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Yopilgan qarzlar auditi'**
   String get closedDebtAudit;
+
+  /// No description provided for @requestSentToAdmin.
+  ///
+  /// In uz, this message translates to:
+  /// **'Zapros adminga yuborildi'**
+  String get requestSentToAdmin;
+
+  /// No description provided for @requestSentDescription.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sizning so\'rovingiz administratorga yuborildi. Tasdiqlashdan keyin siz bilan bog\'lanamiz.'**
+  String get requestSentDescription;
+
+  /// No description provided for @back.
+  ///
+  /// In uz, this message translates to:
+  /// **'Orqaga'**
+  String get back;
+
+  /// No description provided for @marketName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Market nomi'**
+  String get marketName;
+
+  /// No description provided for @enterMarketName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Market nomini kiriting'**
+  String get enterMarketName;
+
+  /// No description provided for @marketNameTooShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Market nomi kamida 3 ta belgidan iborat bo\'lishi kerak'**
+  String get marketNameTooShort;
+
+  /// No description provided for @newCategory.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi kategoriya'**
+  String get newCategory;
+
+  /// No description provided for @fillIn.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'ldiring'**
+  String get fillIn;
+
+  /// No description provided for @addFirstCategory.
+  ///
+  /// In uz, this message translates to:
+  /// **'Birinchi kategoriyangizni qo\'shing'**
+  String get addFirstCategory;
+
+  /// No description provided for @todaysReport.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugungi hisobot'**
+  String get todaysReport;
+
+  /// No description provided for @anonymousCustomer.
+  ///
+  /// In uz, this message translates to:
+  /// **'Nomsiz mijoz'**
+  String get anonymousCustomer;
+
+  /// No description provided for @saleDetail.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savdo tafsiloti'**
+  String get saleDetail;
+
+  /// No description provided for @registerMarket.
+  ///
+  /// In uz, this message translates to:
+  /// **'Marketni Ro\'yxatdan O\'tkazish'**
+  String get registerMarket;
+
+  /// No description provided for @afterMarketRegisterInfo.
+  ///
+  /// In uz, this message translates to:
+  /// **'Market ro\'yxatdan o\'tgandan so\'ng, Admin va Seller foydalanuvchilar qo\'shishingiz mumkin'**
+  String get afterMarketRegisterInfo;
+
+  /// No description provided for @descriptionOptional.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tavsif (ixtiyoriy)'**
+  String get descriptionOptional;
+
+  /// No description provided for @marketShortInfo.
+  ///
+  /// In uz, this message translates to:
+  /// **'Market haqida qisqacha ma\'lumot'**
+  String get marketShortInfo;
+
+  /// No description provided for @subdomainRules.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faqat kichik harflar, raqamlar va tire (-) bo\'lishi mumkin'**
+  String get subdomainRules;
+
+  /// No description provided for @canBeLeftEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bo\'sh qoldirish mumkin'**
+  String get canBeLeftEmpty;
+
+  /// No description provided for @exampleMyShop.
+  ///
+  /// In uz, this message translates to:
+  /// **'Masalan: myshop'**
+  String get exampleMyShop;
+
+  /// No description provided for @subdomainOptional.
+  ///
+  /// In uz, this message translates to:
+  /// **'Subdomain (ixtiyoriy)'**
+  String get subdomainOptional;
+
+  /// No description provided for @pleaseEnterMarketName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Iltimos, market nomini kiriting'**
+  String get pleaseEnterMarketName;
+
+  /// No description provided for @exampleMyStore.
+  ///
+  /// In uz, this message translates to:
+  /// **'Masalan: Do\'konim'**
+  String get exampleMyStore;
+
+  /// No description provided for @enterMarketDetails.
+  ///
+  /// In uz, this message translates to:
+  /// **'Market ma\'lumotlarini kiriting'**
+  String get enterMarketDetails;
+
+  /// No description provided for @createYourMarket.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'zingizning marketingizni yarating'**
+  String get createYourMarket;
+
+  /// No description provided for @marketRegistration.
+  ///
+  /// In uz, this message translates to:
+  /// **'Market Registratsiyasi'**
+  String get marketRegistration;
+
+  /// No description provided for @nowYouCanAddUsers.
+  ///
+  /// In uz, this message translates to:
+  /// **'Endi siz Admin va Seller foydalanuvchilar qo\'shishingiz mumkin.'**
+  String get nowYouCanAddUsers;
+
+  /// No description provided for @marketRegisteredSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Market muvaffaqiyatli ro\'yxatdan o\'tkazildi!'**
+  String get marketRegisteredSuccess;
+
+  /// No description provided for @productUsedInSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu mahsulot savdolarda ishlatilgan, o\'chirib bo\'lmaydi'**
+  String get productUsedInSales;
 }
 
 class _AppLocalizationsDelegate

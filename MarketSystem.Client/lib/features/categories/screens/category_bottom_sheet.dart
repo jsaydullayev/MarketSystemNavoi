@@ -135,7 +135,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                             fontSize: 18, fontWeight: FontWeight.w800),
                       ),
                       Text(
-                        _isEditing ? widget.category!.name : "Yangi kategoriya",
+                        _isEditing ? widget.category!.name : l10n.newCategory,
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -154,7 +154,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
               icon: Icons.category_outlined,
               isDark: isDark,
               validator: (v) =>
-                  v == null || v.trim().isEmpty ? "To'ldiring" : null,
+                  v == null || v.trim().isEmpty ? l10n.fillIn : null,
             ),
             const SizedBox(height: 12),
 
@@ -296,13 +296,14 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
       validator: validator ??
           (isRequired
-              ? (v) => v == null || v.trim().isEmpty ? "To'ldiring" : null
+              ? (v) => v == null || v.trim().isEmpty ? l10n.fillIn : null
               : null),
       decoration: InputDecoration(
         labelText: label,

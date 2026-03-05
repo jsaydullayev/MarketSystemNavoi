@@ -48,7 +48,6 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   Future<void> _loadUsers() async {
-    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -63,6 +62,7 @@ class _UsersScreenState extends State<UsersScreen> {
       });
     } catch (e) {
       setState(() {
+        final l10n = AppLocalizations.of(context)!;
         _error = '${l10n.error}: $e';
         _isLoading = false;
       });

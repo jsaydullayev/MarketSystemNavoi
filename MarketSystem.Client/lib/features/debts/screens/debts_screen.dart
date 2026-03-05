@@ -74,8 +74,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
     }
   }
 
-  void _openPaySheet(dynamic debt) {
-    final l10n = AppLocalizations.of(context)!;
+  void _openPaySheet(dynamic debt, AppLocalizations l10n) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -134,7 +133,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
                             ),
                           ),
                         ),
-                        onPay: () => _openPaySheet(customerDebts.first),
+                        onPay: () => _openPaySheet(customerDebts.first, l10n),
                       );
                     },
                   ),
