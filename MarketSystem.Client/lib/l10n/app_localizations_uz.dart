@@ -638,9 +638,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get all => 'Barchasi';
 
   @override
-  String get d => 'Yopilgan';
-
-  @override
   String get debt => 'Qarz';
 
   @override
@@ -1382,4 +1379,95 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get closedDebtAudit => 'Yopilgan qarzlar auditi';
+
+  @override
+  String get requestSentToAdmin => 'Zapros adminga yuborildi';
+
+  @override
+  String get requestSentDescription =>
+      'Sizning so\'rovingiz administratorga yuborildi. Tasdiqlashdan keyin siz bilan bog\'lanamiz.';
+
+  @override
+  String get back => 'Orqaga';
+
+  @override
+  String get marketName => 'Market nomi';
+
+  @override
+  String get enterMarketName => 'Market nomini kiriting';
+
+  @override
+  String get marketNameTooShort =>
+      'Market nomi kamida 3 ta belgidan iborat bo\'lishi kerak';
+
+  @override
+  String get newCategory => 'Yangi kategoriya';
+
+  @override
+  String get fillIn => 'To\'ldiring';
+
+  @override
+  String get addFirstCategory => 'Birinchi kategoriyangizni qo\'shing';
+
+  @override
+  String get todaysReport => 'Bugungi hisobot';
+
+  @override
+  String get anonymousCustomer => 'Nomsiz mijoz';
+
+  @override
+  String get saleDetail => 'Savdo tafsiloti';
+
+  @override
+  String get registerMarket => 'Marketni Ro\'yxatdan O\'tkazish';
+
+  @override
+  String get afterMarketRegisterInfo =>
+      'Market ro\'yxatdan o\'tgandan so\'ng, Admin va Seller foydalanuvchilar qo\'shishingiz mumkin';
+
+  @override
+  String get descriptionOptional => 'Tavsif (ixtiyoriy)';
+
+  @override
+  String get marketShortInfo => 'Market haqida qisqacha ma\'lumot';
+
+  @override
+  String get subdomainRules =>
+      'Faqat kichik harflar, raqamlar va tire (-) bo\'lishi mumkin';
+
+  @override
+  String get canBeLeftEmpty => 'Bo\'sh qoldirish mumkin';
+
+  @override
+  String get exampleMyShop => 'Masalan: myshop';
+
+  @override
+  String get subdomainOptional => 'Subdomain (ixtiyoriy)';
+
+  @override
+  String get pleaseEnterMarketName => 'Iltimos, market nomini kiriting';
+
+  @override
+  String get exampleMyStore => 'Masalan: Do\'konim';
+
+  @override
+  String get enterMarketDetails => 'Market ma\'lumotlarini kiriting';
+
+  @override
+  String get createYourMarket => 'O\'zingizning marketingizni yarating';
+
+  @override
+  String get marketRegistration => 'Market Registratsiyasi';
+
+  @override
+  String get nowYouCanAddUsers =>
+      'Endi siz Admin va Seller foydalanuvchilar qo\'shishingiz mumkin.';
+
+  @override
+  String get marketRegisteredSuccess =>
+      'Market muvaffaqiyatli ro\'yxatdan o\'tkazildi!';
+
+  @override
+  String get productUsedInSales =>
+      'Bu mahsulot savdolarda ishlatilgan, o\'chirib bo\'lmaydi';
 }

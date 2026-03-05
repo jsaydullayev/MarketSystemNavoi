@@ -18,7 +18,7 @@ class SaleGridItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: statusColor.withOpacity(0.15), width: 2),
         ),

@@ -208,8 +208,6 @@ class _ZakupScreenState extends State<ZakupScreen> {
   }
 }
 
-// ─── Helper views ──────────────────────────────────────────────────────────────
-
 class _EmptyView extends StatelessWidget {
   final AppLocalizations l10n;
   const _EmptyView({required this.l10n});

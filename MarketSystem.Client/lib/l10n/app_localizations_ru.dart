@@ -638,9 +638,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get all => 'Все';
 
   @override
-  String get d => 'Yopilgan';
-
-  @override
   String get debt => 'Долг';
 
   @override
@@ -1023,7 +1020,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noPermissionToEditdd =>
-      'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)';
+      'Нет прав для редактирования закрытого долга (только Owner/Admin)';
 
   @override
   String get priceUpdatedSuccess => 'Цена успешно обновлена';
@@ -1047,7 +1044,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ddDebtAudit =>
-      'Bu qarz yopiq. O\'zgartirish audit logga yoziladi.';
+      'Этот долг закрыт. Изменение будет записано в аудит-лог.';
 
   @override
   String get exampleComment => 'Например: Была указана неверная цена';
@@ -1324,7 +1321,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get makePayment => 'ОПЛАТИТЬ';
 
   @override
-  String get closed => 'Закрыть';
+  String get closed => 'Закрыто';
 
   @override
   String get customerRemoved => 'Клиент удален';
@@ -1372,13 +1369,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get invalidQuantity => 'Некорректное количество';
 
   @override
-  String get paymentHistory => 'Istoriya platejey';
+  String get paymentHistory => 'История платежей';
 
   @override
-  String get hasDebt => 'Yest dolg';
+  String get hasDebt => 'Есть долг';
 
   @override
-  String get noPayments => 'Platejey net';
+  String get noPayments => 'Платежей нет';
 
   @override
   String get noPermissionToEditClosed =>
@@ -1387,4 +1384,94 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get closedDebtAudit =>
       'Этот долг закрыт. Изменение будет записано в аудит-лог.';
+
+  @override
+  String get requestSentToAdmin => 'Запрос отправлен админу';
+
+  @override
+  String get requestSentDescription =>
+      'Ваш запрос отправлен администратору. Мы свяжемся с вами после подтверждения.';
+
+  @override
+  String get back => 'Назад';
+
+  @override
+  String get marketName => 'Название маркета';
+
+  @override
+  String get enterMarketName => 'Введите название маркета';
+
+  @override
+  String get marketNameTooShort =>
+      'Название маркета должно содержать минимум 3 символа';
+
+  @override
+  String get newCategory => 'Новая категория';
+
+  @override
+  String get fillIn => 'Заполните';
+
+  @override
+  String get addFirstCategory => 'Добавьте свою первую категорию';
+
+  @override
+  String get todaysReport => 'Сегодняшний отчёт';
+
+  @override
+  String get anonymousCustomer => 'Анонимный клиент';
+
+  @override
+  String get saleDetail => 'Детали продажи';
+
+  @override
+  String get registerMarket => 'Регистрация маркета';
+
+  @override
+  String get afterMarketRegisterInfo =>
+      'После регистрации маркета вы сможете добавить пользователей Admin и Seller';
+
+  @override
+  String get descriptionOptional => 'Описание (опционально)';
+
+  @override
+  String get marketShortInfo => 'Краткая информация о маркете';
+
+  @override
+  String get subdomainRules =>
+      'Можно использовать только строчные буквы, цифры и тире (-)';
+
+  @override
+  String get canBeLeftEmpty => 'Можно оставить пустым';
+
+  @override
+  String get exampleMyShop => 'Например: myshop';
+
+  @override
+  String get subdomainOptional => 'Субдомен (опционально)';
+
+  @override
+  String get pleaseEnterMarketName => 'Пожалуйста, введите название маркета';
+
+  @override
+  String get exampleMyStore => 'Например: Мой магазин';
+
+  @override
+  String get enterMarketDetails => 'Введите данные маркета';
+
+  @override
+  String get createYourMarket => 'Создайте свой собственный маркет';
+
+  @override
+  String get marketRegistration => 'Регистрация Маркета';
+
+  @override
+  String get nowYouCanAddUsers =>
+      'Теперь вы можете добавлять пользователей Admin и Seller.';
+
+  @override
+  String get marketRegisteredSuccess => 'Маркет успешно зарегистрирован!';
+
+  @override
+  String get productUsedInSales =>
+      'Этот товар использовался в продажах, его нельзя удалить';
 }

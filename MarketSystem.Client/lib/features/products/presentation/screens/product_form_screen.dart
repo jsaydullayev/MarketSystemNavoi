@@ -87,9 +87,11 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
       final String name = _nameController.text.trim();
       final double salePrice =
-          double.tryParse(_salePriceController.text.replaceAll(',', '.')) ?? 0.0;
+          double.tryParse(_salePriceController.text.replaceAll(',', '.')) ??
+              0.0;
       final double minSalePrice =
-          double.tryParse(_minSalePriceController.text.replaceAll(',', '.')) ?? 0.0;
+          double.tryParse(_minSalePriceController.text.replaceAll(',', '.')) ??
+              0.0;
       final int minThreshold = int.tryParse(_minThresholdController.text) ?? 0;
       final bool tempStatus = _isTemporary;
 
@@ -171,6 +173,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                           fontSize: 20, fontWeight: FontWeight.bold)),
                   25.height,
                   _buildField(
+                      l10n: l10n,
                       controller: _nameController,
                       label: l10n.productName,
                       icon: Icons.inventory_2_rounded),
@@ -187,6 +190,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                     children: [
                       Expanded(
                           child: _buildField(
+                              l10n: l10n,
                               controller: _salePriceController,
                               label: l10n.salePrice,
                               icon: Icons.payments_outlined,
@@ -194,6 +198,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                       12.width,
                       Expanded(
                           child: _buildField(
+                              l10n: l10n,
                               controller: _minSalePriceController,
                               label: l10n.minPrice,
                               icon: Icons.trending_down,
@@ -208,6 +213,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                               controller: _minThresholdController,
                               label: l10n.minThreshold,
                               icon: Icons.warning_amber,
+                              l10n: l10n,
                               isNumber: true)),
                       12.width,
                       _buildTempSwitch(isDark, l10n),
@@ -241,6 +247,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   Widget _buildField(
       {required TextEditingController controller,
       required String label,
+      required AppLocalizations l10n,
       required IconData icon,
       bool isNumber = false}) {
     return TextFormField(
@@ -248,7 +255,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       keyboardType: isNumber
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
-      validator: (v) => (v == null || v.isEmpty) ? 'To\'ldiring' : null,
+      validator: (v) => (v == null || v.isEmpty) ? l10n.fillIn : null,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 20),

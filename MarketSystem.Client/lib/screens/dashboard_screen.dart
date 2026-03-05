@@ -32,6 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isDark = AdaptiveTheme.of(context).mode.isDark;
     final primaryColor = AppColors.getPrimary(context);
+    final imageVersion = authProvider.profileImageVersion;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -46,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               borderRadius: BorderRadius.horizontal(right: Radius.circular(20)),
             ),
             child: _buildDrawerContent(
-                context, user, role, primaryColor, isDark, l10n),
+                context, user, role, primaryColor, isDark, l10n, imageVersion),
           ),
           appBar: AppBar(
             backgroundColor: Colors.transparent,
@@ -69,11 +70,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildDrawerContent(BuildContext context, dynamic user, String role,
-      Color primary, bool isDark, var l10n) {
+      Color primary, bool isDark, var l10n, imageVersion) {
     return SafeArea(
       child: Column(
         children: [
-          _buildDrawerHeader(context, user, role, primary, isDark, l10n),
+          _buildDrawerHeader(
+              context, user, role, primary, isDark, l10n, imageVersion),
           20.height,
           Expanded(
             child: ListTileTheme(
@@ -121,7 +123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildDrawerHeader(BuildContext context, dynamic user, String role,
-      Color primary, bool isDark, var l10n) {
+      Color primary, bool isDark, var l10n, imageVersion) {
     final String defaultName =
         l10n.localeName == 'uz' ? "Foydalanuvchi" : "Пользователь";
     return ZoomTapAnimation(
@@ -147,12 +149,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: primary,
-              child: Text(user?['fullName']?[0] ?? 'U',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ClipOval(
+              child: user?['profileImage'] != null
+                  ? Image.network(
+                      user!['profileImage'],
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      // Xato bo'lsa harf ko'rsat
+                      errorBuilder: (_, __, ___) =>
+                          _avatarFallback(user, primary),
+                      // Yuklanayotganda harf ko'rsat
+                      loadingBuilder: (_, child, loadingProgress) =>
+                          loadingProgress == null
+                              ? child
+                              : _avatarFallback(user, primary),
+                    )
+                  : _avatarFallback(user, primary),
             ),
             15.width,
             Expanded(
@@ -176,6 +189,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             Icon(Icons.edit_note_rounded, color: primary, size: 28),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _avatarFallback(dynamic user, Color primary) {
+    return CircleAvatar(
+      radius: 25,
+      backgroundColor: primary,
+      child: Text(
+        (user?['fullName'] ?? 'U')[0].toUpperCase(),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
         ),
       ),
     );
