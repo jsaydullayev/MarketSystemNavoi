@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class SaleDetailSheet extends StatelessWidget {
   final dynamic sale;
@@ -18,67 +19,67 @@ class SaleDetailSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final items = saleDetails['saleItems'] as List<dynamic>? ?? [];
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40)
-            ],
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).padding.bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // ← content baqadar
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.dividerColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: theme.dividerColor,
-                    borderRadius: BorderRadius.circular(10)),
+          _buildHeader(context, theme, isDark, l10n),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6, // max 60%
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInfoTile(Icons.person_outline, l10n.customer,
+                      sale.customerName ?? l10n.anonymousCustomer, theme),
+                  _buildInfoTile(
+                      Icons.account_balance_wallet_outlined,
+                      l10n.paymentType,
+                      _getPaymentText(sale.paymentType, l10n),
+                      theme),
+                  const SizedBox(height: 20),
+                  Text(l10n.products,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  ...items.map(
+                      (item) => _buildProductItem(item, theme, isDark, l10n)),
+                  const SizedBox(height: 24),
+                  _buildTotalsCard(theme, l10n),
+                  const SizedBox(height: 20),
+                ],
               ),
-              _buildHeader(context, theme, isDark),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildInfoTile(Icons.person_outline, "Mijoz",
-                          sale.customerName ?? "Nomsiz mijoz", theme),
-                      _buildInfoTile(
-                          Icons.account_balance_wallet_outlined,
-                          "To'lov turi",
-                          _getPaymentText(sale.paymentType),
-                          theme),
-                      const SizedBox(height: 20),
-                      Text("Mahsulotlar",
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
-                      ...items.map(
-                          (item) => _buildProductItem(item, theme, isDark)),
-                      const SizedBox(height: 24),
-                      _buildTotalsCard(theme),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, ThemeData theme, bool isDark) {
+  Widget _buildHeader(BuildContext context, ThemeData theme, bool isDark,
+      AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
@@ -87,7 +88,7 @@ class SaleDetailSheet extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Savdo tafsiloti",
+              Text(l10n.saleDetail,
                   style: theme.textTheme.headlineSmall
                       ?.copyWith(fontWeight: FontWeight.w900)),
               Text(DateFormat('dd.MM.yyyy HH:mm').format(sale.createdAt),
@@ -120,7 +121,8 @@ class SaleDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildProductItem(dynamic item, ThemeData theme, bool isDark) {
+  Widget _buildProductItem(
+      dynamic item, ThemeData theme, bool isDark, AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -136,14 +138,14 @@ class SaleDetailSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item['productName'] ?? "Noma'lum",
+                Text(item['productName'] ?? l10n.unknown,
                     style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text("${item['quantity']} x ${item['unitPrice']}",
                     style: theme.textTheme.bodySmall),
               ],
             ),
           ),
-          Text("${item['totalPrice']} so'm",
+          Text("${item['totalPrice']} ${l10n.currencySom}",
               style: TextStyle(
                   color: theme.primaryColor, fontWeight: FontWeight.w900)),
         ],
@@ -151,7 +153,7 @@ class SaleDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildTotalsCard(ThemeData theme) {
+  Widget _buildTotalsCard(ThemeData theme, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -160,10 +162,12 @@ class SaleDetailSheet extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _totalRow("Jami summa", "${sale.totalAmount} so'm", Colors.white),
+          _totalRow(l10n.totalSum, "${sale.totalAmount} ${l10n.currencySom}",
+              Colors.white),
           if (isOwner && sale.profit != null) ...[
             const Divider(color: Colors.white24, height: 20),
-            _totalRow("Foyda", "+${sale.profit} so'm", Colors.greenAccent),
+            _totalRow(l10n.profit, "+${sale.profit} ${l10n.currencySom}",
+                Colors.greenAccent),
           ],
         ],
       ),
@@ -183,12 +187,12 @@ class SaleDetailSheet extends StatelessWidget {
     );
   }
 
-  String _getPaymentText(String type) {
+  String _getPaymentText(String type, AppLocalizations l10n) {
     switch (type.toLowerCase()) {
       case 'cash':
-        return 'Naqd';
+        return l10n.cash;
       case 'card':
-        return 'Karta / Terminal';
+        return '${l10n.card} / ${l10n.terminal}';
       default:
         return type;
     }

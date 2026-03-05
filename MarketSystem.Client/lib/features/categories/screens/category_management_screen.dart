@@ -5,7 +5,6 @@ import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/features/categories/screens/category_bottom_sheet.dart';
 import 'package:market_system_client/features/categories/widgets/categories_card.dart';
 import 'package:provider/provider.dart';
-
 import '../../../data/services/category_service.dart';
 import '../../../data/models/product_category_model.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -141,6 +140,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
             total: _categories.length,
             activeCount: active.length,
             inactiveCount: inactive.length,
+            l10n: l10n,
           ),
           const SizedBox(height: 16),
           if (active.isNotEmpty) ...[
@@ -176,17 +176,17 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   }
 }
 
-// ─── Stats Banner ───
 class _StatsBanner extends StatelessWidget {
+  final AppLocalizations l10n;
   final int total;
   final int activeCount;
   final int inactiveCount;
 
-  const _StatsBanner({
-    required this.total,
-    required this.activeCount,
-    required this.inactiveCount,
-  });
+  const _StatsBanner(
+      {required this.total,
+      required this.activeCount,
+      required this.inactiveCount,
+      required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +213,7 @@ class _StatsBanner extends StatelessWidget {
             child: _BannerStat(
               icon: Icons.category_outlined,
               value: '$total',
-              label: 'Jami',
+              label: l10n.total,
             ),
           ),
           Container(width: 1, height: 36, color: Colors.white.withOpacity(0.2)),
@@ -221,7 +221,7 @@ class _StatsBanner extends StatelessWidget {
             child: _BannerStat(
               icon: Icons.check_circle_outline_rounded,
               value: '$activeCount',
-              label: 'Faol',
+              label: l10n.active,
             ),
           ),
           Container(width: 1, height: 36, color: Colors.white.withOpacity(0.2)),
@@ -229,7 +229,7 @@ class _StatsBanner extends StatelessWidget {
             child: _BannerStat(
               icon: Icons.pause_circle_outline_rounded,
               value: '$inactiveCount',
-              label: 'Nofaol',
+              label: l10n.inactive,
             ),
           ),
         ],
@@ -265,7 +265,6 @@ class _BannerStat extends StatelessWidget {
   }
 }
 
-// ─── Section Label ───
 class _SectionLabel extends StatelessWidget {
   final String label;
   final int count;
@@ -316,7 +315,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ─── Empty View ───
 class _EmptyView extends StatelessWidget {
   final AppLocalizations l10n;
   final VoidCallback onAdd;
@@ -355,7 +353,7 @@ class _EmptyView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "Birinchi kategoriyangizni qo'shing",
+              l10n.addFirstCategory,
               style: TextStyle(fontSize: 13, color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
@@ -381,7 +379,6 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-// ─── Error View ───
 class _ErrorView extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;

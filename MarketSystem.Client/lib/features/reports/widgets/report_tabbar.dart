@@ -17,13 +17,13 @@ class ReportTabBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withOpacity(0.08)
-            : Colors.white.withOpacity(0.2),
+            : Colors.black.withOpacity(0.06),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TabBar(
         controller: controller,
         indicator: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? Colors.white : Theme.of(context).primaryColor,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
@@ -35,8 +35,8 @@ class ReportTabBar extends StatelessWidget {
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
-        labelColor: const Color(0xFF3B82F6),
-        unselectedLabelColor: Colors.white.withOpacity(0.8),
+        labelColor: isDark ? Theme.of(context).primaryColor : Colors.white,
+        unselectedLabelColor: isDark ? Colors.white60 : Colors.black45,
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle: const TextStyle(fontSize: 13),
         tabs: [

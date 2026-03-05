@@ -107,15 +107,21 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Fetch user profile from backend
+  int _profileImageVersion = 0;
+  int get profileImageVersion => _profileImageVersion;
+
   Future<void> fetchUserProfile() async {
     try {
       final userService = UserService(authProvider: this);
       final profile = await userService.getMyProfile();
+
+      if (_user?['profileImage'] != profile['profileImage']) {
+        _profileImageVersion++;
+      }
+
       _user = profile;
       notifyListeners();
     } catch (e) {
-      // Silent fail - don't show error to user
       print('Error fetching profile: $e');
     }
   }

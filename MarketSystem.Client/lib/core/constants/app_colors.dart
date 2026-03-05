@@ -17,7 +17,7 @@ class AppColors {
   static const Color lightCard = Colors.white;
   static const Color lightBorder = Color(0xFFEEEEEE);
 
-  static const Color primary = Colors.blue;
+  static const Color primary = Color.fromARGB(255, 40, 77, 180);
   static const Color accent = Colors.orange;
   static const Color success = Colors.green;
   static const Color error = Colors.red;
