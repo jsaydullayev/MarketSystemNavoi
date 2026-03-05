@@ -103,7 +103,7 @@ class UserInfoSheet extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14)),
                     elevation: 0),
                 onPressed: () => Navigator.pop(context),
-                child: Text(l10n.close,
+                child: Text(l10n.closed,
                     style: const TextStyle(fontWeight: FontWeight.w600)),
               )),
         ],

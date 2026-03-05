@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ContinueSaleProductCard extends StatelessWidget {
   final dynamic product;
@@ -17,6 +18,7 @@ class ContinueSaleProductCard extends StatelessWidget {
     final quantity = (product['quantity'] as num?)?.toDouble() ?? 0.0;
     final isInStock = quantity > 0;
     final isLow = quantity > 0 && quantity <= 5;
+    final l10n = AppLocalizations.of(context)!;
 
     final stockColor = isLow
         ? Colors.orange
@@ -59,7 +61,7 @@ class ContinueSaleProductCard extends StatelessWidget {
             children: [
               // Mahsulot nomi
               Text(
-                product['name'] ?? "Noma'lum",
+                product['name'] ?? l10n.unknown,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 12,

@@ -28,7 +28,7 @@ class WithdrawalHistoryList extends StatelessWidget {
                 size: 52, color: Colors.grey[400]),
             const SizedBox(height: 12),
             Text(
-              "Hali pul olish tarixi yo'q",
+              l10n.noWithdrawals,
               style: TextStyle(fontSize: 15, color: Colors.grey[500]),
             ),
           ],
@@ -105,7 +105,7 @@ class _WithdrawalItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${withdrawal.amount.toStringAsFixed(0)} so\'m',
+                  '${withdrawal.amount.toStringAsFixed(0)} ${l10n.currencySom}',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,

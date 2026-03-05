@@ -102,7 +102,7 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
 
     if (amount > availableBalance) {
       _showSnack(
-        "Yetarli pul yo'q! Mavjud: ${availableBalance.toStringAsFixed(2)} so'm",
+        l10n.insufficientFundsWithBalance(availableBalance.toStringAsFixed(2)),
         isError: true,
       );
       return;
@@ -121,7 +121,8 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
 
     if (success) {
       _showSnack(
-        "${withdrawType == 'cash' ? 'Naqd pul' : 'Click'} muvaffaqiyatli olindi",
+        l10n.withdrawalSuccessType(
+            withdrawType == 'cash' ? l10n.cash : l10n.click),
         isError: false,
       );
       _loadCashRegister();

@@ -68,7 +68,6 @@ class PaymentDialogState extends State<PaymentDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      // 👈 Qizil ekranni yo'qotadigan joyi shu
       color: Colors.transparent,
       child: Container(
         padding: EdgeInsets.only(
@@ -78,14 +77,13 @@ class PaymentDialogState extends State<PaymentDialog> {
           top: 15,
         ),
         decoration: BoxDecoration(
-          color: AppColors.getCard(isDark), // Orqa fon Theme'ga moslashadi
+          color: AppColors.getCard(isDark),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Tepadagi Handle
               Container(
                   width: 40,
                   height: 4,
@@ -93,8 +91,6 @@ class PaymentDialogState extends State<PaymentDialog> {
                       color: Colors.grey.shade400,
                       borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 20),
-
-              // Sarlavha va Jami Summa
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -116,8 +112,6 @@ class PaymentDialogState extends State<PaymentDialog> {
                 ],
               ),
               const SizedBox(height: 15),
-
-              // To'lov turlari (Checkbox + Input logikasi bilan)
               _buildPaymentRow(
                   l10n.cash,
                   _useCash,
@@ -146,15 +140,9 @@ class PaymentDialogState extends State<PaymentDialog> {
                   _clickController,
                   Icons.phone_android,
                   Colors.deepPurple),
-
               const Divider(height: 30),
-
-              // Qarz va Pastki hisob-kitob
               _buildSummary(l10n),
-
               const SizedBox(height: 20),
-
-              // Action tugmalar
               Row(
                 children: [
                   Expanded(
@@ -271,28 +259,29 @@ class PaymentDialogState extends State<PaymentDialog> {
   }
 
   void _confirmAction() {
+    final l10n = AppLocalizations.of(context)!;
     List<Map<String, dynamic>> payments = [];
     if (_useCash)
       payments.add({
-        'paymentType': 'CASH',
+        'paymentType': l10n.cash,
         'amount':
             double.tryParse(_cashController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useTerminal)
       payments.add({
-        'paymentType': 'CARD',
+        'paymentType': l10n.card,
         'amount':
             double.tryParse(_terminalController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useTransfer)
       payments.add({
-        'paymentType': 'TRANSFER',
+        'paymentType': l10n.transfer,
         'amount':
             double.tryParse(_transferController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useClick)
       payments.add({
-        'paymentType': 'CLICK',
+        'paymentType': l10n.click,
         'amount':
             double.tryParse(_clickController.text.replaceAll(',', '.')) ?? 0
       });

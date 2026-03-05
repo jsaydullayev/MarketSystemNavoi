@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
@@ -83,16 +84,18 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
   }
 
   Future<void> _onConfirm() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final amount =
         double.tryParse(_amountController.text.replaceAll(',', '.').trim()) ??
             0;
 
     if (amount <= 0) {
-      _showSnack("To'g'ri miqdor kiriting", isError: true);
+      _showSnack(l10n.enterValidAmount, isError: true);
       return;
     }
     if (_selectedPaymentType == null) {
-      _showSnack("To'lov usulini tanlang", isError: true);
+      _showSnack(l10n.selectPaymentMethod, isError: true);
       return;
     }
 
@@ -107,7 +110,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
           .where((sale) => sale['customerId'] == customerId)
           .toList();
 
-      if (debtorSales.isEmpty) throw Exception('Qarz savdolari topilmadi');
+      if (debtorSales.isEmpty) throw Exception(l10n.noDebtSalesFound);
 
       await salesService.addPayment(
         saleId: debtorSales[0]['id'],
@@ -118,14 +121,14 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
       if (mounted) {
         Navigator.pop(context);
         _showSnack(
-          "To'lov amalga oshirildi: ${NumberFormatter.formatDecimal(amount)} so'm",
+          "${l10n.paymentSuccess}: ${NumberFormatter.formatDecimal(amount)} ${l10n.currencySom}",
           isError: false,
         );
         widget.onPaymentSuccess();
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) _showSnack('Xatolik: $e', isError: true);
+      if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     }
   }
 
@@ -141,9 +144,11 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-    final customerName = widget.debtor['customerName'] ?? 'Mijozsiz';
+    final customerName = widget.debtor['customerName'] ?? l10n.noCustomer;
     final remainingDebt =
         (widget.debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
     final initial =
@@ -207,7 +212,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
                         color: isDark ? Colors.white : const Color(0xFF1F2937),
                       ),
                     ),
-                    Text("Qarz to'lash",
+                    Text(l10n.payDebt,
                         style:
                             TextStyle(fontSize: 12, color: Colors.grey[500])),
                   ],
@@ -224,11 +229,11 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Qarz',
+                    Text(l10n.debt,
                         style: TextStyle(
                             fontSize: 10, color: Colors.red.withOpacity(0.7))),
                     Text(
-                      '${NumberFormatter.formatDecimal(remainingDebt)} so\'m',
+                      '${NumberFormatter.formatDecimal(remainingDebt)} ${l10n.currencySom}',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -248,9 +253,9 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             decoration: InputDecoration(
-              labelText: "To'lov miqdori",
+              labelText: l10n.paymentAmount,
               prefixIcon: const Icon(Icons.monetization_on_outlined),
-              suffixText: "so'm",
+              suffixText: l10n.currencySom,
               filled: true,
               fillColor: isDark
                   ? Colors.white.withOpacity(0.05)
@@ -271,7 +276,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
 
           // To'lov usuli
           Text(
-            "To'lov usuli",
+            l10n.paymentMethod,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -339,7 +344,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
                         borderRadius: BorderRadius.circular(14)),
                     side: BorderSide(color: Colors.grey.withOpacity(0.3)),
                   ),
-                  child: Text('Bekor qilish',
+                  child: Text(l10n.cancel,
                       style: TextStyle(color: Colors.grey[600])),
                 ),
               ),
@@ -363,8 +368,8 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text("To'lash",
-                          style: TextStyle(
+                      : Text(l10n.pay,
+                          style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
               ),

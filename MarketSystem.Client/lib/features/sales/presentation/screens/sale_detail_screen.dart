@@ -153,7 +153,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(sale['customerName'] ?? 'Mijozsiz',
+                    Text(sale['customerName'] ?? l10n.noCustomer,
                         style: const TextStyle(
                             fontSize: 22, fontWeight: FontWeight.bold)),
                     4.height,
@@ -169,7 +169,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           ),
           const Divider(height: 32),
           _buildInfoRow(Icons.person_outline, l10n.seller,
-              sale['sellerName'] ?? "Noma'lum", theme),
+              sale['sellerName'] ?? l10n.unknown, theme),
           if (sale['customerPhone'] != null) ...[
             16.height,
             _buildInfoRow(
@@ -357,7 +357,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
-          final qtyText = quantityController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+          final qtyText = quantityController.text
+              .replaceAll(RegExp(r'\s+'), '')
+              .replaceAll(',', '.');
           double currentQty = double.tryParse(qtyText) ?? 0.0;
           double returnSum = currentQty * salePrice;
 
@@ -463,7 +465,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-                      final qtyText = quantityController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+                      final qtyText = quantityController.text
+                          .replaceAll(RegExp(r'\s+'), '')
+                          .replaceAll(',', '.');
                       final qty = double.tryParse(qtyText);
                       if (qty == null || qty <= 0 || qty > maxQuantity) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

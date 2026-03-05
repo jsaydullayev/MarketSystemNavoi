@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ReturnQuantityDialog extends StatefulWidget {
   final String productName;
@@ -42,6 +43,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -69,9 +71,9 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Mahsulotni qaytarish',
-                        style: TextStyle(
+                      Text(
+                        l10n.returnProduct,
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w800),
                       ),
                       Text(
@@ -100,7 +102,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Mavjud miqdor',
+                  Text(l10n.availableQuantity,
                       style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                   Text(
                     '${widget.maxQuantity % 1 == 0 ? widget.maxQuantity.toInt() : widget.maxQuantity}',
@@ -120,8 +122,8 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
               autofocus: true,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
-                labelText: 'Qaytarish miqdori',
-                errorText: _isValid ? null : "Noto'g'ri miqdor",
+                labelText: l10n.returnQuantity,
+                errorText: _isValid ? null : l10n.invalidQuantity,
                 filled: true,
                 fillColor: isDark
                     ? Colors.white.withOpacity(0.05)
@@ -158,7 +160,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                           borderRadius: BorderRadius.circular(12)),
                       side: BorderSide(color: Colors.grey.withOpacity(0.3)),
                     ),
-                    child: Text('Bekor qilish',
+                    child: Text(l10n.cancel,
                         style: TextStyle(color: Colors.grey[600])),
                   ),
                 ),
@@ -176,8 +178,8 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Qaytarish',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: Text(l10n.returnAction,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],

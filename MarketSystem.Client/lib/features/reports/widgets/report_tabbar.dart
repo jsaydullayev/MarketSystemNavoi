@@ -10,6 +10,7 @@ class ReportTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       height: 42,

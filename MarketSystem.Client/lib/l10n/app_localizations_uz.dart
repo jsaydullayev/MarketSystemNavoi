@@ -638,7 +638,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get all => 'Barchasi';
 
   @override
-  String get close => 'Yopilgan';
+  String get d => 'Yopilgan';
 
   @override
   String get debt => 'Qarz';
@@ -654,9 +654,6 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get soldProducts => 'Sotilgan mahsulotlar';
-
-  @override
-  String get returnProduct => 'Tovarni qaytarish';
 
   @override
   String get returnAmount => 'Qaytariladigan summa';
@@ -696,9 +693,6 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get defect => 'Brak';
-
-  @override
-  String get invalidQuantity => 'Xato miqdor!';
 
   @override
   String get finishReturn => 'Vozvratni yakunlash';
@@ -759,7 +753,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get newDebt => 'Yangi qarz';
 
   @override
-  String get onDebt => 'Qarzga:';
+  String get onDebt => 'Qarzga';
 
   @override
   String get remaining => 'Qolgan:';
@@ -1025,7 +1019,7 @@ class AppLocalizationsUz extends AppLocalizations {
       'Username va parolni yangi foydalanuvchiga bering';
 
   @override
-  String get noPermissionToEditClosed =>
+  String get noPermissionToEditdd =>
       'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)';
 
   @override
@@ -1049,7 +1043,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get open => 'Ochiq';
 
   @override
-  String get closedDebtAudit =>
+  String get ddDebtAudit =>
       'Bu qarz yopiq. O\'zgartirish audit logga yoziladi.';
 
   @override
@@ -1174,4 +1168,218 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get monthly => 'Oylik';
+
+  @override
+  String insufficientFundsWithBalance(Object balance) {
+    return 'Yetarli pul yo\'q! Mavjud: $balance so\'m';
+  }
+
+  @override
+  String withdrawalSuccessType(Object type) {
+    return '$type muvaffaqiyatli olindi';
+  }
+
+  @override
+  String get totalBalance => 'Umumiy balans';
+
+  @override
+  String updatedAt(Object time) {
+    return 'Yangilandi: $time';
+  }
+
+  @override
+  String get todaysIncomes => 'Bugungi tushumlar';
+
+  @override
+  String get cashMoney => 'Naqd pul';
+
+  @override
+  String get todaysSales => 'Bugungi savdolar';
+
+  @override
+  String itemsCount(Object count) {
+    return '$count ta';
+  }
+
+  @override
+  String get selectPaymentTypeAndAmount => 'Pul turini va miqdorini tanlang';
+
+  @override
+  String get paymentTypeLabel => 'Pul turi';
+
+  @override
+  String get waiting => 'Kutilmoqda...';
+
+  @override
+  String get productRemoved => 'Mahsulot olib tashlandi';
+
+  @override
+  String get priceUpdated => 'Narx yangilandi';
+
+  @override
+  String get productReturned => 'Mahsulot qaytarildi';
+
+  @override
+  String get saleNotFound => 'Savdo topilmadi';
+
+  @override
+  String get productsNotFound => 'Mahsulotlar topilmadi';
+
+  @override
+  String productAddedToCart(Object name) {
+    return '$name savatga qo\'shildi';
+  }
+
+  @override
+  String get changePrice => 'Narxni o\'zgartirish';
+
+  @override
+  String get currentPrice => 'Hozirgi narx';
+
+  @override
+  String quantityCount(Object quantity) {
+    return 'Miqdor: $quantity ta';
+  }
+
+  @override
+  String priceChangedFor(Object name) {
+    return '$name uchun narx o\'zgartirildi';
+  }
+
+  @override
+  String get noSales => 'Savdolar yo\'q';
+
+  @override
+  String debtAmount(Object amount) {
+    return 'Qarz: $amount';
+  }
+
+  @override
+  String get noDebtors => 'Qarzdorlar yo\'q';
+
+  @override
+  String get debtorsWillBeShownHere => 'Qarzli mijozlar bu yerda ko\'rsatiladi';
+
+  @override
+  String get today => 'Bugun';
+
+  @override
+  String get yesterday => 'Kecha';
+
+  @override
+  String daysAgo(Object count) {
+    return '$count kun oldin';
+  }
+
+  @override
+  String monthsAgo(Object count) {
+    return '$count oy oldin';
+  }
+
+  @override
+  String yearsAgo(Object count) {
+    return '$count yil oldin';
+  }
+
+  @override
+  String get deleteSale => 'Savdoni o\'chirish';
+
+  @override
+  String get deleteSaleConfirm =>
+      'Haqiqatan ham bu savdoni o\'chirmoqchimisiz?';
+
+  @override
+  String get noDebtSalesFound => 'Qarz savdolari topilmadi';
+
+  @override
+  String get debtorCustomers => 'Qarzdor mijozlar';
+
+  @override
+  String get ongoing => 'Davom etayotgan';
+
+  @override
+  String get debtSales => 'Qarz savdolar';
+
+  @override
+  String get paidSales => 'To\'langan savdolar';
+
+  @override
+  String get saleDeleted => 'Savdo o\'chirildi';
+
+  @override
+  String get draftSaveError => 'Draft saqlashda xatolik';
+
+  @override
+  String get enterQuantityHint => 'Miqdor kiriting...';
+
+  @override
+  String get selectCustomerForDebtWarning =>
+      'Qarzga olish uchun mijoz tanlang!';
+
+  @override
+  String get makePayment => 'TO\'LOV QILISH';
+
+  @override
+  String get closed => 'Yopish';
+
+  @override
+  String get customerRemoved => 'Mijoz olib tashlandi';
+
+  @override
+  String get removeCustomer => 'Mijozni olib tashlash';
+
+  @override
+  String get paymentMethod => 'To\'lov usuli';
+
+  @override
+  String get paymentAmount => 'To\'lov miqdori';
+
+  @override
+  String get selectPaymentMethod => 'To\'lov usulini tanlang';
+
+  @override
+  String get enterValidAmount => 'To\'g\'ri miqdor kiriting';
+
+  @override
+  String get continueAction => 'Davom etish';
+
+  @override
+  String saleIdTitle(Object id) {
+    return 'Savdo #$id';
+  }
+
+  @override
+  String get noOngoingSales => 'Davom etayotgan savdolar yo\'q';
+
+  @override
+  String get initialSalesWillBeShownHere =>
+      'Boshlang\'ich savdolar bu yerda ko\'rsatiladi';
+
+  @override
+  String get returnProduct => 'Mahsulotni qaytarish';
+
+  @override
+  String get availableQuantity => 'Mavjud miqdor';
+
+  @override
+  String get returnQuantity => 'Qaytarish miqdori';
+
+  @override
+  String get invalidQuantity => 'Noto\'g\'ri miqdor';
+
+  @override
+  String get paymentHistory => 'To\'lov tarixi';
+
+  @override
+  String get hasDebt => 'Qarz bor';
+
+  @override
+  String get noPayments => 'To\'lovlar yo\'q';
+
+  @override
+  String get noPermissionToEditClosed =>
+      'Yopilgan qarzni tahrirlash uchun huquqingiz yo\'q (faqat Egasi/Admin)';
+
+  @override
+  String get closedDebtAudit => 'Yopilgan qarzlar auditi';
 }

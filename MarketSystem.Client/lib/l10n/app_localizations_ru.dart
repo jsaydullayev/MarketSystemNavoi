@@ -575,7 +575,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dailySales => 'Ежедневные продажи';
 
   @override
-  String get drafts => 'Черновики';
+  String get drafts => 'Драфты';
 
   @override
   String get darkMode => 'Темный режим';
@@ -638,7 +638,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get all => 'Все';
 
   @override
-  String get close => 'Закрыто';
+  String get d => 'Yopilgan';
 
   @override
   String get debt => 'Долг';
@@ -654,9 +654,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get soldProducts => 'Проданные товары';
-
-  @override
-  String get returnProduct => 'Возврат товара';
 
   @override
   String get returnAmount => 'Сумма возврата';
@@ -696,9 +693,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get defect => 'Брак';
-
-  @override
-  String get invalidQuantity => 'Неверное количество!';
 
   @override
   String get finishReturn => 'Завершить возврат';
@@ -1028,8 +1022,8 @@ class AppLocalizationsRu extends AppLocalizations {
       'Передайте имя пользователя и пароль новому пользователю';
 
   @override
-  String get noPermissionToEditClosed =>
-      'Нет прав для редактирования закрытого долга (только Owner/Admin)';
+  String get noPermissionToEditdd =>
+      'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)';
 
   @override
   String get priceUpdatedSuccess => 'Цена успешно обновлена';
@@ -1052,8 +1046,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get open => 'Открыто';
 
   @override
-  String get closedDebtAudit =>
-      'Этот долг закрыт. Изменение будет записано в аудит-лог.';
+  String get ddDebtAudit =>
+      'Bu qarz yopiq. O\'zgartirish audit logga yoziladi.';
 
   @override
   String get exampleComment => 'Например: Была указана неверная цена';
@@ -1177,4 +1171,220 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get monthly => 'Ежемесячно';
+
+  @override
+  String insufficientFundsWithBalance(Object balance) {
+    return 'Недостаточно средств! В наличии: $balance сум';
+  }
+
+  @override
+  String withdrawalSuccessType(Object type) {
+    return '$type успешно выведены';
+  }
+
+  @override
+  String get totalBalance => 'Общий баланс';
+
+  @override
+  String updatedAt(Object time) {
+    return 'Обновлено: $time';
+  }
+
+  @override
+  String get todaysIncomes => 'Сегодняшние поступления';
+
+  @override
+  String get cashMoney => 'Наличные деньги';
+
+  @override
+  String get todaysSales => 'Сегодняшние продажи';
+
+  @override
+  String itemsCount(Object count) {
+    return '$count шт.';
+  }
+
+  @override
+  String get selectPaymentTypeAndAmount => 'Выберите тип и сумму оплаты';
+
+  @override
+  String get paymentTypeLabel => 'Тип оплаты';
+
+  @override
+  String get waiting => 'Ожидание...';
+
+  @override
+  String get productRemoved => 'Товар удален';
+
+  @override
+  String get priceUpdated => 'Цена обновлена';
+
+  @override
+  String get productReturned => 'Товар возвращен';
+
+  @override
+  String get saleNotFound => 'Продажа не найдена';
+
+  @override
+  String get productsNotFound => 'Товары не найдены';
+
+  @override
+  String productAddedToCart(Object name) {
+    return '$name добавлен в корзину';
+  }
+
+  @override
+  String get changePrice => 'Изменить цену';
+
+  @override
+  String get currentPrice => 'Текущая цена';
+
+  @override
+  String quantityCount(Object quantity) {
+    return 'Количество: $quantity шт.';
+  }
+
+  @override
+  String priceChangedFor(Object name) {
+    return 'Цена изменена для $name';
+  }
+
+  @override
+  String get noSales => 'Продаж нет';
+
+  @override
+  String debtAmount(Object amount) {
+    return 'Долг: $amount';
+  }
+
+  @override
+  String get noDebtors => 'Должников нет';
+
+  @override
+  String get debtorsWillBeShownHere =>
+      'Клиенты с долгами будут отображаться здесь';
+
+  @override
+  String get today => 'Сегодня';
+
+  @override
+  String get yesterday => 'Вчера';
+
+  @override
+  String daysAgo(Object count) {
+    return '$count дн. назад';
+  }
+
+  @override
+  String monthsAgo(Object count) {
+    return '$count мес. назад';
+  }
+
+  @override
+  String yearsAgo(Object count) {
+    return '$count г. назад';
+  }
+
+  @override
+  String get deleteSale => 'Удалить продажу';
+
+  @override
+  String get deleteSaleConfirm =>
+      'Вы действительно хотите удалить эту продажу?';
+
+  @override
+  String get noDebtSalesFound => 'Долговые продажи не найдены';
+
+  @override
+  String get debtorCustomers => 'Клиенты-должники';
+
+  @override
+  String get ongoing => 'В процессе';
+
+  @override
+  String get debtSales => 'Долговые продажи';
+
+  @override
+  String get paidSales => 'Оплаченные продажи';
+
+  @override
+  String get saleDeleted => 'Продажа удалена';
+
+  @override
+  String get draftSaveError => 'Ошибка при сохранении черновика';
+
+  @override
+  String get enterQuantityHint => 'Введите количество...';
+
+  @override
+  String get selectCustomerForDebtWarning =>
+      'Для продажи в долг выберите клиента!';
+
+  @override
+  String get makePayment => 'ОПЛАТИТЬ';
+
+  @override
+  String get closed => 'Закрыть';
+
+  @override
+  String get customerRemoved => 'Клиент удален';
+
+  @override
+  String get removeCustomer => 'Удалить клиента';
+
+  @override
+  String get paymentMethod => 'Способ оплаты';
+
+  @override
+  String get paymentAmount => 'Сумма оплаты';
+
+  @override
+  String get selectPaymentMethod => 'Выберите способ оплаты';
+
+  @override
+  String get enterValidAmount => 'Введите корректную сумму';
+
+  @override
+  String get continueAction => 'Продолжить';
+
+  @override
+  String saleIdTitle(Object id) {
+    return 'Продажа #$id';
+  }
+
+  @override
+  String get noOngoingSales => 'Нет незавершенных продаж';
+
+  @override
+  String get initialSalesWillBeShownHere =>
+      'Начатые продажи будут отображаться здесь';
+
+  @override
+  String get returnProduct => 'Возврат товара';
+
+  @override
+  String get availableQuantity => 'Доступное количество';
+
+  @override
+  String get returnQuantity => 'Количество возврата';
+
+  @override
+  String get invalidQuantity => 'Некорректное количество';
+
+  @override
+  String get paymentHistory => 'Istoriya platejey';
+
+  @override
+  String get hasDebt => 'Yest dolg';
+
+  @override
+  String get noPayments => 'Platejey net';
+
+  @override
+  String get noPermissionToEditClosed =>
+      'Нет прав для редактирования закрытого долга (только Owner/Admin)';
+
+  @override
+  String get closedDebtAudit =>
+      'Этот долг закрыт. Изменение будет записано в аудит-лог.';
 }

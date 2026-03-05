@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ContinueSaleBottomBar extends StatelessWidget {
   final double totalAmount;
@@ -18,6 +19,7 @@ class ContinueSaleBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -48,7 +50,7 @@ class ContinueSaleBottomBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Jami summa',
+                l10n.totalSum,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -56,7 +58,7 @@ class ContinueSaleBottomBar extends StatelessWidget {
                 ),
               ),
               Text(
-                '${NumberFormatter.formatDecimal(totalAmount)} so\'m',
+                '${NumberFormatter.formatDecimal(totalAmount)} ${l10n.currencySom}',
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
@@ -85,9 +87,9 @@ class ContinueSaleBottomBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14)),
                 ),
                 icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
-                label: const Text(
-                  "TO'LOV QILISH",
-                  style: TextStyle(
+                label: Text(
+                  l10n.makePayment,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.5,

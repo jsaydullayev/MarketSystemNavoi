@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 // Chaqirish uchun helper
 Future<void> showPaymentHistorySheet(
@@ -33,6 +34,7 @@ class PaymentHistorySheet extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final initial =
         customerName.isNotEmpty ? customerName[0].toUpperCase() : '?';
+    final l10n = AppLocalizations.of(context)!;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -97,7 +99,7 @@ class PaymentHistorySheet extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "To'lov tarixi",
+                          l10n.paymentHistory,
                           style:
                               TextStyle(fontSize: 12, color: Colors.grey[500]),
                         ),
@@ -150,6 +152,7 @@ class _SaleHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final payments = sale['payments'] as List<dynamic>? ?? [];
     final saleTotal = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
     final salePaid = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
@@ -157,7 +160,7 @@ class _SaleHistoryCard extends StatelessWidget {
     final saleId = sale['id']?.toString() ?? '';
     final saleDate = sale['createdAt'];
 
-    String formattedDate = 'Noma\'lum';
+    String formattedDate = l10n.unknown;
     if (saleDate != null) {
       try {
         final date = DateTime.parse(saleDate);
@@ -203,7 +206,7 @@ class _SaleHistoryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  saleRemaining > 0 ? 'Qarz bor' : "To'langan",
+                  saleRemaining > 0 ? l10n.hasDebt : l10n.paid,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -216,7 +219,7 @@ class _SaleHistoryCard extends StatelessWidget {
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Text(
-              '$formattedDate  •  ${NumberFormatter.formatDecimal(saleTotal)} so\'m',
+              '$formattedDate  •  ${NumberFormatter.formatDecimal(saleTotal)} ${l10n.currencySom}',
               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
           ),
@@ -233,20 +236,22 @@ class _SaleHistoryCard extends StatelessWidget {
               child: Column(
                 children: [
                   _SummaryRow(
-                    label: 'Jami',
-                    value: '${NumberFormatter.formatDecimal(saleTotal)} so\'m',
+                    label: l10n.total,
+                    value:
+                        '${NumberFormatter.formatDecimal(saleTotal)} ${l10n.currencySom}',
                   ),
                   const SizedBox(height: 6),
                   _SummaryRow(
-                    label: "To'langan",
-                    value: '${NumberFormatter.formatDecimal(salePaid)} so\'m',
+                    label: l10n.paid,
+                    value:
+                        '${NumberFormatter.formatDecimal(salePaid)} ${l10n.currencySom}',
                     valueColor: Colors.green,
                   ),
                   const SizedBox(height: 6),
                   _SummaryRow(
-                    label: 'Qolgan qarz',
+                    label: l10n.remainingDebt,
                     value:
-                        '${NumberFormatter.formatDecimal(saleRemaining)} so\'m',
+                        '${NumberFormatter.formatDecimal(saleRemaining)} ${l10n.currencySom}',
                     valueColor: saleRemaining > 0 ? Colors.red : Colors.green,
                   ),
                 ],
@@ -257,7 +262,7 @@ class _SaleHistoryCard extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "To'lovlar (${payments.length})",
+                  "${l10n.payments} (${payments.length})",
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -271,7 +276,7 @@ class _SaleHistoryCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(
-                  "To'lovlar yo'q",
+                  l10n.noPayments,
                   style: TextStyle(color: Colors.grey[500], fontSize: 13),
                 ),
               ),
@@ -324,16 +329,16 @@ class _PaymentTile extends StatelessWidget {
     return Icons.payment_outlined;
   }
 
-  static String _label(String type) {
+  static String _label(String type, AppLocalizations l10n) {
     switch (type.toLowerCase()) {
       case 'cash':
-        return 'Naqd';
+        return l10n.cash;
       case 'terminal':
-        return 'Plastik karta';
+        return l10n.bankCard;
       case 'transfer':
-        return 'Hisob raqam';
+        return l10n.accountNumber;
       case 'click':
-        return 'Click';
+        return l10n.click;
       default:
         return type;
     }
@@ -341,6 +346,7 @@ class _PaymentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final amount = (payment['amount'] as num?)?.toDouble() ?? 0.0;
     final paymentType = payment['paymentType']?.toString() ?? '';
     final paymentDate = payment['createdAt'];
@@ -371,7 +377,7 @@ class _PaymentTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _label(paymentType),
+                  _label(paymentType, l10n),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],
@@ -385,7 +391,7 @@ class _PaymentTile extends StatelessWidget {
             ),
           ),
           Text(
-            '${NumberFormatter.formatDecimal(amount)} so\'m',
+            '${NumberFormatter.formatDecimal(amount)} ${l10n.currencySom}',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class EmptyState extends StatelessWidget {
   final String? title;
@@ -15,7 +16,7 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 40),
@@ -50,7 +51,7 @@ class EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            title ?? "Davom etayotgan savdolar yo'q",
+            title ?? l10n.noOngoingSales,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -61,7 +62,7 @@ class EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            subtitle ?? "Boshlang'ich savdolar bu yerda ko'rsatiladi",
+            subtitle ?? l10n.initialSalesWillBeShownHere,
             style: TextStyle(
               fontSize: 13,
               color: Colors.grey[500],
