@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/debt_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -37,46 +38,51 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: widget.customerName.isNotEmpty
-            ? widget.customerName
-            : widget.customerPhone,
-        onRefresh: () => context
-            .read<CustomersBloc>()
-            .add(GetCustomerDebtsEvent(widget.customerId)),
-      ),
-      body: BlocConsumer<CustomersBloc, CustomersState>(
-        listener: (context, state) {
-          if (state is CustomersError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.all(16),
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is CustomerDebtsLoading) {
+    return NetworkWrapper(
+      onRetry: () => context
+          .read<CustomersBloc>()
+          .add(GetCustomerDebtsEvent(widget.customerId)),
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: widget.customerName.isNotEmpty
+              ? widget.customerName
+              : widget.customerPhone,
+          onRefresh: () => context
+              .read<CustomersBloc>()
+              .add(GetCustomerDebtsEvent(widget.customerId)),
+        ),
+        body: BlocConsumer<CustomersBloc, CustomersState>(
+          listener: (context, state) {
+            if (state is CustomersError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  margin: const EdgeInsets.all(16),
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is CustomerDebtsLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is CustomerDebtsLoaded) {
+              return _buildDebtsList(state.debts, isDark);
+            } else if (state is CustomersError) {
+              return _ErrorView(
+                message: state.message,
+                onRetry: () => context
+                    .read<CustomersBloc>()
+                    .add(GetCustomerDebtsEvent(widget.customerId)),
+              );
+            }
             return const Center(child: CircularProgressIndicator());
-          } else if (state is CustomerDebtsLoaded) {
-            return _buildDebtsList(state.debts, isDark);
-          } else if (state is CustomersError) {
-            return _ErrorView(
-              message: state.message,
-              onRetry: () => context
-                  .read<CustomersBloc>()
-                  .add(GetCustomerDebtsEvent(widget.customerId)),
-            );
-          }
-          return const Center(child: CircularProgressIndicator());
-        },
+          },
+        ),
       ),
     );
   }

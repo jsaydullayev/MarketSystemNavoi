@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/number_formatter.dart';
@@ -38,10 +39,18 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   List<SaleEntity> _filterSales(List<SaleEntity> sales) {
-    if (_selectedStatus == 'all') return sales;
-    return sales
-        .where((s) => s.getStatusText().toLowerCase() == _selectedStatus)
-        .toList();
+    List<SaleEntity> filtered;
+
+    if (_selectedStatus == 'all') {
+      filtered = List.from(sales);
+    } else {
+      filtered = sales
+          .where((s) => s.getStatusText().toLowerCase() == _selectedStatus)
+          .toList();
+    }
+
+    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return filtered;
   }
 
   Color _getStatusColor(String status, ThemeData theme) {
@@ -116,81 +125,84 @@ class _SalesScreenState extends State<SalesScreen> {
               content: Text(state.message), backgroundColor: Colors.red));
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(
-          title: l10n.sales,
-          onRefresh: _loadSales,
-          extraActions: [
-            _isExporting
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.file_download_outlined),
-                    onPressed: _exportExcel,
-                  ),
-          ],
-        ),
-        body: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: BlocBuilder<SalesBloc, SalesState>(
-              builder: (context, state) {
-                if (state is SalesLoading)
-                  return const Center(child: CircularProgressIndicator());
-
-                if (state is SalesLoaded) {
-                  final filteredSales = _filterSales(state.sales);
-                  return Column(
-                    children: [
-                      _buildSummaryHeader(state.sales, theme, l10n, isDark),
-                      _buildStatusChips(state.sales, theme, isDark, l10n),
-                      Expanded(
-                        child: RefreshIndicator(
-                          onRefresh: () async => _loadSales(),
-                          child: filteredSales.isEmpty
-                              ? _buildEmptyState(theme, l10n)
-                              : ListView.builder(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16),
-                                  itemCount: filteredSales.length,
-                                  itemBuilder: (context, index) =>
-                                      _buildSaleItem(filteredSales[index],
-                                          theme, isDark, l10n),
-                                ),
+      child: NetworkWrapper(
+        onRetry: _loadSales,
+        child: Scaffold(
+          backgroundColor: AppColors.getBg(isDark),
+          appBar: CommonAppBar(
+            title: l10n.sales,
+            onRefresh: _loadSales,
+            extraActions: [
+              _isExporting
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
+                    )
+                  : IconButton(
+                      icon: const Icon(Icons.file_download_outlined),
+                      onPressed: _exportExcel,
+                    ),
+            ],
+          ),
+          body: Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: BlocBuilder<SalesBloc, SalesState>(
+                builder: (context, state) {
+                  if (state is SalesLoading)
+                    return const Center(child: CircularProgressIndicator());
+
+                  if (state is SalesLoaded) {
+                    final filteredSales = _filterSales(state.sales);
+                    return Column(
+                      children: [
+                        _buildSummaryHeader(state.sales, theme, l10n, isDark),
+                        _buildStatusChips(state.sales, theme, isDark, l10n),
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: () async => _loadSales(),
+                            child: filteredSales.isEmpty
+                                ? _buildEmptyState(theme, l10n)
+                                : ListView.builder(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    itemCount: filteredSales.length,
+                                    itemBuilder: (context, index) =>
+                                        _buildSaleItem(filteredSales[index],
+                                            theme, isDark, l10n),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () async {
-            final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => BlocProvider.value(
-                        value: context.read<SalesBloc>(),
-                        child: const NewSaleScreen())));
-            if (result == true && mounted) _loadSales();
-          },
-          icon:
-              const Icon(Icons.add_shopping_cart_rounded, color: Colors.white),
-          label: Text(l10n.newSale,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.white)),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () async {
+              final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                          value: context.read<SalesBloc>(),
+                          child: const NewSaleScreen())));
+              if (result == true && mounted) _loadSales();
+            },
+            icon: const Icon(Icons.add_shopping_cart_rounded,
+                color: Colors.white),
+            label: Text(l10n.newSale,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
         ),
       ),
     );

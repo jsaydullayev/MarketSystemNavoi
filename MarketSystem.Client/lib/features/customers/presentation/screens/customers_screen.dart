@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/add_customer_sheet.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/customers_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -87,24 +88,28 @@ class _CustomersScreenState extends State<CustomersScreen> {
           );
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(
-          title: l10n.customers,
-          onRefresh: () =>
-              context.read<CustomersBloc>().add(const GetCustomersEvent()),
-        ),
-        body: Column(
-          children: [
-            _SearchBar(controller: _searchController),
-            Expanded(child: _CustomersList(filter: _filterCustomers)),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _openAddSheet,
-          icon: const Icon(Icons.person_add, color: Colors.white),
-          label:
-              Text(l10n.addNewCustomer, style: TextStyle(color: Colors.white)),
+      child: NetworkWrapper(
+        onRetry: () =>
+            context.read<CustomersBloc>().add(const GetCustomersEvent()),
+        child: Scaffold(
+          backgroundColor: AppColors.getBg(isDark),
+          appBar: CommonAppBar(
+            title: l10n.customers,
+            onRefresh: () =>
+                context.read<CustomersBloc>().add(const GetCustomersEvent()),
+          ),
+          body: Column(
+            children: [
+              _SearchBar(controller: _searchController),
+              Expanded(child: _CustomersList(filter: _filterCustomers)),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: _openAddSheet,
+            icon: const Icon(Icons.person_add, color: Colors.white),
+            label: Text(l10n.addNewCustomer,
+                style: TextStyle(color: Colors.white)),
+          ),
         ),
       ),
     );

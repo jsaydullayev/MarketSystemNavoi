@@ -56,7 +56,14 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
   }
 
   String _formatNumber(double value) {
-    if (value == value.truncateToDouble()) return value.toInt().toString();
+    final unitName =
+        (widget.product['unitName'] ?? '').toString().toLowerCase();
+    const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
+    final isWeight = weightUnits.contains(unitName);
+
+    if (!isWeight && value == value.truncateToDouble()) {
+      return value.toInt().toString();
+    }
     return value.toString();
   }
 
@@ -88,7 +95,15 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
         _qtyController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
 
     final price = double.tryParse(cleanPriceText) ?? 0;
-    final qty = double.tryParse(cleanQtyText) ?? 1;
+    final rawQty = double.tryParse(cleanQtyText) ?? 1;
+
+    final unitName =
+        (widget.product['unitName'] ?? '').toString().toLowerCase();
+    const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
+    final isWeight = weightUnits.contains(unitName);
+
+    final double qty = isWeight ? rawQty : rawQty.truncateToDouble();
+
     widget.onConfirm(price, qty, _commentController.text);
     Navigator.pop(context);
   }
