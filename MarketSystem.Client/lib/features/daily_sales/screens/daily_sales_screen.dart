@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/daily_sales/widgets/daily_summary_card.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_detail_sheet.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_grid_item.dart';
@@ -124,25 +125,29 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.dailySales,
-        extraActions: [
-          IconButton(
-            icon: Icon(Icons.calendar_month_rounded, color: theme.primaryColor),
-            onPressed: _selectDate,
-          ),
-        ],
-      ),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Column(
-            children: [
-              _buildDateBadge(theme, isDark),
-              Expanded(child: _buildBody(l10n, theme, isDark)),
-            ],
+    return NetworkWrapper(
+      onRetry: _loadDailySales,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.dailySales,
+          extraActions: [
+            IconButton(
+              icon:
+                  Icon(Icons.calendar_month_rounded, color: theme.primaryColor),
+              onPressed: _selectDate,
+            ),
+          ],
+        ),
+        body: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              children: [
+                _buildDateBadge(theme, isDark),
+                Expanded(child: _buildBody(l10n, theme, isDark)),
+              ],
+            ),
           ),
         ),
       ),

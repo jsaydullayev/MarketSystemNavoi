@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/sales/presentation/screens/%20continue_sale_screen.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/debtor_payment_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/payment_history_dialog.dart';
@@ -50,8 +51,6 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   }
 
   Future<void> _loadDraftSales() async {
-    final l10n = AppLocalizations.of(context)!;
-
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -59,6 +58,7 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
       final unfinished = await salesService.getMyUnfinishedSales();
       if (mounted) setState(() => _unfinishedSales = unfinished);
     } catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -192,90 +192,93 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
         _paidSales.isEmpty &&
         _debtors.isEmpty;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.draftSales,
-        onRefresh: _loadAll,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadAll,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                children: [
-                  if (isEmpty) const EmptyState(),
+    return NetworkWrapper(
+      onRetry: _loadAll,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.draftSales,
+          onRefresh: _loadAll,
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadAll,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  children: [
+                    if (isEmpty) const EmptyState(),
 
-                  // Qarzdor mijozlar
-                  if (_debtors.isNotEmpty) ...[
-                    SectionHeader(
-                      title: l10n.debtorCustomers,
-                      icon: Icons.person_outline,
-                      color: Colors.red,
-                      count: _debtors.length,
-                    ),
-                    const SizedBox(height: 12),
-                    ..._debtors.map((debtor) => DebtorCard(
-                          debtor: debtor,
-                          onPaymentTap: () => _showDebtorPayment(debtor),
-                          onHistoryTap: () => _showPaymentHistory(debtor),
-                        )),
-                    const SizedBox(height: 20),
-                  ],
+                    // Qarzdor mijozlar
+                    if (_debtors.isNotEmpty) ...[
+                      SectionHeader(
+                        title: l10n.debtorCustomers,
+                        icon: Icons.person_outline,
+                        color: Colors.red,
+                        count: _debtors.length,
+                      ),
+                      const SizedBox(height: 12),
+                      ..._debtors.map((debtor) => DebtorCard(
+                            debtor: debtor,
+                            onPaymentTap: () => _showDebtorPayment(debtor),
+                            onHistoryTap: () => _showPaymentHistory(debtor),
+                          )),
+                      const SizedBox(height: 20),
+                    ],
 
-                  // Draft savdolar
-                  if (_draftSales.isNotEmpty) ...[
-                    SectionHeader(
-                      title: l10n.ongoing,
-                      icon: Icons.edit_note_rounded,
-                      color: Colors.orange,
-                      count: _draftSales.length,
-                    ),
-                    const SizedBox(height: 12),
-                    ..._draftSales.map((sale) => DraftSaleCard(
-                          sale: sale,
-                          onEdit: () => _continueSale(sale),
-                          onDelete: () => _confirmDelete(sale['id']),
-                        )),
-                    const SizedBox(height: 20),
-                  ],
+                    // Draft savdolar
+                    if (_draftSales.isNotEmpty) ...[
+                      SectionHeader(
+                        title: l10n.ongoing,
+                        icon: Icons.edit_note_rounded,
+                        color: Colors.orange,
+                        count: _draftSales.length,
+                      ),
+                      const SizedBox(height: 12),
+                      ..._draftSales.map((sale) => DraftSaleCard(
+                            sale: sale,
+                            onEdit: () => _continueSale(sale),
+                            onDelete: () => _confirmDelete(sale['id']),
+                          )),
+                      const SizedBox(height: 20),
+                    ],
 
-                  // Qarz savdolar
-                  if (_debtSales.isNotEmpty) ...[
-                    SectionHeader(
-                      title: l10n.debtSales,
-                      icon: Icons.money_off_rounded,
-                      color: Colors.red,
-                      count: _debtSales.length,
-                    ),
-                    const SizedBox(height: 12),
-                    ..._debtSales.map((sale) => DraftSaleCard(
-                          sale: sale,
-                          onEdit: () => _continueSale(sale),
-                          onDelete: () => _confirmDelete(sale['id']),
-                        )),
-                    const SizedBox(height: 20),
-                  ],
+                    // Qarz savdolar
+                    if (_debtSales.isNotEmpty) ...[
+                      SectionHeader(
+                        title: l10n.debtSales,
+                        icon: Icons.money_off_rounded,
+                        color: Colors.red,
+                        count: _debtSales.length,
+                      ),
+                      const SizedBox(height: 12),
+                      ..._debtSales.map((sale) => DraftSaleCard(
+                            sale: sale,
+                            onEdit: () => _continueSale(sale),
+                            onDelete: () => _confirmDelete(sale['id']),
+                          )),
+                      const SizedBox(height: 20),
+                    ],
 
-                  // To'langan savdolar
-                  if (_paidSales.isNotEmpty) ...[
-                    SectionHeader(
-                      title: l10n.paidSales,
-                      icon: Icons.assignment_turned_in_outlined,
-                      color: Colors.green,
-                      count: _paidSales.length,
-                    ),
-                    const SizedBox(height: 12),
-                    ..._paidSales.map((sale) => DraftSaleCard(
-                          sale: sale,
-                          onEdit: () => _continueSale(sale),
-                          onDelete: () => _confirmDelete(sale['id']),
-                        )),
+                    // To'langan savdolar
+                    if (_paidSales.isNotEmpty) ...[
+                      SectionHeader(
+                        title: l10n.paidSales,
+                        icon: Icons.assignment_turned_in_outlined,
+                        color: Colors.green,
+                        count: _paidSales.length,
+                      ),
+                      const SizedBox(height: 12),
+                      ..._paidSales.map((sale) => DraftSaleCard(
+                            sale: sale,
+                            onEdit: () => _continueSale(sale),
+                            onDelete: () => _confirmDelete(sale['id']),
+                          )),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

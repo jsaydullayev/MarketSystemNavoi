@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/debts/widgets/debt_summary_header.dart';
 import 'package:market_system_client/features/debts/widgets/edit_price_bottomsheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -113,37 +114,40 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(title: l10n.debtDetails),
-      body: Column(
-        children: [
-          DebtSummaryHeader(
-            customerName: widget.customerName,
-            debt: widget.debt,
-            debtStatus: debtStatus,
-            l10n: l10n,
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _saleItems.isEmpty
-                    ? const _EmptySaleItemsView()
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                        itemCount: _saleItems.length,
-                        itemBuilder: (context, index) {
-                          final item = _saleItems[index];
-                          return _SaleItemCard(
-                            item: item,
-                            userRole: userRole,
-                            debtStatus: debtStatus,
-                            onEdit: () => _openEditSheet(item),
-                          );
-                        },
-                      ),
-          ),
-        ],
+    return NetworkWrapper(
+      onRetry: _loadSaleDetails,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(title: l10n.debtDetails),
+        body: Column(
+          children: [
+            DebtSummaryHeader(
+              customerName: widget.customerName,
+              debt: widget.debt,
+              debtStatus: debtStatus,
+              l10n: l10n,
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _saleItems.isEmpty
+                      ? const _EmptySaleItemsView()
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                          itemCount: _saleItems.length,
+                          itemBuilder: (context, index) {
+                            final item = _saleItems[index];
+                            return _SaleItemCard(
+                              item: item,
+                              userRole: userRole,
+                              debtStatus: debtStatus,
+                              onEdit: () => _openEditSheet(item),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_payment_dialog.dart';
 
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_cart_item.dart';
@@ -369,177 +370,177 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(title: l10n.draftSale),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_sale == null) {
-      return Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(title: l10n.draftSale),
-        body: Center(child: Text(l10n.saleNotFound)),
+    if (_isLoading || _sale == null) {
+      return NetworkWrapper(
+        onRetry: _loadData,
+        child: Scaffold(
+          backgroundColor: AppColors.getBg(isDark),
+          appBar: CommonAppBar(title: l10n.draftSale),
+          body: const Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
     final customerName = _sale!['customerName'] as String?;
     final isClosed = _sale?['status'] == 'Closed';
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(title: l10n.draftSale),
-      body: Column(
-        children: [
-          if (customerName != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF0F9FF),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(9),
+    return NetworkWrapper(
+      onRetry: _loadData,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(title: l10n.draftSale),
+        body: Column(
+          children: [
+            if (customerName != null)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color:
+                    isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF0F9FF),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: const Icon(Icons.person_rounded,
+                          color: Color(0xFF3B82F6), size: 17),
                     ),
-                    child: const Icon(Icons.person_rounded,
-                        color: Color(0xFF3B82F6), size: 17),
+                    const SizedBox(width: 10),
+                    Text(
+                      customerName,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            if (_cartItems.isNotEmpty)
+              SizedBox(
+                height: 110,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  itemCount: _cartItems.length,
+                  itemBuilder: (context, index) => ContinueSaleCartItem(
+                    item: _cartItems[index],
+                    isClosed: isClosed,
+                    onEditPrice: () => _updateItemPrice(index),
+                    onReturn: () => _returnItem(index),
+                    onDecrement: () async {
+                      final qty =
+                          (_cartItems[index]['quantity'] as num?)?.toDouble() ??
+                              0.0;
+                      await _updateQuantity(index, qty - 1);
+                    },
+                    onIncrement: () async {
+                      final qty =
+                          (_cartItems[index]['quantity'] as num?)?.toDouble() ??
+                              0.0;
+                      await _updateQuantity(index, qty + 1);
+                    },
+                    onRemove: () => _removeFromCart(index),
                   ),
-                  const SizedBox(width: 10),
-                  Text(
-                    customerName,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+            Expanded(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: l10n.searchProduct,
+                        hintStyle: TextStyle(
+                            color: Colors.grey.shade400, fontSize: 14),
+                        prefixIcon: const Icon(Icons.search_rounded,
+                            size: 18, color: Color(0xFF9CA3AF)),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear_rounded, size: 16),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _filterProducts();
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor:
+                            isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.08)
+                                  : const Color(0xFFE5E7EB)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.08)
+                                  : const Color(0xFFE5E7EB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF3B82F6), width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _filteredProducts.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.search_off_rounded,
+                                    size: 48, color: Colors.grey[300]),
+                                const SizedBox(height: 8),
+                                Text(
+                                  l10n.productsNotFound,
+                                  style: TextStyle(
+                                      color: Colors.grey[400], fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          )
+                        : GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.6,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                            ),
+                            itemCount: _filteredProducts.length,
+                            itemBuilder: (context, index) =>
+                                ContinueSaleProductCard(
+                              product: _filteredProducts[index],
+                              onTap: () => _addToCart(_filteredProducts[index]),
+                            ),
+                          ),
                   ),
                 ],
               ),
             ),
-          if (_cartItems.isNotEmpty)
-            SizedBox(
-              height: 110,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                itemCount: _cartItems.length,
-                itemBuilder: (context, index) => ContinueSaleCartItem(
-                  item: _cartItems[index],
-                  isClosed: isClosed,
-                  onEditPrice: () => _updateItemPrice(index),
-                  onReturn: () => _returnItem(index),
-                  onDecrement: () async {
-                    final qty =
-                        (_cartItems[index]['quantity'] as num?)?.toDouble() ??
-                            0.0;
-                    await _updateQuantity(index, qty - 1);
-                  },
-                  onIncrement: () async {
-                    final qty =
-                        (_cartItems[index]['quantity'] as num?)?.toDouble() ??
-                            0.0;
-                    await _updateQuantity(index, qty + 1);
-                  },
-                  onRemove: () => _removeFromCart(index),
-                ),
-              ),
+            ContinueSaleBottomBar(
+              totalAmount: _totalAmount,
+              cartIsEmpty: _cartItems.isEmpty,
+              isClosed: isClosed,
+              onCheckout: _showPaymentSheet,
             ),
-          Expanded(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                  child: TextField(
-                    controller: _searchController,
-                    style: const TextStyle(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: l10n.searchProduct,
-                      hintStyle:
-                          TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                      prefixIcon: const Icon(Icons.search_rounded,
-                          size: 18, color: Color(0xFF9CA3AF)),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 16),
-                              onPressed: () {
-                                _searchController.clear();
-                                _filterProducts();
-                              },
-                            )
-                          : null,
-                      filled: true,
-                      fillColor:
-                          isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.08)
-                                : const Color(0xFFE5E7EB)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.08)
-                                : const Color(0xFFE5E7EB)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFF3B82F6), width: 1.5),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: _filteredProducts.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.search_off_rounded,
-                                  size: 48, color: Colors.grey[300]),
-                              const SizedBox(height: 8),
-                              Text(
-                                l10n.productsNotFound,
-                                style: TextStyle(
-                                    color: Colors.grey[400], fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        )
-                      : GridView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 1.6,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                          ),
-                          itemCount: _filteredProducts.length,
-                          itemBuilder: (context, index) =>
-                              ContinueSaleProductCard(
-                            product: _filteredProducts[index],
-                            onTap: () => _addToCart(_filteredProducts[index]),
-                          ),
-                        ),
-                ),
-              ],
-            ),
-          ),
-          ContinueSaleBottomBar(
-            totalAmount: _totalAmount,
-            cartIsEmpty: _cartItems.isEmpty,
-            isClosed: isClosed,
-            onCheckout: _showPaymentSheet,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

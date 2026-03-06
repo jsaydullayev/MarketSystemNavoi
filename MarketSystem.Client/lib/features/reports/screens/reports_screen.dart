@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/reports/widgets/daily_report_tab.dart';
 import 'package:market_system_client/features/reports/widgets/inventory_reporttab.dart';
 import 'package:market_system_client/features/reports/widgets/monthly_report_tab.dart';
@@ -149,75 +150,78 @@ class _ReportsScreenState extends State<ReportsScreen>
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.reports,
-        extraActions: [
-          _isDownloading
-              ? const Padding(
-                  padding: EdgeInsets.all(14),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+    return NetworkWrapper(
+      onRetry: _loadReports,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.reports,
+          extraActions: [
+            _isDownloading
+                ? const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.download_rounded),
+                    tooltip: l10n.downloadExcel,
+                    onPressed: _downloadExcelReport,
                   ),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.download_rounded),
-                  tooltip: l10n.downloadExcel,
-                  onPressed: _downloadExcelReport,
-                ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
-          child: ReportTabBar(controller: _tabController),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(52),
+            child: ReportTabBar(controller: _tabController),
+          ),
         ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadReports,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  DailyReportTab(
-                    report: _dailyReport,
-                    selectedDate: _selectedDate,
-                    isLoadingDetails: _isLoadingDetails,
-                    onDateChanged: (d) {
-                      setState(() => _selectedDate = d);
-                      _loadReports();
-                    },
-                    onViewDetails: _loadDailySaleItems,
-                    onExport: () => _exportToExcel('daily'),
-                  ),
-                  MonthlyReportTab(
-                    report: _periodReport,
-                    startDate: _startDate,
-                    endDate: _endDate,
-                    onRangeChanged: (start, end) {
-                      setState(() {
-                        _startDate = start;
-                        _endDate = end;
-                      });
-                      _loadReports();
-                    },
-                    onExport: () => _exportToExcel('monthly'),
-                  ),
-                  InventoryReportTab(
-                    report: _comprehensiveReport,
-                    selectedDate: _selectedDate,
-                    onDateChanged: (d) {
-                      setState(() => _selectedDate = d);
-                      _loadReports();
-                    },
-                    onExport: () => _exportToExcel('inventory'),
-                  ),
-                ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadReports,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    DailyReportTab(
+                      report: _dailyReport,
+                      selectedDate: _selectedDate,
+                      isLoadingDetails: _isLoadingDetails,
+                      onDateChanged: (d) {
+                        setState(() => _selectedDate = d);
+                        _loadReports();
+                      },
+                      onViewDetails: _loadDailySaleItems,
+                      onExport: () => _exportToExcel('daily'),
+                    ),
+                    MonthlyReportTab(
+                      report: _periodReport,
+                      startDate: _startDate,
+                      endDate: _endDate,
+                      onRangeChanged: (start, end) {
+                        setState(() {
+                          _startDate = start;
+                          _endDate = end;
+                        });
+                        _loadReports();
+                      },
+                      onExport: () => _exportToExcel('monthly'),
+                    ),
+                    InventoryReportTab(
+                      report: _comprehensiveReport,
+                      selectedDate: _selectedDate,
+                      onDateChanged: (d) {
+                        setState(() => _selectedDate = d);
+                        _loadReports();
+                      },
+                      onExport: () => _exportToExcel('inventory'),
+                    ),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

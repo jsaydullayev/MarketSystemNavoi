@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -82,26 +83,29 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.debtors,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _debtors.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadDebtors,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _debtors.length,
-                    itemBuilder: (context, index) {
-                      final debtor = _debtors[index];
-                      return _buildDebtorCard(debtor);
-                    },
+    return NetworkWrapper(
+      onRetry: _loadDebtors,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.debtors,
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _debtors.isEmpty
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: _loadDebtors,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _debtors.length,
+                      itemBuilder: (context, index) {
+                        final debtor = _debtors[index];
+                        return _buildDebtorCard(debtor);
+                      },
+                    ),
                   ),
-                ),
+      ),
     );
   }
 

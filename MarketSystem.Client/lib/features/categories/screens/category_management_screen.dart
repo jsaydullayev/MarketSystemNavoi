@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/categories/screens/category_bottom_sheet.dart';
 import 'package:market_system_client/features/categories/widgets/categories_card.dart';
 import 'package:provider/provider.dart';
@@ -93,22 +94,25 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.categories,
-        onRefresh: _loadCategories,
-      ),
-      body: _buildBody(l10n, isDark, theme),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(),
-        backgroundColor: const Color(0xFF3B82F6),
-        foregroundColor: Colors.white,
-        elevation: 4,
-        icon: const Icon(Icons.add_rounded),
-        label: Text(
-          l10n.addCategory,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+    return NetworkWrapper(
+      onRetry: _loadCategories,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.categories,
+          onRefresh: _loadCategories,
+        ),
+        body: _buildBody(l10n, isDark, theme),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _openForm(),
+          backgroundColor: const Color(0xFF3B82F6),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          icon: const Icon(Icons.add_rounded),
+          label: Text(
+            l10n.addCategory,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
         ),
       ),
     );
