@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -130,79 +131,85 @@ class _ZakupScreenState extends State<ZakupScreen> {
           ));
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(
-          title: l10n.zakup,
-          onRefresh: () =>
-              context.read<ZakupBloc>().add(const GetZakupsEvent()),
-          extraActions: [
-            _isExporting
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+      child: NetworkWrapper(
+        onRetry: () {
+          _loadProducts();
+          context.read<ZakupBloc>().add(const GetZakupsEvent());
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.getBg(isDark),
+          appBar: CommonAppBar(
+            title: l10n.zakup,
+            onRefresh: () =>
+                context.read<ZakupBloc>().add(const GetZakupsEvent()),
+            extraActions: [
+              _isExporting
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
+                    )
+                  : IconButton(
+                      icon: const Icon(Icons.file_download_outlined),
+                      tooltip: l10n.exportExcel,
+                      onPressed: _exportExcel,
                     ),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.file_download_outlined),
-                    tooltip: l10n.exportExcel,
-                    onPressed: _exportExcel,
-                  ),
-          ],
-        ),
-        body: BlocBuilder<ZakupBloc, ZakupState>(
-          builder: (context, state) {
-            if (state is ZakupLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (state is ZakupError) {
-              return _ErrorView(
-                message: state.message,
-                onRetry: () =>
-                    context.read<ZakupBloc>().add(const GetZakupsEvent()),
-              );
-            }
-
-            if (state is ZakupLoaded) {
-              final zakups = state.zakups.map((z) => z.toJson()).toList();
-
-              if (zakups.isEmpty) {
-                return _EmptyView(l10n: l10n);
+            ],
+          ),
+          body: BlocBuilder<ZakupBloc, ZakupState>(
+            builder: (context, state) {
+              if (state is ZakupLoading) {
+                return const Center(child: CircularProgressIndicator());
               }
 
-              return RefreshIndicator(
-                onRefresh: () async =>
-                    context.read<ZakupBloc>().add(const GetZakupsEvent()),
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                  itemCount: zakups.length,
-                  itemBuilder: (_, i) => ZakupCard(zakup: zakups[i]),
-                ),
-              );
-            }
+              if (state is ZakupError) {
+                return _ErrorView(
+                  message: state.message,
+                  onRetry: () =>
+                      context.read<ZakupBloc>().add(const GetZakupsEvent()),
+                );
+              }
 
-            return const SizedBox.shrink();
-          },
+              if (state is ZakupLoaded) {
+                final zakups = state.zakups.map((z) => z.toJson()).toList();
+
+                if (zakups.isEmpty) {
+                  return _EmptyView(l10n: l10n);
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async =>
+                      context.read<ZakupBloc>().add(const GetZakupsEvent()),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                    itemCount: zakups.length,
+                    itemBuilder: (_, i) => ZakupCard(zakup: zakups[i]),
+                  ),
+                );
+              }
+
+              return const SizedBox.shrink();
+            },
+          ),
+          floatingActionButton: canAdd
+              ? FloatingActionButton.extended(
+                  onPressed: () => _openAddSheet(context),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(
+                    l10n.addPurchase,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                )
+              : null,
         ),
-        floatingActionButton: canAdd
-            ? FloatingActionButton.extended(
-                onPressed: () => _openAddSheet(context),
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 2,
-                icon: const Icon(Icons.add_rounded),
-                label: Text(
-                  l10n.addPurchase,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              )
-            : null,
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/cash_register/widgets/balance_card.dart';
 import 'package:market_system_client/features/cash_register/widgets/payment_breakdown_card.dart';
 import 'package:market_system_client/features/cash_register/widgets/today_sales_card.dart';
@@ -151,82 +152,79 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
     final role = authProvider.user?['role'];
     final isAdmin = role == 'Admin' || role == 'Owner';
 
-    if (!isAdmin) {
-      return Scaffold(
+    return NetworkWrapper(
+      onRetry: _loadCashRegister,
+      child: Scaffold(
         backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(title: l10n.cashRegister),
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.lock_outline, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                l10n.accessDenied,
-                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-              ),
-            ],
-          ),
+        appBar: CommonAppBar(
+          title: l10n.cashRegister,
+          onRefresh: _isLoading ? null : _loadCashRegister,
         ),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.cashRegister,
-        onRefresh: _isLoading ? null : _loadCashRegister,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadCashRegister,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        body: !isAdmin
+            ? Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    BalanceCard(
-                      cashBalance: _cashRegister?.currentBalance ?? 0,
-                      clickBalance: _todaySales?.clickPaid ?? 0,
-                      lastUpdated: _cashRegister?.lastUpdated,
-                    ),
+                    Icon(Icons.lock_outline, size: 64, color: Colors.grey[400]),
                     const SizedBox(height: 16),
-                    if (_todaySales != null) ...[
-                      TodaySalesCard(todaySales: _todaySales!),
-                      const SizedBox(height: 16),
-                    ],
-                    if (_todaySales != null &&
-                        (_todaySales!.cashPaid > 0 ||
-                            _todaySales!.cardPaid > 0 ||
-                            _todaySales!.clickPaid > 0)) ...[
-                      PaymentBreakdownCard(todaySales: _todaySales!),
-                      const SizedBox(height: 20),
-                    ],
-                    WithdrawButton(
-                      isWithdrawing: _isWithdrawing,
-                      onTap: _showWithdrawDialog,
-                      label: l10n.withdrawCash,
-                    ),
-                    const SizedBox(height: 28),
                     Text(
-                      l10n.withdrawalHistory,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    WithdrawalHistoryList(
-                      withdrawals: _cashRegister?.withdrawals ?? [],
-                      l10n: l10n,
+                      l10n.accessDenied,
+                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                     ),
                   ],
                 ),
-              ),
-            ),
+              )
+            : _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: _loadCashRegister,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          BalanceCard(
+                            cashBalance: _cashRegister?.currentBalance ?? 0,
+                            clickBalance: _todaySales?.clickPaid ?? 0,
+                            lastUpdated: _cashRegister?.lastUpdated,
+                          ),
+                          const SizedBox(height: 16),
+                          if (_todaySales != null) ...[
+                            TodaySalesCard(todaySales: _todaySales!),
+                            const SizedBox(height: 16),
+                          ],
+                          if (_todaySales != null &&
+                              (_todaySales!.cashPaid > 0 ||
+                                  _todaySales!.cardPaid > 0 ||
+                                  _todaySales!.clickPaid > 0)) ...[
+                            PaymentBreakdownCard(todaySales: _todaySales!),
+                            const SizedBox(height: 20),
+                          ],
+                          WithdrawButton(
+                            isWithdrawing: _isWithdrawing,
+                            onTap: _showWithdrawDialog,
+                            label: l10n.withdrawCash,
+                          ),
+                          const SizedBox(height: 28),
+                          Text(
+                            l10n.withdrawalHistory,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          WithdrawalHistoryList(
+                            withdrawals: _cashRegister?.withdrawals ?? [],
+                            l10n: l10n,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/products/presentation/screens/product_form_screen.dart';
 import 'package:market_system_client/features/products/presentation/widgets/product_body.dart';
 import 'package:provider/provider.dart';
@@ -289,36 +290,39 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.products,
-        onRefresh: _loadProducts,
-        extraActions: [
-          IconButton(
-            icon: Icon(Icons.file_download_outlined, color: primaryColor),
-            onPressed: _exportExcel,
-          ),
-        ],
+    return NetworkWrapper(
+      onRetry: _loadProducts,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.products,
+          onRefresh: _loadProducts,
+          extraActions: [
+            IconButton(
+              icon: Icon(Icons.file_download_outlined, color: primaryColor),
+              onPressed: _exportExcel,
+            ),
+          ],
+        ),
+        body: ProductsBody(
+          isLoading: _isLoading,
+          errorMessage: _errorMessage,
+          products: _filteredProducts,
+          searchController: _searchController,
+          onRefresh: _loadProducts,
+          onDelete: _deleteProduct,
+          onEdit: (p) => _openProductForm(product: p),
+          onZakup: _quickZakup,
+          isReadOnly: widget.isReadOnly,
+        ),
+        floatingActionButton: !widget.isReadOnly
+            ? FloatingActionButton(
+                onPressed: () => _openProductForm(),
+                backgroundColor: primaryColor,
+                child: const Icon(Icons.add, color: Colors.white, size: 30),
+              )
+            : null,
       ),
-      body: ProductsBody(
-        isLoading: _isLoading,
-        errorMessage: _errorMessage,
-        products: _filteredProducts,
-        searchController: _searchController,
-        onRefresh: _loadProducts,
-        onDelete: _deleteProduct,
-        onEdit: (p) => _openProductForm(product: p),
-        onZakup: _quickZakup,
-        isReadOnly: widget.isReadOnly,
-      ),
-      floatingActionButton: !widget.isReadOnly
-          ? FloatingActionButton(
-              onPressed: () => _openProductForm(),
-              backgroundColor: primaryColor,
-              child: const Icon(Icons.add, color: Colors.white, size: 30),
-            )
-          : null,
     );
   }
 }

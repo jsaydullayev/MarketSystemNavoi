@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../bloc/sales_bloc.dart';
@@ -63,24 +64,27 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           _loadSaleDetails();
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(
-          title: l10n.sales,
-          onRefresh: _loadSaleDetails,
-          onBackPressed: () {
-            context.read<SalesBloc>().add(const GetSalesEvent());
-            Navigator.pop(context);
-          },
-        ),
-        body: BlocBuilder<SalesBloc, SalesState>(
-          builder: (context, state) {
-            if (state is SaleDetailLoading)
-              return const Center(child: CircularProgressIndicator());
-            if (state is SaleDetailLoaded)
-              return _buildBody(state.sale, theme, isDark, l10n);
-            return Center(child: Text(l10n.errorOccurred));
-          },
+      child: NetworkWrapper(
+        onRetry: _loadSaleDetails,
+        child: Scaffold(
+          backgroundColor: AppColors.getBg(isDark),
+          appBar: CommonAppBar(
+            title: l10n.sales,
+            onRefresh: _loadSaleDetails,
+            onBackPressed: () {
+              context.read<SalesBloc>().add(const GetSalesEvent());
+              Navigator.pop(context);
+            },
+          ),
+          body: BlocBuilder<SalesBloc, SalesState>(
+            builder: (context, state) {
+              if (state is SaleDetailLoading)
+                return const Center(child: CircularProgressIndicator());
+              if (state is SaleDetailLoaded)
+                return _buildBody(state.sale, theme, isDark, l10n);
+              return Center(child: Text(l10n.errorOccurred));
+            },
+          ),
         ),
       ),
     );
@@ -227,6 +231,13 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final qty = (item['quantity'] as num).toDouble();
     final price = (item['salePrice'] as num).toDouble();
 
+    // ✅ unitName ga qarab format
+    final unitName = (item['unit'] ?? '').toString().toLowerCase();
+    const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
+    final isWeight = weightUnits.contains(unitName);
+    final qtyDisplay = isWeight ? qty.toString() : qty.toInt().toString();
+    final unit = item['unit'] ?? l10n.piece;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -252,7 +263,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 Text(item['productName'] ?? l10n.unknown,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 15)),
-                Text("$qty x ${NumberFormatter.format(price)}",
+                Text("$qtyDisplay $unit x ${NumberFormatter.format(price)}",
                     style: TextStyle(color: theme.disabledColor, fontSize: 13)),
               ],
             ),

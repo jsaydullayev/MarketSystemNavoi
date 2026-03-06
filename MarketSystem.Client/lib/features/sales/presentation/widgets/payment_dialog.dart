@@ -259,32 +259,36 @@ class PaymentDialogState extends State<PaymentDialog> {
   }
 
   void _confirmAction() {
-    final l10n = AppLocalizations.of(context)!;
     List<Map<String, dynamic>> payments = [];
+
     if (_useCash)
       payments.add({
-        'paymentType': l10n.cash,
+        'paymentType': 'Cash', // ✅ Server kutgan enum
         'amount':
             double.tryParse(_cashController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useTerminal)
       payments.add({
-        'paymentType': l10n.card,
+        'paymentType': 'Card', // ✅
         'amount':
             double.tryParse(_terminalController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useTransfer)
       payments.add({
-        'paymentType': l10n.transfer,
+        'paymentType': 'Transfer', // ✅
         'amount':
             double.tryParse(_transferController.text.replaceAll(',', '.')) ?? 0
       });
     if (_useClick)
       payments.add({
-        'paymentType': l10n.click,
+        'paymentType': 'Click', // ✅
         'amount':
             double.tryParse(_clickController.text.replaceAll(',', '.')) ?? 0
       });
+    print('useDebt: $_useDebt');
+    print('hasDebt: $_hasDebt');
+    print('totalPaid: $_totalPaid');
+    print('remaining: $_remainingAmount');
 
     setState(() => _isProcessing = true);
     widget.onConfirm(payments, _hasDebt);

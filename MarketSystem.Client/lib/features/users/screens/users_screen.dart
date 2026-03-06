@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/users_service.dart';
@@ -144,20 +145,23 @@ class _UsersScreenState extends State<UsersScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(title: l10n.users, onRefresh: _loadUsers),
-      body: Column(children: [
-        _SearchBar(controller: _searchCtrl, isDark: isDark),
-        Expanded(child: _buildBody(isDark)),
-      ]),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => AddUserSheet.show(context),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.person_add_rounded),
-        label:
-            Text(l10n.newUser, style: TextStyle(fontWeight: FontWeight.w600)),
+    return NetworkWrapper(
+      onRetry: _loadUsers,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(title: l10n.users, onRefresh: _loadUsers),
+        body: Column(children: [
+          _SearchBar(controller: _searchCtrl, isDark: isDark),
+          Expanded(child: _buildBody(isDark)),
+        ]),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => AddUserSheet.show(context),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.person_add_rounded),
+          label:
+              Text(l10n.newUser, style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
       ),
     );
   }

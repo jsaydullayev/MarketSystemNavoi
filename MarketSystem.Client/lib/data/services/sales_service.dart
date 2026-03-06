@@ -14,7 +14,8 @@ class SalesService {
 
   // Barcha sotuvlarni olish
   Future<List<dynamic>> getAllSales() async {
-    final response = await _httpService.get('${ApiConstants.sales}/GetAllSales');
+    final response =
+        await _httpService.get('${ApiConstants.sales}/GetAllSales');
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
@@ -29,7 +30,13 @@ class SalesService {
 
   // Sotuvni ID bo'yicha olish
   Future<Map<String, dynamic>> getSaleById(String saleId) async {
-    final response = await _httpService.get('${ApiConstants.sales}/GetSale/$saleId');
+    final response =
+        await _httpService.get('${ApiConstants.sales}/GetSale/$saleId');
+    print(
+        '=== GET SALE RESPONSE ===========================================================================================================================');
+    print(response.body);
+    print(
+        '========================================================================');
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
@@ -49,7 +56,8 @@ class SalesService {
 
   // Mening draft sotuvlarim
   Future<List<dynamic>> getMyDraftSales() async {
-    final response = await _httpService.get('${ApiConstants.sales}/GetMyDraftSales');
+    final response =
+        await _httpService.get('${ApiConstants.sales}/GetMyDraftSales');
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
@@ -64,7 +72,8 @@ class SalesService {
 
   // Mening tugatilmagan sotuvlarim (Draft + Debt)
   Future<List<dynamic>> getMyUnfinishedSales() async {
-    final response = await _httpService.get('${ApiConstants.sales}/GetMyUnfinishedSales');
+    final response =
+        await _httpService.get('${ApiConstants.sales}/GetMyUnfinishedSales');
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
@@ -73,7 +82,8 @@ class SalesService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data ?? []);
     } else {
-      throw Exception('Failed to load unfinished sales: ${response.statusCode}');
+      throw Exception(
+          'Failed to load unfinished sales: ${response.statusCode}');
     }
   }
 
@@ -128,9 +138,9 @@ class SalesService {
   Future<dynamic> addSaleItem({
     required String saleId,
     required String productId,
-    required double quantity,  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
+    required double quantity, // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
     required double salePrice,
-    required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
+    required double minSalePrice, // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,
   }) async {
     print('=== ADD SALE ITEM DEBUG ===');
@@ -138,7 +148,7 @@ class SalesService {
     print('Product ID: $productId');
     print('Quantity: $quantity');
     print('Sale Price: $salePrice');
-    print('Min Sale Price: $minSalePrice');  // ✅ Debug: minPrice
+    print('Min Sale Price: $minSalePrice'); // ✅ Debug: minPrice
     print('Comment: ${comment ?? "(empty string)"}');
     print('==========================');
 
@@ -148,7 +158,7 @@ class SalesService {
         'productId': productId,
         'quantity': quantity,
         'salePrice': salePrice,
-        'minSalePrice': minSalePrice,  // ✅ Backendga minPrice yuborish
+        'minSalePrice': minSalePrice, // ✅ Backendga minPrice yuborish
         'comment': comment ?? '', // Null bo'lsa bo'sh string yuboramiz
       },
     );
@@ -165,9 +175,12 @@ class SalesService {
         final errorData = jsonDecode(response.body);
         errorMsg = errorData['message'] ?? errorData['title'] ?? response.body;
       } catch (_) {
-        errorMsg = response.body.isNotEmpty ? response.body : 'Server error: ${response.statusCode}';
+        errorMsg = response.body.isNotEmpty
+            ? response.body
+            : 'Server error: ${response.statusCode}';
       }
-      throw Exception('Failed to add sale item: $errorMsg (Status: ${response.statusCode})');
+      throw Exception(
+          'Failed to add sale item: $errorMsg (Status: ${response.statusCode})');
     }
   }
 
@@ -175,7 +188,8 @@ class SalesService {
   Future<dynamic> removeSaleItem({
     required String saleId,
     required String saleItemId,
-    required double quantity,  // ✅ DECIMAL - 0 = butunlay o'chirish, >0 = shunchaki miqdorni kamaytirish
+    required double
+        quantity, // ✅ DECIMAL - 0 = butunlay o'chirish, >0 = shunchaki miqdorni kamaytirish
   }) async {
     final url = '${ApiConstants.sales}/RemoveSaleItem/$saleId';
     print('=== REMOVE SALE ITEM DEBUG ===');
@@ -206,9 +220,12 @@ class SalesService {
         final errorData = jsonDecode(response.body);
         errorMsg = errorData['message'] ?? errorData['title'] ?? response.body;
       } catch (_) {
-        errorMsg = response.body.isNotEmpty ? response.body : 'Server error: ${response.statusCode}';
+        errorMsg = response.body.isNotEmpty
+            ? response.body
+            : 'Server error: ${response.statusCode}';
       }
-      throw Exception('Failed to remove sale item: $errorMsg (Status: ${response.statusCode})');
+      throw Exception(
+          'Failed to remove sale item: $errorMsg (Status: ${response.statusCode})');
     }
   }
 
@@ -225,6 +242,12 @@ class SalesService {
         'amount': amount,
       },
     );
+
+    // ✅ Shu ikki qatorni qo'shing
+    print('=== ADD PAYMENT RESPONSE ===');
+    print('Status: ${response.statusCode}');
+    print('Body: ${response.body}');
+    print('============================');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -271,7 +294,8 @@ class SalesService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to cancel sale. Status: ${response.statusCode}, Body: ${response.body}');
+      throw Exception(
+          'Failed to cancel sale. Status: ${response.statusCode}, Body: ${response.body}');
     }
   }
 
@@ -392,6 +416,7 @@ class SalesService {
   }
 
   Future<List<int>?> downloadSalesExcel() async {
-    return await _httpService.downloadBytes('${ApiConstants.sales}/ExportSalesToExcel');
+    return await _httpService
+        .downloadBytes('${ApiConstants.sales}/ExportSalesToExcel');
   }
 }

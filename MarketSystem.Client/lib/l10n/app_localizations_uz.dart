@@ -72,7 +72,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get customers => 'Mijozlar';
 
   @override
-  String get zakup => 'Xaridlar';
+  String get zakup => 'Zakuplar';
 
   @override
   String get reports => 'Hisobotlar';

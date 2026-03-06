@@ -227,7 +227,7 @@ abstract class AppLocalizations {
   /// No description provided for @zakup.
   ///
   /// In uz, this message translates to:
-  /// **'Xaridlar'**
+  /// **'Zakuplar'**
   String get zakup;
 
   /// No description provided for @reports.
