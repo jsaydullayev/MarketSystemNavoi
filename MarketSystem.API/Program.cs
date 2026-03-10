@@ -69,9 +69,13 @@ try
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 
-    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    var port = Environment.GetEnvironmentVariable("PORT") ??
+               Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS") ??
+               Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(':').Last() ??
+               "8080";
+    // Use 0.0.0.0 for Docker compatibility (allows external access)
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
-    Log.Information("Configuring to listen on: http://0.0.0.0:{Port}", port);
+    Log.Information("Configuring to listen on: http://0.0.0.0:{0}", port);
 
     builder.Services.AddHealthChecks();
 
@@ -267,8 +271,6 @@ try
     app.UseSerilogRequestLogging();
     app.UseMiddleware<RequestLoggingMiddleware>();
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
-
-    app.Environment.IsDevelopment();
 
     app.UseStaticFiles();
     app.UseAuthentication();
