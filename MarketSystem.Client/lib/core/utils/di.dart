@@ -13,6 +13,9 @@ import '../handlers/navigation_handler.dart';
 import '../handlers/network_handler.dart';
 import '../handlers/storage_handler.dart';
 
+// Constants
+import '../constants/api_constants.dart';
+
 // Providers
 import '../providers/auth_provider.dart';
 
@@ -81,7 +84,7 @@ Future<void> _initCore() async {
   sl.registerLazySingleton<StorageHandler>(() => StorageHandler());
   sl.registerLazySingleton<NetworkHandler>(
     () => NetworkHandler(
-      baseUrl: 'http://10.0.2.2:5137/api', // Emulator IP
+      baseUrl: ApiConstants.baseUrl,
     ),
   );
 
