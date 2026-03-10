@@ -200,4 +200,100 @@ class DownloadService {
       throw Exception('Web download xatolik: $e');
     }
   }
+
+  /// Faylni web browser orqali PDF formatda yuklab olish
+  void _downloadWebPdf(List<int> bytes, String filename) {
+    try {
+      // Blob yaratish (PDF MIME type)
+      final blob = html.Blob([bytes], 'application/pdf');
+
+      // Download URL yaratish
+      final url = html.Url.createObjectUrlFromBlob(blob);
+
+      // Anchor element yaratish va click qilish
+      final anchor = html.AnchorElement()
+        ..href = url
+        ..download = filename
+        ..style.display = 'none';
+
+      // DOM ga qo'shish, click qilish, va o'chirish
+      html.document.body?.append(anchor);
+      anchor.click();
+      anchor.remove();
+
+      // URLni tozalash (memory leak oldini olish uchun)
+      html.Url.revokeObjectUrl(url);
+    } catch (e) {
+      throw Exception('Web PDF download xatolik: $e');
+    }
+  }
+
+  /// Kunlik hisobotni PDF formatida yuklab olish
+  Future<void> downloadDailyReportToPdf(DateTime date) async {
+    try {
+      String url = '/Reports/ExportDailyReportToPdf?date=${date.toIso8601String()}';
+
+      final response = await _httpService.get(url);
+
+      if (response.statusCode == 200) {
+        final filename = 'daily_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        if (kIsWeb) {
+          _downloadWebPdf(response.bodyBytes, filename);
+        } else {
+          await _downloadMobileDesktop(response.bodyBytes, filename);
+        }
+      } else {
+        throw Exception(
+            'Kunlik hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Kunlik hisobotni PDF formatida yuklab olishda xatolik: $e');
+    }
+  }
+
+  /// Davr hisobotni PDF formatida yuklab olish
+  Future<void> downloadPeriodReportToPdf(DateTime start, DateTime end) async {
+    try {
+      String url = '/Reports/ExportPeriodReportToPdf?start=${start.toIso8601String()}&end=${end.toIso8601String()}';
+
+      final response = await _httpService.get(url);
+
+      if (response.statusCode == 200) {
+        final filename = 'period_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        if (kIsWeb) {
+          _downloadWebPdf(response.bodyBytes, filename);
+        } else {
+          await _downloadMobileDesktop(response.bodyBytes, filename);
+        }
+      } else {
+        throw Exception(
+            'Davriy hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Davriy hisobotni PDF formatida yuklab olishda xatolik: $e');
+    }
+  }
+
+  /// Umumiy hisobotni PDF formatida yuklab olish
+  Future<void> downloadComprehensiveReportToPdf(DateTime date) async {
+    try {
+      String url = '/Reports/ExportComprehensiveReportToPdf?date=${date.toIso8601String()}';
+
+      final response = await _httpService.get(url);
+
+      if (response.statusCode == 200) {
+        final filename = 'comprehensive_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        if (kIsWeb) {
+          _downloadWebPdf(response.bodyBytes, filename);
+        } else {
+          await _downloadMobileDesktop(response.bodyBytes, filename);
+        }
+      } else {
+        throw Exception(
+            'Umumiy hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Umumiy hisobotni PDF formatida yuklab olishda xatolik: $e');
+    }
+  }
 }
