@@ -2,7 +2,7 @@ using Npgsql;
 using System.Data;
 using BCrypt.Net;
 
-var connectionString = "Host=localhost;Port=3030;Database=MarketSystemDB;Username=postgres;Password=postgres";
+var connectionString = "Host=localhost;Port=5433;Database=MarketSystemDB;Username=postgres;Password=SuperSecur3MarketDB!2026";
 
 // Test BCrypt hash first
 Console.WriteLine("=== Testing BCrypt Hash ===");

@@ -10,7 +10,7 @@ public class CreateLogsTableScript
 {
     public static async Task Main(string[] args)
     {
-        var connectionString = "Host=localhost;Port=3030;Database=MarketSystemDB;Username=postgres;Password=postgres";
+        var connectionString = "Host=localhost;Port=5433;Database=MarketSystemDB;Username=postgres;Password=SuperSecur3MarketDB!2026";
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
