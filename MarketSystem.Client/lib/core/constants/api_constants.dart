@@ -10,20 +10,15 @@ class ApiConstants {
   static const String _androidDockerLocalUrl = 'http://10.0.2.2:8080/api';
 
   static String get baseUrl {
-    // 🌍 CHOOSE ENVIRONMENT:
-    // true = Production server (103.125.217.28:8080)
-    // false = Local development (choose Docker or non-Docker below)
-    const bool useProduction = false;
+    const bool useProduction = true;
 
-    // 🐳 Docker Compose yoki local'ni tanlang:
-    const bool useDocker = true;
+    const bool useDocker = false;
 
     if (useProduction) {
       return _productionUrl;
     }
 
     if (useDocker) {
-      // Docker Compose ishlayapti (port 8080)
       if (kIsWeb) {
         return _dockerLocalUrl;
       } else if (Platform.isAndroid) {
