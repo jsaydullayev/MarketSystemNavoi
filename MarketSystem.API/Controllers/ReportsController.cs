@@ -494,5 +494,73 @@ public class ReportsController : ControllerBase
         var report = await _reportService.GetMonthlyCategorySalesAsync(utcDate, userRole, cancellationToken);
         return Ok(report);
     }
+
+    /// <summary>
+    /// Export daily report to PDF
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date)
+    {
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var pdfBytes = await _reportService.ExportDailyReportToPdfAsync(utcDate, userRole);
+
+        return File(
+            pdfBytes,
+            "application/pdf",
+            $"daily_report_{date:yyyyMMdd}.pdf"
+        );
+    }
+
+    /// <summary>
+    /// Export period report to PDF
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<IActionResult> ExportPeriodReportToPdf(
+        [FromQuery] DateTime start,
+        [FromQuery] DateTime end)
+    {
+        if (start > end)
+            return BadRequest("Start date cannot be after end date");
+
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcStart = DateTime.SpecifyKind(start.Date, DateTimeKind.Utc);
+        var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
+
+        var request = new PeriodReportRequest(utcStart, utcEnd);
+        var pdfBytes = await _reportService.ExportPeriodReportToPdfAsync(request, userRole);
+
+        return File(
+            pdfBytes,
+            "application/pdf",
+            $"period_report_{start:yyyyMMdd}_{end:yyyyMMdd}.pdf"
+        );
+    }
+
+    /// <summary>
+    /// Export comprehensive report to PDF
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date)
+    {
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        // Convert to UTC to prevent PostgreSQL DateTime Kind error
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var pdfBytes = await _reportService.ExportComprehensiveReportToPdfAsync(utcDate, userRole);
+
+        return File(
+            pdfBytes,
+            "application/pdf",
+            $"comprehensive_report_{date:yyyyMMdd}.pdf"
+        );
+    }
 }
 
