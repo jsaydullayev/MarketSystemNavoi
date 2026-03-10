@@ -1,446 +1,287 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/users_service.dart';
 import '../../../core/providers/auth_provider.dart';
-import 'add_user_screen.dart';
+import '../widgets/user_card.dart';
+import '../widgets/user_info_sheet.dart';
+import '../widgets/add_user_sheet.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
-
   @override
   State<UsersScreen> createState() => _UsersScreenState();
 }
 
 class _UsersScreenState extends State<UsersScreen> {
   List<dynamic> _users = [];
-  List<dynamic> _filteredUsers = [];
+  List<dynamic> _filtered = [];
   bool _isLoading = false;
-  String? _errorMessage;
-  final _searchController = TextEditingController();
+  String? _error;
+  final _searchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadUsers();
-    _searchController.addListener(_filterUsers);
+    _searchCtrl.addListener(_filter);
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
-  void _filterUsers() {
-    final query = _searchController.text.toLowerCase();
+  void _filter() {
+    final q = _searchCtrl.text.toLowerCase();
     setState(() {
-      if (query.isEmpty) {
-        _filteredUsers = _users;
-      } else {
-        _filteredUsers = _users.where((user) {
-          final fullName = (user['fullName'] ?? '').toLowerCase();
-          final username = (user['username'] ?? '').toLowerCase();
-          return fullName.contains(query) || username.contains(query);
-        }).toList();
-      }
+      _filtered = q.isEmpty
+          ? _users
+          : _users.where((u) {
+              return (u['fullName'] ?? '').toLowerCase().contains(q) ||
+                  (u['username'] ?? '').toLowerCase().contains(q);
+            }).toList();
     });
   }
 
   Future<void> _loadUsers() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
+      _error = null;
     });
-
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final usersService = UsersService(authProvider: authProvider);
-
-      final users = await usersService.getAllUsers();
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final users = await UsersService(authProvider: auth).getAllUsers();
       setState(() {
         _users = users;
-        _filteredUsers = users;
+        _filtered = users;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Xatolik: $e';
+        final l10n = AppLocalizations.of(context)!;
+        _error = '${l10n.error}: $e';
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _toggleUserStatus(dynamic user) async {
+  Future<void> _toggleStatus(dynamic user) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final usersService = UsersService(authProvider: authProvider);
-
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final svc = UsersService(authProvider: auth);
       final isActive = user['isActive'] ?? false;
-
       if (isActive) {
-        await usersService.deactivateUser(user['id']);
+        await svc.deactivateUser(user['id']);
       } else {
-        await usersService.activateUser(user['id']);
+        await svc.activateUser(user['id']);
       }
-
       await _loadUsers();
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isActive
-                ? 'User deaktivatsiya qilindi'
-                : 'User aktivatsiya qilindi'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(isActive ? l10n.deactivated : l10n.activated),
+          backgroundColor: Colors.green,
+        ));
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('${l10n.error}: $e'), backgroundColor: Colors.red));
     }
   }
 
   Future<void> _deleteUser(dynamic user) async {
-    // O'zini o'chira olmaydi
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final currentUserId = authProvider.user?['userId'];
-
-    if (user['id'] == currentUserId) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('O\'zingizni o\'chira olmaysiz'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    final l10n = AppLocalizations.of(context)!;
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    if (user['id'] == auth.user?['userId']) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(l10n.cannotDeleteSelf),
+        backgroundColor: Colors.red,
+      ));
       return;
     }
-
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Foydalanuvchini o\'chirish'),
-        content: Text(
-            '${user['fullName']} (${user['username']}) foydalanuvchisini rostdan ham o\'chirmoqchimisiz?'),
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(l10n.deleteUser),
+        content:
+            Text(l10n.deleteUserConfirm(user['fullName'] ?? user['userName'])),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Yo\'q'),
-          ),
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.no)),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Ha'),
-          ),
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text(l10n.yesDelete)),
         ],
       ),
     );
-
     if (confirmed == true) {
       try {
-        final usersService = UsersService(authProvider: authProvider);
-        await usersService.deleteUser(user['id']);
+        await UsersService(authProvider: auth).deleteUser(user['id']);
         await _loadUsers();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Foydalanuvchi muvaffaqiyatli o\'chirildi'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(l10n.deleteSuccess),
+            backgroundColor: Colors.green,
+          ));
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Xatolik: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('${l10n.error}: $e'), backgroundColor: Colors.red));
       }
     }
-  }
-
-  void _showAddUserDialog() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const AddUserScreen(),
-      ),
-    ).then((result) {
-      if (result == true) {
-        _loadUsers();
-      }
-    });
-  }
-
-  void _showUserInfo(dynamic user) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(user['fullName'] ?? 'Noma\'lum'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Username: ${user['username'] ?? 'Noma\'lum'}'),
-            const SizedBox(height: 8),
-            Text('Role: ${user['role'] ?? 'Noma\'lum'}'),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Text('Holati: '),
-                Chip(
-                  label: Text(
-                    (user['isActive'] ?? false) ? 'Active' : 'Inactive',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  backgroundColor: (user['isActive'] ?? false)
-                      ? Colors.green.shade100
-                      : Colors.red.shade100,
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Yopish'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final userRole = authProvider.user?['role'];
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.users,
-        onRefresh: _loadUsers,
-      ),
-      body: Column(
-        children: [
-          // Info banner
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade50,
-            child: const Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.blue),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Yangi user qo\'shgandan so\'ng, unga username va password bering. U o\'sha ma\'lumotlar bilan login qiladi.',
-                    style: TextStyle(color: Colors.blue, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (_) => _filterUsers(),
-              decoration: InputDecoration(
-                hintText: 'Foydalanuvchi qidirish...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _filterUsers();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
-              ),
-            ),
-          ),
-
-          // Users list
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: Colors.red),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadUsers,
-                              child: const Text('Qayta urinish'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _filteredUsers.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.people_outline,
-                                  size: 80,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchController.text.isNotEmpty
-                                      ? 'Foydalanuvchi topilmadi'
-                                      : 'Foydalanuvchilar yo\'q',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadUsers,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _filteredUsers.length,
-                              itemBuilder: (context, index) {
-                                final user = _filteredUsers[index];
-                                return _buildUserCard(user, userRole);
-                              },
-                            ),
-                          ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddUserDialog,
-        icon: const Icon(Icons.person_add),
-        label: const Text('Yangi user'),
-      ),
-    );
-  }
-
-  Widget _buildUserCard(dynamic user, String? currentUserRole) {
-    final isActive = user['isActive'] ?? false;
-    final role = user['role'] ?? '';
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: ListTile(
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: _getRoleColor(role).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.person,
-            color: _getRoleColor(role),
-          ),
-        ),
-        title: Text(
-          user['fullName'] ?? 'Noma\'lum',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('@${user['username'] ?? 'Noma\'lum'}'),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Chip(
-                  label: Text(
-                    role,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  backgroundColor: _getRoleColor(role).withOpacity(0.2),
-                  padding: EdgeInsets.zero,
-                ),
-                const SizedBox(width: 8),
-                Chip(
-                  label: Text(
-                    isActive ? 'Active' : 'Inactive',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  backgroundColor: isActive
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.red.withOpacity(0.2),
-                  padding: EdgeInsets.zero,
-                ),
-              ],
-            ),
-          ],
-        ),
-        isThreeLine: true,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: () => _showUserInfo(user),
-            ),
-            IconButton(
-              icon: Icon(isActive ? Icons.block : Icons.check_circle),
-              color: isActive ? Colors.orange : Colors.green,
-              onPressed: () => _toggleUserStatus(user),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteUser(user),
-            ),
-          ],
+    return NetworkWrapper(
+      onRetry: _loadUsers,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(title: l10n.users, onRefresh: _loadUsers),
+        body: Column(children: [
+          _SearchBar(controller: _searchCtrl, isDark: isDark),
+          Expanded(child: _buildBody(isDark)),
+        ]),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => AddUserSheet.show(context),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.person_add_rounded),
+          label:
+              Text(l10n.newUser, style: TextStyle(fontWeight: FontWeight.w600)),
         ),
       ),
     );
   }
 
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'owner':
-        return Colors.purple;
-      case 'admin':
-        return Colors.blue;
-      case 'seller':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
+  Widget _buildBody(bool isDark) {
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_error != null)
+      return _ErrorView(message: _error!, onRetry: _loadUsers);
+    if (_filtered.isEmpty)
+      return _EmptyView(isSearching: _searchCtrl.text.isNotEmpty);
+
+    return RefreshIndicator(
+      onRefresh: _loadUsers,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+        itemCount: _filtered.length,
+        itemBuilder: (_, i) => UserCard(
+          user: _filtered[i],
+          onTap: () => UserInfoSheet.show(context, user: _filtered[i]),
+          onToggleStatus: () => _toggleStatus(_filtered[i]),
+          onDelete: () => _deleteUser(_filtered[i]),
+        ),
+      ),
+    );
+  }
+}
+
+// Search bar
+class _SearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final bool isDark;
+  const _SearchBar({required this.controller, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          hintText: l10n.searchUser,
+          hintStyle: TextStyle(
+              color: isDark ? Colors.white30 : Colors.grey.shade400,
+              fontSize: 14),
+          prefixIcon: Icon(Icons.search_rounded,
+              color: isDark ? Colors.white38 : Colors.grey.shade400, size: 20),
+          suffixIcon: controller.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.clear_rounded,
+                      size: 18,
+                      color: isDark ? Colors.white38 : Colors.grey.shade400),
+                  onPressed: controller.clear)
+              : null,
+          filled: true,
+          fillColor:
+              isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade50,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+}
+
+// Empty / Error views
+class _EmptyView extends StatelessWidget {
+  final bool isSearching;
+  const _EmptyView({required this.isSearching});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                shape: BoxShape.circle),
+            child: Icon(Icons.people_outline_rounded,
+                size: 44, color: AppColors.primary)),
+        const SizedBox(height: 14),
+        Text(isSearching ? l10n.userNotFound : l10n.noUsersFound,
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white54 : Colors.grey.shade500)),
+      ]),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorView({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text(message,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white),
+              child: Text(l10n.retry)),
+        ]),
+      ),
+    );
   }
 }

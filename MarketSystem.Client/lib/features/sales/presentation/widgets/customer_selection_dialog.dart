@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/data/services/customer_service.dart';
@@ -16,9 +17,9 @@ class CustomerSelectionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Bu dialog async data yuklashi kerak, shuning uchun FutureBuilder ishlatamiz
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final customerService = CustomerService(authProvider: authProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return FutureBuilder(
       future: customerService.getAllCustomers(),
@@ -34,12 +35,12 @@ class CustomerSelectionDialog extends StatelessWidget {
 
         if (snapshot.hasError) {
           return AlertDialog(
-            title: const Text('Xatolik'),
+            title: Text(l10n.error),
             content: Text('${snapshot.error}'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Yopish'),
+                child: Text(l10n.closed),
               ),
             ],
           );
@@ -48,20 +49,20 @@ class CustomerSelectionDialog extends StatelessWidget {
         final customersData = snapshot.data ?? [];
 
         return AlertDialog(
-          title: const Text('Mijoz tanlang'),
+          title: Text(l10n.selectCustomer),
           content: SizedBox(
             width: 400,
             height: 400,
             child: customersData.isEmpty
-                ? const Center(
+                ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.person_outline,
+                        const Icon(Icons.person_outline,
                             size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text('Mijozlar topilmadi',
-                            style: TextStyle(color: Colors.grey)),
+                        const SizedBox(height: 16),
+                        Text(l10n.noCustomersFound,
+                            style: const TextStyle(color: Colors.grey)),
                       ],
                     ),
                   )
@@ -69,7 +70,7 @@ class CustomerSelectionDialog extends StatelessWidget {
                     itemCount: customersData.length,
                     itemBuilder: (context, index) {
                       final customer = customersData[index];
-                      final customerName = customer['fullName'] ?? 'Noma\'lum';
+                      final customerName = customer['fullName'] ?? l10n.unknown;
                       final customerPhone = customer['phone'] ?? '';
                       final customerId = customer['id']?.toString() ?? '';
 
@@ -94,8 +95,8 @@ class CustomerSelectionDialog extends StatelessWidget {
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content:
-                                      Text('✅ Mijoz qo\'shildi: $customerName'),
+                                  content: Text(
+                                      '${l10n.customerAdded}: $customerName'),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -103,7 +104,7 @@ class CustomerSelectionDialog extends StatelessWidget {
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Xatolik: $e'),
+                                  content: Text('${l10n.error}: $e'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -126,8 +127,8 @@ class CustomerSelectionDialog extends StatelessWidget {
                     customerId: null,
                   );
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('✅ Mijoz olib tashlandi'),
+                    SnackBar(
+                      content: Text(l10n.customerRemoved),
                       backgroundColor: Colors.orange,
                     ),
                   );
@@ -135,18 +136,18 @@ class CustomerSelectionDialog extends StatelessWidget {
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Xatolik: $e'),
+                      content: Text('${l10n.error}: $e'),
                       backgroundColor: Colors.red,
                     ),
                   );
                 }
               },
-              child: const Text('Mijozni olib tashlash',
-                  style: TextStyle(color: Colors.red)),
+              child: Text(l10n.removeCustomer,
+                  style: const TextStyle(color: Colors.red)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Bekor qilish'),
+              child: Text(l10n.cancel),
             ),
           ],
         );

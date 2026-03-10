@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ContinueSaleCartItem extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -23,128 +24,173 @@ class ContinueSaleCartItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
     final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final itemTotal = price * qty;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      width: 160,
+      width: 155,
       margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            item['productName'],
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-              color: Color(0xFF1F2937),
+        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color:
+              isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '${item['quantity']} x ${NumberFormatter.format(item['salePrice'])}',
-            style: const TextStyle(fontSize: 10, color: Color(0xFF6B7280)),
-          ),
-          Row(
-            children: [
-              Text(
-                NumberFormatter.formatDecimal(itemTotal),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF10B981),
-                ),
-              ),
-              const SizedBox(width: 4),
-              GestureDetector(
-                onTap: onEditPrice,
-                child:
-                    const Icon(Icons.edit, size: 14, color: Color(0xFF3B82F6)),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (isClosed)
-                GestureDetector(
-                  onTap: onReturn,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(6),
-                      border:
-                          Border.all(color: Colors.orange.shade300, width: 1),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(9),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Mahsulot nomi + O'chirish
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item['productName'] ?? '',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: isDark ? Colors.white : const Color(0xFF1F2937),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.assignment_return,
-                            size: 14, color: Colors.orange.shade700),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Qaytarish',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange.shade700,
-                          ),
-                        ),
-                      ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (!isClosed)
+                  GestureDetector(
+                    onTap: onRemove,
+                    child: const Icon(Icons.close_rounded,
+                        size: 14, color: Color(0xFFEF4444)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 2),
+
+            // Miqdor x narx
+            Text(
+              '${qty % 1 == 0 ? qty.toInt() : qty} × ${NumberFormatter.format(price)}',
+              style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+            ),
+
+            // Jami + Tahrirlash
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    NumberFormatter.formatDecimal(itemTotal),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF10B981),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (!isClosed)
+                  GestureDetector(
+                    onTap: onEditPrice,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3B82F6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: const Icon(Icons.edit_rounded,
+                          size: 11, color: Color(0xFF3B82F6)),
                     ),
                   ),
-                )
-              else
-                Row(
-                  children: [
-                    _squareButton(Icons.remove, onDecrement),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '${item['quantity']}',
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600),
+              ],
+            ),
+
+            const Spacer(),
+
+            // Qaytarish yoki miqdor o'zgartirish
+            if (isClosed)
+              GestureDetector(
+                onTap: onReturn,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.assignment_return_rounded,
+                          size: 12, color: Colors.orange.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        l10n.returnAction,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _QtyButton(icon: Icons.remove_rounded, onTap: onDecrement),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      qty % 1 == 0 ? '${qty.toInt()}' : '$qty',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF1F2937),
                       ),
                     ),
-                    _squareButton(Icons.add, onIncrement),
-                  ],
-                ),
-              if (!isClosed)
-                GestureDetector(
-                  onTap: onRemove,
-                  child: const Icon(Icons.close,
-                      size: 14, color: Color(0xFFEF4444)),
-                ),
-            ],
-          ),
-        ],
+                  ),
+                  _QtyButton(icon: Icons.add_rounded, onTap: onIncrement),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _squareButton(IconData icon, VoidCallback onTap) {
+class _QtyButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _QtyButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 24,
         height: 24,
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6),
+          color: const Color(0xFF3B82F6).withOpacity(0.1),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Icon(icon, size: 14, color: const Color(0xFF374151)),
+        child: Icon(icon, size: 13, color: const Color(0xFF3B82F6)),
       ),
     );
   }

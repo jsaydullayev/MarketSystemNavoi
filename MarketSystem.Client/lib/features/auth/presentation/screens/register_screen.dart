@@ -58,62 +58,65 @@ class _RegisterScreenState extends State<RegisterScreen>
       if (!mounted) return;
 
       showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_outline,
-                  size: 48,
-                  color: AppTheme.primary,
-                ),
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            final l10n = AppLocalizations.of(context)!;
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Zapros adminga yuborildi',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
-                ),
-                textAlign: TextAlign.center,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle_outline,
+                      size: 48,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.requestSentToAdmin,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.requestSentDescription,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close dialog
+                        Navigator.pop(context); // Go back to login
+                      },
+                      style: AppTheme.primaryButtonStyle,
+                      child: Text(l10n.back),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Sizning so\'rovingiz administratorga yuborildi. Tasdiqlashdan keyin siz bilan bog\'lanamiz.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close dialog
-                    Navigator.pop(context); // Go back to login
-                  },
-                  style: AppTheme.primaryButtonStyle,
-                  child: const Text('Orqaga'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+            );
+          });
     }
   }
 
@@ -274,15 +277,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                             style: const TextStyle(
                                 color: AppTheme.textPrimary, fontSize: 14),
                             decoration: AppTheme.inputDecoration(
-                              label: 'Market nomi',
+                              label: l10n.marketName,
                               icon: Icons.store_outlined,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Market nomini kiriting';
+                                return l10n.enterMarketName;
                               }
                               if (value.length < 3) {
-                                return 'Market nomi kamida 3 ta belgidan iborat bo\'lishi kerak';
+                                return l10n.marketNameTooShort;
                               }
                               return null;
                             },

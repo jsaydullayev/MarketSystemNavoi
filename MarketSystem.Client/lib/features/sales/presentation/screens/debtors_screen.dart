@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -42,6 +43,8 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
   }
 
   Future<void> _loadDebtors() async {
+    final l10n = AppLocalizations.of(context)!;
+
     print('📥 DebtorsScreen: _loadDebtors called...');
     setState(() {
       _isLoading = true;
@@ -67,7 +70,7 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Xatolik: $e'),
+            content: Text('${l10n.error}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -80,30 +83,34 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.debtors,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _debtors.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadDebtors,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _debtors.length,
-                    itemBuilder: (context, index) {
-                      final debtor = _debtors[index];
-                      return _buildDebtorCard(debtor);
-                    },
+    return NetworkWrapper(
+      onRetry: _loadDebtors,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.debtors,
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _debtors.isEmpty
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: _loadDebtors,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _debtors.length,
+                      itemBuilder: (context, index) {
+                        final debtor = _debtors[index];
+                        return _buildDebtorCard(debtor);
+                      },
+                    ),
                   ),
-                ),
+      ),
     );
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -115,7 +122,7 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Qarzdorlar yo\'q',
+            l10n.noDebtors,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -124,7 +131,7 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Qarzli mijozlar bu yerda ko\'rsatiladi',
+            l10n.debtorsWillBeShownHere,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade500,
@@ -136,7 +143,8 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
   }
 
   Widget _buildDebtorCard(dynamic debtor) {
-    final customerName = debtor['customerName'] ?? 'Mijozsiz';
+    final l10n = AppLocalizations.of(context)!;
+    final customerName = debtor['customerName'] ?? l10n.noCustomer;
     final customerPhone = debtor['customerPhone'];
     final totalDebt = (debtor['totalDebt'] as num?)?.toDouble() ?? 0.0;
     final paidAmount = (debtor['paidAmount'] as num?)?.toDouble() ?? 0.0;
@@ -156,20 +164,22 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
         final difference = tashkentNow.difference(tashkentDate);
 
         if (difference.inDays == 0) {
-          formattedDate = 'Bugun ${NumberFormatter.formatTime(oldestDebtDate)}';
+          formattedDate =
+              '${l10n.today} ${NumberFormatter.formatTime(oldestDebtDate)}';
         } else if (difference.inDays == 1) {
-          formattedDate = 'Kecha ${NumberFormatter.formatTime(oldestDebtDate)}';
+          formattedDate =
+              '${l10n.yesterday} ${NumberFormatter.formatTime(oldestDebtDate)}';
         } else if (difference.inDays < 30) {
           formattedDate =
-              '${difference.inDays} kun oldin, ${NumberFormatter.formatTime(oldestDebtDate)}';
+              '${l10n.daysAgo(difference.inDays)}, ${NumberFormatter.formatTime(oldestDebtDate)}';
         } else if (difference.inDays < 365) {
           final months = (difference.inDays / 30).floor();
           formattedDate =
-              '$months oy oldin, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
+              '${l10n.monthsAgo(months)}, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
         } else {
           final years = (difference.inDays / 365).floor();
           formattedDate =
-              '$years yil oldin, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
+              '${l10n.yearsAgo(years)}, ${NumberFormatter.formatDateTime(oldestDebtDate, showTime: false)}';
         }
       } catch (e) {
         formattedDate = '';
@@ -315,7 +325,7 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Jami qarz:',
+                            '${l10n.totalDebt}:',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -337,9 +347,9 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'To\'langan:',
-                              style: TextStyle(
+                            Text(
+                              '${l10n.paid}:',
+                              style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                                 color: Color(0xFF10B981),
@@ -360,9 +370,9 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Qolgan qarz:',
-                            style: TextStyle(
+                          Text(
+                            '${l10n.remainingDebt}:',
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.red,
@@ -394,7 +404,7 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '$debtCount ta savdo',
+                      l10n.salesCount(debtCount),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,

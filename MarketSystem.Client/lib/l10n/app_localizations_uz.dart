@@ -72,7 +72,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get customers => 'Mijozlar';
 
   @override
-  String get zakup => 'Xaridlar';
+  String get zakup => 'Zakuplar';
 
   @override
   String get reports => 'Hisobotlar';
@@ -183,10 +183,13 @@ class AppLocalizationsUz extends AppLocalizations {
   String get confirm => 'Tasdiqlash';
 
   @override
-  String get close => 'Yopish';
+  String get total => 'Jami';
 
   @override
-  String get total => 'Jami';
+  String get from => 'Dan';
+
+  @override
+  String get to => 'Gacha';
 
   @override
   String get paid => 'To\'langan';
@@ -268,9 +271,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get enterPhone => 'Telefon raqamini kiriting';
 
   @override
-  String get priceMustBePositive => 'Narx musbat bo\'lishi kerak';
-
-  @override
   String get quantityMustBePositive => 'Miqdor musbat bo\'lishi kerak';
 
   @override
@@ -339,9 +339,6 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get card => 'Karta';
-
-  @override
-  String get selectProduct => 'Mahsulotni tanlang';
 
   @override
   String get noProducts => 'Mahsulotlar yo\'q';
@@ -641,9 +638,6 @@ class AppLocalizationsUz extends AppLocalizations {
   String get all => 'Barchasi';
 
   @override
-  String get closed => 'Yopilgan';
-
-  @override
   String get debt => 'Qarz';
 
   @override
@@ -657,9 +651,6 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get soldProducts => 'Sotilgan mahsulotlar';
-
-  @override
-  String get returnProduct => 'Tovarni qaytarish';
 
   @override
   String get returnAmount => 'Qaytariladigan summa';
@@ -699,9 +690,6 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get defect => 'Brak';
-
-  @override
-  String get invalidQuantity => 'Xato miqdor!';
 
   @override
   String get finishReturn => 'Vozvratni yakunlash';
@@ -762,7 +750,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get newDebt => 'Yangi qarz';
 
   @override
-  String get onDebt => 'Qarzga:';
+  String get onDebt => 'Qarzga';
 
   @override
   String get remaining => 'Qolgan:';
@@ -926,4 +914,560 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get phoneFormatHint => 'Format: 998XXXXXXXXX (12 ta raqam)';
+
+  @override
+  String get productNotFound => 'Mahsulot topilmadi';
+
+  @override
+  String priceSom(Object price) {
+    return 'Narxi: $price so\'m';
+  }
+
+  @override
+  String get selectProduct => 'Mahsulot tanlang';
+
+  @override
+  String addedBy(Object user) {
+    return 'Qo\'shdi: $user';
+  }
+
+  @override
+  String costPriceSom(Object price) {
+    return 'Olingan narxi: $price so\'m';
+  }
+
+  @override
+  String get addPurchase => 'Zakup qo\'shish';
+
+  @override
+  String get noPurchases => 'Xaridlar yo\'q';
+
+  @override
+  String get errorLoadingData => 'Ma\'lumotlarni yuklab olishda xatolik';
+
+  @override
+  String get fileSaved => 'Fayl saqlandi';
+
+  @override
+  String get fileSaveError => 'Faylni saqlashda xatolik yuz berdi';
+
+  @override
+  String get costPriceField => 'Olingan narxi (so\'m)';
+
+  @override
+  String get noProductsAddFirst =>
+      'Mahsulotlar yo\'q. Avval mahsulot qo\'shing';
+
+  @override
+  String get onlyAdminOwnerCanAdd => 'Faqat Admin va Owner zakup qo\'sha oladi';
+
+  @override
+  String get fillAmountAndPrice => 'Miqdor va narxni to\'ldiring';
+
+  @override
+  String get activated => 'Aktivatsiya qilindi';
+
+  @override
+  String get deactivated => 'Deaktivatsiya qilindi';
+
+  @override
+  String get cannotDeleteSelf => 'O\'zingizni o\'chira olmaysiz';
+
+  @override
+  String get deleteUser => 'Foydalanuvchini o\'chirish';
+
+  @override
+  String deleteUserConfirm(Object name) {
+    return '$name ni o\'chirmoqchimisiz?';
+  }
+
+  @override
+  String get searchUser => 'Foydalanuvchi qidirish...';
+
+  @override
+  String get userNotFound => 'Foydalanuvchi topilmadi';
+
+  @override
+  String get noUsersFound => 'Foydalanuvchilar yo\'q';
+
+  @override
+  String get nameRequired => 'Ism kiritish shart';
+
+  @override
+  String get usernameRequired => 'Username shart';
+
+  @override
+  String get minThreeChars => 'Kamida 3 ta belgi';
+
+  @override
+  String get noSpacesAllowed => 'Bo\'sh joy bo\'lmasin';
+
+  @override
+  String get passwordRequired => 'Parol shart';
+
+  @override
+  String get confirmPasswordRequired => 'Tasdiqlash shart';
+
+  @override
+  String get userCreatedSuccess => 'Muvaffaqiyatli yaratildi!';
+
+  @override
+  String get giveCredentialsToUser =>
+      'Username va parolni yangi foydalanuvchiga bering';
+
+  @override
+  String get noPermissionToEditdd =>
+      'Yopilgan qarzni tahrirlash huquqi yo\'q (faqat Owner/Admin)';
+
+  @override
+  String get priceUpdatedSuccess => 'Narx muvaffaqiyatli yangilandi';
+
+  @override
+  String get allDebtsPaid => 'Barcha qarzlar to\'langan';
+
+  @override
+  String debtCount(Object count) {
+    return '$count ta qarz';
+  }
+
+  @override
+  String get pay => 'To\'lash';
+
+  @override
+  String get cls => 'Yopiq';
+
+  @override
+  String get open => 'Ochiq';
+
+  @override
+  String get ddDebtAudit =>
+      'Bu qarz yopiq. O\'zgartirish audit logga yoziladi.';
+
+  @override
+  String get exampleComment => 'Masalan: Xato narx qo\'yilgan';
+
+  @override
+  String get commentRequiredLabel => 'Izoh (majburiy)';
+
+  @override
+  String get priceWithCurrency => 'Narx (so\'m)';
+
+  @override
+  String get newPriceLabel => 'Yangi narx';
+
+  @override
+  String productQuantityAndOldPrice(Object price, Object quantity) {
+    return '$quantity dona  ·  Eski narx: $price so\'m';
+  }
+
+  @override
+  String get editPriceTitle => 'Narxni tahrirlash';
+
+  @override
+  String get product => 'Mahsulot';
+
+  @override
+  String get yesConfirm => 'Ha, tasdiqlayman';
+
+  @override
+  String confirmPriceChangeDesc(Object price) {
+    return 'Narxni $price so\'mga o\'zgartirmoqchimisiz?';
+  }
+
+  @override
+  String get commentRequiredError => 'Izoh kiritish majburiy';
+
+  @override
+  String get priceMustBePositive => 'Narx 0 dan katta bo\'lishi kerak';
+
+  @override
+  String get paymentSuccess => 'To\'lov muvaffaqiyatli amalga oshirildi!';
+
+  @override
+  String get paymentAmountLabel => 'To\'lov summasi';
+
+  @override
+  String payingTooMuchWarning(Object amount) {
+    return 'Qarz miqdoridan $amount so\'m ko\'p to\'layapsiz';
+  }
+
+  @override
+  String get processPayment => 'To\'lovni amalga oshirish';
+
+  @override
+  String salesCount(Object count) {
+    return '$count ta savdo';
+  }
+
+  @override
+  String get netProfit => 'Sof foyda';
+
+  @override
+  String get noSalesToday => 'Bu kunda sotuvlar yo\'q';
+
+  @override
+  String get downloadExcel => 'Excel yuklab olish';
+
+  @override
+  String get reportDownloaded => 'Hisobot yuklab olindi';
+
+  @override
+  String get downloadError => 'Yuklab olishda xatolik';
+
+  @override
+  String get reportDownloadSuccess => 'Hisobot muvaffaqiyatli yuklab olindi!';
+
+  @override
+  String get byPaymentType => 'To\'lov turlari bo\'yicha';
+
+  @override
+  String get select => 'Tanlash';
+
+  @override
+  String get noReports => 'Hisobotlar yo\'q';
+
+  @override
+  String get totalValue => 'Jami qiymat';
+
+  @override
+  String get sellingPrice => 'Sotuv narxi';
+
+  @override
+  String get productCount => 'Mahsulotlar soni';
+
+  @override
+  String get incomingPrice => 'Kelgan narxi';
+
+  @override
+  String andMoreProducts(Object count) {
+    return 'Va yana $count ta mahsulot bor...';
+  }
+
+  @override
+  String get totalSale => 'Jami savdo';
+
+  @override
+  String get saleCount => 'Savdolar soni';
+
+  @override
+  String get averageSale => 'O\'rtacha savdo';
+
+  @override
+  String get averageTransactionValue => 'Har bir savdoning o\'rtacha summasi';
+
+  @override
+  String transactionStats(Object count, Object percentage) {
+    return '$count ta tranzaksiya  •  $percentage%';
+  }
+
+  @override
+  String get daily => 'Kunlik';
+
+  @override
+  String get monthly => 'Oylik';
+
+  @override
+  String insufficientFundsWithBalance(Object balance) {
+    return 'Yetarli pul yo\'q! Mavjud: $balance so\'m';
+  }
+
+  @override
+  String withdrawalSuccessType(Object type) {
+    return '$type muvaffaqiyatli olindi';
+  }
+
+  @override
+  String get totalBalance => 'Umumiy balans';
+
+  @override
+  String updatedAt(Object time) {
+    return 'Yangilandi: $time';
+  }
+
+  @override
+  String get todaysIncomes => 'Bugungi tushumlar';
+
+  @override
+  String get cashMoney => 'Naqd pul';
+
+  @override
+  String get todaysSales => 'Bugungi savdolar';
+
+  @override
+  String itemsCount(Object count) {
+    return '$count ta';
+  }
+
+  @override
+  String get selectPaymentTypeAndAmount => 'Pul turini va miqdorini tanlang';
+
+  @override
+  String get paymentTypeLabel => 'Pul turi';
+
+  @override
+  String get waiting => 'Kutilmoqda...';
+
+  @override
+  String get productRemoved => 'Mahsulot olib tashlandi';
+
+  @override
+  String get priceUpdated => 'Narx yangilandi';
+
+  @override
+  String get productReturned => 'Mahsulot qaytarildi';
+
+  @override
+  String get saleNotFound => 'Savdo topilmadi';
+
+  @override
+  String get productsNotFound => 'Mahsulotlar topilmadi';
+
+  @override
+  String productAddedToCart(Object name) {
+    return '$name savatga qo\'shildi';
+  }
+
+  @override
+  String get changePrice => 'Narxni o\'zgartirish';
+
+  @override
+  String get currentPrice => 'Hozirgi narx';
+
+  @override
+  String quantityCount(Object quantity) {
+    return 'Miqdor: $quantity ta';
+  }
+
+  @override
+  String priceChangedFor(Object name) {
+    return '$name uchun narx o\'zgartirildi';
+  }
+
+  @override
+  String get noSales => 'Savdolar yo\'q';
+
+  @override
+  String debtAmount(Object amount) {
+    return 'Qarz: $amount';
+  }
+
+  @override
+  String get noDebtors => 'Qarzdorlar yo\'q';
+
+  @override
+  String get debtorsWillBeShownHere => 'Qarzli mijozlar bu yerda ko\'rsatiladi';
+
+  @override
+  String get today => 'Bugun';
+
+  @override
+  String get yesterday => 'Kecha';
+
+  @override
+  String daysAgo(Object count) {
+    return '$count kun oldin';
+  }
+
+  @override
+  String monthsAgo(Object count) {
+    return '$count oy oldin';
+  }
+
+  @override
+  String yearsAgo(Object count) {
+    return '$count yil oldin';
+  }
+
+  @override
+  String get deleteSale => 'Savdoni o\'chirish';
+
+  @override
+  String get deleteSaleConfirm =>
+      'Haqiqatan ham bu savdoni o\'chirmoqchimisiz?';
+
+  @override
+  String get noDebtSalesFound => 'Qarz savdolari topilmadi';
+
+  @override
+  String get debtorCustomers => 'Qarzdor mijozlar';
+
+  @override
+  String get ongoing => 'Davom etayotgan';
+
+  @override
+  String get debtSales => 'Qarz savdolar';
+
+  @override
+  String get paidSales => 'To\'langan savdolar';
+
+  @override
+  String get saleDeleted => 'Savdo o\'chirildi';
+
+  @override
+  String get draftSaveError => 'Draft saqlashda xatolik';
+
+  @override
+  String get enterQuantityHint => 'Miqdor kiriting...';
+
+  @override
+  String get selectCustomerForDebtWarning =>
+      'Qarzga olish uchun mijoz tanlang!';
+
+  @override
+  String get makePayment => 'TO\'LOV QILISH';
+
+  @override
+  String get closed => 'Yopish';
+
+  @override
+  String get customerRemoved => 'Mijoz olib tashlandi';
+
+  @override
+  String get removeCustomer => 'Mijozni olib tashlash';
+
+  @override
+  String get paymentMethod => 'To\'lov usuli';
+
+  @override
+  String get paymentAmount => 'To\'lov miqdori';
+
+  @override
+  String get selectPaymentMethod => 'To\'lov usulini tanlang';
+
+  @override
+  String get enterValidAmount => 'To\'g\'ri miqdor kiriting';
+
+  @override
+  String get continueAction => 'Davom etish';
+
+  @override
+  String saleIdTitle(Object id) {
+    return 'Savdo #$id';
+  }
+
+  @override
+  String get noOngoingSales => 'Davom etayotgan savdolar yo\'q';
+
+  @override
+  String get initialSalesWillBeShownHere =>
+      'Boshlang\'ich savdolar bu yerda ko\'rsatiladi';
+
+  @override
+  String get returnProduct => 'Mahsulotni qaytarish';
+
+  @override
+  String get availableQuantity => 'Mavjud miqdor';
+
+  @override
+  String get returnQuantity => 'Qaytarish miqdori';
+
+  @override
+  String get invalidQuantity => 'Noto\'g\'ri miqdor';
+
+  @override
+  String get paymentHistory => 'To\'lov tarixi';
+
+  @override
+  String get hasDebt => 'Qarz bor';
+
+  @override
+  String get noPayments => 'To\'lovlar yo\'q';
+
+  @override
+  String get noPermissionToEditClosed =>
+      'Yopilgan qarzni tahrirlash uchun huquqingiz yo\'q (faqat Egasi/Admin)';
+
+  @override
+  String get closedDebtAudit => 'Yopilgan qarzlar auditi';
+
+  @override
+  String get requestSentToAdmin => 'Zapros adminga yuborildi';
+
+  @override
+  String get requestSentDescription =>
+      'Sizning so\'rovingiz administratorga yuborildi. Tasdiqlashdan keyin siz bilan bog\'lanamiz.';
+
+  @override
+  String get back => 'Orqaga';
+
+  @override
+  String get marketName => 'Market nomi';
+
+  @override
+  String get enterMarketName => 'Market nomini kiriting';
+
+  @override
+  String get marketNameTooShort =>
+      'Market nomi kamida 3 ta belgidan iborat bo\'lishi kerak';
+
+  @override
+  String get newCategory => 'Yangi kategoriya';
+
+  @override
+  String get fillIn => 'To\'ldiring';
+
+  @override
+  String get addFirstCategory => 'Birinchi kategoriyangizni qo\'shing';
+
+  @override
+  String get todaysReport => 'Bugungi hisobot';
+
+  @override
+  String get anonymousCustomer => 'Nomsiz mijoz';
+
+  @override
+  String get saleDetail => 'Savdo tafsiloti';
+
+  @override
+  String get registerMarket => 'Marketni Ro\'yxatdan O\'tkazish';
+
+  @override
+  String get afterMarketRegisterInfo =>
+      'Market ro\'yxatdan o\'tgandan so\'ng, Admin va Seller foydalanuvchilar qo\'shishingiz mumkin';
+
+  @override
+  String get descriptionOptional => 'Tavsif (ixtiyoriy)';
+
+  @override
+  String get marketShortInfo => 'Market haqida qisqacha ma\'lumot';
+
+  @override
+  String get subdomainRules =>
+      'Faqat kichik harflar, raqamlar va tire (-) bo\'lishi mumkin';
+
+  @override
+  String get canBeLeftEmpty => 'Bo\'sh qoldirish mumkin';
+
+  @override
+  String get exampleMyShop => 'Masalan: myshop';
+
+  @override
+  String get subdomainOptional => 'Subdomain (ixtiyoriy)';
+
+  @override
+  String get pleaseEnterMarketName => 'Iltimos, market nomini kiriting';
+
+  @override
+  String get exampleMyStore => 'Masalan: Do\'konim';
+
+  @override
+  String get enterMarketDetails => 'Market ma\'lumotlarini kiriting';
+
+  @override
+  String get createYourMarket => 'O\'zingizning marketingizni yarating';
+
+  @override
+  String get marketRegistration => 'Market Registratsiyasi';
+
+  @override
+  String get nowYouCanAddUsers =>
+      'Endi siz Admin va Seller foydalanuvchilar qo\'shishingiz mumkin.';
+
+  @override
+  String get marketRegisteredSuccess =>
+      'Market muvaffaqiyatli ro\'yxatdan o\'tkazildi!';
+
+  @override
+  String get productUsedInSales =>
+      'Bu mahsulot savdolarda ishlatilgan, o\'chirib bo\'lmaydi';
 }

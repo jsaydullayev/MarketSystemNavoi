@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/daily_sales/widgets/daily_summary_card.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_detail_sheet.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_grid_item.dart';
@@ -84,17 +85,20 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     final isOwner = authProvider.user?['role'] == 'Owner';
     final salesService = SalesService(authProvider: authProvider);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      ),
     );
 
     try {
       final saleDetails = await salesService.getSaleById(sale.id);
       if (!mounted) return;
       Navigator.pop(context);
-
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -121,26 +125,29 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.dailySales,
-        extraActions: [
-          IconButton(
-            icon: Icon(Icons.calendar_month_rounded, color: theme.primaryColor),
-            onPressed: _selectDate,
-          ),
-        ],
-      ),
-      body: Center(
-        child: Container(
-          constraints:
-              const BoxConstraints(maxWidth: 800), // Web uchun adaptive
-          child: Column(
-            children: [
-              _buildDateBadge(theme, isDark),
-              Expanded(child: _buildBody(l10n, theme, isDark)),
-            ],
+    return NetworkWrapper(
+      onRetry: _loadDailySales,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.dailySales,
+          extraActions: [
+            IconButton(
+              icon:
+                  Icon(Icons.calendar_month_rounded, color: theme.primaryColor),
+              onPressed: _selectDate,
+            ),
+          ],
+        ),
+        body: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              children: [
+                _buildDateBadge(theme, isDark),
+                Expanded(child: _buildBody(l10n, theme, isDark)),
+              ],
+            ),
           ),
         ),
       ),
@@ -171,6 +178,8 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
   }
 
   Widget _buildBody(AppLocalizations l10n, ThemeData theme, bool isDark) {
+    final primary = Theme.of(context).primaryColor;
+
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
     if (_error != null) {
@@ -224,9 +233,9 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${_dailySales!.sales.length} ta',
+                  '${_dailySales!.sales.length} ${l10n.piece}',
                   style: TextStyle(
-                    color: theme.primaryColor,
+                    color: isDark ? Colors.white : primary,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
