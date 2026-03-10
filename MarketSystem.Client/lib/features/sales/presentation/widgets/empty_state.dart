@@ -1,32 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key});
+  final String? title;
+  final String? subtitle;
+  final IconData? icon;
+
+  const EmptyState({
+    super.key,
+    this.title,
+    this.subtitle,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 40),
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withOpacity(0.04)
+            : Colors.grey.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.07)
+              : Colors.grey.withOpacity(0.15),
+        ),
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 80,
-            color: Colors.grey.shade300,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Davom etayotgan savdolar yo\'q',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.06)
+                  : Colors.grey.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon ?? Icons.receipt_long_outlined,
+              size: 44,
+              color: Colors.grey[400],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
           Text(
-            'Boshlang\'ich savdolar bu yerda ko\'rsatiladi',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            title ?? l10n.noOngoingSales,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.grey[300] : Colors.grey[700],
+              letterSpacing: -0.2,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle ?? l10n.initialSalesWillBeShownHere,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[500],
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

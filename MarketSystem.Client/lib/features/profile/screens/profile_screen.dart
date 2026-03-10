@@ -83,8 +83,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       ProfileImagePicker(
                         currentImageUrl: user?['profileImage'],
-                        onImageUpdated: (url) =>
-                            authProvider.fetchUserProfile(),
+                        onImageUpdated: (url) async {
+                          if (user?['profileImage'] != null) {
+                            await NetworkImage(user!['profileImage']).evict();
+                          }
+                          await authProvider.fetchUserProfile();
+                        },
                       ),
                       32.height,
                       ProfileSectionTitle(title: l10n.info, isDark: isDark),

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:http/http.dart' as http;
 import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
 
@@ -115,7 +115,38 @@ class AuthService {
   // Token borligini tekshirish
   Future<bool> isAuthenticated() async {
     final token = await _httpService.getAccessToken();
-    return token != null && token.isNotEmpty;
+    if (token == null || token.isEmpty) return false;
+
+    if (_isTokenExpired(token)) {
+      print('Access token expired, attempting refresh...');
+      final refreshed = await refreshToken();
+
+      if (refreshed == null) {
+        print('Token refresh failed - user must login again');
+        await _httpService.clearTokens();
+        return false;
+      }
+      return true;
+    }
+
+    return true;
+  }
+
+  bool _isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+
+      final payload =
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final data = jsonDecode(payload);
+      final exp = data['exp'] as int;
+
+      final expiryDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      return DateTime.now().isAfter(expiryDate);
+    } catch (e) {
+      return true;
+    }
   }
 
   // ✅ Refresh access token using refresh token
@@ -127,33 +158,25 @@ class AuthService {
         return null;
       }
 
-      final response = await _httpService.post(
-        ApiConstants.refreshToken,
-        body: {
-          'refreshToken': refreshToken,
-        },
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshToken}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
       );
 
       print('Refresh Token Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        // Yangi tokenlarni saqlash
         await _httpService.saveTokens(
           data['accessToken'],
           data['refreshToken'],
         );
-
         print('Token refreshed successfully');
         return data;
-      } else if (response.statusCode == 401) {
-        // Refresh token ham muddati tugagan - logout qilish kerak
+      } else {
         print('Refresh token expired, user must login again');
         await _httpService.clearTokens();
-        return null;
-      } else {
-        print('Refresh token failed with status: ${response.statusCode}');
         return null;
       }
     } catch (e) {

@@ -82,6 +82,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isLoading = false;
       });
@@ -89,7 +90,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Xatolik: $e'),
+            content: Text('${l10n.error}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -99,30 +100,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _addToCart(dynamic product) {
     final l10n = AppLocalizations.of(context)!;
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => PriceInputDialog(
-    //     product: product,
-    //     onConfirm: (price, qty, comment) {
-    //       setState(() {
-    //         _cartItems.add({
-    //           'productId': product['id'],
-    //           'productName': product['name'],
-    //           'salePrice': price,
-    //           'quantity': qty,
-    //           'comment': comment,
-    //         });
-    //       });
-
-    //       ScaffoldMessenger.of(context).showSnackBar(
-    //         SnackBar(
-    //           content: Text("${product['name']} ${l10n.returnSuccess}"),
-    //           backgroundColor: AppColors.success,
-    //         ),
-    //       );
-    //     },
-    //   ),
-    // );
     PriceInputSheet.show(
       context,
       product: product,
@@ -177,7 +154,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
 
     PriceInputSheet.show(context, product: {
-      'name': item['productName'] ?? 'Noma\'lum mahsulot',
+      'name': item['productName'] ?? l10n.unknownProduct,
       'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
       'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
       'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
@@ -342,30 +319,43 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _showPaymentDialog(String? saleId) {
     final l10n = AppLocalizations.of(context)!;
+
+    final cartSnapshot = List<Map<String, dynamic>>.from(_cartItems);
+    final customerSnapshot = _selectedCustomer;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => PaymentDialog(
         saleId: saleId ?? '',
         totalAmount: _totalAmount,
-        selectedCustomer: _selectedCustomer,
+        selectedCustomer: customerSnapshot,
         onConfirm: (payments, useDebt) async {
           final scaffoldMessenger = ScaffoldMessenger.of(context);
           final navigator = Navigator.of(context);
+          print(
+              "================================================================");
+          print('cartSnapshot: $cartSnapshot');
+          print(
+              "================================================================");
 
           try {
             final authProvider =
                 Provider.of<AuthProvider>(context, listen: false);
             final salesService = SalesService(authProvider: authProvider);
 
-            String finalSaleId;
-
             final sale = await salesService.createSale(
-              customerId: _selectedCustomer?['id'],
+              customerId: customerSnapshot?['id'],
             );
-            finalSaleId = sale['id'];
+            final finalSaleId = sale['id'];
 
-            for (var item in _cartItems) {
+            for (var item in cartSnapshot) {
+              print('=== ADDING ITEM ===');
+              print('productId: ${item['productId']}');
+              print('quantity: ${item['quantity']}');
+              print('salePrice: ${item['salePrice']}');
+              print('minSalePrice: ${item['minSalePrice']}');
+
               await salesService.addSaleItem(
                 saleId: finalSaleId,
                 productId: item['productId'],
@@ -374,6 +364,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 minSalePrice: item['minSalePrice'] ?? 0.0,
                 comment: item['comment'],
               );
+
+              print('=== ITEM ADDED OK ===');
             }
 
             for (var payment in payments) {
@@ -395,23 +387,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               _selectedCustomer = null;
             });
 
-            // ✅ Removed GetSalesEvent call to prevent duplicate API calls
-            // Sales screen will reload sales when user returns (line 188 in sales_screen.dart)
-
             navigator.pop();
-
             scaffoldMessenger.showSnackBar(SnackBar(
-                content: Text(useDebt ? l10n.saleAsDebt : l10n.saleSuccess),
-                backgroundColor: Colors.green));
-
+              content: Text(useDebt ? l10n.saleAsDebt : l10n.saleSuccess),
+              backgroundColor: Colors.green,
+            ));
             navigator.pop(true);
           } catch (e) {
             if (!mounted) return;
-
             navigator.pop();
-
             scaffoldMessenger.showSnackBar(SnackBar(
-                content: Text('Xato: $e'), backgroundColor: Colors.red));
+              content: Text('${l10n.error}: $e'),
+              backgroundColor: Colors.red,
+            ));
           }
         },
       ),
@@ -486,7 +474,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Draft saqlashda xatolik: $e'),
+            content: Text('${l10n.draftSaveError}: $e'),
             backgroundColor: Colors.red,
           ),
         );

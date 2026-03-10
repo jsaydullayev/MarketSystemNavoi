@@ -52,18 +52,15 @@ class HttpService {
     print('====================');
   }
 
-  // Tokenlarni olish
   Future<String?> getAccessToken() async {
-    if (_accessToken != null) {
-      print('✅ Token from memory: ${_accessToken!.substring(0, 20)}...');
-      return _accessToken;
-    }
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
+
     if (_accessToken != null) {
-      print('✅ Token from SharedPreferences: ${_accessToken!.substring(0, 20)}...');
+      print(
+          '✅ Token from SharedPreferences: ${_accessToken!.substring(0, 20)}...');
     } else {
-      print('❌ NO TOKEN FOUND in SharedPreferences!');
+      print('❌ NO TOKEN FOUND!');
     }
     return _accessToken;
   }
@@ -82,7 +79,9 @@ class HttpService {
   }
 
   // ✅ 401 xatolikni qayta ishlash va token refresh
-  Future<http.Response> _handleResponse(http.Response response, String method, String endpoint, {Object? body}) async {
+  Future<http.Response> _handleResponse(
+      http.Response response, String method, String endpoint,
+      {Object? body}) async {
     // Agar 401 bo'lsa va refresh qilinayotgan bo'lmasa
     if (response.statusCode == 401 && !_isRefreshing) {
       _isRefreshing = true;
@@ -111,7 +110,8 @@ class HttpService {
   }
 
   // So'rovni qayta yuborish
-  Future<http.Response> _retryRequest(String method, String endpoint, Object? body) async {
+  Future<http.Response> _retryRequest(
+      String method, String endpoint, Object? body) async {
     final token = await getAccessToken();
 
     switch (method.toUpperCase()) {
@@ -177,7 +177,8 @@ class HttpService {
 
     print('=== HTTP GET ===');
     print('URL: $baseUrl$endpoint');
-    print('Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}');
+    print(
+        'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}');
     print('================');
 
     return http.get(
@@ -201,7 +202,8 @@ class HttpService {
 
     print('=== HTTP POST ===');
     print('URL: $baseUrl$endpoint');
-    print('Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}');
+    print(
+        'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}');
     print('Body: $encodedBody');
     print('================');
 
@@ -231,7 +233,8 @@ class HttpService {
     if (body != null && encodedBody != null && encodedBody.length < 500) {
       print('Body: $encodedBody');
     } else if (body != null) {
-      print('Body length: ${encodedBody?.length ?? 0} bytes (too large to display)');
+      print(
+          'Body length: ${encodedBody?.length ?? 0} bytes (too large to display)');
     }
     print('================');
 
@@ -272,8 +275,14 @@ class HttpService {
 
   Future<http.Response> _performDelete(String endpoint) async {
     final token = await getAccessToken();
+
+    final fullUrl = '$baseUrl$endpoint';
+    print('=== HTTP DELETE ===');
+    print('Full URL: $fullUrl');
+    print('==================');
+
     return http.delete(
-      Uri.parse('$baseUrl$endpoint'),
+      Uri.parse(fullUrl),
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',

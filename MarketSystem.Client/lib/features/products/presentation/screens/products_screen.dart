@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/features/products/presentation/screens/product_form_screen.dart';
 import 'package:market_system_client/features/products/presentation/widgets/product_body.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +10,6 @@ import '../../../../data/services/zakup_service.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/utils/file_helper.dart' as core_file_helper;
-import 'package:market_system_client/core/extensions/app_extensions.dart';
 
 class ProductsScreen extends StatefulWidget {
   final bool isReadOnly;
@@ -72,7 +72,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
-  Future<void> _deleteProduct(dynamic product) async {
+  Future<void> _deleteProduct(
+    dynamic product,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _products.removeWhere((p) => p['id'] == product['id']);
       _filteredProducts.removeWhere((p) => p['id'] == product['id']);
@@ -89,8 +92,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text(
-              'Bu mahsulot savdolarda ishlatilgan, o\'chirib bo\'lmaydi'),
+          content: Text(l10n.productUsedInSales),
           backgroundColor: Colors.red,
         ));
       }
@@ -102,34 +104,113 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final qtyController = TextEditingController();
     final costController =
         TextEditingController(text: (product['costPrice'] ?? 0).toString());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).primaryColor;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(product['name'],
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogField(
-                qtyController, l10n.quantity, Icons.add_shopping_cart, true),
-            16.height,
-            _buildDialogField(costController, l10n.costPrice,
-                Icons.monetization_on_outlined, true),
-          ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.cancel)),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(shape: const StadiumBorder()),
-            child: Text(l10n.add),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.inventory_2_rounded,
+                        color: primary, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.zakup,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? Colors.white38 : Colors.grey)),
+                        Text(product['name'],
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _buildDialogField(
+                  qtyController, l10n.quantity, Icons.add_shopping_cart, true),
+              const SizedBox(height: 12),
+              _buildDialogField(costController, l10n.costPrice,
+                  Icons.monetization_on_outlined, true),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(
+                            color:
+                                isDark ? Colors.white24 : Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text(l10n.cancel,
+                          style: TextStyle(
+                              color: isDark ? Colors.white54 : Colors.grey)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? Colors.white : primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: Text(l10n.add,
+                          style: TextStyle(
+                              color: isDark ? primary : Colors.white,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
 
@@ -209,36 +290,39 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.products,
-        onRefresh: _loadProducts,
-        extraActions: [
-          IconButton(
-            icon: Icon(Icons.file_download_outlined, color: primaryColor),
-            onPressed: _exportExcel,
-          ),
-        ],
+    return NetworkWrapper(
+      onRetry: _loadProducts,
+      child: Scaffold(
+        backgroundColor: AppColors.getBg(isDark),
+        appBar: CommonAppBar(
+          title: l10n.products,
+          onRefresh: _loadProducts,
+          extraActions: [
+            IconButton(
+              icon: Icon(Icons.file_download_outlined, color: primaryColor),
+              onPressed: _exportExcel,
+            ),
+          ],
+        ),
+        body: ProductsBody(
+          isLoading: _isLoading,
+          errorMessage: _errorMessage,
+          products: _filteredProducts,
+          searchController: _searchController,
+          onRefresh: _loadProducts,
+          onDelete: _deleteProduct,
+          onEdit: (p) => _openProductForm(product: p),
+          onZakup: _quickZakup,
+          isReadOnly: widget.isReadOnly,
+        ),
+        floatingActionButton: !widget.isReadOnly
+            ? FloatingActionButton(
+                onPressed: () => _openProductForm(),
+                backgroundColor: primaryColor,
+                child: const Icon(Icons.add, color: Colors.white, size: 30),
+              )
+            : null,
       ),
-      body: ProductsBody(
-        isLoading: _isLoading,
-        errorMessage: _errorMessage,
-        products: _filteredProducts,
-        searchController: _searchController,
-        onRefresh: _loadProducts,
-        onDelete: _deleteProduct,
-        onEdit: (p) => _openProductForm(product: p),
-        onZakup: _quickZakup,
-        isReadOnly: widget.isReadOnly,
-      ),
-      floatingActionButton: !widget.isReadOnly
-          ? FloatingActionButton(
-              onPressed: () => _openProductForm(),
-              backgroundColor: primaryColor,
-              child: const Icon(Icons.add, color: Colors.white, size: 30),
-            )
-          : null,
     );
   }
 }
