@@ -420,10 +420,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         Center(
           child: ElevatedButton.icon(
             onPressed: () => _exportToExcel('daily'),
-            icon: const Icon(Icons.file_download),
-            label: const Text('Excelga yuklab olish'),
+            icon: const Icon(Icons.download),
+            label: const Text('Hisobotni yuklab olish'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
                 horizontal: 24,
@@ -431,6 +431,46 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             ),
           ),
+        ),
+        const SizedBox(height: 8),
+        // Export format indicators
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.table_chart, size: 18, color: Colors.green),
+                  SizedBox(width: 6),
+                  Text('Excel', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
+                  SizedBox(width: 6),
+                  Text('PDF', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -584,10 +624,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         Center(
           child: ElevatedButton.icon(
             onPressed: () => _exportToExcel('monthly'),
-            icon: const Icon(Icons.file_download),
-            label: const Text('Excelga yuklab olish'),
+            icon: const Icon(Icons.download),
+            label: const Text('Hisobotni yuklab olish'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
                 horizontal: 24,
@@ -595,6 +635,46 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             ),
           ),
+        ),
+        const SizedBox(height: 8),
+        // Export format indicators
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.table_chart, size: 18, color: Colors.green),
+                  SizedBox(width: 6),
+                  Text('Excel', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
+                  SizedBox(width: 6),
+                  Text('PDF', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -739,10 +819,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         Center(
           child: ElevatedButton.icon(
             onPressed: () => _exportToExcel('inventory'),
-            icon: const Icon(Icons.file_download),
-            label: const Text('Excelga yuklab olish'),
+            icon: const Icon(Icons.download),
+            label: const Text('Hisobotni yuklab olish'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
                 horizontal: 24,
@@ -750,6 +830,46 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             ),
           ),
+        ),
+        const SizedBox(height: 8),
+        // Export format indicators
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.table_chart, size: 18, color: Colors.green),
+                  SizedBox(width: 6),
+                  Text('Excel', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
+                  SizedBox(width: 6),
+                  Text('PDF', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1170,24 +1290,80 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Future<void> _exportToExcel(String reportType) async {
+    // Format selection dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Format tanlang'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.table_chart, color: Colors.green),
+              title: const Text('Excel'),
+              onTap: () {
+                Navigator.pop(context);
+                _exportReport(reportType, 'excel');
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
+              title: const Text('PDF'),
+              onTap: () {
+                Navigator.pop(context);
+                _exportReport(reportType, 'pdf');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportReport(String reportType, String format) async {
     try {
       setState(() {
         _isLoading = true;
       });
 
+      // Daily report
       if (reportType == 'daily') {
-        await _reportsService.exportComprehensiveToExcel(_selectedDate);
-      } else if (reportType == 'monthly') {
-        await _reportsService.exportPeriodReportToExcel(_startDate, _endDate);
-      } else if (reportType == 'inventory') {
-        await _reportsService.exportComprehensiveToExcel(_selectedDate);
+        if (format == 'excel') {
+          await _downloadService.downloadComprehensiveReport(date: _selectedDate);
+        } else {
+          await _downloadService.downloadDailyReportToPdf(_selectedDate);
+        }
+      }
+      // Monthly period report
+      else if (reportType == 'monthly') {
+        if (format == 'excel') {
+          await _downloadService.downloadSales(
+            startDate: _startDate,
+            endDate: _endDate,
+          );
+        } else {
+          await _downloadService.downloadPeriodReportToPdf(
+            start: _startDate,
+            end: _endDate,
+          );
+        }
+      }
+      // Inventory report
+      else if (reportType == 'inventory') {
+        if (format == 'excel') {
+          await _downloadService.downloadComprehensiveReport(date: _selectedDate);
+        } else {
+          await _downloadService.downloadComprehensiveReportToPdf(_selectedDate);
+        }
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Hisobot muvaffaqiyatli yuklab olindi!'),
+          SnackBar(
+            content: Text('✅ Hisobot muvaffaqiyatli yuklab olindi!\n\n📊 Format: ${format.toUpperCase()}\n• Barcha ma\'lumotlar kiritilgan\n• Professional shablon'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -1197,6 +1373,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
           SnackBar(
             content: Text('Yuklab olishda xatolik: $e'),
             backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Qayta urinish',
+              textColor: Colors.white,
+              onPressed: () => _exportReport(reportType, format),
+            ),
           ),
         );
       }

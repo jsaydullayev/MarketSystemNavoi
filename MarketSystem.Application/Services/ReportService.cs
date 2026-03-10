@@ -1,4 +1,7 @@
 using OfficeOpenXml;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
@@ -17,8 +20,6 @@ public class ReportService : IReportService
     {
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
-
-        // Set EPPlus license context (EPPlus 7.x)
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
@@ -28,7 +29,6 @@ public class ReportService : IReportService
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
-        // Include SaleItems and Payments for proper profit calculation
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
@@ -47,17 +47,13 @@ public class ReportService : IReportService
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
-        // Include SaleItems for detailed breakdown
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
-        // Determine if profit should be included (Owner only)
         bool includeProfit = userRole == "Owner";
 
-        // Get all sale items (NOT grouped by product)
-        // This allows users to see individual sales with double quantities
         var allItems = new List<DailySaleItemDto>();
 
         Console.WriteLine($"📊 [GetDailySaleItems] Processing {sales.Count()} sales for {start:yyyy-MM-dd}");
@@ -72,7 +68,6 @@ public class ReportService : IReportService
                 var productName = product.Name;
                 var quantity = item.Quantity;
 
-                // Log double quantities
                 if (quantity % 1 != 0)
                 {
                     Console.WriteLine($"  ➕ Double quantity: {productName} - {quantity} ta (Sale: {sale.Id})");
@@ -83,7 +78,6 @@ public class ReportService : IReportService
                 var totalRevenue = salePrice * quantity;
                 decimal? profit = includeProfit ? totalRevenue - totalCost : null;
 
-                // Add each item individually (NO grouping)
                 allItems.Add(new DailySaleItemDto(
                     productName,
                     quantity,
@@ -96,7 +90,6 @@ public class ReportService : IReportService
             }
         }
 
-        // Sort by quantity descending (to see larger quantities first)
         var sortedItems = allItems.OrderByDescending(i => i.Quantity).ToList();
 
         return new DailySaleItemsResponseDto(
@@ -109,7 +102,6 @@ public class ReportService : IReportService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Include SaleItems and Payments for proper profit calculation
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
@@ -121,7 +113,6 @@ public class ReportService : IReportService
 
         var report = CalculateReport(sales, zakups, request.StartDate, request.EndDate, userRole);
 
-        // Calculate average sale
         decimal averageSale = report.TotalTransactions > 0
             ? report.TotalSales / report.TotalTransactions
             : 0;
@@ -145,7 +136,6 @@ public class ReportService : IReportService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Include SaleItems for proper data export
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
@@ -158,7 +148,6 @@ public class ReportService : IReportService
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add("Report");
 
-        // Headers
         worksheet.Cells[1, 1].Value = "Date";
         worksheet.Cells[1, 2].Value = "Type";
         worksheet.Cells[1, 3].Value = "Product";
@@ -167,7 +156,6 @@ public class ReportService : IReportService
         worksheet.Cells[1, 6].Value = "Cost";
         worksheet.Cells[1, 7].Value = "Profit";
 
-        // Style headers
         using (var range = worksheet.Cells[1, 1, 1, 7])
         {
             range.Style.Font.Bold = true;
@@ -176,8 +164,6 @@ public class ReportService : IReportService
         }
 
         int row = 2;
-
-        // Add sales data
         foreach (var sale in sales)
         {
             var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == sale.Id, cancellationToken);
@@ -197,7 +183,7 @@ public class ReportService : IReportService
             }
         }
 
-        // Add zakup data
+
         foreach (var zakup in zakups)
         {
             var product = await _unitOfWork.Products.GetByIdAsync(zakup.ProductId, cancellationToken);
@@ -504,9 +490,9 @@ public class ReportService : IReportService
 
         return new DailyReportDto(
             start,
-            totalAllSales,     // Jami savdo (paid + debt)
-            totalPaidSales,    // To'langan savdolar
-            totalDebtSales,    // Qarzga sotilgan
+            totalAllSales,
+            totalPaidSales,
+            totalDebtSales,
             totalZakup,
             profit,
             netIncome,
@@ -515,7 +501,6 @@ public class ReportService : IReportService
         );
     }
 
-    // New methods for role-based access control
     public async Task<ProfitSummaryDto> GetProfitSummaryAsync(CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
@@ -614,8 +599,6 @@ public class ReportService : IReportService
         var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
 
-        // Build query with role-based filtering
-        // If Seller, filter by their own sales only
         Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
                               s.Status != SaleStatus.Cancelled &&
                               s.MarketId == marketId &&
@@ -628,29 +611,21 @@ public class ReportService : IReportService
 
         var salesListItems = new List<DailySalesListItemDto>();
 
-        // ⭐ NEW: Separate tracking of paid and debt sales
-        decimal totalPaidSales = 0;      // To'langan savdolar
-        decimal totalDebtSales = 0;      // Qarzga sotilgan
-        decimal totalAllSales = 0;       // Jami savdo (paid + debt)
+        decimal totalPaidSales = 0;
+        decimal totalDebtSales = 0;
+        decimal totalAllSales = 0;
 
-        // Determine if profit should be included (Owner only)
         bool includeProfit = userRole == "Owner";
 
         foreach (var sale in sales)
         {
-            // Calculate paid and debt amounts
-            // IMPORTANT: Use sale.PaidAmount directly instead of summing payments
-            // This ensures credit applications (which don't create payment records)
-            // are not incorrectly counted in reports
             var paidAmount = sale.PaidAmount;
             var debtAmount = sale.TotalAmount - paidAmount;
 
-            // Add to appropriate categories
             totalPaidSales += paidAmount;
             totalDebtSales += debtAmount;
             totalAllSales += sale.TotalAmount;
 
-            // Calculate profit ONLY for PAID items (pro-rated by paid ratio)
             decimal? profit = null;
             if (includeProfit)
             {
@@ -663,12 +638,10 @@ public class ReportService : IReportService
                     var itemRevenue = item.SalePrice * item.Quantity;
                     var itemProfit = itemRevenue - itemCost;
 
-                    // Only count the portion that was actually paid
                     profit += itemProfit * paidRatio;
                 }
             }
 
-            // Get primary payment type - convert to lowercase format
             var primaryPayment = sale.Payments.FirstOrDefault();
             var paymentTypeRaw = primaryPayment?.PaymentType.ToString() ?? "Cash";
             var paymentType = paymentTypeRaw.ToLowerInvariant();
@@ -685,7 +658,6 @@ public class ReportService : IReportService
             ));
         }
 
-        // Calculate summary profit for Owner only
         decimal? summaryProfit = null;
         if (includeProfit && salesListItems.Any())
         {
@@ -695,9 +667,9 @@ public class ReportService : IReportService
         return new DailySalesListDto(
             start,
             salesListItems,
-            totalAllSales,     // Jami savdo (paid + debt)
-            totalPaidSales,    // To'langan savdolar
-            totalDebtSales,    // Qarzga sotilgan
+            totalAllSales,     
+            totalPaidSales,    
+            totalDebtSales,    
             salesListItems.Count,
             summaryProfit
         );
@@ -723,40 +695,31 @@ public class ReportService : IReportService
     public async Task<MonthlyCategorySalesResponseDto> GetMonthlyCategorySalesAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        
-        // Calculate start and end of the month based on the provided date (which is in UTC)
         var start = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var end = start.AddMonths(1);
 
-        // Get all categories for the market
         var categories = await _unitOfWork.ProductCategories.FindAsync(
             c => c.MarketId == marketId && c.IsActive && !c.IsDeleted,
             cancellationToken);
 
-        // Get all sales for the month that are not cancelled
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
-        // Get all products to avoid N+1 queries
         var products = await _unitOfWork.Products.FindAsync(
             p => p.MarketId == marketId, 
             cancellationToken);
         var productDict = products.ToDictionary(p => p.Id);
 
         bool includeProfit = userRole == "Owner";
-        
-        // Dictionary to hold category sales
         var categorySales = new Dictionary<int, CategorySalesDto>();
 
-        // Initialize dictionary with all categories (even those with 0 sales)
         foreach (var category in categories)
         {
             categorySales[category.Id] = new CategorySalesDto(category.Id, category.Name, 0, 0, includeProfit ? 0 : null);
         }
         
-        // Add "Other" category for products without a category
         int otherCategoryId = -1;
         categorySales[otherCategoryId] = new CategorySalesDto(otherCategoryId, "Boshqa", 0, 0, includeProfit ? 0 : null);
 
@@ -767,7 +730,6 @@ public class ReportService : IReportService
         {
             foreach (var item in sale.SaleItems)
             {
-                // Get the product from the pre-loaded dictionary
                 var product = productDict.GetValueOrDefault(item.ProductId);
                 int catId = product?.CategoryId ?? otherCategoryId;
 
@@ -798,17 +760,364 @@ public class ReportService : IReportService
             }
         }
 
-        // Remove "Other" category if it has no sales
         if (categorySales[otherCategoryId].TotalSales == 0)
         {
-            categorySales.Remove(otherCategoryId);
-        }
 
-        return new MonthlyCategorySalesResponseDto(
-            date,
-            categorySales.Values.OrderByDescending(c => c.TotalSales).ToList(),
-            totalSalesOverall,
-            includeProfit ? totalProfitOverall : null
-        );
+    public async Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
+    {
+        var report = await GetDailyReportAsync(date, userRole, cancellationToken);
+        QuestPDF.Settings.License = LicenseType.Community;
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+                page.Header().Element(ComposeHeader(date));
+                page.Content().Element(ComposeDailyReportContent(report, userRole));
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.Span("Sahifa: ");
+                    x.CurrentPageNumber();
+                    x.Span(" dan ");
+                    x.TotalPages();
+                });
+            });
+        });
+
+        using var stream = new MemoryStream();
+        await document.GeneratePdfAsync(stream);
+        return stream.ToArray();
+    }
+
+    public async Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default)
+    {
+        var report = await GetPeriodReportAsync(request, userRole, cancellationToken);
+        QuestPDF.Settings.License = LicenseType.Community;
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+                page.Header().Element(ComposeHeader(startDate: request.StartDate, endDate: request.EndDate));
+                page.Content().Element(ComposePeriodReportContent(report, userRole));
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.Span("Sahifa: ");
+                    x.CurrentPageNumber();
+                    x.Span(" dan ");
+                    x.TotalPages();
+                });
+            });
+        });
+
+        using var stream = new MemoryStream();
+        await document.GeneratePdfAsync(stream);
+        return stream.ToArray();
+    }
+
+    public async Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
+    {
+        var report = await GetComprehensiveReportAsync(date, userRole, cancellationToken);
+        QuestPDF.Settings.License = LicenseType.Community;
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+                page.Header().Element(ComposeHeader(date));
+                page.Content().Element(ComposeComprehensiveReportContent(report, userRole));
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.Span("Sahifa: ");
+                    x.CurrentPageNumber();
+                    x.Span(" dan ");
+                    x.TotalPages();
+                });
+            });
+        });
+
+        using var stream = new MemoryStream();
+        await document.GeneratePdfAsync(stream);
+        return stream.ToArray();
+    }
+
+    static IContainer ComposeHeader(DateTime? singleDate = null, DateTime? startDate = null, DateTime? endDate = null)
+    {
+        return column => column
+            .Item().Row(row =>
+            {
+                row.RelativeItem().Width(Unit.Percentage, 30)
+                    .Text("Market System")
+                    .FontSize(20)
+                    .Bold()
+                    .FontColor(Colors.Blue.Medium);
+                row.RelativeItem().Width(Unit.Percentage, 40)
+                    .AlignCenter()
+                    .Text("Hisobotlar")
+                    .FontSize(24)
+                    .Bold();
+                row.RelativeItem().Width(Unit.Percentage, 30)
+                    .AlignRight()
+                    .Text(DateTime.Now.ToString("dd.MM.yyyy HH:mm"))
+                    .FontSize(12);
+            })
+            .Item().PaddingVertical(10)
+            .BorderBottom(1)
+            .BorderColor(Colors.Grey.Lighten2);
+    }
+
+    static IContainer ComposeDailyReportContent(DailyReportDto report, string? userRole)
+    {
+        return column => column
+            .Spacing(10)
+            .Item().Element(c => ComposeSummaryCards(c,
+                report.TotalSales,
+                report.TotalTransactions,
+                report.TotalPaidSales,
+                report.TotalDebtSales,
+                report.Profit))
+            .Item().Element(c => ComposePaymentBreakdown(c, report.PaymentBreakdown));
+    }
+
+    static IContainer ComposePeriodReportContent(PeriodReportDto report, string? userRole)
+    {
+        return column => column
+            .Spacing(10)
+            .Item().Element(c => ComposeSummaryCards(c,
+                report.TotalSales,
+                report.TotalTransactions,
+                report.TotalPaidSales,
+                report.TotalDebtSales,
+                report.Profit))
+            .Item().Element(c => ComposePaymentBreakdown(c, report.PaymentBreakdown))
+            .Item().Container(container =>
+            {
+                container.Padding(10)
+                    .Border(1)
+                    .BorderColor(Colors.Grey.Lighten2)
+                    .Row(row =>
+                    {
+                        row.RelativeItem().Width(Unit.Percentage, 50)
+                            .Text("O'rtacha savdo:")
+                            .Bold();
+                        row.RelativeItem().Width(Unit.Percentage, 50)
+                            .AlignRight()
+                            .Text(report.AverageSale.ToString("N2") + " so'm")
+                            .Bold();
+                    });
+            });
+    }
+
+    static IContainer ComposeComprehensiveReportContent(ComprehensiveReportDto report, string? userRole)
+    {
+        return column => column
+            .Spacing(10)
+            .Item().Container(container =>
+            {
+                container.Padding(10)
+                    .Background(Colors.Grey.Lighten4)
+                    .Column(column =>
+                    {
+                        column.Item().Text("Kunlik Hisobot")
+                            .FontSize(18)
+                            .Bold();
+                        column.Item().Row(row =>
+                        {
+                            row.RelativeItem().Width(Unit.Percentage, 50)
+                                .Text($"Jami savdo: {report.DailyReport.TotalSales:N2} so'm");
+                            row.RelativeItem().Width(Unit.Percentage, 50)
+                                .Text($"Tranzaksiyalar: {report.DailyReport.TotalTransactions} ta");
+                        });
+                        if (report.DailyReport.Profit.HasValue)
+                        {
+                            column.Item().Text($"Foyda: {report.DailyReport.Profit:N2} so'm")
+                                .Bold()
+                                .FontColor(Colors.Green.Dark);
+                        }
+                    });
+            })
+            .Item().If(report.SellerReports.Any(), container =>
+            {
+                container.Padding(10)
+                    .Border(1)
+                    .BorderColor(Colors.Grey.Lighten2)
+                    .Column(column =>
+                    {
+                        column.Item().Text("Sotuvchilar Hisoboti")
+                            .FontSize(16)
+                            .Bold();
+                        column.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.ConstantColumn(150);
+                                columns.ConstantColumn(120);
+                                columns.ConstantColumn(120);
+                                columns.ConstantColumn(80);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Row(row =>
+                                {
+                                    row.Cell().Text("Sotuvchi").Bold();
+                                    row.Cell().Text("Jami savdo").Bold();
+                                    row.Cell().Text("Foyda").Bold();
+                                    row.Cell().Text("Soni").Bold();
+                                }).Background(Colors.Blue.Lighten3);
+                            });
+
+                            foreach (var seller in report.SellerReports)
+                            {
+                                table.Cell().Row(row =>
+                                {
+                                    row.Cell().Text(seller.SellerName);
+                                    row.Cell().Text(seller.TotalSales.ToString("N2") + " so'm");
+                                    row.Cell().Text(seller.TotalProfit.ToString("N2") + " so'm");
+                                    row.Cell().Text(seller.TransactionCount.ToString());
+                                });
+                            }
+                        });
+                    });
+            })
+            .Item().Container(container =>
+            {
+                container.Padding(10)
+                    .Border(1)
+                    .BorderColor(Colors.Grey.Lighten2)
+                    .Column(column =>
+                    {
+                        column.Item().Text("Sklad Hisoboti")
+                            .FontSize(16)
+                            .Bold();
+                        column.Item().Row(row =>
+                        {
+                            row.RelativeItem().Width(Unit.Percentage, 50)
+                                .Text($"Mahsulotlar soni: {report.InventoryReport.Count} ta");
+                            row.RelativeItem().Width(Unit.Percentage, 50)
+                                .Text($"Sklad qiymati: {report.TotalInventoryCost:N2} so'm (xarid)");
+                        });
+                        column.Item().Text($"Potensial qiymat: {report.TotalInventorySaleValue:N2} so'm (sotuv)");
+                    });
+            });
+    }
+
+    static void ComposeSummaryCards(IContainer container, decimal totalSales, int totalTransactions,
+        decimal totalPaidSales, decimal totalDebtSales, decimal? profit)
+    {
+        container.Column(column =>
+        {
+            column.Spacing(5);
+
+            column.Item().Row(row =>
+            {
+                row.RelativeItem().Width(Unit.Percentage, 50)
+                    .Container(c => c
+                        .Padding(8)
+                        .Border(1)
+                        .BorderColor(Colors.Green.Lighten2)
+                        .Background(Colors.Green.Lighten4)
+                        .Column(col =>
+                        {
+                            col.Item().Text("Jami Savdo").Bold();
+                            col.Item().Text($"{totalSales:N2} so'm")
+                                .FontSize(14)
+                                .FontColor(Colors.Green.Dark);
+                        }));
+
+                row.RelativeItem().Width(Unit.Percentage, 50)
+                    .Container(c => c
+                        .Padding(8)
+                        .Border(1)
+                        .BorderColor(Colors.Blue.Lighten2)
+                        .Background(Colors.Blue.Lighten4)
+                        .Column(col =>
+                        {
+                            col.Item().Text("Tranzaksiyalar").Bold();
+                            col.Item().Text($"{totalTransactions} ta")
+                                .FontSize(14);
+                        }));
+            });
+
+            column.Item().Row(row =>
+            {
+                row.RelativeItem().Width(Unit.Percentage, 50)
+                    .Container(c => c
+                        .Padding(8)
+                        .Border(1)
+                        .BorderColor(Colors.Green.Lighten2)
+                        .Background(Colors.Green.Lighten4)
+                        .Column(col =>
+                        {
+                            col.Item().Text("To'langan").Bold();
+                            col.Item().Text($"{totalPaidSales:N2} so'm")
+                                .FontSize(14)
+                                .FontColor(Colors.Green.Dark);
+                        }));
+
+                row.RelativeItem().Width(Unit.Percentage, 50)
+                    .Container(c => c
+                        .Padding(8)
+                        .Border(1)
+                        .BorderColor(Colors.Red.Lighten2)
+                        .Background(Colors.Red.Lighten4)
+                        .Column(col =>
+                        {
+                            col.Item().Text("Qarzga").Bold();
+                            col.Item().Text($"{totalDebtSales:N2} so'm")
+                                .FontSize(14)
+                                .FontColor(Colors.Red.Dark);
+                        }));
+            });
+
+            if (profit.HasValue)
+            {
+                column.Item().Container(c => c
+                    .Padding(8)
+                    .Border(1)
+                    .BorderColor(Colors.Gold.Lighten2)
+                    .Background(Colors.Gold.Lighten4)
+                    .Column(col =>
+                    {
+                        col.Item().Text("Foyda").Bold();
+                        col.Item().Text($"{profit:N2} so'm")
+                            .FontSize(16)
+                            .FontColor(Colors.Gold.Dark);
+                    }));
+            }
+        });
+    }
+
+    static void ComposePaymentBreakdown(IContainer container, List<PaymentBreakdownDto> paymentBreakdown)
+    {
+        if (!paymentBreakdown.Any()) return;
+
+        container.Column(column =>
+        {
+            column.Item().Text("To'lov Turlari").FontSize(16).Bold();
+            column.Spacing(5);
+
+            foreach (var payment in paymentBreakdown.OrderByDescending(p => p.Amount))
+            {
+                column.Item().Row(row =>
+                {
+                    row.RelativeItem().Width(Unit.Percentage, 60)
+                        .Text(payment.PaymentType);
+                    row.RelativeItem().Width(Unit.Percentage, 40)
+                        .AlignRight()
+                        .Column(col =>
+                        {
+                            col.Item().Text($"{payment.Amount:N2} so'm").Bold();
+                            col.Item().Text($"{payment.Count} ta").FontSize(10);
+                        });
+                });
+            }
+        });
     }
 }
