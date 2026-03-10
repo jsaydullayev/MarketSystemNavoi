@@ -183,10 +183,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get confirm => 'Подтвердить';
 
   @override
-  String get close => 'Закрыть';
+  String get total => 'Итого';
 
   @override
-  String get total => 'Итого';
+  String get from => 'С';
+
+  @override
+  String get to => 'По';
 
   @override
   String get paid => 'Оплачено';
@@ -267,9 +270,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get enterPhone => 'Введите номер телефона';
 
   @override
-  String get priceMustBePositive => 'Цена должна быть положительной';
-
-  @override
   String get quantityMustBePositive => 'Количество должно быть положительным';
 
   @override
@@ -338,9 +338,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get card => 'Карта';
-
-  @override
-  String get selectProduct => 'Выберите товар';
 
   @override
   String get noProducts => 'Нет товаров';
@@ -578,7 +575,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dailySales => 'Ежедневные продажи';
 
   @override
-  String get drafts => 'Черновики';
+  String get drafts => 'Драфты';
 
   @override
   String get darkMode => 'Темный режим';
@@ -641,9 +638,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get all => 'Все';
 
   @override
-  String get closed => 'Закрыто';
-
-  @override
   String get debt => 'Долг';
 
   @override
@@ -657,9 +651,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get soldProducts => 'Проданные товары';
-
-  @override
-  String get returnProduct => 'Возврат товара';
 
   @override
   String get returnAmount => 'Сумма возврата';
@@ -699,9 +690,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get defect => 'Брак';
-
-  @override
-  String get invalidQuantity => 'Неверное количество!';
 
   @override
   String get finishReturn => 'Завершить возврат';
@@ -929,4 +917,561 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get phoneFormatHint => 'Формат: 998XXXXXXXXX (12 цифр)';
+
+  @override
+  String get productNotFound => 'Товар не найден';
+
+  @override
+  String priceSom(Object price) {
+    return 'Цена: $price сум';
+  }
+
+  @override
+  String get selectProduct => 'Выберите товар';
+
+  @override
+  String addedBy(Object user) {
+    return 'Добавил: $user';
+  }
+
+  @override
+  String costPriceSom(Object price) {
+    return 'Цена покупки: $price сум';
+  }
+
+  @override
+  String get addPurchase => 'Добавить закуп';
+
+  @override
+  String get noPurchases => 'Закупок нет';
+
+  @override
+  String get errorLoadingData => 'Ошибка при загрузке данных';
+
+  @override
+  String get fileSaved => 'Файл сохранен';
+
+  @override
+  String get fileSaveError => 'Ошибка при сохранении файла';
+
+  @override
+  String get costPriceField => 'Цена покупки (сум)';
+
+  @override
+  String get noProductsAddFirst => 'Товаров нет. Сначала добавьте товар';
+
+  @override
+  String get onlyAdminOwnerCanAdd =>
+      'Только Админ и Владелец могут добавлять закуп';
+
+  @override
+  String get fillAmountAndPrice => 'Заполните количество и цену';
+
+  @override
+  String get activated => 'Активировано';
+
+  @override
+  String get deactivated => 'Деактивировано';
+
+  @override
+  String get cannotDeleteSelf => 'Вы не можете удалить самого себя';
+
+  @override
+  String get deleteUser => 'Удалить пользователя';
+
+  @override
+  String deleteUserConfirm(Object name) {
+    return 'Вы действительно хотите удалить $name?';
+  }
+
+  @override
+  String get searchUser => 'Поиск пользователя...';
+
+  @override
+  String get userNotFound => 'Пользователь не найден';
+
+  @override
+  String get noUsersFound => 'Пользователи не найдены';
+
+  @override
+  String get nameRequired => 'Имя обязательно';
+
+  @override
+  String get usernameRequired => 'Username обязателен';
+
+  @override
+  String get minThreeChars => 'Минимум 3 символа';
+
+  @override
+  String get noSpacesAllowed => 'Пробелы не допускаются';
+
+  @override
+  String get passwordRequired => 'Пароль обязателен';
+
+  @override
+  String get confirmPasswordRequired => 'Подтверждение обязательно';
+
+  @override
+  String get userCreatedSuccess => 'Успешно создано!';
+
+  @override
+  String get giveCredentialsToUser =>
+      'Передайте имя пользователя и пароль новому пользователю';
+
+  @override
+  String get noPermissionToEditdd =>
+      'Нет прав для редактирования закрытого долга (только Owner/Admin)';
+
+  @override
+  String get priceUpdatedSuccess => 'Цена успешно обновлена';
+
+  @override
+  String get allDebtsPaid => 'Все долги оплачены';
+
+  @override
+  String debtCount(Object count) {
+    return '$count долгов';
+  }
+
+  @override
+  String get pay => 'Оплатить';
+
+  @override
+  String get cls => 'Закрыто';
+
+  @override
+  String get open => 'Открыто';
+
+  @override
+  String get ddDebtAudit =>
+      'Этот долг закрыт. Изменение будет записано в аудит-лог.';
+
+  @override
+  String get exampleComment => 'Например: Была указана неверная цена';
+
+  @override
+  String get commentRequiredLabel => 'Комментарий (обязательно)';
+
+  @override
+  String get priceWithCurrency => 'Цена (сум)';
+
+  @override
+  String get newPriceLabel => 'Новая цена';
+
+  @override
+  String productQuantityAndOldPrice(Object price, Object quantity) {
+    return '$quantity шт  ·  Старая цена: $price сум';
+  }
+
+  @override
+  String get editPriceTitle => 'Редактировать цену';
+
+  @override
+  String get product => 'Продукт';
+
+  @override
+  String get yesConfirm => 'Да, подтверждаю';
+
+  @override
+  String confirmPriceChangeDesc(Object price) {
+    return 'Вы хотите изменить цену на $price сум?';
+  }
+
+  @override
+  String get commentRequiredError => 'Введите комментарий';
+
+  @override
+  String get priceMustBePositive => 'Цена должна быть больше 0';
+
+  @override
+  String get paymentSuccess => 'Оплата успешно произведена!';
+
+  @override
+  String get paymentAmountLabel => 'Сумма оплаты';
+
+  @override
+  String payingTooMuchWarning(Object amount) {
+    return 'Вы платите на $amount сум больше суммы долга';
+  }
+
+  @override
+  String get processPayment => 'Произвести оплату';
+
+  @override
+  String salesCount(Object count) {
+    return '$count продаж';
+  }
+
+  @override
+  String get netProfit => 'Чистая прибыль';
+
+  @override
+  String get noSalesToday => 'В этот день продаж нет';
+
+  @override
+  String get downloadExcel => 'Скачать Excel';
+
+  @override
+  String get reportDownloaded => 'Отчет загружен';
+
+  @override
+  String get downloadError => 'Ошибка при загрузке';
+
+  @override
+  String get reportDownloadSuccess => 'Отчет успешно загружен!';
+
+  @override
+  String get byPaymentType => 'По видам оплаты';
+
+  @override
+  String get select => 'Выбрать';
+
+  @override
+  String get noReports => 'Отчетов нет';
+
+  @override
+  String get totalValue => 'Общая стоимость';
+
+  @override
+  String get sellingPrice => 'Цена продажи';
+
+  @override
+  String get productCount => 'Количество товаров';
+
+  @override
+  String get incomingPrice => 'Приходная цена';
+
+  @override
+  String andMoreProducts(Object count) {
+    return 'И еще $count товаров...';
+  }
+
+  @override
+  String get totalSale => 'Общие продажи';
+
+  @override
+  String get saleCount => 'Количество продаж';
+
+  @override
+  String get averageSale => 'Средний чек';
+
+  @override
+  String get averageTransactionValue => 'Средняя сумма каждой продажи';
+
+  @override
+  String transactionStats(Object count, Object percentage) {
+    return '$count транзакций  •  $percentage%';
+  }
+
+  @override
+  String get daily => 'Ежедневно';
+
+  @override
+  String get monthly => 'Ежемесячно';
+
+  @override
+  String insufficientFundsWithBalance(Object balance) {
+    return 'Недостаточно средств! В наличии: $balance сум';
+  }
+
+  @override
+  String withdrawalSuccessType(Object type) {
+    return '$type успешно выведены';
+  }
+
+  @override
+  String get totalBalance => 'Общий баланс';
+
+  @override
+  String updatedAt(Object time) {
+    return 'Обновлено: $time';
+  }
+
+  @override
+  String get todaysIncomes => 'Сегодняшние поступления';
+
+  @override
+  String get cashMoney => 'Наличные деньги';
+
+  @override
+  String get todaysSales => 'Сегодняшние продажи';
+
+  @override
+  String itemsCount(Object count) {
+    return '$count шт.';
+  }
+
+  @override
+  String get selectPaymentTypeAndAmount => 'Выберите тип и сумму оплаты';
+
+  @override
+  String get paymentTypeLabel => 'Тип оплаты';
+
+  @override
+  String get waiting => 'Ожидание...';
+
+  @override
+  String get productRemoved => 'Товар удален';
+
+  @override
+  String get priceUpdated => 'Цена обновлена';
+
+  @override
+  String get productReturned => 'Товар возвращен';
+
+  @override
+  String get saleNotFound => 'Продажа не найдена';
+
+  @override
+  String get productsNotFound => 'Товары не найдены';
+
+  @override
+  String productAddedToCart(Object name) {
+    return '$name добавлен в корзину';
+  }
+
+  @override
+  String get changePrice => 'Изменить цену';
+
+  @override
+  String get currentPrice => 'Текущая цена';
+
+  @override
+  String quantityCount(Object quantity) {
+    return 'Количество: $quantity шт.';
+  }
+
+  @override
+  String priceChangedFor(Object name) {
+    return 'Цена изменена для $name';
+  }
+
+  @override
+  String get noSales => 'Продаж нет';
+
+  @override
+  String debtAmount(Object amount) {
+    return 'Долг: $amount';
+  }
+
+  @override
+  String get noDebtors => 'Должников нет';
+
+  @override
+  String get debtorsWillBeShownHere =>
+      'Клиенты с долгами будут отображаться здесь';
+
+  @override
+  String get today => 'Сегодня';
+
+  @override
+  String get yesterday => 'Вчера';
+
+  @override
+  String daysAgo(Object count) {
+    return '$count дн. назад';
+  }
+
+  @override
+  String monthsAgo(Object count) {
+    return '$count мес. назад';
+  }
+
+  @override
+  String yearsAgo(Object count) {
+    return '$count г. назад';
+  }
+
+  @override
+  String get deleteSale => 'Удалить продажу';
+
+  @override
+  String get deleteSaleConfirm =>
+      'Вы действительно хотите удалить эту продажу?';
+
+  @override
+  String get noDebtSalesFound => 'Долговые продажи не найдены';
+
+  @override
+  String get debtorCustomers => 'Клиенты-должники';
+
+  @override
+  String get ongoing => 'В процессе';
+
+  @override
+  String get debtSales => 'Долговые продажи';
+
+  @override
+  String get paidSales => 'Оплаченные продажи';
+
+  @override
+  String get saleDeleted => 'Продажа удалена';
+
+  @override
+  String get draftSaveError => 'Ошибка при сохранении черновика';
+
+  @override
+  String get enterQuantityHint => 'Введите количество...';
+
+  @override
+  String get selectCustomerForDebtWarning =>
+      'Для продажи в долг выберите клиента!';
+
+  @override
+  String get makePayment => 'ОПЛАТИТЬ';
+
+  @override
+  String get closed => 'Закрыто';
+
+  @override
+  String get customerRemoved => 'Клиент удален';
+
+  @override
+  String get removeCustomer => 'Удалить клиента';
+
+  @override
+  String get paymentMethod => 'Способ оплаты';
+
+  @override
+  String get paymentAmount => 'Сумма оплаты';
+
+  @override
+  String get selectPaymentMethod => 'Выберите способ оплаты';
+
+  @override
+  String get enterValidAmount => 'Введите корректную сумму';
+
+  @override
+  String get continueAction => 'Продолжить';
+
+  @override
+  String saleIdTitle(Object id) {
+    return 'Продажа #$id';
+  }
+
+  @override
+  String get noOngoingSales => 'Нет незавершенных продаж';
+
+  @override
+  String get initialSalesWillBeShownHere =>
+      'Начатые продажи будут отображаться здесь';
+
+  @override
+  String get returnProduct => 'Возврат товара';
+
+  @override
+  String get availableQuantity => 'Доступное количество';
+
+  @override
+  String get returnQuantity => 'Количество возврата';
+
+  @override
+  String get invalidQuantity => 'Некорректное количество';
+
+  @override
+  String get paymentHistory => 'История платежей';
+
+  @override
+  String get hasDebt => 'Есть долг';
+
+  @override
+  String get noPayments => 'Платежей нет';
+
+  @override
+  String get noPermissionToEditClosed =>
+      'Нет прав для редактирования закрытого долга (только Owner/Admin)';
+
+  @override
+  String get closedDebtAudit =>
+      'Этот долг закрыт. Изменение будет записано в аудит-лог.';
+
+  @override
+  String get requestSentToAdmin => 'Запрос отправлен админу';
+
+  @override
+  String get requestSentDescription =>
+      'Ваш запрос отправлен администратору. Мы свяжемся с вами после подтверждения.';
+
+  @override
+  String get back => 'Назад';
+
+  @override
+  String get marketName => 'Название маркета';
+
+  @override
+  String get enterMarketName => 'Введите название маркета';
+
+  @override
+  String get marketNameTooShort =>
+      'Название маркета должно содержать минимум 3 символа';
+
+  @override
+  String get newCategory => 'Новая категория';
+
+  @override
+  String get fillIn => 'Заполните';
+
+  @override
+  String get addFirstCategory => 'Добавьте свою первую категорию';
+
+  @override
+  String get todaysReport => 'Сегодняшний отчёт';
+
+  @override
+  String get anonymousCustomer => 'Анонимный клиент';
+
+  @override
+  String get saleDetail => 'Детали продажи';
+
+  @override
+  String get registerMarket => 'Регистрация маркета';
+
+  @override
+  String get afterMarketRegisterInfo =>
+      'После регистрации маркета вы сможете добавить пользователей Admin и Seller';
+
+  @override
+  String get descriptionOptional => 'Описание (опционально)';
+
+  @override
+  String get marketShortInfo => 'Краткая информация о маркете';
+
+  @override
+  String get subdomainRules =>
+      'Можно использовать только строчные буквы, цифры и тире (-)';
+
+  @override
+  String get canBeLeftEmpty => 'Можно оставить пустым';
+
+  @override
+  String get exampleMyShop => 'Например: myshop';
+
+  @override
+  String get subdomainOptional => 'Субдомен (опционально)';
+
+  @override
+  String get pleaseEnterMarketName => 'Пожалуйста, введите название маркета';
+
+  @override
+  String get exampleMyStore => 'Например: Мой магазин';
+
+  @override
+  String get enterMarketDetails => 'Введите данные маркета';
+
+  @override
+  String get createYourMarket => 'Создайте свой собственный маркет';
+
+  @override
+  String get marketRegistration => 'Регистрация Маркета';
+
+  @override
+  String get nowYouCanAddUsers =>
+      'Теперь вы можете добавлять пользователей Admin и Seller.';
+
+  @override
+  String get marketRegisteredSuccess => 'Маркет успешно зарегистрирован!';
+
+  @override
+  String get productUsedInSales =>
+      'Этот товар использовался в продажах, его нельзя удалить';
 }

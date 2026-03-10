@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/product_service.dart';
@@ -76,7 +77,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Mahsulotni o\'chirish'),
-        content: Text('${product['name']} mahsulotini rostdan ham o\'chirmoqchimisiz?'),
+        content: Text(
+            '${product['name']} mahsulotini rostdan ham o\'chirmoqchimisiz?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -125,144 +127,147 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final userRole = authProvider.user?['role'];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin: Mahsulotlar boshqaruvi'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadProducts,
+    return NetworkWrapper(
+      onRetry: _loadProducts,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Admin: Mahsulotlar boshqaruvi'),
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              );
+            },
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Info banner
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade50,
-            child: const Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.blue),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Admin faqat narxlarni, vaqtinchaliklik va minimal chegara yangilay oladi. Mahsulot nomi va sonini o\'zgartira olmaydi.',
-                    style: TextStyle(color: Colors.blue, fontSize: 12),
-                  ),
-                ),
-              ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadProducts,
             ),
-          ),
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (_) => _filterProducts(),
-              decoration: InputDecoration(
-                hintText: 'Mahsulot qidirish...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _filterProducts();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
+          ],
+        ),
+        body: Column(
+          children: [
+            // Info banner
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: Colors.blue.shade50,
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Admin faqat narxlarni, vaqtinchaliklik va minimal chegara yangilay oladi. Mahsulot nomi va sonini o\'zgartira olmaydi.',
+                      style: TextStyle(color: Colors.blue, fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          // Products list
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: Colors.red),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadProducts,
-                              child: const Text('Qayta urinish'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _filteredProducts.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.inventory_2_outlined,
-                                  size: 80,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchController.text.isNotEmpty
-                                      ? 'Mahsulot topilmadi'
-                                      : 'Mahsulotlar yo\'q',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadProducts,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _filteredProducts.length,
-                              itemBuilder: (context, index) {
-                                final product = _filteredProducts[index];
-                                return _buildProductCard(product, userRole);
-                              },
-                            ),
-                          ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AdminProductFormScreen(),
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (_) => _filterProducts(),
+                decoration: InputDecoration(
+                  hintText: 'Mahsulot qidirish...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _filterProducts();
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+              ),
             ),
-          );
-          if (result == true) {
-            _loadProducts();
-          }
-        },
-        child: const Icon(Icons.add),
+            // Products list
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: Colors.red),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _loadProducts,
+                                child: const Text('Qayta urinish'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _filteredProducts.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.inventory_2_outlined,
+                                    size: 80,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    _searchController.text.isNotEmpty
+                                        ? 'Mahsulot topilmadi'
+                                        : 'Mahsulotlar yo\'q',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _loadProducts,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: _filteredProducts.length,
+                                itemBuilder: (context, index) {
+                                  final product = _filteredProducts[index];
+                                  return _buildProductCard(product, userRole);
+                                },
+                              ),
+                            ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const AdminProductFormScreen(),
+              ),
+            );
+            if (result == true) {
+              _loadProducts();
+            }
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -303,7 +308,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'} (o\'zgarmas)',  // ✅ UNIT
+                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'} (o\'zgarmas)', // ✅ UNIT
                   style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 12,

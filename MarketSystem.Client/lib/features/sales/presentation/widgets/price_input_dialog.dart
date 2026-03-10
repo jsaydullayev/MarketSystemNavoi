@@ -56,12 +56,21 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
   }
 
   String _formatNumber(double value) {
-    if (value == value.truncateToDouble()) return value.toInt().toString();
+    final unitName =
+        (widget.product['unitName'] ?? '').toString().toLowerCase();
+    const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
+    final isWeight = weightUnits.contains(unitName);
+
+    if (!isWeight && value == value.truncateToDouble()) {
+      return value.toInt().toString();
+    }
     return value.toString();
   }
 
   void _onPriceChanged() {
-    final cleanText = _priceController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+    final cleanText = _priceController.text
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(',', '.');
     final price = double.tryParse(cleanText) ?? 0.0;
     final shouldShow = _minPrice > 0 && price < _minPrice;
     if (shouldShow != _showMinPrice) {
@@ -79,11 +88,22 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
   }
 
   void _submit() {
-    final cleanPriceText = _priceController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
-    final cleanQtyText = _qtyController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
-    
+    final cleanPriceText = _priceController.text
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(',', '.');
+    final cleanQtyText =
+        _qtyController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+
     final price = double.tryParse(cleanPriceText) ?? 0;
-    final qty = double.tryParse(cleanQtyText) ?? 1;
+    final rawQty = double.tryParse(cleanQtyText) ?? 1;
+
+    final unitName =
+        (widget.product['unitName'] ?? '').toString().toLowerCase();
+    const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
+    final isWeight = weightUnits.contains(unitName);
+
+    final double qty = isWeight ? rawQty : rawQty.truncateToDouble();
+
     widget.onConfirm(price, qty, _commentController.text);
     Navigator.pop(context);
   }

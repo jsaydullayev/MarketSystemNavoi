@@ -3,8 +3,6 @@
 library;
 
 import 'package:dio/dio.dart';
-
-import '../constants/api_constants.dart';
 import '../interceptor/api_interceptor.dart';
 import '../interceptor/error_interceptor.dart';
 

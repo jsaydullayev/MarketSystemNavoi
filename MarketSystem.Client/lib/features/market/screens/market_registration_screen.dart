@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/market_service.dart';
@@ -8,7 +9,8 @@ class MarketRegistrationScreen extends StatefulWidget {
   const MarketRegistrationScreen({super.key});
 
   @override
-  State<MarketRegistrationScreen> createState() => _MarketRegistrationScreenState();
+  State<MarketRegistrationScreen> createState() =>
+      _MarketRegistrationScreenState();
 }
 
 class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
@@ -80,21 +82,22 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
   }
 
   void _showSuccessDialog(dynamic response) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.check_circle, color: Colors.green, size: 50),
-        title: const Text('Market muvaffaqiyatli ro\'yxatdan o\'tkazildi!'),
+        title: Text(l10n.marketRegisteredSuccess),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Market nomi: ${response.market.name}'),
+            Text('${l10n.marketName}: ${response.market.name}'),
             const SizedBox(height: 8),
-            const Text(
-              'Endi siz Admin va Seller foydalanuvchilar qo\'shishingiz mumkin.',
-              style: TextStyle(fontSize: 12),
+            Text(
+              l10n.nowYouCanAddUsers,
+              style: const TextStyle(fontSize: 12),
             ),
           ],
         ),
@@ -113,9 +116,11 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Market Registratsiyasi'),
+        title: Text(l10n.marketRegistration),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -137,9 +142,9 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                   const SizedBox(height: 24),
 
                   // Title
-                  const Text(
-                    'O\'zingizning marketingizni yarating',
-                    style: TextStyle(
+                  Text(
+                    l10n.createYourMarket,
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -148,9 +153,9 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                   const SizedBox(height: 8),
 
                   // Subtitle
-                  const Text(
-                    'Market ma\'lumotlarini kiriting',
-                    style: TextStyle(
+                  Text(
+                    l10n.enterMarketDetails,
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
                     ),
@@ -161,18 +166,18 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                   // Market Name
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Market nomi',
-                      hintText: 'Masalan: Do\'konim',
-                      prefixIcon: Icon(Icons.store),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.marketName,
+                      hintText: l10n.exampleMyStore,
+                      prefixIcon: const Icon(Icons.store),
+                      border: const OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Iltimos, market nomini kiriting';
+                        return l10n.pleaseEnterMarketName;
                       }
                       if (value.trim().length < 3) {
-                        return 'Market nomi kamida 3 ta belgidan iborat bo\'lishi kerak';
+                        return l10n.marketNameTooShort;
                       }
                       return null;
                     },
@@ -182,18 +187,18 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                   // Subdomain (Optional)
                   TextFormField(
                     controller: _subdomainController,
-                    decoration: const InputDecoration(
-                      labelText: 'Subdomain (ixtiyoriy)',
-                      hintText: 'Masalan: myshop',
-                      prefixIcon: Icon(Icons.link),
-                      border: OutlineInputBorder(),
-                      helperText: 'Bo\'sh qoldirish mumkin',
+                    decoration: InputDecoration(
+                      labelText: l10n.subdomainOptional,
+                      hintText: l10n.exampleMyStore,
+                      prefixIcon: const Icon(Icons.link),
+                      border: const OutlineInputBorder(),
+                      helperText: l10n.canBeLeftEmpty,
                     ),
                     validator: (value) {
                       if (value != null &&
                           value.trim().isNotEmpty &&
                           !RegExp(r'^[a-z0-9-]+$').hasMatch(value.trim())) {
-                        return 'Faqat kichik harflar, raqamlar va tire (-) bo\'lishi mumkin';
+                        return l10n.subdomainRules;
                       }
                       return null;
                     },
@@ -203,11 +208,11 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                   // Description (Optional)
                   TextFormField(
                     controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Tavsif (ixtiyoriy)',
-                      hintText: 'Market haqida qisqacha ma\'lumot',
-                      prefixIcon: Icon(Icons.description),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.descriptionOptional,
+                      hintText: l10n.marketShortInfo,
+                      prefixIcon: const Icon(Icons.description),
+                      border: const OutlineInputBorder(),
                     ),
                     maxLines: 3,
                     validator: (value) {
@@ -227,7 +232,7 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Market ro\'yxatdan o\'tgandan so\'ng, Admin va Seller foydalanuvchilar qo\'shishingiz mumkin',
+                              l10n.afterMarketRegisterInfo,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.blue.shade900,
@@ -259,9 +264,9 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                               ),
                             ),
                           )
-                        : const Text(
-                            'Marketni Ro\'yxatdan O\'tkazish',
-                            style: TextStyle(
+                        : Text(
+                            l10n.registerMarket,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
