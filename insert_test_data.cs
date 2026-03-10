@@ -6,7 +6,7 @@ class Program
 {
     static async Task Main()
     {
-        var connString = "Host=localhost;Port=3030;Database=MarketSystemDB;Username=postgres;Password=postgres";
+        var connString = "Host=localhost;Port=5433;Database=MarketSystemDB;Username=postgres;Password=SuperSecur3MarketDB!2026";
 
         await using var conn = new NpgsqlConnection(connString);
         await conn.OpenAsync();
