@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -11,7 +12,9 @@ import 'package:provider/provider.dart';
 import '../../../data/services/report_service.dart';
 import '../../../data/services/download_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/utils/number_formatter.dart';
 import 'daily_sales_details_screen.dart';
+import 'dart:io';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -1118,45 +1121,5 @@ class _ReportsScreenState extends State<ReportsScreen>
         ),
       ],
     );
-  }
-
-  Future<void> _exportToExcel(String reportType) async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      if (reportType == 'daily') {
-        await _reportsService.exportComprehensiveToExcel(_selectedDate);
-      } else if (reportType == 'monthly') {
-        await _reportsService.exportPeriodReportToExcel(_startDate, _endDate);
-      } else if (reportType == 'inventory') {
-        await _reportsService.exportComprehensiveToExcel(_selectedDate);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Hisobot muvaffaqiyatli yuklab olindi!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Yuklab olishda xatolik: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 }
