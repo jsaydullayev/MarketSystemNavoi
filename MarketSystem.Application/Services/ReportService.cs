@@ -708,7 +708,7 @@ public class ReportService : IReportService
             includeProperties: "SaleItems");
 
         var products = await _unitOfWork.Products.FindAsync(
-            p => p.MarketId == marketId, 
+            p => p.MarketId == marketId,
             cancellationToken);
         var productDict = products.ToDictionary(p => p.Id);
 
@@ -719,7 +719,7 @@ public class ReportService : IReportService
         {
             categorySales[category.Id] = new CategorySalesDto(category.Id, category.Name, 0, 0, includeProfit ? 0 : null);
         }
-        
+
         int otherCategoryId = -1;
         categorySales[otherCategoryId] = new CategorySalesDto(otherCategoryId, "Boshqa", 0, 0, includeProfit ? 0 : null);
 
@@ -773,8 +773,6 @@ public class ReportService : IReportService
         );
     }
 
-    // PDF export methods temporarily disabled due to QuestPDF API compatibility issues
-    // TODO: Implement proper PDF export using correct QuestPDF API
     public Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
