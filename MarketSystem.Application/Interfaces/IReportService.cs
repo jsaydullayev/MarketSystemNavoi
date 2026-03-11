@@ -16,4 +16,9 @@ public interface IReportService
     Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default);
     Task<DailySalesListDto> GetDailySalesListAsync(DateTime date, string? userRole = null, Guid? userId = null, CancellationToken cancellationToken = default);
     Task<MonthlyCategorySalesResponseDto> GetMonthlyCategorySalesAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default);
+
+    // PDF export methods (temporarily disabled - being updated)
+    Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default);
+    Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default);
+    Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default);
 }
