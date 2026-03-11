@@ -5,8 +5,8 @@ class ApiConstants {
   // =================== SERVERS ===================
   static const String _productionUrl = 'http://103.125.217.28:8080/api';
   static const String _dockerInternalUrl = 'http://market-system-api:8080/api'; // Docker internal service name
-  static const String _localUrl = 'http://localhost:5137/api';
-  static const String _androidLocalUrl = 'http://10.0.2.2:5137/api';
+  static const String _localUrl = 'http://localhost:8080/api';
+  static const String _androidLocalUrl = 'http://10.0.2.2:8080/api';
   static const String _dockerLocalUrl = 'http://localhost:8080/api';
   static const String _androidDockerLocalUrl = 'http://10.0.2.2:8080/api';
 
@@ -36,7 +36,7 @@ class ApiConstants {
         return _dockerLocalUrl;
       }
     } else {
-      // Local development without Docker (port 5137)
+      // Local development without Docker (port 8080)
       if (kIsWeb) {
         return _localUrl;
       } else if (Platform.isAndroid) {
