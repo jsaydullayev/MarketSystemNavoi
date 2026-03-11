@@ -1092,7 +1092,7 @@ public class SaleService : ISaleService
                 group.Select(s => new SaleDto(
                     s.Id,
                     s.SellerId,
-                    null, // SellerName - kerak emas
+                    null!,
                     s.CustomerId,
                     s.Customer?.FullName,
                     s.Customer?.Phone,
