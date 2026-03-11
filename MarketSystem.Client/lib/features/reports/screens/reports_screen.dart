@@ -32,6 +32,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   DateTime _selectedDate = DateTime.now();
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
+  String _selectedTab = 'daily';
 
   Map<String, dynamic>? _dailyReport;
   Map<String, dynamic>? _periodReport;
@@ -1103,6 +1104,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                   ],
                 ),
               ),
+            ],
       ),
     );
   }
