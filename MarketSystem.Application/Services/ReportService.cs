@@ -197,8 +197,7 @@ public class ReportService : IReportService
             worksheet.Cells[row, 7].Value = 0;
             row++;
         }
-
-        // AutoFit columns
+        
         worksheet.Cells.AutoFitColumns();
 
         return await package.GetAsByteArrayAsync();

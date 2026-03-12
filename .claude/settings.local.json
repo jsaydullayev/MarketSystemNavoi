@@ -3,7 +3,8 @@
     "allow": [
       "Bash(curl:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(ping -c 3 github.com)"
     ]
   }
 }
