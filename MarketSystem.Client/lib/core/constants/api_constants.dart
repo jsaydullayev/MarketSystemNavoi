@@ -11,8 +11,9 @@ class ApiConstants {
   static const String _androidDockerLocalUrl = 'http://10.0.2.2:8080/api';
 
   static String get baseUrl {
-    // Set to true when running inside Docker container
-    const bool isRunningInDocker = true;
+    // Production deployment - users access web app from browser, not inside container
+    // So we need to use the actual server IP, not Docker internal service name
+    const bool isRunningInDocker = false;
 
     const bool useProduction = true;
 
