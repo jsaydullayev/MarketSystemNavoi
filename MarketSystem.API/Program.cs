@@ -147,9 +147,14 @@ try
             policy.SetIsOriginAllowed((origin) =>
                 {
                     if (string.IsNullOrEmpty(origin)) return false;
+                    // Allow localhost, server IP, and internal Docker network
                     return origin.Contains("localhost") ||
+                           origin.Contains("127.0.0.1") ||
                            origin.Contains("103.125.217.28") ||
-                           origin.Contains("10.0.1.201");
+                           origin.Contains("10.0.1.201") ||
+                           origin.Contains("172.") ||  // Docker internal network
+                           origin.Contains("192.168.") || // Local network
+                           origin.Contains("market-system-client"); // Docker service name
                 })
                   .AllowAnyMethod()
                   .AllowAnyHeader()
