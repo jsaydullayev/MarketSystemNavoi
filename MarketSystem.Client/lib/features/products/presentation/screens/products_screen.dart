@@ -65,8 +65,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      final errorMsg = e.toString();
       setState(() {
-        _errorMessage = e.toString();
+        // ✅ Tuzatilgan: Aniqroq xato xabari
+        if (errorMsg.contains('SocketException') || errorMsg.contains('Connection refused')) {
+          _errorMessage = 'Server bilan aloqa yo\'q. Backend server ishlayaptimi? (103.125.217.28:8080)';
+        } else if (errorMsg.contains('401') || errorMsg.contains('Unauthorized')) {
+          _errorMessage = 'Login amali eskirgan. Iltimos, qayta login qiling.';
+        } else if (errorMsg.contains('403') || errorMsg.contains('Forbidden')) {
+          _errorMessage = 'Ruxsat yo\'q. Siz bu amalni bajarish huquqiga ega emassiz.';
+        } else {
+          _errorMessage = 'Mahsulotlarni yuklashda xato: $errorMsg';
+        }
         _isLoading = false;
       });
     }

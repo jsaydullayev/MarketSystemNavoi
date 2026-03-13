@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:http/http.dart' as http;
 
 class NetworkWrapper extends StatefulWidget {
   final Widget child;
@@ -44,10 +45,24 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
       final hasNetwork = result != ConnectivityResult.none;
 
       if (hasNetwork) {
-        final lookup = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 3));
-        final connected = lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty;
-        if (mounted) setState(() => _isConnected = connected);
+        // ✅ Tuzatilgan: Production serverga ham test qilamiz
+        try {
+          // API serverga ham test qilamiz
+          final response = await http.get(
+            Uri.parse('http://103.125.217.28:8080/health'),
+          ).timeout(const Duration(seconds: 3));
+          final apiConnected = response.statusCode == 200;
+
+          if (mounted) setState(() => _isConnected = apiConnected);
+        } catch (apiError) {
+          // API serverga ulana olmasa, internet bor deb hisoblaymiz
+          // chunki backend server ishlamasligi mumkin
+          final lookup = await InternetAddress.lookup('google.com')
+              .timeout(const Duration(seconds: 2));
+          final internetConnected = lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty;
+
+          if (mounted) setState(() => _isConnected = internetConnected);
+        }
       } else {
         if (mounted) setState(() => _isConnected = false);
       }
@@ -96,7 +111,8 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
               ),
               const SizedBox(height: 32),
               Text(
-                'Internet yo\'q',
+                'Internet yoki server bilan aloqa yo\'q',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -105,7 +121,7 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Internet aloqasini tekshiring va qayta urinib ko\'ring',
+                'Internet aloqasini tekshiring va backend server ishlayapti deganiga ishonching\n(103.125.217.28:8080)',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,

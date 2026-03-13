@@ -15,6 +15,8 @@ class ApiConstants {
     // So we need to use the actual server IP, not Docker internal service name
     const bool isRunningInDocker = false;
 
+    // ✅ O'ZGARTIRISH: Production server URL'dan foydalanamiz
+    // Buni o'zgartirmang, chunki production server ishlayapti
     const bool useProduction = true;
 
     const bool useDocker = false;
@@ -47,6 +49,7 @@ class ApiConstants {
       }
     }
   }
+
 
 
   // Endpoints (Controller names must match)
