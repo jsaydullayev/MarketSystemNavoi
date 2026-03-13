@@ -146,6 +146,9 @@ try
         {
             policy.SetIsOriginAllowed((origin) =>
                 {
+                    // Log the origin for debugging
+                    Console.WriteLine($"[CORS] Origin request: {origin}");
+
                     if (string.IsNullOrEmpty(origin)) return false;
                     // Allow localhost, server IP, and internal Docker network
                     return origin.Contains("localhost") ||
