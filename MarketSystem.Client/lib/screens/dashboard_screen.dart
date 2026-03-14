@@ -30,13 +30,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = authProvider.user;
     final role = user?['role'] ?? 'Seller';
     final l10n = AppLocalizations.of(context)!;
-    final isDark = AdaptiveTheme.of(context).mode.isDark;
-    final primaryColor = AppColors.getPrimary(context);
-    final imageVersion = authProvider.profileImageVersion;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         bool isLargeScreen = constraints.maxWidth > 900;
+        final isDark = AdaptiveTheme.of(context).mode.isDark;
+        final primaryColor = AppColors.getPrimary(context);
+        final imageVersion = authProvider.profileImageVersion;
 
         return Scaffold(
           backgroundColor: AppColors.getBg(isDark),
@@ -92,8 +92,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     trailing: Switch.adaptive(
                       value: isDark,
                       activeColor: primary,
-                      onChanged: (v) =>
-                          AdaptiveTheme.of(context).toggleThemeMode(),
+                      onChanged: (v) {
+                        if (isDark) {
+                          AdaptiveTheme.of(context).setLight();
+                        } else {
+                          AdaptiveTheme.of(context).setDark();
+                        }
+                      },
                     ),
                   ),
                   Consumer<LocaleProvider>(
