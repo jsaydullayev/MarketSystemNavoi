@@ -146,12 +146,14 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
         child: Container(
           constraints: BoxConstraints(
             maxWidth: isWeb ? 500 : double.infinity,
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
           ),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             child: Form(
               key: _formKey,
