@@ -68,12 +68,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
       final errorMsg = e.toString();
       setState(() {
         // ✅ Tuzatilgan: Aniqroq xato xabari
-        if (errorMsg.contains('SocketException') || errorMsg.contains('Connection refused')) {
-          _errorMessage = 'Server bilan aloqa yo\'q. Backend server ishlayaptimi? (103.125.217.28:8080)';
-        } else if (errorMsg.contains('401') || errorMsg.contains('Unauthorized')) {
+        if (errorMsg.contains('SocketException') ||
+            errorMsg.contains('Connection refused')) {
+          _errorMessage =
+              'Server bilan aloqa yo\'q. Backend server ishlayaptimi? (103.125.217.28:8080)';
+        } else if (errorMsg.contains('401') ||
+            errorMsg.contains('Unauthorized')) {
           _errorMessage = 'Login amali eskirgan. Iltimos, qayta login qiling.';
         } else if (errorMsg.contains('403') || errorMsg.contains('Forbidden')) {
-          _errorMessage = 'Ruxsat yo\'q. Siz bu amalni bajarish huquqiga ega emassiz.';
+          _errorMessage =
+              'Ruxsat yo\'q. Siz bu amalni bajarish huquqiga ega emassiz.';
         } else {
           _errorMessage = 'Mahsulotlarni yuklashda xato: $errorMsg';
         }
@@ -126,99 +130,106 @@ class _ProductsScreenState extends State<ProductsScreen> {
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(10),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.inventory_2_rounded,
+                          color: primary, size: 22),
                     ),
-                    child: Icon(Icons.inventory_2_rounded,
-                        color: primary, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l10n.zakup,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l10n.zakup,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      isDark ? Colors.white38 : Colors.grey)),
+                          Text(product['name'],
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _buildDialogField(qtyController, l10n.quantity,
+                    Icons.add_shopping_cart, true),
+                const SizedBox(height: 12),
+                _buildDialogField(costController, l10n.costPrice,
+                    Icons.monetization_on_outlined, true),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(
+                              color: isDark
+                                  ? Colors.white24
+                                  : Colors.grey.shade300),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: Text(l10n.cancel,
                             style: TextStyle(
-                                fontSize: 12,
-                                color: isDark ? Colors.white38 : Colors.grey)),
-                        Text(product['name'],
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildDialogField(
-                  qtyController, l10n.quantity, Icons.add_shopping_cart, true),
-              const SizedBox(height: 12),
-              _buildDialogField(costController, l10n.costPrice,
-                  Icons.monetization_on_outlined, true),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: BorderSide(
-                            color:
-                                isDark ? Colors.white24 : Colors.grey.shade300),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                                color: isDark ? Colors.white54 : Colors.grey)),
                       ),
-                      child: Text(l10n.cancel,
-                          style: TextStyle(
-                              color: isDark ? Colors.white54 : Colors.grey)),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? Colors.white : primary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDark ? Colors.white : primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        child: Text(l10n.add,
+                            style: TextStyle(
+                                color: isDark ? primary : Colors.white,
+                                fontWeight: FontWeight.bold)),
                       ),
-                      child: Text(l10n.add,
-                          style: TextStyle(
-                              color: isDark ? primary : Colors.white,
-                              fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
