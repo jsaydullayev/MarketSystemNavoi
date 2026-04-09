@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:open_filex/open_filex.dart';
+
 import 'http_service.dart';
 
 class DownloadService {
@@ -14,6 +16,11 @@ class DownloadService {
   static DownloadService getInstance(HttpService httpService) {
     _instance ??= DownloadService._internal(httpService);
     return _instance!;
+  }
+
+  /// DateTime ni yyyy-MM-dd formatida query parametr uchun formatlash
+  String _formatDateForQuery(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
   }
 
   /// Kategoriyalarni Excel formatida yuklab olish
@@ -65,17 +72,17 @@ class DownloadService {
   /// Sotuvlarni Excel formatida yuklab olish
   Future<void> downloadSales({DateTime? startDate, DateTime? endDate}) async {
     try {
-      String url = '/Reports/ExportSalesToExcel';
+      String url = '/Reports/sales/export';
 
       // Qo'shimcha parametrlarni qo'shish
       if (startDate != null || endDate != null) {
         url += '?';
         if (startDate != null) {
-          url += 'startDate=${startDate.toIso8601String()}';
+          url += 'startDate=${_formatDateForQuery(startDate)}';
           if (endDate != null) url += '&';
         }
         if (endDate != null) {
-          url += 'endDate=${endDate.toIso8601String()}';
+          url += 'endDate=${_formatDateForQuery(endDate)}';
         }
       }
 
@@ -101,11 +108,11 @@ class DownloadService {
   /// Umumiy hisobotni Excel formatida yuklab olish
   Future<void> downloadComprehensiveReport({DateTime? date}) async {
     try {
-      String url = '/Reports/ExportComprehensiveReportToExcel';
+      String url = '/Reports/comprehensive-report/export';
 
-      // Sana parametrini qo'shish
+      // Sana parametrini qo'shish (yyyy-MM-dd formatda)
       if (date != null) {
-        url += '?date=${date.toIso8601String()}';
+        url += '?date=${_formatDateForQuery(date)}';
       }
 
       final response = await _httpService.get(url);
@@ -231,7 +238,7 @@ class DownloadService {
   /// Kunlik hisobotni PDF formatida yuklab olish
   Future<void> downloadDailyReportToPdf(DateTime date) async {
     try {
-      String url = '/Reports/ExportDailyReportToPdf?date=${date.toIso8601String()}';
+      String url = '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}';
 
       final response = await _httpService.get(url);
 
@@ -254,7 +261,7 @@ class DownloadService {
   /// Davr hisobotni PDF formatida yuklab olish
   Future<void> downloadPeriodReportToPdf(DateTime start, DateTime end) async {
     try {
-      String url = '/Reports/ExportPeriodReportToPdf?start=${start.toIso8601String()}&end=${end.toIso8601String()}';
+      String url = '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}';
 
       final response = await _httpService.get(url);
 
@@ -277,7 +284,7 @@ class DownloadService {
   /// Umumiy hisobotni PDF formatida yuklab olish
   Future<void> downloadComprehensiveReportToPdf(DateTime date) async {
     try {
-      String url = '/Reports/ExportComprehensiveReportToPdf?date=${date.toIso8601String()}';
+      String url = '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}';
 
       final response = await _httpService.get(url);
 

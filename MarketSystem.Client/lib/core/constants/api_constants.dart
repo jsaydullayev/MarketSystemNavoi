@@ -5,19 +5,18 @@ class ApiConstants {
   // =================== SERVERS ===================
   static const String _productionUrl = 'http://103.125.217.28:8080/api';
   static const String _dockerInternalUrl = 'http://market-system-api:8080/api'; // Docker internal service name
-  static const String _localUrl = 'http://localhost:8080/api';
-  static const String _androidLocalUrl = 'http://10.0.2.2:8080/api';
+  static const String _localUrl = 'http://localhost:5000/api';
+  static const String _androidLocalUrl = 'http://10.0.2.2:5000/api';
   static const String _dockerLocalUrl = 'http://localhost:8080/api';
   static const String _androidDockerLocalUrl = 'http://10.0.2.2:8080/api';
 
   static String get baseUrl {
-    // Production deployment - users access web app from browser, not inside container
-    // So we need to use the actual server IP, not Docker internal service name
+    // Local development - use localhost:8080
     const bool isRunningInDocker = false;
 
     // ✅ O'ZGARTIRISH: Production server URL'dan foydalanamiz
     // Buni o'zgartirmang, chunki production server ishlayapti
-    const bool useProduction = true;
+    const bool useProduction = false;
 
     const bool useDocker = false;
 

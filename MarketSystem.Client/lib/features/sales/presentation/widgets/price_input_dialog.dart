@@ -97,12 +97,8 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     final price = double.tryParse(cleanPriceText) ?? 0;
     final rawQty = double.tryParse(cleanQtyText) ?? 1;
 
-    final unitName =
-        (widget.product['unitName'] ?? '').toString().toLowerCase();
-    const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
-    final isWeight = weightUnits.contains(unitName);
-
-    final double qty = isWeight ? rawQty : rawQty.truncateToDouble();
+    // BUG FIX: Remove truncation - allow decimal quantities for all units
+    final double qty = rawQty;
 
     widget.onConfirm(price, qty, _commentController.text);
     Navigator.pop(context);

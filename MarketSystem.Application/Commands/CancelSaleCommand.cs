@@ -24,55 +24,61 @@ public class CancelSaleCommandHandler : IRequestHandler<CancelSaleCommand>
     {
         _logger.LogInformation("Admin {AdminId} attempting to cancel sale {SaleId}", command.AdminId, command.SaleId);
 
-        try
+        // ✅ FIX: Use execution strategy to wrap transaction operations
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        await strategy.ExecuteAsync(async () =>
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-            // Validate admin
-            var admin = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == command.AdminId && u.IsActive, cancellationToken)
-                ?? throw new Exception($"Admin with ID {command.AdminId} not found or inactive");
-
-            var sale = await _context.Sales
-                .Include(s => s.SaleItems)
-                .Include(s => s.Debt)
-                .Include(s => s.Payments)
-                .FirstOrDefaultAsync(s => s.Id == command.SaleId, cancellationToken)
-                ?? throw new Exception($"Sale with ID {command.SaleId} not found");
-
-            var previousStatus = sale.Status;
-
-            if (sale.Status == SaleStatus.Cancelled)
+            try
             {
-                _logger.LogWarning("Attempt to cancel already cancelled sale {SaleId}", command.SaleId);
-                throw new Exception("Sale already cancelled");
+                using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+                // Validate admin
+                var admin = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == command.AdminId && u.IsActive, cancellationToken)
+                    ?? throw new Exception($"Admin with ID {command.AdminId} not found or inactive");
+
+                var sale = await _context.Sales
+                    .Include(s => s.SaleItems)
+                    .Include(s => s.Debt)
+                    .Include(s => s.Payments)
+                    .FirstOrDefaultAsync(s => s.Id == command.SaleId, cancellationToken)
+                    ?? throw new Exception($"Sale with ID {command.SaleId} not found");
+
+                var previousStatus = sale.Status;
+
+                if (sale.Status == SaleStatus.Cancelled)
+                {
+                    _logger.LogWarning("Attempt to cancel already cancelled sale {SaleId}", command.SaleId);
+                    throw new Exception("Sale already cancelled");
+                }
+
+                // Update sale status
+                sale.Status = SaleStatus.Cancelled;
+                _logger.LogInformation("Sale {SaleId} status changed from {PreviousStatus} to Cancelled",
+                    command.SaleId, previousStatus);
+
+                // Close debt if exists
+                if (sale.Debt != null)
+                {
+                    var previousDebt = sale.Debt.RemainingDebt;
+                    sale.Debt.Status = DebtStatus.Closed;
+                    sale.Debt.RemainingDebt = 0;
+                    _logger.LogInformation("Closed debt for sale {SaleId}. Previous debt: {Debt}",
+                        command.SaleId, previousDebt);
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogInformation("Sale {SaleId} successfully cancelled by Admin {AdminId}",
+                    command.SaleId, command.AdminId);
             }
-
-            // Update sale status
-            sale.Status = SaleStatus.Cancelled;
-            _logger.LogInformation("Sale {SaleId} status changed from {PreviousStatus} to Cancelled",
-                command.SaleId, previousStatus);
-
-            // Close debt if exists
-            if (sale.Debt != null)
+            catch (Exception ex)
             {
-                var previousDebt = sale.Debt.RemainingDebt;
-                sale.Debt.Status = DebtStatus.Closed;
-                sale.Debt.RemainingDebt = 0;
-                _logger.LogInformation("Closed debt for sale {SaleId}. Previous debt: {Debt}",
-                    command.SaleId, previousDebt);
+                _logger.LogError(ex, "Error cancelling sale {SaleId}: {Message}", command.SaleId, ex.Message);
+                throw;
             }
-
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-
-            _logger.LogInformation("Sale {SaleId} successfully cancelled by Admin {AdminId}",
-                command.SaleId, command.AdminId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error cancelling sale {SaleId}: {Message}", command.SaleId, ex.Message);
-            throw;
-        }
+        });
     }
 }

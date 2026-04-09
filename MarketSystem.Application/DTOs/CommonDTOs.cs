@@ -344,3 +344,29 @@ public record MonthlyCategorySalesResponseDto(
     [property: JsonPropertyName("totalSales")] decimal TotalSales,
     [property: JsonPropertyName("totalProfit")] decimal? TotalProfit
 );
+
+// Sale Item for detailed export
+public record SaleItemExportDto(
+    [property: JsonPropertyName("productId")] string ProductId,
+    [property: JsonPropertyName("productName")] string ProductName,
+    [property: JsonPropertyName("quantity")] decimal Quantity,
+    [property: JsonPropertyName("costPrice")] decimal CostPrice,
+    [property: JsonPropertyName("salePrice")] decimal SalePrice,
+    [property: JsonPropertyName("totalAmount")] decimal TotalAmount,
+    [property: JsonPropertyName("profit")] decimal? Profit,
+    [property: JsonPropertyName("comment")] string? Comment
+);
+
+// Sale with items for detailed export
+public record SaleWithItemsDto(
+    [property: JsonPropertyName("id")] Guid Id,
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+    [property: JsonPropertyName("sellerName")] string? SellerName,
+    [property: JsonPropertyName("customerName")] string? CustomerName,
+    [property: JsonPropertyName("totalAmount")] decimal TotalAmount,
+    [property: JsonPropertyName("paidAmount")] decimal PaidAmount,
+    [property: JsonPropertyName("paymentType")] string? PaymentType,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("profit")] decimal? Profit,
+    [property: JsonPropertyName("items")] List<SaleItemExportDto> Items
+);

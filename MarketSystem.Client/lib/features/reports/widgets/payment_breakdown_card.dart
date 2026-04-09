@@ -37,12 +37,24 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
       'icon': Icons.phone_android_outlined,
       'color': Colors.blue
     },
+    'Qaytarilgan': {
+      'name': 'Qaytarilgan',
+      'icon': Icons.assignment_return_outlined,
+      'color': Colors.red
+    },
+    'Refund': {
+      'name': 'Qaytarilgan',
+      'icon': Icons.assignment_return_outlined,
+      'color': Colors.red
+    },
   };
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isRefund = paymentType == 'Qaytarilgan' || paymentType == 'Refund';
+
     final cfg = _config[paymentType] ??
         {
           'name': paymentType,
@@ -52,8 +64,10 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
     final color = cfg['color'] as Color;
     final icon = cfg['icon'] as IconData;
     final name = cfg['name'] as String;
-    final pct =
-        totalSales > 0 ? (amount / totalSales * 100).toStringAsFixed(1) : '0.0';
+
+    // For refunds, show absolute value but keep track of negative
+    final displayAmount = amount.abs();
+    final pct = totalSales > 0 ? (displayAmount / totalSales * 100).toStringAsFixed(1) : '0.0';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -85,30 +99,47 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
                 Text(name,
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w700)),
-                Text(
-                  l10n.transactionStats(count, pct),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: totalSales > 0 ? amount / totalSales : 0,
-                    backgroundColor: color.withOpacity(0.1),
-                    valueColor: AlwaysStoppedAnimation(color),
-                    minHeight: 4,
+                if (!isRefund)
+                  Text(
+                    l10n.transactionStats(count, pct),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  )
+                else
+                  Text(
+                    count > 0 ? l10n.transactionStats(count, pct) : '',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
-                ),
+                const SizedBox(height: 6),
+                if (!isRefund)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: totalSales > 0 ? amount / totalSales : 0,
+                      backgroundColor: color.withOpacity(0.1),
+                      valueColor: AlwaysStoppedAnimation(color),
+                      minHeight: 4,
+                    ),
+                  )
+                else
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: totalSales > 0 ? displayAmount / totalSales : 0,
+                      backgroundColor: color.withOpacity(0.1),
+                      valueColor: const AlwaysStoppedAnimation(Colors.red),
+                      minHeight: 4,
+                    ),
+                  ),
               ],
             ),
           ),
           const SizedBox(width: 12),
           Text(
-            '${NumberFormatter.formatDecimal(amount)} ${l10n.currencySom}',
+            '${isRefund ? '-' : ''}${NumberFormatter.formatDecimal(displayAmount)} ${l10n.currencySom}',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: color,
+              color: isRefund ? Colors.red : color,
             ),
           ),
         ],

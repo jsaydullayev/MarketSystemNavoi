@@ -74,7 +74,7 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
+            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -117,7 +117,7 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
+            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -158,7 +158,7 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
+            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -200,7 +200,7 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
+            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -286,7 +286,11 @@ public class SaleService : ISaleService
     public async Task<SaleItemDto?> AddSaleItemAsync(Guid saleId, AddSaleItemDto request, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        
+
+        // LOG: Track quantity flow - 1.5 should remain 1.5 throughout
+        _logger.LogInformation("[AddSaleItem] RECEIVED - SaleId: {SaleId}, ProductId: {ProductId}, Quantity: {Quantity}, Type: {Type}",
+            saleId, request.ProductId, request.Quantity, request.Quantity.GetType().Name);
+
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // Get sale with MarketId filtering
@@ -310,8 +314,11 @@ public class SaleService : ISaleService
                 throw new InvalidOperationException("Product does not belong to this market");
 
             // Validate stock
+            if (product.Quantity <= 0)
+                throw new InvalidOperationException("Bu mahsulot omborda yo'q");
+
             if (product.Quantity < request.Quantity)
-                throw new InvalidOperationException($"Insufficient stock. Available: {product.Quantity}, Requested: {request.Quantity}");
+                throw new InvalidOperationException($"Omborda yetarli mahsulot yo'q. Mavjud: {product.Quantity}, So'ralgan: {request.Quantity}");
 
             // Note: MinSalePrice validation is now UI-only warning, not enforced on backend
             // Sellers can sell below minimum price without comment if needed
@@ -334,6 +341,11 @@ public class SaleService : ISaleService
                 // Product exists - UPDATE existing item
                 var oldQuantity = existingItem.Quantity;
                 existingItem.Quantity += request.Quantity;
+
+                // LOG: Existing item update
+                _logger.LogInformation("[AddSaleItem] UPDATE EXISTING - OldQty: {OldQty}, RequestQty: {RequestQty}, NewQty: {NewQty}",
+                    oldQuantity, request.Quantity, existingItem.Quantity);
+
                 // Keep the original sale price (or could use weighted average)
                 // existingItem.SalePrice = existingItem.SalePrice; // Keep original price
 
@@ -366,6 +378,10 @@ public class SaleService : ISaleService
                     Comment = request.Comment
                 };
 
+                // LOG: New item create
+                _logger.LogInformation("[AddSaleItem] CREATE NEW - Quantity: {Quantity}, ProductId: {ProductId}",
+                    saleItem.Quantity, saleItem.ProductId);
+
                 await _unitOfWork.SaleItems.AddAsync(saleItem, cancellationToken);
 
                 // Update stock
@@ -381,9 +397,17 @@ public class SaleService : ISaleService
                 resultSaleItem = saleItem;
             }
 
+            // LOG: Before DB save - confirm what will be saved
+            _logger.LogInformation("[AddSaleItem] BEFORE DB SAVE - Quantity: {Quantity}, ProductId: {ProductId}",
+                resultSaleItem.Quantity, resultSaleItem.ProductId);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return MapSaleItemToDto(resultSaleItem, product.Name);
+            // LOG: After DB save - confirm what was saved
+            _logger.LogInformation("[AddSaleItem] AFTER DB SAVE - Quantity: {Quantity}, ProductId: {ProductId}",
+                resultSaleItem.Quantity, resultSaleItem.ProductId);
+
+            return MapSaleItemToDto(resultSaleItem, product.Name, product.GetUnitName());
         }, cancellationToken);
     }
 
@@ -464,7 +488,7 @@ public class SaleService : ISaleService
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return MapSaleItemToDto(resultSaleItem, product.Name);
+            return MapSaleItemToDto(resultSaleItem, product.Name, product.GetUnitName());
         }, cancellationToken);
     }
 
@@ -858,7 +882,7 @@ public class SaleService : ISaleService
         );
     }
 
-    private static SaleItemDto MapSaleItemToDto(SaleItem item, string productName)
+    private static SaleItemDto MapSaleItemToDto(SaleItem item, string productName, string unit = "")
     {
         return new SaleItemDto(
             item.Id.ToString(),
@@ -870,7 +894,7 @@ public class SaleService : ISaleService
             item.SalePrice,
             item.TotalPrice,  // Property from entity
             item.Profit,      // Property from entity
-            "", // TODO: Get unit from product
+            unit,
             item.Comment
         );
     }
@@ -883,13 +907,14 @@ public class SaleService : ISaleService
         if (request.NewPrice <= 0)
             throw new InvalidOperationException("Narx 0 yoki manfiy bo'lishi mumkin emas");
 
-        // Comment is optional for price update
-        // if (string.IsNullOrWhiteSpace(request.Comment))
-        //     throw new InvalidOperationException("Izoh (comment) majburiy");
+        // ✅ FIX: Use execution strategy to wrap transaction operations
+        var strategy = _context.Database.CreateExecutionStrategy();
 
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
-        try
+            try
         {
             // Parse saleItemId from string to Guid
             var saleItemGuid = Guid.Parse(request.SaleItemId);
@@ -985,13 +1010,25 @@ public class SaleService : ISaleService
             // Get product name for response
             var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
 
-            return MapSaleItemToDto(saleItem, product?.Name ?? "Unknown");
+        // ✅ QARZ BOSHQA - Qarz total ma'lumotini ham qaytarib chiqamiz
+        // Qarzni hisoblab qaytamiz
+        var debts = await _unitOfWork.Debts.FindAsync(
+                d => d.SaleId == sale.Id && d.MarketId == marketId,
+                cancellationToken);
+
+            var debt = debts.FirstOrDefault();
+            var totalDebt = debt?.TotalDebt ?? 0;
+            var paidAmount = debt?.TotalPaid ?? 0;
+            var remainingDebt = totalDebt - paidAmount;
+
+            return MapSaleItemToDto(saleItem, product?.Name ?? "Unknown", product?.GetUnitName() ?? "");
         }
         catch
         {
             await _unitOfWork.RollbackTransactionAsync(cancellationToken);
             throw;
         }
+        });
     }
 
     public async Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default)
@@ -1002,64 +1039,118 @@ public class SaleService : ISaleService
 
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.Id == saleId && s.MarketId == marketId,
-            cancellationToken);
-
-        var sale = sales.FirstOrDefault();
-
-        if (sale is null)
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            _logger.LogWarning("Sale not found: {SaleId}", saleId);
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            return null;
-        }
+            // Query filterni o'tkazib yuborib, bevosita bazadan qidiramiz
+            var sale = await _context.Sales
+                .IgnoreQueryFilters()
+                .Include(s => s.SaleItems)
+                .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
 
-        // Faqat Draft va Paid statusdagi savdolarni o'chirish mumkin
-        // Debt statusdagi savdolarni o'chirish mumkin emas, chunki ularda qarz bor
-        // Closed va Cancelled statusdagi savdolarni ham o'chirish mumkin emas
-        if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Paid)
-        {
-            _logger.LogWarning("Sale cannot be deleted: {SaleId}, Status: {Status}", saleId, sale.Status);
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw new InvalidOperationException("Faqat draft yoki to'langan (Paid) savdolarini o'chirish mumkin! Qarzli savdolarni o'chirib bo'lmaydi.");
-        }
-
-        // Sale items ni o'chirish (cascade delete bo'lishi kerak)
-        var saleItems = await _unitOfWork.SaleItems.FindAsync(
-            si => si.SaleId == saleId,
-            cancellationToken
-        );
-
-        foreach (var saleItem in saleItems)
-        {
-            _unitOfWork.SaleItems.Delete(saleItem);
-            _logger.LogInformation("SaleItem deleted: {SaleItemId}, Product: {ProductId}, Qty: {Quantity}",
-                saleItem.Id, saleItem.ProductId, saleItem.Quantity);
-
-            // Mahsulotni qaytarib olish (stock ni qaytarish)
-            var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
-            if (product != null)
+            if (sale is null)
             {
-                product.Quantity += saleItem.Quantity;
-                _unitOfWork.Products.Update(product);
-                _logger.LogInformation("Product stock restored: {ProductId}, Qty: +{Quantity}",
-                    product.Id, saleItem.Quantity);
+                _logger.LogWarning("Sale not found: {SaleId} in MarketId: {MarketId}", saleId, marketId);
+                return null;
             }
-        }
 
-        // Savdoni o'chirish
-        _unitOfWork.Sales.Delete(sale);
-        _logger.LogInformation("Sale deleted: {SaleId}", saleId);
+            if (sale.IsDeleted)
+            {
+                _logger.LogWarning("Sale already deleted: {SaleId}", saleId);
+                return null;
+            }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        await _unitOfWork.CommitTransactionAsync(cancellationToken);
+            // Faqat Draft va Paid statusdagi savdolarni o'chirish mumkin
+            // Debt statusdagi savdolarni o'chirish mumkin emas, chunki ularda qarz bor
+            // Closed va Cancelled statusdagi savdolarni ham o'chirish mumkin emas
+            if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Paid)
+            {
+                _logger.LogWarning("Sale cannot be deleted: {SaleId}, Status: {Status}", saleId, sale.Status);
+                throw new InvalidOperationException("Faqat draft yoki to'langan (Paid) savdolarini o'chirish mumkin! Qarzli savdolarni o'chirib bo'lmaydi.");
+            }
 
-        _logger.LogInformation("=== DELETE SALE SUCCESS ===");
+            // Sale items ni o'chirish
+            var saleItems = sale.SaleItems.ToList();
+            _logger.LogInformation("Found {Count} sale items to delete", saleItems.Count);
 
-        return await MapToDtoAsync(sale, cancellationToken);
+            foreach (var saleItem in saleItems)
+            {
+                _logger.LogInformation("Deleting SaleItem: {SaleItemId}, Product: {ProductId}, Qty: {Quantity}",
+                    saleItem.Id, saleItem.ProductId, saleItem.Quantity);
+
+                // Mahsulotni qaytarib olish (stock ni qaytarish)
+                var product = await _context.Products
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(p => p.Id == saleItem.ProductId && p.MarketId == marketId, cancellationToken);
+
+                if (product != null)
+                {
+                    product.Quantity += saleItem.Quantity;
+                    _context.Products.Update(product);
+                    _logger.LogInformation("Product stock restored: {ProductId}, Qty: +{Quantity}",
+                        product.Id, saleItem.Quantity);
+                }
+
+                // SaleItemni o'chirish
+                _context.SaleItems.Remove(saleItem);
+            }
+
+            // Savdoni o'chirish (soft delete - IsDeleted = true)
+            sale.IsDeleted = true;
+            _context.Sales.Update(sale);
+            _logger.LogInformation("Sale marked as deleted: {SaleId}", saleId);
+
+            // Payments ham o'chirilishi kerak
+            var payments = await _context.Payments
+                .Where(p => p.SaleId == saleId)
+                .ToListAsync(cancellationToken);
+
+            foreach (var payment in payments)
+            {
+                _context.Payments.Remove(payment);
+                _logger.LogInformation("Payment deleted: {PaymentId}", payment.Id);
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("=== DELETE SALE SUCCESS ===");
+
+            // DTO ni yaratish (sale hali tracking state da)
+            return new SaleDto(
+                sale.Id,
+                sale.SellerId,
+                "", // Seller name - yuklanmaydi
+                sale.CustomerId,
+                null, // Customer name
+                null, // Customer phone
+                sale.Status.ToString(),
+                sale.TotalAmount,
+                sale.PaidAmount,
+                sale.TotalAmount - sale.PaidAmount,
+                sale.CreatedAt,
+                saleItems.Select(si => new SaleItemDto(
+                    si.Id.ToString(),
+                    si.SaleId.ToString(),
+                    si.ProductId,
+                    "", // Product name - yuklanmaydi
+                    si.Quantity,
+                    si.CostPrice,
+                    si.SalePrice,
+                    si.TotalPrice,
+                    si.Profit,
+                    "", // Unit
+                    si.Comment
+                )).ToList(),
+                payments.Select(p => new PaymentDto(
+                    p.Id,
+                    p.PaymentType.ToString().ToLowerInvariant(),
+                    p.Amount,
+                    p.CreatedAt,
+                    null,
+                    null,
+                    null
+                )).ToList()
+            );
+        }, cancellationToken);
     }
 
     public async Task<IEnumerable<DebtorDto>> GetDebtorsAsync(CancellationToken cancellationToken = default)
@@ -1101,7 +1192,7 @@ public class SaleService : ISaleService
                     s.PaidAmount,
                     s.TotalAmount - s.PaidAmount,
                     s.CreatedAt,
-                    s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown")).ToList(),
+                    s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
                     s.Payments.Select(p => new PaymentDto(
                         p.Id,
                         p.PaymentType.ToString(),
@@ -1269,6 +1360,21 @@ public class SaleService : ISaleService
                     sale.Status = SaleStatus.Paid;
                 }
 
+                // ✅ QARZDOR TOVARNI QAYTARILGANDA - Qarzni "Returned" statusga o'tkaziladi
+                if (sale.CustomerId.HasValue && (sale.TotalAmount == 0 || sale.SaleItems.Count == 0))
+                {
+                    var existingDebt = await _context.Debts
+                        .FirstOrDefaultAsync(d => d.SaleId == sale.Id && d.MarketId == marketId, cancellationToken);
+
+                    if (existingDebt != null)
+                    {
+                        existingDebt.Status = DebtStatus.Returned; // Qarzdor tovarni qisman qaytarganini bildiradi
+                        existingDebt.RemainingDebt = 0;
+                        _context.Debts.Update(existingDebt);
+                        _logger.LogInformation("Debt status changed to Returned: SaleId={SaleId}, DebtId={DebtId}", sale.Id, existingDebt.Id);
+                    }
+                }
+
                 _logger.LogInformation("Sale status: SaleId={SaleId}, OldStatus={OldStatus}, NewStatus={NewStatus}",
                     saleId, oldStatus, sale.Status);
 
@@ -1299,7 +1405,7 @@ public class SaleService : ISaleService
                 // Updated sale item ni qaytarish (faqat partial return bo'lsa)
                 if (!isFullReturn && saleItem != null)
                 {
-                    return MapSaleItemToDto(saleItem, saleItem.Product?.Name ?? "Unknown");
+                    return MapSaleItemToDto(saleItem, saleItem.Product?.Name ?? "Unknown", saleItem.Product?.GetUnitName() ?? "");
                 }
 
                 return null;
