@@ -2,14 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.API.Helpers;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]/[action]")]
+[Route("api/[controller]")]
 [Authorize(Policy = "AllRoles")]
 public class SalesController : ControllerBase
 {
@@ -46,7 +45,7 @@ public class SalesController : ControllerBase
         return Ok(sales);
     }
 
-    [HttpGet]
+    [HttpGet("my-drafts")]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyDraftSales()
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -57,7 +56,7 @@ public class SalesController : ControllerBase
         return Ok(sales);
     }
 
-    [HttpGet]
+    [HttpGet("my-unfinished")]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyUnfinishedSales()
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -86,7 +85,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPatch("{saleId}")]
+    [HttpPatch("{saleId}/customer")]
     public async Task<ActionResult<SaleDto>> UpdateSaleCustomer(Guid saleId, [FromBody] UpdateSaleCustomerDto request)
     {
         try
@@ -103,7 +102,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}")]
+    [HttpPost("{saleId}/items")]
     public async Task<ActionResult<SaleItemDto>> AddSaleItem(Guid saleId, [FromBody] AddSaleItemDto request)
     {
         try
@@ -120,13 +119,11 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}")]
+    [HttpPost("{saleId}/items/remove")]
     public async Task<ActionResult<SaleItemDto>> RemoveSaleItem(Guid saleId, [FromBody] RemoveSaleItemDto request)
     {
-        _logger.LogInformation("=== RemoveSaleItem called ===");
-        _logger.LogInformation("SaleId: {SaleId}", saleId);
-        _logger.LogInformation("SaleItemId: {SaleItemId}", request.SaleItemId);
-        _logger.LogInformation("Quantity: {Quantity}", request.Quantity);
+        _logger.LogInformation("RemoveSaleItem called - SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
+            saleId, request.SaleItemId, request.Quantity);
 
         try
         {
@@ -142,7 +139,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}")]
+    [HttpPost("{saleId}/payments")]
     public async Task<ActionResult<PaymentDto>> AddPayment(Guid saleId, [FromBody] AddPaymentDto request)
     {
         try
@@ -159,12 +156,13 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("DeleteSale/{saleId}")]
-    [Authorize(Policy = "AllRoles")]
+    /// <summary>
+    /// Savdoni o'chirish (faqat Draft va Paid statusdagi savdolar uchun)
+    /// </summary>
+    [HttpDelete("{saleId}")]
     public async Task<ActionResult<SaleDto>> DeleteSale(Guid saleId)
     {
-        _logger.LogInformation("=== DeleteSale called ===");
-        _logger.LogInformation("Sale ID: {SaleId}", saleId);
+        _logger.LogInformation("DeleteSale called - Sale ID: {SaleId}", saleId);
 
         try
         {
@@ -176,19 +174,23 @@ public class SalesController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(ex, "Failed to delete sale {SaleId}: {Message}", saleId, ex.Message);
             return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting sale {SaleId}", saleId);
+            return StatusCode(500, "Savdoni o'chirishda xatolik yuz berdi");
         }
     }
 
-    [HttpPost("{saleId}")]
+    [HttpPost("{saleId}/cancel")]
     [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request)
     {
         try
         {
-            _logger.LogInformation("=== CONTROLLER: CancelSale called ===");
-            _logger.LogInformation("Sale ID: {SaleId}", saleId);
-            _logger.LogInformation("Admin ID from request: {AdminId}", request.AdminId);
+            _logger.LogInformation("CancelSale called - Sale ID: {SaleId}, Admin ID: {AdminId}", saleId, request.AdminId);
 
             var sale = await _saleService.CancelSaleAsync(saleId, request.AdminId);
             if (sale is null)
@@ -202,13 +204,12 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost("{saleId}")]
+    [HttpPost("{saleId}/mark-debt")]
     public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId)
     {
         try
         {
-            _logger.LogInformation("=== CONTROLLER: MarkSaleAsDebt called ===");
-            _logger.LogInformation("Sale ID: {SaleId}", saleId);
+            _logger.LogInformation("MarkSaleAsDebt called - Sale ID: {SaleId}", saleId);
 
             var sale = await _saleService.MarkSaleAsDebtAsync(saleId);
             if (sale is null)
@@ -227,8 +228,7 @@ public class SalesController : ControllerBase
     /// - Open debts: All roles can edit
     /// - Closed debts: Only Owner and Admin can edit
     /// </summary>
-    [HttpPatch]
-    [Authorize(Policy = "AllRoles")]
+    [HttpPatch("items/price")]
     public async Task<ActionResult<SaleItemDto>> UpdateSaleItemPrice([FromBody] UpdateSaleItemPriceDto request)
     {
         try
@@ -267,9 +267,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpPost]
-    [Route("~/api/Sales/{saleId}/return-item")]
-    [Authorize(Policy = "AllRoles")]
+    [HttpPost("{saleId}/return-item")]
     public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest? request)
     {
         try
@@ -280,13 +278,12 @@ public class SalesController : ControllerBase
                 return BadRequest("Request body cannot be null");
             }
 
-            _logger.LogInformation("ReturnSaleItem called for SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
+            _logger.LogInformation("ReturnSaleItem called - SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
                 saleId, request.SaleItemId, request.Quantity);
 
             var result = await _saleService.ReturnSaleItemAsync(saleId, request);
 
             // result null bo'lishi mumkin (full return bo'lganda), lekin bu muvaffaqiyatli amal
-            // Shuning uchun 200 OK qaytaramiz, result bo'lishi shart emas
             return Ok(result);
         }
         catch (Exception ex)
@@ -296,8 +293,7 @@ public class SalesController : ControllerBase
         }
     }
 
-    [HttpGet]
-    [Authorize(Policy = "AllRoles")]
+    [HttpGet("debtors")]
     public async Task<ActionResult<IEnumerable<DebtorDto>>> GetDebtors()
     {
         try
@@ -319,17 +315,21 @@ public class SalesController : ControllerBase
         {
             var sales = await _saleService.GetAllSalesAsync();
 
-            var exportData = sales.Select(s => new
+            // Har bir sotuvning har bir tovari uchun alohida qator
+            var exportData = sales.SelectMany(sale => sale.Items.Select(item => new
             {
-                ID = s.Id.ToString(),
-                Sana = s.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                Mijoz = s.CustomerName ?? "Mijoz yo'q",
-                Sotuvchi = s.SellerName,
-                Jami_summa = s.TotalAmount,
-                Tolangan = s.PaidAmount,
-                Qarz = s.TotalAmount - s.PaidAmount,
-                Holat = s.Status
-            });
+                Sana = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                Mijoz = sale.CustomerName ?? "Mijoz yo'q",
+                Sotuvchi = sale.SellerName,
+                Holat = sale.Status,
+                Tovar_nomi = item.ProductName,
+                Miqdor = FormatDecimal(item.Quantity),
+                Birlik = item.Unit,
+                Harid_narxi = FormatDecimal(item.CostPrice),
+                Sotish_narxi = FormatDecimal(item.SalePrice),
+                Jami_summa = FormatDecimal(item.TotalPrice),
+                Foyda = FormatDecimal(item.Profit)
+            })).OrderByDescending(x => x.Sana);
 
             var fileContent = excelService.GenerateExcel(exportData, "Sotuvlar");
 
@@ -344,5 +344,13 @@ public class SalesController : ControllerBase
             _logger.LogError(ex, "Error exporting sales");
             return StatusCode(500, "Sotuvlarni eksport qilishda xatolik");
         }
+    }
+
+    /// <summary>
+    /// Decimal sonni formatlash - butun sonlarda ".00" ni olib tashlaydi
+    /// </summary>
+    private static string FormatDecimal(decimal value)
+    {
+        return value.ToString("0.##");
     }
 }

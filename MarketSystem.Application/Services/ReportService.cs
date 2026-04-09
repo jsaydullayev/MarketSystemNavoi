@@ -102,13 +102,16 @@ public class ReportService : IReportService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
+        // Use < instead of <= to include the entire end day (up to 23:59:59.999)
+        var endDateTime = request.EndDate.AddDays(1);
+
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= request.StartDate && s.CreatedAt < endDateTime && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
         var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate && z.MarketId == marketId,
+            z => z.CreatedAt >= request.StartDate && z.CreatedAt < endDateTime && z.MarketId == marketId,
             cancellationToken);
 
         var report = CalculateReport(sales, zakups, request.StartDate, request.EndDate, userRole);
@@ -136,13 +139,16 @@ public class ReportService : IReportService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
+        // Use < instead of <= to include the entire end day (up to 23:59:59.999)
+        var endDateTime = request.EndDate.AddDays(1);
+
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= request.StartDate && s.CreatedAt < endDateTime && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
         var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.CreatedAt >= request.StartDate && z.CreatedAt <= request.EndDate && z.MarketId == marketId,
+            z => z.CreatedAt >= request.StartDate && z.CreatedAt < endDateTime && z.MarketId == marketId,
             cancellationToken);
 
         using var package = new ExcelPackage();
@@ -416,9 +422,10 @@ public class ReportService : IReportService
         // Determine if profit should be included (Owner only)
         bool includeProfit = userRole == "Owner";
 
-        // Calculate payment breakdown
+        // Calculate payment breakdown - separate positive and negative payments
         var paymentBreakdown = new Dictionary<string, decimal>();
         var paymentCounts = new Dictionary<string, int>();
+        decimal totalRefunds = 0;  // Qaytarilgan summa
 
         // Calculate from sales and their items
         foreach (var sale in sales)
@@ -448,17 +455,26 @@ public class ReportService : IReportService
                 }
             }
 
-            // Accumulate payment breakdown from payments (only for paid sales)
+            // Accumulate payment breakdown from payments
             foreach (var payment in sale.Payments)
             {
-                var paymentType = payment.PaymentType.ToString();
-                if (!paymentBreakdown.ContainsKey(paymentType))
+                if (payment.Amount < 0)
                 {
-                    paymentBreakdown[paymentType] = 0;
-                    paymentCounts[paymentType] = 0;
+                    // Negative payment = refund/return
+                    totalRefunds += Math.Abs(payment.Amount);
                 }
-                paymentBreakdown[paymentType] += payment.Amount;
-                paymentCounts[paymentType]++;
+                else
+                {
+                    // Positive payment = actual payment
+                    var paymentType = payment.PaymentType.ToString();
+                    if (!paymentBreakdown.ContainsKey(paymentType))
+                    {
+                        paymentBreakdown[paymentType] = 0;
+                        paymentCounts[paymentType] = 0;
+                    }
+                    paymentBreakdown[paymentType] += payment.Amount;
+                    paymentCounts[paymentType]++;
+                }
             }
         }
 
@@ -484,6 +500,16 @@ public class ReportService : IReportService
                 "Qarz",
                 totalDebtSales,
                 0  // Count doesn't apply to debt
+            ));
+        }
+
+        // Add "Qaytarilgan" to payment breakdown if there are any refunds
+        if (totalRefunds > 0)
+        {
+            paymentBreakdownList.Add(new PaymentBreakdownDto(
+                "Qaytarilgan",
+                -totalRefunds,  // Show as negative to indicate deduction
+                0  // Count doesn't apply to refunds
             ));
         }
 
@@ -565,18 +591,36 @@ public class ReportService : IReportService
 
         decimal cashInRegister = 0;
         decimal cardPayments = 0;
+        decimal totalRefunds = 0;
 
         foreach (var sale in sales)
         {
             foreach (var payment in sale.Payments)
             {
-                if (payment.PaymentType == PaymentType.Cash)
+                if (payment.Amount < 0)
                 {
-                    cashInRegister += payment.Amount;
+                    // Negative payment = refund, subtract from the appropriate balance
+                    if (payment.PaymentType == PaymentType.Cash)
+                    {
+                        cashInRegister += payment.Amount;  // This will subtract since payment.Amount is negative
+                    }
+                    else if (payment.PaymentType == PaymentType.Terminal)
+                    {
+                        cardPayments += payment.Amount;  // This will subtract
+                    }
+                    totalRefunds += Math.Abs(payment.Amount);
                 }
-                else if (payment.PaymentType == PaymentType.Terminal)
+                else
                 {
-                    cardPayments += payment.Amount;
+                    // Positive payment = actual payment
+                    if (payment.PaymentType == PaymentType.Cash)
+                    {
+                        cashInRegister += payment.Amount;
+                    }
+                    else if (payment.PaymentType == PaymentType.Terminal)
+                    {
+                        cardPayments += payment.Amount;
+                    }
                 }
             }
         }
@@ -641,9 +685,22 @@ public class ReportService : IReportService
                 }
             }
 
-            var primaryPayment = sale.Payments.FirstOrDefault();
-            var paymentTypeRaw = primaryPayment?.PaymentType.ToString() ?? "Cash";
-            var paymentType = paymentTypeRaw.ToLowerInvariant();
+            // Check if this sale has any refund (negative) payments
+            var hasRefunds = sale.Payments.Any(p => p.Amount < 0);
+
+            // Determine payment type - if there are refunds, show as "Qaytarilgan"
+            // Otherwise show the primary payment type
+            string paymentType;
+            if (hasRefunds)
+            {
+                paymentType = "Qaytarilgan";
+            }
+            else
+            {
+                var primaryPayment = sale.Payments.FirstOrDefault(p => p.Amount > 0);
+                var paymentTypeRaw = primaryPayment?.PaymentType.ToString() ?? "Cash";
+                paymentType = paymentTypeRaw.ToLowerInvariant();
+            }
 
             salesListItems.Add(new DailySalesListItemDto(
                 sale.Id,
@@ -770,6 +827,109 @@ public class ReportService : IReportService
             totalSalesOverall,
             includeProfit ? totalProfitOverall : null
         );
+    }
+
+    public async Task<List<SaleWithItemsDto>> GetSalesWithItemsAsync(
+        DateTime startDate,
+        DateTime endDate,
+        string? userRole = null,
+        Guid? userId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        var start = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Utc);
+        var end = DateTime.SpecifyKind(endDate.Date.AddDays(1), DateTimeKind.Utc);
+
+        // Use AppDbContext for complex query with proper includes
+        // This is done via the unit of work's context if accessible
+        // For now, use the repository and get products in batch
+        Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
+                              s.Status != SaleStatus.Cancelled &&
+                              s.MarketId == marketId &&
+                              (userRole != "Seller" || s.SellerId == userId);
+
+        var sales = await _unitOfWork.Sales.FindAsync(
+            salesQuery,
+            cancellationToken,
+            includeProperties: "SaleItems,Payments,Seller,Customer");
+
+        // Get all products in batch (N+1 solution)
+        var allProductIds = sales.SelectMany(s => s.SaleItems).Select(si => si.ProductId).Distinct().ToList();
+        var products = new Dictionary<Guid, string>();
+        if (allProductIds.Any())
+        {
+            var productList = await _unitOfWork.Products.FindAsync(
+                p => allProductIds.Contains(p.Id) && p.MarketId == marketId,
+                cancellationToken);
+            foreach (var p in productList)
+            {
+                products[p.Id] = p.Name;
+            }
+        }
+
+        bool includeProfit = userRole == "Owner";
+        var salesWithItems = new List<SaleWithItemsDto>();
+
+        foreach (var sale in sales)
+        {
+            // Get primary payment type (first non-refund payment, or first payment)
+            var primaryPayment = sale.Payments.FirstOrDefault(p => p.Amount > 0);
+            var hasRefunds = sale.Payments.Any(p => p.Amount < 0);
+
+            string? paymentType;
+            if (hasRefunds)
+            {
+                paymentType = "Qaytarilgan";
+            }
+            else
+            {
+                paymentType = primaryPayment?.PaymentType.ToString().ToLowerInvariant() ?? "cash";
+            }
+
+            // Calculate profit if owner
+            decimal? profit = null;
+            if (includeProfit)
+            {
+                profit = 0;
+                var paidRatio = sale.TotalAmount > 0 ? sale.PaidAmount / sale.TotalAmount : 0;
+
+                foreach (var item in sale.SaleItems)
+                {
+                    var itemCost = item.CostPrice * item.Quantity;
+                    var itemRevenue = item.SalePrice * item.Quantity;
+                    var itemProfit = itemRevenue - itemCost;
+
+                    profit += itemProfit * paidRatio;
+                }
+            }
+
+            // Create sale items DTOs with product names from dictionary
+            var items = sale.SaleItems.Select(item => new SaleItemExportDto(
+                item.ProductId.ToString(),
+                products.GetValueOrDefault(item.ProductId, "Unknown"),
+                item.Quantity,
+                item.CostPrice,
+                item.SalePrice,
+                item.SalePrice * item.Quantity,
+                includeProfit ? (item.SalePrice - item.CostPrice) * item.Quantity : null,
+                item.Comment
+            )).ToList();
+
+            salesWithItems.Add(new SaleWithItemsDto(
+                sale.Id,
+                sale.CreatedAt,
+                sale.Seller?.FullName ?? "Unknown",
+                sale.Customer?.FullName,
+                sale.TotalAmount,
+                sale.PaidAmount,
+                paymentType,
+                sale.Status.ToString(),
+                profit,
+                items
+            ));
+        }
+
+        return salesWithItems;
     }
 
     public Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)

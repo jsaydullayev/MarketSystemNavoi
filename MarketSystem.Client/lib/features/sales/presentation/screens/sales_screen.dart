@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
@@ -93,13 +94,17 @@ class _SalesScreenState extends State<SalesScreen> {
       final bytes = await salesService.downloadSalesExcel();
 
       if (bytes != null && bytes.isNotEmpty) {
-        final path = await core_file_helper.FileHelper.saveAndOpenExcel(
+        final success = await core_file_helper.FileHelper.saveAndOpenExcel(
             bytes, 'Sotuvlar.xlsx');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(path != null ? 'Excel OK: $path' : 'Error'),
-                backgroundColor: path != null ? Colors.green : Colors.red),
+                content: Text(
+                  kIsWeb && success
+                      ? 'Excel fayli yuklanmoqda...'
+                      : (success ? 'Excel saqlandi va ochildi' : 'Error')
+                ),
+                backgroundColor: success ? Colors.green : Colors.red),
           );
         }
       }

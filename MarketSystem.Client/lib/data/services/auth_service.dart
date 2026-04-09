@@ -142,9 +142,19 @@ class AuthService {
       final data = jsonDecode(payload);
       final exp = data['exp'] as int;
 
+      // JWT exp claim UTC da bo'ladi, shuning uchun DateTime.now().toUtc() ishlatamiz
       final expiryDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-      return DateTime.now().isAfter(expiryDate);
+      final now = DateTime.now().toUtc();
+
+      print('=== TOKEN EXPIRY CHECK ===');
+      print('Token expiry (UTC): $expiryDate');
+      print('Current time (UTC): $now');
+      print('Is expired: ${now.isAfter(expiryDate)}');
+      print('=========================');
+
+      return now.isAfter(expiryDate);
     } catch (e) {
+      print('Error checking token expiry: $e');
       return true;
     }
   }
