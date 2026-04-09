@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
+import '../constants/api_constants.dart';
 
 class NetworkWrapper extends StatefulWidget {
   final Widget child;
@@ -45,23 +46,26 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
       final hasNetwork = result != ConnectivityResult.none;
 
       if (hasNetwork) {
-        // ✅ Tuzatilgan: Production serverga ham test qilamiz
+        // API serverga test qilamiz
         try {
-          // API serverga ham test qilamiz
           final response = await http.get(
-            Uri.parse('http://103.125.217.28:8080/health'),
+            Uri.parse(ApiConstants.baseUrl),
           ).timeout(const Duration(seconds: 3));
-          final apiConnected = response.statusCode == 200;
+          // 200, 401, 403, 404 - bularning barchasi server ishlayapti degani
+          final apiConnected = response.statusCode >= 200 && response.statusCode < 500;
 
           if (mounted) setState(() => _isConnected = apiConnected);
         } catch (apiError) {
-          // API serverga ulana olmasa, internet bor deb hisoblaymiz
-          // chunki backend server ishlamasligi mumkin
-          final lookup = await InternetAddress.lookup('google.com')
-              .timeout(const Duration(seconds: 2));
-          final internetConnected = lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty;
+          // API serverga ulana olmasa, google.com orqali tekshiramiz
+          try {
+            final lookup = await InternetAddress.lookup('google.com')
+                .timeout(const Duration(seconds: 2));
+            final internetConnected = lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty;
 
-          if (mounted) setState(() => _isConnected = internetConnected);
+            if (mounted) setState(() => _isConnected = internetConnected);
+          } catch (_) {
+            if (mounted) setState(() => _isConnected = false);
+          }
         }
       } else {
         if (mounted) setState(() => _isConnected = false);
@@ -111,7 +115,7 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
               ),
               const SizedBox(height: 32),
               Text(
-                'Internet yoki server bilan aloqa yo\'q',
+                'Internet aloqasi yo\'q',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
@@ -121,7 +125,7 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Internet aloqasini tekshiring va backend server ishlayapti deganiga ishonching\n(103.125.217.28:8080)',
+                'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,

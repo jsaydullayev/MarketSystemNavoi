@@ -3,5 +3,7 @@ namespace MarketSystem.Domain.Enums;
 public enum DebtStatus
 {
     Open,
-    Closed
+    Closed,
+    /// Qarzdor tovarni qisman qaytargan holati
+    Returned
 }

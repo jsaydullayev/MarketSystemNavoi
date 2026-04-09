@@ -9,6 +9,8 @@ public class Product : BaseEntity
     public bool IsTemporary { get; set; } = false;
     public Guid? CreatedBySellerId { get; set; }
     public bool IsDeleted { get; set; } = false;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? DeletedAt { get; set; }
 
     // Pricing
     public decimal CostPrice { get; set; }

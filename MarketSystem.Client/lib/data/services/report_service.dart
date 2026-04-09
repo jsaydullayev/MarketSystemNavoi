@@ -18,7 +18,7 @@ class ReportService {
   Future<Map<String, dynamic>> getComprehensiveReport(DateTime date) async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
     final response = await _httpService.get(
-      '${ApiConstants.reports}/GetComprehensiveReport?date=$formattedDate',
+      '${ApiConstants.reports}/comprehensive?date=$formattedDate',
     );
 
     if (response.statusCode == 200) {
@@ -33,20 +33,19 @@ class ReportService {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
 
     final response = await _httpService.get(
-      '${ApiConstants.reports}/ExportComprehensiveToExcel?date=$formattedDate',
+      '${ApiConstants.reports}/comprehensive/export?date=$formattedDate',
     );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to export report: ${response.statusCode}');
     }
-    // File is downloaded automatically by browser
   }
 
   // Get daily report
   Future<dynamic> getDailyReport(DateTime date) async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
     final response = await _httpService.get(
-      '${ApiConstants.reports}/GetDailyReport?date=$formattedDate',
+      '${ApiConstants.reports}/daily?date=$formattedDate',
     );
 
     if (response.statusCode == 200) {
@@ -62,7 +61,7 @@ class ReportService {
     final endDate = DateFormat('yyyy-MM-dd').format(end);
 
     final response = await _httpService.get(
-      '${ApiConstants.reports}/GetPeriodReport?start=$startDate&end=$endDate',
+      '${ApiConstants.reports}/period?start=$startDate&end=$endDate',
     );
 
     if (response.statusCode == 200) {
@@ -78,13 +77,12 @@ class ReportService {
     final endDate = DateFormat('yyyy-MM-dd').format(end);
 
     final response = await _httpService.get(
-      '${ApiConstants.reports}/ExportToExcel?start=$startDate&end=$endDate',
+      '${ApiConstants.reports}/period/export?start=$startDate&end=$endDate',
     );
 
     if (response.statusCode != 200) {
       throw Exception('Failed to export report: ${response.statusCode}');
     }
-    // File is downloaded automatically by browser
   }
 
   // New methods for role-based access control
@@ -92,7 +90,7 @@ class ReportService {
   // Get profit summary - Owner only
   Future<ProfitSummaryModel> getProfitSummary() async {
     final response = await _httpService.get(
-      '${ApiConstants.reports}/GetProfitSummary',
+      '${ApiConstants.reports}/profit-summary',
     );
 
     if (response.statusCode == 200) {
@@ -114,7 +112,7 @@ class ReportService {
   // Get cash balance - Owner only
   Future<CashBalanceModel> getCashBalance() async {
     final response = await _httpService.get(
-      '${ApiConstants.reports}/GetCashBalance',
+      '${ApiConstants.reports}/cash-balance',
     );
 
     if (response.statusCode == 200) {
@@ -130,7 +128,7 @@ class ReportService {
   Future<DailySalesListModel> getDailySalesList(DateTime date) async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
     final response = await _httpService.get(
-      '${ApiConstants.reports}/GetDailySalesList?date=$formattedDate',
+      '${ApiConstants.reports}/daily-sales-list?date=$formattedDate',
     );
 
     if (response.statusCode == 200) {
@@ -144,7 +142,7 @@ class ReportService {
   Future<List<Map<String, dynamic>>> getDailySaleItems(DateTime date) async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
     final response = await _httpService.get(
-      '${ApiConstants.reports}/GetDailySaleItems?date=$formattedDate',
+      '${ApiConstants.reports}/daily-items?date=$formattedDate',
     );
 
     if (response.statusCode == 200) {

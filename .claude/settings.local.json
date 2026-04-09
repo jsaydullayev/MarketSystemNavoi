@@ -4,7 +4,8 @@
       "Bash(curl:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(ping -c 3 github.com)"
+      "Bash(ping -c 3 github.com)",
+      "Bash(find . -name \"*.cs\" -exec grep -l \"await.*MigrateAsync\" {} \\\\;)"
     ]
   }
 }

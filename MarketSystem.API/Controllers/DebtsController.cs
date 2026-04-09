@@ -108,92 +108,99 @@ public class DebtsController : ControllerBase
         if (!Guid.TryParse(userIdStr, out var userId))
             return Unauthorized();
 
-        await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+        // ✅ FIX: Use execution strategy to wrap transaction operations
+        // This is required because NpgsqlRetryingExecutionStrategy doesn't support user-initiated transactions
+        var strategy = _context.Database.CreateExecutionStrategy();
 
-        try
+        return await strategy.ExecuteAsync<IActionResult>(async () =>
         {
-            var debt = await _unitOfWork.Debts.GetByIdAsync(debtId);
-            if (debt is null || debt.Status != DebtStatus.Open)
-                return NotFound("Debt not found or already closed");
+            await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
 
-            var sale = await _unitOfWork.Sales.GetByIdAsync(debt.SaleId);
-            if (sale is null)
-                return NotFound("Sale not found");
-
-            // Validate payment amount
-            if (request.Amount <= 0)
-                return BadRequest("Payment amount must be positive");
-
-            if (request.Amount > debt.RemainingDebt)
-                return BadRequest($"Payment amount ({request.Amount}) exceeds remaining debt ({debt.RemainingDebt})");
-
-            var paymentTypeStr = request.PaymentType;
-            if (string.Equals(paymentTypeStr, "CARD", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                paymentTypeStr = "Terminal";
-            }
+                var debt = await _unitOfWork.Debts.GetByIdAsync(debtId);
+                if (debt is null || debt.Status != DebtStatus.Open)
+                    return NotFound("Debt not found or already closed");
 
-            // Create payment record
-            var marketId = _currentMarketService.GetCurrentMarketId();
-            var payment = new Payment
-            {
-                Id = Guid.NewGuid(),
-                SaleId = debt.SaleId,
-                PaymentType = Enum.Parse<PaymentType>(paymentTypeStr, true),
-                Amount = request.Amount,
-                MarketId = marketId,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _unitOfWork.Payments.AddAsync(payment);
+                var sale = await _unitOfWork.Sales.GetByIdAsync(debt.SaleId);
+                if (sale is null)
+                    return NotFound("Sale not found");
 
-            // ✅ NEW: Update cash register balance for cash payments
-            if (payment.PaymentType == PaymentType.Cash)
-            {
-                var cashRegister = await _context.CashRegisters
-                    .OrderByDescending(cr => cr.LastUpdated)
-                    .FirstOrDefaultAsync(CancellationToken.None);
+                // Validate payment amount
+                if (request.Amount <= 0)
+                    return BadRequest("Payment amount must be positive");
 
-                if (cashRegister != null)
+                if (request.Amount > debt.RemainingDebt)
+                    return BadRequest($"Payment amount ({request.Amount}) exceeds remaining debt ({debt.RemainingDebt})");
+
+                var paymentTypeStr = request.PaymentType;
+                if (string.Equals(paymentTypeStr, "CARD", StringComparison.OrdinalIgnoreCase))
                 {
-                    cashRegister.CurrentBalance += request.Amount;
-                    cashRegister.LastUpdated = DateTime.UtcNow;
-                    _context.CashRegisters.Update(cashRegister);
+                    paymentTypeStr = "Terminal";
                 }
+
+                // Create payment record
+                var marketId = _currentMarketService.GetCurrentMarketId();
+                var payment = new Payment
+                {
+                    Id = Guid.NewGuid(),
+                    SaleId = debt.SaleId,
+                    PaymentType = Enum.Parse<PaymentType>(paymentTypeStr, true),
+                    Amount = request.Amount,
+                    MarketId = marketId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.Payments.AddAsync(payment);
+
+                // ✅ NEW: Update cash register balance for cash payments
+                if (payment.PaymentType == PaymentType.Cash)
+                {
+                    var cashRegister = await _context.CashRegisters
+                        .OrderByDescending(cr => cr.LastUpdated)
+                        .FirstOrDefaultAsync(CancellationToken.None);
+
+                    if (cashRegister != null)
+                    {
+                        cashRegister.CurrentBalance += request.Amount;
+                        cashRegister.LastUpdated = DateTime.UtcNow;
+                        _context.CashRegisters.Update(cashRegister);
+                    }
+                }
+
+                // Update debt
+                debt.RemainingDebt -= request.Amount;
+                if (debt.RemainingDebt <= 0)
+                {
+                    debt.RemainingDebt = 0;
+                    debt.Status = DebtStatus.Closed;
+                    sale.Status = SaleStatus.Closed;
+                }
+
+                // Update sale
+                sale.PaidAmount += request.Amount;
+                _unitOfWork.Sales.Update(sale);
+                _unitOfWork.Debts.Update(debt);
+
+                await _unitOfWork.SaveChangesAsync(CancellationToken.None);
+                await _unitOfWork.CommitTransactionAsync();
+
+                // Audit log
+                await _auditLogService.LogPaymentActionAsync(payment.Id, userId, CancellationToken.None);
+
+                return Ok(new
+                {
+                    message = "Payment successful",
+                    remainingDebt = debt.RemainingDebt,
+                    paymentAmount = request.Amount,
+                    debtStatus = debt.Status.ToString()
+                });
             }
-
-            // Update debt
-            debt.RemainingDebt -= request.Amount;
-            if (debt.RemainingDebt <= 0)
+            catch (Exception ex)
             {
-                debt.RemainingDebt = 0;
-                debt.Status = DebtStatus.Closed;
-                sale.Status = SaleStatus.Closed;
+                await _unitOfWork.RollbackTransactionAsync();
+                return BadRequest($"Payment failed: {ex.Message}");
             }
-
-            // Update sale
-            sale.PaidAmount += request.Amount;
-            _unitOfWork.Sales.Update(sale);
-            _unitOfWork.Debts.Update(debt);
-
-            await _unitOfWork.SaveChangesAsync(CancellationToken.None);
-            await _unitOfWork.CommitTransactionAsync();
-
-            // Audit log
-            await _auditLogService.LogPaymentActionAsync(payment.Id, userId, CancellationToken.None);
-
-            return Ok(new
-            {
-                message = "Payment successful",
-                remainingDebt = debt.RemainingDebt,
-                paymentAmount = request.Amount,
-                debtStatus = debt.Status.ToString()
-            });
-        }
-        catch (Exception ex)
-        {
-            await _unitOfWork.RollbackTransactionAsync();
-            return BadRequest($"Payment failed: {ex.Message}");
-        }
+        });
     }
 
     /// <summary>
