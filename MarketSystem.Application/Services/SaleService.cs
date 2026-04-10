@@ -1010,17 +1010,6 @@ public class SaleService : ISaleService
             // Get product name for response
             var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
 
-        // ✅ QARZ BOSHQA - Qarz total ma'lumotini ham qaytarib chiqamiz
-        // Qarzni hisoblab qaytamiz
-        var debts = await _unitOfWork.Debts.FindAsync(
-                d => d.SaleId == sale.Id && d.MarketId == marketId,
-                cancellationToken);
-
-            var debt = debts.FirstOrDefault();
-            var totalDebt = debt?.TotalDebt ?? 0;
-            var paidAmount = debt?.TotalPaid ?? 0;
-            var remainingDebt = totalDebt - paidAmount;
-
             return MapSaleItemToDto(saleItem, product?.Name ?? "Unknown", product?.GetUnitName() ?? "");
         }
         catch
