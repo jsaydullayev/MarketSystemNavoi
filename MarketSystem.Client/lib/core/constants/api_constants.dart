@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 
 class ApiConstants {
   // =================== SERVERS ===================
-  static const String _productionUrl = 'http://114.29.239.156:8080/api';
+  static const String _productionUrl = '/api'; // Same origin (proxied by nginx)
   static const String _dockerInternalUrl = 'http://market-system-api:8080/api'; // Docker internal service name
   static const String _localUrl = 'http://localhost:5000/api';
   static const String _androidLocalUrl = 'http://10.0.2.2:5000/api';
