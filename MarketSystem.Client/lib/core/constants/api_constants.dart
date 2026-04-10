@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 
 class ApiConstants {
   // =================== SERVERS ===================
-  static const String _productionUrl = 'http://103.125.217.28:8080/api';
+  static const String _productionUrl = 'http://114.29.239.156:8080/api';
   static const String _dockerInternalUrl = 'http://market-system-api:8080/api'; // Docker internal service name
   static const String _localUrl = 'http://localhost:5000/api';
   static const String _androidLocalUrl = 'http://10.0.2.2:5000/api';
@@ -12,11 +12,11 @@ class ApiConstants {
 
   static String get baseUrl {
     // Local development - use localhost:8080
-    const bool isRunningInDocker = true;
+    const bool isRunningInDocker = false;
 
     // ✅ O'ZGARTIRISH: Production server URL'dan foydalanamiz
     // Buni o'zgartirmang, chunki production server ishlayapti
-    const bool useProduction = false;
+    const bool useProduction = true;
 
     const bool useDocker = false;
 
