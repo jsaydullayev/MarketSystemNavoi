@@ -155,6 +155,7 @@ try
                            origin.Contains("127.0.0.1") ||
                            origin.Contains("103.125.217.28") ||
                            origin.Contains("10.0.1.201") ||
+                           origin.Contains("114.29.239.156") || // Production server
                            origin.Contains("172.") ||  // Docker internal network
                            origin.Contains("192.168.") || // Local network
                            origin.Contains("market-system-client"); // Docker service name
