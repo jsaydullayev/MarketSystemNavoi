@@ -187,6 +187,11 @@ class HttpService {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       },
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw Exception('Request timeout after 30 seconds');
+      },
     );
   }
 
@@ -214,6 +219,11 @@ class HttpService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
       body: encodedBody,
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw Exception('Request timeout after 30 seconds');
+      },
     );
   }
 

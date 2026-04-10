@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
@@ -46,26 +45,22 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
       final hasNetwork = result != ConnectivityResult.none;
 
       if (hasNetwork) {
-        // API serverga test qilamiz
+        // API serverga test qilamiz - /health endpoint'ini ishlatamiz
         try {
+          final healthUrl = ApiConstants.baseUrl == '/api'
+              ? '/health'  // Production: relative URL
+              : '${ApiConstants.baseUrl}/health';  // Dev: full URL
           final response = await http.get(
-            Uri.parse(ApiConstants.baseUrl),
-          ).timeout(const Duration(seconds: 3));
+            Uri.parse(healthUrl),
+          ).timeout(const Duration(seconds: 5));  // 5 sekund timeout
           // 200, 401, 403, 404 - bularning barchasi server ishlayapti degani
           final apiConnected = response.statusCode >= 200 && response.statusCode < 500;
 
           if (mounted) setState(() => _isConnected = apiConnected);
         } catch (apiError) {
-          // API serverga ulana olmasa, google.com orqali tekshiramiz
-          try {
-            final lookup = await InternetAddress.lookup('google.com')
-                .timeout(const Duration(seconds: 2));
-            final internetConnected = lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty;
-
-            if (mounted) setState(() => _isConnected = internetConnected);
-          } catch (_) {
-            if (mounted) setState(() => _isConnected = false);
-          }
+          // API serverga ulana olmasa, lekin internet bor deb hisoblaymiz
+          // Chunki server vaqtncha javob bermashi mumkin
+          if (mounted) setState(() => _isConnected = true);
         }
       } else {
         if (mounted) setState(() => _isConnected = false);
