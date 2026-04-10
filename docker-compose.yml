@@ -5,13 +5,13 @@ services:
             dockerfile: Dockerfile
         container_name: market-system-api
         ports:
-            - "8080:8080"
+            - "8081:8081"
         extra_hosts:
             - "host.docker.internal:host-gateway"
         environment:
             - ASPNETCORE_ENVIRONMENT=Production
-            - ASPNETCORE_URLS=http://+:8080
-            - PORT=8080
+            - ASPNETCORE_URLS=http://+:8081
+            - PORT=8081
             # Database connection - using Docker's internal PostgreSQL container
             - ConnectionStrings__DefaultConnection=${DATABASE_URL:-Host=market-system-db;Port=5432;Database=MarketSystemDB;Username=postgres;Password=SuperSecur3MarketDB!2026}
             # JWT configuration
@@ -25,7 +25,7 @@ services:
             - market-network
         restart: unless-stopped
         healthcheck:
-            test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+            test: [ "CMD", "curl", "-f", "http://localhost:8081/health" ]
             interval: 30s
             timeout: 10s
             retries: 3
@@ -59,7 +59,7 @@ services:
             dockerfile: Dockerfile
         container_name: market-system-client
         ports:
-            - "8081:80" # Maps port 8081 of the host machine to port 80 of the Nginx container
+            - "8080:80" # Maps port 8080 of the host machine to port 80 of the Nginx container
         depends_on:
             - market-system-api
         networks:
