@@ -12,7 +12,7 @@ class ApiConstants {
 
   static String get baseUrl {
     // Local development - use localhost:8080
-    const bool isRunningInDocker = false;
+    const bool isRunningInDocker = true;
 
     // ✅ O'ZGARTIRISH: Production server URL'dan foydalanamiz
     // Buni o'zgartirmang, chunki production server ishlayapti
