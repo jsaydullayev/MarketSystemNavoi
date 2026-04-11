@@ -116,6 +116,9 @@ class CategoryService {
       return true;
     } else if (response.statusCode == 404) {
       return false;
+    } else if (response.statusCode == 400) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Category deletion failed: Bad Request');
     } else {
       throw Exception('Failed to delete category: ${response.statusCode}');
     }
