@@ -45,7 +45,7 @@ class UserService {
     }
   }
 
-  // Upload profile image using multipart/form-data (NO "_Namespace" error!)
+  // Upload profile image - use base64 JSON (Windows compatible)
   Future<dynamic> uploadProfileImage(String imagePath) async {
     try {
       // Check file size first (before reading entire file)
@@ -57,28 +57,60 @@ class UserService {
         throw Exception('Rasm hajmi juda katta. Iltimos, kichikroq rasm tanlang (maksimum 5MB).');
       }
 
-      // Use multipart upload - NO jsonEncode, NO "_Namespace" error!
-      final response = await _httpService.uploadFile(
+      // Read file and convert to base64
+      final imageBytes = await file.readAsBytes();
+      final base64Image = base64Encode(imageBytes);
+
+      // Determine MIME type from file extension
+      final extension = imagePath.toLowerCase().split('.').last;
+      final mimeType = switch (extension) {
+        'jpg' || 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        _ => 'image/jpeg',
+      };
+
+      // Send as JSON body - Windows compatible!
+      final response = await _httpService.put(
         '${ApiConstants.users}/UpdateProfileImage',
-        filePath: imagePath,
-        fileFieldName: 'image', // Backend expects this field name
+        body: {
+          'profileImage': 'data:$mimeType;base64,$base64Image',
+        },
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        // For successful upload, parse JSON response
+        try {
+          return jsonDecode(response.body);
+        } catch (e) {
+          throw Exception('Server javobini o\'qib bo\'lmadi');
+        }
+      } else if (response.statusCode == 401) {
+        throw Exception('Avtorizatsiya xatosi. Iltimos, qaytadan kiring.');
       } else {
         // Parse error message for better debugging
-        String errorMessage = 'Failed to upload image: ${response.statusCode}';
+        String errorMessage = 'Xatolik: ${response.statusCode}';
         try {
           final errorData = jsonDecode(response.body);
           errorMessage = errorData['message'] ?? errorData['error'] ?? errorMessage;
+          // Handle common errors
+          if (errorMessage.contains('5MB') || errorMessage.contains('5 MB')) {
+            errorMessage = 'Rasm hajmi juda katta. Maksimum 5MB.';
+          }
         } catch (_) {
-          errorMessage = 'Failed to upload image: ${response.body}';
+          // If JSON parse fails, use raw body (truncated)
+          final bodyPreview = response.body.length > 200
+              ? '${response.body.substring(0, 200)}...'
+              : response.body;
+          errorMessage = 'Xatolik ($response.statusCode): $bodyPreview';
         }
         throw Exception(errorMessage);
       }
+    } on FileSystemException catch (e) {
+      throw Exception('Faylni o\'qib bo\'lmadi: ${e.message}');
     } catch (e) {
-      throw Exception('Error uploading image: $e');
+      throw Exception('Rasm yuklashda xatolik: $e');
     }
   }
 }

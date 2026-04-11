@@ -122,7 +122,7 @@ class AuthProvider extends ChangeNotifier {
       _user = profile;
       notifyListeners();
     } catch (e) {
-      print('Error fetching profile: $e');
+      // Silent fail - don't show error to user
     }
   }
 
