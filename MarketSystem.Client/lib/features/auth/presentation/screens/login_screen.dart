@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:market_system_client/core/constants/app_styles.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/providers/locale_provider.dart';
@@ -48,17 +49,19 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 450),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildLogo(isDark),
-                      40.height,
-                      _buildGlassForm(context, isDark, primaryColor, l10n),
-                      30.height,
-                      _buildRegisterLink(primaryColor, isDark, l10n),
-                    ],
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildLogo(isDark),
+                        40.height,
+                        _buildGlassForm(context, isDark, primaryColor, l10n),
+                        30.height,
+                        _buildRegisterLink(primaryColor, isDark, l10n),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -147,6 +150,9 @@ class _LoginScreenState extends State<LoginScreen> {
         TextFormField(
           controller: controller,
           obscureText: isPassword ? _obscurePassword : false,
+          autofillHints: isPassword
+              ? const [AutofillHints.password]
+              : const [AutofillHints.username],
           cursorColor: isDark ? Colors.white : Colors.blue,
           validator: validator,
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
@@ -237,6 +243,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (success) {
+        // Notify browser that autofill completed successfully
+        TextInput.finishAutofillContext();
+
         final user = authProvider.user;
 
         final prefs = await SharedPreferences.getInstance();
