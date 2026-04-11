@@ -342,8 +342,10 @@ class HttpService {
       Uri.parse('$baseUrl$endpoint'),
     );
 
-    // Add headers
-    request.headers['Authorization'] = 'Bearer $token';
+    // Add headers - use addAll instead of direct assignment
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+    });
 
     // Add file
     final fileStream = http.ByteStream(file.openRead());
