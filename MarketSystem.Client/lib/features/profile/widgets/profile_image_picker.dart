@@ -140,8 +140,13 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = e.toString();
+        // Remove "Exception: " prefix for cleaner display
+        if (errorMessage.startsWith('Exception: ')) {
+          errorMessage = errorMessage.substring(11);
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
