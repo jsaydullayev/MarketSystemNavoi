@@ -468,5 +468,7 @@
   "marketRegistration": "Регистрация Маркета",
   "nowYouCanAddUsers": "Теперь вы можете добавлять пользователей Admin и Seller.",
   "marketRegisteredSuccess": "Маркет успешно зарегистрирован!",
-  "productUsedInSales": "Этот товар использовался в продажах, его нельзя удалить"
+  "productUsedInSales": "Этот товар использовался в продажах, его нельзя удалить",
+  "downloadPdf": "Скачать PDF",
+  "pdfDownloaded": "PDF успешно загружен"
 }

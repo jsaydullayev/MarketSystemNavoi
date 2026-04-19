@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -5,6 +6,10 @@ import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/services/pdf/invoice_pdf_generator.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../bloc/sales_bloc.dart';
@@ -21,6 +26,8 @@ class SaleDetailScreen extends StatefulWidget {
 }
 
 class _SaleDetailScreenState extends State<SaleDetailScreen> {
+  Map<String, dynamic>? _currentSale;
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +36,112 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
   void _loadSaleDetails() {
     context.read<SalesBloc>().add(GetSaleDetailEvent(widget.saleId));
+  }
+
+  /// PDF yuklab olish
+  Future<void> _downloadPdf() async {
+    if (_currentSale == null) return;
+
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return;
+
+    final sale = _currentSale!;
+
+    // Loading dialog ko'rsatish
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // PDF generatsiya qilish
+      final pdfData = await InvoicePdfGenerator.generateInvoice(sale);
+
+      // Fayl nomini generatsiya qilish
+      final createdAt = sale['createdAt'] != null
+          ? (sale['createdAt'] is DateTime
+              ? sale['createdAt'] as DateTime
+              : DateTime.parse(sale['createdAt'].toString()))
+          : DateTime.now();
+      final dateStr = DateFormat('dd.MM.yyyy').format(createdAt);
+      final fileName = 'savdo_${widget.saleId}_$dateStr.pdf';
+
+      // Platformga qarab saqlash
+      if (Platform.isAndroid || Platform.isIOS) {
+        // Mobile platformlarda printing orqali yuklash
+        await Printing.sharePdf(
+          bytes: pdfData,
+          filename: fileName,
+        );
+      } else {
+        // Desktop platformlarda
+        Directory? directory;
+        if (Platform.isWindows) {
+          final username = Platform.environment['USERNAME'] ?? 'User';
+          directory = Directory('C:/Users/$username/Downloads');
+        } else if (Platform.isMacOS || Platform.isLinux) {
+          directory = await getDownloadsDirectory();
+        }
+
+        final path = '${directory?.path ?? '.'}/$fileName';
+        final file = File(path);
+
+        // Directory mavjudligini tekshirish va yaratish
+        if (directory != null && !directory.existsSync()) {
+          await directory.create(recursive: true);
+        }
+
+        await file.writeAsBytes(pdfData);
+
+        // Dialogni yopish
+        if (mounted) Navigator.pop(context);
+
+        // Desktop'da faylni ochish
+        if (mounted) {
+          final result = await OpenFilex.open(path);
+          if (result.type != ResultType.done) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('${l10n.errorOccurred}: ${result.message}'),
+                backgroundColor: Colors.orange,
+              ));
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(l10n.pdfDownloaded),
+                backgroundColor: Colors.green,
+              ));
+            }
+          }
+        }
+        return;
+      }
+
+      // Dialogni yopish
+      if (mounted) Navigator.pop(context);
+
+      // Muvaffaqiyat xabari
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.pdfDownloaded),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      // Xatolik bo'lsa
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${l10n.errorOccurred}: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
   }
 
   Color _getStatusColor(String status, ThemeData theme) {
@@ -75,13 +188,24 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               context.read<SalesBloc>().add(const GetSalesEvent());
               Navigator.pop(context);
             },
+            extraActions: _currentSale != null
+                ? [
+                    IconButton(
+                      icon: const Icon(Icons.download),
+                      onPressed: _downloadPdf,
+                      tooltip: l10n.downloadPdf,
+                    ),
+                  ]
+                : null,
           ),
           body: BlocBuilder<SalesBloc, SalesState>(
             builder: (context, state) {
               if (state is SaleDetailLoading)
                 return const Center(child: CircularProgressIndicator());
-              if (state is SaleDetailLoaded)
+              if (state is SaleDetailLoaded) {
+                _currentSale = state.sale;
                 return _buildBody(state.sale, theme, isDark, l10n);
+              }
               return Center(child: Text(l10n.errorOccurred));
             },
           ),
@@ -162,8 +286,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                             fontSize: 22, fontWeight: FontWeight.bold)),
                     4.height,
                     Text(
-                        DateFormat('dd.MM.yyyy HH:mm')
-                            .format(DateTime.parse(sale['createdAt'])),
+                        DateFormat('dd.MM.yyyy HH:mm').format(
+                          sale['createdAt'] is DateTime
+                              ? sale['createdAt'] as DateTime
+                              : DateTime.parse(sale['createdAt'].toString()),
+                        ),
                         style: TextStyle(color: theme.disabledColor)),
                   ],
                 ),
@@ -231,7 +358,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final qty = (item['quantity'] as num).toDouble();
     final price = (item['salePrice'] as num).toDouble();
 
-    // ✅ unitName ga qarab format
+    // unitName ga qarab format
     final unitName = (item['unit'] ?? '').toString().toLowerCase();
     const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
     final isWeight = weightUnits.contains(unitName);

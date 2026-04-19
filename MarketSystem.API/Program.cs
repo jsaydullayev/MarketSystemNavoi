@@ -354,8 +354,8 @@ try
             {
                 Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
                 FullName = "Market Owner",
-                Username = "owner",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("owner123"),
+                Username = "marketadminsystem",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("marketsystem1234567890"),
                 Role = Role.Owner,
                 IsActive = true,
                 Language = Language.Uzbek,
@@ -398,7 +398,7 @@ try
                 users = new[]
                 {
                 new { username = "superadmin", password = "superadmin123", role = "SuperAdmin", note = "Can create/manage all markets" },
-                new { username = "owner", password = "owner123", role = "Owner", note = "Owner of Demo Market" },
+                new { username = "marketadminsystem", password = "marketsystem1234567890", role = "Owner", note = "Owner of Demo Market (Default)" },
                 new { username = "admin", password = "admin123", role = "Admin", note = "Administrator of Demo Market" },
                 new { username = "seller", password = "seller123", role = "Seller", note = "Seller in Demo Market" }
                 }
