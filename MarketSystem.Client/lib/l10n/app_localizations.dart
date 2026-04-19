@@ -2881,6 +2881,18 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Bu mahsulot savdolarda ishlatilgan, o\'chirib bo\'lmaydi'**
   String get productUsedInSales;
+
+  /// No description provided for @downloadPdf.
+  ///
+  /// In uz, this message translates to:
+  /// **'PDF yuklab olish'**
+  String get downloadPdf;
+
+  /// No description provided for @pdfDownloaded.
+  ///
+  /// In uz, this message translates to:
+  /// **'PDF muvaffaqiyatli yuklab olindi'**
+  String get pdfDownloaded;
 }
 
 class _AppLocalizationsDelegate

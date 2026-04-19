@@ -1474,4 +1474,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get productUsedInSales =>
       'Этот товар использовался в продажах, его нельзя удалить';
+
+  @override
+  String get downloadPdf => 'Скачать PDF';
+
+  @override
+  String get pdfDownloaded => 'PDF успешно загружен';
 }

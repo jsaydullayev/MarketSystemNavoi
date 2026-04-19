@@ -1470,4 +1470,10 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get productUsedInSales =>
       'Bu mahsulot savdolarda ishlatilgan, o\'chirib bo\'lmaydi';
+
+  @override
+  String get downloadPdf => 'PDF yuklab olish';
+
+  @override
+  String get pdfDownloaded => 'PDF muvaffaqiyatli yuklab olindi';
 }

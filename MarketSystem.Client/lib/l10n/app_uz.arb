@@ -468,5 +468,7 @@
   "marketRegistration": "Market Registratsiyasi",
   "nowYouCanAddUsers": "Endi siz Admin va Seller foydalanuvchilar qo'shishingiz mumkin.",
   "marketRegisteredSuccess": "Market muvaffaqiyatli ro'yxatdan o'tkazildi!",
-  "productUsedInSales": "Bu mahsulot savdolarda ishlatilgan, o'chirib bo'lmaydi"
+  "productUsedInSales": "Bu mahsulot savdolarda ishlatilgan, o'chirib bo'lmaydi",
+  "downloadPdf": "PDF yuklab olish",
+  "pdfDownloaded": "PDF muvaffaqiyatli yuklab olindi"
 }
