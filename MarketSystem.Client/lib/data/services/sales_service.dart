@@ -409,4 +409,14 @@ class SalesService {
     return await _httpService
         .downloadBytes('${ApiConstants.sales}/export');
   }
+
+  // Savdo uchun faktura (PDF) yuklab olish
+  Future<List<int>?> downloadInvoice(String saleId) async {
+    print('=== DOWNLOAD INVOICE ===');
+    print('Sale ID: $saleId');
+    print('URL: ${ApiConstants.sales}/$saleId/invoice');
+    print('=======================');
+
+    return await _httpService.downloadBytes('${ApiConstants.sales}/$saleId/invoice');
+  }
 }

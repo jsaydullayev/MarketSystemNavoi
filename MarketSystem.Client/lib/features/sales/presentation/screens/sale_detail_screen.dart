@@ -1,15 +1,19 @@
 import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
+import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
-import 'package:market_system_client/services/pdf/invoice_pdf_generator.dart';
+import 'package:market_system_client/data/services/sales_service.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../bloc/sales_bloc.dart';
@@ -27,10 +31,14 @@ class SaleDetailScreen extends StatefulWidget {
 
 class _SaleDetailScreenState extends State<SaleDetailScreen> {
   Map<String, dynamic>? _currentSale;
+  late final SalesService _salesService;
 
   @override
   void initState() {
     super.initState();
+    _salesService = SalesService(
+      authProvider: Provider.of<AuthProvider>(context, listen: false),
+    );
     _loadSaleDetails();
   }
 
@@ -38,14 +46,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     context.read<SalesBloc>().add(GetSaleDetailEvent(widget.saleId));
   }
 
-  /// PDF yuklab olish
+  /// PDF yuklab olish (server-side)
   Future<void> _downloadPdf() async {
     if (_currentSale == null) return;
 
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
-
-    final sale = _currentSale!;
 
     // Loading dialog ko'rsatish
     if (!mounted) return;
@@ -58,23 +64,38 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     );
 
     try {
-      // PDF generatsiya qilish
-      final pdfData = await InvoicePdfGenerator.generateInvoice(sale);
+      // PDFni serverdan yuklab olish
+      final pdfData = await _salesService.downloadInvoice(widget.saleId);
+
+      if (pdfData == null || pdfData.isEmpty) {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(l10n.errorOccurred),
+            backgroundColor: Colors.red,
+          ));
+        }
+        return;
+      }
+
+      // List<int> -> Uint8List ga o'tkazish
+      final pdfBytes = Uint8List.fromList(pdfData);
 
       // Fayl nomini generatsiya qilish
+      final sale = _currentSale!;
       final createdAt = sale['createdAt'] != null
           ? (sale['createdAt'] is DateTime
               ? sale['createdAt'] as DateTime
               : DateTime.parse(sale['createdAt'].toString()))
           : DateTime.now();
       final dateStr = DateFormat('dd.MM.yyyy').format(createdAt);
-      final fileName = 'savdo_${widget.saleId}_$dateStr.pdf';
+      final fileName = 'faktura_${widget.saleId}_$dateStr.pdf';
 
       // Platformga qarab saqlash
       if (Platform.isAndroid || Platform.isIOS) {
         // Mobile platformlarda printing orqali yuklash
         await Printing.sharePdf(
-          bytes: pdfData,
+          bytes: pdfBytes,
           filename: fileName,
         );
       } else {
@@ -95,7 +116,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           await directory.create(recursive: true);
         }
 
-        await file.writeAsBytes(pdfData);
+        await file.writeAsBytes(pdfBytes);
 
         // Dialogni yopish
         if (mounted) Navigator.pop(context);
