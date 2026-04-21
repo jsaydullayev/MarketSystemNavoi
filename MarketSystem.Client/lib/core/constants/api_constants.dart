@@ -38,7 +38,7 @@ class ApiConstants {
         return _dockerLocalUrl;
       }
     } else {
-      // Local development without Docker (port 8080)
+      // Local development without Docker (port 5000)
       if (kIsWeb) {
         return _localUrl;
       } else if (Platform.isAndroid) {

@@ -4,6 +4,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
+using MarketSystem.Application.Interfaces;
 
 namespace MarketSystem.API.Controllers;
 
@@ -14,11 +15,13 @@ public class SalesController : ControllerBase
 {
     private readonly ISaleService _saleService;
     private readonly ILogger<SalesController> _logger;
+    private readonly IReportService _reportService;
 
-    public SalesController(ISaleService saleService, ILogger<SalesController> logger)
+    public SalesController(ISaleService saleService, ILogger<SalesController> logger, IReportService reportService)
     {
         _saleService = saleService;
         _logger = logger;
+        _reportService = reportService;
     }
 
     [HttpGet("{id}")]
@@ -352,5 +355,63 @@ public class SalesController : ControllerBase
     private static string FormatDecimal(decimal value)
     {
         return value.ToString("0.##");
+    }
+
+    [HttpPost("{saleId}/apply-credit")]
+    public async Task<ActionResult<SaleDto>> ApplyCustomerCredit(Guid saleId)
+    {
+        try
+        {
+            _logger.LogInformation("=== CONTROLLER: ApplyCustomerCredit called ===");
+            _logger.LogInformation("Sale ID: {SaleId}", saleId);
+
+            var sale = await _saleService.ApplyCustomerCreditAsync(saleId);
+            if (sale is null)
+                return NotFound();
+
+            _logger.LogInformation("=== CONTROLLER: ApplyCustomerCredit SUCCESS ===");
+            return Ok(sale);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Error applying customer credit");
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Generate and download PDF invoice for a sale
+    /// </summary>
+    [HttpGet("{id}/invoice")]
+    public async Task<IActionResult> GetInvoice(Guid id)
+    {
+        try
+        {
+            _logger.LogInformation("GetInvoice called - Sale ID: {SaleId}", id);
+
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole);
+
+            var sale = await _saleService.GetSaleByIdAsync(id);
+            var fileName = $"Faktura_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+
+            _logger.LogInformation("Invoice generated successfully for sale {SaleId}", id);
+
+            return File(
+                pdfBytes,
+                "application/pdf",
+                fileName
+            );
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Sale not found: {SaleId}", id);
+            return NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating invoice for sale {SaleId}", id);
+            return StatusCode(500, "Faktura yaratishda xatolik yuz berdi");
+        }
     }
 }

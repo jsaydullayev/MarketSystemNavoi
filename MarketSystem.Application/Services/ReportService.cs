@@ -946,4 +946,269 @@ public class ReportService : IReportService
     {
         throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
     }
+
+    public async Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.Id == saleId && s.MarketId == marketId,
+            cancellationToken,
+            includeProperties: "SaleItems,Payments,Seller,Customer,Market");
+
+        var sale = sales.FirstOrDefault();
+        if (sale == null)
+            throw new KeyNotFoundException($"Sale with ID {saleId} not found.");
+
+        if (sale.Market == null)
+            throw new InvalidOperationException($"Market data is missing for sale {saleId}.");
+
+        if (sale.Seller == null)
+            throw new InvalidOperationException($"Seller data is missing for sale {saleId}.");
+
+        var market = sale.Market;
+        var seller = sale.Seller;
+        var customer = sale.Customer;
+
+        // Get all products for the sale items
+        var productIds = sale.SaleItems.Select(si => si.ProductId).Distinct().ToList();
+        var products = await _unitOfWork.Products.FindAsync(
+            p => productIds.Contains(p.Id) && p.MarketId == marketId,
+            cancellationToken);
+        var productDict = products.ToDictionary(p => p.Id);
+
+        // Determine payment type
+        var primaryPayment = sale.Payments.FirstOrDefault(p => p.Amount > 0);
+        string paymentType = primaryPayment?.PaymentType.ToString() ?? "Cash";
+        string paymentTypeUz = paymentType switch
+        {
+            "Cash" => "Naqd",
+            "Terminal" => "Terminal",
+            "BankTransfer" => "Bank o'tkazmasi",
+            "Credit" => "Kredit",
+            _ => paymentType
+        };
+
+        // Create invoice data
+        var invoiceItems = new List<InvoiceItemData>();
+        foreach (var item in sale.SaleItems)
+        {
+            var product = productDict.GetValueOrDefault(item.ProductId);
+            invoiceItems.Add(new InvoiceItemData(
+                product?.Name ?? "Noma'lum mahsulot",
+                item.Quantity,
+                item.SalePrice,
+                item.SalePrice * item.Quantity,
+                item.Comment
+            ));
+        }
+
+        var invoiceData = new InvoiceData(
+            market.Name,
+            market.Description ?? "",
+            seller?.FullName ?? "Noma'lum sotuvchi",
+            customer?.FullName ?? "Mijoz ko'rsatilmagan",
+            sale.Id,
+            sale.CreatedAt,
+            paymentTypeUz,
+            invoiceItems,
+            sale.TotalAmount,
+            sale.PaidAmount,
+            sale.TotalAmount - sale.PaidAmount
+        );
+
+        // Generate PDF using QuestPDF
+        try
+        {
+            return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+                page.DefaultTextStyle(x => x.FontSize(10));
+
+                // Header
+                page.Header().Element(header =>
+                {
+                    header.Column(column =>
+                    {
+                        column.Item().Row(row =>
+                        {
+                            row.RelativeItem().Column(col =>
+                            {
+                                col.Item().Text(invoiceData.MarketName).FontSize(18).Bold();
+                                col.Item().Text(invoiceData.MarketDescription).FontSize(10).Light();
+                            });
+                            row.ConstantItem(100).AlignRight().Text("FAKTURA").FontSize(12).Bold();
+                        });
+                        column.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    });
+                });
+
+                // Content
+                page.Content().Element(content =>
+                {
+                    content.Column(column =>
+                    {
+                        // Invoice details
+                        column.Spacing(10);
+
+                        column.Item().Row(row =>
+                        {
+                            row.RelativeItem().Column(col =>
+                            {
+                                col.Item().Text("Faktura №:").SemiBold();
+                                col.Item().Text(invoiceData.InvoiceNumber.ToString());
+                                col.Item().Text("Sana:").SemiBold();
+                                col.Item().Text(invoiceData.Date.ToString("dd.MM.yyyy HH:mm"));
+                            });
+
+                            row.RelativeItem().Column(col =>
+                            {
+                                col.Item().Text("Sotuvchi:").SemiBold();
+                                col.Item().Text(invoiceData.SellerName);
+                                col.Item().Text("Mijoz:").SemiBold();
+                                col.Item().Text(invoiceData.CustomerName);
+                            });
+                        });
+
+                        column.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+
+                        // Items table
+                        column.Item().Element(e =>
+                        {
+                            e.Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(30);
+                                    columns.RelativeColumn(3);
+                                    columns.ConstantColumn(60);
+                                    columns.ConstantColumn(80);
+                                    columns.RelativeColumn(2);
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Element(CellStyle).Text("#");
+                                    header.Cell().Element(CellStyle).Text("Mahsulot").SemiBold();
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Miqdor");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Narx");
+                                    header.Cell().Element(CellStyle).AlignRight().Text("Jami").SemiBold();
+                                });
+
+                                int index = 1;
+                                foreach (var item in invoiceData.Items)
+                                {
+                                    table.Cell().Element(CellStyle).Text($"{index++}");
+                                    table.Cell().Element(CellStyle).Text(item.ProductName);
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.Quantity:N2}");
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.Price:N2} so'm");
+                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.Total:N2} so'm");
+
+                                    if (!string.IsNullOrEmpty(item.Comment))
+                                    {
+                                        table.Cell().ColumnSpan(5).Element(CommentStyle).Text($"Izoh: {item.Comment}").FontSize(8);
+                                    }
+                                }
+                            });
+                        });
+
+                        column.Item().PaddingVertical(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+
+                        // Totals
+                        column.Item().AlignRight().Element(e =>
+                        {
+                            e.Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.RelativeColumn(2);
+                                    columns.ConstantColumn(100);
+                                });
+
+                                table.Cell().Element(TotalCellStyle).Text("To'lov turi:");
+                                table.Cell().Element(TotalCellStyle).AlignRight().Text(invoiceData.PaymentType).SemiBold();
+
+                                table.Cell().Element(TotalCellStyle).Text("Jami summa:").Bold();
+                                table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.TotalAmount:N2} so'm").Bold();
+
+                                table.Cell().Element(TotalCellStyle).Text("To'langan:");
+                                table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.PaidAmount:N2} so'm");
+
+                                if (invoiceData.RemainingAmount > 0)
+                                {
+                                    table.Cell().Element(TotalCellStyle).Text("Qarzdorlik:").Bold().FontColor(Colors.Red.Medium);
+                                    table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.RemainingAmount:N2} so'm").Bold().FontColor(Colors.Red.Medium);
+                                }
+                            });
+                        });
+                    });
+                });
+
+                // Footer
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.Span("Sahifa ");
+                    x.CurrentPageNumber();
+                });
+            });
+        }).GeneratePdf();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"PDF generation failed for sale {saleId}: {ex.Message}", ex);
+        }
+    }
+
+    private static IContainer CellStyle(IContainer container)
+    {
+        return container
+            .Border(1)
+            .BorderColor(Colors.Grey.Lighten2)
+            .Padding(5)
+            .AlignCenter()
+            .AlignMiddle();
+    }
+
+    private static IContainer CommentStyle(IContainer container)
+    {
+        return container
+            .Border(1)
+            .BorderColor(Colors.Grey.Lighten2)
+            .PaddingLeft(35)
+            .AlignLeft()
+            .AlignMiddle();
+    }
+
+    private static IContainer TotalCellStyle(IContainer container)
+    {
+        return container
+            .Padding(3)
+            .AlignRight();
+    }
+
+    // Invoice data classes
+    private record InvoiceData(
+        string MarketName,
+        string MarketDescription,
+        string SellerName,
+        string CustomerName,
+        Guid InvoiceNumber,
+        DateTime Date,
+        string PaymentType,
+        List<InvoiceItemData> Items,
+        decimal TotalAmount,
+        decimal PaidAmount,
+        decimal RemainingAmount
+    );
+
+    private record InvoiceItemData(
+        string ProductName,
+        decimal Quantity,
+        decimal Price,
+        decimal Total,
+        string? Comment
+    );
 }
