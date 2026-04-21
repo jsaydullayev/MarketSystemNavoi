@@ -394,11 +394,13 @@ class HttpService {
         },
       );
 
-      // Agar xato bo'lsa _handleResponse orqali tekshirish mumkin
-      // Lekin byte stream bo'lgani uchun oddiy tekshiramiz
-      if (response.statusCode == 200) {
-        return response.bodyBytes;
+      // 401 xatolikni handle qilish
+      final handledResponse = await _handleResponse(response, 'GET', endpoint);
+
+      if (handledResponse.statusCode == 200) {
+        return handledResponse.bodyBytes;
       }
+      print('Download failed with status: ${handledResponse.statusCode}');
       return null;
     } catch (e) {
       print('Download bytes error: $e');
