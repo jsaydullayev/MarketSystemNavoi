@@ -5,6 +5,7 @@ using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using System.Text.Json;
 using MarketSystem.Application.Interfaces;
+using Serilog;
 
 namespace MarketSystem.API.Controllers;
 //new code
@@ -133,7 +134,14 @@ public class UsersController : ControllerBase
     [HttpPut]
     public async Task<ActionResult<UserDto>> UpdateProfileImage()
     {
+        Log.Information("=== UPDATE PROFILE IMAGE START ===");
+        Log.Information("Request Content-Type: {ContentType}", Request.ContentType);
+        Log.Information("HasFormContentType: {HasFormContentType}", Request.HasFormContentType);
+        Log.Information("Files count: {FilesCount}", Request.Form?.Files.Count ?? 0);
+
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        Log.Information("User ID from token: {UserId}", userIdStr);
+
         if (!Guid.TryParse(userIdStr, out var userId))
             return Unauthorized();
 
@@ -142,7 +150,7 @@ public class UsersController : ControllerBase
             UpdateProfileImageDto request;
 
             // Check if request contains file upload (multipart/form-data)
-            if (Request.HasFormContentType && Request.Form.Files.Count > 0)
+            if (Request.HasFormContentType && Request.Form != null && Request.Form.Files.Count > 0)
             {
                 // Handle file upload
                 var image = Request.Form.Files[0];
@@ -205,14 +213,17 @@ public class UsersController : ControllerBase
         }
         catch (UnauthorizedAccessException ex)
         {
+            Log.Error(ex, "Unauthorized access while updating profile image for user: {UserId}", userId);
             return Unauthorized(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
+            Log.Error(ex, "Invalid operation while updating profile image for user: {UserId}", userId);
             return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
+            Log.Error(ex, "Error updating profile image for user: {UserId}", userId);
             return BadRequest($"Rasmni yangilashda xatolik: {ex.Message}");
         }
     }

@@ -310,6 +310,13 @@ try
     app.MapGet("/", () => Results.Ok(healthResponse))
         .ExcludeFromDescription()
         .WithName("Root Health Check");
+    app.MapGet("/privacy", (IWebHostEnvironment env) =>
+    {
+        var filePath = Path.Combine(env.WebRootPath, "privacy.html");
+        return Results.File(filePath, "text/html");
+    })
+    .ExcludeFromDescription()
+    .WithName("Privacy Policy");
 
     app.MapControllers();
 
