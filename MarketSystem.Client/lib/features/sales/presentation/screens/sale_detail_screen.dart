@@ -30,7 +30,6 @@ class SaleDetailScreen extends StatefulWidget {
 }
 
 class _SaleDetailScreenState extends State<SaleDetailScreen> {
-  Map<String, dynamic>? _currentSale;
   late final SalesService _salesService;
 
   @override
@@ -47,9 +46,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   }
 
   /// PDF yuklab olish (server-side)
-  Future<void> _downloadPdf() async {
-    if (_currentSale == null) return;
-
+  Future<void> _downloadPdf(Map<String, dynamic> sale) async {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
 
@@ -82,7 +79,6 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final pdfBytes = Uint8List.fromList(pdfData);
 
       // Fayl nomini generatsiya qilish
-      final sale = _currentSale!;
       final createdAt = sale['createdAt'] != null
           ? (sale['createdAt'] is DateTime
               ? sale['createdAt'] as DateTime
@@ -198,82 +194,87 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           _loadSaleDetails();
         }
       },
-      child: NetworkWrapper(
-        onRetry: _loadSaleDetails,
-        child: Scaffold(
-          backgroundColor: AppColors.getBg(isDark),
-          appBar: CommonAppBar(
-            title: l10n.sales,
-            onRefresh: _loadSaleDetails,
-            onBackPressed: () {
-              context.read<SalesBloc>().add(const GetSalesEvent());
-              Navigator.pop(context);
-            },
-            extraActions: _currentSale != null
-                ? [
-                    IconButton(
-                      icon: const Icon(Icons.download),
-                      onPressed: _downloadPdf,
-                      tooltip: l10n.downloadPdf,
-                    ),
-                  ]
-                : null,
-          ),
-          body: BlocBuilder<SalesBloc, SalesState>(
-            builder: (context, state) {
-              if (state is SaleDetailLoading)
-                return const Center(child: CircularProgressIndicator());
-              if (state is SaleDetailLoaded) {
-                _currentSale = state.sale;
-                return _buildBody(state.sale, theme, isDark, l10n);
-              }
-              return Center(child: Text(l10n.errorOccurred));
-            },
-          ),
-        ),
+      child: BlocBuilder<SalesBloc, SalesState>(
+        builder: (context, state) {
+          // State asosida extraActions aniqlash
+          List<Widget>? extraActions;
+
+          if (state is SaleDetailLoaded) {
+            extraActions = [
+              IconButton(
+                icon: const Icon(Icons.download),
+                onPressed: () => _downloadPdf(state.sale),
+                tooltip: l10n.downloadPdf,
+              ),
+            ];
+          }
+
+          return NetworkWrapper(
+            onRetry: _loadSaleDetails,
+            child: Scaffold(
+              backgroundColor: AppColors.getBg(isDark),
+              appBar: CommonAppBar(
+                title: l10n.sales,
+                onRefresh: _loadSaleDetails,
+                onBackPressed: () {
+                  context.read<SalesBloc>().add(const GetSalesEvent());
+                  Navigator.pop(context);
+                },
+                extraActions: extraActions,
+              ),
+              body: _buildBody(state, theme, isDark, l10n),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildBody(Map<String, dynamic> sale, ThemeData theme, bool isDark,
+  Widget _buildBody(SalesState state, ThemeData theme, bool isDark,
       AppLocalizations l10n) {
-    final status = sale['status']?.toString() ?? '';
-    final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
-    final paidAmount = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
-    final remainingAmount = totalAmount - paidAmount;
-    final items = sale['items'] as List<dynamic>? ?? [];
+    if (state is SaleDetailLoading)
+      return const Center(child: CircularProgressIndicator());
+    if (state is SaleDetailLoaded) {
+      final sale = state.sale;
+      final status = sale['status']?.toString() ?? '';
+      final totalAmount = (sale['totalAmount'] as num?)?.toDouble() ?? 0.0;
+      final paidAmount = (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
+      final remainingAmount = totalAmount - paidAmount;
+      final items = sale['items'] as List<dynamic>? ?? [];
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Column(
-        children: [
-          _buildInfoCard(sale, theme, isDark, l10n, status),
-          _buildFinancialCard(
-              totalAmount, paidAmount, remainingAmount, theme, isDark, l10n),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                const Icon(Icons.inventory_2_outlined, size: 20),
-                8.width,
-                Text(l10n.all,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
+      return SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            _buildInfoCard(sale, theme, isDark, l10n, status),
+            _buildFinancialCard(
+                totalAmount, paidAmount, remainingAmount, theme, isDark, l10n),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.inventory_2_outlined, size: 20),
+                  8.width,
+                  Text(l10n.all,
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
-          ),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: items.length,
-            itemBuilder: (context, index) =>
-                _buildProductItem(items[index], status, theme, isDark),
-          ),
-          32.height,
-        ],
-      ),
-    );
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: items.length,
+              itemBuilder: (context, index) =>
+                  _buildProductItem(items[index], status, theme, isDark),
+            ),
+            32.height,
+          ],
+        ),
+      );
+    }
+    return Center(child: Text(l10n.errorOccurred));
   }
 
   Widget _buildInfoCard(Map<String, dynamic> sale, ThemeData theme, bool isDark,
