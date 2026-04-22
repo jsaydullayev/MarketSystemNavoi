@@ -27,4 +27,7 @@ public interface IReportService
 
     // Invoice generation
     Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, CancellationToken cancellationToken = default);
+
+    // Sales list export to PDF
+    Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, CancellationToken cancellationToken = default);
 }

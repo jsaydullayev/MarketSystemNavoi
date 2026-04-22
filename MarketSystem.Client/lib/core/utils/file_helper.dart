@@ -14,7 +14,7 @@ class FileHelper {
     try {
       if (kIsWeb) {
         // Web muhiti - browser download orqali
-        return _downloadWeb(bytes, fileName);
+        return _downloadWeb(bytes, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       } else {
         // Mobile/Desktop muhiti - fayl tizimiga yozish
         return await _saveMobileDesktop(bytes, fileName);
@@ -25,13 +25,31 @@ class FileHelper {
     }
   }
 
-  /// Web muhiti uchun download (Browser API)
-  static bool _downloadWeb(List<int> bytes, String fileName) {
+  /// PDF faylini saqlaydi va ochadi
+  /// Web'da - browser download orqali
+  /// Mobile/Desktop - path_provider orqali
+  static Future<bool> saveAndOpenPdf(List<int> bytes, String fileName) async {
     try {
-      // Blob yaratish - Excel MIME type
+      if (kIsWeb) {
+        // Web muhiti - browser download orqali
+        return _downloadWeb(bytes, fileName, 'application/pdf');
+      } else {
+        // Mobile/Desktop muhiti - fayl tizimiga yozish
+        return await _saveMobileDesktop(bytes, fileName);
+      }
+    } catch (e) {
+      debugPrint('Error saving or opening pdf file: $e');
+      return false;
+    }
+  }
+
+  /// Web muhiti uchun download (Browser API)
+  static bool _downloadWeb(List<int> bytes, String fileName, String mimeType) {
+    try {
+      // Blob yaratish
       final blob = html.Blob(
         [bytes],
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        mimeType,
       );
 
       // Download URL yaratish
