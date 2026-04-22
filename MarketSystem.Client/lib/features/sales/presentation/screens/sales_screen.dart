@@ -195,7 +195,11 @@ class _SalesScreenState extends State<SalesScreen> {
                   ]
                 : [
                     PopupMenuButton<String>(
-                      icon: const Icon(Icons.file_download_outlined),
+                      icon: Icon(
+                        Icons.file_download_outlined,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      tooltip: 'Export',
                       onSelected: (value) {
                         if (value == 'excel') {
                           _exportExcel();
@@ -204,23 +208,23 @@ class _SalesScreenState extends State<SalesScreen> {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'excel',
                           child: Row(
                             children: [
-                              Icon(Icons.table_view, size: 20),
-                              SizedBox(width: 12),
-                              Text('Excel export'),
+                              const Icon(Icons.table_view, size: 20),
+                              const SizedBox(width: 12),
+                              Text('Excel export', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
                             ],
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'pdf',
                           child: Row(
                             children: [
-                              Icon(Icons.picture_as_pdf, size: 20),
-                              SizedBox(width: 12),
-                              Text('PDF export'),
+                              const Icon(Icons.picture_as_pdf, size: 20),
+                              const SizedBox(width: 12),
+                              Text('PDF export', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
                             ],
                           ),
                         ),
