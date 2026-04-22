@@ -92,7 +92,7 @@ class UserService {
       );
 
       print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}');
+      print('Response body: ${response.body.isEmpty ? '(empty)' : response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}');
 
       if (response.statusCode == 200) {
         // For successful upload, parse JSON response

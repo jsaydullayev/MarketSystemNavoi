@@ -122,23 +122,37 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
   }
 
   Future<void> _handleImagePick(BuildContext context) async {
+    print('=== PROFILE IMAGE PICKER START ===');
+
     final ImagePicker picker = ImagePicker();
     final XFile? image =
         await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
 
-    if (image == null) return;
+    print('Image picked: ${image != null}');
+    print('Image path: ${image?.path}');
+
+    if (image == null) {
+      print('No image selected, returning');
+      return;
+    }
 
     setState(() => _isUploading = true);
 
     try {
+      print('Starting upload...');
       final auth = Provider.of<AuthProvider>(context, listen: false);
+      print('Auth provider obtained');
+
       final result =
           await UserService(authProvider: auth).uploadProfileImage(image.path);
+
+      print('Upload result: $result');
 
       if (widget.onImageUpdated != null && result != null) {
         widget.onImageUpdated!(result['profileImage']);
       }
     } catch (e) {
+      print('Upload error: $e');
       if (mounted) {
         String errorMessage = e.toString();
         // Remove "Exception: " prefix for cleaner display

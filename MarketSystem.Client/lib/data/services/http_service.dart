@@ -240,6 +240,7 @@ class HttpService {
     print('=== HTTP PUT ===');
     print('URL: $baseUrl$endpoint');
     print('Has body: ${body != null}');
+    print('Has token: ${token != null}');
     if (body != null && encodedBody != null && encodedBody.length < 500) {
       print('Body: $encodedBody');
     } else if (body != null) {
@@ -259,7 +260,12 @@ class HttpService {
         });
         request.body = encodedBody;
 
-        final streamedResponse = await client.send(request);
+        final streamedResponse = await client.send(request).timeout(
+          const Duration(seconds: 60),
+          onTimeout: () {
+            throw Exception('Request timeout after 60 seconds');
+          },
+        );
         final response = await http.Response.fromStream(streamedResponse);
         return response;
       } finally {
@@ -274,6 +280,11 @@ class HttpService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
       body: encodedBody,
+    ).timeout(
+      const Duration(seconds: 60),
+      onTimeout: () {
+        throw Exception('Request timeout after 60 seconds');
+      },
     );
   }
 
