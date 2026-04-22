@@ -48,10 +48,17 @@ class UserService {
   // Upload profile image - use base64 JSON (Windows compatible)
   Future<dynamic> uploadProfileImage(String imagePath) async {
     try {
+      print('=== PROFILE IMAGE UPLOAD START ===');
+      print('Image path: $imagePath');
+
       // Check file size first (before reading entire file)
       final file = File(imagePath);
+      if (!await file.exists()) {
+        throw Exception('Fayl topilmadi: $imagePath');
+      }
       final fileSize = await file.length();
       final fileSizeInMB = fileSize / (1024 * 1024);
+      print('File size: ${fileSizeInMB.toStringAsFixed(2)} MB');
 
       if (fileSizeInMB > 5) {
         throw Exception('Rasm hajmi juda katta. Iltimos, kichikroq rasm tanlang (maksimum 5MB).');
@@ -60,9 +67,11 @@ class UserService {
       // Read file and convert to base64
       final imageBytes = await file.readAsBytes();
       final base64Image = base64Encode(imageBytes);
+      print('Base64 length: ${base64Image.length} characters');
 
       // Determine MIME type from file extension
       final extension = imagePath.toLowerCase().split('.').last;
+      print('File extension: $extension');
       final mimeType = switch (extension) {
         'jpg' || 'jpeg' => 'image/jpeg',
         'png' => 'image/png',
@@ -72,12 +81,18 @@ class UserService {
       };
 
       // Send as JSON body - Windows compatible!
+      final requestData = {
+        'profileImage': 'data:$mimeType;base64,$base64Image',
+      };
+      print('Request body length: ${requestData.toString().length} characters');
+
       final response = await _httpService.put(
         '${ApiConstants.users}/UpdateProfileImage',
-        body: {
-          'profileImage': 'data:$mimeType;base64,$base64Image',
-        },
+        body: requestData,
       );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}');
 
       if (response.statusCode == 200) {
         // For successful upload, parse JSON response

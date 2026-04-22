@@ -15,6 +15,7 @@ class ProductsBody extends StatelessWidget {
   final Function(dynamic) onEdit;
   final Function(dynamic) onZakup;
   final bool isReadOnly;
+  final bool canViewCostPrice;
 
   const ProductsBody({
     required this.isLoading,
@@ -26,6 +27,7 @@ class ProductsBody extends StatelessWidget {
     required this.onEdit,
     required this.onZakup,
     required this.isReadOnly,
+    required this.canViewCostPrice,
   });
 
   @override
@@ -73,6 +75,7 @@ class ProductsBody extends StatelessWidget {
                                   onEdit: onEdit,
                                   onZakup: onZakup,
                                   isReadOnly: isReadOnly,
+                                  canViewCostPrice: canViewCostPrice,
                                 ),
                               ),
                             ),
@@ -128,6 +131,7 @@ class _ProductCard extends StatelessWidget {
   final Function(dynamic) onEdit;
   final Function(dynamic) onZakup;
   final bool isReadOnly;
+  final bool canViewCostPrice;
 
   const _ProductCard({
     required this.product,
@@ -138,6 +142,7 @@ class _ProductCard extends StatelessWidget {
     required this.onEdit,
     required this.onZakup,
     required this.isReadOnly,
+    required this.canViewCostPrice,
   });
 
   @override
@@ -205,7 +210,11 @@ class _ProductCard extends StatelessWidget {
                               color: primaryColor.withOpacity(0.8),
                               fontSize: 12)),
                     8.height,
-                    _PriceRow(product: product, l10n: l10n, isDark: isDark),
+                    _PriceRow(
+                        product: product,
+                        l10n: l10n,
+                        isDark: isDark,
+                        canViewCostPrice: canViewCostPrice),
                     8.height,
                     _StockBadge(
                       product: product,
@@ -294,8 +303,12 @@ class _PriceRow extends StatelessWidget {
   final dynamic product;
   final AppLocalizations l10n;
   final bool isDark;
+  final bool canViewCostPrice;
   const _PriceRow(
-      {required this.product, required this.l10n, required this.isDark});
+      {required this.product,
+      required this.l10n,
+      required this.isDark,
+      required this.canViewCostPrice});
 
   @override
   Widget build(BuildContext context) {
@@ -306,12 +319,14 @@ class _PriceRow extends StatelessWidget {
             price: product['salePrice'],
             color: Colors.green,
             isDark: isDark),
-        12.width,
-        _Badge(
-            label: l10n.costPrice,
-            price: product['costPrice'],
-            color: Colors.blueGrey,
-            isDark: isDark),
+        if (canViewCostPrice) ...[
+          12.width,
+          _Badge(
+              label: l10n.costPrice,
+              price: product['costPrice'],
+              color: Colors.blueGrey,
+              isDark: isDark),
+        ],
       ],
     );
   }

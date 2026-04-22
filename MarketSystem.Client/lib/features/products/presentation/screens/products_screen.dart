@@ -309,6 +309,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.primaryColor;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final canViewCostPrice = authProvider.user?['role'] != 'Seller';
 
     return NetworkWrapper(
       onRetry: _loadProducts,
@@ -334,6 +336,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
           onEdit: (p) => _openProductForm(product: p),
           onZakup: _quickZakup,
           isReadOnly: widget.isReadOnly,
+          canViewCostPrice: canViewCostPrice,
         ),
         floatingActionButton: !widget.isReadOnly
             ? FloatingActionButton(
