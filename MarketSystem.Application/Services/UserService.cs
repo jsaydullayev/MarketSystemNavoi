@@ -160,12 +160,9 @@ public class UserService : IUserService
 
     public async Task<UserDto?> UpdateProfileImageAsync(Guid userId, UpdateProfileImageDto request, CancellationToken cancellationToken = default)
     {
-        var marketId = _currentMarketService.GetCurrentMarketId();
-
-        var users = await _unitOfWork.Users.FindAsync(
-            u => u.Id == userId && u.MarketId == marketId,
-            cancellationToken);
-        var user = users.FirstOrDefault();
+        // Profile image update uchun faqat ID bo'yicha qidiramiz - foydalanuvchi o'z profil rasmini o'zgartira oladi
+        // MarketId tekshiruvi shart emas, chunki JWT token'dan userId olinmoqda
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
 
         if (user is null)
             return null;

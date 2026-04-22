@@ -217,8 +217,7 @@ public class UsersController : ControllerBase
         }
     }
 
-    [HttpDelete]
-    [Route("api/Users/DeleteUser/{id}")]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _userService.DeleteUserAsync(id);
@@ -228,8 +227,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost]
-    [Route("api/Users/{id}/deactivate")]
+    [HttpPost("{id}/deactivate")]
     public async Task<IActionResult> DeactivateUser(Guid id)
     {
         var result = await _userService.DeactivateUserAsync(id);
@@ -239,8 +237,7 @@ public class UsersController : ControllerBase
         return Ok(new { message = "User deactivated" });
     }
 
-    [HttpPost]
-    [Route("api/Users/{id}/activate")]
+    [HttpPost("{id}/activate")]
     public async Task<IActionResult> ActivateUser(Guid id)
     {
         var result = await _userService.ActivateUserAsync(id);
