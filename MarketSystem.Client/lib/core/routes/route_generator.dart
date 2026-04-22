@@ -22,6 +22,7 @@ import '../../features/users/screens/users_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/debts/screens/debts_screen.dart';
+import '../../features/privacy/screens/privacy_screen.dart';
 
 /// Generate route
 Route<dynamic> generateRoute(RouteSettings settings) {
@@ -76,6 +77,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case AppRoutes.cashRegister:
       return MaterialPageRoute(builder: (_) => const CashRegisterScreen());
+
+    case AppRoutes.privacy:
+      return MaterialPageRoute(builder: (_) => const PrivacyScreen());
 
     default:
       return MaterialPageRoute(

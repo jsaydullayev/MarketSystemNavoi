@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../../../core/routes/app_routes.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_styles.dart';
@@ -33,7 +34,15 @@ class WelcomeScreen extends StatelessWidget {
                 _buildBrandSection(isDark),
                 const Spacer(flex: 3),
                 _buildStartButton(context, primaryColor, l10n),
-                40.height,
+                20.height,
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.privacy),
+                  child: Text(
+                    'Privacy Policy',
+                    style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                  ),
+                ),
+                20.height,
               ],
             ),
           ),

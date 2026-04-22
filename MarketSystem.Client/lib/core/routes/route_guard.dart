@@ -14,6 +14,7 @@ const List<String> publicRoutes = [
   '/welcome',
   '/login',
   '/register',
+  '/privacy',
 ];
 
 /// Check if route is public
