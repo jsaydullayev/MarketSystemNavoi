@@ -30,6 +30,7 @@ class AppRoutes {
   static const String adminProducts = '/admin-products';
   static const String adminProductsForm = '/admin-products-form';
   static const String profile = '/profile';
+  static const String privacy = '/privacy';
   static const String cashRegister = '/cash-register';
 
   // Sub-routes

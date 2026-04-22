@@ -312,7 +312,16 @@ try
         .WithName("Root Health Check");
     app.MapGet("/privacy", (IWebHostEnvironment env) =>
     {
-        var filePath = Path.Combine(env.WebRootPath, "privacy.html");
+        var webRootPath = env.WebRootPath;
+        if (string.IsNullOrEmpty(webRootPath))
+        {
+            webRootPath = Path.Combine(env.ContentRootPath, "wwwroot");
+        }
+        var filePath = Path.Combine(webRootPath, "privacy.html");
+        if (!File.Exists(filePath))
+        {
+            return Results.NotFound(new { error = "Privacy policy file not found" });
+        }
         return Results.File(filePath, "text/html");
     })
     .ExcludeFromDescription()

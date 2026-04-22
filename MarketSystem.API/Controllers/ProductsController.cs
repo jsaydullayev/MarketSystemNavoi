@@ -105,7 +105,7 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> ExportProductsToExcel([FromServices] MarketSystem.Application.Interfaces.IExcelService excelService)
     {
         var products = await _productService.GetAllProductsAsync();
-        
+
         // Forma dagi ma'lumotlarni sodda va tushunarli qilish uchun yangi ro'yxat shakllantiramiz
         var exportData = products.Select(p => new
         {
@@ -127,6 +127,57 @@ public class ProductsController : ControllerBase
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"Mahsulotlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
         );
+    }
+
+    /// <summary>
+    /// Debug endpoint - tekshirish uchun
+    /// </summary>
+    [HttpGet("debug")]
+    public async Task<IActionResult> DebugProducts([FromServices] AppDbContext dbContext)
+    {
+        var marketId = User.FindFirst("MarketId")?.Value;
+        Console.WriteLine($"[DEBUG] User's MarketId: {marketId}");
+
+        // Direct database query using raw SQL
+        var rawProducts = await dbContext.Products
+            .Where(p => p.MarketId == int.Parse(marketId ?? "0"))
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Quantity,
+                p.Unit,
+                p.CostPrice,
+                p.SalePrice
+            })
+            .Take(5)
+            .ToListAsync();
+
+        Console.WriteLine($"[DEBUG] Raw SQL query result count: {rawProducts.Count}");
+
+        foreach (var p in rawProducts)
+        {
+            Console.WriteLine($"[DEBUG] Product: {p.Name}, Quantity: {p.Quantity}, Unit: {p.Unit}");
+        }
+
+        // Get products via service (regular flow)
+        var serviceProducts = await _productService.GetAllProductsAsync();
+
+        return Ok(new
+        {
+            marketId,
+            rawQueryCount = rawProducts.Count,
+            rawProducts,
+            serviceQueryCount = serviceProducts.Count(),
+            serviceProducts = serviceProducts.Take(5).Select(p => new
+            {
+                id = p.Id,
+                name = p.Name,
+                quantity = p.Quantity,
+                unit = p.Unit,
+                unitName = p.UnitName
+            })
+        });
     }
 
 }
