@@ -5,8 +5,12 @@ import 'package:market_system_client/l10n/app_localizations.dart';
 class InventoryItemCard extends StatelessWidget {
   final Map<String, dynamic> item;
   final bool isOwner;
+  final bool canViewCostPrice;
 
-  const InventoryItemCard({required this.item, required this.isOwner});
+  const InventoryItemCard(
+      {required this.item,
+      required this.isOwner,
+      this.canViewCostPrice = true});
 
   @override
   Widget build(BuildContext context) {
@@ -90,19 +94,21 @@ class InventoryItemCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(
-                child: _InfoTile(
-                  label: l10n.purchasePrice,
-                  value:
-                      '${NumberFormatter.formatDecimal(costPrice)} ${l10n.currencySom}',
+              if (canViewCostPrice)
+                Expanded(
+                  child: _InfoTile(
+                    label: l10n.purchasePrice,
+                    value:
+                        '${NumberFormatter.formatDecimal(costPrice)} ${l10n.currencySom}',
+                  ),
                 ),
-              ),
+              if (canViewCostPrice) const Spacer(),
               Expanded(
                 child: _InfoTile(
                   label: l10n.sellingPrice,
                   value:
                       '${NumberFormatter.formatDecimal(salePrice)} ${l10n.currencySom}',
-                  align: CrossAxisAlignment.end,
+                  align: canViewCostPrice ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 ),
               ),
             ],
@@ -110,19 +116,21 @@ class InventoryItemCard extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              Expanded(
-                child: _InfoTile(
-                  label: l10n.totalCost,
-                  value:
-                      '${NumberFormatter.formatDecimal(totalCost)} ${l10n.currencySom}',
+              if (canViewCostPrice)
+                Expanded(
+                  child: _InfoTile(
+                    label: l10n.totalCost,
+                    value:
+                        '${NumberFormatter.formatDecimal(totalCost)} ${l10n.currencySom}',
+                  ),
                 ),
-              ),
+              if (canViewCostPrice) const Spacer(),
               Expanded(
                 child: _InfoTile(
                   label: l10n.totalValue,
                   value:
                       '${NumberFormatter.formatDecimal(totalSale)} ${l10n.currencySom}',
-                  align: CrossAxisAlignment.end,
+                  align: canViewCostPrice ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                 ),
               ),
             ],

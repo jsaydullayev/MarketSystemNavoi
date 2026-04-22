@@ -149,6 +149,8 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final canViewCostPrice = authProvider.user?['role'] != 'Seller';
 
     return NetworkWrapper(
       onRetry: _loadReports,
@@ -217,6 +219,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         _loadReports();
                       },
                       onExport: () => _exportToExcel('inventory'),
+                      canViewCostPrice: canViewCostPrice,
                     ),
                   ],
                 ),

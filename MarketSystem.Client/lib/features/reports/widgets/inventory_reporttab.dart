@@ -13,12 +13,14 @@ class InventoryReportTab extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateChanged;
   final VoidCallback onExport;
+  final bool canViewCostPrice;
 
   const InventoryReportTab({
     required this.report,
     required this.selectedDate,
     required this.onDateChanged,
     required this.onExport,
+    this.canViewCostPrice = true,
   });
 
   @override
@@ -121,6 +123,7 @@ class InventoryReportTab extends StatelessWidget {
             child: InventoryItemCard(
               item: inventory[i] as Map<String, dynamic>,
               isOwner: isOwner,
+              canViewCostPrice: canViewCostPrice,
             ),
           ),
         ),

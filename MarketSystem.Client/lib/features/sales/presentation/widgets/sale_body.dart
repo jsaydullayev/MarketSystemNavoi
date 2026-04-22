@@ -206,7 +206,7 @@ class SaleBody extends StatelessWidget {
       itemCount: filteredProducts.length,
       itemBuilder: (context, index) {
         final p = filteredProducts[index];
-        final stock = (p['stock'] ?? 0).toDouble();
+        final stock = (p['quantity'] ?? 0).toDouble();
 
         return InkWell(
           onTap: () => onAddToCart(p),
