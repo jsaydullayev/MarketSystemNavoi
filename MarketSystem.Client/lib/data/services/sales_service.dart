@@ -410,6 +410,26 @@ class SalesService {
         .downloadBytes('${ApiConstants.sales}/export');
   }
 
+  // Barcha sotuvlarni PDF formatda yuklab olish
+  Future<List<int>?> downloadSalesPdf({DateTime? startDate, DateTime? endDate}) async {
+    print('=== DOWNLOAD SALES PDF ===');
+    String url = '${ApiConstants.sales}/export-pdf';
+    List<String> queryParams = [];
+    if (startDate != null) {
+      queryParams.add('startDate=${startDate.toIso8601String()}');
+    }
+    if (endDate != null) {
+      queryParams.add('endDate=${endDate.toIso8601String()}');
+    }
+    if (queryParams.isNotEmpty) {
+      url += '?${queryParams.join('&')}';
+    }
+    print('URL: $url');
+    print('=======================');
+
+    return await _httpService.downloadBytes(url);
+  }
+
   // Savdo uchun faktura (PDF) yuklab olish
   Future<List<int>?> downloadInvoice(String saleId) async {
     print('=== DOWNLOAD INVOICE ===');

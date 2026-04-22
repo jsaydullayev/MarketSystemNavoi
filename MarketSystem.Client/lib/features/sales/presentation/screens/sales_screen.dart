@@ -117,6 +117,49 @@ class _SalesScreenState extends State<SalesScreen> {
     }
   }
 
+  Future<void> _exportPdf() async {
+    setState(() => _isExporting = true);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+      final bytes = await salesService.downloadSalesPdf();
+
+      if (bytes != null && bytes.isNotEmpty) {
+        final success = await core_file_helper.FileHelper.saveAndOpenPdf(
+            bytes, 'Sotuvlar.pdf');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                  kIsWeb && success
+                      ? 'PDF fayli yuklanmoqda...'
+                      : (success ? 'PDF saqlandi va ochildi' : 'PDF saqlashda xatolik')
+                ),
+                backgroundColor: success ? Colors.green : Colors.red),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF faylini yuklab olishda xatolik yuz berdi'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -137,9 +180,9 @@ class _SalesScreenState extends State<SalesScreen> {
           appBar: CommonAppBar(
             title: l10n.sales,
             onRefresh: _loadSales,
-            extraActions: [
-              _isExporting
-                  ? const Center(
+            extraActions: _isExporting
+                ? [
+                    const Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12),
                         child: SizedBox(
@@ -148,12 +191,42 @@ class _SalesScreenState extends State<SalesScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                    )
-                  : IconButton(
-                      icon: const Icon(Icons.file_download_outlined),
-                      onPressed: _exportExcel,
                     ),
-            ],
+                  ]
+                : [
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.file_download_outlined),
+                      onSelected: (value) {
+                        if (value == 'excel') {
+                          _exportExcel();
+                        } else if (value == 'pdf') {
+                          _exportPdf();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'excel',
+                          child: Row(
+                            children: [
+                              Icon(Icons.table_view, size: 20),
+                              SizedBox(width: 12),
+                              Text('Excel export'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'pdf',
+                          child: Row(
+                            children: [
+                              Icon(Icons.picture_as_pdf, size: 20),
+                              SizedBox(width: 12),
+                              Text('PDF export'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
           ),
           body: Center(
             child: Container(

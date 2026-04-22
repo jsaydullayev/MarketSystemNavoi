@@ -349,6 +349,39 @@ public class SalesController : ControllerBase
         }
     }
 
+    [HttpGet("export-pdf")]
+    public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+    {
+        try
+        {
+            _logger.LogInformation("ExportSalesToPdf called - StartDate: {StartDate}, EndDate: {EndDate}",
+                startDate, endDate);
+
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            _logger.LogInformation("Exporting PDF for user role: {UserRole}", userRole ?? "Unknown");
+
+            var pdfBytes = await _reportService.ExportSalesListToPdfAsync(startDate, endDate, userRole);
+
+            _logger.LogInformation("Sales PDF generated successfully");
+
+            return File(
+                pdfBytes,
+                "application/pdf",
+                $"Sotuvlar_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation during PDF export");
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting sales to PDF");
+            return StatusCode(500, "Sotuvlarni PDF formatda eksport qilishda xatolik");
+        }
+    }
+
     /// <summary>
     /// Decimal sonni formatlash - butun sonlarda ".00" ni olib tashlaydi
     /// </summary>
