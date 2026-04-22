@@ -1,8 +1,17 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
+import 'package:provider/provider.dart';
+import '../../../data/services/sales_service.dart';
+import '../../../core/providers/auth_provider.dart';
 
-class SaleDetailSheet extends StatelessWidget {
+class SaleDetailSheet extends StatefulWidget {
   final dynamic sale;
   final Map<String, dynamic> saleDetails;
   final bool isOwner;
@@ -15,10 +24,138 @@ class SaleDetailSheet extends StatelessWidget {
   });
 
   @override
+  State<SaleDetailSheet> createState() => _SaleDetailSheetState();
+}
+
+class _SaleDetailSheetState extends State<SaleDetailSheet> {
+  late final SalesService _salesService;
+
+  @override
+  void initState() {
+    super.initState();
+    _salesService = SalesService(
+      authProvider: Provider.of<AuthProvider>(context, listen: false),
+    );
+  }
+
+  Future<void> _downloadPdf() async {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return;
+
+    final saleId = widget.sale.id?.toString() ?? '';
+
+    // Loading dialog ko'rsatish
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // PDFni serverdan yuklab olish
+      final pdfData = await _salesService.downloadInvoice(saleId);
+
+      if (pdfData == null || pdfData.isEmpty) {
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(l10n.errorOccurred),
+            backgroundColor: Colors.red,
+          ));
+        }
+        return;
+      }
+
+      // List<int> -> Uint8List ga o'tkazish
+      final pdfBytes = Uint8List.fromList(pdfData);
+
+      // Fayl nomini generatsiya qilish
+      final createdAt = widget.sale.createdAt ?? DateTime.now();
+      final dateStr = DateFormat('dd.MM.yyyy').format(createdAt);
+      final fileName = 'faktura_${saleId}_$dateStr.pdf';
+
+      // Platformga qarab saqlash
+      if (Platform.isAndroid || Platform.isIOS) {
+        // Mobile platformlarda printing orqali yuklash
+        await Printing.sharePdf(
+          bytes: pdfBytes,
+          filename: fileName,
+        );
+      } else {
+        // Desktop platformlarda
+        Directory? directory;
+        if (Platform.isWindows) {
+          final username = Platform.environment['USERNAME'] ?? 'User';
+          directory = Directory('C:/Users/$username/Downloads');
+        } else if (Platform.isMacOS || Platform.isLinux) {
+          directory = await getDownloadsDirectory();
+        }
+
+        final path = '${directory?.path ?? '.'}/$fileName';
+        final file = File(path);
+
+        // Directory mavjudligini tekshirish va yaratish
+        if (directory != null && !directory.existsSync()) {
+          await directory.create(recursive: true);
+        }
+
+        await file.writeAsBytes(pdfBytes);
+
+        // Dialogni yopish
+        if (mounted) Navigator.pop(context);
+
+        // Desktop'da faylni ochish
+        if (mounted) {
+          final result = await OpenFilex.open(path);
+          if (result.type != ResultType.done) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('${l10n.errorOccurred}: ${result.message}'),
+                backgroundColor: Colors.orange,
+              ));
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(l10n.pdfDownloaded),
+                backgroundColor: Colors.green,
+              ));
+            }
+          }
+        }
+        return;
+      }
+
+      // Dialogni yopish
+      if (mounted) Navigator.pop(context);
+
+      // Muvaffaqiyat xabari
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.pdfDownloaded),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      // Xatolik bo'lsa
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('${l10n.errorOccurred}: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final items = saleDetails['saleItems'] as List<dynamic>? ?? [];
+    final items = widget.saleDetails['saleItems'] as List<dynamic>? ?? [];
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
@@ -53,11 +190,11 @@ class SaleDetailSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildInfoTile(Icons.person_outline, l10n.customer,
-                      sale.customerName ?? l10n.anonymousCustomer, theme),
+                      widget.sale.customerName ?? l10n.anonymousCustomer, theme),
                   _buildInfoTile(
                       Icons.account_balance_wallet_outlined,
                       l10n.paymentType,
-                      _getPaymentText(sale.paymentType, l10n),
+                      _getPaymentText(widget.sale.paymentType, l10n),
                       theme),
                   const SizedBox(height: 20),
                   Text(l10n.products,
@@ -91,15 +228,27 @@ class SaleDetailSheet extends StatelessWidget {
               Text(l10n.saleDetail,
                   style: theme.textTheme.headlineSmall
                       ?.copyWith(fontWeight: FontWeight.w900)),
-              Text(DateFormat('dd.MM.yyyy HH:mm').format(sale.createdAt),
+              Text(DateFormat('dd.MM.yyyy HH:mm').format(widget.sale.createdAt),
                   style: theme.textTheme.bodySmall),
             ],
           ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close_rounded),
-            style: IconButton.styleFrom(
-                backgroundColor: theme.dividerColor.withOpacity(0.1)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: _downloadPdf,
+                icon: const Icon(Icons.download),
+                tooltip: l10n.downloadPdf,
+                style: IconButton.styleFrom(
+                    backgroundColor: theme.primaryColor.withOpacity(0.1)),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded),
+                style: IconButton.styleFrom(
+                    backgroundColor: theme.dividerColor.withOpacity(0.1)),
+              )
+            ],
           )
         ],
       ),
@@ -162,11 +311,11 @@ class SaleDetailSheet extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _totalRow(l10n.totalSum, "${sale.totalAmount} ${l10n.currencySom}",
+          _totalRow(l10n.totalSum, "${widget.sale.totalAmount} ${l10n.currencySom}",
               Colors.white),
-          if (isOwner && sale.profit != null) ...[
+          if (widget.isOwner && widget.sale.profit != null) ...[
             const Divider(color: Colors.white24, height: 20),
-            _totalRow(l10n.profit, "+${sale.profit} ${l10n.currencySom}",
+            _totalRow(l10n.profit, "+${widget.sale.profit} ${l10n.currencySom}",
                 Colors.greenAccent),
           ],
         ],
