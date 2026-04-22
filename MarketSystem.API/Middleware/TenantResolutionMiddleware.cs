@@ -20,6 +20,7 @@ public class TenantResolutionMiddleware
 
     public async Task InvokeAsync(HttpContext context, AppDbContext dbContext)
     {
+        // Avval JWT token'dan MarketId claim ni olamiz (birinchi prioritet)
         var marketIdClaim = context.User?.FindFirst("MarketId")?.Value;
 
         _logger.LogInformation("TenantResolution: User={User}, MarketIdClaim={MarketIdClaim}",
@@ -33,6 +34,7 @@ public class TenantResolutionMiddleware
             return;
         }
 
+        // Agar token'da MarketId bo'lmasa, subdomain bo'yicha qidiramiz (ikkinchi prioritet)
         var host = context.Request.Host.Host;
         if (!host.Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
             host.Contains('.') &&
@@ -45,8 +47,10 @@ public class TenantResolutionMiddleware
             if (market != null)
             {
                 context.Items["MarketId"] = market.Id;
+                _logger.LogInformation("MarketId set from subdomain: {Subdomain} -> {MarketId}", subdomain, market.Id);
             }
         }
+
         await _next(context);
     }
 }
