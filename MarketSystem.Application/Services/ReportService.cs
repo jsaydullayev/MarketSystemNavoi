@@ -932,6 +932,215 @@ public class ReportService : IReportService
         return salesWithItems;
     }
 
+    public async Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Get all sales if no date range specified
+        var start = startDate.HasValue
+            ? DateTime.SpecifyKind(startDate.Value.Date, DateTimeKind.Utc)
+            : DateTime.MinValue;
+        var end = endDate.HasValue
+            ? DateTime.SpecifyKind(endDate.Value.Date.AddDays(1), DateTimeKind.Utc)
+            : DateTime.UtcNow.AddDays(1);
+
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= start && s.CreatedAt < end &&
+                 s.Status != SaleStatus.Cancelled &&
+                 s.MarketId == marketId,
+            cancellationToken,
+            includeProperties: "SaleItems,Payments,Seller,Customer");
+
+        // Get all products for the sale items
+        var allProductIds = sales.SelectMany(s => s.SaleItems).Select(si => si.ProductId).Distinct().ToList();
+        var products = new Dictionary<Guid, string>();
+        if (allProductIds.Any())
+        {
+            var productList = await _unitOfWork.Products.FindAsync(
+                p => allProductIds.Contains(p.Id) && p.MarketId == marketId,
+                cancellationToken);
+            foreach (var p in productList)
+            {
+                products[p.Id] = p.Name;
+            }
+        }
+
+        // Owner role check - null or non-owner means no profit visibility
+        bool includeProfit = !string.IsNullOrEmpty(userRole) && userRole == "Owner";
+        decimal totalSales = 0;
+        decimal totalProfit = 0;
+
+        var reportItems = new List<SalesReportItem>();
+        int itemNumber = 1;
+
+        // Sort sales by date descending
+        var sortedSales = sales.OrderByDescending(s => s.CreatedAt).ToList();
+
+        foreach (var sale in sortedSales)
+        {
+            // Calculate paid ratio for debt sales (only count profit for paid portion)
+            decimal paidRatio = sale.TotalAmount > 0
+                ? sale.PaidAmount / sale.TotalAmount
+                : 1;
+
+            foreach (var item in sale.SaleItems)
+            {
+                var productName = products.GetValueOrDefault(item.ProductId, "Unknown");
+                // Full item profit
+                decimal fullItemProfit = (item.SalePrice - item.CostPrice) * item.Quantity;
+                // Adjusted profit based on paid ratio (consistent with Excel export)
+                decimal adjustedProfit = fullItemProfit * paidRatio;
+
+                totalSales += item.TotalPrice;
+                if (includeProfit)
+                {
+                    totalProfit += adjustedProfit;
+                }
+
+                reportItems.Add(new SalesReportItem(
+                    itemNumber++,
+                    sale.CreatedAt,
+                    sale.Customer?.FullName ?? "Mijoz yo'q",
+                    sale.Seller?.FullName ?? "Noma'lum",
+                    productName,
+                    item.Quantity,
+                    item.CostPrice,
+                    item.SalePrice,
+                    item.TotalPrice,
+                    includeProfit ? adjustedProfit : null,
+                    sale.Status.ToString()
+                ));
+            }
+        }
+
+        // Generate PDF using QuestPDF
+        try
+        {
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(1, Unit.Centimetre);
+                    page.DefaultTextStyle(x => x.FontSize(9));
+
+                    // Header
+                    page.Header().Element(header =>
+                    {
+                        header.Column(column =>
+                        {
+                            column.Item().Row(row =>
+                            {
+                                row.RelativeItem().Column(col =>
+                                {
+                                    col.Item().Text("SOTUVLAR HISOBOTI").FontSize(16).Bold();
+                                    col.Item().Text(
+                                        startDate.HasValue && endDate.HasValue
+                                            ? $"{startDate.Value:dd.MM.yyyy} - {endDate.Value:dd.MM.yyyy}"
+                                            : "Barcha vaqt")
+                                        .FontSize(10).Light();
+                                });
+                            });
+                            column.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        });
+                    });
+
+                    // Content - Table
+                    page.Content().Element(content =>
+                    {
+                        content.Table(table =>
+                        {
+                            // Define columns - always include profit column for consistency
+                            // It will be hidden if includeProfit is false
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.ConstantColumn(25);  // #
+                                columns.ConstantColumn(70); // Date
+                                columns.RelativeColumn(2);  // Customer
+                                columns.RelativeColumn(2);  // Seller
+                                columns.RelativeColumn(2);  // Product
+                                columns.ConstantColumn(50); // Quantity
+                                columns.ConstantColumn(60); // Cost
+                                columns.ConstantColumn(60); // Price
+                                columns.ConstantColumn(70); // Total
+                                columns.ConstantColumn(60); // Profit (always defined, conditionally shown)
+                                columns.ConstantColumn(50); // Status
+                            });
+
+                            // Table Header
+                            table.Header(header =>
+                            {
+                                header.Cell().Element(HeaderStyle).Text("#").SemiBold();
+                                header.Cell().Element(HeaderStyle).Text("Sana").SemiBold();
+                                header.Cell().Element(HeaderStyle).Text("Mijoz").SemiBold();
+                                header.Cell().Element(HeaderStyle).Text("Sotuvchi").SemiBold();
+                                header.Cell().Element(HeaderStyle).Text("Mahsulot").SemiBold();
+                                header.Cell().Element(HeaderStyle).AlignRight().Text("Miqdor").SemiBold();
+                                header.Cell().Element(HeaderStyle).AlignRight().Text("Xarid").SemiBold();
+                                header.Cell().Element(HeaderStyle).AlignRight().Text("Narx").SemiBold();
+                                header.Cell().Element(HeaderStyle).AlignRight().Text("Jami").SemiBold();
+                                header.Cell().Element(HeaderStyle).AlignRight().Text("Foyda").SemiBold();
+                                header.Cell().Element(HeaderStyle).Text("Holat").SemiBold();
+                            });
+
+                            // Table Rows
+                            foreach (var item in reportItems)
+                            {
+                                table.Cell().Element(RowStyle).Text($"{item.Number}");
+                                table.Cell().Element(RowStyle).Text(item.Date.ToString("dd.MM HH:mm"));
+                                table.Cell().Element(RowStyle).Text(item.CustomerName);
+                                table.Cell().Element(RowStyle).Text(item.SellerName);
+                                table.Cell().Element(RowStyle).Text(item.ProductName);
+                                table.Cell().Element(RowStyle).AlignRight().Text($"{item.Quantity:N2}");
+                                table.Cell().Element(RowStyle).AlignRight().Text($"{item.CostPrice:N0}");
+                                table.Cell().Element(RowStyle).AlignRight().Text($"{item.SalePrice:N0}");
+                                table.Cell().Element(RowStyle).AlignRight().Text($"{item.TotalPrice:N0}").Bold();
+                                if (includeProfit && item.Profit.HasValue)
+                                {
+                                    table.Cell().Element(RowStyle).AlignRight().Text($"{item.Profit.Value:N0}")
+                                        .FontColor(item.Profit.Value >= 0 ? Colors.Green.Darken2 : Colors.Red.Darken2);
+                                }
+                                else
+                                {
+                                    table.Cell().Element(RowStyle).AlignRight().Text("-");
+                                }
+                                table.Cell().Element(RowStyle).Text(item.Status);
+                            }
+                        });
+                    });
+
+                    // Footer with totals
+                    page.Footer().Element(footer =>
+                    {
+                        footer.PaddingTop(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        footer.PaddingTop(5).Row(row =>
+                        {
+                            row.RelativeItem();
+                            row.ConstantItem(150).Text("Jami savdo:").SemiBold();
+                            row.ConstantItem(100).Text($"{totalSales:N0} so'm").Bold();
+                            if (includeProfit)
+                            {
+                                row.ConstantItem(100).Text("Jami foyda:").SemiBold();
+                                row.ConstantItem(100).Text($"{totalProfit:N0} so'm")
+                                    .Bold()
+                                    .FontColor(totalProfit >= 0 ? Colors.Green.Darken2 : Colors.Red.Darken2);
+                            }
+                        });
+                        footer.PaddingTop(5).AlignCenter().Text(x =>
+                        {
+                            x.Span("Sahifa ");
+                            x.CurrentPageNumber();
+                        });
+                    });
+                });
+            }).GeneratePdf();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Sales list PDF generation failed: {ex.Message}", ex);
+        }
+    }
+
     public Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
@@ -1211,4 +1420,38 @@ public class ReportService : IReportService
         decimal Total,
         string? Comment
     );
+
+    private record SalesReportItem(
+        int Number,
+        DateTime Date,
+        string CustomerName,
+        string SellerName,
+        string ProductName,
+        decimal Quantity,
+        decimal CostPrice,
+        decimal SalePrice,
+        decimal TotalPrice,
+        decimal? Profit,
+        string Status
+    );
+
+    private static IContainer HeaderStyle(IContainer container)
+    {
+        return container
+            .Border(1)
+            .BorderColor(Colors.Grey.Lighten2)
+            .Padding(4)
+            .Background(Colors.Grey.Lighten4)
+            .AlignCenter()
+            .AlignMiddle();
+    }
+
+    private static IContainer RowStyle(IContainer container)
+    {
+        return container
+            .Border(1)
+            .BorderColor(Colors.Grey.Lighten2)
+            .Padding(3)
+            .AlignMiddle();
+    }
 }
