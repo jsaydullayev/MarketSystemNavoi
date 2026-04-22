@@ -4,6 +4,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Constants;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.API.Helpers;
+using MarketSystem.Infrastructure.Data;
 using System.Security.Claims;
 
 namespace MarketSystem.API.Controllers;
