@@ -45,6 +45,9 @@ dependencies:
 
   # Image Picker
   image_picker: ^1.0.7
+  image_picker_for_web: ^3.0.6
+  image_picker_android: ^0.8.13
+  image_picker_ios: ^0.8.13
   flutter_native_splash: ^2.4.7
   adaptive_theme: ^3.6.0
   universal_html: ^2.3.0

@@ -40,6 +40,11 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Joylashuv ma'lumotlariga kirishga ruxsat bering</string>
+	<!-- Image Picker permissions -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Profil rasmini yuklash uchun rasm galereyasiga kirishga ruxsat bering</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Profil rasmini yuklash uchun kameralardan foydalanishga ruxsat bering</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
