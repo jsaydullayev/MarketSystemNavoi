@@ -1014,9 +1014,11 @@ public class ReportService : IReportService
             }
         }
 
-        // Generate PDF using QuestPDF
+        // Generate PDF using QuestPDF with improved error handling
         try
         {
+            _logger.LogInformation($"[GenerateInvoicePdf] Starting PDF generation for sale {saleId}");
+
             return Document.Create(container =>
             {
                 container.Page(page =>
