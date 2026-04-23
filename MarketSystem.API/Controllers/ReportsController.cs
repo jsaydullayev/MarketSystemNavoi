@@ -29,9 +29,8 @@ public class ReportsController : ControllerBase
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        // Convert to UTC - treat the input date as UTC
-        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var report = await _reportService.GetDailyReportAsync(utcDate, userRole);
+        // Service handles UTC conversion internally via GetUtcDateRange
+        var report = await _reportService.GetDailyReportAsync(date, userRole);
         return Ok(report);
     }
 
@@ -43,8 +42,8 @@ public class ReportsController : ControllerBase
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var saleItems = await _reportService.GetDailySaleItemsAsync(utcDate, userRole);
+        // Use the service's GetUtcDateRange for proper UTC conversion
+        var saleItems = await _reportService.GetDailySaleItemsAsync(date, userRole);
         return Ok(saleItems);
     }
 
@@ -103,8 +102,8 @@ public class ReportsController : ControllerBase
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var report = await _reportService.GetComprehensiveReportAsync(utcDate, userRole);
+        // Service handles UTC conversion internally via GetUtcDateRange
+        var report = await _reportService.GetComprehensiveReportAsync(date, userRole);
         return Ok(report);
     }
 
@@ -114,8 +113,8 @@ public class ReportsController : ControllerBase
     [HttpGet("comprehensive/export")]
     public async Task<IActionResult> ExportComprehensiveToExcel([FromQuery] DateTime date)
     {
-        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(utcDate);
+        // Service handles UTC conversion internally via GetUtcDateRange
+        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(date);
 
         return File(
             excelBytes,
@@ -162,8 +161,8 @@ public class ReportsController : ControllerBase
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         Guid? userId = Guid.TryParse(userIdString, out var parsedId) ? parsedId : null;
 
-        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var salesList = await _reportService.GetDailySalesListAsync(utcDate, userRole, userId);
+        // Service handles UTC conversion internally via GetUtcDateRange
+        var salesList = await _reportService.GetDailySalesListAsync(date, userRole, userId);
         return Ok(salesList);
     }
 
@@ -956,9 +955,9 @@ public class ReportsController : ControllerBase
     public async Task<ActionResult<MonthlyCategorySalesResponseDto>> GetMonthlyCategorySales([FromQuery] DateTime date, CancellationToken cancellationToken = default)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
 
-        var report = await _reportService.GetMonthlyCategorySalesAsync(utcDate, userRole, cancellationToken);
+        // Service handles UTC conversion internally
+        var report = await _reportService.GetMonthlyCategorySalesAsync(date, userRole, cancellationToken);
         return Ok(report);
     }
 

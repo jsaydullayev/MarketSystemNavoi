@@ -5,6 +5,7 @@ using QuestPDF.Infrastructure;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
+using MarketSystem.Domain.Extensions;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Application.Interfaces;
 using System.Linq.Expressions;
@@ -30,8 +31,7 @@ public class ReportService : IReportService
     public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
+        var (start, end) = GetUtcDateRange(date);
 
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
@@ -48,33 +48,45 @@ public class ReportService : IReportService
     public async Task<DailySaleItemsResponseDto> GetDailySaleItemsAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
+        var (start, end) = GetUtcDateRange(date);
 
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
-        bool includeProfit = userRole == "Owner";
+        // Batch fetch all products to avoid N+1 query
+        var allProductIds = sales.SelectMany(s => s.SaleItems).Select(si => si.ProductId).Distinct().ToList();
+        var products = new Dictionary<Guid, Product>();
+        if (allProductIds.Any())
+        {
+            var productList = await _unitOfWork.Products.FindAsync(
+                p => allProductIds.Contains(p.Id) && p.MarketId == marketId,
+                cancellationToken);
+            foreach (var p in productList)
+            {
+                products[p.Id] = p;
+            }
+        }
+
+        bool includeProfit = userRole == Role.Owner.ToString();
 
         var allItems = new List<DailySaleItemDto>();
 
-        Console.WriteLine($"📊 [GetDailySaleItems] Processing {sales.Count()} sales for {start:yyyy-MM-dd}");
+        _logger.LogInformation("[GetDailySaleItems] Processing {Count} sales for {Date}", sales.Count(), start.ToString("yyyy-MM-dd"));
 
         foreach (var sale in sales)
         {
             foreach (var item in sale.SaleItems)
             {
-                var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, cancellationToken);
-                if (product == null) continue;
+                if (!products.TryGetValue(item.ProductId, out var product)) continue;
 
                 var productName = product.Name;
                 var quantity = item.Quantity;
 
                 if (quantity % 1 != 0)
                 {
-                    Console.WriteLine($"  ➕ Double quantity: {productName} - {quantity} ta (Sale: {sale.Id})");
+                    _logger.LogInformation("Double quantity: {ProductName} - {Quantity} ta (Sale: {SaleId})", productName, quantity, sale.Id);
                 }
                 var costPrice = item.CostPrice;
                 var salePrice = item.SalePrice;
@@ -216,8 +228,7 @@ public class ReportService : IReportService
     public async Task<ComprehensiveReportDto> GetComprehensiveReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
+        var (start, end) = GetUtcDateRange(date);
 
         // Get daily sales with SaleItems and Payments
         var sales = await _unitOfWork.Sales.FindAsync(
@@ -242,7 +253,7 @@ public class ReportService : IReportService
         var sellerReports = new List<SellerReportDto>();
 
         // Only Owner can see seller reports
-        if (userRole == "Owner")
+        if (userRole == Role.Owner.ToString())
         {
             // Get all users for seller reports (filtered by market)
             var users = await _unitOfWork.Users.FindAsync(
@@ -536,20 +547,16 @@ public class ReportService : IReportService
         var now = DateTime.UtcNow;
 
         // Today
-        var todayStart = DateTime.SpecifyKind(now.Date, DateTimeKind.Utc);
-        var todayEnd = DateTime.SpecifyKind(now.Date.AddDays(1), DateTimeKind.Utc);
+        var (todayStart, todayEnd) = GetUtcDateRange(now);
 
         // Week
-        var weekStart = DateTime.SpecifyKind(now.Date.AddDays(-(int)now.DayOfWeek), DateTimeKind.Utc);
+        var weekStart = ToUtcDate(now.Date.AddDays(-(int)now.DayOfWeek));
 
         // Month
-        var monthStart = DateTime.SpecifyKind(new DateTime(now.Year, now.Month, 1), DateTimeKind.Utc);
-
-        // All time
-        var allTimeStart = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+        var monthStart = ToUtcDate(new DateTime(now.Year, now.Month, 1));
 
         var todaySales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= todayStart && s.CreatedAt < todayStart.AddDays(1) &&
+            s => s.CreatedAt >= todayStart && s.CreatedAt < todayEnd &&
                  s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
@@ -583,8 +590,7 @@ public class ReportService : IReportService
         var now = DateTime.UtcNow;
 
         // Get today's date range in current market's timezone
-        var todayStart = DateTime.SpecifyKind(now.Date, DateTimeKind.Utc);
-        var todayEnd = DateTime.SpecifyKind(now.Date.AddDays(1), DateTimeKind.Utc);
+        var (todayStart, todayEnd) = GetUtcDateRange(now);
 
         // Get all payments for today
         var sales = await _unitOfWork.Sales.FindAsync(
@@ -643,13 +649,12 @@ public class ReportService : IReportService
         CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var start = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var end = DateTime.SpecifyKind(date.Date.AddDays(1), DateTimeKind.Utc);
+        var (start, end) = GetUtcDateRange(date);
 
         Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
                               s.Status != SaleStatus.Cancelled &&
                               s.MarketId == marketId &&
-                              (userRole != "Seller" || s.SellerId == userId);
+                              (userRole != Role.Seller.ToString() || s.SellerId == userId);
 
         var sales = await _unitOfWork.Sales.FindAsync(
             salesQuery,
@@ -841,8 +846,8 @@ public class ReportService : IReportService
         CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var start = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Utc);
-        var end = DateTime.SpecifyKind(endDate.Date.AddDays(1), DateTimeKind.Utc);
+        var start = ToUtcDate(startDate);
+        var end = ToUtcDate(endDate.AddDays(1));
 
         // Use AppDbContext for complex query with proper includes
         // This is done via the unit of work's context if accessible
@@ -850,7 +855,7 @@ public class ReportService : IReportService
         Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
                               s.Status != SaleStatus.Cancelled &&
                               s.MarketId == marketId &&
-                              (userRole != "Seller" || s.SellerId == userId);
+                              (userRole != Role.Seller.ToString() || s.SellerId == userId);
 
         var sales = await _unitOfWork.Sales.FindAsync(
             salesQuery,
@@ -941,12 +946,8 @@ public class ReportService : IReportService
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         // Get all sales if no date range specified
-        var start = startDate.HasValue
-            ? DateTime.SpecifyKind(startDate.Value.Date, DateTimeKind.Utc)
-            : DateTime.MinValue;
-        var end = endDate.HasValue
-            ? DateTime.SpecifyKind(endDate.Value.Date.AddDays(1), DateTimeKind.Utc)
-            : DateTime.UtcNow.AddDays(1);
+        var start = startDate.HasValue ? ToUtcDate(startDate.Value) : DateTime.MinValue;
+        var end = endDate.HasValue ? ToUtcDate(endDate.Value.AddDays(1)) : DateTime.UtcNow.AddDays(1);
 
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end &&
@@ -970,7 +971,7 @@ public class ReportService : IReportService
         }
 
         // Owner role check - null or non-owner means no profit visibility
-        bool includeProfit = !string.IsNullOrEmpty(userRole) && userRole == "Owner";
+        bool includeProfit = !string.IsNullOrEmpty(userRole) && userRole == Role.Owner.ToString();
         decimal totalSales = 0;
         decimal totalProfit = 0;
 
@@ -1224,15 +1225,8 @@ public class ReportService : IReportService
 
         // Determine payment type
         var primaryPayment = sale.Payments.FirstOrDefault(p => p.Amount > 0);
-        string paymentType = primaryPayment?.PaymentType.ToString() ?? "Cash";
-        string paymentTypeUz = paymentType switch
-        {
-            "Cash" => "Naqd",
-            "Terminal" => "Terminal",
-            "BankTransfer" => "Bank o'tkazmasi",
-            "Credit" => "Kredit",
-            _ => paymentType
-        };
+        var paymentTypeEnum = primaryPayment?.PaymentType ?? PaymentType.Cash;
+        string paymentTypeUz = paymentTypeEnum.ToUzbek();
 
         // Create invoice data
         var invoiceItems = new List<InvoiceItemData>();
@@ -1489,5 +1483,17 @@ public class ReportService : IReportService
             .BorderColor(Colors.Grey.Lighten2)
             .Padding(3)
             .AlignMiddle();
+    }
+
+    private static DateTime ToUtcDate(DateTime date)
+    {
+        return DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+    }
+
+    private static (DateTime Start, DateTime End) GetUtcDateRange(DateTime date)
+    {
+        var start = ToUtcDate(date);
+        var end = ToUtcDate(date.AddDays(1));
+        return (start, end);
     }
 }
