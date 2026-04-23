@@ -21,6 +21,7 @@ public class ReportService : IReportService
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        QuestPDF.Settings.License = LicenseType.Community;
     }
 
     public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
