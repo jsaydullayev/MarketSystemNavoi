@@ -26,7 +26,18 @@ import '../../features/privacy/screens/privacy_screen.dart';
 
 /// Generate route
 Route<dynamic> generateRoute(RouteSettings settings) {
-  switch (settings.name) {
+  final routeName = settings.name ?? '';
+
+  debugPrint('🛣️ generateRoute called: $routeName');
+
+  // Special case: if route is /privacy, show privacy screen directly
+  // This bypasses any auto-navigation logic
+  if (routeName == AppRoutes.privacy) {
+    debugPrint('🔒 Privacy route detected - showing PrivacyScreen directly');
+    return MaterialPageRoute(builder: (_) => const PrivacyScreen());
+  }
+
+  switch (routeName) {
     case AppRoutes.splash:
       return MaterialPageRoute(builder: (_) => const SplashScreen());
 

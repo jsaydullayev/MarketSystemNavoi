@@ -12,7 +12,6 @@ import '../../l10n/app_localizations.dart';
 import '../utils/di.dart';
 import '../constants/app_strings.dart';
 import '../handlers/navigation_handler.dart';
-import '../routes/app_routes.dart';
 import '../routes/route_generator.dart';
 import '../../features/sales/presentation/bloc/sales_bloc.dart';
 import '../../features/customers/presentation/bloc/customers_bloc.dart';
@@ -21,21 +20,6 @@ import '../providers/theme_provider.dart';
 import '../providers/locale_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../data/services/auth_service.dart';
-
-/// Gets the initial route based on current URL
-/// For web, checks if user is accessing /privacy directly
-String getInitialRoute() {
-  try {
-    // On web, check the current URL path
-    final currentPath = Uri.base.path;
-    if (currentPath == '/privacy') {
-      return AppRoutes.privacy;
-    }
-  } catch (e) {
-    // Ignore errors on mobile platforms
-  }
-  return AppRoutes.splash;
-}
 
 /// Main App Widget
 class MainApp extends StatelessWidget {
@@ -71,6 +55,8 @@ class MainApp extends StatelessWidget {
             themeMode: ThemeMode.system,
             navigatorKey: NavigationHandler.navigatorKey,
             onGenerateRoute: generateRoute,
+            // Don't set initialRoute - let usePathUrlStrategy() handle it
+            // This way /privacy will work directly without going through splash
             locale:
                 localeProvider.locale, // ✅ Dynamic locale from LocaleProvider
             localizationsDelegates: const [
@@ -83,7 +69,6 @@ class MainApp extends StatelessWidget {
               Locale('uz'), // Uzbek
               Locale('ru'), // Russian
             ],
-            initialRoute: getInitialRoute(),
           ),
         ),
       ),
