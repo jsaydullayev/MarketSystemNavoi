@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/providers/locale_provider.dart';
-import '../../../../core/routes/app_routes.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_styles.dart';
@@ -36,7 +35,7 @@ class WelcomeScreen extends StatelessWidget {
                 _buildStartButton(context, primaryColor, l10n),
                 20.height,
                 TextButton(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.privacy),
+                  onPressed: () => _showPrivacyDialog(context, isDark),
                   child: Text(
                     'Privacy Policy',
                     style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
@@ -171,6 +170,145 @@ class WelcomeScreen extends StatelessWidget {
           color: isDark ? Colors.amber : Colors.black87,
         ),
       ),
+    );
+  }
+
+  void _showPrivacyDialog(BuildContext context, bool isDark) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.getPrimary(context),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Privacy Policy',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPrivacySection(
+                        'Introduction',
+                        'This Privacy Policy describes how MarketSystem collects, uses, and protects your personal information. By using our application, you agree to the terms of this policy.',
+                        isDark,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildPrivacySection(
+                        'Data Collection',
+                        'We collect the following types of information:\n\n'
+                        '1. Personal Information: Name, email address, phone number\n'
+                        '2. Usage Data: How you interact with the application\n'
+                        '3. Device Information: Device type, operating system, unique device identifiers\n'
+                        '4. Business Data: Sales, inventory, customer information (if you are a business user)',
+                        isDark,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildPrivacySection(
+                        'Data Usage',
+                        'We use the collected information for:\n\n'
+                        '• Providing and maintaining our services\n'
+                        '• Improving user experience\n'
+                        '• Processing transactions\n'
+                        '• Sending notifications about important updates\n'
+                        '• Analyzing usage patterns to enhance our services',
+                        isDark,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildPrivacySection(
+                        'Data Security',
+                        'We take data security seriously and implement appropriate measures to protect your information:\n\n'
+                        '• Encryption of sensitive data in transit and at rest\n'
+                        '• Regular security audits\n'
+                        '• Access controls and authentication\n'
+                        '• Secure data storage and backup systems',
+                        isDark,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildPrivacySection(
+                        'Your Rights',
+                        'You have the following rights regarding your data:\n\n'
+                        '• Access to your personal information\n'
+                        '• Request correction of inaccurate data\n'
+                        '• Request deletion of your account and data\n'
+                        '• Opt-out of marketing communications\n'
+                        '• Export your data',
+                        isDark,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildPrivacySection(
+                        'Contact Information',
+                        'If you have questions about this Privacy Policy or your data, please contact us at:\n\n'
+                        'Email: support@strotech.uz\n'
+                        'Website: https://strotech.uz',
+                        isDark,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacySection(String title, String content, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2196F3),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? Colors.white70 : Colors.black87,
+            height: 1.5,
+          ),
+        ),
+      ],
     );
   }
 }

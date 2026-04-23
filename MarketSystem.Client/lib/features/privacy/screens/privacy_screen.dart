@@ -3,68 +3,93 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:market_system_client/core/routes/app_routes.dart';
 
-class PrivacyScreen extends StatelessWidget {
+class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({super.key});
+
+  @override
+  State<PrivacyScreen> createState() => _PrivacyScreenState();
+}
+
+class _PrivacyScreenState extends State<PrivacyScreen> {
+  // Prevent any auto-navigation by tracking mount state
+  bool _isScreenMounted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isScreenMounted = true;
+    // No auto-navigation logic here
+  }
+
+  @override
+  void dispose() {
+    _isScreenMounted = false;
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Privacy Policy'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSection(
-              context,
-              'Introduction',
-              _getPrivacyIntro(),
-              theme,
-            ),
-            const SizedBox(height: 24),
-            _buildSection(
-              context,
-              'Data Collection',
-              _getDataCollection(),
-              theme,
-            ),
-            const SizedBox(height: 24),
-            _buildSection(
-              context,
-              'Data Usage',
-              _getDataUsage(),
-              theme,
-            ),
-            const SizedBox(height: 24),
-            _buildSection(
-              context,
-              'Data Security',
-              _getDataSecurity(),
-              theme,
-            ),
-            const SizedBox(height: 24),
-            _buildSection(
-              context,
-              'Your Rights',
-              _getYourRights(),
-              theme,
-            ),
-            const SizedBox(height: 24),
-            _buildSection(
-              context,
-              'Contact Information',
-              _getContactInfo(),
-              theme,
-            ),
-            const SizedBox(height: 40),
-            _buildFooter(context, theme, l10n),
-          ],
+    return PopScope(
+      // Allow back navigation, but prevent auto-navigation
+      canPop: true,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Privacy Policy'),
+          centerTitle: true,
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSection(
+                context,
+                'Introduction',
+                _getPrivacyIntro(),
+                theme,
+              ),
+              const SizedBox(height: 24),
+              _buildSection(
+                context,
+                'Data Collection',
+                _getDataCollection(),
+                theme,
+              ),
+              const SizedBox(height: 24),
+              _buildSection(
+                context,
+                'Data Usage',
+                _getDataUsage(),
+                theme,
+              ),
+              const SizedBox(height: 24),
+              _buildSection(
+                context,
+                'Data Security',
+                _getDataSecurity(),
+                theme,
+              ),
+              const SizedBox(height: 24),
+              _buildSection(
+                context,
+                'Your Rights',
+                _getYourRights(),
+                theme,
+              ),
+              const SizedBox(height: 24),
+              _buildSection(
+                context,
+                'Contact Information',
+                _getContactInfo(),
+                theme,
+              ),
+              const SizedBox(height: 40),
+              _buildFooter(context, theme, l10n),
+            ],
+          ),
         ),
       ),
     );
@@ -160,7 +185,8 @@ class PrivacyScreen extends StatelessWidget {
               ),
               recognizer: TapGestureRecognizer()
                 ..onTap = () {
-                  Navigator.of(context).pushReplacementNamed(AppRoutes.register);
+                  // Use pushNamed instead of pushReplacementNamed to keep privacy screen in stack
+                  Navigator.of(context).pushNamed(AppRoutes.register);
                 },
             ),
           ],
