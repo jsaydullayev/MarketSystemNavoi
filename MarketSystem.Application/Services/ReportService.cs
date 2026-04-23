@@ -1172,12 +1172,42 @@ public class ReportService : IReportService
         if (sale.Market == null)
             throw new InvalidOperationException($"Market data is missing for sale {saleId}.");
 
-        if (sale.Seller == null)
-            throw new InvalidOperationException($"Seller data is missing for sale {saleId}.");
-
         var market = sale.Market;
         var seller = sale.Seller;
+
+        // If seller was soft-deleted, fetch their name directly from database (ignoring soft-delete filter)
+        string sellerName = "Noma'lum sotuvchi";
+        if (seller != null)
+        {
+            sellerName = seller.FullName;
+        }
+        else
+        {
+            // Try to get seller name from database even if deleted
+            var deletedSeller = await _unitOfWork.Users.GetByIdIncludingDeletedAsync(sale.SellerId, cancellationToken);
+            if (deletedSeller != null)
+            {
+                sellerName = deletedSeller.FullName;
+            }
+        }
+
         var customer = sale.Customer;
+
+        // If customer was soft-deleted, fetch their name from database (ignoring soft-delete filter)
+        string customerName = "Mijoz ko'rsatilmagan";
+        if (customer != null)
+        {
+            customerName = customer.FullName ?? "Mijoz ko'rsatilmagan";
+        }
+        else if (sale.CustomerId.HasValue)
+        {
+            // Try to get customer name from database even if deleted
+            var deletedCustomer = await _unitOfWork.Customers.GetByIdIncludingDeletedAsync(sale.CustomerId.Value, cancellationToken);
+            if (deletedCustomer != null)
+            {
+                customerName = deletedCustomer.FullName ?? "Mijoz ko'rsatilmagan";
+            }
+        }
 
         // Get all products for the sale items
         var productIds = sale.SaleItems.Select(si => si.ProductId).Distinct().ToList();
@@ -1215,8 +1245,8 @@ public class ReportService : IReportService
         var invoiceData = new InvoiceData(
             market.Name,
             market.Description ?? "",
-            seller?.FullName ?? "Noma'lum sotuvchi",
-            customer?.FullName ?? "Mijoz ko'rsatilmagan",
+            sellerName,
+            customerName,
             sale.Id,
             sale.CreatedAt,
             paymentTypeUz,

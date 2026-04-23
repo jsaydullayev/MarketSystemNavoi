@@ -22,6 +22,13 @@ public abstract class BaseRepository<T> : IRepository<T> where T : class
         return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
     }
 
+    public virtual async Task<T?> GetByIdIncludingDeletedAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, cancellationToken);
+    }
+
     public virtual async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _dbSet.ToListAsync(cancellationToken);
