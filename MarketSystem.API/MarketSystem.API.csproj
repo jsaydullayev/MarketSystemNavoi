@@ -14,9 +14,6 @@
     <None Remove="Controllers\NewFolder\**" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
