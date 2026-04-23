@@ -8,6 +8,7 @@ using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Application.Interfaces;
 using System.Linq.Expressions;
+using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
 
@@ -15,11 +16,13 @@ public class ReportService : IReportService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly ILogger<ReportService> _logger;
 
-    public ReportService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService)
+    public ReportService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService, ILogger<ReportService> logger)
     {
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
+        _logger = logger;
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         QuestPDF.Settings.License = LicenseType.Community;
     }
