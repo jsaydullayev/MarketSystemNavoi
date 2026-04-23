@@ -22,6 +22,21 @@ import '../providers/locale_provider.dart';
 import '../providers/auth_provider.dart';
 import '../../data/services/auth_service.dart';
 
+/// Gets the initial route based on current URL
+/// For web, checks if user is accessing /privacy directly
+String getInitialRoute() {
+  try {
+    // On web, check the current URL path
+    final currentPath = Uri.base.path;
+    if (currentPath == '/privacy') {
+      return AppRoutes.privacy;
+    }
+  } catch (e) {
+    // Ignore errors on mobile platforms
+  }
+  return AppRoutes.splash;
+}
+
 /// Main App Widget
 class MainApp extends StatelessWidget {
   final AdaptiveThemeMode? savedThemeMode;
@@ -68,7 +83,7 @@ class MainApp extends StatelessWidget {
               Locale('uz'), // Uzbek
               Locale('ru'), // Russian
             ],
-            initialRoute: AppRoutes.splash,
+            initialRoute: getInitialRoute(),
           ),
         ),
       ),
