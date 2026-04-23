@@ -1017,7 +1017,7 @@ public class ReportService : IReportService
         // Generate PDF using QuestPDF with improved error handling
         try
         {
-            _logger.LogInformation($"[GenerateInvoicePdf] Starting PDF generation for sale {saleId}");
+            _logger.LogInformation($"[ExportSalesListToPdfAsync] Starting PDF generation for {reportItems.Count} items");
 
             return Document.Create(container =>
             {
