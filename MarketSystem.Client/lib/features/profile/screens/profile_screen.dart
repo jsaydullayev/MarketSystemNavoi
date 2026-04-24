@@ -11,7 +11,7 @@ import '../../../data/services/user_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../widgets/profile_image_picker.dart';
 import '../widgets/profile_widgets.dart';
-import '../../auth/presentation/screens/welcome_screen.dart';
+import '../../auth/presentation/screens/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -336,7 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await Provider.of<AuthProvider>(context, listen: false).logout();
       Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
           (r) => false);
     }
   }
