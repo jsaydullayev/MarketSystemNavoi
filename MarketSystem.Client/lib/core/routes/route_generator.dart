@@ -24,17 +24,43 @@ import '../../features/reports/screens/reports_screen.dart';
 import '../../features/debts/screens/debts_screen.dart';
 import '../../features/privacy/screens/privacy_screen.dart';
 
+/// Public routes that should NOT trigger any auto-navigation or auth redirects
+/// These routes are accessible without authentication and should never redirect
+const Set<String> publicRoutesExemptFromRedirect = {
+  AppRoutes.privacy,
+  AppRoutes.welcome,
+  AppRoutes.login,
+  AppRoutes.register,
+};
+
+/// Check if a route should be exempt from any auto-redirect logic
+bool isRouteExemptFromRedirect(String routeName) {
+  return publicRoutesExemptFromRedirect.contains(routeName);
+}
+
 /// Generate route
 Route<dynamic> generateRoute(RouteSettings settings) {
   final routeName = settings.name ?? '';
 
   debugPrint('🛣️ generateRoute called: $routeName');
 
-  // Special case: if route is /privacy, show privacy screen directly
-  // This bypasses any auto-navigation logic
-  if (routeName == AppRoutes.privacy) {
-    debugPrint('🔒 Privacy route detected - showing PrivacyScreen directly');
-    return MaterialPageRoute(builder: (_) => const PrivacyScreen());
+  // CRITICAL: Public routes that should NEVER redirect
+  // These routes must be handled first and bypass ALL auto-navigation logic
+  if (isRouteExemptFromRedirect(routeName)) {
+    debugPrint('🔒 Public route detected (no redirect): $routeName');
+
+    switch (routeName) {
+      case AppRoutes.welcome:
+        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+      case AppRoutes.login:
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
+      case AppRoutes.register:
+        return MaterialPageRoute(builder: (_) => const RegisterScreen());
+      case AppRoutes.privacy:
+        return MaterialPageRoute(builder: (_) => const PrivacyScreen());
+      default:
+        break;
+    }
   }
 
   switch (routeName) {

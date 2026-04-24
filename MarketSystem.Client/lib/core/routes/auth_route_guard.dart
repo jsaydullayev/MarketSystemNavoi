@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../utils/route_helper.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -22,6 +23,13 @@ class AuthRouteGuard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+
+    // Check if current route is public - if so, allow without auth check
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+    if (isPublicRoute(currentRoute)) {
+      debugPrint('🔓 AuthRouteGuard: Skipping auth check for public route: $currentRoute');
+      return child;
+    }
 
     if (!authProvider.isAuthenticated) {
       // Show login screen if not authenticated
@@ -50,9 +58,18 @@ class RoleRouteGuard extends StatelessWidget {
     final user = authProvider.user;
     final userRole = user?['role'] as String?;
 
+    // Check if current route is public - if so, skip role check
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+    if (isPublicRoute(currentRoute)) {
+      debugPrint('🔓 RoleRouteGuard: Skipping role check for public route: $currentRoute');
+      return child;
+    }
+
     if (!allowedRoles.contains(userRole)) {
       // User doesn't have required role - show access denied page
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+
         final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

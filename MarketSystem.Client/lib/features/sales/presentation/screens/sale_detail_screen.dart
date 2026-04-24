@@ -1,7 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart' as html;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
@@ -87,8 +88,20 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final dateStr = DateFormat('dd.MM.yyyy').format(createdAt);
       final fileName = 'faktura_${widget.saleId}_$dateStr.pdf';
 
-      // Platformga qarab saqlash
-      if (Platform.isAndroid || Platform.isIOS) {
+      // Platformaga qarab saqlash
+      if (kIsWeb) {
+        // Web platformada browser download API orqali yuklash
+        final blob = html.Blob([pdfBytes], 'application/pdf');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement()
+          ..href = url
+          ..download = fileName
+          ..style.display = 'none';
+        html.document.body?.append(anchor);
+        anchor.click();
+        anchor.remove();
+        html.Url.revokeObjectUrl(url);
+      } else if (Platform.isAndroid || Platform.isIOS) {
         // Mobile platformlarda printing orqali yuklash
         await Printing.sharePdf(
           bytes: pdfBytes,

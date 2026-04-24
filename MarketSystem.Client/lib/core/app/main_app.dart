@@ -13,6 +13,7 @@ import '../utils/di.dart';
 import '../constants/app_strings.dart';
 import '../handlers/navigation_handler.dart';
 import '../routes/route_generator.dart';
+import '../routes/navigator_observer.dart';
 import '../../features/sales/presentation/bloc/sales_bloc.dart';
 import '../../features/customers/presentation/bloc/customers_bloc.dart';
 import '../../features/zakup/presentation/bloc/zakup_bloc.dart';
@@ -28,6 +29,9 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Route protection observer for debugging unwanted redirects
+    final routeObserver = RouteProtectionObserver();
+
     return MultiProvider(
       providers: [
         // Auth Provider - must be first, others may depend on it
@@ -55,6 +59,8 @@ class MainApp extends StatelessWidget {
             themeMode: ThemeMode.system,
             navigatorKey: NavigationHandler.navigatorKey,
             onGenerateRoute: generateRoute,
+            // Add navigator observer to track and warn about unwanted redirects
+            navigatorObservers: [routeObserver],
             // Don't set initialRoute - let usePathUrlStrategy() handle it
             // This way /privacy will work directly without going through splash
             locale:
