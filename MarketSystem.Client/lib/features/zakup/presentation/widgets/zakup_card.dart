@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:market_system_client/core/providers/auth_provider.dart';
 
 class ZakupCard extends StatelessWidget {
   final Map<String, dynamic> zakup;
@@ -18,6 +20,11 @@ class ZakupCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final createdAt = DateTime.tryParse(zakup['createdAt'] ?? '');
+
+    // Hide cost price for Sellers
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userRole = authProvider.user?['role'];
+    final canViewCostPrice = userRole != 'Seller';
 
     final qty = (zakup['quantity'] as num?)?.toDouble() ?? 0.0;
     final qtyStr =
@@ -86,13 +93,15 @@ class ZakupCard extends StatelessWidget {
                         icon: Icons.layers_rounded,
                         isDark: isDark,
                       ),
-                      const SizedBox(width: 6),
-                      _Chip(
-                        label: NumberFormatter.format(zakup['costPrice'] ?? 0),
-                        icon: Icons.payments_rounded,
-                        isDark: isDark,
-                        isAccent: true,
-                      ),
+                      if (canViewCostPrice) ...[
+                        const SizedBox(width: 6),
+                        _Chip(
+                          label: NumberFormatter.format(zakup['costPrice'] ?? 0),
+                          icon: Icons.payments_rounded,
+                          isDark: isDark,
+                          isAccent: true,
+                        ),
+                      ],
                     ],
                   ),
                 ],
