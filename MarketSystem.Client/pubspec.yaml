@@ -80,7 +80,6 @@ flutter:
     - assets/lottie/
     - assets/svg/
     - assets/translations/
-    - assets/fonts/
 
   fonts:
     # Roboto Font Family - Pre-bundled to fix font loading glitches on Web
