@@ -125,8 +125,8 @@ public class ZakupsController : ControllerBase
             Sana = z.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
             Xodim = z.CreatedBy,
             Miqdor = z.Quantity,
-            Xarid_narxi = IsSeller() ? null : z.CostPrice,
-            Jami_summa = IsSeller() ? null : z.Quantity * z.CostPrice
+            Xarid_narxi = IsSeller() ? "-" : z.CostPrice.ToString(),
+            Jami_summa = IsSeller() ? "-" : (z.Quantity * z.CostPrice).ToString()
         });
 
         var fileContent = excelService.GenerateExcel(exportData, "Xaridlar");

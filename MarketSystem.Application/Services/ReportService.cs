@@ -241,10 +241,11 @@ public class ReportService : IReportService
             z => z.CreatedAt >= start && z.CreatedAt < end && z.MarketId == marketId,
             cancellationToken);
 
-        // Get all products for inventory report (filtered by market)
+        // Get all products for inventory report (filtered by market) with Category
         var products = await _unitOfWork.Products.FindAsync(
             p => p.MarketId == marketId,
-            cancellationToken);
+            cancellationToken,
+            includeProperties: "Category");
 
         // Calculate daily report
         var dailyReport = CalculateReport(sales, zakups, start, end);
@@ -297,6 +298,11 @@ public class ReportService : IReportService
         // Determine if profit should be included (Owner only)
         bool includeProfit = userRole == "Owner";
 
+        // Calculate inventory statistics
+        int productCount = products.Count();
+        int lowStockCount = products.Count(p => p.Quantity < 10 && p.Quantity > 0);
+        int outOfStockCount = products.Count(p => p.Quantity <= 0);
+
         foreach (var product in products)
         {
             var totalCostValue = product.Quantity * product.CostPrice;
@@ -315,7 +321,9 @@ public class ReportService : IReportService
                 product.MinSalePrice,
                 totalCostValue,
                 totalSaleValue,
-                potentialProfit
+                potentialProfit,
+                product.Category?.Name,
+                product.GetUnitName()
             ));
         }
 
@@ -325,7 +333,11 @@ public class ReportService : IReportService
             sellerReports,
             inventoryReport,
             totalInventoryCost,
-            totalInventorySaleValue
+            totalInventorySaleValue,
+            productCount,
+            totalInventoryCost,
+            lowStockCount,
+            outOfStockCount
         );
     }
 
