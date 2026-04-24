@@ -61,7 +61,7 @@ class MainApp extends StatelessWidget {
             onGenerateRoute: generateRoute,
             // Add navigator observer to track and warn about unwanted redirects
             navigatorObservers: [routeObserver],
-            // Don't set initialRoute - let usePathUrlStrategy() handle it
+            // CRITICAL: Don't set initialRoute - let usePathUrlStrategy() handle it
             // This way /privacy will work directly without going through splash
             locale:
                 localeProvider.locale, // ✅ Dynamic locale from LocaleProvider

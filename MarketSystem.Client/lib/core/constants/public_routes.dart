@@ -2,6 +2,7 @@
 /// Single source of truth for all routes that don't require authentication
 library;
 
+import 'package:flutter/foundation.dart';
 import '../routes/app_routes.dart';
 
 /// Centralized public route definitions
@@ -9,25 +10,30 @@ import '../routes/app_routes.dart';
 class PublicRoutes {
   /// All public routes (no authentication required)
   /// NOTE: Splash route (/) is NOT in this list - it's a special case that DOES redirect
+  /// CRITICAL: /privacy MUST be in this list to prevent redirect loop
   static const Set<String> all = {
     AppRoutes.welcome,
     AppRoutes.login,
     AppRoutes.register,
-    AppRoutes.privacy,
+    AppRoutes.privacy,  // MUST BE HERE - prevents redirect from privacy page
   };
 
   /// Check if a route is public
   /// Returns true if route requires no authentication
   static bool isPublic(String route) {
     final normalized = _normalizeRoute(route);
-    return all.contains(normalized);
+    final result = all.contains(normalized);
+    debugPrint('🔓 PublicRoutes.isPublic("$route") = $result');
+    return result;
   }
 
   /// Check if route is splash screen
   /// Splash screen is special - it should still check auth and redirect
   static bool isSplash(String route) {
     final normalized = _normalizeRoute(route);
-    return normalized == _normalizeRoute(AppRoutes.splash);
+    final result = normalized == _normalizeRoute(AppRoutes.splash);
+    debugPrint('🔓 PublicRoutes.isSplash("$route") = $result');
+    return result;
   }
 
   /// Check if route should skip auto-navigation (stay on the page)
@@ -36,10 +42,13 @@ class PublicRoutes {
   static bool shouldSkipAutoNavigation(String route) {
     // Splash screen should NOT skip auto-navigation - it needs to check auth
     if (isSplash(route)) {
+      debugPrint('🔓 shouldSkipAutoNavigation("$route") = false (is splash)');
       return false;
     }
     // Other public routes should stay where they are
-    return isPublic(route);
+    final result = isPublic(route);
+    debugPrint('🔓 shouldSkipAutoNavigation("$route") = $result (is public)');
+    return result;
   }
 
   /// Normalize route string for consistent comparison
