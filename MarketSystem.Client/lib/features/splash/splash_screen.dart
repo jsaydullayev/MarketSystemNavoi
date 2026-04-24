@@ -2,7 +2,8 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
-import 'package:market_system_client/core/utils/route_helper.dart';
+import 'package:market_system_client/core/constants/public_routes.dart';
+import 'package:market_system_client/core/managers/route_state_manager.dart';
 import 'package:market_system_client/data/services/auth_service.dart';
 import 'package:market_system_client/features/auth/presentation/screens/login_screen.dart';
 import 'package:market_system_client/features/auth/presentation/screens/welcome_screen.dart';
@@ -19,33 +20,45 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _isNavigating = false;
+
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    _initializeAndNavigate();
   }
 
-  Future<void> _checkAuth() async {
-    // CRITICAL: Check current route BEFORE async delay
-    // This prevents the BuildContext across async gap warning
-    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
-    final shouldSkipRedirect = isPublicRoute(currentRoute);
+  /// Initialize app state and navigate to appropriate screen
+  /// This is now purely UI-driven, no auto-redirect logic from public routes
+  Future<void> _initializeAndNavigate() async {
+    // Prevent multiple navigations
+    if (_isNavigating) return;
+    _isNavigating = true;
 
-    if (shouldSkipRedirect) {
-      debugPrint('🛑 Splash: Skipping auto-redirect - current route is public: $currentRoute');
+    // CRITICAL: Check if we should skip auto-navigation
+    // /privacy and other public routes should stay where they are
+    // /splash should check auth and redirect
+    final currentRoute = RouteStateManager.instance.currentRoute ?? '';
+    final shouldSkipAutoNav = PublicRoutes.shouldSkipAutoNavigation(currentRoute);
+
+    if (shouldSkipAutoNav) {
+      debugPrint('🛑 Splash: Route should skip auto-navigation: $currentRoute');
       return;
     }
 
-    await Future.delayed(const Duration(seconds: 2));
+    // Small delay for splash screen effect
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     if (!mounted) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final bool isFirstTime = prefs.getBool('is_first_time') ?? true;
-
+    // Initialize auth state
     final authService = di.sl<AuthService>();
+    final prefs = await SharedPreferences.getInstance();
+
+    final bool isFirstTime = prefs.getBool('is_first_time') ?? true;
     final bool isAuth = await authService.isAuthenticated();
 
+    // Load user data if authenticated
     if (isAuth && mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final role = prefs.getString('user_role');
@@ -63,6 +76,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
+    // Determine next screen
     Widget nextScreen;
     if (isFirstTime) {
       nextScreen = const WelcomeScreen();
@@ -70,6 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
       nextScreen = isAuth ? const DashboardScreen() : const LoginScreen();
     }
 
+    // Navigate
     if (mounted) {
       Navigator.pushReplacement(
         context,
