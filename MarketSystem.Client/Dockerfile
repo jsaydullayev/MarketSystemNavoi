@@ -11,8 +11,11 @@ RUN flutter pub get
 # Copy the rest of the application code
 COPY . .
 
-# Build the web application
-RUN flutter build web --release
+# Clean build artifacts and FontManifest to prevent path doubling
+RUN flutter clean
+
+# Build the web application with HTML renderer for better font loading
+RUN flutter build web --release --web-renderer html
 
 # Stage 2: Serve the application with Nginx
 FROM nginx:alpine
