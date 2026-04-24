@@ -1385,7 +1385,7 @@ public class ReportsController : ControllerBase
                 summarySheet.Column(2).Width = 20;
 
                 // SHEET 2: Mahsulotlar ro'yxati
-                if (comprehensiveReport.Inventory != null && comprehensiveReport.Inventory.Any())
+                if (comprehensiveReport.InventoryReport != null && comprehensiveReport.InventoryReport.Any())
                 {
                     var inventorySheet = package.Workbook.Worksheets.Add("Mahsulotlar Ro'yxati");
 
@@ -1418,7 +1418,7 @@ public class ReportsController : ControllerBase
                     int idx = 1;
                     decimal totalInvValue = 0;
 
-                    foreach (var item in comprehensiveReport.Inventory)
+                    foreach (var item in comprehensiveReport.InventoryReport)
                     {
                         inventorySheet.Cells[invRow, 1].Value = idx++;
                         inventorySheet.Cells[invRow, 2].Value = item.ProductName;
@@ -1499,7 +1499,7 @@ public class ReportsController : ControllerBase
                 }
 
                 // SHEET 3: Kam qolgan mahsulotlar (agar mavjud bo'lsa)
-                if (comprehensiveReport.Inventory != null && comprehensiveReport.Inventory.Any(i => i.Quantity < 10))
+                if (comprehensiveReport.InventoryReport != null && comprehensiveReport.InventoryReport.Any(i => i.Quantity < 10))
                 {
                     var lowStockSheet = package.Workbook.Worksheets.Add("Kam Qolgan Mahsulotlar");
 
@@ -1526,7 +1526,7 @@ public class ReportsController : ControllerBase
                     int lowRow = 4;
                     int lowIdx = 1;
 
-                    var lowStockItems = comprehensiveReport.Inventory.Where(i => i.Quantity < 10).OrderBy(i => i.Quantity).ToList();
+                    var lowStockItems = comprehensiveReport.InventoryReport.Where(i => i.Quantity < 10).OrderBy(i => i.Quantity).ToList();
 
                     foreach (var item in lowStockItems)
                     {
