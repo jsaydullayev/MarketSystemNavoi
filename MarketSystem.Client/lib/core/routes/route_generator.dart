@@ -7,6 +7,8 @@ import 'package:market_system_client/features/cash_register/screens/cash_registe
 import 'package:market_system_client/features/splash/splash_screen.dart';
 
 import 'app_routes.dart';
+import '../constants/public_routes.dart';
+import '../managers/route_state_manager.dart';
 
 // Screens
 import '../../features/auth/presentation/screens/welcome_screen.dart';
@@ -26,6 +28,7 @@ import '../../features/privacy/screens/privacy_screen.dart';
 
 /// Public routes that should NOT trigger any auto-navigation or auth redirects
 /// These routes are accessible without authentication and should never redirect
+@Deprecated('Use PublicRoutes.isPublic() instead')
 const Set<String> publicRoutesExemptFromRedirect = {
   AppRoutes.privacy,
   AppRoutes.welcome,
@@ -34,6 +37,7 @@ const Set<String> publicRoutesExemptFromRedirect = {
 };
 
 /// Check if a route should be exempt from any auto-redirect logic
+@Deprecated('Use PublicRoutes.isPublic() instead')
 bool isRouteExemptFromRedirect(String routeName) {
   return publicRoutesExemptFromRedirect.contains(routeName);
 }
@@ -44,12 +48,20 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
   debugPrint('🛣️ generateRoute called: $routeName');
 
-  // CRITICAL: Public routes that should NEVER redirect
-  // These routes must be handled first and bypass ALL auto-navigation logic
-  if (isRouteExemptFromRedirect(routeName)) {
-    debugPrint('🔒 Public route detected (no redirect): $routeName');
+  // CRITICAL: Capture and initialize route state IMMEDIATELY
+  // This must happen before any other logic to prevent race conditions
+  RouteStateManager.instance.updateRoute(routeName);
+
+  // CRITICAL: Check if route is public FIRST
+  // This is the "Impenetrable Wall" - public routes bypass ALL other logic
+  // NOTE: /splash is handled here but it's a special case - it DOES redirect
+  if (PublicRoutes.isPublic(routeName) || PublicRoutes.isSplash(routeName)) {
+    final isSplash = PublicRoutes.isSplash(routeName);
+    debugPrint('🔒 Public route detected: $routeName${isSplash ? " (will redirect after auth check)" : " (no redirect)"}');
 
     switch (routeName) {
+      case AppRoutes.splash:
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
       case AppRoutes.welcome:
         return MaterialPageRoute(builder: (_) => const WelcomeScreen());
       case AppRoutes.login:
@@ -59,23 +71,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       case AppRoutes.privacy:
         return MaterialPageRoute(builder: (_) => const PrivacyScreen());
       default:
+        // Should not happen if route is in PublicRoutes, but handle gracefully
         break;
     }
   }
 
+  // Handle protected routes
   switch (routeName) {
-    case AppRoutes.splash:
-      return MaterialPageRoute(builder: (_) => const SplashScreen());
-
-    case AppRoutes.welcome:
-      return MaterialPageRoute(builder: (_) => const WelcomeScreen());
-
-    case AppRoutes.login:
-      return MaterialPageRoute(builder: (_) => const LoginScreen());
-
-    case AppRoutes.register:
-      return MaterialPageRoute(builder: (_) => const RegisterScreen());
-
     case AppRoutes.dashboard:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -114,9 +116,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case AppRoutes.cashRegister:
       return MaterialPageRoute(builder: (_) => const CashRegisterScreen());
-
-    case AppRoutes.privacy:
-      return MaterialPageRoute(builder: (_) => const PrivacyScreen());
 
     default:
       return MaterialPageRoute(

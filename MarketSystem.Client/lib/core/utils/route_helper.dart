@@ -4,8 +4,10 @@ library;
 
 import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
+import '../constants/public_routes.dart';
 
 /// Public routes that should NOT trigger any auto-navigation
+@Deprecated('Use PublicRoutes instead')
 const Set<String> publicRoutes = {
   AppRoutes.privacy,
   AppRoutes.welcome,
@@ -15,6 +17,7 @@ const Set<String> publicRoutes = {
 };
 
 /// Check if a route is public (no auth required)
+@Deprecated('Use PublicRoutes.isPublic() instead')
 bool isPublicRoute(String routeName) {
   return publicRoutes.contains(routeName);
 }
@@ -23,7 +26,7 @@ bool isPublicRoute(String routeName) {
 /// This is used by splash screen and other auto-redirect logic
 bool shouldSkipAutoRedirect(BuildContext context) {
   final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
-  final isPublic = isPublicRoute(currentRoute);
+  final isPublic = PublicRoutes.isPublic(currentRoute);
 
   debugPrint('🔍 Route Helper - Current route: $currentRoute');
   debugPrint('🔍 Route Helper - Is public: $isPublic');

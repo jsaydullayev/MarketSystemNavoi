@@ -6,9 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../constants/public_routes.dart';
+import '../guards/public_route_guard.dart';
 import 'app_routes.dart';
 
 /// Public routes that don't require authentication
+@Deprecated('Use PublicRoutes.isPublic() instead')
 const List<String> publicRoutes = [
   '/',
   '/welcome',
@@ -18,6 +21,7 @@ const List<String> publicRoutes = [
 ];
 
 /// Check if route is public
+@Deprecated('Use PublicRoutes.isPublic() instead')
 bool isPublicRoute(String? routeName) {
   if (routeName == null) return false;
   return publicRoutes.contains(routeName) || routeName == AppRoutes.splash;
@@ -28,18 +32,29 @@ bool isPublicRoute(String? routeName) {
 Future<bool> authGuard(BuildContext context, String? routeName) async {
   final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-  // If route is public, allow navigation
-  if (isPublicRoute(routeName)) {
+  // CRITICAL: Use PublicRoutes for consistent public route checking
+  // If route is public, allow navigation without any auth check
+  if (PublicRoutes.isPublic(routeName ?? '')) {
+    debugPrint('🔓 RouteGuard: Public route, bypassing auth check: $routeName');
     return true;
   }
 
   // Check if user is authenticated
   if (!authProvider.isAuthenticated) {
     // Not authenticated - redirect to login
-    if (context.mounted) {
-      Navigator.of(context).pushReplacementNamed('/login');
+    // Only redirect if we're not already being redirected from a public route
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+
+    if (PublicRouteGuard.allowRedirect(currentRoute, '/login')) {
+      if (context.mounted) {
+        debugPrint('🔒 RouteGuard: Redirecting to login (not authenticated)');
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+      return false;
+    } else {
+      debugPrint('🚫 RouteGuard: Blocked redirect to login (from public route)');
+      return false;
     }
-    return false;
   }
 
   return true;
