@@ -80,12 +80,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 theme,
               ),
               const SizedBox(height: 24),
-              _buildSection(
-                context,
-                'Contact Information',
-                _getContactInfo(),
-                theme,
-              ),
+              _buildContactSection(context, theme),
               const SizedBox(height: 40),
               _buildFooter(context, theme, l10n),
             ],
@@ -160,10 +155,47 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         '• Export your data';
   }
 
-  String _getContactInfo() {
-    return 'If you have questions about this Privacy Policy or your data, please contact us at:\n\n'
-        'Email: saydullayev.jahongir7170@gmail.com\n'
-        'Website: https://strotech.uz';
+  Widget _buildContactSection(BuildContext context, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Contact Information',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'If you have questions about this Privacy Policy or your data, please contact us at:',
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Text('Email: ',
+                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
+            SelectableText(
+              'saydullayev.jahongir7170@gmail.com',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.6,
+                color: theme.primaryColor,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SelectableText(
+          'https://strotech.uz',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            height: 1.6,
+            color: theme.primaryColor,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildFooter(BuildContext context, ThemeData theme, AppLocalizations? l10n) {
