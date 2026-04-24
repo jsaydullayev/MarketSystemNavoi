@@ -1,6 +1,9 @@
 # Stage 1: Build the Flutter Web application
 FROM ghcr.io/cirruslabs/flutter:stable AS build
 
+# Suppress Flutter root user warning
+ENV FLUTTER_ROOT=/flutter
+
 # Set the working directory
 WORKDIR /app
 
@@ -14,8 +17,8 @@ COPY . .
 # Clean build artifacts and FontManifest to prevent path doubling
 RUN flutter clean
 
-# Build the web application with HTML renderer for better font loading
-RUN flutter build web --release --web-renderer html
+# Build the web application (HTML renderer is default in Flutter 3.24+)
+RUN flutter build web --release
 
 # Stage 2: Serve the application with Nginx
 FROM nginx:alpine
