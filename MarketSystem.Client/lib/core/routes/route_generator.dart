@@ -54,10 +54,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
   // CRITICAL: Check if route is public FIRST
   // This is the "Impenetrable Wall" - public routes bypass ALL other logic
-  // NOTE: /splash is handled here but it's a special case - it DOES redirect
+  // /privacy route must return here without ANY further processing
   if (PublicRoutes.isPublic(routeName) || PublicRoutes.isSplash(routeName)) {
-    final isSplash = PublicRoutes.isSplash(routeName);
-    debugPrint('🔒 Public route detected: $routeName${isSplash ? " (will redirect after auth check)" : " (no redirect)"}');
+    debugPrint('🔒 Public route detected: $routeName - RETURNING IMMEDIATELY (no auth check, no redirect)');
 
     switch (routeName) {
       case AppRoutes.splash:
@@ -69,6 +68,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       case AppRoutes.register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case AppRoutes.privacy:
+        // CRITICAL: /privacy MUST return here with NO further processing
         return MaterialPageRoute(builder: (_) => const PrivacyScreen());
       default:
         // Should not happen if route is in PublicRoutes, but handle gracefully
@@ -76,7 +76,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     }
   }
 
-  // Handle protected routes
+  // Handle protected routes below
+  debugPrint('🔐 Protected route detected: $routeName - checking auth');
+
   switch (routeName) {
     case AppRoutes.dashboard:
       return PageRouteBuilder(
