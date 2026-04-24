@@ -56,6 +56,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<ProductDto>> CreateProduct([FromBody] CreateProductDto request)
     {
         var sellerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -73,6 +74,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<ProductDto>> UpdateProduct(Guid id, [FromBody] UpdateProductDto request)
     {
         if (id != request.Id)
@@ -93,6 +95,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<IActionResult> DeleteProduct(Guid id)
     {
         var result = await _productService.DeleteProductAsync(id);

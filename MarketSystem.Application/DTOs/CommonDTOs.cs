@@ -165,6 +165,15 @@ public record ZakupDto(
     [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
     [property: JsonPropertyName("createdBy")] string CreatedBy
 );
+// Zakup DTO for Sellers - excludes cost price
+public record ZakupSellerDto(
+    [property: JsonPropertyName("id")] Guid Id,
+    [property: JsonPropertyName("productId")] Guid ProductId,
+    [property: JsonPropertyName("productName")] string ProductName,
+    [property: JsonPropertyName("quantity")] decimal Quantity,
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+    [property: JsonPropertyName("createdBy")] string CreatedBy
+);
 public record CreateZakupDto(
     [property: JsonPropertyName("productId")] Guid ProductId,
     [property: JsonPropertyName("quantity")] decimal Quantity,
