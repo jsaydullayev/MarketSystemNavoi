@@ -161,4 +161,30 @@ class ReportService {
       throw Exception('Kunlik savdo detallarini yuklashda xatolik: ${response.statusCode}');
     }
   }
+
+  // Kunlik hisobotni Excel ga export qilish (kunlik hisobot + sotuvlar ro'yxati + mahsulotlar bo'yicha)
+  Future<void> exportDailyReportToExcel(DateTime date) async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/daily/export?date=$formattedDate',
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to export daily report: ${response.statusCode}');
+    }
+  }
+
+  // Ombor hisobotini Excel ga export qilish
+  Future<void> exportInventoryReportToExcel(DateTime date) async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/inventory/export?date=$formattedDate',
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to export inventory report: ${response.statusCode}');
+    }
+  }
 }
