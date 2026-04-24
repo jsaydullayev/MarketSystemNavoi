@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:market_system_client/core/constants/app_styles.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/providers/locale_provider.dart';
+import 'package:market_system_client/core/routes/app_routes.dart';
 import 'package:market_system_client/core/theme/app_theme.dart';
 import 'package:market_system_client/screens/dashboard_screen.dart';
 import 'package:provider/provider.dart';
@@ -60,6 +61,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         _buildGlassForm(context, isDark, primaryColor, l10n),
                         30.height,
                         _buildRegisterLink(primaryColor, isDark, l10n),
+                        10.height,
+                        _buildPrivacyLink(primaryColor, isDark),
                       ],
                     ),
                   ),
@@ -223,6 +226,19 @@ class _LoginScreenState extends State<LoginScreen> {
           color: isDark ? Colors.white70 : primaryColor,
           fontWeight: FontWeight.bold,
           decoration: TextDecoration.underline,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyLink(Color primaryColor, bool isDark) {
+    return TextButton(
+      onPressed: () => Navigator.pushNamed(context, AppRoutes.privacy),
+      child: Text(
+        'Privacy Policy',
+        style: TextStyle(
+          color: isDark ? Colors.white54 : Colors.grey,
+          fontSize: 12,
         ),
       ),
     );
