@@ -83,8 +83,11 @@ flutter:
     - assets/fonts/
 
   fonts:
+    # Roboto Font Family - Pre-bundled to fix font loading glitches on Web
     - family: Roboto
       fonts:
         - asset: assets/fonts/Roboto-Regular.ttf
+          style: normal
         - asset: assets/fonts/Roboto-Bold.ttf
           weight: 700
+          style: normal
