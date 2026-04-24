@@ -162,7 +162,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
 
   String _getContactInfo() {
     return 'If you have questions about this Privacy Policy or your data, please contact us at:\n\n'
-        'Email: support@strotech.uz\n'
+        'Email: saydullayev.jahongir7170@gmail.com\n'
         'Website: https://strotech.uz';
   }
 
