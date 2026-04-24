@@ -121,10 +121,19 @@ class _ReportsScreenState extends State<ReportsScreen>
 
     setState(() => _isLoading = true);
     try {
-      if (type == 'monthly') {
-        await _reportsService.exportPeriodReportToExcel(_startDate, _endDate);
-      } else {
-        await _reportsService.exportComprehensiveToExcel(_selectedDate);
+      switch (type) {
+        case 'daily':
+          // Kunlik hisobot: kunlik hisobot + sotuvlar ro'yxati + mahsulotlar bo'yicha
+          await _reportsService.exportDailyReportToExcel(_selectedDate);
+          break;
+        case 'monthly':
+          // Oylik ma'lumotlar va barcha tegishli ma'lumotlar
+          await _reportsService.exportPeriodReportToExcel(_startDate, _endDate);
+          break;
+        case 'inventory':
+          // Omborga tegishli barcha ma'lumotlar
+          await _reportsService.exportInventoryReportToExcel(_selectedDate);
+          break;
       }
       if (mounted) _showSnack('${l10n.reportDownloaded}!', isError: false);
     } catch (e) {

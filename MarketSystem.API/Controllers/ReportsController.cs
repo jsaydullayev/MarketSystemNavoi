@@ -1014,4 +1014,575 @@ public class ReportsController : ControllerBase
             $"comprehensive_report_{date:yyyyMMdd}.pdf"
         );
     }
+
+    /// <summary>
+    /// Export daily report to Excel - kunlik hisobot, sotuvlar ro'yxati va mahsulotlar bo'yicha
+    /// </summary>
+    [HttpGet("daily/export")]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<IActionResult> ExportDailyReportToExcel([FromQuery] DateTime date)
+    {
+        try
+        {
+            _logger.LogInformation("Exporting daily report to Excel. Date: {Date}", date);
+
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            Guid? userId = Guid.TryParse(userIdString, out var parsedId) ? parsedId : null;
+
+            var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+
+            var salesList = await _reportService.GetDailySalesListAsync(utcDate, userRole, userId);
+            var dailyReport = await _reportService.GetDailyReportAsync(utcDate, userRole);
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var package = new ExcelPackage())
+            {
+                // SHEET 1: Kunlik Hisobot
+                var summarySheet = package.Workbook.Worksheets.Add("Kunlik Hisobot");
+
+                // Report title
+                summarySheet.Cells[1, 1].Value = "KUNLIK HISOBOT";
+                summarySheet.Cells[1, 1, 1, 3].Merge = true;
+                summarySheet.Cells[1, 1].Style.Font.Bold = true;
+                summarySheet.Cells[1, 1].Style.Font.Size = 16;
+                summarySheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                // Report date
+                summarySheet.Cells[2, 1].Value = $"Sana: {date:dd.MM.yyyy}";
+                summarySheet.Cells[2, 1, 2, 3].Merge = true;
+                summarySheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                // Summary statistics
+                int row = 4;
+                summarySheet.Cells[row, 1].Value = "KO'RSATGICH";
+                summarySheet.Cells[row, 2].Value = "QIYMATI";
+                summarySheet.Cells[row, 1, row, 2].Style.Font.Bold = true;
+                summarySheet.Cells[row, 1, row, 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                summarySheet.Cells[row, 1, row, 2].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+
+                row++;
+                summarySheet.Cells[row, 1].Value = "Sotuvlar soni";
+                summarySheet.Cells[row, 2].Value = salesList.Sales.Count;
+                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
+
+                row++;
+                summarySheet.Cells[row, 1].Value = "Jami savdo (Total)";
+                summarySheet.Cells[row, 2].Value = dailyReport.TotalSales;
+                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+
+                row++;
+                summarySheet.Cells[row, 1].Value = "To'langan (Paid)";
+                summarySheet.Cells[row, 2].Value = dailyReport.TotalPaidSales;
+                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+
+                row++;
+                summarySheet.Cells[row, 1].Value = "Qarz (Debt)";
+                summarySheet.Cells[row, 2].Value = dailyReport.TotalDebtSales;
+                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+
+                // Payment breakdown
+                if (dailyReport.PaymentBreakdown != null && dailyReport.PaymentBreakdown.Any())
+                {
+                    row += 2;
+                    summarySheet.Cells[row, 1].Value = "TO'LOV TURLARI";
+                    summarySheet.Cells[row, 1, row, 2].Merge = true;
+                    summarySheet.Cells[row, 1].Style.Font.Bold = true;
+                    summarySheet.Cells[row, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                    foreach (var payment in dailyReport.PaymentBreakdown)
+                    {
+                        row++;
+                        summarySheet.Cells[row, 1].Value = GetPaymentTypeText(payment.PaymentType);
+                        summarySheet.Cells[row, 2].Value = payment.Amount;
+                        summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+
+                        if (payment.PaymentType?.ToLower() == "qaytarilgan")
+                        {
+                            summarySheet.Cells[row, 2].Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                        }
+                    }
+                }
+
+                if (userRole == "Owner" && dailyReport.Profit.HasValue)
+                {
+                    row += 2;
+                    summarySheet.Cells[row, 1].Value = "FOYDA (Profit)";
+                    summarySheet.Cells[row, 1, row, 2].Merge = true;
+                    summarySheet.Cells[row, 1].Style.Font.Bold = true;
+                    summarySheet.Cells[row, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    summarySheet.Cells[row, 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+
+                    row++;
+                    summarySheet.Cells[row, 1].Value = "Jami foyda";
+                    summarySheet.Cells[row, 2].Value = dailyReport.Profit.Value;
+                    summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                    summarySheet.Cells[row, 2].Style.Font.Bold = true;
+                }
+
+                summarySheet.Cells[summarySheet.Dimension.Address].AutoFitColumns();
+                summarySheet.Column(1).Width = 30;
+                summarySheet.Column(2).Width = 20;
+
+                // SHEET 2: Sotuvlar Ro'yxati
+                var salesSheet = package.Workbook.Worksheets.Add("Sotuvlar Ro'yxati");
+
+                salesSheet.Cells[1, 1].Value = "№";
+                salesSheet.Cells[1, 2].Value = "Sana";
+                salesSheet.Cells[1, 3].Value = "Savdo ID";
+                salesSheet.Cells[1, 4].Value = "Sotuvchi";
+                salesSheet.Cells[1, 5].Value = "Mijoz";
+                salesSheet.Cells[1, 6].Value = "Summa";
+                salesSheet.Cells[1, 7].Value = "To'lov turi";
+                salesSheet.Cells[1, 8].Value = "Holat";
+                if (userRole == "Owner")
+                {
+                    salesSheet.Cells[1, 9].Value = "Foyda";
+                }
+
+                int headerCols = userRole == "Owner" ? 9 : 8;
+                using (var range = salesSheet.Cells[1, 1, 1, headerCols])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                }
+
+                int salesRow = 2;
+                decimal sheetTotal = 0;
+                decimal sheetProfit = 0;
+
+                foreach (var sale in salesList.Sales)
+                {
+                    salesSheet.Cells[salesRow, 1].Value = salesRow - 1;
+                    salesSheet.Cells[salesRow, 2].Value = sale.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+                    salesSheet.Cells[salesRow, 3].Value = sale.Id.ToString();
+                    salesSheet.Cells[salesRow, 4].Value = sale.SellerName ?? "";
+                    salesSheet.Cells[salesRow, 5].Value = sale.CustomerName ?? "Mijoz yo'q";
+                    salesSheet.Cells[salesRow, 6].Value = sale.TotalAmount;
+                    salesSheet.Cells[salesRow, 6].Style.Numberformat.Format = "#,##0.00";
+                    salesSheet.Cells[salesRow, 7].Value = GetPaymentTypeText(sale.PaymentType);
+                    salesSheet.Cells[salesRow, 8].Value = GetStatusText(sale.Status ?? "");
+
+                    if (userRole == "Owner")
+                    {
+                        salesSheet.Cells[salesRow, 9].Value = sale.Profit ?? 0;
+                        salesSheet.Cells[salesRow, 9].Style.Numberformat.Format = "#,##0.00";
+                        sheetProfit += sale.Profit ?? 0;
+                    }
+
+                    var statusCell = salesSheet.Cells[salesRow, 8];
+                    switch (sale.Status?.ToLower())
+                    {
+                        case "paid":
+                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Green);
+                            break;
+                        case "debt":
+                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                            break;
+                        case "cancelled":
+                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Gray);
+                            break;
+                        case "draft":
+                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                            break;
+                        case "closed":
+                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.DarkBlue);
+                            break;
+                    }
+
+                    sheetTotal += sale.TotalAmount;
+                    salesRow++;
+                }
+
+                salesSheet.Cells[salesRow, 1].Value = "JAMI:";
+                salesSheet.Cells[salesRow, 1, salesRow, 5].Merge = true;
+                salesSheet.Cells[salesRow, 1].Style.Font.Bold = true;
+                salesSheet.Cells[salesRow, 6].Value = sheetTotal;
+                salesSheet.Cells[salesRow, 6].Style.Numberformat.Format = "#,##0.00";
+                salesSheet.Cells[salesRow, 6].Style.Font.Bold = true;
+
+                if (userRole == "Owner")
+                {
+                    salesSheet.Cells[salesRow, 9].Value = sheetProfit;
+                    salesSheet.Cells[salesRow, 9].Style.Numberformat.Format = "#,##0.00";
+                    salesSheet.Cells[salesRow, 9].Style.Font.Bold = true;
+                }
+
+                salesSheet.Cells[salesSheet.Dimension.Address].AutoFitColumns();
+                salesSheet.Column(1).Width = 6;
+                salesSheet.Column(2).Width = 18;
+                salesSheet.Column(3).Width = 40;
+                salesSheet.Column(4).Width = 20;
+                salesSheet.Column(5).Width = 20;
+                salesSheet.Column(6).Width = 15;
+                salesSheet.Column(7).Width = 15;
+                salesSheet.Column(8).Width = 15;
+                if (userRole == "Owner") salesSheet.Column(9).Width = 15;
+
+                using (var range = salesSheet.Cells[1, 1, salesRow, headerCols])
+                {
+                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                }
+                salesSheet.Cells[1, 1, 1, headerCols].AutoFilter = true;
+
+                // SHEET 3: Mahsulotlar Bo'yicha
+                var productsSheet = package.Workbook.Worksheets.Add("Mahsulotlar Bo'yicha");
+                productsSheet.Cells[1, 1].Value = "MAHSULOTLAR BO'YICHA HISOBOT";
+                productsSheet.Cells[1, 1, 1, 5].Merge = true;
+                productsSheet.Cells[1, 1].Style.Font.Bold = true;
+                productsSheet.Cells[1, 1].Style.Font.Size = 14;
+                productsSheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                productsSheet.Cells[2, 1].Value = $"Sana: {date:dd.MM.yyyy}";
+                productsSheet.Cells[2, 1, 2, 5].Merge = true;
+                productsSheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                productsSheet.Cells[4, 1].Value = "№";
+                productsSheet.Cells[4, 2].Value = "Mahsulot nomi";
+                productsSheet.Cells[4, 3].Value = "Miqdor";
+                productsSheet.Cells[4, 4].Value = "Sotuv narxi";
+                productsSheet.Cells[4, 5].Value = "Jami summa";
+
+                using (var range = productsSheet.Cells[4, 1, 4, 5])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                }
+
+                var dailySaleItems = await _reportService.GetDailySaleItemsAsync(utcDate, userRole);
+                int prodRow = 5;
+                decimal prodTotal = 0;
+
+                foreach (var item in dailySaleItems.SaleItems)
+                {
+                    productsSheet.Cells[prodRow, 1].Value = prodRow - 4;
+                    productsSheet.Cells[prodRow, 2].Value = item.ProductName;
+                    productsSheet.Cells[prodRow, 3].Value = item.Quantity;
+                    productsSheet.Cells[prodRow, 3].Style.Numberformat.Format = "#,##0.000";
+                    productsSheet.Cells[prodRow, 4].Value = item.SalePrice;
+                    productsSheet.Cells[prodRow, 4].Style.Numberformat.Format = "#,##0.00";
+                    productsSheet.Cells[prodRow, 5].Value = item.TotalRevenue;
+                    productsSheet.Cells[prodRow, 5].Style.Numberformat.Format = "#,##0.00";
+
+                    prodTotal += item.TotalRevenue;
+                    prodRow++;
+                }
+
+                productsSheet.Cells[prodRow, 1].Value = "JAMI:";
+                productsSheet.Cells[prodRow, 1, prodRow, 4].Merge = true;
+                productsSheet.Cells[prodRow, 1].Style.Font.Bold = true;
+                productsSheet.Cells[prodRow, 5].Value = prodTotal;
+                productsSheet.Cells[prodRow, 5].Style.Numberformat.Format = "#,##0.00";
+                productsSheet.Cells[prodRow, 5].Style.Font.Bold = true;
+
+                productsSheet.Cells[productsSheet.Dimension.Address].AutoFitColumns();
+                productsSheet.Column(1).Width = 6;
+                productsSheet.Column(2).Width = 40;
+                productsSheet.Column(3).Width = 12;
+                productsSheet.Column(4).Width = 15;
+                productsSheet.Column(5).Width = 15;
+
+                using (var range = productsSheet.Cells[4, 1, prodRow, 5])
+                {
+                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                }
+
+                var stream = new MemoryStream(package.GetAsByteArray());
+                var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                var fileName = $"kunlik_hisobot_{date:yyyyMMdd}.xlsx";
+
+                _logger.LogInformation("Successfully exported daily report to Excel");
+                return File(stream, contentType, fileName);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting daily report to Excel");
+            return StatusCode(500, new { message = "Xatolik yuz berdi", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Export inventory report to Excel - ombor hisoboti
+    /// </summary>
+    [HttpGet("inventory/export")]
+    [Authorize(Policy = "AllRoles")]
+    public async Task<IActionResult> ExportInventoryReportToExcel([FromQuery] DateTime date)
+    {
+        try
+        {
+            _logger.LogInformation("Exporting inventory report to Excel. Date: {Date}", date);
+
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+
+            var comprehensiveReport = await _reportService.GetComprehensiveReportAsync(utcDate, userRole);
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var package = new ExcelPackage())
+            {
+                // SHEET 1: Ombor xulosasi
+                var summarySheet = package.Workbook.Worksheets.Add("Ombor Xulosasi");
+
+                summarySheet.Cells[1, 1].Value = "OMBOR HISOBOTI";
+                summarySheet.Cells[1, 1, 1, 3].Merge = true;
+                summarySheet.Cells[1, 1].Style.Font.Bold = true;
+                summarySheet.Cells[1, 1].Style.Font.Size = 16;
+                summarySheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                summarySheet.Cells[2, 1].Value = $"Sana: {date:dd.MM.yyyy}";
+                summarySheet.Cells[2, 1, 2, 3].Merge = true;
+                summarySheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                int row = 4;
+                summarySheet.Cells[row, 1].Value = "KO'RSATGICH";
+                summarySheet.Cells[row, 2].Value = "QIYMATI";
+                summarySheet.Cells[row, 1, row, 2].Style.Font.Bold = true;
+                summarySheet.Cells[row, 1, row, 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                summarySheet.Cells[row, 1, row, 2].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+
+                row++;
+                summarySheet.Cells[row, 1].Value = "Mahsulotlar soni";
+                summarySheet.Cells[row, 2].Value = comprehensiveReport.ProductCount;
+                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
+
+                row++;
+                summarySheet.Cells[row, 1].Value = "Jami ombor qiymati";
+                if (userRole == "Owner")
+                {
+                    summarySheet.Cells[row, 2].Value = comprehensiveReport.TotalInventoryValue;
+                    summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                }
+                else
+                {
+                    summarySheet.Cells[row, 2].Value = "Noma'lum";
+                }
+
+                row++;
+                summarySheet.Cells[row, 1].Value = "Kam qolgan mahsulotlar";
+                summarySheet.Cells[row, 2].Value = comprehensiveReport.LowStockCount;
+                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
+                summarySheet.Cells[row, 2].Style.Font.Color.SetColor(System.Drawing.Color.Red);
+
+                row++;
+                summarySheet.Cells[row, 1].Value = "Tugagan mahsulotlar";
+                summarySheet.Cells[row, 2].Value = comprehensiveReport.OutOfStockCount;
+                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
+                summarySheet.Cells[row, 2].Style.Font.Color.SetColor(System.Drawing.Color.DarkRed);
+
+                summarySheet.Cells[summarySheet.Dimension.Address].AutoFitColumns();
+                summarySheet.Column(1).Width = 30;
+                summarySheet.Column(2).Width = 20;
+
+                // SHEET 2: Mahsulotlar ro'yxati
+                if (comprehensiveReport.Inventory != null && comprehensiveReport.Inventory.Any())
+                {
+                    var inventorySheet = package.Workbook.Worksheets.Add("Mahsulotlar Ro'yxati");
+
+                    inventorySheet.Cells[1, 1].Value = "№";
+                    inventorySheet.Cells[1, 2].Value = "Mahsulot nomi";
+                    inventorySheet.Cells[1, 3].Value = "Kategoriya";
+                    inventorySheet.Cells[1, 4].Value = "Miqdor";
+                    inventorySheet.Cells[1, 5].Value = "Birligi";
+                    if (userRole == "Owner")
+                    {
+                        inventorySheet.Cells[1, 6].Value = "Olingan narxi";
+                        inventorySheet.Cells[1, 7].Value = "Sotuv narxi";
+                        inventorySheet.Cells[1, 8].Value = "Ombor qiymati";
+                    }
+                    else
+                    {
+                        inventorySheet.Cells[1, 6].Value = "Sotuv narxi";
+                    }
+
+                    int invHeaderCols = userRole == "Owner" ? 8 : 6;
+                    using (var range = inventorySheet.Cells[1, 1, 1, invHeaderCols])
+                    {
+                        range.Style.Font.Bold = true;
+                        range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                        range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                        range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    }
+
+                    int invRow = 2;
+                    int idx = 1;
+                    decimal totalInvValue = 0;
+
+                    foreach (var item in comprehensiveReport.Inventory)
+                    {
+                        inventorySheet.Cells[invRow, 1].Value = idx++;
+                        inventorySheet.Cells[invRow, 2].Value = item.ProductName;
+                        inventorySheet.Cells[invRow, 3].Value = item.Category ?? "";
+                        inventorySheet.Cells[invRow, 4].Value = item.Quantity;
+                        inventorySheet.Cells[invRow, 4].Style.Numberformat.Format = "#,##0.000";
+                        inventorySheet.Cells[invRow, 5].Value = item.Unit ?? "";
+
+                        if (userRole == "Owner")
+                        {
+                            inventorySheet.Cells[invRow, 6].Value = item.CostPrice ?? 0;
+                            inventorySheet.Cells[invRow, 6].Style.Numberformat.Format = "#,##0.00";
+                            inventorySheet.Cells[invRow, 7].Value = item.SalePrice;
+                            inventorySheet.Cells[invRow, 7].Style.Numberformat.Format = "#,##0.00";
+
+                            decimal itemValue = (item.CostPrice ?? 0) * item.Quantity;
+                            inventorySheet.Cells[invRow, 8].Value = itemValue;
+                            inventorySheet.Cells[invRow, 8].Style.Numberformat.Format = "#,##0.00";
+                            totalInvValue += itemValue;
+                        }
+                        else
+                        {
+                            inventorySheet.Cells[invRow, 6].Value = item.SalePrice;
+                            inventorySheet.Cells[invRow, 6].Style.Numberformat.Format = "#,##0.00";
+                        }
+
+                        // Highlight low stock and out of stock
+                        if (item.Quantity <= 0)
+                        {
+                            inventorySheet.Cells[invRow, 4].Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                            inventorySheet.Cells[invRow, 4].Style.Font.Bold = true;
+                        }
+                        else if (item.Quantity < 10)
+                        {
+                            inventorySheet.Cells[invRow, 4].Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                        }
+
+                        invRow++;
+                    }
+
+                    // Footer
+                    inventorySheet.Cells[invRow, 1].Value = "JAMI:";
+                    inventorySheet.Cells[invRow, 1, invRow, 7].Merge = true;
+                    inventorySheet.Cells[invRow, 1].Style.Font.Bold = true;
+
+                    if (userRole == "Owner")
+                    {
+                        inventorySheet.Cells[invRow, 8].Value = totalInvValue;
+                        inventorySheet.Cells[invRow, 8].Style.Numberformat.Format = "#,##0.00";
+                        inventorySheet.Cells[invRow, 8].Style.Font.Bold = true;
+                    }
+
+                    inventorySheet.Cells[inventorySheet.Dimension.Address].AutoFitColumns();
+                    inventorySheet.Column(1).Width = 6;
+                    inventorySheet.Column(2).Width = 40;
+                    inventorySheet.Column(3).Width = 20;
+                    inventorySheet.Column(4).Width = 12;
+                    inventorySheet.Column(5).Width = 10;
+                    if (userRole == "Owner")
+                    {
+                        inventorySheet.Column(6).Width = 15;
+                        inventorySheet.Column(7).Width = 15;
+                        inventorySheet.Column(8).Width = 18;
+                    }
+                    else
+                    {
+                        inventorySheet.Column(6).Width = 15;
+                    }
+
+                    using (var range = inventorySheet.Cells[1, 1, invRow, invHeaderCols])
+                    {
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    }
+                    inventorySheet.Cells[1, 1, 1, invHeaderCols].AutoFilter = true;
+                }
+
+                // SHEET 3: Kam qolgan mahsulotlar (agar mavjud bo'lsa)
+                if (comprehensiveReport.Inventory != null && comprehensiveReport.Inventory.Any(i => i.Quantity < 10))
+                {
+                    var lowStockSheet = package.Workbook.Worksheets.Add("Kam Qolgan Mahsulotlar");
+
+                    lowStockSheet.Cells[1, 1].Value = "KAM QOLGAN VA TUGAGAN MAHSULOTLAR";
+                    lowStockSheet.Cells[1, 1, 1, 5].Merge = true;
+                    lowStockSheet.Cells[1, 1].Style.Font.Bold = true;
+                    lowStockSheet.Cells[1, 1].Style.Font.Size = 14;
+                    lowStockSheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+
+                    lowStockSheet.Cells[3, 1].Value = "№";
+                    lowStockSheet.Cells[3, 2].Value = "Mahsulot nomi";
+                    lowStockSheet.Cells[3, 3].Value = "Kategoriya";
+                    lowStockSheet.Cells[3, 4].Value = "Miqdor";
+                    lowStockSheet.Cells[3, 5].Value = "Holati";
+
+                    using (var range = lowStockSheet.Cells[3, 1, 3, 5])
+                    {
+                        range.Style.Font.Bold = true;
+                        range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                        range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightCoral);
+                        range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    }
+
+                    int lowRow = 4;
+                    int lowIdx = 1;
+
+                    var lowStockItems = comprehensiveReport.Inventory.Where(i => i.Quantity < 10).OrderBy(i => i.Quantity).ToList();
+
+                    foreach (var item in lowStockItems)
+                    {
+                        lowStockSheet.Cells[lowRow, 1].Value = lowIdx++;
+                        lowStockSheet.Cells[lowRow, 2].Value = item.ProductName;
+                        lowStockSheet.Cells[lowRow, 3].Value = item.Category ?? "";
+                        lowStockSheet.Cells[lowRow, 4].Value = item.Quantity;
+                        lowStockSheet.Cells[lowRow, 4].Style.Numberformat.Format = "#,##0.000";
+
+                        string status = item.Quantity <= 0 ? "TUGAGAN" : "KAM QOLGAN";
+                        lowStockSheet.Cells[lowRow, 5].Value = status;
+
+                        if (item.Quantity <= 0)
+                        {
+                            lowStockSheet.Cells[lowRow, 4].Style.Font.Color.SetColor(System.Drawing.Color.DarkRed);
+                            lowStockSheet.Cells[lowRow, 4].Style.Font.Bold = true;
+                            lowStockSheet.Cells[lowRow, 5].Style.Font.Color.SetColor(System.Drawing.Color.DarkRed);
+                            lowStockSheet.Cells[lowRow, 5].Style.Font.Bold = true;
+                        }
+                        else
+                        {
+                            lowStockSheet.Cells[lowRow, 4].Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                            lowStockSheet.Cells[lowRow, 5].Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                        }
+
+                        lowRow++;
+                    }
+
+                    lowStockSheet.Cells[lowStockSheet.Dimension.Address].AutoFitColumns();
+                    lowStockSheet.Column(1).Width = 6;
+                    lowStockSheet.Column(2).Width = 40;
+                    lowStockSheet.Column(3).Width = 20;
+                    lowStockSheet.Column(4).Width = 12;
+                    lowStockSheet.Column(5).Width = 15;
+
+                    using (var range = lowStockSheet.Cells[3, 1, lowRow - 1, 5])
+                    {
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    }
+                }
+
+                var stream = new MemoryStream(package.GetAsByteArray());
+                var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                var fileName = $"ombor_hisoboti_{date:yyyyMMdd}.xlsx";
+
+                _logger.LogInformation("Successfully exported inventory report to Excel");
+                return File(stream, contentType, fileName);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting inventory report to Excel");
+            return StatusCode(500, new { message = "Xatolik yuz berdi", error = ex.Message });
+        }
+    }
 }
