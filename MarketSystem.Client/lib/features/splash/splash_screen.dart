@@ -2,6 +2,7 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
+import 'package:market_system_client/core/utils/route_helper.dart';
 import 'package:market_system_client/data/services/auth_service.dart';
 import 'package:market_system_client/features/auth/presentation/screens/login_screen.dart';
 import 'package:market_system_client/features/auth/presentation/screens/welcome_screen.dart';
@@ -25,7 +26,19 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
+    // CRITICAL: Check current route BEFORE async delay
+    // This prevents the BuildContext across async gap warning
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+    final shouldSkipRedirect = isPublicRoute(currentRoute);
+
+    if (shouldSkipRedirect) {
+      debugPrint('🛑 Splash: Skipping auto-redirect - current route is public: $currentRoute');
+      return;
+    }
+
     await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
     final bool isFirstTime = prefs.getBool('is_first_time') ?? true;
@@ -33,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final authService = di.sl<AuthService>();
     final bool isAuth = await authService.isAuthenticated();
 
-    if (isAuth) {
+    if (isAuth && mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final role = prefs.getString('user_role');
       final fullName = prefs.getString('user_full_name');
@@ -57,10 +70,12 @@ class _SplashScreenState extends State<SplashScreen> {
       nextScreen = isAuth ? const DashboardScreen() : const LoginScreen();
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => nextScreen),
-    );
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => nextScreen),
+      );
+    }
   }
 
   @override
@@ -74,11 +89,9 @@ class _SplashScreenState extends State<SplashScreen> {
           opacity: const AlwaysStoppedAnimation(1.0),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Container(
-              child: Image.asset(
-                isDark ? 'assets/images/blue.png' : 'assets/images/splash.png',
-                fit: BoxFit.contain,
-              ),
+            child: Image.asset(
+              isDark ? 'assets/images/blue.png' : 'assets/images/splash.png',
+              fit: BoxFit.contain,
             ),
           ),
         ),
