@@ -117,26 +117,17 @@ public class ZakupsController : ControllerBase
     {
         var zakups = await _zakupService.GetAllZakupsAsync();
 
-        // Hide cost prices for Sellers
-        var exportData = IsSeller()
-            ? zakups.Select(z => new
-            {
-                ID = z.Id.ToString(),
-                Mahsulot = z.ProductName,
-                Sana = z.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                Xodim = z.CreatedBy,
-                Miqdor = z.Quantity
-            })
-            : zakups.Select(z => new
-            {
-                ID = z.Id.ToString(),
-                Mahsulot = z.ProductName,
-                Sana = z.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                Xodim = z.CreatedBy,
-                Miqdor = z.Quantity,
-                Xarid_narxi = z.CostPrice,
-                Jami_summa = z.Quantity * z.CostPrice
-            });
+        // Hide cost prices for Sellers - use consistent structure
+        var exportData = zakups.Select(z => new
+        {
+            ID = z.Id.ToString(),
+            Mahsulot = z.ProductName,
+            Sana = z.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+            Xodim = z.CreatedBy,
+            Miqdor = z.Quantity,
+            Xarid_narxi = IsSeller() ? null : z.CostPrice,
+            Jami_summa = IsSeller() ? null : z.Quantity * z.CostPrice
+        });
 
         var fileContent = excelService.GenerateExcel(exportData, "Xaridlar");
 

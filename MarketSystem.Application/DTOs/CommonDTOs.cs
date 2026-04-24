@@ -245,12 +245,14 @@ public record InventoryReportDto(
     [property: JsonPropertyName("productId")] Guid ProductId,
     [property: JsonPropertyName("productName")] string ProductName,
     [property: JsonPropertyName("quantity")] decimal Quantity,  // ✅ DECIMAL
-    [property: JsonPropertyName("costPrice")] decimal CostPrice,
+    [property: JsonPropertyName("costPrice")] decimal? CostPrice,
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,
     [property: JsonPropertyName("totalCostValue")] decimal TotalCostValue,
     [property: JsonPropertyName("totalSaleValue")] decimal TotalSaleValue,
-    [property: JsonPropertyName("potentialProfit")] decimal? PotentialProfit  // null for Admin/Seller
+    [property: JsonPropertyName("potentialProfit")] decimal? PotentialProfit,  // null for Admin/Seller
+    [property: JsonPropertyName("category")] string? Category,
+    [property: JsonPropertyName("unit")] string? Unit
 );
 
 // Comprehensive Report
@@ -260,7 +262,11 @@ public record ComprehensiveReportDto(
     [property: JsonPropertyName("sellerReports")] List<SellerReportDto> SellerReports,
     [property: JsonPropertyName("inventoryReport")] List<InventoryReportDto> InventoryReport,
     [property: JsonPropertyName("totalInventoryCost")] decimal TotalInventoryCost,
-    [property: JsonPropertyName("totalInventorySaleValue")] decimal TotalInventorySaleValue
+    [property: JsonPropertyName("totalInventorySaleValue")] decimal TotalInventorySaleValue,
+    [property: JsonPropertyName("productCount")] int ProductCount,
+    [property: JsonPropertyName("totalInventoryValue")] decimal TotalInventoryValue,
+    [property: JsonPropertyName("lowStockCount")] int LowStockCount,
+    [property: JsonPropertyName("outOfStockCount")] int OutOfStockCount
 );
 
 // Debt DTOs
