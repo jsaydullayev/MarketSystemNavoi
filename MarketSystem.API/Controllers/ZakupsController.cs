@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
+using MarketSystem.Domain.Enums;
 
 namespace MarketSystem.API.Controllers;
 
@@ -18,27 +19,77 @@ public class ZakupsController : ControllerBase
         _zakupService = zakupService;
     }
 
+    private bool IsSeller()
+    {
+        var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
+        return roleClaim == Role.Seller.ToString();
+    }
+
     [HttpGet("{id}")]
-    public async Task<ActionResult<ZakupDto>> GetZakup(Guid id)
+    public async Task<IActionResult> GetZakup(Guid id)
     {
         var zakup = await _zakupService.GetZakupByIdAsync(id);
         if (zakup is null)
             return NotFound();
 
+        // Return ZakupSellerDto for Sellers (without cost price)
+        if (IsSeller())
+        {
+            var sellerDto = new ZakupSellerDto(
+                zakup.Id,
+                zakup.ProductId,
+                zakup.ProductName,
+                zakup.Quantity,
+                zakup.CreatedAt,
+                zakup.CreatedBy
+            );
+            return Ok(sellerDto);
+        }
+
         return Ok(zakup);
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ZakupDto>>> GetAllZakups()
+    public async Task<IActionResult> GetAllZakups()
     {
         var zakups = await _zakupService.GetAllZakupsAsync();
+
+        // Return ZakupSellerDto for Sellers (without cost price)
+        if (IsSeller())
+        {
+            var sellerDtos = zakups.Select(z => new ZakupSellerDto(
+                z.Id,
+                z.ProductId,
+                z.ProductName,
+                z.Quantity,
+                z.CreatedAt,
+                z.CreatedBy
+            ));
+            return Ok(sellerDtos);
+        }
+
         return Ok(zakups);
     }
 
     [HttpGet("by-date")]
-    public async Task<ActionResult<IEnumerable<ZakupDto>>> GetZakupsByDateRange([FromQuery] DateTime start, [FromQuery] DateTime end)
+    public async Task<IActionResult> GetZakupsByDateRange([FromQuery] DateTime start, [FromQuery] DateTime end)
     {
         var zakups = await _zakupService.GetZakupsByDateRangeAsync(start, end);
+
+        // Return ZakupSellerDto for Sellers (without cost price)
+        if (IsSeller())
+        {
+            var sellerDtos = zakups.Select(z => new ZakupSellerDto(
+                z.Id,
+                z.ProductId,
+                z.ProductName,
+                z.Quantity,
+                z.CreatedAt,
+                z.CreatedBy
+            ));
+            return Ok(sellerDtos);
+        }
+
         return Ok(zakups);
     }
 
@@ -66,16 +117,26 @@ public class ZakupsController : ControllerBase
     {
         var zakups = await _zakupService.GetAllZakupsAsync();
 
-        var exportData = zakups.Select(z => new
-        {
-            ID = z.Id.ToString(),
-            Mahsulot = z.ProductName,
-            Sana = z.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-            Xodim = z.CreatedBy,
-            Miqdor = z.Quantity,
-            Xarid_narxi = z.CostPrice,
-            Jami_summa = z.Quantity * z.CostPrice
-        });
+        // Hide cost prices for Sellers
+        var exportData = IsSeller()
+            ? zakups.Select(z => new
+            {
+                ID = z.Id.ToString(),
+                Mahsulot = z.ProductName,
+                Sana = z.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                Xodim = z.CreatedBy,
+                Miqdor = z.Quantity
+            })
+            : zakups.Select(z => new
+            {
+                ID = z.Id.ToString(),
+                Mahsulot = z.ProductName,
+                Sana = z.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                Xodim = z.CreatedBy,
+                Miqdor = z.Quantity,
+                Xarid_narxi = z.CostPrice,
+                Jami_summa = z.Quantity * z.CostPrice
+            });
 
         var fileContent = excelService.GenerateExcel(exportData, "Xaridlar");
 

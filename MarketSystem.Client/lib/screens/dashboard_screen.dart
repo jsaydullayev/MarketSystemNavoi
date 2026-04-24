@@ -308,15 +308,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'icon': Icons.people_alt_rounded,
         'onTap': () => Navigator.pushNamed(context, AppRoutes.customers)
       },
+      {
+        'title': l10n.zakup,
+        'icon': Icons.add_business_rounded,
+        'onTap': () => Navigator.pushNamed(context, AppRoutes.zakup)
+      },
     ];
 
     if (role == 'Admin' || role == 'Owner') {
       items.addAll([
-        {
-          'title': l10n.zakup,
-          'icon': Icons.add_business_rounded,
-          'onTap': () => Navigator.pushNamed(context, AppRoutes.zakup)
-        },
         {
           'title': l10n.cashRegister,
           'icon': Icons.account_balance_wallet_rounded,
