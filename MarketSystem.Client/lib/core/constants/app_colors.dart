@@ -32,6 +32,7 @@ class AppThemes {
     brightness: Brightness.light,
     primaryColor: AppColors.orangePrimary,
     scaffoldBackgroundColor: Colors.white,
+    fontFamily: 'Roboto',
     colorScheme: const ColorScheme.light(
       primary: AppColors.orangePrimary,
       secondary: AppColors.orangePrimary,
@@ -45,6 +46,7 @@ class AppThemes {
     brightness: Brightness.dark,
     primaryColor: AppColors.darkBluePrimary,
     scaffoldBackgroundColor: const Color(0xFF0F172A),
+    fontFamily: 'Roboto',
     colorScheme: const ColorScheme.dark(
       primary: AppColors.darkBluePrimary,
       secondary: AppColors.darkBluePrimary,
