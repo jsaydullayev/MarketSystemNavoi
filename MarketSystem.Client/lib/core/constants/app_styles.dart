@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppStyles {
   static BoxDecoration cardDecoration(bool isDark) {
@@ -22,18 +23,18 @@ class AppStyles {
     );
   }
 
-  static const TextStyle brandTitle = TextStyle(
+  static TextStyle brandTitle = GoogleFonts.notoSans(
     fontWeight: FontWeight.bold,
     fontSize: 22,
     letterSpacing: 1.2,
   );
 
-  static const TextStyle cardTitle = TextStyle(
+  static TextStyle cardTitle = GoogleFonts.notoSans(
     fontWeight: FontWeight.bold,
     fontSize: 16,
   );
 
-  static const TextStyle subtitle = TextStyle(
+  static TextStyle subtitle = GoogleFonts.notoSans(
     fontSize: 11,
     fontWeight: FontWeight.w600,
   );

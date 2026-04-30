@@ -143,12 +143,19 @@ class _LoginScreenState extends State<LoginScreen> {
     bool isPassword = false,
     String? Function(String?)? validator,
   }) {
+    // Aniq rang konstantlari
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final hintColor = isDark ? Colors.white54 : Colors.black45;
+    final fillColor = isDark
+        ? Colors.white.withOpacity(0.12) // 0.08 → 0.12 (yaxshiroq kontrast)
+        : Colors.black.withOpacity(0.06); // 0.04 → 0.06
+    final iconColor = isDark ? Colors.white60 : Colors.black54;
+    final cursorColor = isDark ? Colors.white : Colors.black87;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: AppStyles.subtitle
-                .copyWith(color: isDark ? Colors.white70 : Colors.black54)),
+        Text(label, style: AppStyles.subtitle.copyWith(color: hintColor)),
         8.height,
         TextFormField(
           controller: controller,
@@ -156,23 +163,25 @@ class _LoginScreenState extends State<LoginScreen> {
           autofillHints: isPassword
               ? const [AutofillHints.password]
               : const [AutofillHints.username],
-          cursorColor: isDark ? Colors.white : Colors.blue,
+          cursorColor: cursorColor,
           validator: validator,
-          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+          style: TextStyle(color: textColor, fontSize: 16),
           decoration: InputDecoration(
             filled: true,
-            fillColor: isDark
-                ? Colors.white.withOpacity(0.08)
-                : Colors.black.withOpacity(0.04),
-            prefixIcon:
-                Icon(icon, color: isDark ? Colors.white60 : Colors.black45),
+            fillColor: fillColor,
+            prefixIcon: Icon(icon, color: iconColor),
+            // ↓ Bu qatorlar muhim — label va hint ranglarini aniq belgilash
+            labelStyle: TextStyle(color: hintColor),
+            hintStyle: TextStyle(color: hintColor),
+            floatingLabelStyle: TextStyle(color: textColor),
+            errorStyle: const TextStyle(fontSize: 12),
             suffixIcon: isPassword
                 ? IconButton(
                     icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_off
                             : Icons.visibility,
-                        color: isDark ? Colors.white60 : Colors.black45),
+                        color: iconColor),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
                   )
@@ -191,17 +200,25 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildLoginButton(Color primaryColor, var l10n) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
+        // Dark mode'da buttonni doimo ko'rinadigan qilamiz
+        final buttonColor = isDark
+            ? primaryColor.withOpacity(0.85) // yoki Colors.blue.shade400
+            : primaryColor;
+
         return SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
             onPressed: auth.isLoading ? null : _login,
             style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
+              backgroundColor: buttonColor,
               foregroundColor: Colors.white,
+              disabledBackgroundColor: isDark ? Colors.white24 : Colors.black12,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
+              elevation: isDark ? 4 : 0, // dark mode'da ko'zga ko'rinishi uchun
             ),
             child: auth.isLoading
                 ? const SizedBox(
@@ -237,8 +254,11 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Text(
         'Privacy Policy',
         style: TextStyle(
-          color: isDark ? Colors.white54 : Colors.grey,
+          // Colors.grey → aniqroq rang
+          color: isDark ? Colors.white60 : Colors.black54,
           fontSize: 12,
+          decoration: TextDecoration.underline,
+          decorationColor: isDark ? Colors.white60 : Colors.black54,
         ),
       ),
     );
