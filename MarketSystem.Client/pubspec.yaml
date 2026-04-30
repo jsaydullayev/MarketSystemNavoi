@@ -57,6 +57,7 @@ dependencies:
   share_plus: ^12.0.1
   liquid_pull_to_refresh: ^3.0.1
   cached_network_image: ^3.4.1
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -81,12 +82,3 @@ flutter:
     - assets/svg/
     - assets/translations/
 
-  fonts:
-    # Roboto Font Family - Pre-bundled to fix font loading glitches on Web
-    - family: Roboto
-      fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
-          style: normal
-        - asset: assets/fonts/Roboto-Bold.ttf
-          weight: 700
-          style: normal
