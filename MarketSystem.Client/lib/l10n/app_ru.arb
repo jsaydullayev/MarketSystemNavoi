@@ -470,5 +470,11 @@
   "marketRegisteredSuccess": "Маркет успешно зарегистрирован!",
   "productUsedInSales": "Этот товар использовался в продажах, его нельзя удалить",
   "downloadPdf": "Скачать PDF",
-  "pdfDownloaded": "PDF успешно загружен"
+  "pdfDownloaded": "PDF успешно загружен",
+  "addExternalProduct": "Добавить внешний продукт",
+  "externalProductName": "Название внешнего продукта",
+  "externalCostPrice": "Цена внешнего продукта",
+  "externalProductNameRequired": "Введите название внешнего продукта",
+  "externalCostPriceRequired": "Введите цену внешнего продукта",
+  "externalCostPriceGreaterThanSalePrice": "Цена внешнего продукта не должна быть больше цены продажи"
 }

@@ -470,5 +470,11 @@
   "marketRegisteredSuccess": "Market muvaffaqiyatli ro'yxatdan o'tkazildi!",
   "productUsedInSales": "Bu mahsulot savdolarda ishlatilgan, o'chirib bo'lmaydi",
   "downloadPdf": "PDF yuklab olish",
-  "pdfDownloaded": "PDF muvaffaqiyatli yuklab olindi"
+  "pdfDownloaded": "PDF muvaffaqiyatli yuklab olindi",
+  "addExternalProduct": "Tashqi mahsulot qo'shish",
+  "externalProductName": "Tashqi mahsulot nomi",
+  "externalCostPrice": "Tashqi mahsulot narxi",
+  "externalProductNameRequired": "Tashqi mahsulot nomini kiriting",
+  "externalCostPriceRequired": "Tashqi mahsulot narxini kiriting",
+  "externalCostPriceGreaterThanSalePrice": "Tashqi mahsulot narxi sotish narxidan katta bo'lmasligi kerak"
 }
