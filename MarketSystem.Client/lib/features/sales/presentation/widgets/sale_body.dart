@@ -60,7 +60,7 @@ class SaleBody extends StatelessWidget {
                   // Tashqi mahsulot qo'shish tugmasi
                   _buildExternalProductButton(isDark, l10n),
                 ],
-              ),
+              ), //new code added successfully
             ],
           ),
         ),
