@@ -4,12 +4,12 @@ import 'dart:io' show Platform;
 class ApiConstants {
   // =================== SERVERS ===================
   static const String _productionUrl = '/api'; // Same origin (proxied by nginx)
-  static const String _dockerInternalUrl = 'http://market-system-api:8081/api'; // Docker internal service name (port 8081)
-  static const String _localUrl = 'http://localhost:5000/api';
-  static const String _androidLocalUrl = 'http://10.0.2.2:5000/api';
-  static const String _androidRealDeviceUrl = 'http://192.168.1.X:5000/api'; // Change to your PC IP
-  static const String _dockerLocalUrl = 'http://localhost:8081/api'; // Docker Compose backend port
-  static const String _androidDockerLocalUrl = 'http://10.0.2.2:8081/api';
+  static const String _dockerInternalUrl = 'http://market-system-api:8080/api'; // Docker internal service name (port 8080)
+  static const String _localUrl = 'http://localhost:8080/api';
+  static const String _androidLocalUrl = 'http://10.0.2.2:8080/api';
+  static const String _androidRealDeviceUrl = 'http://192.168.1.X:8080/api'; // Change to your PC IP
+  static const String _dockerLocalUrl = 'http://localhost:8080/api'; // Docker Compose backend port
+  static const String _androidDockerLocalUrl = 'http://10.0.2.2:8080/api';
 
   static String get baseUrl {
     // Local development - use localhost:5000
@@ -38,7 +38,7 @@ class ApiConstants {
         return _dockerLocalUrl;
       }
     } else {
-      // Local development without Docker (port 5000)
+      // Local development without Docker (port 8080)
       if (kIsWeb) {
         return _localUrl;
       } else if (Platform.isAndroid) {
