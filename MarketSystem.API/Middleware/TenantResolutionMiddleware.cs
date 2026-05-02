@@ -48,9 +48,21 @@ public class TenantResolutionMiddleware
             {
                 context.Items["MarketId"] = market.Id;
                 _logger.LogInformation("MarketId set from subdomain: {Subdomain} -> {MarketId}", subdomain, market.Id);
+                await _next(context);
+                return;
             }
         }
 
-        await _next(context);
+        // MarketId topilmadi - 401 Unauthorized qaytarish
+        _logger.LogWarning("MarketId not found for user {User}, path {Path}",
+            context.User?.Identity?.Name, context.Request.Path);
+
+        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "Unauthorized",
+            message = "Market topilmadi. Iltimos, tizimga qaytadan kiring yoki administrator bilan bog'laning."
+        });
     }
 }

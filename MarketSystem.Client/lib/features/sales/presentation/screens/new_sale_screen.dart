@@ -133,6 +133,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         setState(() {
           _cartItems.add({
             'isExternal': true,  // ✅ Tashqi mahsulot flag
+            'externalCostPrice': costPrice,  // ✅ Tashqi tannarxni saqlash
             'productId': null,  // ✅ Tashqi mahsulot uchun null
             'productName': name,
             'salePrice': salePrice,
@@ -387,7 +388,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   saleId: finalSaleId,
                   isExternal: true,
                   externalProductName: item['productName'],
-                  externalCostPrice: 0.0,  // ✅ Tashqi mahsulot uchun - backenddan tannarx so'raladi
+                  externalCostPrice: item['externalCostPrice'] ?? 0.0,  // ✅ Tashqi mahsulot uchun tannarx
                   quantity: item['quantity'],
                   salePrice: item['salePrice'],
                   minSalePrice: 0.0,  // ✅ Tashqi mahsulot uchun minPrice bo'sh bo'ladi
@@ -486,7 +487,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             saleId: sale['id'],
             isExternal: true,
             externalProductName: item['productName'],
-            externalCostPrice: 0.0,
+            externalCostPrice: item['externalCostPrice'] ?? 0.0,  // ✅ Tashqi mahsulot uchun tannarx
             quantity: item['quantity'],
             salePrice: item['salePrice'],
             minSalePrice: 0.0,
@@ -649,3 +650,4 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 }
+

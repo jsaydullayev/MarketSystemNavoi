@@ -314,7 +314,9 @@ public class ReportService : IReportService
                     {
                         foreach (var item in sale.SaleItems)
                         {
-                            var itemCost = item.CostPrice * item.Quantity;
+                            // ✅ ISEXTERNAL SHARTI - Effective cost price
+                            decimal costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
+                            var itemCost = costPrice * item.Quantity;
                             var itemRevenue = item.SalePrice * item.Quantity;
                             totalProfit += itemRevenue - itemCost;
                         }
@@ -744,7 +746,9 @@ public class ReportService : IReportService
 
                 foreach (var item in sale.SaleItems)
                 {
-                    var itemCost = item.CostPrice * item.Quantity;
+                    // ✅ ISEXTERNAL SHARTI - Effective cost price
+                    decimal costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
+                    var itemCost = costPrice * item.Quantity;
                     var itemRevenue = item.SalePrice * item.Quantity;
                     var itemProfit = itemRevenue - itemCost;
 
@@ -1076,9 +1080,23 @@ public class ReportService : IReportService
 
             foreach (var item in sale.SaleItems)
             {
-                var productName = item.ProductId.HasValue && products.TryGetValue(item.ProductId.Value, out var name) ? name : "Unknown";
+                // ✅ ISEXTERNAL SHARTI - Product name olish
+                string productName;
+                decimal costPrice;
+
+                if (!item.IsExternal)
+                {
+                    productName = item.ProductId.HasValue && products.TryGetValue(item.ProductId.Value, out var name) ? name : "Unknown";
+                    costPrice = item.CostPrice;
+                }
+                else
+                {
+                    productName = item.ExternalProductName ?? "Tashqi mahsulot";
+                    costPrice = item.ExternalCostPrice;
+                }
+
                 // Full item profit
-                decimal fullItemProfit = (item.SalePrice - item.CostPrice) * item.Quantity;
+                decimal fullItemProfit = (item.SalePrice - costPrice) * item.Quantity;
                 // Adjusted profit based on paid ratio (consistent with Excel export)
                 decimal adjustedProfit = fullItemProfit * paidRatio;
 
@@ -1095,7 +1113,7 @@ public class ReportService : IReportService
                     sale.Seller?.FullName ?? "Noma'lum",
                     productName,
                     item.Quantity,
-                    item.CostPrice,
+                    costPrice,  // ✅ Effective cost price (ExternalCostPrice for external products)
                     item.SalePrice,
                     item.TotalPrice,
                     includeProfit ? adjustedProfit : null,

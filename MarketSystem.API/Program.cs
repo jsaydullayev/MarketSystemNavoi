@@ -296,20 +296,31 @@ try
         options.RoutePrefix = "swagger";
     });
 
-    var healthResponse = new
+    app.MapGet("/health", async (AppDbContext db, ILogger<Program> logger) =>
     {
-        status = "healthy",
-        timestamp = DateTime.UtcNow,
-        environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
-        version = "1.0.0"
-    };
+        try
+        {
+            var canConnect = await db.Database.CanConnectAsync();
+            var response = new
+            {
+                status = canConnect ? "healthy" : "unhealthy",
+                database = canConnect ? "connected" : "disconnected",
+                timestamp = DateTime.UtcNow,
+                environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
+                version = "1.0.0"
+            };
+            return canConnect ? Results.Ok(response) : Results.Json(new { status = "unhealthy", database = "disconnected" }, statusCode: 503);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Health check failed");
+            return Results.Json(new { status = "unhealthy", database = "error", error = ex.Message }, statusCode: 503);
+        }
+    })
+        .ExcludeFromDescription()
+        .WithName("Health Check")
+        .AllowAnonymous();
 
-    app.MapGet("/health", () => Results.Ok(healthResponse))
-        .ExcludeFromDescription()
-        .WithName("Health Check");
-    app.MapGet("/", () => Results.Ok(healthResponse))
-        .ExcludeFromDescription()
-        .WithName("Root Health Check");
     app.MapGet("/privacy", (IWebHostEnvironment env) =>
     {
         var webRootPath = env.WebRootPath;

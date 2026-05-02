@@ -2894,88 +2894,40 @@ abstract class AppLocalizations {
   /// **'PDF muvaffaqiyatli yuklab olindi'**
   String get pdfDownloaded;
 
-  /// No description provided for @externalProduct.
-  ///
-  /// In uz, this message translates to:
-  /// **'Tashqi mahsulot'**
-  String get externalProduct;
-
   /// No description provided for @addExternalProduct.
   ///
   /// In uz, this message translates to:
-  /// **'Tashqi mahsulot qo'shish'**
+  /// **'Tashqi mahsulot qo\'shish'**
   String get addExternalProduct;
 
   /// No description provided for @externalProductName.
   ///
   /// In uz, this message translates to:
-  /// **'Mahsulot nomi'**
+  /// **'Tashqi mahsulot nomi'**
   String get externalProductName;
 
   /// No description provided for @externalCostPrice.
   ///
   /// In uz, this message translates to:
-  /// **'Tannarx (so'm)'**
+  /// **'Tashqi mahsulot narxi'**
   String get externalCostPrice;
 
   /// No description provided for @externalProductNameRequired.
   ///
   /// In uz, this message translates to:
-  /// **'Tashqi mahsulot nomi kiritilishi shart'**
+  /// **'Tashqi mahsulot nomini kiriting'**
   String get externalProductNameRequired;
 
   /// No description provided for @externalCostPriceRequired.
   ///
   /// In uz, this message translates to:
-  /// **'Tannarx kiritilishi shart'**
+  /// **'Tashqi mahsulot narxini kiriting'**
   String get externalCostPriceRequired;
 
   /// No description provided for @externalCostPriceGreaterThanSalePrice.
   ///
   /// In uz, this message translates to:
-  /// **'Tannarx sotuv narxidan katta bo'lishi mumkin emas'**
-  String get externalCostPriceGreaterThanSalePrice;
-
-  /// No description provided for @externalProduct.
-  ///
-  /// In uz, this message translates to:
-  /// **'Tashqi mahsulot'**
-  String get externalProduct;
-
-  /// No description provided for @addExternalProduct.
-  ///
-  /// In uz, this message translates to:
-  /// **'Tashqi mahsulot qo'shish'**
-  String get addExternalProduct;
-
-  /// No description provided for @externalProductName.
-  ///
-  /// In uz, this message translates to:
-  /// **'Mahsulot nomi'**
-  String get externalProductName;
-
-  /// No description provided for @externalCostPrice.
-  ///
-  /// In uz, this message translates to:
-  /// **'Tannarx (so'm)'**
-  String get externalCostPrice;
-
-  /// No description provided for @externalProductNameRequired.
-  ///
-  /// In uz, this message translates to:
-  /// **'Tashqi mahsulot nomi kiritilishi shart'**
-  String get externalProductNameRequired;
-
-  /// No description provided for @externalCostPriceRequired.
-  ///
-  /// In uz, this message translates to:
-  /// **'Tannarx kiritilishi shart'**
-  String get externalCostPriceRequired;
-
-  /// No description provided for @externalCostPriceGreaterThanSalePrice.
-  ///
-  /// In uz, this message translates to:
-  /// **'Tannarx sotuv narxidan katta bo'lishi mumkin emas'**
+  /// **'Tashqi mahsulot narxi sotish narxidan katta bo\'lmasligi kerak'**
   String get externalCostPriceGreaterThanSalePrice;
 }
 
