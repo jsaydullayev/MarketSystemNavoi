@@ -200,7 +200,6 @@ class SaleBody extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            // ✅ Tashqi mahsulotlar uchun o'chirish yoki miqdor o'zgartirish yo'q
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -226,7 +225,7 @@ class SaleBody extends StatelessWidget {
           ],
         ),
       );
-    );
+    });
   }
 
   Widget _buildQtyButton({required IconData icon, required VoidCallback onTap}) {
@@ -257,7 +256,6 @@ class SaleBody extends StatelessWidget {
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
               borderSide: BorderSide.none),
-          ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         ),
       ),
@@ -414,8 +412,8 @@ class SaleBody extends StatelessWidget {
                 ),
                 8.width,
                 Text(
-                  l10n.addExternalProduct,  // "Tashqi mahsulot qo'shish"
-                  style: const TextStyle(
+                  l10n.addExternalProduct,
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Colors.orange.shade800,

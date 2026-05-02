@@ -1476,4 +1476,6 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get pdfDownloaded => 'PDF muvaffaqiyatli yuklab olindi';
+
+  // Tashqi mahsulotlar uchun getterlar yo'q (base classda bor)
 }

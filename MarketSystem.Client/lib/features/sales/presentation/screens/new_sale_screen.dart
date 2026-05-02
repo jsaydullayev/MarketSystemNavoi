@@ -319,14 +319,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                               color: Colors.grey.shade600,
                                               fontSize: 13),
                                         ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              if (isSelected)
+                                if (isSelected)
                                   const Icon(Icons.check_circle,
                                       color: AppColors.primary),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },
