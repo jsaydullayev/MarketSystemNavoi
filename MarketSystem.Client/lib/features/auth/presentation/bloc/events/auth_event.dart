@@ -19,16 +19,16 @@ class AppStartedEvent extends AuthEvent {
 
 /// Login event
 class LoginEvent extends AuthEvent {
-  final String email;
+  final String username;
   final String password;
 
   const LoginEvent({
-    required this.email,
+    required this.username,
     required this.password,
   });
 
   @override
-  List<Object?> get props => [email, password];
+  List<Object?> get props => [username, password];
 }
 
 /// Register event

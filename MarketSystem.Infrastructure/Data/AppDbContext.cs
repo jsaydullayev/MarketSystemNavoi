@@ -158,6 +158,26 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SaleItem>(b =>
         {
             b.HasKey(x => x.Id);
+
+            // ✅ IsExternal - mandatory, default false
+            b.Property(x => x.IsExternal)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            // ✅ ProductId - nullable bo'lishi mumkin
+            b.Property(x => x.ProductId)
+                .IsRequired(false);  // Nullable FK
+
+            // ✅ ExternalProductName - nullable bo'lishi mumkin
+            b.Property(x => x.ExternalProductName)
+                .HasMaxLength(200)
+                .IsRequired(false);
+
+            // ✅ ExternalCostPrice - default 0
+            b.Property(x => x.ExternalCostPrice)
+                .HasPrecision(18, 2)
+                .HasDefaultValue(0m);
+
             b.Property(x => x.Quantity).HasPrecision(18, 3).IsRequired();
             b.Property(x => x.CostPrice).HasPrecision(18, 2);
             b.Property(x => x.SalePrice).HasPrecision(18, 2);
@@ -166,6 +186,7 @@ public class AppDbContext : DbContext
             b.HasOne(x => x.Sale).WithMany(p => p.SaleItems).HasForeignKey(x => x.SaleId)
                 .OnDelete(DeleteBehavior.Cascade); // Sale o'chirilsa, SaleItemlar ham o'chadi
 
+            // ✅ Product relationship - nullable FK bo'lishi mumkin
             // IMPORTANT: Product o'chirilganda SaleItemlar o'CHMASIN kerak (tarix saqlash uchun)
             b.HasOne(x => x.Product).WithMany(p => p.SaleItems).HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Restrict); // Product o'chirilsa, SaleItemlar qoladi

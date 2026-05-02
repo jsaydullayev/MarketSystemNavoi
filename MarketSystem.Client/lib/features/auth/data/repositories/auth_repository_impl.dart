@@ -21,14 +21,14 @@ class AuthRepositoryImpl implements AuthRepositoryInterface {
 
   @override
   Future<ApiResult<UserEntity?>> login({
-    required String email,
+    required String username,
     required String password,
   }) async {
     try {
       final response = await _networkHandler.post(
         '/Auth/Login',
         data: {
-          'email': email,
+          'username': username,
           'password': password,
         },
       );

@@ -55,13 +55,19 @@ public class ReportService : IReportService
             cancellationToken,
             includeProperties: "SaleItems");
 
-        // Batch fetch all products to avoid N+1 query
-        var allProductIds = sales.SelectMany(s => s.SaleItems).Select(si => si.ProductId).Distinct().ToList();
+        // ✅ Batch fetch all ordinary products to avoid N+1 query (faqat oddiy mahsulotlar uchun)
+        var ordinaryProductIds = sales
+            .SelectMany(s => s.SaleItems)
+            .Where(si => !si.IsExternal && si.ProductId.HasValue)
+            .Select(si => si.ProductId.Value)
+            .Distinct()
+            .ToList();
+
         var products = new Dictionary<Guid, Product>();
-        if (allProductIds.Any())
+        if (ordinaryProductIds.Any())
         {
             var productList = await _unitOfWork.Products.FindAsync(
-                p => allProductIds.Contains(p.Id) && p.MarketId == marketId,
+                p => ordinaryProductIds.Contains(p.Id) && p.MarketId == marketId,
                 cancellationToken);
             foreach (var p in productList)
             {
@@ -79,16 +85,35 @@ public class ReportService : IReportService
         {
             foreach (var item in sale.SaleItems)
             {
-                if (!products.TryGetValue(item.ProductId, out var product)) continue;
+                // ✅ ISEXTERNAL SHARTI - Product name va CostPrice
+                string productName;
+                decimal costPrice;
+                string unit = "";
 
-                var productName = product.Name;
+                if (!item.IsExternal)
+                {
+                    // Oddiy mahsulot
+                    if (!products.TryGetValue(item.ProductId.Value, out var product))
+                        continue;
+
+                    productName = product.Name;
+                    costPrice = item.CostPrice;
+                    unit = product.GetUnitName();
+                }
+                else
+                {
+                    // Tashqi mahsulot
+                    productName = item.ExternalProductName ?? "Tashqi mahsulot";
+                    costPrice = item.ExternalCostPrice;
+                    // Unit bo'sh qoldiriladi
+                }
                 var quantity = item.Quantity;
 
                 if (quantity % 1 != 0)
                 {
                     _logger.LogInformation("Double quantity: {ProductName} - {Quantity} ta (Sale: {SaleId})", productName, quantity, sale.Id);
                 }
-                var costPrice = item.CostPrice;
+
                 var salePrice = item.SalePrice;
                 var totalCost = costPrice * quantity;
                 var totalRevenue = salePrice * quantity;
@@ -192,14 +217,30 @@ public class ReportService : IReportService
 
             foreach (var item in saleItems)
             {
-                var product = await _unitOfWork.Products.GetByIdAsync(item.ProductId, cancellationToken);
+                // ✅ ISEXTERNAL SHARTI - Product name va CostPrice
+                string productName;
+                Product? product = null;
+
+                if (!item.IsExternal)
+                {
+                    // Oddiy mahsulot - Product ni olish
+                    product = await _unitOfWork.Products.GetByIdAsync(item.ProductId.Value, cancellationToken);
+                    productName = product?.Name ?? "Unknown";
+                }
+                else
+                {
+                    // Tashqi mahsulot - ExternalProductName ishlatish
+                    productName = item.ExternalProductName ?? "Tashqi mahsulot";
+                }
 
                 worksheet.Cells[row, 1].Value = sale.CreatedAt.ToString("yyyy-MM-dd");
                 worksheet.Cells[row, 2].Value = "Sale";
-                worksheet.Cells[row, 3].Value = product?.Name ?? "Unknown";
+                worksheet.Cells[row, 3].Value = productName;
                 worksheet.Cells[row, 4].Value = item.Quantity;
                 worksheet.Cells[row, 5].Value = item.SalePrice * item.Quantity;
-                worksheet.Cells[row, 6].Value = item.CostPrice * item.Quantity;
+                // ✅ ISEXTERNAL SHARTI - Effective cost price
+                var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
+                worksheet.Cells[row, 6].Value = costPrice * item.Quantity;
                 worksheet.Cells[row, 7].Value = item.Profit;
                 row++;
             }
@@ -471,7 +512,12 @@ public class ReportService : IReportService
             // Calculate cost and profit from ALL sale items (both paid and debt)
             foreach (var item in sale.SaleItems)
             {
-                var itemCost = item.CostPrice * item.Quantity;
+                // ✅ ISEXTERNAL SHARTI - EFFECTIVE COST PRICE
+                decimal costPrice = item.IsExternal
+                    ? item.ExternalCostPrice
+                    : item.CostPrice;
+
+                var itemCost = costPrice * item.Quantity;
                 var itemRevenue = item.SalePrice * item.Quantity;
                 var itemProfit = itemRevenue - itemCost;
 
@@ -760,7 +806,9 @@ public class ReportService : IReportService
         {
             foreach (var item in sale.SaleItems)
             {
-                var itemCost = item.CostPrice * item.Quantity;
+                // ✅ ISEXTERNAL SHARTI - Effective cost price
+                var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
+                var itemCost = costPrice * item.Quantity;
                 var itemRevenue = item.SalePrice * item.Quantity;
                 profit += itemRevenue - itemCost;
             }
@@ -807,9 +855,17 @@ public class ReportService : IReportService
         {
             foreach (var item in sale.SaleItems)
             {
-                var product = productDict.GetValueOrDefault(item.ProductId);
-                int catId = product?.CategoryId ?? otherCategoryId;
+                // ✅ ISEXTERNAL SHARTI - Product va CostPrice olish
+                Product? product = null;
+                int catId = otherCategoryId;
 
+                if (!item.IsExternal && item.ProductId.HasValue)
+                {
+                    product = productDict.GetValueOrDefault(item.ProductId.Value);
+                    catId = product?.CategoryId ?? otherCategoryId;
+                }
+
+                // Get or create category sales
                 if (!categorySales.TryGetValue(catId, out var currentCat))
                 {
                     catId = otherCategoryId;
@@ -817,7 +873,9 @@ public class ReportService : IReportService
                 }
 
                 decimal itemSales = item.Quantity * item.SalePrice;
-                decimal itemProfit = (item.SalePrice - item.CostPrice) * item.Quantity;
+                // ✅ Effective cost price
+                var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
+                decimal itemProfit = (item.SalePrice - costPrice) * item.Quantity;
 
                 decimal? newTotalProfit = includeProfit ? (currentCat.TotalProfit ?? 0) + itemProfit : null;
 
@@ -916,7 +974,9 @@ public class ReportService : IReportService
 
                 foreach (var item in sale.SaleItems)
                 {
-                    var itemCost = item.CostPrice * item.Quantity;
+                    // ✅ ISEXTERNAL SHARTI - Effective cost price
+                    var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
+                    var itemCost = costPrice * item.Quantity;
                     var itemRevenue = item.SalePrice * item.Quantity;
                     var itemProfit = itemRevenue - itemCost;
 
@@ -925,16 +985,30 @@ public class ReportService : IReportService
             }
 
             // Create sale items DTOs with product names from dictionary
-            var items = sale.SaleItems.Select(item => new SaleItemExportDto(
-                item.ProductId.ToString(),
-                products.GetValueOrDefault(item.ProductId, "Unknown"),
-                item.Quantity,
-                item.CostPrice,
-                item.SalePrice,
-                item.SalePrice * item.Quantity,
-                includeProfit ? (item.SalePrice - item.CostPrice) * item.Quantity : null,
-                item.Comment
-            )).ToList();
+            var items = sale.SaleItems.Select(item => {
+                // ✅ ISEXTERNAL SHARTI - Product name olish
+                string productName;
+                if (!item.IsExternal)
+                {
+                    productName = item.ProductId.HasValue && products.TryGetValue(item.ProductId.Value, out var name) ? name : "Unknown";
+                }
+                else
+                {
+                    productName = item.ExternalProductName ?? "Tashqi mahsulot";
+                }
+                // ✅ Effective cost price
+                var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
+                return new SaleItemExportDto(
+                    item.ProductId?.ToString() ?? "",
+                    productName,
+                    item.Quantity,
+                    costPrice,
+                    item.SalePrice,
+                    item.SalePrice * item.Quantity,
+                    includeProfit ? (item.SalePrice - costPrice) * item.Quantity : null,
+                    item.Comment
+                );
+            }).ToList();
 
             salesWithItems.Add(new SaleWithItemsDto(
                 sale.Id,
@@ -1002,7 +1076,7 @@ public class ReportService : IReportService
 
             foreach (var item in sale.SaleItems)
             {
-                var productName = products.GetValueOrDefault(item.ProductId, "Unknown");
+                var productName = item.ProductId.HasValue && products.TryGetValue(item.ProductId.Value, out var name) ? name : "Unknown";
                 // Full item profit
                 decimal fullItemProfit = (item.SalePrice - item.CostPrice) * item.Quantity;
                 // Adjusted profit based on paid ratio (consistent with Excel export)
@@ -1228,12 +1302,25 @@ public class ReportService : IReportService
             }
         }
 
-        // Get all products for the sale items
-        var productIds = sale.SaleItems.Select(si => si.ProductId).Distinct().ToList();
-        var products = await _unitOfWork.Products.FindAsync(
-            p => productIds.Contains(p.Id) && p.MarketId == marketId,
-            cancellationToken);
-        var productDict = products.ToDictionary(p => p.Id);
+        // ✅ Get all ordinary products for the sale items (faqat oddiy mahsulotlar uchun)
+        var ordinaryProductIds = sale.SaleItems
+            .Where(si => !si.IsExternal && si.ProductId.HasValue)
+            .Select(si => si.ProductId.Value)
+            .Distinct()
+            .ToList();
+
+        var products = new Dictionary<Guid, Product>();
+        if (ordinaryProductIds.Any())
+        {
+            var productList = await _unitOfWork.Products.FindAsync(
+                p => ordinaryProductIds.Contains(p.Id) && p.MarketId == marketId,
+                cancellationToken);
+            foreach (var p in productList)
+            {
+                products[p.Id] = p;
+            }
+        }
+        var productDict = products;
 
         // Determine payment type
         var primaryPayment = sale.Payments.FirstOrDefault(p => p.Amount > 0);
@@ -1244,9 +1331,26 @@ public class ReportService : IReportService
         var invoiceItems = new List<InvoiceItemData>();
         foreach (var item in sale.SaleItems)
         {
-            var product = productDict.GetValueOrDefault(item.ProductId);
+            // ✅ ISEXTERNAL SHARTI - Product name olish
+            string productName;
+            if (!item.IsExternal)
+            {
+                // Oddiy mahsulot - ProductId nullable uchun null check
+                if (!item.ProductId.HasValue)
+                    productName = "Unknown";
+                else
+                {
+                    var product = productDict.GetValueOrDefault(item.ProductId.Value);
+                    productName = product?.Name ?? "Noma'lum mahsulot";
+                }
+            }
+            else
+            {
+                // Tashqi mahsulot
+                productName = item.ExternalProductName ?? "Noma'lum mahsulot";
+            }
             invoiceItems.Add(new InvoiceItemData(
-                product?.Name ?? "Noma'lum mahsulot",
+                productName,
                 item.Quantity,
                 item.SalePrice,
                 item.SalePrice * item.Quantity,

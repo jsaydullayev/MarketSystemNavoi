@@ -53,7 +53,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     final result = await _loginUseCase(
       LoginParams(
-        email: event.email,
+        username: event.username,
         password: event.password,
       ),
     );

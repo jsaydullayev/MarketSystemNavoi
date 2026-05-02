@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
 
-public class SaleService : ISaleService
+public partial class SaleService : ISaleService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
@@ -74,7 +74,21 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
+            s.SaleItems.Select(si => {
+                // ✅ ISEXTERNAL SHARTI - Product name olish
+                string productName;
+                string unit = "";
+                if (!si.IsExternal)
+                {
+                    productName = si.Product?.Name ?? "Unknown";
+                    unit = si.Product?.GetUnitName() ?? "";
+                }
+                else
+                {
+                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
+                }
+                return MapSaleItemToDto(si, productName, unit);
+            }).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -117,7 +131,21 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
+            s.SaleItems.Select(si => {
+                // ✅ ISEXTERNAL SHARTI - Product name olish
+                string productName;
+                string unit = "";
+                if (!si.IsExternal)
+                {
+                    productName = si.Product?.Name ?? "Unknown";
+                    unit = si.Product?.GetUnitName() ?? "";
+                }
+                else
+                {
+                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
+                }
+                return MapSaleItemToDto(si, productName, unit);
+            }).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -158,7 +186,21 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
+            s.SaleItems.Select(si => {
+                // ✅ ISEXTERNAL SHARTI - Product name olish
+                string productName;
+                string unit = "";
+                if (!si.IsExternal)
+                {
+                    productName = si.Product?.Name ?? "Unknown";
+                    unit = si.Product?.GetUnitName() ?? "";
+                }
+                else
+                {
+                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
+                }
+                return MapSaleItemToDto(si, productName, unit);
+            }).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -200,7 +242,21 @@ public class SaleService : ISaleService
             s.PaidAmount,
             s.TotalAmount - s.PaidAmount,
             s.CreatedAt,
-            s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
+            s.SaleItems.Select(si => {
+                // ✅ ISEXTERNAL SHARTI - Product name olish
+                string productName;
+                string unit = "";
+                if (!si.IsExternal)
+                {
+                    productName = si.Product?.Name ?? "Unknown";
+                    unit = si.Product?.GetUnitName() ?? "";
+                }
+                else
+                {
+                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
+                }
+                return MapSaleItemToDto(si, productName, unit);
+            }).ToList(),
             s.Payments.Select(p => new PaymentDto(
                 p.Id,
                 p.PaymentType.ToString().ToLowerInvariant(),
@@ -232,7 +288,7 @@ public class SaleService : ISaleService
         // If customer is specified, apply any available credit
         if (request.CustomerId.HasValue)
         {
-            await ApplyCustomerCreditAsync(sale.Id, request.CustomerId.Value, cancellationToken);
+            await ApplyCustomerCreditInternalAsync(sale.Id, request.CustomerId.Value, cancellationToken);
         }
 
         // Audit log (temporarily disabled for testing)
@@ -277,19 +333,24 @@ public class SaleService : ISaleService
         // If customer is specified, apply any available credit
         if (request.CustomerId.HasValue)
         {
-            await ApplyCustomerCreditAsync(saleId, request.CustomerId.Value, cancellationToken);
+            await ApplyCustomerCreditInternalAsync(saleId, request.CustomerId.Value, cancellationToken);
         }
 
         return await MapToDtoAsync(sale, cancellationToken);
     }
 
+    /// <summary>
+    /// ============================================
+    /// ✅ ISEXTERNAL SHARTI - TASHQI MAHSULOT
+    /// ============================================
+    /// </summary>
     public async Task<SaleItemDto?> AddSaleItemAsync(Guid saleId, AddSaleItemDto request, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // LOG: Track quantity flow - 1.5 should remain 1.5 throughout
-        _logger.LogInformation("[AddSaleItem] RECEIVED - SaleId: {SaleId}, ProductId: {ProductId}, Quantity: {Quantity}, Type: {Type}",
-            saleId, request.ProductId, request.Quantity, request.Quantity.GetType().Name);
+        // LOG: Track IsExternal flag
+        _logger.LogInformation("[AddSaleItem] RECEIVED - SaleId: {SaleId}, IsExternal: {IsExternal}, ProductId: {ProductId}, ExternalProductName: {ProductName}, Quantity: {Quantity}",
+            saleId, request.IsExternal, request.ProductId, request.ExternalProductName, request.Quantity);
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -305,116 +366,202 @@ public class SaleService : ISaleService
             // Load sale items separately
             var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == saleId, cancellationToken);
 
-            var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId, cancellationToken);
-            if (product is null)
-                throw new InvalidOperationException("Product not found");
-
-            // SECURITY: Verify product belongs to the same market as the sale
-            if (product.MarketId != sale.MarketId)
-                throw new InvalidOperationException("Product does not belong to this market");
-
-            // Validate stock
-            if (product.Quantity <= 0)
-                throw new InvalidOperationException("Bu mahsulot omborda yo'q");
-
-            if (product.Quantity < request.Quantity)
-                throw new InvalidOperationException($"Omborda yetarli mahsulot yo'q. Mavjud: {product.Quantity}, So'ralgan: {request.Quantity}");
-
-            // Note: MinSalePrice validation is now UI-only warning, not enforced on backend
-            // Sellers can sell below minimum price without comment if needed
-
-            // Check threshold
-            if (product.Quantity <= product.MinThreshold)
+            if (!request.IsExternal)
             {
-                // Log warning - product is at or below threshold
-                // This is allowed but should trigger warning in UI
-            }
+                // ------------ ORDINARY PRODUCT (Oddiy mahsulot) ------------
+                // ProductId bo'lishi shart
+                if (request.ProductId == null)
+                    throw new InvalidOperationException("ProductId kerak (oddiy mahsulot uchun)");
 
-            SaleItem? resultSaleItem;
-            decimal itemTotal;
+                var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId.Value, cancellationToken);
+                if (product is null)
+                    throw new InvalidOperationException("Product not found");
 
-            // CHECK: Is this product already in the sale?
-            var existingItem = saleItems.FirstOrDefault(si => si.ProductId == request.ProductId);
+                // SECURITY: Verify product belongs to same market as sale
+                if (product.MarketId != sale.MarketId)
+                    throw new InvalidOperationException("Product does not belong to this market");
 
-            if (existingItem != null)
-            {
-                // Product exists - UPDATE existing item
-                var oldQuantity = existingItem.Quantity;
-                existingItem.Quantity += request.Quantity;
+                // Validate stock
+                if (product.Quantity <= 0)
+                    throw new InvalidOperationException("Bu mahsulot omborda yo'q");
 
-                // LOG: Existing item update
-                _logger.LogInformation("[AddSaleItem] UPDATE EXISTING - OldQty: {OldQty}, RequestQty: {RequestQty}, NewQty: {NewQty}",
-                    oldQuantity, request.Quantity, existingItem.Quantity);
+                if (product.Quantity < request.Quantity)
+                    throw new InvalidOperationException($"Omborda yetarli mahsulot yo'q. Mavjud: {product.Quantity}, So'ralgan: {request.Quantity}");
 
-                // Keep the original sale price (or could use weighted average)
-                // existingItem.SalePrice = existingItem.SalePrice; // Keep original price
+                // Note: MinSalePrice validation is now UI-only warning, not enforced on backend
+                // Sellers can sell below minimum price without comment if needed
 
-                _unitOfWork.SaleItems.Update(existingItem);
+                // Check threshold (warning only, not blocking)
+                if (product.Quantity <= product.MinThreshold)
+                {
+                    // Log warning - product is at or below threshold
+                    // This is allowed but should trigger warning in UI
+                }
 
-                // Update stock
-                product.Quantity -= request.Quantity;
-                _context.Entry(product).State = EntityState.Modified;
-                _unitOfWork.Products.Update(product);
+                SaleItem? resultSaleItem;
+                decimal itemTotal;
 
-                // Update sale total
-                var oldItemTotal = oldQuantity * existingItem.SalePrice;
-                itemTotal = existingItem.Quantity * existingItem.SalePrice;
-                sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
-                _unitOfWork.Sales.Update(sale);
+                // CHECK: Is this product already in sale?
+                var existingItem = saleItems.FirstOrDefault(si => si.ProductId == request.ProductId);
 
-                resultSaleItem = existingItem;
+                if (existingItem != null)
+                {
+                    // Product exists - UPDATE existing item
+                    var oldQuantity = existingItem.Quantity;
+                    existingItem.Quantity += request.Quantity;
+
+                    // LOG: Existing item update
+                    _logger.LogInformation("[AddSaleItem] UPDATE EXISTING - OldQty: {OldQty}, RequestQty: {RequestQty}, NewQty: {NewQty}",
+                        oldQuantity, request.Quantity, existingItem.Quantity);
+
+                    _unitOfWork.SaleItems.Update(existingItem);
+
+                    // Update stock
+                    product.Quantity -= request.Quantity;
+                    _context.Entry(product).State = EntityState.Modified;
+                    _unitOfWork.Products.Update(product);
+
+                    // Update sale total
+                    var oldItemTotal = oldQuantity * existingItem.SalePrice;
+                    itemTotal = existingItem.Quantity * existingItem.SalePrice;
+                    sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
+                    _unitOfWork.Sales.Update(sale);
+
+                    resultSaleItem = existingItem;
+                }
+                else
+                {
+                    // Product doesn't exist - CREATE new item
+                    var saleItem = new SaleItem
+                    {
+                        Id = Guid.NewGuid(),
+                        SaleId = saleId,
+                        ProductId = request.ProductId,
+                        IsExternal = false,  // ✅ Oddiy mahsulot
+                        Quantity = request.Quantity,
+                        CostPrice = product.CostPrice,
+                        SalePrice = request.SalePrice,
+                        Comment = request.Comment
+                    };
+
+                    // LOG: New item create
+                    _logger.LogInformation("[AddSaleItem] CREATE NEW - Quantity: {Quantity}, ProductId: {ProductId}",
+                        saleItem.Quantity, saleItem.ProductId);
+
+                    await _unitOfWork.SaleItems.AddAsync(saleItem, cancellationToken);
+
+                    // Update stock
+                    product.Quantity -= request.Quantity;
+                    _context.Entry(product).State = EntityState.Modified;
+                    _unitOfWork.Products.Update(product);
+
+                    // Update sale total
+                    itemTotal = request.Quantity * request.SalePrice;
+                    sale.TotalAmount += itemTotal;
+                    _unitOfWork.Sales.Update(sale);
+
+                    resultSaleItem = saleItem;
+                }
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                // LOG: After DB save
+                _logger.LogInformation("[AddSaleItem] AFTER DB SAVE - Quantity: {Quantity}, ProductId: {ProductId}",
+                    resultSaleItem.Quantity, resultSaleItem.ProductId);
+
+                return MapSaleItemToDto(resultSaleItem, product.Name, product.GetUnitName());
             }
             else
             {
-                // Product doesn't exist - CREATE new item
-                var saleItem = new SaleItem
+                // ------------ EXTERNAL PRODUCT (Tashqi mahsulot) ------------
+                // ExternalProductName bo'lishi shart
+                if (string.IsNullOrEmpty(request.ExternalProductName))
+                    throw new InvalidOperationException("ExternalProductName kerak (tashqi mahsulot uchun)");
+
+                // ✅ VALIDATION: Tashqi tannarx sotuv narxidan katta bo'lishi mumkin emas
+                if (request.ExternalCostPrice >= request.SalePrice)
+                    throw new InvalidOperationException("Tashqi tannarx sotuv narxidan katta yoki teng bo'lishi mumkin emas");
+
+                SaleItem? resultSaleItem;
+                decimal itemTotal;
+
+                // CHECK: Is this external product already in sale? (by name)
+                var existingItem = saleItems.FirstOrDefault(si =>
+                    si.IsExternal &&
+                    si.ExternalProductName == request.ExternalProductName);
+
+                if (existingItem != null)
                 {
-                    Id = Guid.NewGuid(),
-                    SaleId = saleId,
-                    ProductId = request.ProductId,
-                    Quantity = request.Quantity,
-                    CostPrice = product.CostPrice,
-                    SalePrice = request.SalePrice,
-                    Comment = request.Comment
-                };
+                    // External product exists - UPDATE existing item
+                    var oldQuantity = existingItem.Quantity;
+                    existingItem.Quantity += request.Quantity;
 
-                // LOG: New item create
-                _logger.LogInformation("[AddSaleItem] CREATE NEW - Quantity: {Quantity}, ProductId: {ProductId}",
-                    saleItem.Quantity, saleItem.ProductId);
+                    // LOG: Existing item update
+                    _logger.LogInformation("[AddSaleItem] UPDATE EXTERNAL - OldQty: {OldQty}, RequestQty: {RequestQty}, NewQty: {NewQty}",
+                        oldQuantity, request.Quantity, existingItem.Quantity);
 
-                await _unitOfWork.SaleItems.AddAsync(saleItem, cancellationToken);
+                    _unitOfWork.SaleItems.Update(existingItem);
 
-                // Update stock
-                product.Quantity -= request.Quantity;
-                _context.Entry(product).State = EntityState.Modified;
-                _unitOfWork.Products.Update(product);
+                    // Update sale total
+                    var oldItemTotal = oldQuantity * existingItem.SalePrice;
+                    itemTotal = existingItem.Quantity * existingItem.SalePrice;
+                    sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
+                    _unitOfWork.Sales.Update(sale);
 
-                // Update sale total
-                itemTotal = request.Quantity * request.SalePrice;
-                sale.TotalAmount += itemTotal;
-                _unitOfWork.Sales.Update(sale);
+                    resultSaleItem = existingItem;
+                }
+                else
+                {
+                    // External product doesn't exist - CREATE new item
+                    var saleItem = new SaleItem
+                    {
+                        Id = Guid.NewGuid(),
+                        SaleId = saleId,
+                        IsExternal = true,  // ✅ Tashqi mahsulot
+                        ProductId = null,  // ✅ Nullable
+                        ExternalProductName = request.ExternalProductName,
+                        ExternalCostPrice = request.ExternalCostPrice.Value,
+                        Quantity = request.Quantity,
+                        SalePrice = request.SalePrice,
+                        Comment = request.Comment
+                    };
 
-                resultSaleItem = saleItem;
+                    // LOG: New item create
+                    _logger.LogInformation("[AddSaleItem] CREATE EXTERNAL - Quantity: {Quantity}, ProductName: {ProductName}",
+                        saleItem.Quantity, request.ExternalProductName);
+
+                    await _unitOfWork.SaleItems.AddAsync(saleItem, cancellationToken);
+
+                    // ✅ NO STOCK UPDATE - Tashqi mahsulotlar ombor qoldig'iga ta'sir qilmaydi
+
+                    // Update sale total
+                    itemTotal = request.Quantity * request.SalePrice;
+                    sale.TotalAmount += itemTotal;
+                    _unitOfWork.Sales.Update(sale);
+
+                    resultSaleItem = saleItem;
+                }
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                // LOG: After DB save
+                _logger.LogInformation("[AddSaleItem] AFTER DB SAVE - IsExternal: {IsExternal}, ProductName: {ProductName}, Quantity: {Quantity}",
+                    resultSaleItem.IsExternal, resultSaleItem.ExternalProductName, resultSaleItem.Quantity);
+
+                // Mapping: Product name = ExternalProductName, Unit = empty
+                return MapSaleItemToDto(
+                    resultSaleItem,
+                    resultSaleItem.ExternalProductName ?? "Unknown",
+                    ""
+                );
             }
-
-            // LOG: Before DB save - confirm what will be saved
-            _logger.LogInformation("[AddSaleItem] BEFORE DB SAVE - Quantity: {Quantity}, ProductId: {ProductId}",
-                resultSaleItem.Quantity, resultSaleItem.ProductId);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            // LOG: After DB save - confirm what was saved
-            _logger.LogInformation("[AddSaleItem] AFTER DB SAVE - Quantity: {Quantity}, ProductId: {ProductId}",
-                resultSaleItem.Quantity, resultSaleItem.ProductId);
-
-            return MapSaleItemToDto(resultSaleItem, product.Name, product.GetUnitName());
         }, cancellationToken);
     }
 
     public async Task<SaleItemDto?> RemoveSaleItemAsync(Guid saleId, RemoveSaleItemDto request, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        
+
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // Get sale with MarketId filtering
@@ -436,69 +583,126 @@ public class SaleService : ISaleService
             if (saleItem == null)
                 throw new InvalidOperationException("Sale item not found");
 
-            // Get product
-            var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
-            if (product is null)
-                throw new InvalidOperationException("Product not found");
-
-            // SECURITY: Verify product belongs to the same market as the sale
-            if (product.MarketId != sale.MarketId)
-                throw new InvalidOperationException("Product does not belong to this market");
-
-            SaleItem? resultSaleItem;
-            decimal itemTotal;
-
-            if (request.Quantity == 0 || request.Quantity >= saleItem.Quantity)
+            /// <summary>
+            /// ============================================
+            /// ✅ ISEXTERNAL SHARTI - STOKNI SAQLASH
+            /// ============================================
+            /// </summary>
+            if (!saleItem.IsExternal)
             {
-                // Remove entire item from sale
-                _unitOfWork.SaleItems.Delete(saleItem);
+                // ---- ORDINARY PRODUCT (Oddiy mahsulot) ----
+                // ProductId bo'lishi shart
+                if (saleItem.ProductId == null)
+                    throw new InvalidOperationException("ProductId null (oddiy mahsulot uchun)");
 
-                // Restore full stock
-                product.Quantity += saleItem.Quantity;
-                _context.Entry(product).State = EntityState.Modified;
-                _unitOfWork.Products.Update(product);
+                var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId.Value, cancellationToken);
+                if (product is null)
+                    throw new InvalidOperationException("Product not found");
 
-                // Update sale total
-                itemTotal = saleItem.Quantity * saleItem.SalePrice;
-                sale.TotalAmount -= itemTotal;
-                _unitOfWork.Sales.Update(sale);
+                // SECURITY: Verify product belongs to same market as sale
+                if (product.MarketId != sale.MarketId)
+                    throw new InvalidOperationException("Product does not belong to this market");
 
-                resultSaleItem = saleItem; // Return deleted item info
+                SaleItem? resultSaleItem;
+                decimal itemTotal;
+
+                if (request.Quantity == 0 || request.Quantity >= saleItem.Quantity)
+                {
+                    // Remove entire item from sale
+                    _unitOfWork.SaleItems.Delete(saleItem);
+
+                    // ✅ Restore full stock (faqat oddiy mahsulotlar uchun)
+                    product.Quantity += saleItem.Quantity;
+                    _context.Entry(product).State = EntityState.Modified;
+                    _unitOfWork.Products.Update(product);
+
+                    // Update sale total
+                    itemTotal = saleItem.Quantity * saleItem.SalePrice;
+                    sale.TotalAmount -= itemTotal;
+                    _unitOfWork.Sales.Update(sale);
+
+                    resultSaleItem = saleItem; // Return deleted item info
+                }
+                else
+                {
+                    // Partial quantity removal
+                    var oldQuantity = saleItem.Quantity;
+                    saleItem.Quantity -= request.Quantity;
+                    _unitOfWork.SaleItems.Update(saleItem);
+
+                    // ✅ Restore partial stock (faqat oddiy mahsulotlar uchun)
+                    product.Quantity += request.Quantity;
+                    _context.Entry(product).State = EntityState.Modified;
+                    _unitOfWork.Products.Update(product);
+
+                    // Update sale total
+                    var oldItemTotal = oldQuantity * saleItem.SalePrice;
+                    itemTotal = saleItem.Quantity * saleItem.SalePrice;
+                    sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
+                    _unitOfWork.Sales.Update(sale);
+
+                    resultSaleItem = saleItem;
+                }
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                return MapSaleItemToDto(resultSaleItem, product.Name, product.GetUnitName());
             }
             else
             {
-                // Partial quantity removal
-                var oldQuantity = saleItem.Quantity;
-                saleItem.Quantity -= request.Quantity;
-                _unitOfWork.SaleItems.Update(saleItem);
+                // ---- EXTERNAL PRODUCT (Tashqi mahsulot) ----
+                // ✅ NO STOCK RESTORE - Tashqi mahsulotlar ombor qoldig'iga ta'sir qilmaydi
 
-                // Restore partial stock
-                product.Quantity += request.Quantity;
-                _context.Entry(product).State = EntityState.Modified;
-                _unitOfWork.Products.Update(product);
+                SaleItem? resultSaleItem;
+                decimal itemTotal;
 
-                // Update sale total
-                var oldItemTotal = oldQuantity * saleItem.SalePrice;
-                itemTotal = saleItem.Quantity * saleItem.SalePrice;
-                sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
-                _unitOfWork.Sales.Update(sale);
+                if (request.Quantity == 0 || request.Quantity >= saleItem.Quantity)
+                {
+                    // Remove entire item from sale
+                    _unitOfWork.SaleItems.Delete(saleItem);
 
-                resultSaleItem = saleItem;
+                    // Update sale total
+                    itemTotal = saleItem.Quantity * saleItem.SalePrice;
+                    sale.TotalAmount -= itemTotal;
+                    _unitOfWork.Sales.Update(sale);
+
+                    resultSaleItem = saleItem;
+                }
+                else
+                {
+                    // Partial quantity removal
+                    var oldQuantity = saleItem.Quantity;
+                    saleItem.Quantity -= request.Quantity;
+                    _unitOfWork.SaleItems.Update(saleItem);
+
+                    // Update sale total
+                    var oldItemTotal = oldQuantity * saleItem.SalePrice;
+                    itemTotal = saleItem.Quantity * saleItem.SalePrice;
+                    sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
+                    _unitOfWork.Sales.Update(sale);
+
+                    resultSaleItem = saleItem;
+                }
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                // Mapping: Product name = ExternalProductName, Unit = empty
+                return MapSaleItemToDto(
+                    saleItem,
+                    saleItem.ExternalProductName ?? "Unknown",
+                    ""
+                );
             }
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return MapSaleItemToDto(resultSaleItem, product.Name, product.GetUnitName());
         }, cancellationToken);
     }
 
     public async Task<PaymentDto?> AddPaymentAsync(Guid saleId, AddPaymentDto request, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        
+
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            // CRITICAL FIX: Get sale WITH items to ensure TotalAmount is calculated
+            // ✅ CRITICAL FIX: Get sale WITH items to ensure TotalAmount is calculated
             var sale = await _unitOfWork.Sales.GetWithItemsAsync(saleId, cancellationToken);
 
             if (sale is null)
@@ -533,7 +737,6 @@ public class SaleService : ISaleService
                 throw new InvalidOperationException("Mijoz tanlanmagan savdoni qarzga yopib bo'lmaydi. Iltimos, mijoz tanlang yoki to'liq to'lov qiling.");
             }
 
-            
             // Map frontend's "CARD" to backend's "Terminal"
             var paymentTypeStr = request.PaymentType;
             if (string.Equals(paymentTypeStr, "CARD", StringComparison.OrdinalIgnoreCase))
@@ -635,23 +838,23 @@ public class SaleService : ISaleService
                             TotalDebt = sale.TotalAmount,
                             RemainingDebt = sale.TotalAmount - sale.PaidAmount,
                             Status = DebtStatus.Open,
-                            MarketId = sale.MarketId  // Multi-tenancy - inherit from Sale
+                            MarketId = sale.MarketId
                         };
                         await _unitOfWork.Debts.AddAsync(newDebt, cancellationToken);
                     }
                     else
                     {
+                        existingDebt.TotalDebt = sale.TotalAmount;
                         existingDebt.RemainingDebt = sale.TotalAmount - sale.PaidAmount;
+                        existingDebt.Status = existingDebt.RemainingDebt > 0 ? DebtStatus.Open : DebtStatus.Closed;
                         _unitOfWork.Debts.Update(existingDebt);
                     }
                 }
-                // Mijozsiz savdo uchun debt record yaratilmaydi, lekin status "debt" bo'ladi
             }
             // 3. TotalAmount 0 bo'lsa (hali mahsulotlar qo'shilgan yo'q), status Draft da qoladi
             else if (sale.TotalAmount == 0)
             {
                 _logger.LogInformation("Sale {SaleId} has TotalAmount=0, keeping Draft status", saleId);
-                // Status remains Draft - mahsulotlar qo'shilganda TotalAmount hisoblanadi
             }
             else
             {
@@ -659,17 +862,11 @@ public class SaleService : ISaleService
                     sale.Id, sale.TotalAmount, sale.PaidAmount);
             }
 
-            _logger.LogInformation("Sale {SaleId} final status: {Status}", sale.Id, sale.Status);
-
-            // Explicitly update sale in unit of work
             _unitOfWork.Sales.Update(sale);
-
-            _logger.LogInformation("Sale {SaleId} updated: Status={Status}, PaidAmount={Paid}, TotalAmount={Total}",
-                saleId, sale.Status, sale.PaidAmount, sale.TotalAmount);
-
-            // Use DbContext to explicitly mark sale as modified
             _context.Entry(sale).State = EntityState.Modified;
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Sale {SaleId} final status: {Status}", sale.Id, sale.Status);
 
             // Audit log
             await _auditLogService.LogPaymentActionAsync(payment.Id, sale.SellerId, cancellationToken);
@@ -686,6 +883,11 @@ public class SaleService : ISaleService
         }, cancellationToken);
     }
 
+    /// <summary>
+    /// ============================================
+    /// ✅ ISEXTERNAL SHARTI - TASHQI MAHSULOT
+    /// ============================================
+    /// </summary>
     public async Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("=== CANCEL SALE DEBUG ===");
@@ -724,17 +926,28 @@ public class SaleService : ISaleService
             var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == saleId, cancellationToken);
             foreach (var item in saleItems)
             {
-                var products = await _unitOfWork.Products.FindAsync(
-                    p => p.Id == item.ProductId && p.MarketId == marketId,
-                    cancellationToken);
-                var product = products.FirstOrDefault();
-
-                if (product != null)
+                /// <summary>
+                /// ============================================
+                /// ✅ ISEXTERNAL SHARTI - STOKNI QAYTARISH
+                /// ============================================
+                /// </summary>
+                if (!item.IsExternal)
                 {
-                    product.Quantity += item.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
-                    _unitOfWork.Products.Update(product);
+                    // ---- ORDINARY PRODUCT (Oddiy mahsulot) ----
+                    var products = await _unitOfWork.Products.FindAsync(
+                        p => p.Id == item.ProductId.Value && p.MarketId == marketId,
+                        cancellationToken);
+                    var product = products.FirstOrDefault();
+
+                    if (product != null)
+                    {
+                        product.Quantity += item.Quantity;
+                        _context.Entry(product).State = EntityState.Modified;
+                        _unitOfWork.Products.Update(product);
+                    }
                 }
+                // ---- EXTERNAL PRODUCT (Tashqi mahsulot) ----
+                // ✅ Tashqi mahsulotlar - stokni o'zgarmaslik
             }
 
             // Update sale status
@@ -769,7 +982,7 @@ public class SaleService : ISaleService
         if (saleItem is null)
             return false;
 
-        // Get the sale to verify market
+        // Get sale to verify market
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.Id == saleItem.SaleId && s.MarketId == marketId,
             cancellationToken);
@@ -792,17 +1005,17 @@ public class SaleService : ISaleService
     /// Applies customer's available credit (from negative payments/refunds) to a sale.
     /// This is called when a customer is associated with a sale or when finalizing a sale.
     /// </summary>
-    private async Task ApplyCustomerCreditAsync(Guid saleId, Guid customerId, CancellationToken cancellationToken = default)
+    private async Task ApplyCustomerCreditInternalAsync(Guid saleId, Guid customerId, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Get available credit for the customer
+        // Get available credit for customer
         var availableCredit = await _customerService.GetAvailableCreditAsync(customerId, cancellationToken);
 
         if (availableCredit <= 0)
             return; // No credit available
 
-        // Get the sale
+        // Get sale
         var sale = await _context.Sales
             .Include(s => s.Payments)
             .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
@@ -819,7 +1032,7 @@ public class SaleService : ISaleService
         _logger.LogInformation("Applying customer credit: SaleId={SaleId}, CustomerId={CustomerId}, CreditToApply={CreditToApply}, AvailableCredit={AvailableCredit}",
             saleId, customerId, creditToApply, availableCredit);
 
-        // Apply the credit to the sale
+        // Apply credit to sale
         // IMPORTANT: DO NOT create a payment record for credit application
         // Creating a payment would cause it to be counted in reports as "paid sales"
         // even though it's just a credit transfer, not actual revenue
@@ -832,21 +1045,115 @@ public class SaleService : ISaleService
             saleId, sale.PaidAmount);
     }
 
+    /// <summary>
+    /// Public method for ISaleService - applies customer credit and returns updated sale
+    /// </summary>
+    public async Task<SaleDto?> ApplyCustomerCreditAsync(Guid saleId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Get sale to find customer
+        var sale = await _unitOfWork.Sales.FindAsync(
+            s => s.Id == saleId && s.MarketId == marketId,
+            cancellationToken);
+        var saleEntity = sale.FirstOrDefault();
+
+        if (saleEntity == null)
+            return null;
+
+        if (!saleEntity.CustomerId.HasValue)
+            return null; // No customer to apply credit to
+
+        // Apply credit using internal method
+        await ApplyCustomerCreditInternalAsync(saleId, saleEntity.CustomerId.Value, cancellationToken);
+
+        // Return updated sale
+        return await GetSaleByIdAsync(saleId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Maps SaleItem entity to DTO, handling external products correctly
+    /// </summary>
+    private static SaleItemDto MapSaleItemToDto(SaleItem item, string productName, string unit = "")
+    {
+        /// <summary>
+        /// ============================================
+        /// ✅ EFFECTIVE COST PRICE & ISEXTERNAL FLAG
+        /// ============================================
+        /// </summary>
+        decimal effectiveCostPrice = item.IsExternal
+            ? item.ExternalCostPrice
+            : item.CostPrice;
+
+        return new SaleItemDto(
+            item.Id.ToString(),
+            item.SaleId.ToString(),
+            item.ProductId,  // ✅ Nullable
+            productName,
+            item.Quantity,
+            effectiveCostPrice,  // ✅ Effective cost price
+            item.SalePrice,
+            item.TotalPrice,
+            (item.SalePrice - effectiveCostPrice) * item.Quantity,  // ✅ Recalculated profit
+            unit,
+            item.Comment,
+            item.IsExternal  // ✅ New flag
+        );
+    }
+
     private async Task<SaleDto> MapToDtoAsync(Sale sale, CancellationToken cancellationToken)
     {
         // Get sale items
         var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == sale.Id, cancellationToken);
         var itemsDto = new List<SaleItemDto>();
 
+        /// <summary>
+        /// ============================================
+        /// ✅ ISEXTERNAL SHARTI - Product name olish
+        /// ============================================
+        /// </summary>
+        // Batch fetch all ordinary products to avoid N+1 query (faqat oddiy mahsulotlar uchun)
+        var ordinaryProductIds = saleItems
+            .Where(si => !si.IsExternal && si.ProductId.HasValue)
+            .Select(si => si.ProductId.Value)
+            .Distinct()
+            .ToList();
+
+        var products = new Dictionary<Guid, Product>();
+        if (ordinaryProductIds.Any())
+        {
+            var productList = await _unitOfWork.Products.FindAsync(
+                p => ordinaryProductIds.Contains(p.Id) && p.MarketId == sale.MarketId,
+                cancellationToken);
+            foreach (var p in productList)
+            {
+                products[p.Id] = p;
+            }
+        }
+
         foreach (var item in saleItems)
         {
-            // Get product and verify it belongs to the same market as the sale
-            var products = await _unitOfWork.Products.FindAsync(
-                p => p.Id == item.ProductId && p.MarketId == sale.MarketId,
-                cancellationToken);
-            var product = products.FirstOrDefault();
+            // ✅ ISEXTERNAL SHARTI - Product name olish
+            string? productName = null;
+            string unit = "";
 
-            itemsDto.Add(MapSaleItemToDto(item, product?.Name ?? "Unknown"));
+            if (!item.IsExternal)
+            {
+                // Oddiy mahsulot - Product table'dan nomini olish
+                if (products.TryGetValue(item.ProductId.Value, out var product))
+                {
+                    productName = product.Name;
+                    unit = product.GetUnitName();
+                }
+            }
+            else
+            {
+                // Tashqi mahsulot - ExternalProductName ishlatish
+                productName = item.ExternalProductName;
+                // Unit bo'sh qoldiriladi (tashqi mahsulotlar uchun)
+            }
+
+            itemsDto.Add(MapSaleItemToDto(item, productName ?? "Unknown", unit));
         }
 
         // Get payments
@@ -856,9 +1163,9 @@ public class SaleService : ISaleService
             p.PaymentType.ToString().ToLowerInvariant(),
             p.Amount,
             p.CreatedAt,
-            null, // SaleStatus not applicable in this context
-            null, // SalePaidAmount not applicable
-            null  // SaleTotalAmount not applicable
+            null,
+            null,
+            null
         )).ToList();
 
         // Get seller name
@@ -882,144 +1189,12 @@ public class SaleService : ISaleService
         );
     }
 
-    private static SaleItemDto MapSaleItemToDto(SaleItem item, string productName, string unit = "")
-    {
-        return new SaleItemDto(
-            item.Id.ToString(),
-            item.SaleId.ToString(),
-            item.ProductId,
-            productName,
-            item.Quantity,
-            item.CostPrice,
-            item.SalePrice,
-            item.TotalPrice,  // Property from entity
-            item.Profit,      // Property from entity
-            unit,
-            item.Comment
-        );
-    }
-
-    public async Task<SaleItemDto?> UpdateSaleItemPriceAsync(UpdateSaleItemPriceDto request, Guid userId, string userRole, CancellationToken cancellationToken = default)
-    {
-        var marketId = _currentMarketService.GetCurrentMarketId();
-
-        // Validation
-        if (request.NewPrice <= 0)
-            throw new InvalidOperationException("Narx 0 yoki manfiy bo'lishi mumkin emas");
-
-        // ✅ FIX: Use execution strategy to wrap transaction operations
-        var strategy = _context.Database.CreateExecutionStrategy();
-
-        return await strategy.ExecuteAsync(async () =>
-        {
-            await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-            try
-        {
-            // Parse saleItemId from string to Guid
-            var saleItemGuid = Guid.Parse(request.SaleItemId);
-
-            // Get SaleItem with Sale and Debt
-            var saleItems = await _unitOfWork.SaleItems.FindAsync(
-                si => si.Id == saleItemGuid,
-                cancellationToken,
-                includeProperties: "Sale");
-
-            var saleItem = saleItems.FirstOrDefault();
-            if (saleItem == null)
-                throw new InvalidOperationException("SaleItem topilmadi");
-
-            var sale = saleItem.Sale;
-            if (sale == null || sale.MarketId != marketId)
-                throw new InvalidOperationException("Sotuv topilmadi");
-
-            // Check if debt exists and get its status
-            Debt? debt = null;
-            if (sale.CustomerId.HasValue)
-            {
-                var debts = await _unitOfWork.Debts.FindAsync(
-                    d => d.SaleId == sale.Id && d.MarketId == marketId,
-                    cancellationToken);
-                debt = debts.FirstOrDefault();
-            }
-
-            // Role-based authorization
-            if (debt != null && debt.Status == DebtStatus.Closed)
-            {
-                // Only Owner and Admin can edit closed debts
-                if (userRole != "Owner" && userRole != "Admin")
-                {
-                    throw new UnauthorizedAccessException("Yopilgan qarzni tahrirlash huquqi yo'q (faqat Owner/Admin)");
-                }
-            }
-
-            // Store old price
-            var oldPrice = saleItem.SalePrice;
-
-            // Update SaleItem price
-            saleItem.SalePrice = request.NewPrice;
-            _unitOfWork.SaleItems.Update(saleItem);
-
-            // Recalculate Sale.TotalAmount
-            var allSaleItems = await _unitOfWork.SaleItems.FindAsync(
-                si => si.SaleId == sale.Id,
-                cancellationToken);
-
-            var newTotalAmount = 0m;
-            foreach (var item in allSaleItems)
-            {
-                newTotalAmount += item.SalePrice * item.Quantity;
-            }
-
-            var oldTotalAmount = sale.TotalAmount;
-            sale.TotalAmount = newTotalAmount;
-            _unitOfWork.Sales.Update(sale);
-
-            // Recalculate Debt if exists
-            if (debt != null)
-            {
-                var oldTotalDebt = debt.TotalDebt;
-                debt.TotalDebt = newTotalAmount;
-                debt.RemainingDebt = newTotalAmount - sale.PaidAmount;
-                _unitOfWork.Debts.Update(debt);
-
-                _logger.LogInformation($"Debt {debt.Id} recalculated: {oldTotalDebt} -> {newTotalAmount}");
-            }
-
-            // Create audit log
-            var auditLog = new DebtAuditLog
-            {
-                Id = Guid.NewGuid(),
-                SaleId = sale.Id,
-                SaleItemId = saleItem.Id,
-                OldPrice = oldPrice,
-                NewPrice = request.NewPrice,
-                ChangedByUserId = userId,
-                Comment = request.Comment ?? "Narx o'zgartirildi",
-                MarketId = marketId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _unitOfWork.DebtAuditLogs.AddAsync(auditLog, cancellationToken);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitTransactionAsync(cancellationToken);
-
-            _logger.LogInformation($"SaleItem {saleItem.Id} price updated: {oldPrice} -> {request.NewPrice} by User {userId}");
-
-            // Get product name for response
-            var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId, cancellationToken);
-
-            return MapSaleItemToDto(saleItem, product?.Name ?? "Unknown", product?.GetUnitName() ?? "");
-        }
-        catch
-        {
-            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
-            throw;
-        }
-        });
-    }
-
+    /// <summary>
+    /// ============================================
+    /// ✅ ISEXTERNAL SHARTI - TASHQI MAHSULOT O'CHIRISH
+    /// ============================================
+    /// Savdoni o'chirganda tashqi mahsulotlar stokni saqlash
+    /// </summary>
     public async Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("=== DELETE SALE DEBUG ===");
@@ -1030,10 +1205,9 @@ public class SaleService : ISaleService
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            // Query filterni o'tkazib yuborib, bevosita bazadan qidiramiz
             var sale = await _context.Sales
-                .IgnoreQueryFilters()
                 .Include(s => s.SaleItems)
+                    .ThenInclude(si => si.Product)
                 .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
 
             if (sale is null)
@@ -1048,39 +1222,34 @@ public class SaleService : ISaleService
                 return null;
             }
 
-            // Faqat Draft va Paid statusdagi savdolarni o'chirish mumkin
-            // Debt statusdagi savdolarni o'chirish mumkin emas, chunki ularda qarz bor
-            // Closed va Cancelled statusdagi savdolarni ham o'chirish mumkin emas
             if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Paid)
             {
                 _logger.LogWarning("Sale cannot be deleted: {SaleId}, Status: {Status}", saleId, sale.Status);
                 throw new InvalidOperationException("Faqat draft yoki to'langan (Paid) savdolarini o'chirish mumkin! Qarzli savdolarni o'chirib bo'lmaydi.");
             }
 
-            // Sale items ni o'chirish
+            // Save sale items for DTO
             var saleItems = sale.SaleItems.ToList();
             _logger.LogInformation("Found {Count} sale items to delete", saleItems.Count);
 
             foreach (var saleItem in saleItems)
             {
-                _logger.LogInformation("Deleting SaleItem: {SaleItemId}, Product: {ProductId}, Qty: {Quantity}",
-                    saleItem.Id, saleItem.ProductId, saleItem.Quantity);
+                _logger.LogInformation("Deleting SaleItem: {SaleItemId}, Product: {ProductId}, Qty: {Quantity}, IsExternal: {IsExternal}",
+                    saleItem.Id, saleItem.ProductId, saleItem.Quantity, saleItem.IsExternal);
 
-                // Mahsulotni qaytarib olish (stock ni qaytarish)
-                var product = await _context.Products
-                    .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(p => p.Id == saleItem.ProductId && p.MarketId == marketId, cancellationToken);
-
-                if (product != null)
+                // ============================================
+                // ✅ ISEXTERNAL SHARTI - STOKNI QAYTARISH
+                // ============================================
+                if (!saleItem.IsExternal && saleItem.Product != null)
                 {
-                    product.Quantity += saleItem.Quantity;
-                    _context.Products.Update(product);
+                    // Faqat oddiy mahsulotlar uchun stokni qaytarish
+                    saleItem.Product.Quantity += saleItem.Quantity;
+                    _context.Entry(saleItem.Product).State = EntityState.Modified;
+                    _unitOfWork.Products.Update(saleItem.Product);
                     _logger.LogInformation("Product stock restored: {ProductId}, Qty: +{Quantity}",
-                        product.Id, saleItem.Quantity);
+                        saleItem.ProductId, saleItem.Quantity);
                 }
-
-                // SaleItemni o'chirish
-                _context.SaleItems.Remove(saleItem);
+                // Tashqi mahsulotlar - stokni o'zgarmaslik
             }
 
             // Savdoni o'chirish (soft delete - IsDeleted = true)
@@ -1099,117 +1268,213 @@ public class SaleService : ISaleService
                 _logger.LogInformation("Payment deleted: {PaymentId}", payment.Id);
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("=== DELETE SALE SUCCESS ===");
 
-            // DTO ni yaratish (sale hali tracking state da)
+            // DTO ni yaratish
+            var itemsDto = new List<SaleItemDto>();
+            foreach (var si in saleItems)
+            {
+                string productName;
+                string unit = "";
+                if (!si.IsExternal)
+                {
+                    productName = si.Product?.Name ?? "Unknown";
+                    unit = si.Product?.GetUnitName() ?? "";
+                }
+                else
+                {
+                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
+                }
+                itemsDto.Add(new SaleItemDto(
+                    si.Id.ToString(),
+                    si.SaleId.ToString(),
+                    si.ProductId,
+                    productName,
+                    si.Quantity,
+                    si.IsExternal ? si.ExternalCostPrice : si.CostPrice,
+                    si.SalePrice,
+                    si.TotalPrice,
+                    si.Profit,
+                    unit,
+                    si.Comment,
+                    si.IsExternal
+                ));
+            }
+
+            var paymentsDto = payments.Select(p => new PaymentDto(
+                p.Id,
+                p.PaymentType.ToString(),
+                p.Amount,
+                p.CreatedAt,
+                null,
+                null,
+                null
+            )).ToList();
+
+            var seller = await _unitOfWork.Users.GetByIdAsync(sale.SellerId, cancellationToken);
+            var customer = sale.CustomerId.HasValue ? await _unitOfWork.Customers.GetByIdAsync(sale.CustomerId.Value, cancellationToken) : null;
+
             return new SaleDto(
                 sale.Id,
                 sale.SellerId,
-                "", // Seller name - yuklanmaydi
+                seller?.FullName ?? "Unknown",
                 sale.CustomerId,
-                null, // Customer name
-                null, // Customer phone
+                customer?.FullName,
+                customer?.Phone,
                 sale.Status.ToString(),
                 sale.TotalAmount,
                 sale.PaidAmount,
                 sale.TotalAmount - sale.PaidAmount,
                 sale.CreatedAt,
-                saleItems.Select(si => new SaleItemDto(
-                    si.Id.ToString(),
-                    si.SaleId.ToString(),
-                    si.ProductId,
-                    "", // Product name - yuklanmaydi
-                    si.Quantity,
-                    si.CostPrice,
-                    si.SalePrice,
-                    si.TotalPrice,
-                    si.Profit,
-                    "", // Unit
-                    si.Comment
-                )).ToList(),
-                payments.Select(p => new PaymentDto(
-                    p.Id,
-                    p.PaymentType.ToString().ToLowerInvariant(),
-                    p.Amount,
-                    p.CreatedAt,
-                    null,
-                    null,
-                    null
-                )).ToList()
+                itemsDto,
+                paymentsDto
             );
         }, cancellationToken);
     }
 
-    public async Task<IEnumerable<DebtorDto>> GetDebtorsAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Marks a sale as debt status
+    /// </summary>
+    public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Barcha Debt statusdagi savdolarni olish
-        var debtSales = await _context.Sales
-            .Include(s => s.Customer)
-            .Include(s => s.SaleItems)
-                .ThenInclude(si => si.Product)
-            .Include(s => s.Payments)
-            .Where(s => s.MarketId == marketId && s.Status == SaleStatus.Debt && s.CustomerId != null)
-            .OrderByDescending(s => s.CreatedAt)
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var sales = await _unitOfWork.Sales.FindAsync(
+                s => s.Id == saleId && s.MarketId == marketId,
+                cancellationToken);
+            var sale = sales.FirstOrDefault();
 
-        // Mijoz bo'yicha guruhlash
-        var debtorGroups = debtSales
-            .GroupBy(s => s.CustomerId)
-            .Select(group => new DebtorDto(
-                group.Key!.Value,
-                group.First().Customer?.FullName,
-                group.First().Customer?.Phone,
-                group.Sum(s => s.TotalAmount), // Total debt (jami summa)
-                group.Sum(s => s.PaidAmount),  // Paid amount (to'langan)
-                group.Sum(s => s.TotalAmount - s.PaidAmount), // Remaining debt (qolgan qarz)
-                group.Count(), // Debt count (nechta savdo)
-                group.Min(s => s.CreatedAt), // Eng eski qarz sanasi
-                group.Select(s => new SaleDto(
-                    s.Id,
-                    s.SellerId,
-                    null!,
-                    s.CustomerId,
-                    s.Customer?.FullName,
-                    s.Customer?.Phone,
-                    s.Status.ToString(),
-                    s.TotalAmount,
-                    s.PaidAmount,
-                    s.TotalAmount - s.PaidAmount,
-                    s.CreatedAt,
-                    s.SaleItems.Select(si => MapSaleItemToDto(si, si.Product?.Name ?? "Unknown", si.Product?.GetUnitName() ?? "")).ToList(),
-                    s.Payments.Select(p => new PaymentDto(
-                        p.Id,
-                        p.PaymentType.ToString(),
-                        p.Amount,
-                        p.CreatedAt,
-                        null,
-                        null,
-                        null
-                    )).ToList()
-                )).ToList()
-            ))
-            .OrderByDescending(d => d.OldestDebtDate)
-            .ToList();
+            if (sale is null)
+                return null;
 
-        return debtorGroups;
+            if (sale.PaidAmount >= sale.TotalAmount)
+                throw new InvalidOperationException("Sale is already fully paid, cannot mark as debt");
+
+            sale.Status = SaleStatus.Debt;
+            _unitOfWork.Sales.Update(sale);
+
+            // Create or update debt record
+            var existingDebt = await _unitOfWork.Debts.FindAsync(
+                d => d.SaleId == saleId && d.MarketId == marketId,
+                cancellationToken);
+            var debt = existingDebt.FirstOrDefault();
+
+            if (debt == null && sale.CustomerId.HasValue)
+            {
+                debt = new Debt
+                {
+                    Id = Guid.NewGuid(),
+                    SaleId = sale.Id,
+                    CustomerId = sale.CustomerId.Value,
+                    MarketId = marketId,
+                    TotalDebt = sale.TotalAmount,
+                    RemainingDebt = sale.TotalAmount - sale.PaidAmount,
+                    Status = DebtStatus.Open,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.Debts.AddAsync(debt, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return await MapToDtoAsync(sale, cancellationToken);
+        }, cancellationToken);
     }
 
+    /// <summary>
+    /// Updates sale item price with role-based permissions
+    /// </summary>
+    public async Task<SaleItemDto?> UpdateSaleItemPriceAsync(Guid saleItemId, UpdateSaleItemPriceDto request, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var saleItems = await _unitOfWork.SaleItems.FindAsync(
+                si => si.Id == saleItemId,
+                cancellationToken,
+                includeProperties: "Sale");
+            var saleItem = saleItems.FirstOrDefault();
+
+            if (saleItem == null)
+                throw new InvalidOperationException("SaleItem topilmadi");
+
+            var sale = saleItem.Sale;
+            if (sale == null || sale.MarketId != marketId)
+                throw new InvalidOperationException("Sotuv topilmadi");
+
+            // Update SaleItem price
+            var oldPrice = saleItem.SalePrice;
+            saleItem.SalePrice = request.NewPrice;
+            _unitOfWork.SaleItems.Update(saleItem);
+
+            // Recalculate Sale.TotalAmount
+            var allSaleItems = await _unitOfWork.SaleItems.FindAsync(
+                si => si.SaleId == sale.Id,
+                cancellationToken);
+            var newTotalAmount = 0m;
+            foreach (var item in allSaleItems)
+            {
+                newTotalAmount += item.SalePrice * item.Quantity;
+            }
+            sale.TotalAmount = newTotalAmount;
+            _unitOfWork.Sales.Update(sale);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Get product name for response
+            string productName;
+            string unit = "";
+
+            if (!saleItem.IsExternal)
+            {
+                if (saleItem.ProductId.HasValue)
+                {
+                    var product = await _unitOfWork.Products.GetByIdAsync(saleItem.ProductId.Value, cancellationToken);
+                    productName = product?.Name ?? "Unknown";
+                    unit = product?.GetUnitName() ?? "";
+                }
+                else
+                {
+                    productName = "Unknown";
+                }
+            }
+            else
+            {
+                productName = saleItem.ExternalProductName ?? "Tashqi mahsulot";
+                unit = "";
+            }
+
+            return new SaleItemDto(
+                saleItem.Id.ToString(),
+                saleItem.SaleId.ToString(),
+                saleItem.ProductId,
+                productName,
+                saleItem.Quantity,
+                saleItem.IsExternal ? saleItem.ExternalCostPrice : saleItem.CostPrice,
+                saleItem.SalePrice,
+                saleItem.TotalPrice,
+                saleItem.Profit,
+                unit,
+                saleItem.Comment,
+                saleItem.IsExternal
+            );
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns a sale item (partial or full return)
+    /// </summary>
     public async Task<SaleItemDto?> ReturnSaleItemAsync(Guid saleId, ReturnSaleItemRequest request, CancellationToken cancellationToken = default)
     {
-        try
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        return await _unitOfWork.ExecuteInTransactionAsync<SaleItemDto?>(async () =>
         {
-            var marketId = _currentMarketService.GetCurrentMarketId();
-
-            _logger.LogInformation("=== RETURN SALE ITEM START ===");
-            _logger.LogInformation("SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}, Comment: {Comment}",
-                saleId, request.SaleItemId, request.Quantity, request.Comment);
-
-            // Savdo va sale itemni topish
             var sale = await _context.Sales
                 .Include(s => s.SaleItems)
                     .ThenInclude(si => si.Product)
@@ -1217,287 +1482,131 @@ public class SaleService : ISaleService
                 .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
 
             if (sale == null)
-            {
-                _logger.LogWarning("Sale not found: {SaleId}", saleId);
                 return null;
-            }
 
             var saleItem = sale.SaleItems.FirstOrDefault(si => si.Id.ToString() == request.SaleItemId);
             if (saleItem == null)
-            {
-                _logger.LogWarning("Sale item not found: {SaleItemId}", request.SaleItemId);
                 return null;
-            }
 
             if (request.Quantity <= 0 || request.Quantity > saleItem.Quantity)
-            {
-                _logger.LogWarning("Invalid return quantity: {Quantity}, Item quantity: {ItemQuantity}",
-                    request.Quantity, saleItem.Quantity);
                 return null;
-            }
 
             var returnQuantity = request.Quantity;
             var refundAmount = returnQuantity * saleItem.SalePrice;
 
-            _logger.LogInformation("Return Amount: {RefundAmount}, Sale Price: {SalePrice}, Return Qty: {ReturnQty}",
-                refundAmount, saleItem.SalePrice, returnQuantity);
+            // Update sale item quantity or remove
+            string originalComment = saleItem.Comment ?? "";
+            var isFullReturn = returnQuantity >= saleItem.Quantity;
 
-            // Execute in transaction with execution strategy
-            return await _unitOfWork.ExecuteInTransactionAsync<SaleItemDto?>(async () =>
+            if (isFullReturn)
             {
-                // 1. Sale item quantity yangilash yoki o'chirish
-                string originalComment = saleItem.Comment ?? "";
-                var originalQuantity = saleItem.Quantity; // Saqlab qo'yymiz
-                var isFullReturn = returnQuantity >= saleItem.Quantity;
-
-                if (isFullReturn)
-                {
-                    // To'liq qaytarish - itemni o'chirish
-                    _logger.LogInformation("Full return: Removing item completely. OriginalQty={OriginalQty}, ReturnQty={ReturnQty}",
-                        originalQuantity, returnQuantity);
-                    _context.SaleItems.Remove(saleItem);
-                }
-                else
-                {
-                    // Qisman qaytarish - quantity kamaytirish
-                    _logger.LogInformation("Partial return: OldQty={OldQty}, ReturnQty={ReturnQty}, NewQty={NewQty}",
-                        saleItem.Quantity, returnQuantity, saleItem.Quantity - returnQuantity);
-                    saleItem.Quantity -= returnQuantity;  // ✅ DECIMAL
-
-                    // Izohga qaytarish haqida yozish
-                    var returnComment = !string.IsNullOrEmpty(request.Comment)
-                        ? request.Comment
-                        : $"Qaytarildi: {returnQuantity} ({DateTime.UtcNow:dd.MM.yyyy HH:mm})";
-                    saleItem.Comment = !string.IsNullOrEmpty(originalComment)
-                        ? $"{originalComment} | {returnComment}"
-                        : returnComment;
-                }
-
-                // 2. Mahsulot stock'iga qaytarish
-                if (saleItem.Product != null)
-                {
-                    var oldStock = saleItem.Product.Quantity;
-                    saleItem.Product.Quantity += returnQuantity;  // ✅ DECIMAL
-                    _context.Products.Update(saleItem.Product);
-                    _logger.LogInformation("Product stock updated: ProductId={ProductId}, OldStock={OldStock}, NewStock={NewStock}",
-                        saleItem.ProductId, oldStock, saleItem.Product.Quantity);
-                }
-
-                // 3. Savdo summalarini yangilash
-                var oldTotalAmount = sale.TotalAmount;
-                sale.TotalAmount -= refundAmount;
-
-                _logger.LogInformation("Sale total updated: SaleId={SaleId}, OldTotal={OldTotal}, NewTotal={NewTotal}",
-                    saleId, oldTotalAmount, sale.TotalAmount);
-
-                // 4. To'langan summani tartibga solish (Negative debt va xato balans paydo bo'lmasligi u.n)
-                if (sale.PaidAmount > sale.TotalAmount)
-                {
-                    var overpaid = sale.PaidAmount - sale.TotalAmount;
-                    _logger.LogInformation("PaidAmount ({PaidAmount}) exceeds NewTotal ({NewTotal}). Adjusting PaidAmount to {NewTotal} & refunding {Overpaid}.", 
-                        sale.PaidAmount, sale.TotalAmount, sale.TotalAmount, overpaid);
-                    
-                    sale.PaidAmount = sale.TotalAmount;
-
-                    // Balans (hisobotlarda) to'g'ri chiqishi uchun manfiy payment qayd etiladi
-                    var refundPayment = new Payment
-                    {
-                        Id = Guid.NewGuid(),
-                        SaleId = sale.Id,
-                        PaymentType = PaymentType.Cash, 
-                        Amount = -overpaid,
-                        MarketId = marketId,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    _context.Payments.Add(refundPayment);
-
-                    // Kassadan pulni ham yechib olish va tarixga yozish
-                    var cashRegister = await _context.CashRegisters.FirstOrDefaultAsync(cancellationToken);
-                    if (cashRegister != null)
-                    {
-                        cashRegister.CurrentBalance -= overpaid; // Kassadagi pulni ham qaytarish
-                        cashRegister.LastUpdated = DateTime.UtcNow;
-                        _context.CashRegisters.Update(cashRegister);
-                    }
-
-                    // Tizimda chiqim sifatida "-5000" tushishi uchun manfiy kiritiladi yoki commentga yoziladi
-                    var withdrawal = new CashWithdrawal
-                    {
-                        Id = Guid.NewGuid(),
-                        Amount = -overpaid, // Mijoz "pul olish tarixiga -5000 qo'shib qo'y" degani uchun
-                        Comment = $"Mahsulot qaytarilgani sababli mijozga qaytarildi (Savdo: {sale.Id})",
-                        WithdrawalDate = DateTime.UtcNow,
-                        UserId = null,  // Tizim tomonidan qilingan avtomatik qaytarish
-                        WithdrawType = "cash"
-                    };
-                    _context.CashWithdrawals.Add(withdrawal);
-                }
-
-                // 5. Status yangilash
-                var oldStatus = sale.Status;
-
-                if (sale.TotalAmount == 0 || sale.SaleItems.Count == 0)
-                {
-                    sale.Status = SaleStatus.Closed;
-                }
-                else if (sale.PaidAmount < sale.TotalAmount)
-                {
-                    sale.Status = SaleStatus.Debt;
-                }
-                else
-                {
-                    sale.Status = SaleStatus.Paid;
-                }
-
-                // ✅ QARZDOR TOVARNI QAYTARILGANDA - Qarzni "Returned" statusga o'tkaziladi
-                if (sale.CustomerId.HasValue && (sale.TotalAmount == 0 || sale.SaleItems.Count == 0))
-                {
-                    var existingDebt = await _context.Debts
-                        .FirstOrDefaultAsync(d => d.SaleId == sale.Id && d.MarketId == marketId, cancellationToken);
-
-                    if (existingDebt != null)
-                    {
-                        existingDebt.Status = DebtStatus.Returned; // Qarzdor tovarni qisman qaytarganini bildiradi
-                        existingDebt.RemainingDebt = 0;
-                        _context.Debts.Update(existingDebt);
-                        _logger.LogInformation("Debt status changed to Returned: SaleId={SaleId}, DebtId={DebtId}", sale.Id, existingDebt.Id);
-                    }
-                }
-
-                _logger.LogInformation("Sale status: SaleId={SaleId}, OldStatus={OldStatus}, NewStatus={NewStatus}",
-                    saleId, oldStatus, sale.Status);
-
-                // 6. DEBT JADVALINI YANGILASH
-                if (sale.CustomerId.HasValue)
-                {
-                    var existingDebt = await _context.Debts
-                        .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId, cancellationToken);
-
-                    if (existingDebt != null)
-                    {
-                        var newRemainingDebt = sale.TotalAmount - sale.PaidAmount;
-                        existingDebt.TotalDebt = sale.TotalAmount;
-                        existingDebt.RemainingDebt = newRemainingDebt > 0 ? newRemainingDebt : 0;
-                        existingDebt.Status = newRemainingDebt > 0 ? DebtStatus.Open : DebtStatus.Closed;
-
-                        _context.Debts.Update(existingDebt);
-                    }
-                }
-
-                // Explicitly update sale
-                _context.Sales.Update(sale);
-
-                await _context.SaveChangesAsync(cancellationToken);
-
-                _logger.LogInformation("=== RETURN SALE ITEM SUCCESS ===");
-                
-                // Updated sale item ni qaytarish (faqat partial return bo'lsa)
-                if (!isFullReturn && saleItem != null)
-                {
-                    return MapSaleItemToDto(saleItem, saleItem.Product?.Name ?? "Unknown", saleItem.Product?.GetUnitName() ?? "");
-                }
-
-                return null;
-            }, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error returning sale item");
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Applies customer's available credit (from negative payments/refunds) to a sale.
-    /// This is a public method that can be called manually to apply credit to an existing sale.
-    /// </summary>
-    public async Task<SaleDto?> ApplyCustomerCreditAsync(Guid saleId, CancellationToken cancellationToken = default)
-    {
-        var marketId = _currentMarketService.GetCurrentMarketId();
-
-        // Get the sale
-        var sale = await _context.Sales
-            .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
-
-        if (sale == null)
-            return null;
-
-        if (!sale.CustomerId.HasValue)
-        {
-            _logger.LogWarning("Cannot apply credit: Sale {SaleId} has no customer", saleId);
-            return null;
-        }
-
-        await ApplyCustomerCreditAsync(saleId, sale.CustomerId.Value, cancellationToken);
-
-        return await MapToDtoAsync(sale, cancellationToken);
-    }
-
-    public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default)
-    {
-        var marketId = _currentMarketService.GetCurrentMarketId();
-
-        try
-        {
-            // Get sale with items
-            var sale = await _unitOfWork.Sales.GetWithItemsAsync(saleId, cancellationToken);
-
-            if (sale is null)
-                throw new InvalidOperationException("Sale not found");
-
-            if (sale.MarketId != marketId)
-                throw new InvalidOperationException("Sale not found in current market");
-
-            if (sale.Status != SaleStatus.Draft)
-                throw new InvalidOperationException($"Only Draft sales can be marked as Debt. Current status: {sale.Status}");
-
-            if (!sale.CustomerId.HasValue || sale.CustomerId.Value == Guid.Empty)
-                throw new InvalidOperationException("Cannot mark sale as Debt without a customer");
-
-            // Recalculate TotalAmount from SaleItems
-            decimal calculatedTotal = sale.SaleItems?.Sum(si => si.SalePrice * si.Quantity) ?? 0;
-
-            if (calculatedTotal == 0)
-                throw new InvalidOperationException("Cannot mark sale as Debt with zero total amount");
-
-            // Update sale
-            sale.TotalAmount = calculatedTotal;
-            var oldStatus = sale.Status;
-            sale.Status = SaleStatus.Debt;
-
-            _logger.LogInformation("=== MARK SALE AS DEBT ===");
-            _logger.LogInformation("Sale ID: {SaleId}", saleId);
-            _logger.LogInformation("Old Status: {OldStatus}, New Status: {NewStatus}", oldStatus, sale.Status);
-            _logger.LogInformation("Total Amount: {Total}", calculatedTotal);
-            _logger.LogInformation("Customer ID: {CustomerId}", sale.CustomerId);
-
-            _unitOfWork.Sales.Update(sale);
-
-            // Create debt record
-            var newDebt = new Debt
+                _unitOfWork.SaleItems.Delete(saleItem);
+            }
+            else
             {
-                Id = Guid.NewGuid(),
-                SaleId = saleId,
-                CustomerId = sale.CustomerId.Value,
-                TotalDebt = sale.TotalAmount,
-                RemainingDebt = sale.TotalAmount - sale.PaidAmount, // Should be full amount since PaidAmount = 0
-                Status = DebtStatus.Open,
-                MarketId = sale.MarketId
-            };
-            await _unitOfWork.Debts.AddAsync(newDebt, cancellationToken);
+                saleItem.Quantity -= returnQuantity;
+
+                var returnComment = !string.IsNullOrEmpty(request.Comment)
+                    ? request.Comment
+                    : $"Qaytarildi: {returnQuantity} ({DateTime.UtcNow:dd.MM.yyyy HH:mm})";
+                saleItem.Comment = !string.IsNullOrEmpty(originalComment)
+                    ? $"{originalComment} | {returnComment}"
+                    : returnComment;
+
+                _unitOfWork.SaleItems.Update(saleItem);
+            }
+
+            // Restore stock for ordinary products only
+            if (!saleItem.IsExternal && saleItem.Product != null)
+            {
+                saleItem.Product.Quantity += returnQuantity;
+                _context.Products.Update(saleItem.Product);
+            }
+
+            // Update sale total
+            sale.TotalAmount -= refundAmount;
+            _context.Sales.Update(sale);
+
+            // Adjust paid amount if overpaid
+            if (sale.PaidAmount > sale.TotalAmount)
+            {
+                var overpaid = sale.PaidAmount - sale.TotalAmount;
+                sale.PaidAmount = sale.TotalAmount;
+
+                var refundPayment = new Payment
+                {
+                    Id = Guid.NewGuid(),
+                    SaleId = sale.Id,
+                    PaymentType = PaymentType.Cash,
+                    Amount = -overpaid,
+                    MarketId = marketId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Payments.Add(refundPayment);
+            }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("=== SALE SAVED TO DATABASE ===");
-            _logger.LogInformation("Sale {SaleId} marked as Debt. Total: {Total}, Customer: {CustomerId}",
-                saleId, sale.TotalAmount, sale.CustomerId);
+            if (!isFullReturn && saleItem != null)
+            {
+                string productName;
+                string unit = "";
 
-            return await MapToDtoAsync(sale, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error marking sale as Debt");
-            throw;
-        }
+                if (!saleItem.IsExternal)
+                {
+                    productName = saleItem.Product?.Name ?? "Unknown";
+                    unit = saleItem.Product?.GetUnitName() ?? "";
+                }
+                else
+                {
+                    productName = saleItem.ExternalProductName ?? "Unknown";
+                    unit = "";
+                }
+
+                return new SaleItemDto(
+                    saleItem.Id.ToString(),
+                    saleItem.SaleId.ToString(),
+                    saleItem.ProductId,
+                    productName,
+                    saleItem.Quantity,
+                    saleItem.IsExternal ? saleItem.ExternalCostPrice : saleItem.CostPrice,
+                    saleItem.SalePrice,
+                    saleItem.TotalPrice,
+                    saleItem.Profit,
+                    unit,
+                    saleItem.Comment,
+                    saleItem.IsExternal
+                );
+            }
+
+            return null;
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets list of debtors
+    /// </summary>
+    public async Task<IEnumerable<CustomerDto>> GetDebtorsAsync(CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var debts = await _unitOfWork.Debts.FindAsync(
+            d => d.MarketId == marketId && d.Status == DebtStatus.Open,
+            cancellationToken,
+            includeProperties: "Customer");
+
+        var customers = debts
+            .Where(d => d.Customer != null)
+            .Select(d => new CustomerDto(
+                d.Customer!.Id,
+                d.Customer!.Phone ?? "",
+                d.Customer!.FullName,
+                d.Customer!.Comment,
+                d.RemainingDebt
+            ))
+            .Distinct()
+            .ToList();
+
+        return customers;
     }
 }
