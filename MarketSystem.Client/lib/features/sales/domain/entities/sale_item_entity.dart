@@ -13,6 +13,7 @@ class SaleItemEntity extends Equatable {
   final double salePrice;
   final double totalPrice;
   final String? comment;
+  final bool isExternal;     // ✅ Tashqi mahsulot flag
 
   const SaleItemEntity({
     required this.id,
@@ -23,6 +24,7 @@ class SaleItemEntity extends Equatable {
     required this.salePrice,
     required this.totalPrice,
     this.comment,
+    this.isExternal = false,
   });
 
   /// JSON dan SaleItemEntity yaratish
@@ -30,12 +32,13 @@ class SaleItemEntity extends Equatable {
     return SaleItemEntity(
       id: json['id'] as String,
       saleId: json['saleId'] as String,
-      productId: json['productId'] as String,
+      productId: json['productId'] as String? ?? '',  // ✅ Nullable - tashqi mahsulot uchun bo'sh
       productName: json['productName'] as String? ?? '',
       quantity: json['quantity'] is num ? (json['quantity'] as num).toDouble() : 0.0,  // ✅ DECIMAL
       salePrice: (json['salePrice'] as num).toDouble(),
       totalPrice: (json['totalPrice'] as num).toDouble(),
       comment: json['comment'] as String?,
+      isExternal: json['isExternal'] as bool? ?? false,  // ✅ Tashqi mahsulot flag
     );
   }
 
@@ -49,5 +52,6 @@ class SaleItemEntity extends Equatable {
         salePrice,
         totalPrice,
         comment,
+        isExternal,
       ];
 }

@@ -6,6 +6,7 @@ import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/payment_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/price_input_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/sale_body.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/external_product_sheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../../data/services/sales_service.dart';
@@ -124,6 +125,32 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
+  void _addExternalProduct() {
+    final l10n = AppLocalizations.of(context)!;
+    ExternalProductSheet.show(
+      context,
+      onConfirm: (name, costPrice, qty, salePrice, comment) {
+        setState(() {
+          _cartItems.add({
+            'isExternal': true,  // ✅ Tashqi mahsulot flag
+            'productId': null,  // ✅ Tashqi mahsulot uchun null
+            'productName': name,
+            'salePrice': salePrice,
+            'quantity': qty,
+            'comment': comment,
+          });
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("$name ${l10n.returnSuccess}"),
+            backgroundColor: Colors.orange,  // Orange for external products
+          ),
+        );
+      },
+    );
+  }
+
   void _removeFromCart(int index) {
     setState(() {
       _cartItems.removeAt(index);
@@ -145,9 +172,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final currentPrice = item['salePrice'] ?? 0.0;
     final currentQuantity = item['quantity'] is num
         ? (item['quantity'] as num).toDouble()
-        : 1.0; // ✅ Current quantity
+        : 1.0;
     final minPrice = item['minSalePrice'] ?? 0.0;
-
     final product = _products.firstWhere(
       (p) => p['id'] == item['productId'],
       orElse: () => {},
@@ -159,7 +185,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
       'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
       'id': item['productId'] ?? '',
-      // BU YERDA: product o'zgaruvchisi null bo'lsa xato bermasligi uchun:
       'unitName': (item['unitName'] ?? 'dona'),
       'initialQuantity': (currentQuantity ?? 1.0).toDouble(),
     }, onConfirm: (newPrice, newQuantity, comment) {
@@ -191,17 +216,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Full screen bo'lishi uchun
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7, // Ekran 70% qismi
+        height: MediaQuery.of(context).size.height * 0.7,
         decoration: BoxDecoration(
           color: AppColors.getCard(isDark),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
         ),
         child: Column(
           children: [
-            // Tepasidagi chiziqcha (Handle)
             const SizedBox(height: 12),
             Container(
               width: 40,
@@ -211,7 +235,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -229,7 +252,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 ],
               ),
             ),
-
             Expanded(
               child: _customers.isEmpty
                   ? Center(child: Text(l10n.noCustomersFound))
@@ -297,14 +319,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                               color: Colors.grey.shade600,
                                               fontSize: 13),
                                         ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                                if (isSelected)
+                              ),
+                              if (isSelected)
                                   const Icon(Icons.check_circle,
                                       color: AppColors.primary),
-                              ],
-                            ),
+                            ],
                           ),
                         );
                       },
@@ -351,21 +373,39 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
             for (var item in cartSnapshot) {
               print('=== ADDING ITEM ===');
+              print('isExternal: ${item['isExternal'] ?? false}');  // ✅ Debug log
               print('productId: ${item['productId']}');
               print('quantity: ${item['quantity']}');
               print('salePrice: ${item['salePrice']}');
               print('minSalePrice: ${item['minSalePrice']}');
+              print('comment: ${item['comment'] ?? "(empty string)"}');
+              print('==========================');
 
-              await salesService.addSaleItem(
-                saleId: finalSaleId,
-                productId: item['productId'],
-                quantity: item['quantity'],
-                salePrice: item['salePrice'],
-                minSalePrice: item['minSalePrice'] ?? 0.0,
-                comment: item['comment'],
-              );
-
-              print('=== ITEM ADDED OK ===');
+              if (item['isExternal'] == true) {
+                // ✅ Tashqi mahsulot qo'shish
+                await salesService.addSaleItem(
+                  saleId: finalSaleId,
+                  isExternal: true,
+                  externalProductName: item['productName'],
+                  externalCostPrice: 0.0,  // ✅ Tashqi mahsulot uchun - backenddan tannarx so'raladi
+                  quantity: item['quantity'],
+                  salePrice: item['salePrice'],
+                  minSalePrice: 0.0,  // ✅ Tashqi mahsulot uchun minPrice bo'sh bo'ladi
+                  comment: item['comment'],
+                );
+                print('=== EXTERNAL ITEM ADDED OK ===');
+              } else {
+                // ✅ Oddiy mahsulot qo'shish
+                await salesService.addSaleItem(
+                  saleId: finalSaleId,
+                  productId: item['productId'],
+                  quantity: item['quantity'],
+                  salePrice: item['salePrice'],
+                  minSalePrice: item['minSalePrice'] ?? 0.0,
+                  comment: item['comment'],
+                );
+                print('=== ITEM ADDED OK ===');
+              }
             }
 
             for (var payment in payments) {
@@ -421,11 +461,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     _showPaymentDialog(null);
   }
 
-  // Savdoni draft sifatida saqlash
   Future<void> _saveAsDraft() async {
     final l10n = AppLocalizations.of(context)!;
     if (_cartItems.isEmpty) {
-      return; // Bo'sh savdoni saqlash shart emas
+      return;
     }
 
     try {
@@ -436,21 +475,34 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
 
-      // 1. Create sale
       final sale = await salesService.createSale(
         customerId: _selectedCustomer?['id'],
       );
 
-      // 2. Add all items to sale
       for (var item in _cartItems) {
-        await salesService.addSaleItem(
-          saleId: sale['id'],
-          productId: item['productId'],
-          quantity: item['quantity'],
-          salePrice: item['salePrice'],
-          minSalePrice: item['minSalePrice'],
-          comment: item['comment'],
-        );
+        if (item['isExternal'] == true) {
+          // ✅ Tashqi mahsulot qo'shish (draft uchun ham shunday)
+          await salesService.addSaleItem(
+            saleId: sale['id'],
+            isExternal: true,
+            externalProductName: item['productName'],
+            externalCostPrice: 0.0,
+            quantity: item['quantity'],
+            salePrice: item['salePrice'],
+            minSalePrice: 0.0,
+            comment: item['comment'],
+          );
+        } else {
+          // ✅ Oddiy mahsulot qo'shish
+          await salesService.addSaleItem(
+            saleId: sale['id'],
+            productId: item['productId'],
+            quantity: item['quantity'],
+            salePrice: item['salePrice'],
+            minSalePrice: item['minSalePrice'] ?? 0.0,
+            comment: item['comment'],
+          );
+        }
       }
 
       setState(() {
@@ -462,7 +514,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           SnackBar(
             content: Text('✅ ${l10n.draftSaved}'),
             backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -482,15 +534,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }
   }
 
-  // Back button bosilganda
   Future<bool> _onWillPop() async {
-    // Agar savda bo'sh bo'lsa, shunchaki chiqib ketamiz
     if (_cartItems.isEmpty) {
       return true;
     }
     final l10n = AppLocalizations.of(context)!;
 
-    // Agar mahsulotlar bor bo'lsa, draft saqlashni taklif qilamiz
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -499,12 +548,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         actions: [
           TextButton(
             onPressed: () =>
-                Navigator.pop(context, false), // Saqlamasdan chiqish
+                Navigator.pop(context, false),
             child: Text(l10n.discardSale),
           ),
           TextButton(
             onPressed: () async {
-              // Draft sifatida saqlash
               Navigator.pop(context, true);
             },
             child: Text(l10n.saveDraft, style: TextStyle(color: Colors.orange)),
@@ -550,6 +598,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           searchController: _searchController,
           onSelectCustomer: _showCustomerDialog,
           onAddToCart: _addToCart,
+          onAddExternalProduct: _addExternalProduct,  // ✅ Tashqi mahsulot qo'shish
           onUpdateQuantity: _updateQuantity,
           onRemoveFromCart: _removeFromCart,
           onEditPrice: _editItemPrice,
@@ -579,8 +628,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 55),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+                borderRadius: BorderRadius.circular(16)),
             elevation: 0,
           ),
           onPressed: _cartItems.isEmpty ? null : _completeSale,

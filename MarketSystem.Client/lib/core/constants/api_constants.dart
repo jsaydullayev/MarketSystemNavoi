@@ -5,8 +5,9 @@ class ApiConstants {
   // =================== SERVERS ===================
   static const String _productionUrl = '/api'; // Same origin (proxied by nginx)
   static const String _dockerInternalUrl = 'http://market-system-api:8080/api'; // Docker internal service name
-  static const String _localUrl = 'http://localhost:5000/api';
-  static const String _androidLocalUrl = 'http://10.0.2.2:5000/api';
+  static const String _localUrl = 'http://localhost:8080/api';
+  static const String _androidLocalUrl = 'http://10.0.2.2:8080/api';
+  static const String _androidRealDeviceUrl = 'http://192.168.1.X:8080/api'; // Change to your PC IP
   static const String _dockerLocalUrl = 'http://localhost:8080/api';
   static const String _androidDockerLocalUrl = 'http://10.0.2.2:8080/api';
 
@@ -14,9 +15,8 @@ class ApiConstants {
     // Local development - use localhost:8080
     const bool isRunningInDocker = false;
 
-    // ✅ O'ZGARTIRISH: Production server URL'dan foydalanamiz
-    // Buni o'zgartirmang, chunki production server ishlayapti
-    const bool useProduction = true;
+    // ✅ O'ZGARTIRISH: Local development ishlatamiz (Android uchun)
+    const bool useProduction = false;
 
     const bool useDocker = false;
 
@@ -38,7 +38,7 @@ class ApiConstants {
         return _dockerLocalUrl;
       }
     } else {
-      // Local development without Docker (port 5000)
+      // Local development without Docker (port 8080)
       if (kIsWeb) {
         return _localUrl;
       } else if (Platform.isAndroid) {

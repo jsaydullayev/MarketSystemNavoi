@@ -246,7 +246,8 @@ public class SalesController : ControllerBase
 
             _logger.LogInformation("UpdateSaleItemPrice called by {UserId} with role {Role}", userId, userRole);
 
-            var updatedItem = await _saleService.UpdateSaleItemPriceAsync(request, userId, userRole);
+            var saleItemId = Guid.Parse(request.SaleItemId);
+            var updatedItem = await _saleService.UpdateSaleItemPriceAsync(saleItemId, request);
 
             if (updatedItem == null)
                 return NotFound();

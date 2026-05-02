@@ -1,11 +1,21 @@
 using MarketSystem.Domain.Common;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MarketSystem.Domain.Entities;
 
 public class SaleItem : BaseEntity
 {
     public Guid SaleId { get; set; }
-    public Guid ProductId { get; set; }
+
+    // ✅ TASHQI MAHSULOT FLAG
+    public bool IsExternal { get; set; } = false;
+
+    // ✅ ORDINARY PRODUCT (Oddiy mahsulot) - Nullable
+    public Guid? ProductId { get; set; }
+
+    // ✅ EXTERNAL PRODUCT (Tashqi mahsulot) - faqat IsExternal = true bo'lganda
+    public string? ExternalProductName { get; set; }
+    public decimal ExternalCostPrice { get; set; }
 
     // Quantity - DECIMAL qilib o'zgartirdik
     public decimal Quantity { get; set; }
@@ -16,7 +26,17 @@ public class SaleItem : BaseEntity
 
     // Navigation properties
     public Sale Sale { get; set; } = null!;
-    public Product Product { get; set; } = null!;
+
+    // ✅ Nullable navigation property
+    public Product? Product { get; set; }
+
+    /// <summary>
+    /// Effective cost price calculation (External for external products, otherwise Product.CostPrice)
+    /// </summary>
+    [NotMapped]
+    public decimal EffectiveCostPrice => IsExternal
+        ? ExternalCostPrice
+        : (Product?.CostPrice ?? 0);
 
     /// <summary>
     /// Jami summa (Quantity * SalePrice)
@@ -24,12 +44,12 @@ public class SaleItem : BaseEntity
     public decimal TotalPrice => Quantity * SalePrice;
 
     /// <summary>
-    /// Foyda (SalePrice - CostPrice) * Quantity
+    /// Foyda (SalePrice - EffectiveCostPrice) * Quantity
     /// </summary>
-    public decimal Profit => (SalePrice - CostPrice) * Quantity;
+    public decimal Profit => (SalePrice - EffectiveCostPrice) * Quantity;
 
     /// <summary>
-    /// Jami xaraj narx (Quantity * CostPrice)
+    /// Jami xaraj narx (Quantity * EffectiveCostPrice)
     /// </summary>
-    public decimal TotalCost => Quantity * CostPrice;
+    public decimal TotalCost => Quantity * EffectiveCostPrice;
 }

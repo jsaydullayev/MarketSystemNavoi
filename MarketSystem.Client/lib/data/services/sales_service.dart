@@ -130,15 +130,21 @@ class SalesService {
   // Sotuvga mahsulot qo'shish
   Future<dynamic> addSaleItem({
     required String saleId,
-    required String productId,
+    String? productId,  // ✅ Nullable - tashqi mahsulot uchun bo'sh bo'lishi mumkin
     required double quantity,
     required double salePrice,
     required double minSalePrice,
     String? comment,
+    bool isExternal = false,  // ✅ Tashqi mahsulot flag
+    String? externalProductName,  // ✅ Tashqi mahsulot nomi
+    double? externalCostPrice,  // ✅ Tashqi tannarx
   }) async {
     print('=== ADD SALE ITEM DEBUG ===');
     print('Sale ID: $saleId');
     print('Product ID: $productId');
+    print('Is External: $isExternal');
+    print('External Product Name: $externalProductName');
+    print('External Cost Price: $externalCostPrice');
     print('Quantity: $quantity');
     print('Sale Price: $salePrice');
     print('Min Sale Price: $minSalePrice');
@@ -148,11 +154,14 @@ class SalesService {
     final response = await _httpService.post(
       '${ApiConstants.sales}/$saleId/items',
       body: {
-        'productId': productId,
+        if (productId != null && !isExternal) 'productId': productId,  // ✅ Faqat oddiy mahsulot uchun
+        'isExternal': isExternal,  // ✅ Tashqi mahsulot flag
         'quantity': quantity,
         'salePrice': salePrice,
         'minSalePrice': minSalePrice,
         'comment': comment ?? '',
+        if (isExternal) 'externalProductName': externalProductName,  // ✅ Tashqi mahsulot nomi
+        if (isExternal) 'externalCostPrice': externalCostPrice,  // ✅ Tashqi tannarx
       },
     );
 

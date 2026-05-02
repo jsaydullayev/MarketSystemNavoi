@@ -10,16 +10,16 @@ import '../repositories/auth_repository_interface.dart';
 
 /// Login Use Case Parameters
 class LoginParams extends Equatable {
-  final String email;
+  final String username;
   final String password;
 
   const LoginParams({
-    required this.email,
+    required this.username,
     required this.password,
   });
 
   @override
-  List<Object?> get props => [email, password];
+  List<Object?> get props => [username, password];
 }
 
 /// Login Use Case
@@ -30,9 +30,9 @@ class LoginUseCase {
 
   /// Execute login use case
   Future<ApiResult<UserEntity?>> call(LoginParams params) async {
-    // Business logic: validate email format
-    if (params.email.isEmpty || !params.email.contains('@')) {
-      return ApiResult.failure('Invalid email format');
+    // Business logic: validate username
+    if (params.username.isEmpty) {
+      return ApiResult.failure('Username is required');
     }
 
     // Business logic: validate password length
@@ -42,7 +42,7 @@ class LoginUseCase {
 
     // Call repository
     return await repository.login(
-      email: params.email,
+      username: params.username,
       password: params.password,
     );
   }

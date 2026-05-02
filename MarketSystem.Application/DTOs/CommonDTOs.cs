@@ -91,15 +91,16 @@ public record CustomerDeleteInfoDto(
 public record SaleItemDto(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("saleId")] string SaleId,
-    [property: JsonPropertyName("productId")] Guid ProductId,
+    [property: JsonPropertyName("productId")] Guid? ProductId,  // ✅ Nullable
     [property: JsonPropertyName("productName")] string ProductName,
     [property: JsonPropertyName("quantity")] decimal Quantity,  // ✅ DECIMAL
-    [property: JsonPropertyName("costPrice")] decimal CostPrice,
+    [property: JsonPropertyName("costPrice")] decimal CostPrice,  // EffectiveCostPrice bo'ladi
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("totalPrice")] decimal TotalPrice,
     [property: JsonPropertyName("profit")] decimal Profit,
     [property: JsonPropertyName("unit")] string Unit,  // "dona", "kg", "m"
-    [property: JsonPropertyName("comment")] string? Comment
+    [property: JsonPropertyName("comment")] string? Comment,
+    [property: JsonPropertyName("isExternal")] bool IsExternal  // ✅ New flag
 );
 public record PaymentDto(
     [property: JsonPropertyName("paymentId")] Guid PaymentId,
@@ -132,7 +133,10 @@ public record UpdateSaleCustomerDto(
     [property: JsonPropertyName("customerId")] Guid? CustomerId
 );
 public record AddSaleItemDto(
-    [property: JsonPropertyName("productId")] Guid ProductId,
+    [property: JsonPropertyName("isExternal")] bool IsExternal,  // ✅ New flag
+    [property: JsonPropertyName("productId")] Guid? ProductId,  // ✅ Nullable
+    [property: JsonPropertyName("externalProductName")] string? ExternalProductName,  // ✅ New
+    [property: JsonPropertyName("externalCostPrice")] decimal? ExternalCostPrice,  // ✅ New
     [property: JsonPropertyName("quantity")] decimal Quantity,  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
     [property: JsonPropertyName("salePrice")] decimal SalePrice,
     [property: JsonPropertyName("minSalePrice")] decimal MinSalePrice,  // For validation, not stored in SaleItem

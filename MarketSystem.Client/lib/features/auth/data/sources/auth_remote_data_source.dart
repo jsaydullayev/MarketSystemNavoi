@@ -15,13 +15,13 @@ class AuthRemoteDataSource {
 
   /// Login API call
   Future<Response> login({
-    required String email,
+    required String username,
     required String password,
   }) async {
     return await _networkHandler.post(
       '/Auth/Login',
       data: {
-        'email': email,
+        'username': username,
         'password': password,
       },
     );

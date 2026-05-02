@@ -62,7 +62,8 @@ public class DebtsController : ControllerBase
                     si.TotalPrice,
                     si.Profit,
                     "dona", // TODO: Get from product
-                    si.Comment
+                    si.Comment,
+                    si.IsExternal
                 )).ToList();
             }
 
@@ -247,7 +248,8 @@ public class DebtsController : ControllerBase
                     si.TotalPrice,
                     si.Profit,
                     "dona", // TODO: Get from product
-                    si.Comment
+                    si.Comment,
+                    si.IsExternal
                 )).ToList();
             }
 

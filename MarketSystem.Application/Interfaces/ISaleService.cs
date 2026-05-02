@@ -20,17 +20,30 @@ public interface ISaleService
     Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default);
     Task<bool> ValidateSalePriceAsync(Guid saleItemId, CancellationToken cancellationToken = default);
 
-    // Qarzdorlar uchun
-    Task<IEnumerable<DebtorDto>> GetDebtorsAsync(CancellationToken cancellationToken = default);
-    Task<SaleItemDto?> UpdateSaleItemPriceAsync(UpdateSaleItemPriceDto request, Guid userId, string userRole, CancellationToken cancellationToken = default);
-    Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default);
-
-    // Tovar vozvrat uchun
-    Task<SaleItemDto?> ReturnSaleItemAsync(Guid saleId, ReturnSaleItemRequest request, CancellationToken cancellationToken = default);
-
     // Customer credit application
     /// <summary>
     /// Applies customer's available credit (from negative payments/refunds) to a sale.
     /// </summary>
     Task<SaleDto?> ApplyCustomerCreditAsync(Guid saleId, CancellationToken cancellationToken = default);
+
+    // Additional methods for sale management
+    /// <summary>
+    /// Marks a sale as debt status
+    /// </summary>
+    Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates sale item price with role-based permissions
+    /// </summary>
+    Task<SaleItemDto?> UpdateSaleItemPriceAsync(Guid saleItemId, UpdateSaleItemPriceDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a sale item (partial or full return)
+    /// </summary>
+    Task<SaleItemDto?> ReturnSaleItemAsync(Guid saleId, ReturnSaleItemRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets list of debtors
+    /// </summary>
+    Task<IEnumerable<CustomerDto>> GetDebtorsAsync(CancellationToken cancellationToken = default);
 }

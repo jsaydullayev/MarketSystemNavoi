@@ -3,18 +3,18 @@
 
 /// Login request DTO
 class LoginRequestModel {
-  final String email;
+  final String username;
   final String password;
 
   LoginRequestModel({
-    required this.email,
+    required this.username,
     required this.password,
   });
 
   /// Convert to JSON
   Map<String, dynamic> toJson() {
     return {
-      'email': email,
+      'username': username,
       'password': password,
     };
   }

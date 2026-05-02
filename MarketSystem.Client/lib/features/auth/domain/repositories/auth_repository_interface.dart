@@ -7,9 +7,9 @@ import '../entities/user_entity.dart';
 
 /// Auth Repository Interface
 abstract class AuthRepositoryInterface {
-  /// Login with email and password
+  /// Login with username and password
   Future<ApiResult<UserEntity?>> login({
-    required String email,
+    required String username,
     required String password,
   });
 
