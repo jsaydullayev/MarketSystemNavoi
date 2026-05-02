@@ -16,7 +16,8 @@ class SaleBody extends StatelessWidget {
   final Function(int) onRemoveFromCart;
   final Function(int, Map<String, dynamic>) onEditPrice;
   final TextEditingController searchController;
-  final VoidCallback onAddExternalProduct;  // ✅ Tashqi mahsulot qo'shish funksiyasi
+  final VoidCallback
+      onAddExternalProduct; // ✅ Tashqi mahsulot qo'shish funksiyasi
 
   const SaleBody({
     super.key,
@@ -31,7 +32,7 @@ class SaleBody extends StatelessWidget {
     required this.onRemoveFromCart,
     required this.onEditPrice,
     required this.searchController,
-    required this.onAddExternalProduct,  // ✅ Tashqi mahsulot qo'shish funksiyasi
+    required this.onAddExternalProduct, // ✅ Tashqi mahsulot qo'shish funksiyasi
   });
 
   @override
@@ -138,7 +139,8 @@ class SaleBody extends StatelessWidget {
         itemCount: cartItems.length,
         itemBuilder: (context, index) {
           final item = cartItems[index];
-          final isExternal = item['isExternal'] ?? false;  // ✅ Tashqi mahsulot flag
+          final isExternal =
+              item['isExternal'] ?? false; // ✅ Tashqi mahsulot flag
 
           return Container(
             width: 180,
@@ -146,13 +148,15 @@ class SaleBody extends StatelessWidget {
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
               color: isExternal
-                  ? Colors.orange.withOpacity(0.08)  // ✅ Tashqi mahsulot uchun rang
+                  ? Colors.orange
+                      .withOpacity(0.08) // ✅ Tashqi mahsulot uchun rang
                   : AppColors.getCard(isDark),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                  color: isExternal
-                      ? Colors.orange.withOpacity(0.3)
-                      : theme.primaryColor.withOpacity(0.3)),
+                color: isExternal
+                    ? Colors.orange.withOpacity(0.3)
+                    : theme.primaryColor.withOpacity(0.3),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,22 +170,32 @@ class SaleBody extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 12,
-                          color: isExternal ? Colors.orange.shade700 : (isDark ? Colors.white : const Color(0xFF1F2937)),
+                          color: isExternal
+                              ? Colors.orange.shade700
+                              : (isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1F2937)),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (!isExternal)
-                      const Icon(Icons.cancel_rounded, size: 14, color: Color(0xFFEF4444)),
+                      const Icon(
+                        Icons.cancel_rounded,
+                        size: 14,
+                        color: Color(0xFFEF4444),
+                      ),
                   ],
                 ),
                 const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("${item['quantity']} × ${NumberFormatter.format(item['salePrice'])}",
-                        style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+                    Text(
+                      "${item['quantity']} × ${NumberFormatter.format(item['salePrice'])}",
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                    ),
                     // ✅ Tashqi mahsulotlar uchun edit tugmasi yo'q
                     if (!isExternal)
                       GestureDetector(
@@ -192,43 +206,61 @@ class SaleBody extends StatelessWidget {
                             color: theme.primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: const Icon(Icons.edit_rounded, size: 11, color: Color(0xFF3B82F6)),
+                          child: const Icon(
+                            Icons.edit_rounded,
+                            size: 11,
+                            color: Color(0xFF3B82F6),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const Spacer(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (!isExternal)
+                      _buildQtyButton(
+                        icon: Icons.remove_rounded,
+                        onTap: () => onRemoveFromCart(index),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        isExternal
+                            ? "${item['quantity']}"
+                            : "${item['quantity'] % 1 == 0 ? (item['quantity'] as num).toInt() : item['quantity']}",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: isExternal
+                              ? Colors.orange.shade700
+                              : (isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1F2937)),
+                        ),
+                      ),
+                    ),
+                    if (!isExternal)
+                      _buildQtyButton(
+                        icon: Icons.add_rounded,
+                        onTap: () => onUpdateQuantity(
+                          index,
+                          (item['quantity'] as num).toDouble() + 1,
                         ),
                       ),
                   ],
                 ),
               ],
             ),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (!isExternal)
-                  _buildQtyButton(icon: Icons.remove_rounded, onTap: () => onRemoveFromCart(index)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    isExternal
-                        ? "${item['quantity']}"
-                        : "${item['quantity'] % 1 == 0 ? (item['quantity'] as num).toInt() : item['quantity']}",
-                    style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: isExternal ? Colors.orange.shade700 : (isDark ? Colors.white : const Color(0xFF1F2937)),
-                        ),
-                  ),
-                ),
-                if (!isExternal)
-                  _buildQtyButton(icon: Icons.add_rounded, onTap: () => onUpdateQuantity(index, (item['quantity'] as num).toDouble() + 1)),
-              ],
-            ),
-          ],
-        ),
-      );
-    });
+          );
+        },
+      ),
+    );
   }
 
-  Widget _buildQtyButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _buildQtyButton(
+      {required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -300,8 +332,9 @@ class SaleBody extends StatelessWidget {
                       : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color:
-                      isDark ? Colors.white.withOpacity(0.07) : const Color(0xFFE5E7EB)),
+                  color: isDark
+                      ? Colors.white.withOpacity(0.07)
+                      : const Color(0xFFE5E7EB)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -359,7 +392,8 @@ class SaleBody extends StatelessWidget {
                         color: const Color(0xFF3B82F6).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(7),
                       ),
-                      child: const Icon(Icons.add_rounded, size: 15, color: const Color(0xFF3B82F6)),
+                      child: const Icon(Icons.add_rounded,
+                          size: 15, color: const Color(0xFF3B82F6)),
                     ),
                   ],
                 ),
@@ -385,8 +419,8 @@ class SaleBody extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.orange.withOpacity(0.1),  // Light
-                  Colors.orange.withOpacity(0.05),  // Dark
+                  Colors.orange.withOpacity(0.1), // Light
+                  Colors.orange.withOpacity(0.05), // Dark
                 ],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
@@ -405,7 +439,8 @@ class SaleBody extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
-                    Icons.add_business_rounded,  // Business icon for external products
+                    Icons
+                        .add_business_rounded, // Business icon for external products
                     color: Colors.white,
                     size: 20,
                   ),
