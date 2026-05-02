@@ -1,0 +1,436 @@
+  void _addToCart(dynamic product) {
+    final l10n = AppLocalizations.of(context)!;
+    PriceInputSheet.show(
+      context,
+      product: product,
+      onConfirm: (price, qty, comment) {
+        setState(() {
+          _cartItems.add({
+            'productId': product['id'],
+            'productName': product['name'],
+            'salePrice': price,
+            'quantity': qty,
+            'comment': comment,
+          });
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("${product['name']} ${l10n.returnSuccess}"),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      },
+    );
+  }
+
+  void _addExternalProduct() {
+    final l10n = AppLocalizations.of(context)!;
+    ExternalProductSheet.show(
+      context,
+      onConfirm: (name, costPrice, qty, salePrice, comment) {
+        setState(() {
+          _cartItems.add({
+            'isExternal': true,  // ✅ Tashqi mahsulot flag
+            'externalCostPrice': costPrice,  // ✅ Tashqi tannarxni saqlash
+            'productId': null,  // ✅ Tashqi mahsulot uchun null
+            'productName': name,
+            'salePrice': salePrice,
+            'quantity': qty,
+            'comment': comment,
+          });
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("$name ${l10n.returnSuccess}"),
+            backgroundColor: Colors.orange,  // Orange for external products
+          ),
+        );
+      },
+    );
+  }
+
+  void _removeFromCart(int index) {
+    setState(() {
+      _cartItems.removeAt(index);
+    });
+  }
+
+  void _updateQuantity(int index, double newQuantity) {
+    if (newQuantity <= 0) {
+      _removeFromCart(index);
+    } else {
+      setState(() {
+        _cartItems[index]['quantity'] = newQuantity;
+      });
+    }
+  }
+
+  void _editItemPrice(int index, Map<String, dynamic> item) {
+    final l10n = AppLocalizations.of(context)!;
+    final currentPrice = item['salePrice'] ?? 0.0;
+    final currentQuantity = item['quantity'] is num
+        ? (item['quantity'] as num).toDouble()
+        :1.0;
+    final minPrice = item['minSalePrice'] ?? 0.0;
+    final product = _products.firstWhere(
+      (p) => p['id'] == item['productId'],
+      orElse: () => {},
+    );
+
+    PriceInputSheet.show(context, product: {
+      'name': item['productName'] ?? l10n.unknownProduct,
+      'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
+      'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
+      'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
+      'id': item['productId'] ?? '',
+      'unitName': (item['unitName'] ?? 'dona'),
+      'initialQuantity': (currentQuantity ??1.0).toDouble(),
+    }, onConfirm: (newPrice, newQuantity, comment) {
+      setState(() {
+        _cartItems[index]['salePrice'] = newPrice;
+        _cartItems[index]['quantity'] =
+            newQuantity; // ✅ Miqdorni ham yangilaymiz
+        if (comment != null && comment.isNotEmpty) {
+          _cartItems[index]['comment'] = comment;
+        }
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '✅ ${item['productName']} ${l10n.itemUpdated}!',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    });
+  }
+
+  void _showCustomerDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: AppColors.getCard(isDark),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Text(
+                    l10n.selectCustomerTitle,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _customers.isEmpty
+                  ? Center(child: Text(l10n.noCustomersFound))
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _customers.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final customer = _customers[index];
+                        final name = customer['fullName'] ?? l10n.unknown;
+                        final phone = customer['phone'] ?? '';
+                        final isSelected =
+                            _selectedCustomer?['id'] == customer['id'];
+
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedCustomer = customer;
+                            });
+                            Navigator.pop(context);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withOpacity(0.1)
+                                  : Colors.grey.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.transparent,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: isSelected
+                                      ? AppColors.primary
+                                      : Colors.grey.shade300,
+                                  child: Text(
+                                    name[0].toUpperCase(),
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16),
+                                      ),
+                                      if (phone.isNotEmpty)
+                                        Text(
+                                          phone,
+                                          style: TextStyle(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 13),
+                                        ),
+                                    ),
+                                  ],
+                                ),
+                                ),
+                                if (isSelected)
+                                  const Icon(Icons.check_circle,
+                                      color: AppColors.primary),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPaymentDialog(String? saleId) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final cartSnapshot = List<Map<String, dynamic>>.from(_cartItems);
+    final customerSnapshot = _selectedCustomer;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PaymentDialog(
+        saleId: saleId ?? '',
+        totalAmount: _totalAmount,
+        selectedCustomer: customerSnapshot,
+        onConfirm: (payments, useDebt) async {
+          final scaffoldMessenger = ScaffoldMessenger.of(context);
+          final navigator = Navigator.of(context);
+          print(
+              "================================================================");
+          print('cartSnapshot: $cartSnapshot');
+          print(
+              "================================================================");
+
+          try {
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
+            final salesService = SalesService(authProvider: authProvider);
+
+            final sale = await salesService.createSale(
+              customerId: customerSnapshot?['id'],
+            );
+            final finalSaleId = sale['id'];
+
+            for (var item in cartSnapshot) {
+              print('=== ADDING ITEM ===');
+              print('isExternal: ${item['isExternal'] ?? false}');  // ✅ Debug log
+              print('productId: ${item['productId']}');
+              print('quantity: ${item['quantity']}');
+              print('salePrice: ${item['salePrice']}');
+              print('minSalePrice: ${item['minSalePrice']}');
+              print('comment: ${item['comment'] ?? "(empty string)"}');
+              print('==========================');
+
+              if (item['isExternal'] == true) {
+                // ✅ Tashqi mahsulot qo'shish
+                await salesService.addSaleItem(
+                  saleId: finalSaleId,
+                  isExternal: true,
+                  externalProductName: item['productName'],
+                  externalCostPrice: item['externalCostPrice'] ?? 0.0,  // ✅ Tashqi mahsulot uchun tannarx
+                  quantity: item['quantity'],
+                  salePrice: item['salePrice'],
+                  minSalePrice: 0.0,  // ✅ Tashqi mahsulot uchun minPrice bo'sh bo'ladi
+                  comment: item['comment'],
+                );
+                print('=== EXTERNAL ITEM ADDED OK ===');
+              } else {
+                // ✅ Oddiy mahsulot qo'shish
+                await salesService.addSaleItem(
+                  saleId: finalSaleId,
+                  productId: item['productId'],
+                  quantity: item['quantity'],
+                  salePrice: item['salePrice'],
+                  minSalePrice: item['minSalePrice'] ?? 0.0,
+                  comment: item['comment'],
+                );
+                print('=== ITEM ADDED OK ===');
+              }
+            }
+
+            for (var payment in payments) {
+              await salesService.addPayment(
+                saleId: finalSaleId,
+                paymentType: payment['paymentType'],
+                amount: payment['amount'],
+              );
+            }
+
+            if (useDebt && payments.isEmpty) {
+              await salesService.markSaleAsDebt(finalSaleId);
+            }
+
+            if (!mounted) return;
+
+            setState(() {
+              _cartItems.clear();
+              _selectedCustomer = null;
+            });
+
+            navigator.pop();
+            scaffoldMessenger.showSnackBar(SnackBar(
+              content: Text(useDebt ? l10n.saleAsDebt : l10n.saleSuccess),
+              backgroundColor: Colors.green,
+            ));
+            navigator.pop(true);
+          } catch (e) {
+            if (!mounted) return;
+            navigator.pop();
+            scaffoldMessenger.showSnackBar(SnackBar(
+              content: Text('${l10n.error}: $e'),
+              backgroundColor: Colors.red,
+            ));
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _completeSale() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_cartItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.cartEmptyWarning),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    _showPaymentDialog(null);
+  }
+
+  Future<void> _saveAsDraft() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_cartItems.isEmpty) {
+      return;
+    }
+
+    try {
+      setState(() {
+        _isCreating = true;
+      });
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+
+      final sale = await salesService.createSale(
+        customerId: _selectedCustomer?['id'],
+      );
+
+      for (var item in _cartItems) {
+        if (item['isExternal'] == true) {
+          // ✅ Tashqi mahsulot qo'shish (draft uchun ham shunday)
+          await salesService.addSaleItem(
+            saleId: sale['id'],
+            isExternal: true,
+            externalProductName: item['productName'],
+            externalCostPrice: item['externalCostPrice'] ?? 0.0,  // ✅ Tashqi mahsulot uchun tannarx
+            quantity: item['quantity'],
+            salePrice: item['salePrice'],
+            minSalePrice: 0.0,
+            comment: item['comment'],
+          );
+        } else {
+          // ✅ Oddiy mahsulot qo'shish
+          await salesService.addSaleItem(
+            saleId: sale['id'],
+            productId: item['productId'],
+            quantity: item['quantity'],
+            salePrice: item['salePrice'],
+            minSalePrice: item['minSalePrice'] ?? 0.0,
+            comment: item['comment'],
+          );
+        }
+      }
+
+      setState(() {
+        _isCreating = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ ${l10n.draftSaved}'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isCreating = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.draftSaveError}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }

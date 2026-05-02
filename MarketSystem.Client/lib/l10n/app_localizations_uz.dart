@@ -1477,5 +1477,22 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get pdfDownloaded => 'PDF muvaffaqiyatli yuklab olindi';
 
-  // Tashqi mahsulotlar uchun getterlar yo'q (base classda bor)
+  @override
+  String get addExternalProduct => 'Tashqi mahsulot qo\'shish';
+
+  @override
+  String get externalProductName => 'Tashqi mahsulot nomi';
+
+  @override
+  String get externalCostPrice => 'Tashqi mahsulot narxi';
+
+  @override
+  String get externalProductNameRequired => 'Tashqi mahsulot nomini kiriting';
+
+  @override
+  String get externalCostPriceRequired => 'Tashqi mahsulot narxini kiriting';
+
+  @override
+  String get externalCostPriceGreaterThanSalePrice =>
+      'Tashqi mahsulot narxi sotish narxidan katta bo\'lmasligi kerak';
 }

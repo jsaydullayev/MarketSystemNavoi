@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Npgsql;
 
 namespace MarketSystem.API.Middleware;
 
@@ -61,6 +62,18 @@ public class GlobalExceptionHandlerMiddleware
             case KeyNotFoundException:
                 context.Response.StatusCode = (int)HttpStatusCode.NotFound;
                 response.Message = "Ma'lumot topilmadi.";
+                break;
+
+            case PostgresException postgresEx:
+                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                _logger.LogError(postgresEx, "PostgreSQL error: {SqlState} - {Message}", postgresEx.SqlState, postgresEx.MessageText);
+                response.Message = "Ma'lumotlar bazasi bilan bog'lanishda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.";
+                break;
+
+            case TimeoutException:
+                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                _logger.LogError(exception, "Request timeout: {Message}", exception.Message);
+                response.Message = "So'rov vaqti tugadi. Iltimos, keyinroq urinib ko'ring.";
                 break;
 
             default:

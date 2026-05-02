@@ -1480,4 +1480,24 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pdfDownloaded => 'PDF успешно загружен';
+
+  @override
+  String get addExternalProduct => 'Добавить внешний продукт';
+
+  @override
+  String get externalProductName => 'Название внешнего продукта';
+
+  @override
+  String get externalCostPrice => 'Цена внешнего продукта';
+
+  @override
+  String get externalProductNameRequired =>
+      'Введите название внешнего продукта';
+
+  @override
+  String get externalCostPriceRequired => 'Введите цену внешнего продукта';
+
+  @override
+  String get externalCostPriceGreaterThanSalePrice =>
+      'Цена внешнего продукта не должна быть больше цены продажи';
 }
