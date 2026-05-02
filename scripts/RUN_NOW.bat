@@ -24,14 +24,14 @@ timeout /t 15 /nobreak >nul
 
 REM 3. ngrok
 echo [3/3] ngrok ishga tushirilmoqda...
-start "ngrok" cmd /k "ngrok http 5137"
+start "ngrok" cmd /k "ngrok http 5000"
 
 echo.
 echo ========================================
 echo ✅ BARCHA TAYYOR!
 echo ========================================
 echo 📦 PostgreSQL: http://localhost:5433
-echo 🚀 Backend:    http://localhost:5137
+echo 🚀 Backend:    http://localhost:5000
 echo 🌐 ngrok:      Yangi terminalda ko'ring
 echo.
 echo ⚠️ ngrok URL ni nusqa oling!
