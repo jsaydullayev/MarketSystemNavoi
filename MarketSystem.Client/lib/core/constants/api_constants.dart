@@ -18,7 +18,7 @@ class ApiConstants {
     // ✅ O'ZGARTIRISH: Local development ishlatamiz (Android uchun)
     const bool useProduction = false;
 
-    const bool useDocker = false;
+    const bool useDocker = true;
 
     // Docker container ichida ishlayotganda internal service nomini ishlatamiz
     if (isRunningInDocker) {
@@ -66,6 +66,6 @@ class ApiConstants {
   // Auth endpoints
   static const String login = '$auth/Login';
   static const String register = '$auth/Register';
-  static const String refreshToken = '$auth/Refresh';
+  static const String refreshToken = '$auth/RefreshToken';
   static const String logout = '$auth/Logout';
 }

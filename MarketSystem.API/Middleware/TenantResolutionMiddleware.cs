@@ -20,6 +20,16 @@ public class TenantResolutionMiddleware
 
     public async Task InvokeAsync(HttpContext context, AppDbContext dbContext)
     {
+        // Skip tenant resolution for public endpoints
+        var path = context.Request.Path.Value ?? "";
+        var skipPaths = new[] { "/api/Auth/Login", "/api/Auth/Register", "/api/Auth/RefreshToken", "/api/Auth/Logout", "/health", "/swagger", "/privacy" };
+
+        if (skipPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+        {
+            await _next(context);
+            return;
+        }
+
         // Avval JWT token'dan MarketId claim ni olamiz (birinchi prioritet)
         var marketIdClaim = context.User?.FindFirst("MarketId")?.Value;
 
