@@ -3,22 +3,22 @@ import 'dart:io' show Platform;
 
 class ApiConstants {
   // =================== SERVERS ===================
-  static const String _productionUrl = '/api'; // Same origin (proxied by nginx)
+  static const String _productionUrl = 'http://114.29.239.156:8080/api'; // Production server (port 8080)
   static const String _dockerInternalUrl = 'http://market-system-api:8080/api'; // Docker internal service name (port 8080)
-  static const String _localUrl = 'http://localhost:8080/api';
-  static const String _androidLocalUrl = 'http://10.0.2.2:8080/api';
-  static const String _androidRealDeviceUrl = 'http://192.168.1.X:8080/api'; // Change to your PC IP
-  static const String _dockerLocalUrl = 'http://localhost:8080/api'; // Docker Compose backend port
-  static const String _androidDockerLocalUrl = 'http://10.0.2.2:8080/api';
+  static const String _localUrl = 'http://114.29.239.156:8080/api'; // Use server URL for local testing too
+  static const String _androidLocalUrl = 'http://114.29.239.156:8080/api';
+  static const String _androidRealDeviceUrl = 'http://114.29.239.156:8080/api'; // Server IP
+  static const String _dockerLocalUrl = 'http://114.29.239.156:8080/api'; // Docker Compose backend port
+  static const String _androidDockerLocalUrl = 'http://114.29.239.156:8080/api';
 
   static String get baseUrl {
     // Local development - use localhost:5000
     const bool isRunningInDocker = false;
 
-    // ✅ O'ZGARTIRISH: Local development ishlatamiz (Android uchun)
-    const bool useProduction = false;
+    // ✅ O'ZGARTIRISH: Production server ishlatamiz
+    const bool useProduction = true;
 
-    const bool useDocker = true;
+    const bool useDocker = false;
 
     // Docker container ichida ishlayotganda internal service nomini ishlatamiz
     if (isRunningInDocker) {
