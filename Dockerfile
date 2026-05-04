@@ -4,6 +4,10 @@ WORKDIR /app
 EXPOSE 8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
