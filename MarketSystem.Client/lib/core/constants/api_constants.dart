@@ -12,7 +12,14 @@ class ApiConstants {
   static const String _androidDockerLocalUrl = 'http://114.29.239.156:8080/api';
 
   static String get baseUrl {
-    // ✅ PRODUCTION SERVER - har doim shu URL ishlaydi
+    // ✅ WEB: Relative URL - nginx proxy orqali backendga boradi
+    // ✅ MOBILE/DESKTOP: Hardcoded URL
+    if (kIsWeb) {
+      // Web uchun relative URL - brauzer hozirgi domendan foydalanadi
+      // Nginx /api/ ni backendga forward qiladi
+      return '/api';
+    }
+    // Mobile va Desktop uchun server URL
     return 'http://114.29.239.156:8080/api';
   }
 
