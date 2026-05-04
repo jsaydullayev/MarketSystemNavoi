@@ -72,7 +72,7 @@
     final currentPrice = item['salePrice'] ?? 0.0;
     final currentQuantity = item['quantity'] is num
         ? (item['quantity'] as num).toDouble()
-        :1.0;
+        : 1.0;
     final minPrice = item['minSalePrice'] ?? 0.0;
     final product = _products.firstWhere(
       (p) => p['id'] == item['productId'],
@@ -86,7 +86,7 @@
       'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
       'id': item['productId'] ?? '',
       'unitName': (item['unitName'] ?? 'dona'),
-      'initialQuantity': (currentQuantity ??1.0).toDouble(),
+      'initialQuantity': (currentQuantity ?? 1.0).toDouble(),
     }, onConfirm: (newPrice, newQuantity, comment) {
       setState(() {
         _cartItems[index]['salePrice'] = newPrice;
@@ -219,9 +219,7 @@
                                               color: Colors.grey.shade600,
                                               fontSize: 13),
                                         ),
-                                    ),
                                   ],
-                                ),
                                 ),
                                 if (isSelected)
                                   const Icon(Icons.check_circle,

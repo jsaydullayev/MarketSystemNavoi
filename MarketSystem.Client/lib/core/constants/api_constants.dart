@@ -12,41 +12,8 @@ class ApiConstants {
   static const String _androidDockerLocalUrl = 'http://114.29.239.156:8080/api';
 
   static String get baseUrl {
-    // Local development - use localhost:5000
-    const bool isRunningInDocker = false;
-
-    // ✅ O'ZGARTIRISH: Production server ishlatamiz
-    const bool useProduction = true;
-
-    const bool useDocker = false;
-
-    // Docker container ichida ishlayotganda internal service nomini ishlatamiz
-    if (isRunningInDocker) {
-      return _dockerInternalUrl;
-    }
-
-    if (useProduction) {
-      return _productionUrl;
-    }
-
-    if (useDocker) {
-      if (kIsWeb) {
-        return _dockerLocalUrl;
-      } else if (Platform.isAndroid) {
-        return _androidDockerLocalUrl;
-      } else {
-        return _dockerLocalUrl;
-      }
-    } else {
-      // Local development without Docker (port 8080)
-      if (kIsWeb) {
-        return _localUrl;
-      } else if (Platform.isAndroid) {
-        return _androidLocalUrl;
-      } else {
-        return _localUrl;
-      }
-    }
+    // ✅ PRODUCTION SERVER - har doim shu URL ishlaydi
+    return 'http://114.29.239.156:8080/api';
   }
 
 
