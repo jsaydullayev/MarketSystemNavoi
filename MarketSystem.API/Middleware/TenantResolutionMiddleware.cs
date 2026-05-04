@@ -22,9 +22,18 @@ public class TenantResolutionMiddleware
     {
         // Skip tenant resolution for public endpoints
         var path = context.Request.Path.Value ?? "";
-        var skipPaths = new[] { "/api/Auth/Login", "/api/Auth/Register", "/api/Auth/RefreshToken", "/api/Auth/Logout", "/health", "/swagger", "/privacy" };
+        var skipPaths = new[] { "/api/Auth/Login", "/api/Auth/Register", "/api/Auth/RefreshToken", "/api/Auth/Logout", "/health", "/swagger", "/privacy", "/hubs" };
 
         if (skipPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+        {
+            await _next(context);
+            return;
+        }
+
+        // If the user is not authenticated, let the normal auth pipeline handle it
+        // (returns 401 from [Authorize] for protected endpoints, or proceeds for [AllowAnonymous]).
+        // Otherwise we mask the real auth failure with our "Market topilmadi" message.
+        if (context.User?.Identity?.IsAuthenticated != true)
         {
             await _next(context);
             return;

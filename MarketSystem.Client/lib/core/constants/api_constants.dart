@@ -1,26 +1,19 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Platform;
 
 class ApiConstants {
-  // =================== SERVERS ===================
-  static const String _productionUrl = 'http://114.29.239.156:8080/api'; // Production server (port 8080)
-  static const String _dockerInternalUrl = 'http://market-system-api:8080/api'; // Docker internal service name (port 8080)
-  static const String _localUrl = 'http://114.29.239.156:8080/api'; // Use server URL for local testing too
-  static const String _androidLocalUrl = 'http://114.29.239.156:8080/api';
-  static const String _androidRealDeviceUrl = 'http://114.29.239.156:8080/api'; // Server IP
-  static const String _dockerLocalUrl = 'http://114.29.239.156:8080/api'; // Docker Compose backend port
-  static const String _androidDockerLocalUrl = 'http://114.29.239.156:8080/api';
+  // =================== SERVER ===================
+  // Production server: 114.29.239.156, API on port 8080.
+  // Web build is served from the same host (Flutter nginx container or strotech.uz),
+  // so the browser uses a relative `/api` path that the host nginx proxies to the API.
+  static const String _serverApiUrl = 'http://114.29.239.156:8080/api';
 
   static String get baseUrl {
-    // ✅ WEB: Relative URL - nginx proxy orqali backendga boradi
-    // ✅ MOBILE/DESKTOP: Hardcoded URL
+    // WEB: relative URL — host nginx proxies /api/ → API container
+    // MOBILE/DESKTOP: direct call to server IP
     if (kIsWeb) {
-      // Web uchun relative URL - brauzer hozirgi domendan foydalanadi
-      // Nginx /api/ ni backendga forward qiladi
       return '/api';
     }
-    // Mobile va Desktop uchun server URL
-    return 'http://114.29.239.156:8080/api';
+    return _serverApiUrl;
   }
 
 
