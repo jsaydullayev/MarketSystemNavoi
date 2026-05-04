@@ -150,14 +150,40 @@ try
                     Console.WriteLine($"[CORS] Origin request: {origin}");
 
                     if (string.IsNullOrEmpty(origin)) return false;
-                    // Allow localhost, server IP/domain, and internal Docker network
-                    return origin.Contains("localhost") ||
-                           origin.Contains("127.0.0.1") ||
-                           origin.Contains("114.29.239.156") || // Production server IP
-                           origin.Contains("strotech.uz") ||    // Production domain
-                           origin.Contains("172.") ||           // Docker internal network
-                           origin.Contains("192.168.") ||       // Local network
-                           origin.Contains("market-system-client"); // Docker service name
+
+                    // Allow exact origins for security
+                    var allowedOrigins = new[]
+                    {
+                        "http://localhost",
+                        "http://localhost:8080",
+                        "http://localhost:8081",
+                        "http://127.0.0.1",
+                        "http://127.0.0.1:8080",
+                        "http://127.0.0.1:8081",
+                        "http://114.29.239.156",
+                        "http://114.29.239.156:8080",
+                        "http://114.29.239.156:8081",
+                        "https://strotech.uz",
+                        "https://www.strotech.uz",
+                        "http://strotech.uz",
+                        "http://www.strotech.uz"
+                    };
+
+                    // Exact match for security
+                    if (allowedOrigins.Contains(origin))
+                    {
+                        return true;
+                    }
+
+                    // Allow Docker internal networks (for development)
+                    if (origin.Contains("172.") ||  // Docker internal network
+                        origin.Contains("192.168.") ||  // Local network
+                        origin.Contains("market-system-client")) // Docker service name
+                    {
+                        return true;
+                    }
+
+                    return false;
                 })
                   .AllowAnyMethod()
                   .AllowAnyHeader()
