@@ -351,11 +351,14 @@ public class DebtIntegrationTests : TestBase
 
         // Add an item to the new sale
         var addRequest = new AddSaleItemDto(
-            product.Id,
-            1,
-            100m,
-            100m, // MinSalePrice (same as salePrice for test)
-            null
+            IsExternal: false,
+            ProductId: product.Id,
+            ExternalProductName: null,
+            ExternalCostPrice: null,
+            Quantity: 1,
+            SalePrice: 100m,
+            MinSalePrice: 100m,
+            Comment: null
         );
 
         await SaleService.AddSaleItemAsync(sale2.Id, addRequest);
@@ -415,11 +418,14 @@ public class DebtIntegrationTests : TestBase
         var newSale = await SaleService.CreateSaleAsync(createRequest, TestUserId);
 
         var addRequest = new AddSaleItemDto(
-            product.Id,
-            2,
-            150m,
-            100m, // MinSalePrice
-            null
+            IsExternal: false,
+            ProductId: product.Id,
+            ExternalProductName: null,
+            ExternalCostPrice: null,
+            Quantity: 2,
+            SalePrice: 150m,
+            MinSalePrice: 100m,
+            Comment: null
         );
 
         await SaleService.AddSaleItemAsync(newSale.Id, addRequest);

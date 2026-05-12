@@ -34,156 +34,187 @@ public class AuthService : IAuthService
     {
         _logger.LogInformation("Login attempt for username: {Username}", request.Username);
 
-        var users = await _unitOfWork.Users.FindAsync(u => u.Username == request.Username && u.IsActive, cancellationToken);
-        var user = users.FirstOrDefault();
+        // Username uniqueness is enforced PER MARKET (partial index). A tenant user and a
+        // cross-tenant user (e.g. SuperAdmin with MarketId=NULL) can therefore share the same
+        // username. Iterate all candidates and pick the one whose password hash matches.
+        // This is constant-time-ish (BCrypt.Verify per candidate) and there are at most a
+        // handful of collisions in practice.
+        var candidates = (await _unitOfWork.Users.FindAsync(
+            u => u.Username == request.Username && u.IsActive,
+            cancellationToken)).ToList();
 
-        if (user is null)
+        if (candidates.Count == 0)
         {
             _logger.LogWarning("User not found or inactive: {Username}", request.Username);
             return null;
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        User? matched = null;
+        foreach (var candidate in candidates)
+        {
+            if (BCrypt.Net.BCrypt.Verify(request.Password, candidate.PasswordHash))
+            {
+                if (matched is not null)
+                {
+                    // Two distinct accounts share the same username AND password.
+                    // Refuse to log in rather than guess which identity to grant.
+                    _logger.LogError("Ambiguous login: multiple users with username {Username} accepted the same password", request.Username);
+                    return null;
+                }
+                matched = candidate;
+            }
+        }
+
+        if (matched is null)
         {
             _logger.LogWarning("Invalid password for user: {Username}", request.Username);
             return null;
         }
 
-        _logger.LogInformation("Login successful for user: {Username}, ID: {UserId}", user.Username, user.Id);
-        return await GenerateAuthResponseAsync(user, cancellationToken);
+        _logger.LogInformation("Login successful for user: {Username}, ID: {UserId}", matched.Username, matched.Id);
+        return await GenerateAuthResponseAsync(matched, cancellationToken);
     }
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Register attempt for username: {Username}", request.Username);
 
-        // Check if username already exists
+        // Public self-registration always creates an Owner with a new market.
+        // Role from the request body is IGNORED to prevent privilege escalation
+        // (admin/seller creation must go through an authenticated admin endpoint).
         if (await _unitOfWork.Users.AnyAsync(u => u.Username == request.Username, cancellationToken))
         {
             _logger.LogWarning("Username already exists: {Username}", request.Username);
             throw new InvalidOperationException($"Username '{request.Username}' already exists");
         }
 
-        // Map language codes to Language enum
         Language language = request.Language?.ToLowerInvariant() switch
         {
             "uz" => Language.Uzbek,
             "ru" => Language.Russian,
-            _ => Language.Uzbek // Default to Uzbek
+            _ => Language.Uzbek
         };
 
-        // For registration, marketId comes from request (when Admin/Owner creates user)
-        // For Owner self-registration with marketName, market will be created below
-        int? marketId = request.MarketId;
-
-        // Generate user ID early
         var userId = Guid.NewGuid();
 
-        // Create user FIRST (without MarketId initially)
-        var role = Enum.Parse<Role>(request.Role, ignoreCase: true);
         var user = new User
         {
             Id = userId,
             FullName = request.FullName,
             Username = request.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = role,
+            Role = Role.Owner,
             Language = language,
             IsActive = true,
-            MarketId = null  // Will be set after market is created
+            MarketId = null
         };
 
-        await _unitOfWork.Users.AddAsync(user, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation("User created: {Username}, ID: {UserId}", user.Username, user.Id);
-
-        // Create market for EVERY new user (regardless of role)
-        // If no marketId provided, create new market automatically
-        if (marketId == null)
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            // Generate market name from user's full name or provided marketName
-            string marketName = !string.IsNullOrWhiteSpace(request.MarketName)
-                ? request.MarketName
-                : $"{user.FullName}'s Market";
-
-            // Generate unique subdomain from username
-            string subdomain = $"{user.Username.ToLower().Replace("@", "").Replace(".", "")}{Guid.NewGuid().ToString("N")[..6]}";
-
-            var newMarket = new Market
+            await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
             {
-                Name = marketName,
-                Subdomain = subdomain,
-                IsActive = true,
-                OwnerId = userId  // Every user is the owner of their own market
-            };
+                await _unitOfWork.Users.AddAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await _context.Markets.AddAsync(newMarket, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
+                string marketName = !string.IsNullOrWhiteSpace(request.MarketName)
+                    ? request.MarketName
+                    : $"{user.FullName}'s Market";
 
-            marketId = newMarket.Id;
-            _logger.LogInformation("New market created for user: {Username}, Market: {MarketName}, ID: {MarketId}", user.Username, newMarket.Name, newMarket.Id);
-        }
+                var sanitizedUsername = new string(user.Username.ToLower().Where(c => char.IsLetterOrDigit(c)).ToArray());
+                if (string.IsNullOrEmpty(sanitizedUsername))
+                    sanitizedUsername = "market";
+                string subdomain = $"{sanitizedUsername}{Guid.NewGuid().ToString("N")[..6]}";
 
-        // Update user with MarketId
-        user.MarketId = marketId;
-        _context.Entry(user).State = EntityState.Modified;
-        _unitOfWork.Users.Update(user);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+                var newMarket = new Market
+                {
+                    Name = marketName,
+                    Subdomain = subdomain,
+                    IsActive = true,
+                    OwnerId = userId
+                };
 
-        _logger.LogInformation("User registered successfully: {Username}, ID: {UserId}", user.Username, user.Id);
-        return await GenerateAuthResponseAsync(user, cancellationToken);
+                await _context.Markets.AddAsync(newMarket, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                // Seed the per-market CashRegister immediately so the first sale can't race
+                // two parallel inserts into a UNIQUE-violation. 1 Market → exactly 1 Register.
+                _context.CashRegisters.Add(new CashRegister
+                {
+                    Id = Guid.NewGuid(),
+                    MarketId = newMarket.Id,
+                    CurrentBalance = 0m,
+                    LastUpdated = DateTime.UtcNow
+                });
+
+                user.MarketId = newMarket.Id;
+                _context.Entry(user).State = EntityState.Modified;
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                await tx.CommitAsync(cancellationToken);
+
+                _logger.LogInformation("User registered successfully: {Username}, ID: {UserId}, MarketId: {MarketId}", user.Username, user.Id, newMarket.Id);
+
+                return await GenerateAuthResponseAsync(user, cancellationToken);
+            }
+            catch
+            {
+                await tx.RollbackAsync(cancellationToken);
+                throw;
+            }
+        });
     }
 
     public async Task<AuthResponse?> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
     {
-        // Validate access token
         var (isValid, userIdStr) = _jwtService.ValidateAndGetUser(request.AccessToken);
-        if (!isValid || userIdStr is null)
+        if (!isValid || userIdStr is null || !Guid.TryParse(userIdStr, out var userId))
             return null;
 
-        var userId = Guid.Parse(userIdStr);
-
-        // Get refresh token
         var refreshToken = await _unitOfWork.RefreshTokens
             .GetByTokenAsync(request.RefreshToken, cancellationToken);
 
         if (refreshToken is null || refreshToken.IsUsed || refreshToken.IsRevoked || refreshToken.ExpiresAt < DateTime.UtcNow)
             return null;
 
-        // Get user
+        // Ensure the refresh token belongs to the same user as the access token.
+        if (refreshToken.UserId != userId)
+        {
+            _logger.LogWarning("Refresh token user mismatch. AccessTokenUser={AccessUser} RefreshTokenUser={RefreshUser}", userId, refreshToken.UserId);
+            // Defensive: revoke the leaked refresh token to limit blast radius.
+            refreshToken.IsRevoked = true;
+            refreshToken.RevokedAt = DateTime.UtcNow;
+            _unitOfWork.RefreshTokens.Update(refreshToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return null;
+        }
+
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null || !user.IsActive)
             return null;
 
-        // Mark current refresh token as used
+        // Mark current refresh token as used (one-time use)
         refreshToken.IsUsed = true;
         _context.Entry(refreshToken).State = EntityState.Modified;
         _unitOfWork.RefreshTokens.Update(refreshToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Revoke all old refresh tokens for this user
-        await _unitOfWork.RefreshTokens.RevokeAllForUserAsync(user.Id, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        // Generate new tokens
         return await GenerateAuthResponseAsync(user, cancellationToken);
     }
 
-    public async Task<bool> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
+    public async Task<bool> LogoutAsync(string refreshToken, Guid callerUserId, CancellationToken cancellationToken = default)
     {
         var token = await _unitOfWork.RefreshTokens
             .GetByTokenAsync(refreshToken, cancellationToken);
 
-        if (token is null)
+        if (token is null || token.UserId != callerUserId)
             return false;
 
-        // Revoke the refresh token
         token.IsRevoked = true;
         token.RevokedAt = DateTime.UtcNow;
         _unitOfWork.RefreshTokens.Update(token);
 
-        // Revoke all other refresh tokens for this user
         await _unitOfWork.RefreshTokens.RevokeAllForUserAsync(token.UserId, cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -214,12 +245,11 @@ public class AuthService : IAuthService
 
             _logger.LogInformation("Tokens generated successfully for user: {UserId}", user.Id);
 
-            // Map Language enum to ISO language codes
             string languageCode = user.Language switch
             {
                 Language.Uzbek => "uz",
                 Language.Russian => "ru",
-                _ => "uz" // Default to Uzbek
+                _ => "uz"
             };
 
             return new AuthResponse(
@@ -230,7 +260,7 @@ public class AuthService : IAuthService
                 languageCode,
                 accessToken.AccessToken,
                 refreshToken,
-                DateTime.UtcNow.AddHours(_jwtSetting.AccessTokenExpireHours)
+                DateTime.UtcNow.AddMinutes(_jwtSetting.AccessTokenExpireMinutes)
             );
         }
         catch (Exception ex)

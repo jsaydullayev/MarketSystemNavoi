@@ -1,9 +1,9 @@
-﻿namespace MarketSystem.Domain.Common;
+namespace MarketSystem.Domain.Common;
 public class JwtSetting
 {
-    public string Issuer { get; set; }
-    public string Audience { get; set; }
-    public string Key { get; set; }
-    public int AccessTokenExpireHours { get; set; } = 14;
-    public int RefreshTokenExpireDays { get; set; } = 5;
+    public string Issuer { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+    public string Key { get; set; } = string.Empty;
+    public int AccessTokenExpireMinutes { get; set; } = 30;
+    public int RefreshTokenExpireDays { get; set; } = 7;
 }

@@ -88,8 +88,9 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDto> CreateCustomerAsync(CreateCustomerDto request, CancellationToken cancellationToken = default)
     {
-        // Check if phone already exists
-        if (await _context.Customers.AnyAsync(c => c.Phone == request.Phone, cancellationToken))
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        // Phone is unique per market — check within this tenant only.
+        if (await _context.Customers.AnyAsync(c => c.Phone == request.Phone && c.MarketId == marketId, cancellationToken))
             throw new InvalidOperationException($"Customer with phone '{request.Phone}' already exists");
 
         var customer = new Customer
@@ -99,7 +100,7 @@ public class CustomerService : ICustomerService
             FullName = request.FullName,
             Comment = request.Comment,
             IsDeleted = false,
-            MarketId = _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
+            MarketId = marketId
         };
 
         await _context.Customers.AddAsync(customer, cancellationToken);
@@ -108,7 +109,6 @@ public class CustomerService : ICustomerService
         // Agar initial debt bor bo'lsa, dummy Sale va Debt yozuvlarini yaratamiz
         if (request.InitialDebt.HasValue && request.InitialDebt.Value > 0)
         {
-            var marketId = _currentMarketService.GetCurrentMarketId();
             var currentUserId = GetCurrentUserId();
 
             if (!currentUserId.HasValue)
@@ -333,7 +333,6 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Find all sales for this customer
         var saleIds = await _context.Sales
             .Where(s => s.CustomerId == customerId && s.MarketId == marketId)
             .Select(s => s.Id)
@@ -342,12 +341,17 @@ public class CustomerService : ICustomerService
         if (saleIds.Count == 0)
             return 0;
 
-        // Sum all negative payments (refunds) for these sales
-        var availableCredit = await _context.Payments
+        // Refunds (negative payments) add to credit; Credit-typed payments consume it.
+        // Net credit = |sum(negative)| - sum(PaymentType.Credit)
+        var refundTotal = await _context.Payments
             .Where(p => saleIds.Contains(p.SaleId) && p.MarketId == marketId && p.Amount < 0)
             .SumAsync(p => p.Amount, cancellationToken);
 
-        // Convert negative sum to positive credit amount
-        return Math.Abs(availableCredit);
+        var creditConsumed = await _context.Payments
+            .Where(p => saleIds.Contains(p.SaleId) && p.MarketId == marketId && p.PaymentType == PaymentType.Credit)
+            .SumAsync(p => p.Amount, cancellationToken);
+
+        var net = Math.Abs(refundTotal) - creditConsumed;
+        return net > 0 ? net : 0;
     }
 }

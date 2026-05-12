@@ -76,6 +76,7 @@ public class CustomersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<IActionResult> DeleteCustomer(Guid id)
     {
         var result = await _customerService.DeleteCustomerAsync(id);
@@ -93,6 +94,7 @@ public class CustomersController : ControllerBase
     }
 
     [HttpPost("{id}/soft-delete")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<IActionResult> SoftDeleteCustomer(Guid id)
     {
         var result = await _customerService.SoftDeleteCustomerAsync(id);

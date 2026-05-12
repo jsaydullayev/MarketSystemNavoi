@@ -18,12 +18,14 @@ public class ReportService : IReportService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly ILogger<ReportService> _logger;
+    private readonly ITashkentClock _clock;
 
-    public ReportService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService, ILogger<ReportService> logger)
+    public ReportService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService, ILogger<ReportService> logger, ITashkentClock clock)
     {
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
         _logger = logger;
+        _clock = clock;
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         QuestPDF.Settings.License = LicenseType.Community;
     }
@@ -34,7 +36,7 @@ public class ReportService : IReportService
         var (start, end) = GetUtcDateRange(date);
 
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
@@ -51,7 +53,7 @@ public class ReportService : IReportService
         var (start, end) = GetUtcDateRange(date);
 
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
@@ -147,7 +149,7 @@ public class ReportService : IReportService
         var endDateTime = request.EndDate.AddDays(1);
 
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= request.StartDate && s.CreatedAt < endDateTime && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= request.StartDate && s.CreatedAt < endDateTime && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
@@ -184,7 +186,7 @@ public class ReportService : IReportService
         var endDateTime = request.EndDate.AddDays(1);
 
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= request.StartDate && s.CreatedAt < endDateTime && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= request.StartDate && s.CreatedAt < endDateTime && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
@@ -273,7 +275,7 @@ public class ReportService : IReportService
 
         // Get daily sales with SaleItems and Payments
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments");
 
@@ -604,35 +606,35 @@ public class ReportService : IReportService
     public async Task<ProfitSummaryDto> GetProfitSummaryAsync(CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var now = DateTime.UtcNow;
+        var todayLocal = _clock.TodayLocal;
 
-        // Today
-        var (todayStart, todayEnd) = GetUtcDateRange(now);
+        // Today (Tashkent calendar day -> UTC range)
+        var (todayStart, todayEnd) = GetUtcDateRange(todayLocal);
 
-        // Week
-        var weekStart = ToUtcDate(now.Date.AddDays(-(int)now.DayOfWeek));
+        // Week (anchored to Tashkent local week)
+        var weekStart = ToUtcDate(todayLocal.AddDays(-(int)todayLocal.DayOfWeek));
 
-        // Month
-        var monthStart = ToUtcDate(new DateTime(now.Year, now.Month, 1));
+        // Month (anchored to Tashkent local month)
+        var monthStart = ToUtcDate(new DateTime(todayLocal.Year, todayLocal.Month, 1));
 
         var todaySales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= todayStart && s.CreatedAt < todayEnd &&
-                 s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+                 s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
         var weekSales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= weekStart && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= weekStart && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
         var monthSales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= monthStart && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= monthStart && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
         var allSales = await _unitOfWork.Sales.FindAsync(
-            s => s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
@@ -647,15 +649,14 @@ public class ReportService : IReportService
     public async Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var now = DateTime.UtcNow;
 
-        // Get today's date range in current market's timezone
-        var (todayStart, todayEnd) = GetUtcDateRange(now);
+        // "Today" anchored to Tashkent calendar day (00:00–24:00 local), not UTC.
+        var (todayStart, todayEnd) = GetUtcDateRange(_clock.TodayLocal);
 
         // Get all payments for today
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= todayStart && s.CreatedAt < todayEnd &&
-                 s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+                 s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "Payments");
 
@@ -712,7 +713,7 @@ public class ReportService : IReportService
         var (start, end) = GetUtcDateRange(date);
 
         Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
-                              s.Status != SaleStatus.Cancelled &&
+                              s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft &&
                               s.MarketId == marketId &&
                               (userRole != Role.Seller.ToString() || s.SellerId == userId);
 
@@ -832,7 +833,7 @@ public class ReportService : IReportService
             cancellationToken);
 
         var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.MarketId == marketId,
+            s => s.CreatedAt >= start && s.CreatedAt < end && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
 
@@ -927,7 +928,7 @@ public class ReportService : IReportService
         // This is done via the unit of work's context if accessible
         // For now, use the repository and get products in batch
         Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
-                              s.Status != SaleStatus.Cancelled &&
+                              s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft &&
                               s.MarketId == marketId &&
                               (userRole != Role.Seller.ToString() || s.SellerId == userId);
 
@@ -1041,7 +1042,7 @@ public class ReportService : IReportService
 
         var sales = await _unitOfWork.Sales.FindAsync(
             s => s.CreatedAt >= start && s.CreatedAt < end &&
-                 s.Status != SaleStatus.Cancelled &&
+                 s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft &&
                  s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems,Payments,Seller,Customer");
@@ -1619,15 +1620,14 @@ public class ReportService : IReportService
             .AlignMiddle();
     }
 
-    private static DateTime ToUtcDate(DateTime date)
-    {
-        return DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-    }
+    // Used by report PDFs/Excel for human-readable date labels — anchored to Tashkent.
+    private DateTime ToUtcDate(DateTime date) => _clock.LocalDayToUtcRange(date).UtcStart;
 
-    private static (DateTime Start, DateTime End) GetUtcDateRange(DateTime date)
-    {
-        var start = ToUtcDate(date);
-        var end = ToUtcDate(date.AddDays(1));
-        return (start, end);
-    }
+    /// <summary>
+    /// Convert a Tashkent-local calendar date to the UTC half-open range covering that day.
+    /// Tashkent is GMT+5: a "2026-05-12 daily report" must include sales from
+    /// 2026-05-11 19:00 UTC to 2026-05-12 19:00 UTC.
+    /// </summary>
+    private (DateTime Start, DateTime End) GetUtcDateRange(DateTime date) =>
+        _clock.LocalDayToUtcRange(date);
 }

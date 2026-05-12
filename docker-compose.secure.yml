@@ -9,7 +9,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=market-system-db;Port=5432;Database=MarketSystemDB;Username=postgres;Password=SuperSecur3MarketDB!2026
+      - ConnectionStrings__DefaultConnection=${DATABASE_URL:?DATABASE_URL is required}
+      - Jwt__Key=${JWT_KEY:?JWT_KEY is required}
     depends_on:
       postgres:
         condition: service_healthy
@@ -20,16 +21,18 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: market-system-db
+    expose:
+      - "5432"
     environment:
-      - POSTGRES_DB=MarketSystemDB
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=SuperSecur3MarketDB!2026
+      - POSTGRES_DB=${DB_NAME:?DB_NAME is required}
+      - POSTGRES_USER=${DB_USER:?DB_USER is required}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - market-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d MarketSystemDB" ]
+      test: [ "CMD-SHELL", "pg_isready -U $${DB_USER} -d $${DB_NAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5

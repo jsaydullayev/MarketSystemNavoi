@@ -1,11 +1,13 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace MarketSystem.API.Middleware;
 
 /// <summary>
-/// Global exception handler to catch and format all unhandled exceptions
+/// Global exception handler to catch and format all unhandled exceptions.
+/// In production only safe, generic messages are returned to the client.
 /// </summary>
 public class GlobalExceptionHandlerMiddleware
 {
@@ -31,7 +33,7 @@ public class GlobalExceptionHandlerMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
+            _logger.LogError(ex, "Unhandled exception. TraceId={TraceId}", context.TraceIdentifier);
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -39,8 +41,8 @@ public class GlobalExceptionHandlerMiddleware
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/json";
-
-        var response = new ErrorResponse();
+        var isDev = _env.IsDevelopment();
+        var response = new ErrorResponse { TraceId = context.TraceIdentifier };
 
         switch (exception)
         {
@@ -64,22 +66,55 @@ public class GlobalExceptionHandlerMiddleware
                 response.Message = "Ma'lumot topilmadi.";
                 break;
 
+            case DbUpdateConcurrencyException:
+                // Surface optimistic-concurrency conflicts (e.g. stock updated by another sale).
+                context.Response.StatusCode = (int)HttpStatusCode.Conflict;
+                response.Message = "Ma'lumot boshqa foydalanuvchi tomonidan o'zgartirildi. Iltimos, qaytadan urinib ko'ring.";
+                break;
+
+            case NotImplementedException:
+                // Feature intentionally unimplemented. In dev, surface the raw message so
+                // the developer can tell which stub fired. In prod, return a generic
+                // string — a future contributor might toss connection strings or file
+                // paths into a NotImplementedException message and we don't want them
+                // leaking to clients.
+                context.Response.StatusCode = (int)HttpStatusCode.NotImplemented; // 501
+                response.Message = isDev
+                    ? exception.Message
+                    : "Bu funksiya hozircha mavjud emas. Iltimos, Excel eksportidan foydalaning.";
+                break;
+
             case PostgresException postgresEx:
-                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-                _logger.LogError(postgresEx, "PostgreSQL error: {SqlState} - {Message}", postgresEx.SqlState, postgresEx.MessageText);
-                response.Message = "Ma'lumotlar bazasi bilan bog'lanishda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.";
+                context.Response.StatusCode = postgresEx.SqlState switch
+                {
+                    "23505" => (int)HttpStatusCode.Conflict,
+                    "23503" => (int)HttpStatusCode.BadRequest,
+                    _ => (int)HttpStatusCode.ServiceUnavailable
+                };
+                _logger.LogError(postgresEx, "PostgreSQL error: {SqlState}", postgresEx.SqlState);
+                response.Message = postgresEx.SqlState switch
+                {
+                    "23505" => "Bu ma'lumot allaqachon mavjud.",
+                    "23503" => "Bog'liq ma'lumot topilmadi.",
+                    _ => "Ma'lumotlar bazasi bilan bog'lanishda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring."
+                };
                 break;
 
             case TimeoutException:
                 context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-                _logger.LogError(exception, "Request timeout: {Message}", exception.Message);
+                _logger.LogError(exception, "Request timeout");
                 response.Message = "So'rov vaqti tugadi. Iltimos, keyinroq urinib ko'ring.";
                 break;
 
             default:
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                response.Message = $"Serverda xatolik yuz berdi: {exception.Message} (Ichki: {exception.InnerException?.Message})";
-                response.StackTrace = exception.StackTrace;
+                response.Message = "Serverda kutilmagan xatolik yuz berdi.";
+                if (isDev)
+                {
+                    response.DevDetails = $"{exception.GetType().Name}: {exception.Message}";
+                    response.StackTrace = exception.StackTrace;
+                    response.InnerExceptionMessage = exception.InnerException?.Message;
+                }
                 break;
         }
 
@@ -87,7 +122,8 @@ public class GlobalExceptionHandlerMiddleware
 
         var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         });
 
         await context.Response.WriteAsync(json);
@@ -97,6 +133,8 @@ public class GlobalExceptionHandlerMiddleware
     {
         public int StatusCode { get; set; }
         public string Message { get; set; } = string.Empty;
+        public string? TraceId { get; set; }
+        public string? DevDetails { get; set; }
         public string? StackTrace { get; set; }
         public string? InnerExceptionMessage { get; set; }
     }

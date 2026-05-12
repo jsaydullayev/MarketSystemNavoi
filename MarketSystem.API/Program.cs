@@ -18,9 +18,24 @@ using System.Security.Claims;
 using Serilog.Events;
 using System.Text;
 
-TimeZoneInfo tashkentTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+// Resolve Tashkent (GMT+5). .NET 6+ maps Windows IDs to IANA on Linux out of the box,
+// but a hostile env var (DOTNET_SYSTEM_GLOBALIZATION_INVARIANT) can break it. We try
+// IANA first (works on Linux/macOS), fall back to the Windows ID, and finally to a fixed
+// offset so the process never fails to start over timezone resolution.
+TimeZoneInfo tashkentTimeZone = ResolveTashkentTimeZone();
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
+
+static TimeZoneInfo ResolveTashkentTimeZone()
+{
+    foreach (var id in new[] { "Asia/Tashkent", "Central Asia Standard Time" })
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
+        catch (TimeZoneNotFoundException) { }
+        catch (InvalidTimeZoneException) { }
+    }
+    return TimeZoneInfo.CreateCustomTimeZone("Asia/Tashkent", TimeSpan.FromHours(5), "Tashkent", "Tashkent");
+}
 
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
@@ -47,9 +62,27 @@ try
     Log.Information("Logging to: PostgreSQL + Console");
     Log.Information("Time Zone: GMT+5 (Tashkent Time)");
 
+    // Fail fast if required secrets are missing — no defaults baked in.
+    var jwtKey = builder.Configuration["Jwt:Key"];
+    if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
+    {
+        throw new InvalidOperationException(
+            "Jwt:Key is missing or shorter than 32 characters. " +
+            "Set it via environment variable (Jwt__Key) or appsettings.Development.json. " +
+            "Generate with: openssl rand -base64 48");
+    }
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException(
+            "ConnectionStrings:DefaultConnection is missing. " +
+            "Set it via environment variable (ConnectionStrings__DefaultConnection) or appsettings.Development.json.");
+    }
+
     builder.Host.UseSerilog();
 
-    builder.Services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time"));
+    // Re-use the already-resolved Tashkent zone (handles Windows-ID vs IANA + fallback).
+    builder.Services.AddSingleton(tashkentTimeZone);
 
     builder.Services.AddDbContext<AppDbContext>(options =>
     {
@@ -100,17 +133,21 @@ try
                 NameClaimType = ClaimTypes.Name
             };
 
+            options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
             options.Events = new JwtBearerEvents()
             {
                 OnMessageReceived = context =>
                 {
-                    var token = context.Token;
-                    if (string.IsNullOrEmpty(token))
+                    // Browser WebSocket clients can't set Authorization headers,
+                    // so accept the token via ?token= ONLY on SignalR hub paths.
+                    var path = context.HttpContext.Request.Path;
+                    if (string.IsNullOrEmpty(context.Token) &&
+                        path.StartsWithSegments("/hubs"))
                     {
-                        token = context.Request.Query["token"];
-                        if (!string.IsNullOrEmpty(token))
+                        var queryToken = context.Request.Query["token"].ToString();
+                        if (!string.IsNullOrEmpty(queryToken))
                         {
-                            context.Token = token;
+                            context.Token = queryToken;
                         }
                     }
                     return Task.CompletedTask;
@@ -132,11 +169,27 @@ try
         options.AddPolicy("AllRoles", policy =>
             policy.RequireRole("Owner", "Admin", "Seller"));
     });
+    // Load allowed CORS origins from config (Cors:AllowedOrigins) or env (Cors__AllowedOrigins__0,…).
+    var configuredOrigins = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? Array.Empty<string>();
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("DevelopmentCors", policy =>
         {
-            policy.SetIsOriginAllowed((origin) => true)
+            // Local dev defaults — no credentials, exact origins only.
+            var devOrigins = configuredOrigins.Length > 0
+                ? configuredOrigins
+                : new[]
+                {
+                    "http://localhost:8080",
+                    "http://localhost:8081",
+                    "http://localhost:3000",
+                    "http://127.0.0.1:8080",
+                    "http://127.0.0.1:8081"
+                };
+            policy.WithOrigins(devOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -144,47 +197,11 @@ try
 
         options.AddPolicy("ProductionCors", policy =>
         {
-            policy.SetIsOriginAllowed((origin) =>
-                {
-                    // Log the origin for debugging
-                    Console.WriteLine($"[CORS] Origin request: {origin}");
-
-                    if (string.IsNullOrEmpty(origin)) return false;
-
-                    // Allow exact origins for security
-                    var allowedOrigins = new[]
-                    {
-                        "http://localhost",
-                        "http://localhost:8080",
-                        "http://localhost:8081",
-                        "http://127.0.0.1",
-                        "http://127.0.0.1:8080",
-                        "http://127.0.0.1:8081",
-                        "http://114.29.239.156",
-                        "http://114.29.239.156:8080",
-                        "http://114.29.239.156:8081",
-                        "https://strotech.uz",
-                        "https://www.strotech.uz",
-                        "http://strotech.uz",
-                        "http://www.strotech.uz"
-                    };
-
-                    // Exact match for security
-                    if (allowedOrigins.Contains(origin))
-                    {
-                        return true;
-                    }
-
-                    // Allow Docker internal networks (for development)
-                    if (origin.Contains("172.") ||  // Docker internal network
-                        origin.Contains("192.168.") ||  // Local network
-                        origin.Contains("market-system-client")) // Docker service name
-                    {
-                        return true;
-                    }
-
-                    return false;
-                })
+            if (configuredOrigins.Length == 0)
+            {
+                Log.Warning("Cors:AllowedOrigins is empty in production. All cross-origin requests will be rejected.");
+            }
+            policy.WithOrigins(configuredOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -268,36 +285,40 @@ try
     builder.Services.AddScoped<IMarketService, MarketService>();
     builder.Services.AddScoped<ICurrentMarketService, CurrentMarketService>();
     builder.Services.AddScoped<IExcelService, ExcelService>();
+    builder.Services.AddSingleton<ITashkentClock, TashkentClock>();
 
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
 
     var app = builder.Build();
-    _ = Task.Run(async () =>
-    {
-        using var scope = app.Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        try
-        {
-            Log.Information("Starting database migration (background)...");
-            var canConnect = await dbContext.Database.CanConnectAsync();
-            if (canConnect)
-            {
-                Log.Information("Applying database migrations...");
-                await dbContext.Database.MigrateAsync();
-                Log.Information("Database migrations applied successfully");
-            }
-            else
-            {
-                Log.Warning("Database not ready yet, will retry on next request");
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to apply migrations - database might not be ready yet");
-            Log.Information("Application will continue, migrations will retry on demand");
 
+    // Apply pending migrations BEFORE the host starts accepting requests.
+    // Running migrations in the background races app.Run() and lets HTTP traffic
+    // hit a partially-migrated schema. We block startup until they finish.
+    // Migration failure on the final attempt is a fatal startup error — we'd rather
+    // fail fast than serve requests against an inconsistent database.
+    {
+        const int maxAttempts = 5;
+        for (var attempt = 1; ; attempt++)
+        {
+            // Fresh DI scope per attempt — EF Core does NOT guarantee the DbContext
+            // can be safely reused after a failed SaveChanges/Migrate. A new scope
+            // gives us a clean DbContext, change tracker, and connection.
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            try
+            {
+                Log.Information("Applying database migrations (attempt {Attempt}/{Max})...", attempt, maxAttempts);
+                await dbContext.Database.MigrateAsync();
+                Log.Information("Database migrations applied successfully.");
+                break;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                Log.Warning(ex, "Migration attempt {Attempt} failed; retrying in 3s.", attempt);
+                await Task.Delay(TimeSpan.FromSeconds(3));
+            }
         }
-    });
+    }
 
 
 
@@ -312,34 +333,31 @@ try
 
     app.UseMiddleware<TenantResolutionMiddleware>();
 
-    app.MapSwagger();
-    app.UseSwaggerUI(options =>
+    if (app.Environment.IsDevelopment())
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "MarketSystem API v1");
-        options.DocumentTitle = "MarketSystem API Documentation";
-        options.DefaultModelsExpandDepth(1);
-        options.RoutePrefix = "swagger";
-    });
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "MarketSystem API v1");
+            options.DocumentTitle = "MarketSystem API Documentation";
+            options.DefaultModelsExpandDepth(1);
+            options.RoutePrefix = "swagger";
+        });
+    }
 
     app.MapGet("/health", async (AppDbContext db, ILogger<Program> logger) =>
     {
         try
         {
             var canConnect = await db.Database.CanConnectAsync();
-            var response = new
-            {
-                status = canConnect ? "healthy" : "unhealthy",
-                database = canConnect ? "connected" : "disconnected",
-                timestamp = DateTime.UtcNow,
-                environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown",
-                version = "1.0.0"
-            };
-            return canConnect ? Results.Ok(response) : Results.Json(new { status = "unhealthy", database = "disconnected" }, statusCode: 503);
+            return canConnect
+                ? Results.Ok(new { status = "healthy" })
+                : Results.Json(new { status = "unhealthy" }, statusCode: 503);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Health check failed");
-            return Results.Json(new { status = "unhealthy", database = "error", error = ex.Message }, statusCode: 503);
+            return Results.Json(new { status = "unhealthy" }, statusCode: 503);
         }
     })
         .ExcludeFromDescription()
@@ -369,15 +387,32 @@ try
 
     if (app.Environment.IsDevelopment())
     {
+        // Dev-only seeder. Reads credentials from env vars; refuses to run otherwise.
+        // Required env:
+        //   SEED_SUPERADMIN_PASSWORD, SEED_OWNER_PASSWORD
+        // Optional: SEED_ADMIN_PASSWORD, SEED_SELLER_PASSWORD
         app.MapGet("/seed", async (IConfiguration config, IServiceProvider services) =>
         {
-            var scope = services.CreateScope();
+            using var scope = services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
             if (await context.Markets.AnyAsync() || await context.Users.AnyAsync())
             {
                 return Results.Ok(new { message = "Database already seeded" });
             }
+
+            string? Pw(string envName) => Environment.GetEnvironmentVariable(envName);
+
+            var superAdminPw = Pw("SEED_SUPERADMIN_PASSWORD");
+            var ownerPw = Pw("SEED_OWNER_PASSWORD");
+            if (string.IsNullOrWhiteSpace(superAdminPw) || string.IsNullOrWhiteSpace(ownerPw))
+            {
+                return Results.BadRequest(new
+                {
+                    error = "Seed refused: SEED_SUPERADMIN_PASSWORD and SEED_OWNER_PASSWORD must be set."
+                });
+            }
+
             var defaultMarket = new Market
             {
                 Name = "Demo Market",
@@ -389,76 +424,38 @@ try
             context.Markets.Add(defaultMarket);
             await context.SaveChangesAsync();
 
-            var superAdmin = new User
+            void AddUser(string username, string fullName, string password, Role role)
             {
-                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                FullName = "Super Administrator",
-                Username = "superadmin",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("superadmin123"),
-                Role = Role.SuperAdmin,
-                IsActive = true,
-                Language = Language.Uzbek,
-                MarketId = defaultMarket.Id
-            };
-            context.Users.Add(superAdmin);
+                context.Users.Add(new User
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = fullName,
+                    Username = username,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                    Role = role,
+                    IsActive = true,
+                    Language = Language.Uzbek,
+                    MarketId = defaultMarket.Id
+                });
+            }
 
-            var owner = new User
-            {
-                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-                FullName = "Market Owner",
-                Username = "marketadminsystem",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("marketsystem1234567890"),
-                Role = Role.Owner,
-                IsActive = true,
-                Language = Language.Uzbek,
-                MarketId = defaultMarket.Id
-            };
-            context.Users.Add(owner);
+            AddUser("superadmin", "Super Administrator", superAdminPw, Role.SuperAdmin);
+            AddUser("owner", "Market Owner", ownerPw, Role.Owner);
 
-            var admin = new User
-            {
-                Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
-                FullName = "System Admin",
-                Username = "admin",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                Role = Role.Admin,
-                IsActive = true,
-                Language = Language.Uzbek,
-                MarketId = defaultMarket.Id
-            };
-            context.Users.Add(admin);
-
-            var seller = new User
-            {
-                Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
-                FullName = "Seller User",
-                Username = "seller",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("seller123"),
-                Role = Role.Seller,
-                IsActive = true,
-                Language = Language.Uzbek,
-                MarketId = defaultMarket.Id
-            };
-            context.Users.Add(seller);
+            var adminPw = Pw("SEED_ADMIN_PASSWORD");
+            if (!string.IsNullOrWhiteSpace(adminPw)) AddUser("admin", "System Admin", adminPw, Role.Admin);
+            var sellerPw = Pw("SEED_SELLER_PASSWORD");
+            if (!string.IsNullOrWhiteSpace(sellerPw)) AddUser("seller", "Seller User", sellerPw, Role.Seller);
 
             await context.SaveChangesAsync();
 
             return Results.Ok(new
             {
-                message = "Database seeded successfully with multi-tenant support",
-                market = new { name = "Demo Market", id = defaultMarket.Id },
-                users = new[]
-                {
-                new { username = "superadmin", password = "superadmin123", role = "SuperAdmin", note = "Can create/manage all markets" },
-                new { username = "marketadminsystem", password = "marketsystem1234567890", role = "Owner", note = "Owner of Demo Market (Default)" },
-                new { username = "admin", password = "admin123", role = "Admin", note = "Administrator of Demo Market" },
-                new { username = "seller", password = "seller123", role = "Seller", note = "Seller in Demo Market" }
-                }
+                message = "Database seeded. Credentials are NOT returned — use the env values you set."
             });
         }).WithName("Seed Database").AllowAnonymous();
     }
 
-    await TestRunner.RunTestAsync(app.Services);
     app.Run();
 }
 

@@ -44,12 +44,16 @@ public partial class SaleService : ISaleService
         return await MapToDtoAsync(sale, cancellationToken);
     }
 
+    // Hard cap to keep Excel export from streaming millions of rows into memory.
+    // Callers that may legitimately want more than this should switch to a
+    // date-range-filtered export (TODO: add `ExportSalesByDateRangeAsync`).
+    private const int ExportMaxRows = 10_000;
+
     public async Task<IEnumerable<SaleDto>> GetAllSalesAsync(CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ✅ OPTIMIZED: Single query with eager loading - no N+1 problem
-        // ✅ FIX: Add Distinct() to prevent duplicate sales from being returned
+        // We fetch ExportMaxRows + 1 so we can detect truncation without an extra COUNT(*).
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
@@ -58,48 +62,102 @@ public partial class SaleService : ISaleService
             .Include(s => s.Payments)
             .Where(s => s.MarketId == marketId)
             .OrderByDescending(s => s.CreatedAt)
-            .Distinct()
+            .ThenBy(s => s.Id)
+            .Take(ExportMaxRows + 1)
             .AsNoTracking()
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
-        return sales.Select(s => new SaleDto(
-            s.Id,
-            s.SellerId,
-            s.Seller?.FullName ?? "Unknown",
-            s.CustomerId,
-            s.Customer?.FullName,
-            s.Customer?.Phone,
-            s.Status.ToString(),
-            s.TotalAmount,
-            s.PaidAmount,
-            s.TotalAmount - s.PaidAmount,
-            s.CreatedAt,
-            s.SaleItems.Select(si => {
-                // ✅ ISEXTERNAL SHARTI - Product name olish
-                string productName;
-                string unit = "";
-                if (!si.IsExternal)
-                {
-                    productName = si.Product?.Name ?? "Unknown";
-                    unit = si.Product?.GetUnitName() ?? "";
-                }
-                else
-                {
-                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
-                }
-                return MapSaleItemToDto(si, productName, unit);
-            }).ToList(),
-            s.Payments.Select(p => new PaymentDto(
-                p.Id,
-                p.PaymentType.ToString().ToLowerInvariant(),
-                p.Amount,
-                p.CreatedAt,
-                null,
-                null,
-                null
-            )).ToList()
-        ));
+        if (sales.Count > ExportMaxRows)
+        {
+            _logger.LogWarning(
+                "Sales export for market {MarketId} truncated at {Cap} rows. " +
+                "Consider switching to a date-range export.",
+                marketId, ExportMaxRows);
+            sales = sales.Take(ExportMaxRows).ToList();
+        }
+
+        return sales.Select(MapSaleToDto);
     }
+
+    public async Task<PagedResult<SaleDto>> GetSalesPagedAsync(int page, int size, CancellationToken cancellationToken = default)
+    {
+        // Clamp inputs — clients cannot ask for arbitrarily large pages or negative offsets.
+        // Upper bound on `page` prevents `(page - 1) * size` int overflow on hostile input
+        // (e.g. ?page=2147483647) — at size=200 the max reachable offset is ~20M, well past
+        // any realistic sales history.
+        if (page < 1) page = 1;
+        if (page > 100_000) page = 100_000;
+        if (size < 1) size = 50;
+        if (size > 200) size = 200;
+
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var baseQuery = _context.Sales
+            .Where(s => s.MarketId == marketId);
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+        if (total == 0)
+            return PagedResult<SaleDto>.Empty(page, size);
+
+        // Secondary sort by Id guarantees a stable order across pages even when
+        // two sales share the same CreatedAt millisecond — without it, rows on the
+        // page boundary can be duplicated or dropped between requests.
+        var sales = await baseQuery
+            .OrderByDescending(s => s.CreatedAt)
+            .ThenBy(s => s.Id)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .Include(s => s.Seller)
+            .Include(s => s.Customer)
+            .Include(s => s.SaleItems)
+                .ThenInclude(si => si.Product)
+            .Include(s => s.Payments)
+            .AsNoTracking()
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
+        var items = sales.Select(MapSaleToDto).ToList();
+        return PagedResult<SaleDto>.From(items, page, size, total);
+    }
+
+    private SaleDto MapSaleToDto(Sale s) => new(
+        s.Id,
+        s.SellerId,
+        s.Seller?.FullName ?? "Unknown",
+        s.CustomerId,
+        s.Customer?.FullName,
+        s.Customer?.Phone,
+        s.Status.ToString(),
+        s.TotalAmount,
+        s.PaidAmount,
+        s.TotalAmount - s.PaidAmount,
+        s.CreatedAt,
+        s.SaleItems.Select(si =>
+        {
+            string productName;
+            string unit = "";
+            if (!si.IsExternal)
+            {
+                productName = si.Product?.Name ?? "Unknown";
+                unit = si.Product?.GetUnitName() ?? "";
+            }
+            else
+            {
+                productName = si.ExternalProductName ?? "Tashqi mahsulot";
+            }
+            return MapSaleItemToDto(si, productName, unit);
+        }).ToList(),
+        s.Payments.Select(p => new PaymentDto(
+            p.Id,
+            p.PaymentType.ToString().ToLowerInvariant(),
+            p.Amount,
+            p.CreatedAt,
+            null,
+            null,
+            null
+        )).ToList()
+    );
 
     public async Task<IEnumerable<SaleDto>> GetSalesByDateRangeAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
@@ -346,6 +404,11 @@ public partial class SaleService : ISaleService
     /// </summary>
     public async Task<SaleItemDto?> AddSaleItemAsync(Guid saleId, AddSaleItemDto request, CancellationToken cancellationToken = default)
     {
+        if (request.Quantity <= 0)
+            throw new InvalidOperationException("Quantity must be greater than 0");
+        if (request.SalePrice < 0)
+            throw new InvalidOperationException("Sale price cannot be negative");
+
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         // LOG: Track IsExternal flag
@@ -465,6 +528,13 @@ public partial class SaleService : ISaleService
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+                // After the item lands and the sale total grows, re-apply any outstanding
+                // customer credit so the new portion of the bill is automatically covered.
+                if (sale.CustomerId.HasValue)
+                {
+                    await ApplyCustomerCreditInternalAsync(sale.Id, sale.CustomerId.Value, cancellationToken);
+                }
+
                 // LOG: After DB save
                 _logger.LogInformation("[AddSaleItem] AFTER DB SAVE - Quantity: {Quantity}, ProductId: {ProductId}",
                     resultSaleItem.Quantity, resultSaleItem.ProductId);
@@ -544,6 +614,12 @@ public partial class SaleService : ISaleService
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+                // External items also count toward the bill, so re-apply credit.
+                if (sale.CustomerId.HasValue)
+                {
+                    await ApplyCustomerCreditInternalAsync(sale.Id, sale.CustomerId.Value, cancellationToken);
+                }
+
                 // LOG: After DB save
                 _logger.LogInformation("[AddSaleItem] AFTER DB SAVE - IsExternal: {IsExternal}, ProductName: {ProductName}, Quantity: {Quantity}",
                     resultSaleItem.IsExternal, resultSaleItem.ExternalProductName, resultSaleItem.Quantity);
@@ -560,6 +636,9 @@ public partial class SaleService : ISaleService
 
     public async Task<SaleItemDto?> RemoveSaleItemAsync(Guid saleId, RemoveSaleItemDto request, CancellationToken cancellationToken = default)
     {
+        if (request.Quantity <= 0)
+            throw new InvalidOperationException("Quantity must be greater than 0");
+
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -698,6 +777,9 @@ public partial class SaleService : ISaleService
 
     public async Task<PaymentDto?> AddPaymentAsync(Guid saleId, AddPaymentDto request, CancellationToken cancellationToken = default)
     {
+        if (request.Amount <= 0)
+            throw new InvalidOperationException("Payment amount must be greater than 0");
+
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -755,19 +837,26 @@ public partial class SaleService : ISaleService
 
             await _unitOfWork.Payments.AddAsync(payment, cancellationToken);
 
-            // ✅ NEW: Update cash register balance for cash payments
+            // Update cash register balance for cash payments — scoped to this sale's market.
             if (payment.PaymentType == PaymentType.Cash)
             {
                 var cashRegister = await _context.CashRegisters
-                    .OrderByDescending(cr => cr.LastUpdated)
-                    .FirstOrDefaultAsync(cancellationToken);
+                    .FirstOrDefaultAsync(cr => cr.MarketId == sale.MarketId, cancellationToken);
 
-                if (cashRegister != null)
+                if (cashRegister == null)
                 {
-                    cashRegister.CurrentBalance += request.Amount;
-                    cashRegister.LastUpdated = DateTime.UtcNow;
-                    _context.CashRegisters.Update(cashRegister);
+                    cashRegister = new CashRegister
+                    {
+                        Id = Guid.NewGuid(),
+                        MarketId = sale.MarketId,
+                        CurrentBalance = 0,
+                        LastUpdated = DateTime.UtcNow
+                    };
+                    _context.CashRegisters.Add(cashRegister);
                 }
+
+                cashRegister.CurrentBalance += request.Amount;
+                cashRegister.LastUpdated = DateTime.UtcNow;
             }
 
             // Update sale paid amount
@@ -1009,13 +1098,11 @@ public partial class SaleService : ISaleService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Get available credit for customer
         var availableCredit = await _customerService.GetAvailableCreditAsync(customerId, cancellationToken);
 
         if (availableCredit <= 0)
-            return; // No credit available
+            return;
 
-        // Get sale
         var sale = await _context.Sales
             .Include(s => s.Payments)
             .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
@@ -1023,21 +1110,29 @@ public partial class SaleService : ISaleService
         if (sale == null)
             return;
 
-        // Calculate how much credit can be applied (cannot exceed TotalAmount - PaidAmount)
         var creditToApply = Math.Min(availableCredit, sale.TotalAmount - sale.PaidAmount);
 
         if (creditToApply <= 0)
-            return; // No credit can be applied (either sale already fully paid or TotalAmount is 0)
+            return;
 
         _logger.LogInformation("Applying customer credit: SaleId={SaleId}, CustomerId={CustomerId}, CreditToApply={CreditToApply}, AvailableCredit={AvailableCredit}",
             saleId, customerId, creditToApply, availableCredit);
 
-        // Apply credit to sale
-        // IMPORTANT: DO NOT create a payment record for credit application
-        // Creating a payment would cause it to be counted in reports as "paid sales"
-        // even though it's just a credit transfer, not actual revenue
-        sale.PaidAmount += creditToApply;
+        // Record credit consumption as a positive Payment with PaymentType.Credit.
+        // GetAvailableCreditAsync subtracts these from the refund balance so the same
+        // credit cannot be spent twice.
+        var creditPayment = new Payment
+        {
+            Id = Guid.NewGuid(),
+            SaleId = saleId,
+            MarketId = marketId,
+            PaymentType = PaymentType.Credit,
+            Amount = creditToApply,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _context.Payments.AddAsync(creditPayment, cancellationToken);
 
+        sale.PaidAmount += creditToApply;
         _context.Sales.Update(sale);
         await _context.SaveChangesAsync(cancellationToken);
 

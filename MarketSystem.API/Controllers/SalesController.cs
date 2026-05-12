@@ -35,10 +35,14 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SaleDto>>> GetAllSales()
+    public async Task<ActionResult<PagedResult<SaleDto>>> GetAllSales(
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 50)
     {
-        var sales = await _saleService.GetAllSalesAsync();
-        return Ok(sales);
+        // Returns a paged envelope: { items, page, size, total, totalPages }.
+        // Defaults: page=1, size=50. Max size: 200 (clamped server-side).
+        var result = await _saleService.GetSalesPagedAsync(page, size);
+        return Ok(result);
     }
 
     [HttpGet("by-date")]
@@ -163,6 +167,7 @@ public class SalesController : ControllerBase
     /// Savdoni o'chirish (faqat Draft va Paid statusdagi savdolar uchun)
     /// </summary>
     [HttpDelete("{saleId}")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<SaleDto>> DeleteSale(Guid saleId)
     {
         _logger.LogInformation("DeleteSale called - Sale ID: {SaleId}", saleId);
@@ -208,6 +213,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/mark-debt")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId)
     {
         try
@@ -232,6 +238,7 @@ public class SalesController : ControllerBase
     /// - Closed debts: Only Owner and Admin can edit
     /// </summary>
     [HttpPatch("items/price")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<SaleItemDto>> UpdateSaleItemPrice([FromBody] UpdateSaleItemPriceDto request)
     {
         try
@@ -272,6 +279,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/return-item")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest? request)
     {
         try

@@ -11,8 +11,10 @@ services:
         value: Production
       - key: ASPNETCORE_URLS
         value: http://+:80
-      - key: JWT__Secret
-        value: your_super_secret_jwt_key_minimum_32_characters_long_change_this_in_production
+      # JWT signing key — MUST be set via Render dashboard, never committed.
+      # Generate per-environment with: openssl rand -base64 48
+      - key: Jwt__Key
+        sync: false
       - key: ConnectionStrings__DefaultConnection
         fromDatabase:
           name: marketdb

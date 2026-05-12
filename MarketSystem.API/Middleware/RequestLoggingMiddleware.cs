@@ -1,10 +1,11 @@
-using System.IO;
-using System.Text;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace MarketSystem.API.Middleware;
 
+/// <summary>
+/// Lightweight request audit logger.
+/// Does NOT log request bodies — credentials and PII must never reach the log sink.
+/// </summary>
 public class RequestLoggingMiddleware
 {
     private readonly RequestDelegate _next;
@@ -18,21 +19,13 @@ public class RequestLoggingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Only log POST requests to Auth endpoints
         if (context.Request.Path.StartsWithSegments("/api/Auth") && context.Request.Method == "POST")
         {
-            context.Request.EnableBuffering();
-
-            var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
-            _logger.LogInformation("=== INCOMING REQUEST ===");
-            _logger.LogInformation("Path: {Path}", context.Request.Path);
-            _logger.LogInformation("Method: {Method}", context.Request.Method);
-            _logger.LogInformation("Content-Type: {ContentType}", context.Request.ContentType);
-            _logger.LogInformation("Body: {Body}", body);
-            _logger.LogInformation("========================");
-
-            // Reset position so the request can be read again
-            context.Request.Body.Position = 0;
+            _logger.LogInformation(
+                "Auth request {Method} {Path} from {Remote}",
+                context.Request.Method,
+                context.Request.Path,
+                context.Connection.RemoteIpAddress);
         }
 
         await _next(context);

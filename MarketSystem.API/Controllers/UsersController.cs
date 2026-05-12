@@ -229,6 +229,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _userService.DeleteUserAsync(id);
@@ -239,6 +240,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id}/deactivate")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<IActionResult> DeactivateUser(Guid id)
     {
         var result = await _userService.DeactivateUserAsync(id);
@@ -249,6 +251,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id}/activate")]
+    [Authorize(Policy = "AdminOrOwner")]
     public async Task<IActionResult> ActivateUser(Guid id)
     {
         var result = await _userService.ActivateUserAsync(id);

@@ -49,7 +49,6 @@ public class AppDbContext : DbContext
         {
             b.HasKey(x => x.Id);
             b.Property(x => x.Phone).IsRequired().HasMaxLength(20);
-            b.HasIndex(x => x.Phone).IsUnique();
             b.Property(x => x.FullName).HasMaxLength(200);
             b.Property(x => x.Comment).HasMaxLength(500);
             b.HasQueryFilter(x => !x.IsDeleted);
@@ -57,6 +56,8 @@ public class AppDbContext : DbContext
             // Multi-tenancy
             b.HasOne(x => x.Market).WithMany(m => m.Customers).HasForeignKey(x => x.MarketId);
             b.HasIndex(x => x.MarketId);
+            // Phone is unique per market — different markets can share customer phones.
+            b.HasIndex(x => new { x.MarketId, x.Phone }).IsUnique();
         });
 
         // Configure User
@@ -69,12 +70,22 @@ public class AppDbContext : DbContext
             b.Property(x => x.Language).HasDefaultValue(Language.Uzbek).IsRequired();
             // ProfileImage stores base64 encoded image data - use TEXT type for unlimited size
             b.Property(x => x.ProfileImage).HasColumnType("text");
-            b.HasIndex(x => x.Username).IsUnique();
             b.HasQueryFilter(x => !x.IsDeleted);
 
             // Multi-tenancy
             b.HasOne(x => x.Market).WithMany(m => m.Users).HasForeignKey(x => x.MarketId);
             b.HasIndex(x => x.MarketId);
+            // Username scope:
+            //   - Tenant users (MarketId IS NOT NULL): unique per market.
+            //   - Cross-tenant users (MarketId IS NULL, e.g. SuperAdmin): globally unique.
+            b.HasIndex(x => new { x.MarketId, x.Username })
+                .IsUnique()
+                .HasFilter("\"MarketId\" IS NOT NULL")
+                .HasDatabaseName("IX_Users_MarketId_Username_Unique");
+            b.HasIndex(x => x.Username)
+                .IsUnique()
+                .HasFilter("\"MarketId\" IS NULL")
+                .HasDatabaseName("IX_Users_Username_GlobalUnique");
         });
 
         // Configure Product
@@ -87,6 +98,13 @@ public class AppDbContext : DbContext
             b.Property(x => x.MinSalePrice).HasPrecision(18, 2).IsRequired();
             b.Property(x => x.Quantity).HasPrecision(18, 3).IsRequired();
             b.Property(x => x.MinThreshold).HasPrecision(18, 3).IsRequired();
+
+            // Optimistic concurrency via PostgreSQL system column xmin.
+            b.Property(x => x.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
 
             // ✅ Category relationship (optional)
             b.HasOne(x => x.Category).WithMany(c => c.Products).HasForeignKey(x => x.CategoryId);
@@ -326,9 +344,10 @@ public class AppDbContext : DbContext
             b.Property(x => x.LastUpdated).IsRequired();
             b.HasIndex(x => x.LastUpdated);
 
-            // NOTE: Multi-tenancy disabled for CashRegister
-            // b.HasOne(x => x.Market).WithMany(m => m.CashRegisters).HasForeignKey(x => x.MarketId);
-            // b.HasIndex(x => x.MarketId);
+            // Multi-tenancy: each Market has exactly one CashRegister.
+            b.Property(x => x.MarketId).IsRequired();
+            b.HasOne(x => x.Market).WithOne(m => m.CashRegister).HasForeignKey<CashRegister>(x => x.MarketId);
+            b.HasIndex(x => x.MarketId).IsUnique();
         });
 
         // Configure CashWithdrawal
