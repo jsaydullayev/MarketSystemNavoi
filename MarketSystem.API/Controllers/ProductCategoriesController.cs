@@ -18,39 +18,11 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize] // All authenticated users can view categories
+    [Authorize]
     public async Task<ActionResult<IEnumerable<ProductCategoryDto>>> GetAllCategories(CancellationToken cancellationToken)
     {
-        // Debug logging
-        var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
-        Console.WriteLine($"=== ProductCategories GetAllCategories ===");
-        Console.WriteLine($"User Role: {userRole}");
-        Console.WriteLine($"User ID: {userId}");
-        Console.WriteLine($"IsAuthenticated: {User.Identity?.IsAuthenticated}");
-
-        try
-        {
-            var categories = await _categoryService.GetAllCategoriesAsync(cancellationToken);
-
-            Console.WriteLine($"Categories count: {categories.Count()}");
-
-            foreach (var cat in categories)
-            {
-                Console.WriteLine($"  - ID: {cat.Id}, Name: {cat.Name}, Products: {cat.ProductCount}");
-            }
-
-            Console.WriteLine($"========================================");
-
-            return Ok(categories);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"ERROR: {ex.Message}");
-            Console.WriteLine($"STACK: {ex.StackTrace}");
-            throw;
-        }
+        var categories = await _categoryService.GetAllCategoriesAsync(cancellationToken);
+        return Ok(categories);
     }
 
     [HttpGet("{id}")]

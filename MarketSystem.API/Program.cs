@@ -9,6 +9,7 @@ using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using MarketSystem.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -169,6 +170,97 @@ try
         options.AddPolicy("AllRoles", policy =>
             policy.RequireRole("Owner", "Admin", "Seller"));
     });
+
+    // Rate limiting on authentication endpoints. We use a SLIDING window (6 segments
+    // per minute) instead of fixed-window so a client cannot burst 2x the limit by
+    // straddling the window boundary. Per-IP partitioning is NAT-tolerant because the
+    // limits are calibrated for shared-IP offices: 30 logins/min lets a NAT'd office
+    // of 20-30 users work normally but still cuts off automated brute-force.
+    //
+    // X-Forwarded-For is only honoured because UseForwardedHeaders trusts our internal
+    // proxy network (see fwdOptions above). Spoofing it from outside Docker is blocked
+    // by the trust list.
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.OnRejected = async (ctx, ct) =>
+        {
+            // Surface the real "try again in" hint if the limiter exposes it; otherwise
+            // fall back to the window length so the client always has a usable value.
+            var retryAfter = ctx.Lease.TryGetMetadata(
+                System.Threading.RateLimiting.MetadataName.RetryAfter, out var ts)
+                ? Math.Max(1, (int)ts.TotalSeconds).ToString()
+                : "60";
+            ctx.HttpContext.Response.Headers["Retry-After"] = retryAfter;
+
+            await ctx.HttpContext.Response.WriteAsJsonAsync(new
+            {
+                statusCode = 429,
+                message = "Juda ko'p urinish. Iltimos, biroz kutib qayta urinib ko'ring.",
+                retryAfterSeconds = int.TryParse(retryAfter, out var s) ? s : 60
+            }, ct);
+        };
+
+        static string PartitionKey(HttpContext ctx)
+        {
+            // RemoteIpAddress is already rewritten by UseForwardedHeaders when the
+            // request came in through our trusted proxy chain; for direct (non-proxied)
+            // requests it stays as the real socket peer. Either way, this is the
+            // authoritative client IP from ASP.NET's perspective.
+            return ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+
+        // /api/Auth/Login — sliding window protects against burst-on-boundary attacks.
+        // 30/min is NAT-friendly while still rate-limiting automated brute-force.
+        options.AddPolicy("auth-login", ctx => System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            PartitionKey(ctx),
+            _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+        // /api/Auth/Register — keep tight to discourage account spam.
+        options.AddPolicy("auth-register", ctx => System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            PartitionKey(ctx),
+            _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+        // /api/Auth/RefreshToken — normal clients refresh once per token lifetime.
+        // 60/min lets several users on the same NAT IP refresh without colliding.
+        options.AddPolicy("auth-refresh", ctx => System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            PartitionKey(ctx),
+            _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+        // /api/Auth/Logout — cheap operation but reachable with a valid token; cap
+        // the rate so a stolen token can't churn the refresh-token table.
+        options.AddPolicy("auth-logout", ctx => System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            PartitionKey(ctx),
+            _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+    });
     // Load allowed CORS origins from config (Cors:AllowedOrigins) or env (Cors__AllowedOrigins__0,…).
     var configuredOrigins = builder.Configuration
         .GetSection("Cors:AllowedOrigins")
@@ -287,8 +379,6 @@ try
     builder.Services.AddScoped<IExcelService, ExcelService>();
     builder.Services.AddSingleton<ITashkentClock, TashkentClock>();
 
-    builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MarketSystem.Application.Commands.CreateSaleCommand).Assembly));
-
     var app = builder.Build();
 
     // Apply pending migrations BEFORE the host starts accepting requests.
@@ -322,12 +412,41 @@ try
 
 
 
+    // Trust X-Forwarded-* headers from the reverse proxy (nginx) so HttpContext.Request.Scheme
+    // reflects the real HTTPS scheme, RemoteIpAddress is the original client, and
+    // RequireHttpsMetadata works correctly behind TLS termination.
+    // Without this, ASP.NET sees scheme=http and would reject otherwise-valid HTTPS traffic.
+    // Trust X-Forwarded-For / -Proto from the reverse proxy only. We do NOT enable
+    // XForwardedHost — nginx doesn't override the Host header for us and accepting
+    // it from a spoof source opens host-header injection in any URL we generate.
+    var fwdOptions = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+        // Allow longer chains: nginx -> any internal hop -> Kestrel.
+        ForwardedForHeaderName = "X-Forwarded-For",
+        ForwardedProtoHeaderName = "X-Forwarded-Proto",
+        ForwardLimit = 2
+    };
+    // Defaults trust only loopback. Inside Docker compose the proxy lives on the
+    // bridge network, so we explicitly trust private RFC1918 ranges. We do NOT
+    // Clear() the lists — clearing trusts every source, which would let any client
+    // (e.g. a directly-reachable Kestrel) spoof X-Forwarded-For and bypass the
+    // rate limiter's IP partitioning.
+    fwdOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(
+        System.Net.IPAddress.Parse("10.0.0.0"), 8));
+    fwdOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(
+        System.Net.IPAddress.Parse("172.16.0.0"), 12));
+    fwdOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(
+        System.Net.IPAddress.Parse("192.168.0.0"), 16));
+    app.UseForwardedHeaders(fwdOptions);
+
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
     app.UseSerilogRequestLogging();
     app.UseMiddleware<RequestLoggingMiddleware>();
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
 
     app.UseStaticFiles();
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();
 

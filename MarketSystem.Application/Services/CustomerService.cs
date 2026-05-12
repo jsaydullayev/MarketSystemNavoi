@@ -79,7 +79,6 @@ public class CustomerService : ICustomerService
         foreach (var customer in customers)
         {
             var dto = await MapToDtoAsync(customer, cancellationToken);
-            Console.WriteLine($"📊 [Backend] Customer: {dto.FullName} ({dto.Phone}), TotalDebt: {dto.TotalDebt}");
             result.Add(dto);
         }
 
@@ -305,16 +304,7 @@ public class CustomerService : ICustomerService
                 && d.Status == DebtStatus.Open)
             .ToListAsync(cancellationToken);
 
-        // 🔍 DEBUG: Log each debt found
-        Console.WriteLine($"🔍 [MapToDto] Customer: {customer.FullName} ({customer.Phone})");
-        Console.WriteLine($"   Found {debts.Count} open debts:");
-        foreach (var debt in debts)
-        {
-            Console.WriteLine($"   - DebtId: {debt.Id}, SaleId: {debt.SaleId}, TotalDebt: {debt.TotalDebt}, RemainingDebt: {debt.RemainingDebt}, Status: {debt.Status}");
-        }
-
         var totalDebt = debts.Sum(d => d.RemainingDebt);
-        Console.WriteLine($"   ✅ Calculated TotalDebt: {totalDebt}");
 
         return new CustomerDto(
             customer.Id,
