@@ -9,6 +9,11 @@ public class User : BaseEntity
     public string Username { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     /// <summary>
+    /// Contact phone — populated when an Owner is created from a
+    /// <see cref="RegistrationRequest"/>; optional for users created any other way.
+    /// </summary>
+    public string? Phone { get; set; }
+    /// <summary>
     /// Base64 encoded profile image data
     /// </summary>
     public string? ProfileImage { get; set; }
