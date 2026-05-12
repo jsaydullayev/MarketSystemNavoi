@@ -485,5 +485,39 @@
   "externalCostPrice": "Цена внешнего продукта",
   "externalProductNameRequired": "Введите название внешнего продукта",
   "externalCostPriceRequired": "Введите цену внешнего продукта",
-  "externalCostPriceGreaterThanSalePrice": "Цена внешнего продукта не должна быть больше цены продажи"
+  "externalCostPriceGreaterThanSalePrice": "Цена внешнего продукта не должна быть больше цены продажи",
+  "superAdminConsoleTitle": "Панель SuperAdmin",
+  "superAdminTabRequests": "Заявки",
+  "superAdminTabOwners": "Активные владельцы",
+  "superAdminNoPendingRequests": "Пока нет ожидающих заявок",
+  "superAdminNoActiveOwners": "Нет активных владельцев",
+  "superAdminApprove": "Одобрить",
+  "superAdminReject": "Отклонить",
+  "superAdminApproveTitle": "Одобрить заявку",
+  "superAdminRejectTitle": "Отклонить заявку",
+  "superAdminRejectReason": "Причина отклонения",
+  "superAdminRejectReasonHint": "Не сообщается заявителю — только для аудита",
+  "superAdminRejectReasonRequired": "Укажите причину",
+  "superAdminSubdomainOptional": "Поддомен (необязательно)",
+  "superAdminSubdomainHint": "Оставьте пустым — будет сгенерирован автоматически",
+  "superAdminPasswordMinLength": "Пароль минимум 8 символов",
+  "superAdminApproveSuccess": "Владелец {username} создан. Передайте логин и пароль владельцу безопасным каналом.",
+  "@superAdminApproveSuccess": {
+    "placeholders": { "username": { "type": "String" } }
+  },
+  "superAdminApproveFailed": "Не удалось одобрить",
+  "superAdminRejectSuccess": "Заявка отклонена",
+  "superAdminRejectFailed": "Не удалось отклонить",
+  "superAdminLoadFailed": "Не удалось загрузить данные",
+  "superAdminConsoleNotConfigured": "Консоль не настроена",
+  "superAdminRebuildWithDartDefine": "Соберите приложение с --dart-define=SUPERADMIN_CONSOLE_SEGMENT",
+  "superAdminCredentialsTitle": "Сохраните учётные данные",
+  "superAdminCredentialsSubtitle": "Скопируйте пароль для владельца магазина «{marketName}» сейчас — позже восстановить не получится.",
+  "@superAdminCredentialsSubtitle": {
+    "placeholders": { "marketName": { "type": "String" } }
+  },
+  "superAdminCredentialsCopyBoth": "Скопировать всё",
+  "superAdminCredentialsCopied": "Скопировано",
+  "superAdminCredentialsDone": "Готово",
+  "superAdminCredentialsWarning": "Пароль нигде не хранится. После закрытия его уже не увидеть."
 }

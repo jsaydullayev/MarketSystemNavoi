@@ -25,6 +25,7 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/debts/screens/debts_screen.dart';
 import '../../features/privacy/screens/privacy_screen.dart';
+import '../../features/superadmin/presentation/superadmin_console_screen.dart';
 
 /// Public routes that should NOT trigger any auto-navigation or auth redirects
 /// These routes are accessible without authentication and should never redirect
@@ -80,6 +81,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   debugPrint('🔐 Protected route detected: $routeName - checking auth');
 
   switch (routeName) {
+    case AppRoutes.superAdminConsole:
+      // SuperAdmin-only screen. The Authorize guard in the post-login routing
+      // (login_screen.dart) is the gate that decides who reaches this route —
+      // we intentionally don't redirect non-SuperAdmin users from here, since
+      // the route is supposed to be unreachable from the UI.
+      return MaterialPageRoute(
+        builder: (_) => const SuperAdminConsoleScreen(),
+      );
     case AppRoutes.dashboard:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>

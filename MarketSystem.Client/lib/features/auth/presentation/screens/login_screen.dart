@@ -298,10 +298,22 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
-          );
+          // SuperAdmin accounts are cross-tenant and have no market to land in,
+          // so dropping them into the regular dashboard would just show errors.
+          // Route them straight into the hidden console screen. Every other
+          // role goes to the normal dashboard.
+          final isSuperAdmin = (user?['role'] as String?) == 'SuperAdmin';
+          if (isSuperAdmin) {
+            Navigator.pushReplacementNamed(
+              context,
+              AppRoutes.superAdminConsole,
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            );
+          }
         }
       } else {
         String errorText;
