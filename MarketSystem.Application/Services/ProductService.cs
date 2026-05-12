@@ -41,14 +41,10 @@ public class ProductService : IProductService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        Console.WriteLine($"[GetAllProductsAsync] MarketId: {marketId}");
-
         var products = await _unitOfWork.Products.FindAsync(
             p => p.MarketId == marketId,
             cancellationToken,
-            includeProperties: "Category");  // ✅ Include Category
-
-        Console.WriteLine($"[GetAllProductsAsync] Found {products.Count()} products");
+            includeProperties: "Category");
 
         return products.Select(MapToDto);
     }
@@ -179,7 +175,6 @@ public class ProductService : IProductService
 
     private static ProductDto MapToDto(Product product)
     {
-        Console.WriteLine($"[MapToDto] Product: {product.Name}, Quantity: {product.Quantity}, Unit: {product.Unit}");
         return new ProductDto(
             product.Id,
             product.Name,

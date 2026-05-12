@@ -4,8 +4,14 @@ services:
             context: .
             dockerfile: Dockerfile
         container_name: market-system-api
+        # Bind to loopback on the host so the only public ingress is nginx.
+        # Without this, an attacker can hit Kestrel directly and bypass nginx-
+        # enforced rate limits / TLS / header sanitisation. `expose` keeps the
+        # port reachable from sibling containers on the same Docker network.
         ports:
-            - "8080:8080"
+            - "127.0.0.1:8080:8080"
+        expose:
+            - "8080"
         extra_hosts:
             - "host.docker.internal:host-gateway"
         environment:

@@ -21,9 +21,6 @@ public class ProductCategoryService : IProductCategoryService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        Console.WriteLine($"=== ProductCategoryService.GetAllCategoriesAsync ===");
-        Console.WriteLine($"MarketId: {marketId}");
-
         var categories = await _unitOfWork.ProductCategories
             .GetQueryable()
             .Include(c => c.Products)
@@ -37,9 +34,6 @@ public class ProductCategoryService : IProductCategoryService
                 c.Products.Count(p => !p.IsDeleted)
             ))
             .ToListAsync(cancellationToken);
-
-        Console.WriteLine($"Found {categories.Count()} categories");
-        Console.WriteLine($"==============================================");
 
         return categories;
     }

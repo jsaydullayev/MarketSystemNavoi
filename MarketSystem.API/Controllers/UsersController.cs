@@ -164,28 +164,21 @@ public class UsersController : ControllerBase
                     return BadRequest("Rasm hajmi juda katta. Maksimum rasm hajmi 5MB.");
                 }
 
-                // Validate file type
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-                var fileExtension = Path.GetExtension(image.FileName).ToLowerInvariant();
-                if (!allowedExtensions.Contains(fileExtension))
-                {
-                    return BadRequest("Faqat rasm fayllari (.jpg, .jpeg, .png, .gif) yuklash mumkin.");
-                }
-
-                // Convert image to base64
+                // Read into memory so we can inspect magic bytes BEFORE trusting the file.
                 using var memoryStream = new MemoryStream();
                 await image.CopyToAsync(memoryStream);
                 var imageBytes = memoryStream.ToArray();
-                var base64Image = Convert.ToBase64String(imageBytes);
 
-                // Determine MIME type
-                var mimeType = fileExtension switch
+                // Magic-byte sniff — a renamed `payload.exe.png` would pass the extension
+                // check but fail here. We trust the file's actual bytes, not its name.
+                var kind = MarketSystem.API.Validation.ImageContentValidator.Detect(imageBytes);
+                if (kind == MarketSystem.API.Validation.ImageContentValidator.ImageKind.Unknown)
                 {
-                    ".jpg" or ".jpeg" => "image/jpeg",
-                    ".png" => "image/png",
-                    ".gif" => "image/gif",
-                    _ => "image/jpeg"
-                };
+                    return BadRequest("Fayl tasvir emas yoki qo'llab-quvvatlanmaydigan formatda (JPEG/PNG/GIF/WebP qabul qilinadi).");
+                }
+
+                var base64Image = Convert.ToBase64String(imageBytes);
+                var mimeType = MarketSystem.API.Validation.ImageContentValidator.ToMimeType(kind);
 
                 request = new UpdateProfileImageDto(
                     ProfileImage: $"data:{mimeType};base64,{base64Image}"
