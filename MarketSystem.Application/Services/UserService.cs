@@ -225,6 +225,14 @@ public class UserService : IUserService
         if (user is null)
             return false;
 
+        // Defence in depth: SuperAdmin accounts are cross-tenant (MarketId=null)
+        // so the marketId filter above already excludes them, but if a future
+        // bug ever assigns a SuperAdmin to a market, we refuse to delete them
+        // through the regular Users endpoint. The SuperAdmin lifecycle goes
+        // through the bootstrap seeder only.
+        if (user.Role == Role.SuperAdmin)
+            return false;
+
         _unitOfWork.Users.Delete(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
@@ -240,6 +248,9 @@ public class UserService : IUserService
         var user = users.FirstOrDefault();
 
         if (user is null)
+            return false;
+
+        if (user.Role == Role.SuperAdmin)
             return false;
 
         user.IsActive = false;
@@ -259,6 +270,9 @@ public class UserService : IUserService
         var user = users.FirstOrDefault();
 
         if (user is null)
+            return false;
+
+        if (user.Role == Role.SuperAdmin)
             return false;
 
         user.IsActive = true;
