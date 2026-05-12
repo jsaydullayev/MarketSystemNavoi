@@ -2965,6 +2965,174 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Tashqi mahsulot narxi sotish narxidan katta bo\'lmasligi kerak'**
   String get externalCostPriceGreaterThanSalePrice;
+
+  /// No description provided for @superAdminConsoleTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'SuperAdmin paneli'**
+  String get superAdminConsoleTitle;
+
+  /// No description provided for @superAdminTabRequests.
+  ///
+  /// In uz, this message translates to:
+  /// **'So\'rovlar'**
+  String get superAdminTabRequests;
+
+  /// No description provided for @superAdminTabOwners.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faol egalar'**
+  String get superAdminTabOwners;
+
+  /// No description provided for @superAdminNoPendingRequests.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha kutilayotgan so\'rovlar yo\'q'**
+  String get superAdminNoPendingRequests;
+
+  /// No description provided for @superAdminNoActiveOwners.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faol egalar yo\'q'**
+  String get superAdminNoActiveOwners;
+
+  /// No description provided for @superAdminApprove.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tasdiqlash'**
+  String get superAdminApprove;
+
+  /// No description provided for @superAdminReject.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rad etish'**
+  String get superAdminReject;
+
+  /// No description provided for @superAdminApproveTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'So\'rovni tasdiqlash'**
+  String get superAdminApproveTitle;
+
+  /// No description provided for @superAdminRejectTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'So\'rovni rad etish'**
+  String get superAdminRejectTitle;
+
+  /// No description provided for @superAdminRejectReason.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rad etish sababi'**
+  String get superAdminRejectReason;
+
+  /// No description provided for @superAdminRejectReasonHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Foydalanuvchiga aytib bo\'lmaydi — faqat audit uchun'**
+  String get superAdminRejectReasonHint;
+
+  /// No description provided for @superAdminRejectReasonRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sababini kiriting'**
+  String get superAdminRejectReasonRequired;
+
+  /// No description provided for @superAdminSubdomainOptional.
+  ///
+  /// In uz, this message translates to:
+  /// **'Subdomen (ixtiyoriy)'**
+  String get superAdminSubdomainOptional;
+
+  /// No description provided for @superAdminSubdomainHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bo\'sh qoldirsangiz, avtomatik yaratiladi'**
+  String get superAdminSubdomainHint;
+
+  /// No description provided for @superAdminPasswordMinLength.
+  ///
+  /// In uz, this message translates to:
+  /// **'Parol kamida 8 ta belgi'**
+  String get superAdminPasswordMinLength;
+
+  /// No description provided for @superAdminApproveSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'{username} egasi yaratildi. Login ma\'lumotlarini xavfsiz uzating.'**
+  String superAdminApproveSuccess(String username);
+
+  /// No description provided for @superAdminApproveFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tasdiqlash bajarilmadi'**
+  String get superAdminApproveFailed;
+
+  /// No description provided for @superAdminRejectSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'So\'rov rad etildi'**
+  String get superAdminRejectSuccess;
+
+  /// No description provided for @superAdminRejectFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rad etish bajarilmadi'**
+  String get superAdminRejectFailed;
+
+  /// No description provided for @superAdminLoadFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotni yuklab bo\'lmadi'**
+  String get superAdminLoadFailed;
+
+  /// No description provided for @superAdminConsoleNotConfigured.
+  ///
+  /// In uz, this message translates to:
+  /// **'Konsol sozlanmagan'**
+  String get superAdminConsoleNotConfigured;
+
+  /// No description provided for @superAdminRebuildWithDartDefine.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ilovani --dart-define=SUPERADMIN_CONSOLE_SEGMENT bilan qayta build qiling'**
+  String get superAdminRebuildWithDartDefine;
+
+  /// No description provided for @superAdminCredentialsTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Login ma\'lumotlarini saqlang'**
+  String get superAdminCredentialsTitle;
+
+  /// No description provided for @superAdminCredentialsSubtitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'{marketName} egasi uchun parolni hozir nusxa oling — keyin tiklab bo\'lmaydi.'**
+  String superAdminCredentialsSubtitle(String marketName);
+
+  /// No description provided for @superAdminCredentialsCopyBoth.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasini nusxalash'**
+  String get superAdminCredentialsCopyBoth;
+
+  /// No description provided for @superAdminCredentialsCopied.
+  ///
+  /// In uz, this message translates to:
+  /// **'Nusxalandi'**
+  String get superAdminCredentialsCopied;
+
+  /// No description provided for @superAdminCredentialsDone.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tugatish'**
+  String get superAdminCredentialsDone;
+
+  /// No description provided for @superAdminCredentialsWarning.
+  ///
+  /// In uz, this message translates to:
+  /// **'Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko\'rib bo\'lmaydi.'**
+  String get superAdminCredentialsWarning;
 }
 
 class _AppLocalizationsDelegate

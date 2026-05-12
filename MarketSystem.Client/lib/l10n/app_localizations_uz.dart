@@ -1518,4 +1518,97 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get externalCostPriceGreaterThanSalePrice =>
       'Tashqi mahsulot narxi sotish narxidan katta bo\'lmasligi kerak';
+
+  @override
+  String get superAdminConsoleTitle => 'SuperAdmin paneli';
+
+  @override
+  String get superAdminTabRequests => 'So\'rovlar';
+
+  @override
+  String get superAdminTabOwners => 'Faol egalar';
+
+  @override
+  String get superAdminNoPendingRequests =>
+      'Hozircha kutilayotgan so\'rovlar yo\'q';
+
+  @override
+  String get superAdminNoActiveOwners => 'Faol egalar yo\'q';
+
+  @override
+  String get superAdminApprove => 'Tasdiqlash';
+
+  @override
+  String get superAdminReject => 'Rad etish';
+
+  @override
+  String get superAdminApproveTitle => 'So\'rovni tasdiqlash';
+
+  @override
+  String get superAdminRejectTitle => 'So\'rovni rad etish';
+
+  @override
+  String get superAdminRejectReason => 'Rad etish sababi';
+
+  @override
+  String get superAdminRejectReasonHint =>
+      'Foydalanuvchiga aytib bo\'lmaydi — faqat audit uchun';
+
+  @override
+  String get superAdminRejectReasonRequired => 'Sababini kiriting';
+
+  @override
+  String get superAdminSubdomainOptional => 'Subdomen (ixtiyoriy)';
+
+  @override
+  String get superAdminSubdomainHint =>
+      'Bo\'sh qoldirsangiz, avtomatik yaratiladi';
+
+  @override
+  String get superAdminPasswordMinLength => 'Parol kamida 8 ta belgi';
+
+  @override
+  String superAdminApproveSuccess(String username) {
+    return '$username egasi yaratildi. Login ma\'lumotlarini xavfsiz uzating.';
+  }
+
+  @override
+  String get superAdminApproveFailed => 'Tasdiqlash bajarilmadi';
+
+  @override
+  String get superAdminRejectSuccess => 'So\'rov rad etildi';
+
+  @override
+  String get superAdminRejectFailed => 'Rad etish bajarilmadi';
+
+  @override
+  String get superAdminLoadFailed => 'Ma\'lumotni yuklab bo\'lmadi';
+
+  @override
+  String get superAdminConsoleNotConfigured => 'Konsol sozlanmagan';
+
+  @override
+  String get superAdminRebuildWithDartDefine =>
+      'Ilovani --dart-define=SUPERADMIN_CONSOLE_SEGMENT bilan qayta build qiling';
+
+  @override
+  String get superAdminCredentialsTitle => 'Login ma\'lumotlarini saqlang';
+
+  @override
+  String superAdminCredentialsSubtitle(String marketName) {
+    return '$marketName egasi uchun parolni hozir nusxa oling — keyin tiklab bo\'lmaydi.';
+  }
+
+  @override
+  String get superAdminCredentialsCopyBoth => 'Hammasini nusxalash';
+
+  @override
+  String get superAdminCredentialsCopied => 'Nusxalandi';
+
+  @override
+  String get superAdminCredentialsDone => 'Tugatish';
+
+  @override
+  String get superAdminCredentialsWarning =>
+      'Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko\'rib bo\'lmaydi.';
 }
