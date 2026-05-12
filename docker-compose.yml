@@ -23,7 +23,14 @@ services:
             - Jwt__Key=${JWT_KEY:?JWT_KEY is required}
             - Jwt__Issuer=${JWT_ISSUER:-MarketSystemAPI}
             - Jwt__Audience=${JWT_AUDIENCE:-MarketSystemClient}
-            - Cors__AllowedOrigins__0=${CORS_ALLOWED_ORIGINS:-}
+            - Cors__AllowedOrigins=${CORS_ALLOWED_ORIGINS:-}
+            # SuperAdmin hidden console — segment is REQUIRED in production
+            # (the middleware falls back to a random per-process value and
+            # logs a warning if missing, but the console is then unreachable).
+            - SuperAdmin__ConsoleSegment=${SuperAdmin__ConsoleSegment:?SuperAdmin__ConsoleSegment is required}
+            # First-run bootstrap; remove after the SuperAdmin user exists.
+            - SUPERADMIN_USERNAME=${SUPERADMIN_USERNAME:-}
+            - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD:-}
         depends_on:
             postgres:
                 condition: service_healthy
