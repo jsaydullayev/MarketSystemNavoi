@@ -236,7 +236,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildRegisterLink(Color primaryColor, bool isDark, var l10n) {
     return TextButton(
-      onPressed: () => _showRegisterInfo(context),
+      // Drops the user into the public sign-up screen. The screen submits
+      // FullName + Phone to /api/RegistrationRequests; a SuperAdmin reviews
+      // and provisions the owner. The previous "info dialog" stub was a
+      // dead-end — keeping it would hide the new flow we just shipped.
+      onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
       child: Text(
         l10n.register,
         style: TextStyle(
@@ -325,33 +329,4 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showRegisterInfo(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.info_outline, size: 50, color: Colors.orange),
-            16.height,
-            Text(l10n.info,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            12.height,
-            Text(l10n.registrationPendingInfo, textAlign: TextAlign.center),
-            20.height,
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.getPrimary(context)),
-              child: Text(l10n.understand,
-                  style: const TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
