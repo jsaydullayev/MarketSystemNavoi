@@ -19,8 +19,16 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly JwtSetting _jwtSetting;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IRevokedTokenStore _revokedTokens;
 
-    public AuthService(IUnitOfWork unitOfWork, IJwtService jwtService, ILogger<AuthService> logger, AppDbContext context, IConfiguration configuration, ICurrentMarketService currentMarketService)
+    public AuthService(
+        IUnitOfWork unitOfWork,
+        IJwtService jwtService,
+        ILogger<AuthService> logger,
+        AppDbContext context,
+        IConfiguration configuration,
+        ICurrentMarketService currentMarketService,
+        IRevokedTokenStore revokedTokens)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
@@ -28,6 +36,7 @@ public class AuthService : IAuthService
         _context = context;
         _jwtSetting = configuration.GetSection("Jwt").Get<JwtSetting>()!;
         _currentMarketService = currentMarketService;
+        _revokedTokens = revokedTokens;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -200,10 +209,20 @@ public class AuthService : IAuthService
         _unitOfWork.RefreshTokens.Update(refreshToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Revoke the OLD access token's jti so the previous bearer can no
+        // longer hit authenticated endpoints with it. Without this, an attacker
+        // who phished the access token would keep working access until the
+        // natural 30-minute TTL expires even after the legitimate user refreshed.
+        var oldToken = _jwtService.GetJtiAndExpiry(request.AccessToken);
+        if (oldToken is { } ot)
+        {
+            _revokedTokens.Revoke(ot.Jti, ot.ExpiresAtUtc);
+        }
+
         return await GenerateAuthResponseAsync(user, cancellationToken);
     }
 
-    public async Task<bool> LogoutAsync(string refreshToken, Guid callerUserId, CancellationToken cancellationToken = default)
+    public async Task<bool> LogoutAsync(string refreshToken, Guid callerUserId, string? accessTokenJti, DateTime? accessTokenExpiry, CancellationToken cancellationToken = default)
     {
         var token = await _unitOfWork.RefreshTokens
             .GetByTokenAsync(refreshToken, cancellationToken);
@@ -218,6 +237,14 @@ public class AuthService : IAuthService
         await _unitOfWork.RefreshTokens.RevokeAllForUserAsync(token.UserId, cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Revoke the access token that authenticated this logout call too,
+        // otherwise it would remain usable for the rest of its 30-min TTL.
+        if (!string.IsNullOrEmpty(accessTokenJti) && accessTokenExpiry.HasValue)
+        {
+            _revokedTokens.Revoke(accessTokenJti, accessTokenExpiry.Value);
+        }
+
         return true;
     }
 

@@ -492,7 +492,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loginScreenSubtitle => 'Войдите, чтобы продолжить';
 
   @override
-  String get registerScreenSubtitle => 'Зарегистрируйтесь для начала';
+  String get registerScreenSubtitle =>
+      'Оставьте заявку — администратор скоро свяжется с вами';
 
   @override
   String get welcomeScreenTitle => 'Маркет Система';
@@ -524,6 +525,28 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get createNewAccount => 'Создать новый аккаунт';
+
+  @override
+  String get fullNameTooShort => 'Слишком короткое имя';
+
+  @override
+  String get invalidPhoneFormat => 'Неверный формат номера телефона';
+
+  @override
+  String get submitRegistrationRequest => 'Отправить заявку';
+
+  @override
+  String get registrationSent =>
+      'Заявка отправлена администратору. Скоро с вами свяжутся.';
+
+  @override
+  String registrationRateLimited(int seconds) {
+    return 'Слишком много попыток. Повторите через $seconds секунд.';
+  }
+
+  @override
+  String get registrationFailedRetry =>
+      'Сейчас сервер недоступен. Пожалуйста, попробуйте позже.';
 
   @override
   String get backToLogin => 'Вернуться на страницу входа';
@@ -1500,4 +1523,96 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get externalCostPriceGreaterThanSalePrice =>
       'Цена внешнего продукта не должна быть больше цены продажи';
+
+  @override
+  String get superAdminConsoleTitle => 'Панель SuperAdmin';
+
+  @override
+  String get superAdminTabRequests => 'Заявки';
+
+  @override
+  String get superAdminTabOwners => 'Активные владельцы';
+
+  @override
+  String get superAdminNoPendingRequests => 'Пока нет ожидающих заявок';
+
+  @override
+  String get superAdminNoActiveOwners => 'Нет активных владельцев';
+
+  @override
+  String get superAdminApprove => 'Одобрить';
+
+  @override
+  String get superAdminReject => 'Отклонить';
+
+  @override
+  String get superAdminApproveTitle => 'Одобрить заявку';
+
+  @override
+  String get superAdminRejectTitle => 'Отклонить заявку';
+
+  @override
+  String get superAdminRejectReason => 'Причина отклонения';
+
+  @override
+  String get superAdminRejectReasonHint =>
+      'Не сообщается заявителю — только для аудита';
+
+  @override
+  String get superAdminRejectReasonRequired => 'Укажите причину';
+
+  @override
+  String get superAdminSubdomainOptional => 'Поддомен (необязательно)';
+
+  @override
+  String get superAdminSubdomainHint =>
+      'Оставьте пустым — будет сгенерирован автоматически';
+
+  @override
+  String get superAdminPasswordMinLength => 'Пароль минимум 8 символов';
+
+  @override
+  String superAdminApproveSuccess(String username) {
+    return 'Владелец $username создан. Передайте логин и пароль владельцу безопасным каналом.';
+  }
+
+  @override
+  String get superAdminApproveFailed => 'Не удалось одобрить';
+
+  @override
+  String get superAdminRejectSuccess => 'Заявка отклонена';
+
+  @override
+  String get superAdminRejectFailed => 'Не удалось отклонить';
+
+  @override
+  String get superAdminLoadFailed => 'Не удалось загрузить данные';
+
+  @override
+  String get superAdminConsoleNotConfigured => 'Консоль не настроена';
+
+  @override
+  String get superAdminRebuildWithDartDefine =>
+      'Соберите приложение с --dart-define=SUPERADMIN_CONSOLE_SEGMENT';
+
+  @override
+  String get superAdminCredentialsTitle => 'Сохраните учётные данные';
+
+  @override
+  String superAdminCredentialsSubtitle(String marketName) {
+    return 'Скопируйте пароль для владельца магазина «$marketName» сейчас — позже восстановить не получится.';
+  }
+
+  @override
+  String get superAdminCredentialsCopyBoth => 'Скопировать всё';
+
+  @override
+  String get superAdminCredentialsCopied => 'Скопировано';
+
+  @override
+  String get superAdminCredentialsDone => 'Готово';
+
+  @override
+  String get superAdminCredentialsWarning =>
+      'Пароль нигде не хранится. После закрытия его уже не увидеть.';
 }

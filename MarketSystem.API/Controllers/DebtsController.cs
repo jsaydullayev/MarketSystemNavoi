@@ -1,12 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore; // ✅ For Include extension method
+using System.Security.Claims;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
-using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
-using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data; // ✅ For AppDbContext
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MarketSystem.API.Controllers;
 
@@ -15,268 +12,49 @@ namespace MarketSystem.API.Controllers;
 [Authorize(Policy = "AllRoles")]
 public class DebtsController : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAuditLogService _auditLogService;
-    private readonly ICurrentMarketService _currentMarketService;
-    private readonly AppDbContext _context;
+    private readonly IDebtService _debts;
 
-    public DebtsController(IUnitOfWork unitOfWork, IAuditLogService auditLogService, ICurrentMarketService currentMarketService, AppDbContext context)
+    public DebtsController(IDebtService debts)
     {
-        _unitOfWork = unitOfWork;
-        _auditLogService = auditLogService;
-        _currentMarketService = currentMarketService;
-        _context = context;
+        _debts = debts;
     }
 
-    /// <summary>
-    /// Get all open debts for a customer
-    /// </summary>
+    /// <summary>Open debts for one customer.</summary>
     [HttpGet("{customerId}")]
-    public async Task<ActionResult<IEnumerable<DebtDto>>> GetCustomerDebts(Guid customerId)
-    {
-        var marketId = _currentMarketService.GetCurrentMarketId();
+    public async Task<ActionResult<IEnumerable<DebtDto>>> GetCustomerDebts(Guid customerId, CancellationToken ct)
+        => Ok(await _debts.GetByCustomerAsync(customerId, ct));
 
-        // ✅ OPTIMIZED: Single query with eager loading
-        var debts = await _unitOfWork.Debts.GetQueryable()
-            .Include(d => d.Sale)
-                .ThenInclude(s => s.SaleItems)
-                    .ThenInclude(si => si.Product)
-            .Include(d => d.Customer)
-            .Where(d => d.CustomerId == customerId && d.Status == DebtStatus.Open && d.MarketId == marketId)
-            .OrderByDescending(d => d.CreatedAt)
-            .ToListAsync(CancellationToken.None);
-
-        var result = debts.Select(debt => {
-            // Map sale items to DTOs
-            List<SaleItemDto>? saleItems = null;
-            if (debt.Sale?.SaleItems != null)
-            {
-                saleItems = debt.Sale.SaleItems.Select(si => new SaleItemDto(
-                    si.Id.ToString(),
-                    si.SaleId.ToString(),
-                    si.ProductId,
-                    si.Product?.Name ?? "Noma'lum mahsulot",
-                    si.Quantity,
-                    si.CostPrice,
-                    si.SalePrice,
-                    si.TotalPrice,
-                    si.Profit,
-                    "dona", // TODO: Get from product
-                    si.Comment,
-                    si.IsExternal
-                )).ToList();
-            }
-
-            return new DebtDto(
-                debt.Id,
-                debt.SaleId,
-                debt.CustomerId,
-                debt.Customer?.FullName,
-                debt.TotalDebt,
-                debt.RemainingDebt,
-                debt.Status.ToString(),
-                debt.Sale?.CreatedAt ?? DateTime.MinValue,
-                saleItems
-            );
-        }).ToList();
-
-        return Ok(result);
-    }
-
-    /// <summary>
-    /// Get total debt amount for a customer
-    /// </summary>
+    /// <summary>Total open debt for one customer.</summary>
     [HttpGet("~/api/Debts/customer/{customerId}/total")]
-    public async Task<ActionResult<decimal>> GetCustomerTotalDebt(Guid customerId)
-    {
-        var marketId = _currentMarketService.GetCurrentMarketId();
+    public async Task<ActionResult<decimal>> GetCustomerTotalDebt(Guid customerId, CancellationToken ct)
+        => Ok(await _debts.GetCustomerTotalAsync(customerId, ct));
 
-        var debts = await _unitOfWork.Debts.FindAsync(
-            d => d.CustomerId == customerId && d.Status == DebtStatus.Open && d.MarketId == marketId,
-            CancellationToken.None);
-
-        var totalDebt = debts.Sum(d => d.RemainingDebt);
-        return Ok(totalDebt);
-    }
-
-    /// <summary>
-    /// Make a payment towards a debt
-    /// </summary>
+    /// <summary>Make a payment against an open debt.</summary>
     [HttpPost("~/api/Debts/{debtId}/pay")]
-    public async Task<IActionResult> PayDebt(Guid debtId, [FromBody] PayDebtDto request)
+    public async Task<IActionResult> PayDebt(Guid debtId, [FromBody] PayDebtDto request, CancellationToken ct)
     {
-        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (!Guid.TryParse(userIdStr, out var userId))
+        if (!Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId))
             return Unauthorized();
 
-        var marketId = _currentMarketService.GetCurrentMarketId();
-
-        // ✅ FIX: Use execution strategy to wrap transaction operations
-        // This is required because NpgsqlRetryingExecutionStrategy doesn't support user-initiated transactions
-        var strategy = _context.Database.CreateExecutionStrategy();
-
-        return await strategy.ExecuteAsync<IActionResult>(async () =>
+        try
         {
-            await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
-
-            try
+            var result = await _debts.PayAsync(debtId, request, userId, ct);
+            return Ok(new
             {
-                var debt = await _unitOfWork.Debts.GetByIdAsync(debtId);
-                if (debt is null || debt.Status != DebtStatus.Open)
-                    return NotFound("Debt not found or already closed");
-
-                // Tenant isolation — reject cross-market access.
-                if (debt.MarketId != marketId)
-                    return NotFound("Debt not found");
-
-                var sale = await _unitOfWork.Sales.GetByIdAsync(debt.SaleId);
-                if (sale is null || sale.MarketId != marketId)
-                    return NotFound("Sale not found");
-
-                // Validate payment amount
-                if (request.Amount <= 0)
-                    return BadRequest("Payment amount must be positive");
-
-                if (request.Amount > debt.RemainingDebt)
-                    return BadRequest($"Payment amount ({request.Amount}) exceeds remaining debt ({debt.RemainingDebt})");
-
-                var paymentTypeStr = request.PaymentType;
-                if (string.Equals(paymentTypeStr, "CARD", StringComparison.OrdinalIgnoreCase))
-                {
-                    paymentTypeStr = "Terminal";
-                }
-
-                var payment = new Payment
-                {
-                    Id = Guid.NewGuid(),
-                    SaleId = debt.SaleId,
-                    PaymentType = Enum.Parse<PaymentType>(paymentTypeStr, true),
-                    Amount = request.Amount,
-                    MarketId = marketId,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _unitOfWork.Payments.AddAsync(payment);
-
-                // Update cash register balance for cash payments — scoped to this market.
-                if (payment.PaymentType == PaymentType.Cash)
-                {
-                    var cashRegister = await _context.CashRegisters
-                        .FirstOrDefaultAsync(cr => cr.MarketId == marketId, CancellationToken.None);
-
-                    if (cashRegister == null)
-                    {
-                        cashRegister = new CashRegister
-                        {
-                            Id = Guid.NewGuid(),
-                            MarketId = marketId,
-                            CurrentBalance = 0,
-                            LastUpdated = DateTime.UtcNow
-                        };
-                        _context.CashRegisters.Add(cashRegister);
-                    }
-
-                    cashRegister.CurrentBalance += request.Amount;
-                    cashRegister.LastUpdated = DateTime.UtcNow;
-                }
-
-                // Update debt
-                debt.RemainingDebt -= request.Amount;
-                if (debt.RemainingDebt <= 0)
-                {
-                    debt.RemainingDebt = 0;
-                    debt.Status = DebtStatus.Closed;
-                    sale.Status = SaleStatus.Closed;
-                }
-
-                // Update sale
-                sale.PaidAmount += request.Amount;
-                _unitOfWork.Sales.Update(sale);
-                _unitOfWork.Debts.Update(debt);
-
-                await _unitOfWork.SaveChangesAsync(CancellationToken.None);
-                await _unitOfWork.CommitTransactionAsync();
-
-                // Audit log
-                await _auditLogService.LogPaymentActionAsync(payment.Id, userId, CancellationToken.None);
-
-                return Ok(new
-                {
-                    message = "Payment successful",
-                    remainingDebt = debt.RemainingDebt,
-                    paymentAmount = request.Amount,
-                    debtStatus = debt.Status.ToString()
-                });
-            }
-            catch
-            {
-                await _unitOfWork.RollbackTransactionAsync();
-                throw;
-            }
-        });
+                message = "Payment successful",
+                remainingDebt = result.RemainingDebt,
+                paymentAmount = result.PaymentAmount,
+                debtStatus = result.DebtStatus
+            });
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
-    /// <summary>
-    /// Get all debts (admin/owner only)
-    /// </summary>
+    /// <summary>All debts in this market (optionally filtered by status).</summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<DebtDto>>> GetAllDebts(
-        [FromQuery] DebtStatus? status = null)
-    {
-        var marketId = _currentMarketService.GetCurrentMarketId();
-
-        // ✅ OPTIMIZED: Use eager loading to avoid N+1 queries
-        var debtsQuery = status.HasValue
-            ? _unitOfWork.Debts.GetQueryable()
-                .Include(d => d.Sale)
-                    .ThenInclude(s => s.SaleItems)
-                        .ThenInclude(si => si.Product)
-                .Include(d => d.Customer)
-                .Where(d => d.Status == status.Value && d.MarketId == marketId)
-            : _unitOfWork.Debts.GetQueryable()
-                .Include(d => d.Sale)
-                    .ThenInclude(s => s.SaleItems)
-                        .ThenInclude(si => si.Product)
-                .Include(d => d.Customer)
-                .Where(d => d.MarketId == marketId);
-
-        var debts = await debtsQuery
-            .OrderByDescending(d => d.CreatedAt)
-            .ToListAsync(CancellationToken.None);
-
-        var result = debts.Select(debt => {
-            // Map sale items to DTOs
-            List<SaleItemDto>? saleItems = null;
-            if (debt.Sale?.SaleItems != null)
-            {
-                saleItems = debt.Sale.SaleItems.Select(si => new SaleItemDto(
-                    si.Id.ToString(),
-                    si.SaleId.ToString(),
-                    si.ProductId,
-                    si.Product?.Name ?? "Noma'lum mahsulot",
-                    si.Quantity,
-                    si.CostPrice,
-                    si.SalePrice,
-                    si.TotalPrice,
-                    si.Profit,
-                    "dona", // TODO: Get from product
-                    si.Comment,
-                    si.IsExternal
-                )).ToList();
-            }
-
-            return new DebtDto(
-                debt.Id,
-                debt.SaleId,
-                debt.CustomerId,
-                debt.Customer?.FullName,
-                debt.TotalDebt,
-                debt.RemainingDebt,
-                debt.Status.ToString(),
-                debt.Sale?.CreatedAt ?? DateTime.MinValue,
-                saleItems
-            );
-        }).ToList();
-
-        return Ok(result);
-    }
+        [FromQuery] DebtStatus? status,
+        CancellationToken ct)
+        => Ok(await _debts.ListAsync(status, ct));
 }
