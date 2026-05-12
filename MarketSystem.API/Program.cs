@@ -113,6 +113,27 @@ try
 
     builder.Services.AddHealthChecks();
 
+    // HSTS config — 180 days, includes subdomains. Preload is NOT enabled
+    // because that's a domain-level commitment that the operator owns.
+    builder.Services.AddHsts(options =>
+    {
+        options.MaxAge = TimeSpan.FromDays(180);
+        options.IncludeSubDomains = true;
+        options.Preload = false;
+    });
+
+    // Redirect HTTP -> HTTPS. nginx already does 301 at the edge; this is
+    // a defence-in-depth net so Kestrel never serves a sensitive response
+    // over plain HTTP if nginx is misconfigured or bypassed.
+    // HttpsPort MUST be set (443 = the public-facing port nginx terminates
+    // TLS on) — otherwise UseHttpsRedirection silently no-ops, which would
+    // make the "defence in depth" claim a lie.
+    builder.Services.AddHttpsRedirection(options =>
+    {
+        options.RedirectStatusCode = StatusCodes.Status308PermanentRedirect;
+        options.HttpsPort = 443;
+    });
+
 
     // Add JWT Authentication
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -275,10 +296,25 @@ try
                 AutoReplenishment = true
             }));
     });
-    // Load allowed CORS origins from config (Cors:AllowedOrigins) or env (Cors__AllowedOrigins__0,…).
-    var configuredOrigins = builder.Configuration
-        .GetSection("Cors:AllowedOrigins")
-        .Get<string[]>() ?? Array.Empty<string>();
+    // CORS origins — accepts:
+    //   appsettings.json: "Cors:AllowedOrigins": ["https://a", "https://b"]
+    //   env (single):     Cors__AllowedOrigins=https://a,https://b
+    //   env (indexed):    Cors__AllowedOrigins__0=https://a, Cors__AllowedOrigins__1=https://b
+    // Both forms collapse into one deduped list of non-empty trimmed strings.
+    string[] configuredOrigins;
+    {
+        var section = builder.Configuration.GetSection("Cors:AllowedOrigins");
+        var asArray = section.Get<string[]>();
+        var asString = section.Value; // populated when the env is a single comma-separated value
+        var raw = asArray ?? (string.IsNullOrWhiteSpace(asString)
+            ? Array.Empty<string>()
+            : new[] { asString });
+        configuredOrigins = raw
+            .SelectMany(o => (o ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(o => !string.IsNullOrWhiteSpace(o))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
 
     builder.Services.AddCors(options =>
     {
@@ -459,7 +495,33 @@ try
         System.Net.IPAddress.Parse("192.168.0.0"), 16));
     app.UseForwardedHeaders(fwdOptions);
 
+    // GlobalExceptionHandler runs as early as possible so it catches errors
+    // from every downstream middleware (CORS, auth, routing, controllers).
+    // Only UseForwardedHeaders runs before it — that one can't throw and we
+    // want the exception handler to see the corrected Scheme/RemoteIp.
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
+    // In production, ASP.NET sits behind nginx which terminates TLS. Kestrel
+    // itself listens on plain HTTP (port 8080) and is NOT reachable from the
+    // public internet (docker-compose binds to 127.0.0.1; see compose file).
+    // We add HSTS so browsers refuse to downgrade once they've seen the site
+    // over HTTPS, and we redirect HTTP -> HTTPS at the .NET layer as belt-and-
+    // braces in case nginx is ever bypassed. ForwardedHeaders (above) ensures
+    // Request.IsHttps reflects the real client scheme.
+    if (!app.Environment.IsDevelopment())
+    {
+        // 180-day HSTS with includeSubdomains. Preload is intentionally NOT
+        // set — only opt in once the operator has confirmed every subdomain
+        // can serve HTTPS.
+        app.UseHsts();
+        // /health is excluded because the Docker HEALTHCHECK calls
+        // http://localhost:8080/health from inside the container with no
+        // X-Forwarded-Proto. Redirecting it to https://...:443/health would
+        // either fail (no local TLS endpoint) or break the healthcheck loop.
+        app.UseWhen(
+            ctx => !ctx.Request.Path.StartsWithSegments("/health"),
+            branch => branch.UseHttpsRedirection());
+    }
     app.UseSerilogRequestLogging();
     app.UseMiddleware<RequestLoggingMiddleware>();
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");

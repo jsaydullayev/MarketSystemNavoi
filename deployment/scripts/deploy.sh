@@ -1,86 +1,120 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# =============================================================================
+#  MarketSystem deployment script — production
+# =============================================================================
+#
+#  Pulls the latest commit on the target branch, rebuilds the API + client
+#  containers, waits for the API healthcheck to come up, and either confirms
+#  success or rolls back to the previous image tag.
+#
+#  Usage:
+#     bash deployment/scripts/deploy.sh                 # deploy master
+#     bash deployment/scripts/deploy.sh feature-branch  # deploy a branch
+#     ROLLBACK=1 bash deployment/scripts/deploy.sh      # restore previous tag
+#
+#  Pre-reqs on the host:
+#    * docker / docker compose plugin
+#    * nginx (reverse proxy; config at /etc/nginx/sites-available/strotech.uz.conf)
+#    * .env file with all required secrets (see .env.example)
+# =============================================================================
 
-# MarketSystem Deployment Script
-# Usage: bash deploy.sh [ENVIRONMENT]
-# ENVIRONMENT: development | production
+set -euo pipefail
 
-set -e
+BRANCH="${1:-master}"
+PROJECT_DIR="${PROJECT_DIR:-/root/MarketSystemNavoi}"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
+HEALTH_URL="http://localhost:8080/health"
+HEALTH_MAX_ATTEMPTS=30
+HEALTH_DELAY_SECONDS=2
 
-ENVIRONMENT=${1:-production}
-PROJECT_NAME="MarketSystemNavoi"
-GITHUB_REPO="https://github.com/jsaydullayev/MarketSystemNavoi.git"
-BRANCH="master"
+red()    { printf '\033[0;31m%s\033[0m\n' "$*"; }
+green()  { printf '\033[0;32m%s\033[0m\n' "$*"; }
+yellow() { printf '\033[1;33m%s\033[0m\n' "$*"; }
 
-echo "🚀 Starting deployment for: $ENVIRONMENT"
-echo "=========================================="
+cd "$PROJECT_DIR" || { red "Project dir not found: $PROJECT_DIR"; exit 1; }
 
-# 1. Navigate to project directory
-cd /root/$PROJECT_NAME || {
-    echo "❌ Project directory not found: /root/$PROJECT_NAME"
-    exit 1
-}
+# -----------------------------------------------------------------------------
+# Sanity checks: required env, docker, .env file with secrets.
+# -----------------------------------------------------------------------------
+require_cmd() { command -v "$1" >/dev/null 2>&1 || { red "Missing command: $1"; exit 1; }; }
+require_cmd docker
+require_cmd git
+require_cmd curl
 
-# 2. Pull latest changes
-echo "📥 Pulling latest changes from GitHub..."
-git pull origin $BRANCH
-
-# 3. Stop existing containers
-echo "🛑 Stopping existing containers..."
-docker compose down
-
-# 4. Remove old images (optional - uncomment if needed)
-# echo "🗑️ Removing old Docker images..."
-# docker image prune -f
-
-# 5. Build and start containers
-echo "🔨 Building and starting containers..."
-if [ "$ENVIRONMENT" = "production" ]; then
-    # Production deployment
-    docker compose -f docker-compose.yml up -d --build --force-recreate
-else
-    # Development deployment
-    docker compose -f docker-compose.yml up -d --build
+# -----------------------------------------------------------------------------
+# Rollback path — restore the previous image tag and re-up. Use when a
+# fresh build came up unhealthy.
+# Runs BEFORE the .env placeholder check: rollback is an emergency recovery
+# operation and must not be blocked by an in-progress .env edit.
+# -----------------------------------------------------------------------------
+if [[ "${ROLLBACK:-0}" == "1" ]]; then
+    yellow "Rolling back to previous deployment..."
+    if [[ ! -f .last-deploy-commit ]]; then
+        red "No previous deploy on record (.last-deploy-commit missing)."
+        exit 1
+    fi
+    if [[ ! -f .env ]]; then
+        red ".env file is missing — cannot start rollback target without secrets."
+        exit 1
+    fi
+    git checkout "$(cat .last-deploy-commit)"
+    docker compose -f "$COMPOSE_FILE" up -d --build --force-recreate
+    green "Rolled back to $(git rev-parse --short HEAD)."
+    exit 0
 fi
 
-# 6. Wait for services to be healthy
-echo "⏳ Waiting for services to start..."
-sleep 10
+if [[ ! -f .env ]]; then
+    red ".env file is missing. Copy .env.example and fill in real secrets first."
+    exit 1
+fi
 
-# 7. Check container status
-echo "📊 Checking container status..."
-docker compose ps
+# Refuse to deploy if any required secret is still a placeholder.
+if grep -E '^[A-Z_]+=REPLACE_ME' .env >/dev/null; then
+    red ".env still contains REPLACE_ME placeholders. Aborting."
+    grep -nE '^[A-Z_]+=REPLACE_ME' .env || true
+    exit 1
+fi
 
-# 8. Check API health
-echo "🏥 Checking API health..."
-for i in {1..30}; do
-    if curl -f http://localhost:8080/health > /dev/null 2>&1; then
-        echo "✅ API is healthy!"
+# -----------------------------------------------------------------------------
+# Pull, record current commit (for rollback), and rebuild.
+# -----------------------------------------------------------------------------
+echo "Current commit:  $(git rev-parse --short HEAD)"
+git fetch origin
+git rev-parse HEAD > .last-deploy-commit
+yellow "Checking out origin/$BRANCH..."
+git checkout "$BRANCH"
+git pull --ff-only origin "$BRANCH"
+echo "New commit:      $(git rev-parse --short HEAD)"
+
+yellow "Building containers..."
+docker compose -f "$COMPOSE_FILE" up -d --build --remove-orphans
+
+# -----------------------------------------------------------------------------
+# Wait for the API healthcheck before declaring success.
+# -----------------------------------------------------------------------------
+yellow "Waiting for API healthcheck ($HEALTH_URL)..."
+for ((i=1; i<=HEALTH_MAX_ATTEMPTS; i++)); do
+    if curl --fail --silent "$HEALTH_URL" >/dev/null; then
+        green "API healthy after ${i} attempts."
         break
     fi
-    echo "⏳ Waiting for API... ($i/30)"
-    sleep 2
+    if (( i == HEALTH_MAX_ATTEMPTS )); then
+        red "API failed to become healthy. Showing recent logs:"
+        docker compose -f "$COMPOSE_FILE" logs --tail=80 market-system-api || true
+        red "Run with ROLLBACK=1 to restore the previous build."
+        exit 1
+    fi
+    sleep "$HEALTH_DELAY_SECONDS"
 done
 
-# 9. View logs (optional - uncomment for debugging)
-# echo "📋 Recent logs:"
-# docker compose logs --tail=50
+green "Deploy succeeded. Container status:"
+docker compose -f "$COMPOSE_FILE" ps
 
-echo "=========================================="
-echo "✅ Deployment completed successfully!"
-echo ""
-echo "🌐 Access URLs (server):"
-echo "   API:         http://114.29.239.156:8080"
-echo "   API Swagger: http://114.29.239.156:8080/swagger"
-echo "   Frontend:    http://114.29.239.156:8081"
-echo "   Domain:      https://strotech.uz (via host nginx → 8080)"
-echo ""
-echo "🌐 Local Access (from server):"
-echo "   API:         http://localhost:8080"
-echo "   API Swagger: http://localhost:8080/swagger"
-echo "   Frontend:    http://localhost:8081"
-echo "   Database:    localhost:5433"
-echo ""
-echo "📝 Useful commands:"
-echo "   View logs:    docker compose logs -f"
-echo "   Stop all:     docker compose down"
-echo "   Restart:      docker compose restart"
+cat <<EOF
+
+Reminders:
+  * nginx config lives at /etc/nginx/sites-available/strotech.uz.conf.
+    If you changed deployment/nginx/, sync it then 'nginx -t && systemctl reload nginx'.
+  * Logs:    docker compose logs -f market-system-api
+  * Rollback: ROLLBACK=1 bash deployment/scripts/deploy.sh
+EOF
