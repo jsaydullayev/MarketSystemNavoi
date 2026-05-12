@@ -40,6 +40,9 @@ class ApiConstants {
   static const String debts = '/Debts';
   static const String markets = '/Markets';
   static const String cashRegister = '/CashRegister';
+  // Public sign-up: anonymous POST { fullName, phone } — a SuperAdmin reviews
+  // the queue in the hidden console and provisions the Owner + Market on approval.
+  static const String registrationRequests = '/RegistrationRequests';
 
   // Auth endpoints
   static const String login = '$auth/Login';

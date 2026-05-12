@@ -493,7 +493,8 @@ class AppLocalizationsUz extends AppLocalizations {
   String get loginScreenSubtitle => 'Davom etish uchun tizimga kiring';
 
   @override
-  String get registerScreenSubtitle => 'Boshlash uchun ro\'yxatdan o\'ting';
+  String get registerScreenSubtitle =>
+      'So\'rovingizni qoldiring — admin tez orada bog\'lanadi';
 
   @override
   String get welcomeScreenTitle => 'Market Tizimi';
@@ -524,6 +525,28 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get createNewAccount => 'Yangi hisob yaratish';
+
+  @override
+  String get fullNameTooShort => 'Ism juda qisqa';
+
+  @override
+  String get invalidPhoneFormat => 'Telefon raqami noto\'g\'ri formatda';
+
+  @override
+  String get submitRegistrationRequest => 'So\'rov yuborish';
+
+  @override
+  String get registrationSent =>
+      'Adminga yubordik. Admin tez orada javob beradi.';
+
+  @override
+  String registrationRateLimited(int seconds) {
+    return 'Juda ko\'p urinish. $seconds soniyadan keyin qaytadan urining.';
+  }
+
+  @override
+  String get registrationFailedRetry =>
+      'Hozir server bilan bog\'lanib bo\'lmadi. Iltimos, keyinroq urinib ko\'ring.';
 
   @override
   String get backToLogin => 'Login sahifasiga qaytish';

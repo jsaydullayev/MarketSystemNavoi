@@ -492,7 +492,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loginScreenSubtitle => 'Войдите, чтобы продолжить';
 
   @override
-  String get registerScreenSubtitle => 'Зарегистрируйтесь для начала';
+  String get registerScreenSubtitle =>
+      'Оставьте заявку — администратор скоро свяжется с вами';
 
   @override
   String get welcomeScreenTitle => 'Маркет Система';
@@ -524,6 +525,28 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get createNewAccount => 'Создать новый аккаунт';
+
+  @override
+  String get fullNameTooShort => 'Слишком короткое имя';
+
+  @override
+  String get invalidPhoneFormat => 'Неверный формат номера телефона';
+
+  @override
+  String get submitRegistrationRequest => 'Отправить заявку';
+
+  @override
+  String get registrationSent =>
+      'Заявка отправлена администратору. Скоро с вами свяжутся.';
+
+  @override
+  String registrationRateLimited(int seconds) {
+    return 'Слишком много попыток. Повторите через $seconds секунд.';
+  }
+
+  @override
+  String get registrationFailedRetry =>
+      'Сейчас сервер недоступен. Пожалуйста, попробуйте позже.';
 
   @override
   String get backToLogin => 'Вернуться на страницу входа';

@@ -1061,7 +1061,7 @@ abstract class AppLocalizations {
   /// No description provided for @registerScreenSubtitle.
   ///
   /// In uz, this message translates to:
-  /// **'Boshlash uchun ro\'yxatdan o\'ting'**
+  /// **'So\'rovingizni qoldiring — admin tez orada bog\'lanadi'**
   String get registerScreenSubtitle;
 
   /// No description provided for @welcomeScreenTitle.
@@ -1123,6 +1123,42 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Yangi hisob yaratish'**
   String get createNewAccount;
+
+  /// No description provided for @fullNameTooShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ism juda qisqa'**
+  String get fullNameTooShort;
+
+  /// No description provided for @invalidPhoneFormat.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telefon raqami noto\'g\'ri formatda'**
+  String get invalidPhoneFormat;
+
+  /// No description provided for @submitRegistrationRequest.
+  ///
+  /// In uz, this message translates to:
+  /// **'So\'rov yuborish'**
+  String get submitRegistrationRequest;
+
+  /// No description provided for @registrationSent.
+  ///
+  /// In uz, this message translates to:
+  /// **'Adminga yubordik. Admin tez orada javob beradi.'**
+  String get registrationSent;
+
+  /// No description provided for @registrationRateLimited.
+  ///
+  /// In uz, this message translates to:
+  /// **'Juda ko\'p urinish. {seconds} soniyadan keyin qaytadan urining.'**
+  String registrationRateLimited(int seconds);
+
+  /// No description provided for @registrationFailedRetry.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozir server bilan bog\'lanib bo\'lmadi. Iltimos, keyinroq urinib ko\'ring.'**
+  String get registrationFailedRetry;
 
   /// No description provided for @backToLogin.
   ///
