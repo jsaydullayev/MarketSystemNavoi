@@ -13,6 +13,14 @@ class AppRoutes {
   // Main
   static const String dashboard = '/dashboard';
 
+  // Hidden SuperAdmin console. Routed-to only after a successful SuperAdmin
+  // login; intentionally NOT linked from any visible navigation. The backend
+  // gates the actual API calls behind an opaque URL segment (see
+  // SuperAdmin:ConsoleSegment), so even discovering this route name from a
+  // build artefact isn't enough to reach the data — you also need a
+  // SuperAdmin JWT and the matching segment.
+  static const String superAdminConsole = '/superadmin-console';
+
   // Features
   static const String products = '/products';
   static const String productsForm = '/products-form';

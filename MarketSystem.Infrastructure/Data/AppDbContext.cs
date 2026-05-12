@@ -116,6 +116,12 @@ public class AppDbContext : DbContext
             b.HasQueryFilter(x => !x.IsDeleted);
             b.HasIndex(x => x.MarketId);
             b.HasIndex(x => x.CategoryId);  // ✅ Index for faster filtering
+            // Product name is unique per market. Partial index excludes
+            // soft-deleted rows so re-adding a product after delete works.
+            b.HasIndex(x => new { x.MarketId, x.Name })
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false")
+                .HasDatabaseName("IX_Products_MarketId_Name_Active");
         });
 
         // ✅ Configure ProductCategory

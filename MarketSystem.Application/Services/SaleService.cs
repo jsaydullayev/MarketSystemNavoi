@@ -173,8 +173,8 @@ public partial class SaleService : ISaleService
             .Include(s => s.Payments)
             .Where(s => s.MarketId == marketId && s.CreatedAt >= start && s.CreatedAt <= end)
             .OrderByDescending(s => s.CreatedAt)
-            .Distinct()
             .AsNoTracking()
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
         return sales.Select(s => new SaleDto(
@@ -548,8 +548,15 @@ public partial class SaleService : ISaleService
                 if (string.IsNullOrEmpty(request.ExternalProductName))
                     throw new InvalidOperationException("ExternalProductName kerak (tashqi mahsulot uchun)");
 
+                // ExternalCostPrice is nullable on the DTO but mandatory when IsExternal
+                // is true — without this guard the .Value access below NREs.
+                if (!request.ExternalCostPrice.HasValue)
+                    throw new InvalidOperationException("ExternalCostPrice kerak (tashqi mahsulot uchun)");
+                if (request.ExternalCostPrice.Value < 0)
+                    throw new InvalidOperationException("Tashqi tannarx manfiy bo'lmasin");
+
                 // ✅ VALIDATION: Tashqi tannarx sotuv narxidan katta bo'lishi mumkin emas
-                if (request.ExternalCostPrice >= request.SalePrice)
+                if (request.ExternalCostPrice.Value >= request.SalePrice)
                     throw new InvalidOperationException("Tashqi tannarx sotuv narxidan katta yoki teng bo'lishi mumkin emas");
 
                 SaleItem? resultSaleItem;
@@ -784,15 +791,12 @@ public partial class SaleService : ISaleService
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            // ✅ CRITICAL FIX: Get sale WITH items to ensure TotalAmount is calculated
-            var sale = await _unitOfWork.Sales.GetWithItemsAsync(saleId, cancellationToken);
+            // Repository now enforces MarketId at the query layer — a sale in
+            // another tenant returns null here, same as a non-existent id.
+            var sale = await _unitOfWork.Sales.GetWithItemsAsync(saleId, marketId, cancellationToken);
 
             if (sale is null)
                 throw new InvalidOperationException("Sale not found");
-
-            // Verify market ownership for multi-tenancy
-            if (sale.MarketId != marketId)
-                throw new InvalidOperationException("Sale not found in current market");
 
             if (sale.Status == SaleStatus.Paid || sale.Status == SaleStatus.Closed || sale.Status == SaleStatus.Cancelled)
                 throw new InvalidOperationException($"Cannot add payment to sale with status: {sale.Status}");
@@ -1357,6 +1361,42 @@ public partial class SaleService : ISaleService
                 .Where(p => p.SaleId == saleId)
                 .ToListAsync(cancellationToken);
 
+            // BEFORE deleting the payments, reverse the cash side. Otherwise a
+            // Paid sale whose `CurrentBalance += amount` already landed in the
+            // market's cash register would leave that money in the register
+            // forever — effectively making the customer's cash disappear.
+            // Card / Transfer / Click / Credit payments don't touch the
+            // register so we only reverse Cash.
+            //
+            // netCashOnSale = positive cash payments + negative cash refunds
+            //   > 0 : sale brought net cash in — back it out of the register
+            //   < 0 : sale net-refunded the customer (overpaid/return) — the
+            //         register was previously debited by `|net|`; add it back
+            //   = 0 : nothing to do
+            var netCashOnSale = payments
+                .Where(p => p.PaymentType == PaymentType.Cash)
+                .Sum(p => p.Amount);
+            if (netCashOnSale != 0)
+            {
+                var cashRegister = await _context.CashRegisters
+                    .FirstOrDefaultAsync(cr => cr.MarketId == sale.MarketId, cancellationToken);
+                if (cashRegister != null)
+                {
+                    cashRegister.CurrentBalance -= netCashOnSale;
+                    cashRegister.LastUpdated = DateTime.UtcNow;
+                    _logger.LogInformation(
+                        "Cash reversed on sale delete: SaleId={SaleId} NetCash={Amount} NewBalance={Balance}",
+                        saleId, netCashOnSale, cashRegister.CurrentBalance);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "No CashRegister for MarketId={MarketId} when reversing sale {SaleId} (net {Amount} cash). " +
+                        "Skipping reversal — this should not happen in a normally-seeded market.",
+                        sale.MarketId, saleId, netCashOnSale);
+                }
+            }
+
             foreach (var payment in payments)
             {
                 _context.Payments.Remove(payment);
@@ -1628,16 +1668,51 @@ public partial class SaleService : ISaleService
                 var overpaid = sale.PaidAmount - sale.TotalAmount;
                 sale.PaidAmount = sale.TotalAmount;
 
+                // Use the same payment type the customer actually paid with.
+                // Hardcoding Cash here would (a) lie in the audit trail when the
+                // original was Terminal/Click/Transfer, and (b) cause the cash
+                // register deduction below to debit money that was never in it.
+                // Pick the type that dominates the positive payments on this sale.
+                var dominantType = sale.Payments
+                    .Where(p => p.Amount > 0)
+                    .GroupBy(p => p.PaymentType)
+                    .OrderByDescending(g => g.Sum(p => p.Amount))
+                    .Select(g => (PaymentType?)g.Key)
+                    .FirstOrDefault() ?? PaymentType.Cash;
+
                 var refundPayment = new Payment
                 {
                     Id = Guid.NewGuid(),
                     SaleId = sale.Id,
-                    PaymentType = PaymentType.Cash,
+                    PaymentType = dominantType,
                     Amount = -overpaid,
                     MarketId = marketId,
                     CreatedAt = DateTime.UtcNow
                 };
                 _context.Payments.Add(refundPayment);
+
+                // ONLY touch the cash register when the original payment was Cash.
+                // Terminal/Click/Transfer/Credit refunds happen out-of-band (bank
+                // reversal, platform refund) and never move physical till money.
+                if (dominantType == PaymentType.Cash)
+                {
+                    var cashRegister = await _context.CashRegisters
+                        .FirstOrDefaultAsync(cr => cr.MarketId == marketId, cancellationToken);
+                    if (cashRegister != null)
+                    {
+                        cashRegister.CurrentBalance -= overpaid;
+                        cashRegister.LastUpdated = DateTime.UtcNow;
+                        _logger.LogInformation(
+                            "Cash refunded on item return: SaleId={SaleId} Amount={Amount} NewBalance={Balance}",
+                            sale.Id, overpaid, cashRegister.CurrentBalance);
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "No CashRegister for MarketId={MarketId} during return of sale {SaleId}; refund record kept but balance unchanged.",
+                            marketId, sale.Id);
+                    }
+                }
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);

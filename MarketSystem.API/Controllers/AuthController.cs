@@ -75,7 +75,19 @@ public class AuthController : ControllerBase
         if (!Guid.TryParse(userIdStr, out var userId))
             return Unauthorized();
 
-        var result = await _authService.LogoutAsync(request.RefreshToken, userId);
+        // Pull jti + expiry from the current access token's claims (the JwtBearer
+        // middleware already populated User.Claims). Passing them down lets
+        // AuthService add this exact token to the revocation list — without it,
+        // the access token would still be usable until its natural 30-min TTL.
+        var jti = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+        DateTime? expiresAt = null;
+        var expClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Exp)?.Value;
+        if (long.TryParse(expClaim, out var unix))
+        {
+            expiresAt = DateTimeOffset.FromUnixTimeSeconds(unix).UtcDateTime;
+        }
+
+        var result = await _authService.LogoutAsync(request.RefreshToken, userId, jti, expiresAt);
 
         if (!result)
             return BadRequest("Invalid token");
