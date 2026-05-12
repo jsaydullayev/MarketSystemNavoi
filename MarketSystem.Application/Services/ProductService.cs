@@ -76,6 +76,15 @@ public class ProductService : IProductService
             throw new ArgumentException("Noto'g'ri o'lchov birligi tanlandi!");
         }
 
+        // Per-market product name uniqueness — surface a friendly error before
+        // EF lets Postgres reject the insert with a raw 23505. The DB index is
+        // partial on `IsDeleted = false` so a re-created product after delete works.
+        var nameTaken = await _unitOfWork.Products.AnyAsync(
+            p => p.MarketId == marketId.Value && p.Name == request.Name && !p.IsDeleted,
+            cancellationToken);
+        if (nameTaken)
+            throw new InvalidOperationException($"'{request.Name}' nomli mahsulot allaqachon mavjud.");
+
         var product = new Product
         {
             Id = Guid.NewGuid(),

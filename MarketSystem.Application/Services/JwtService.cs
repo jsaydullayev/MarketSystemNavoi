@@ -48,6 +48,28 @@ public class JwtService(IConfiguration configuration) : IJwtService
         return new TokenDto(AccessToken: accessToken, RefreshToken: string.Empty);
     }
 
+    public (string Jti, DateTime ExpiresAtUtc)? GetJtiAndExpiry(string token)
+    {
+        // We parse but DON'T verify the signature here — the caller is using
+        // this to revoke a token they already validated through the JwtBearer
+        // middleware. ReadJwtToken does no cryptographic work.
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(token)) return null;
+            var jwt = handler.ReadJwtToken(token);
+            var jti = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
+            if (string.IsNullOrEmpty(jti)) return null;
+            return (jti, jwt.ValidTo == DateTime.MinValue
+                ? DateTime.UtcNow.AddMinutes(_jwtSetting.AccessTokenExpireMinutes)
+                : jwt.ValidTo);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public Tuple<bool, string?> ValidateAndGetUser(string token)
     {
         var key = Encoding.UTF8.GetBytes(_jwtSetting.Key);

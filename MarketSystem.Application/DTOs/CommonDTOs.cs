@@ -72,8 +72,15 @@ public record CreateCustomerDto(
     [property: JsonPropertyName("comment")] string? Comment,
     [property: JsonPropertyName("initialDebt")] decimal? InitialDebt
 );
+/// <summary>
+/// <see cref="Id"/> is the preferred lookup key. Existing clients that only
+/// know the phone (legacy callers) can still send <see cref="Phone"/> with a
+/// null/empty <see cref="Id"/>; the service falls back to a per-market phone
+/// lookup in that case.
+/// </summary>
 public record UpdateCustomerDto(
-    [property: JsonPropertyName("phone")] string Phone,
+    [property: JsonPropertyName("id")] Guid? Id,
+    [property: JsonPropertyName("phone")] string? Phone,
     [property: JsonPropertyName("fullName")] string? FullName
 );
 

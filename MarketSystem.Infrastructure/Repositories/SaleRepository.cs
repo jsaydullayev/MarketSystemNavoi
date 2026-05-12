@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using MarketSystem.Domain.Entities;
-using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 
@@ -12,14 +11,14 @@ public class SaleRepository : BaseRepository<Sale>, ISaleRepository
     {
     }
 
-    public async Task<Sale?> GetWithItemsAsync(Guid saleId, CancellationToken cancellationToken = default)
+    public async Task<Sale?> GetWithItemsAsync(Guid saleId, int marketId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Include(s => s.SaleItems)
-            .FirstOrDefaultAsync(s => s.Id == saleId, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
     }
 
-    public async Task<Sale?> GetWithDetailsAsync(Guid saleId, CancellationToken cancellationToken = default)
+    public async Task<Sale?> GetWithDetailsAsync(Guid saleId, int marketId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Include(s => s.SaleItems)
@@ -27,6 +26,6 @@ public class SaleRepository : BaseRepository<Sale>, ISaleRepository
             .Include(s => s.Debt)
             .Include(s => s.Seller)
             .Include(s => s.Customer)
-            .FirstOrDefaultAsync(s => s.Id == saleId, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
     }
 }
