@@ -66,6 +66,25 @@ public record RejectRegistrationRequestDto(
 }
 
 /// <summary>
+/// SuperAdmin directly creates a new Owner + Market without an in-queue
+/// registration request — used when an applicant signs up out-of-band
+/// (phone call, in-person). Phone is optional here because the SuperAdmin
+/// already has the contact channel; everything else mirrors approve.
+/// </summary>
+public record CreateOwnerDto(
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("username")] string Username,
+    [property: JsonPropertyName("password")] string Password,
+    [property: JsonPropertyName("marketName")] string MarketName,
+    [property: JsonPropertyName("phone")] string? Phone = null,
+    [property: JsonPropertyName("subdomain")] string? Subdomain = null,
+    [property: JsonPropertyName("language")] string? Language = "uz"
+)
+{
+    public CreateOwnerDto() : this(string.Empty, string.Empty, string.Empty, string.Empty) { }
+}
+
+/// <summary>
 /// "Active owner" list shown alongside pending requests in the SuperAdmin page.
 /// </summary>
 public record OwnerSummaryDto(

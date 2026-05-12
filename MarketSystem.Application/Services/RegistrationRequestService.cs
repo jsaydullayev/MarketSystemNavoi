@@ -289,6 +289,117 @@ public class RegistrationRequestService : IRegistrationRequestService
         });
     }
 
+    public async Task<ApproveRegistrationResultDto> CreateOwnerAsync(CreateOwnerDto dto, Guid superAdminUserId, CancellationToken cancellationToken = default)
+    {
+        var fullName = (dto.FullName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(fullName) || fullName.Length < 2)
+            throw new InvalidOperationException("Ism va familiyani kiriting.");
+        if (string.IsNullOrWhiteSpace(dto.Username) || dto.Username.Length < 3)
+            throw new InvalidOperationException("Username kamida 3 ta belgidan iborat bo'lsin.");
+        if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 8)
+            throw new InvalidOperationException("Parol kamida 8 ta belgidan iborat bo'lsin.");
+        if (string.IsNullOrWhiteSpace(dto.MarketName))
+            throw new InvalidOperationException("Do'kon nomini kiriting.");
+
+        // Phone is optional on the direct-create path. If provided, run it
+        // through the same normaliser used by the public sign-up so a stored
+        // owner phone is always `+998XXXXXXXXX` — otherwise leave it null.
+        string? phone = null;
+        if (!string.IsNullOrWhiteSpace(dto.Phone))
+        {
+            phone = NormalizePhone(dto.Phone);
+        }
+
+        Language language = dto.Language?.ToLowerInvariant() switch
+        {
+            "uz" => Language.Uzbek,
+            "ru" => Language.Russian,
+            _ => Language.Uzbek
+        };
+
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                if (await _context.Users.AnyAsync(u => u.Username == dto.Username, cancellationToken))
+                    throw new InvalidOperationException($"'{dto.Username}' allaqachon ishlatilgan.");
+                if (await _context.Markets.AnyAsync(m => m.Name == dto.MarketName, cancellationToken))
+                    throw new InvalidOperationException($"'{dto.MarketName}' nomli do'kon allaqachon mavjud.");
+
+                var subdomain = string.IsNullOrWhiteSpace(dto.Subdomain)
+                    ? GenerateSubdomain(dto.Username)
+                    : dto.Subdomain.Trim().ToLowerInvariant();
+                if (await _context.Markets.AnyAsync(m => m.Subdomain == subdomain, cancellationToken))
+                    throw new InvalidOperationException($"'{subdomain}' subdomeni allaqachon band.");
+
+                var userId = Guid.NewGuid();
+                var user = new User
+                {
+                    Id = userId,
+                    FullName = fullName,
+                    Username = dto.Username,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                    Phone = phone,
+                    Role = Role.Owner,
+                    Language = language,
+                    IsActive = true,
+                    MarketId = null
+                };
+                await _context.Users.AddAsync(user, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var market = new Market
+                {
+                    Name = dto.MarketName.Trim(),
+                    Subdomain = subdomain,
+                    IsActive = true,
+                    OwnerId = userId
+                };
+                await _context.Markets.AddAsync(market, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _context.CashRegisters.Add(new CashRegister
+                {
+                    Id = Guid.NewGuid(),
+                    MarketId = market.Id,
+                    CurrentBalance = 0m,
+                    LastUpdated = DateTime.UtcNow
+                });
+
+                user.MarketId = market.Id;
+                await _context.SaveChangesAsync(cancellationToken);
+                await tx.CommitAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Owner created directly: UserId={UserId} MarketId={MarketId} BySuperAdmin={SuperAdminId}",
+                    userId, market.Id, superAdminUserId);
+
+                await _auditLog.LogActionAsync(
+                    entityType: "User",
+                    entityId: userId,
+                    action: "OwnerCreatedDirect",
+                    userId: superAdminUserId,
+                    payload: new { CreatedUserId = userId, CreatedMarketId = market.Id, Username = dto.Username, MarketName = market.Name },
+                    cancellationToken);
+
+                return new ApproveRegistrationResultDto(
+                    Guid.Empty,
+                    user.Id,
+                    user.Username,
+                    market.Id,
+                    market.Name
+                );
+            }
+            catch
+            {
+                await tx.RollbackAsync(cancellationToken);
+                throw;
+            }
+        });
+    }
+
     /// <summary>
     /// Normalise to strict E.164-like Uzbekistan format `+998XXXXXXXXX` (12 digits
     /// after the plus). Anything else throws — accepting "998..." and "+998..."

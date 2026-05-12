@@ -3133,6 +3133,36 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko\'rib bo\'lmaydi.'**
   String get superAdminCredentialsWarning;
+
+  /// No description provided for @superAdminAddOwner.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi ega'**
+  String get superAdminAddOwner;
+
+  /// No description provided for @superAdminAddOwnerTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi ega qo\'shish'**
+  String get superAdminAddOwnerTitle;
+
+  /// No description provided for @superAdminPhoneOptional.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telefon (ixtiyoriy)'**
+  String get superAdminPhoneOptional;
+
+  /// No description provided for @superAdminAddOwnerSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'{username} egasi qo\'shildi. Login ma\'lumotlarini xavfsiz uzating.'**
+  String superAdminAddOwnerSuccess(String username);
+
+  /// No description provided for @superAdminAddOwnerFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Egani qo\'shib bo\'lmadi'**
+  String get superAdminAddOwnerFailed;
 }
 
 class _AppLocalizationsDelegate

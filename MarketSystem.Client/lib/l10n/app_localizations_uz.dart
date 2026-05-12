@@ -1611,4 +1611,20 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get superAdminCredentialsWarning =>
       'Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko\'rib bo\'lmaydi.';
+
+  @override
+  String get superAdminAddOwner => 'Yangi ega';
+
+  @override
+  String get superAdminAddOwnerTitle => 'Yangi ega qo\'shish';
+
+  @override
+  String get superAdminPhoneOptional => 'Telefon (ixtiyoriy)';
+
+  @override
+  String superAdminAddOwnerSuccess(String username) =>
+      '$username egasi qo\'shildi. Login ma\'lumotlarini xavfsiz uzating.';
+
+  @override
+  String get superAdminAddOwnerFailed => 'Egani qo\'shib bo\'lmadi';
 }

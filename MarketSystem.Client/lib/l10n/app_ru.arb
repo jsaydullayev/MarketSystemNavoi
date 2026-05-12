@@ -519,5 +519,13 @@
   "superAdminCredentialsCopyBoth": "Скопировать всё",
   "superAdminCredentialsCopied": "Скопировано",
   "superAdminCredentialsDone": "Готово",
-  "superAdminCredentialsWarning": "Пароль нигде не хранится. После закрытия его уже не увидеть."
+  "superAdminCredentialsWarning": "Пароль нигде не хранится. После закрытия его уже не увидеть.",
+  "superAdminAddOwner": "Новый владелец",
+  "superAdminAddOwnerTitle": "Добавить владельца",
+  "superAdminPhoneOptional": "Телефон (необязательно)",
+  "superAdminAddOwnerSuccess": "Владелец {username} добавлен. Передайте логин и пароль безопасным каналом.",
+  "@superAdminAddOwnerSuccess": {
+    "placeholders": { "username": { "type": "String" } }
+  },
+  "superAdminAddOwnerFailed": "Не удалось добавить владельца"
 }

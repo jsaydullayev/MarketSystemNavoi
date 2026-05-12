@@ -26,4 +26,11 @@ public interface IRegistrationRequestService
 
     /// <summary>Reject a request with a reason. Idempotent on a request already rejected.</summary>
     Task<bool> RejectAsync(Guid requestId, string reason, Guid superAdminUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Create an Owner + Market + CashRegister directly, without a pre-existing
+    /// registration request. Used by SuperAdmin when onboarding an owner who
+    /// signed up out-of-band (e.g. by phone or in person).
+    /// </summary>
+    Task<ApproveRegistrationResultDto> CreateOwnerAsync(CreateOwnerDto dto, Guid superAdminUserId, CancellationToken cancellationToken = default);
 }

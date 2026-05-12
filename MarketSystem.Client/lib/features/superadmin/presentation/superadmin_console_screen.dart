@@ -8,6 +8,7 @@ import '../../../l10n/app_localizations.dart';
 import '../data/superadmin_service.dart';
 import '../domain/models/owner_summary.dart';
 import '../domain/models/registration_request.dart';
+import 'widgets/add_owner_dialog.dart';
 import 'widgets/approve_request_dialog.dart';
 import 'widgets/credentials_handoff_dialog.dart';
 import 'widgets/reject_request_dialog.dart';
@@ -39,10 +40,21 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
   String? _requestsError;
   String? _ownersError;
 
+  int _activeTab = 0;
+
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
+    // Keep _activeTab in sync so the FAB only renders on the Owners tab —
+    // the FAB and the per-card approve buttons cover different flows and
+    // showing both on the Requests tab would be confusing.
+    _tabs.addListener(() {
+      if (_tabs.indexIsChanging) return;
+      if (_tabs.index != _activeTab) {
+        setState(() => _activeTab = _tabs.index);
+      }
+    });
     final auth = context.read<AuthProvider>();
     _service = SuperAdminService(auth.httpService);
 
@@ -158,6 +170,57 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
     } else {
       _showSnack(l10n.superAdminApproveFailed, isError: true);
+    }
+  }
+
+  Future<void> _onAddOwner() async {
+    final input = await showDialog<AddOwnerResult>(
+      context: context,
+      builder: (_) => const AddOwnerDialog(),
+    );
+    if (input == null || !mounted) return;
+
+    final result = await _service.createOwner(
+      fullName: input.fullName,
+      username: input.username,
+      password: input.password,
+      marketName: input.marketName,
+      phone: input.phone,
+      subdomain: input.subdomain,
+    );
+    if (!mounted) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    if (result.status == SuperAdminOpStatus.success) {
+      _refreshOwners();
+      // Same handoff dialog as the approve flow — backend doesn't echo the
+      // password back, so this is the only chance for the operator to copy
+      // it before sending it to the owner out-of-band.
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => CredentialsHandoffDialog(
+          username: input.username,
+          password: input.password,
+          marketName: input.marketName,
+        ),
+      );
+      if (!mounted) return;
+      _showSnack(
+        l10n.superAdminAddOwnerSuccess(input.username),
+        isError: false,
+      );
+    } else if (result.status == SuperAdminOpStatus.validation) {
+      _showSnack(
+        result.message ?? l10n.superAdminAddOwnerFailed,
+        isError: true,
+      );
+    } else if (result.status == SuperAdminOpStatus.unauthorized) {
+      await context.read<AuthProvider>().logout();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+    } else {
+      _showSnack(l10n.superAdminAddOwnerFailed, isError: true);
     }
   }
 
@@ -291,6 +354,13 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
           ),
         ],
       ),
+      floatingActionButton: _activeTab == 1
+          ? FloatingActionButton.extended(
+              onPressed: _onAddOwner,
+              icon: const Icon(Icons.person_add_alt_1),
+              label: Text(l10n.superAdminAddOwner),
+            )
+          : null,
     );
   }
 }

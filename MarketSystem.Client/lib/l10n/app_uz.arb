@@ -519,5 +519,13 @@
   "superAdminCredentialsCopyBoth": "Hammasini nusxalash",
   "superAdminCredentialsCopied": "Nusxalandi",
   "superAdminCredentialsDone": "Tugatish",
-  "superAdminCredentialsWarning": "Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko'rib bo'lmaydi."
+  "superAdminCredentialsWarning": "Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko'rib bo'lmaydi.",
+  "superAdminAddOwner": "Yangi ega",
+  "superAdminAddOwnerTitle": "Yangi ega qo'shish",
+  "superAdminPhoneOptional": "Telefon (ixtiyoriy)",
+  "superAdminAddOwnerSuccess": "{username} egasi qo'shildi. Login ma'lumotlarini xavfsiz uzating.",
+  "@superAdminAddOwnerSuccess": {
+    "placeholders": { "username": { "type": "String" } }
+  },
+  "superAdminAddOwnerFailed": "Egani qo'shib bo'lmadi"
 }

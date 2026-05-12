@@ -41,6 +41,23 @@ public class SuperAdminController : ControllerBase
     public async Task<IActionResult> ListOwners(CancellationToken ct)
         => Ok(await _service.ListOwnersAsync(ct));
 
+    /// <summary>
+    /// Direct-create an Owner + Market + CashRegister without an in-queue
+    /// registration request. Used when onboarding an applicant out-of-band.
+    /// </summary>
+    [HttpPost("owners")]
+    public async Task<IActionResult> CreateOwner(
+        [FromBody] CreateOwnerDto body,
+        CancellationToken ct)
+    {
+        if (!TryGetCallerId(out var superAdminId)) return Unauthorized();
+        try
+        {
+            return Ok(await _service.CreateOwnerAsync(body, superAdminId, ct));
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
     [HttpPost("requests/{id:guid}/approve")]
     public async Task<IActionResult> Approve(
         Guid id,

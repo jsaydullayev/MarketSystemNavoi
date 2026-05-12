@@ -1615,4 +1615,20 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get superAdminCredentialsWarning =>
       'Пароль нигде не хранится. После закрытия его уже не увидеть.';
+
+  @override
+  String get superAdminAddOwner => 'Новый владелец';
+
+  @override
+  String get superAdminAddOwnerTitle => 'Добавить владельца';
+
+  @override
+  String get superAdminPhoneOptional => 'Телефон (необязательно)';
+
+  @override
+  String superAdminAddOwnerSuccess(String username) =>
+      'Владелец $username добавлен. Передайте логин и пароль безопасным каналом.';
+
+  @override
+  String get superAdminAddOwnerFailed => 'Не удалось добавить владельца';
 }

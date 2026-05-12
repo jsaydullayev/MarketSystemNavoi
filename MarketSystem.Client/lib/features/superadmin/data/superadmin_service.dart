@@ -127,6 +127,52 @@ class SuperAdminService {
     }
   }
 
+  /// Direct-create a new Owner (no in-queue registration request).
+  /// Returns the same payload shape as [approve] so the credentials-handoff
+  /// dialog can be reused.
+  Future<SuperAdminOpResult<Map<String, dynamic>>> createOwner({
+    required String fullName,
+    required String username,
+    required String password,
+    required String marketName,
+    String? phone,
+    String? subdomain,
+    String language = 'uz',
+  }) async {
+    if (!AppConfig.hasSuperAdminConsole) {
+      return SuperAdminOpResult(
+        SuperAdminOpStatus.failure,
+        message: 'console_not_configured',
+      );
+    }
+    try {
+      final response = await _http.post(
+        '$_basePath/owners',
+        body: {
+          'fullName': fullName,
+          'username': username,
+          'password': password,
+          'marketName': marketName,
+          if (phone != null && phone.isNotEmpty) 'phone': phone,
+          if (subdomain != null && subdomain.isNotEmpty) 'subdomain': subdomain,
+          'language': language,
+        },
+      );
+      if (response.statusCode == 200) {
+        return SuperAdminOpResult(
+          SuperAdminOpStatus.success,
+          data: jsonDecode(response.body) as Map<String, dynamic>,
+        );
+      }
+      return _mapNonSuccess<Map<String, dynamic>>(
+        response.statusCode,
+        body: response.body,
+      );
+    } catch (_) {
+      return SuperAdminOpResult(SuperAdminOpStatus.failure);
+    }
+  }
+
   Future<SuperAdminOpResult<void>> reject({
     required String requestId,
     required String reason,
