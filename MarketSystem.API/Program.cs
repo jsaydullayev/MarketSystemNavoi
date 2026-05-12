@@ -173,6 +173,25 @@ try
                         }
                     }
                     return Task.CompletedTask;
+                },
+                OnTokenValidated = context =>
+                {
+                    // Reject access tokens whose jti has been revoked (logout,
+                    // refresh rotation, suspicious-refresh defensive revoke).
+                    // Without this, an attacker who steals a token can use it
+                    // for the full 30-minute TTL even after the user logs out.
+                    var jti = context.Principal?.FindFirst(
+                        System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+                    if (!string.IsNullOrEmpty(jti))
+                    {
+                        var store = context.HttpContext.RequestServices
+                            .GetRequiredService<IRevokedTokenStore>();
+                        if (store.IsRevoked(jti))
+                        {
+                            context.Fail("Token has been revoked.");
+                        }
+                    }
+                    return Task.CompletedTask;
                 }
             };
         });
@@ -429,6 +448,9 @@ try
     builder.Services.AddScoped<IExcelService, ExcelService>();
     builder.Services.AddSingleton<ITashkentClock, TashkentClock>();
     builder.Services.AddScoped<IRegistrationRequestService, RegistrationRequestService>();
+    builder.Services.AddScoped<IDebtService, DebtService>();
+    // Singleton — the process-local revocation map must outlive any single request.
+    builder.Services.AddSingleton<IRevokedTokenStore, InMemoryRevokedTokenStore>();
 
     var app = builder.Build();
 

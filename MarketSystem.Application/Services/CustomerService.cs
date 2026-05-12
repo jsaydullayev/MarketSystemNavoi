@@ -156,19 +156,51 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
-        var customer = await _context.Customers
-            .FirstOrDefaultAsync(c => c.Phone == request.Phone && c.MarketId == marketId, cancellationToken);
+        // Prefer the stable primary key. Legacy clients that only know the
+        // phone (pre-Day-4 contract) can omit Id; we fall back to per-market
+        // phone lookup so their requests don't break. When Id IS supplied we
+        // always use it — Phone may be changing in this same request.
+        Customer? customer;
+        if (request.Id.HasValue && request.Id.Value != Guid.Empty)
+        {
+            customer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.Id == request.Id.Value && c.MarketId == marketId, cancellationToken);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(request.Phone)) return null;
+            customer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.Phone == request.Phone && c.MarketId == marketId, cancellationToken);
+        }
 
         if (customer is null)
             return null;
 
-        // Only update FullName if provided
-        if (request.FullName is not null)
+        var changed = false;
+
+        if (request.FullName is not null && request.FullName != customer.FullName)
         {
             customer.FullName = request.FullName;
-            _context.Entry(customer).State = EntityState.Modified;
-            _context.Customers.Update(customer);
+            changed = true;
+        }
+
+        // Only treat Phone as an UPDATE target when the caller passed Id (i.e.
+        // the legacy phone-lookup path can't accidentally rename the customer).
+        if (request.Id.HasValue && request.Id.Value != Guid.Empty
+            && !string.IsNullOrWhiteSpace(request.Phone)
+            && request.Phone != customer.Phone)
+        {
+            var phoneTaken = await _context.Customers.AnyAsync(
+                c => c.Phone == request.Phone && c.MarketId == marketId && c.Id != customer.Id,
+                cancellationToken);
+            if (phoneTaken)
+                throw new InvalidOperationException($"'{request.Phone}' telefoni allaqachon boshqa mijozga tegishli.");
+            customer.Phone = request.Phone;
+            changed = true;
+        }
+
+        if (changed)
+        {
             await _context.SaveChangesAsync(cancellationToken);
         }
 
