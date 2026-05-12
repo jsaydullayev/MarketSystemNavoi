@@ -18,6 +18,21 @@ namespace MarketSystem.IntegrationTests.Integration;
 /// </summary>
 public abstract class TestBase : IDisposable
 {
+    // Resolve once per test process — TimeZoneInfo lookup is mildly expensive,
+    // and the fallback chain handles Linux build agents that lack the Windows ID.
+    private static readonly TimeZoneInfo SharedTashkentTimeZone = ResolveTashkentTimeZone();
+
+    private static TimeZoneInfo ResolveTashkentTimeZone()
+    {
+        foreach (var id in new[] { "Asia/Tashkent", "Central Asia Standard Time" })
+        {
+            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
+            catch (TimeZoneNotFoundException) { }
+            catch (InvalidTimeZoneException) { }
+        }
+        return TimeZoneInfo.CreateCustomTimeZone("Asia/Tashkent", TimeSpan.FromHours(5), "Tashkent", "Tashkent");
+    }
+
     protected AppDbContext DbContext { get; private set; } = null!;
     protected ServiceProvider ServiceProvider { get; private set; } = null!;
     protected Mock<ILogger<SaleService>> SaleServiceLoggerMock { get; private set; } = null!;
@@ -56,6 +71,10 @@ public abstract class TestBase : IDisposable
             options.UseInMemoryDatabase(databaseName: $"MarketSystemTest_{Guid.NewGuid()}");
             options.EnableSensitiveDataLogging();
             options.EnableDetailedErrors();
+            // InMemory has no real transactions; the service code uses
+            // ExecuteInTransactionAsync — suppress the warning so it no-ops.
+            options.ConfigureWarnings(w =>
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning));
         });
 
         // Mocks
@@ -82,9 +101,10 @@ public abstract class TestBase : IDisposable
 
         // Initialize services with UnitOfWork
         var unitOfWork = new Infrastructure.Repositories.UnitOfWork(DbContext);
+        var clock = new TashkentClock(SharedTashkentTimeZone);
         CustomerService = new CustomerService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, httpContextAccessorMock.Object);
         SaleService = new SaleService(unitOfWork, AuditLogServiceMock.Object, DbContext, SaleServiceLoggerMock.Object, CurrentMarketServiceMock.Object, CustomerService);
-        CashRegisterService = new CashRegisterService(unitOfWork, CashRegisterServiceLoggerMock.Object, DbContext, CurrentMarketServiceMock.Object);
+        CashRegisterService = new CashRegisterService(unitOfWork, CashRegisterServiceLoggerMock.Object, DbContext, CurrentMarketServiceMock.Object, clock);
 
         // Seed test data
         SeedTestData();
@@ -125,12 +145,13 @@ public abstract class TestBase : IDisposable
         };
         DbContext.Customers.Add(TestCustomer);
 
-        // Create test cash register
+        // Create test cash register — scoped to the test market (entity now requires MarketId).
         var cashRegister = new CashRegister
         {
             Id = Guid.NewGuid(),
             CurrentBalance = 0,
-            LastUpdated = DateTime.UtcNow
+            LastUpdated = DateTime.UtcNow,
+            MarketId = TestMarketId
         };
         DbContext.CashRegisters.Add(cashRegister);
 

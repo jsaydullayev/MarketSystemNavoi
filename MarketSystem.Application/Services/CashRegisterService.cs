@@ -5,7 +5,6 @@ using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace MarketSystem.Application.Services;
 
@@ -15,13 +14,49 @@ public class CashRegisterService : ICashRegisterService
     private readonly ILogger<CashRegisterService> _logger;
     private readonly AppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly ITashkentClock _clock;
 
-    public CashRegisterService(IUnitOfWork unitOfWork, ILogger<CashRegisterService> logger, AppDbContext context, ICurrentMarketService currentMarketService)
+    public CashRegisterService(IUnitOfWork unitOfWork, ILogger<CashRegisterService> logger, AppDbContext context, ICurrentMarketService currentMarketService, ITashkentClock clock)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _context = context;
         _currentMarketService = currentMarketService;
+        _clock = clock;
+    }
+
+    private async Task<CashRegister> GetOrCreateRegisterAsync(int marketId, CancellationToken cancellationToken)
+    {
+        var register = await _context.CashRegisters
+            .Include(x => x.LastWithdrawal)
+            .FirstOrDefaultAsync(x => x.MarketId == marketId, cancellationToken);
+
+        if (register != null) return register;
+
+        register = new CashRegister
+        {
+            Id = Guid.NewGuid(),
+            MarketId = marketId,
+            CurrentBalance = 0,
+            LastUpdated = DateTime.UtcNow
+        };
+        _context.CashRegisters.Add(register);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return register;
+        }
+        catch (DbUpdateException)
+        {
+            // Another concurrent request just inserted the per-market register.
+            // Drop the local entity from the change tracker and re-read.
+            _context.Entry(register).State = EntityState.Detached;
+            var existing = await _context.CashRegisters
+                .Include(x => x.LastWithdrawal)
+                .FirstOrDefaultAsync(x => x.MarketId == marketId, cancellationToken);
+            if (existing == null) throw;
+            return existing;
+        }
     }
 
     public async Task<CashRegisterDto?> GetCashRegisterAsync(CancellationToken cancellationToken = default)
@@ -29,26 +64,8 @@ public class CashRegisterService : ICashRegisterService
         try
         {
             var marketId = _currentMarketService.GetCurrentMarketId();
+            var cashRegister = await GetOrCreateRegisterAsync(marketId, cancellationToken);
 
-            var cashRegister = await _context.CashRegisters
-                .Include(x => x.LastWithdrawal)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            // Agar cash register yo'q bo'lsa, yaratamiz
-            if (cashRegister == null)
-            {
-                cashRegister = new CashRegister
-                {
-                    Id = Guid.NewGuid(),
-                    CurrentBalance = 0,
-                    LastUpdated = DateTime.UtcNow
-                };
-                _context.CashRegisters.Add(cashRegister);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-
-            // Filter withdrawals by market (through User.MarketId)
-            // System withdrawals (UserId == null, like returns) should also be included
             var withdrawals = await _context.CashWithdrawals
                 .Include(x => x.User)
                 .Where(x => x.User == null || x.User.MarketId == marketId)
@@ -56,7 +73,7 @@ public class CashRegisterService : ICashRegisterService
                 .Take(50)
                 .ToListAsync(cancellationToken);
 
-            var cashRegisterDto = new CashRegisterDto
+            return new CashRegisterDto
             {
                 Id = cashRegister.Id,
                 CurrentBalance = cashRegister.CurrentBalance,
@@ -70,8 +87,6 @@ public class CashRegisterService : ICashRegisterService
                     UserName = w.User?.FullName ?? "Unknown"
                 }).ToList()
             };
-
-            return cashRegisterDto;
         }
         catch (Exception ex)
         {
@@ -84,14 +99,16 @@ public class CashRegisterService : ICashRegisterService
     {
         try
         {
+            var marketId = _currentMarketService.GetCurrentMarketId();
+
             return await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 var cashRegister = await _context.CashRegisters
-                    .FirstOrDefaultAsync(cancellationToken);
+                    .FirstOrDefaultAsync(x => x.MarketId == marketId, cancellationToken);
 
                 if (cashRegister == null)
                 {
-                    _logger.LogWarning("Cash register not found");
+                    _logger.LogWarning("Cash register not found for market {MarketId}", marketId);
                     return false;
                 }
 
@@ -101,20 +118,18 @@ public class CashRegisterService : ICashRegisterService
                     return false;
                 }
 
-                _logger.LogInformation("WithdrawCashAsync called. Type: {Type}, Amount: {Amount}",
-                    request.WithdrawType, request.Amount);
+                _logger.LogInformation("WithdrawCashAsync called. Type: {Type}, Amount: {Amount}, MarketId: {MarketId}",
+                    request.WithdrawType, request.Amount, marketId);
 
-                // Agar 'cash' bo'lsa, kassadan pul olinadi
                 if (request.WithdrawType == "cash")
                 {
                     if (cashRegister.CurrentBalance < request.Amount)
                     {
-                        _logger.LogWarning("Insufficient funds in cash register. Balance: {Balance}, Requested: {Amount}",
+                        _logger.LogWarning("Insufficient funds. Balance: {Balance}, Requested: {Amount}",
                             cashRegister.CurrentBalance, request.Amount);
                         return false;
                     }
 
-                    // Withdrawal yaratish
                     var withdrawal = new CashWithdrawal
                     {
                         Id = Guid.NewGuid(),
@@ -127,19 +142,15 @@ public class CashRegisterService : ICashRegisterService
 
                     _context.CashWithdrawals.Add(withdrawal);
 
-                    // Balansni kamaytirish
                     cashRegister.CurrentBalance -= request.Amount;
                     cashRegister.LastUpdated = DateTime.UtcNow;
                     cashRegister.LastWithdrawalId = withdrawal.Id;
 
                     await _context.SaveChangesAsync(cancellationToken);
-
-                    _logger.LogInformation("Cash withdrawn successfully. Type: cash, Amount: {Amount}", request.Amount);
+                    _logger.LogInformation("Cash withdrawn. Amount: {Amount}", request.Amount);
                 }
-                // Agar 'click' bo'lsa, tarixga yozib qo'ydi, balansga ta'sir qilmaydi
                 else if (request.WithdrawType == "click")
                 {
-                    // Withdrawal yaratish (faqat tarix uchun, balansga ta'sir qilmaydi)
                     var withdrawal = new CashWithdrawal
                     {
                         Id = Guid.NewGuid(),
@@ -152,13 +163,11 @@ public class CashRegisterService : ICashRegisterService
 
                     _context.CashWithdrawals.Add(withdrawal);
 
-                    // Faqat yangilash
                     cashRegister.LastUpdated = DateTime.UtcNow;
                     cashRegister.LastWithdrawalId = withdrawal.Id;
 
                     await _context.SaveChangesAsync(cancellationToken);
-
-                    _logger.LogInformation("Click withdrawal recorded. Type: click, Amount: {Amount}", request.Amount);
+                    _logger.LogInformation("Click withdrawal recorded. Amount: {Amount}", request.Amount);
                 }
                 else
                 {
@@ -186,28 +195,14 @@ public class CashRegisterService : ICashRegisterService
                 return false;
             }
 
-            var cashRegister = await _context.CashRegisters
-                .FirstOrDefaultAsync(cancellationToken);
+            var marketId = _currentMarketService.GetCurrentMarketId();
+            var cashRegister = await GetOrCreateRegisterAsync(marketId, cancellationToken);
 
-            if (cashRegister == null)
-            {
-                cashRegister = new CashRegister
-                {
-                    Id = Guid.NewGuid(),
-                    CurrentBalance = amount,
-                    LastUpdated = DateTime.UtcNow
-                };
-                _context.CashRegisters.Add(cashRegister);
-            }
-            else
-            {
-                cashRegister.CurrentBalance += amount;
-                cashRegister.LastUpdated = DateTime.UtcNow;
-            }
-
+            cashRegister.CurrentBalance += amount;
+            cashRegister.LastUpdated = DateTime.UtcNow;
             await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Cash added successfully. Amount: {Amount}", amount);
+            _logger.LogInformation("Cash added. Amount: {Amount}, MarketId: {MarketId}", amount, marketId);
             return true;
         }
         catch (Exception ex)
@@ -222,15 +217,15 @@ public class CashRegisterService : ICashRegisterService
         try
         {
             var marketId = _currentMarketService.GetCurrentMarketId();
-            var today = DateTime.UtcNow.Date;
+            // Tashkent business day, expressed as a UTC half-open range.
+            var todayLocal = _clock.TodayLocal;
+            var (todayUtcStart, todayUtcEnd) = _clock.LocalDayToUtcRange(todayLocal);
 
-            // Bugungi savdolarni olish (filtered by market)
             var todaySales = await _context.Sales
-                .Where(s => s.CreatedAt.Date == today && s.MarketId == marketId)
+                .Where(s => s.CreatedAt >= todayUtcStart && s.CreatedAt < todayUtcEnd && s.MarketId == marketId)
                 .Include(s => s.Payments)
                 .ToListAsync(cancellationToken);
 
-            // To'lovlar bo'yicha hisoblash
             decimal cashPaid = 0;
             decimal cardPaid = 0;
             decimal clickPaid = 0;
@@ -255,7 +250,7 @@ public class CashRegisterService : ICashRegisterService
                 }
             }
 
-            var summary = new TodaySalesSummaryDto
+            return new TodaySalesSummaryDto
             {
                 TotalSales = todaySales.Count,
                 TotalAmount = todaySales.Sum(s => s.TotalAmount),
@@ -264,10 +259,8 @@ public class CashRegisterService : ICashRegisterService
                 CashPaid = cashPaid,
                 CardPaid = cardPaid,
                 ClickPaid = clickPaid,
-                Date = today
+                Date = todayLocal
             };
-
-            return summary;
         }
         catch (Exception ex)
         {
@@ -276,4 +269,3 @@ public class CashRegisterService : ICashRegisterService
         }
     }
 }
-//new code

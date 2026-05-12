@@ -24,6 +24,5 @@ public class Market
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
     public ICollection<Zakup> Zakups { get; set; } = new List<Zakup>();
     public ICollection<Debt> Debts { get; set; } = new List<Debt>();
-    // NOTE: CashRegister not multi-tenant yet - needs separate implementation
-    // public ICollection<CashRegister> CashRegisters { get; set; } = new List<CashRegister>();
+    public CashRegister? CashRegister { get; set; }
 }

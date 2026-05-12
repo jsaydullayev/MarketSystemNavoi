@@ -64,11 +64,17 @@ public class UserService : IUserService
 
     public async Task<UserDto> CreateUserAsync(CreateUserDto request, CancellationToken cancellationToken = default)
     {
-        // Check if username already exists
+        if (!Enum.TryParse<Role>(request.Role, ignoreCase: true, out var role))
+            throw new InvalidOperationException($"Invalid role: '{request.Role}'");
+
+        // Only Admin and Seller can be created through this endpoint.
+        // Owner is created via self-registration; SuperAdmin is provisioned out-of-band.
+        if (role is not (Role.Admin or Role.Seller))
+            throw new InvalidOperationException("Faqat Admin yoki Seller foydalanuvchi yaratish mumkin.");
+
         if (await _unitOfWork.Users.AnyAsync(u => u.Username == request.Username, cancellationToken))
             throw new InvalidOperationException($"Username '{request.Username}' already exists");
 
-        // Get current market ID from context
         var currentMarketId = _currentMarketService.TryGetCurrentMarketId();
         if (!currentMarketId.HasValue)
             throw new InvalidOperationException("Market topilmadi. Iltimos, qaytadan tizimga kiring.");
@@ -79,7 +85,7 @@ public class UserService : IUserService
             FullName = request.FullName,
             Username = request.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role = Enum.Parse<Role>(request.Role, true),
+            Role = role,
             Language = Enum.TryParse<Language>(request.Language, ignoreCase: true, out var lang)
                 ? lang
                 : Language.Uzbek,

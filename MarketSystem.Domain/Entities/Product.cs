@@ -21,6 +21,10 @@ public class Product : BaseEntity
     public decimal Quantity { get; set; }
     public decimal MinThreshold { get; set; } = 5m;
 
+    // Optimistic concurrency token. Mapped to PostgreSQL's hidden xmin column
+    // so concurrent stock changes detect each other and surface a 409.
+    public uint Xmin { get; set; }
+
     // ✅ Unit Type - YANGI
     public UnitType Unit { get; set; } = UnitType.Piece;
 

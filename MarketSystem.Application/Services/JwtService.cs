@@ -34,11 +34,13 @@ public class JwtService(IConfiguration configuration) : IJwtService
             claims.Add(new Claim("MarketId", user.MarketId.Value.ToString()));
         }
 
+        claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+
         var security = new JwtSecurityToken(
             issuer: _jwtSetting.Issuer,
             audience: _jwtSetting.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(_jwtSetting.AccessTokenExpireHours),
+            expires: DateTime.UtcNow.AddMinutes(_jwtSetting.AccessTokenExpireMinutes),
             signingCredentials: credentials
         );
 
@@ -57,22 +59,31 @@ public class JwtService(IConfiguration configuration) : IJwtService
             ValidateAudience = true,
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ValidateIssuerSigningKey = true,
-            ValidateLifetime = true
+            // Refresh flow needs to read claims from an expired access token.
+            // Lifetime is enforced by the refresh-token's own ExpiresAt check.
+            ValidateLifetime = false
         };
 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var principal = tokenHandler.ValidateToken(token, options, out var securityToken);
-        var jwtSecurityToken = securityToken as JwtSecurityToken;
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, options, out var securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
 
-        if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals("HS256",
-            StringComparison.InvariantCultureIgnoreCase))
-            return new(false, null);
+            if (jwtSecurityToken is null || !jwtSecurityToken.Header.Alg.Equals("HS256",
+                StringComparison.InvariantCultureIgnoreCase))
+                return new(false, null);
 
-        var name = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(name))
+            var name = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(name))
+            {
+                return new(false, null);
+            }
+            return new(true, name);
+        }
+        catch
         {
             return new(false, null);
         }
-        return new(true, name);
     }
 }

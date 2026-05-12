@@ -109,6 +109,8 @@ public class DebtsController : ControllerBase
         if (!Guid.TryParse(userIdStr, out var userId))
             return Unauthorized();
 
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
         // ✅ FIX: Use execution strategy to wrap transaction operations
         // This is required because NpgsqlRetryingExecutionStrategy doesn't support user-initiated transactions
         var strategy = _context.Database.CreateExecutionStrategy();
@@ -123,8 +125,12 @@ public class DebtsController : ControllerBase
                 if (debt is null || debt.Status != DebtStatus.Open)
                     return NotFound("Debt not found or already closed");
 
+                // Tenant isolation — reject cross-market access.
+                if (debt.MarketId != marketId)
+                    return NotFound("Debt not found");
+
                 var sale = await _unitOfWork.Sales.GetByIdAsync(debt.SaleId);
-                if (sale is null)
+                if (sale is null || sale.MarketId != marketId)
                     return NotFound("Sale not found");
 
                 // Validate payment amount
@@ -140,8 +146,6 @@ public class DebtsController : ControllerBase
                     paymentTypeStr = "Terminal";
                 }
 
-                // Create payment record
-                var marketId = _currentMarketService.GetCurrentMarketId();
                 var payment = new Payment
                 {
                     Id = Guid.NewGuid(),
@@ -153,19 +157,26 @@ public class DebtsController : ControllerBase
                 };
                 await _unitOfWork.Payments.AddAsync(payment);
 
-                // ✅ NEW: Update cash register balance for cash payments
+                // Update cash register balance for cash payments — scoped to this market.
                 if (payment.PaymentType == PaymentType.Cash)
                 {
                     var cashRegister = await _context.CashRegisters
-                        .OrderByDescending(cr => cr.LastUpdated)
-                        .FirstOrDefaultAsync(CancellationToken.None);
+                        .FirstOrDefaultAsync(cr => cr.MarketId == marketId, CancellationToken.None);
 
-                    if (cashRegister != null)
+                    if (cashRegister == null)
                     {
-                        cashRegister.CurrentBalance += request.Amount;
-                        cashRegister.LastUpdated = DateTime.UtcNow;
-                        _context.CashRegisters.Update(cashRegister);
+                        cashRegister = new CashRegister
+                        {
+                            Id = Guid.NewGuid(),
+                            MarketId = marketId,
+                            CurrentBalance = 0,
+                            LastUpdated = DateTime.UtcNow
+                        };
+                        _context.CashRegisters.Add(cashRegister);
                     }
+
+                    cashRegister.CurrentBalance += request.Amount;
+                    cashRegister.LastUpdated = DateTime.UtcNow;
                 }
 
                 // Update debt
@@ -196,10 +207,10 @@ public class DebtsController : ControllerBase
                     debtStatus = debt.Status.ToString()
                 });
             }
-            catch (Exception ex)
+            catch
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return BadRequest($"Payment failed: {ex.Message}");
+                throw;
             }
         });
     }

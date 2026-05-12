@@ -7,7 +7,12 @@ namespace MarketSystem.Domain.Interfaces;
 public interface ISaleService
 {
     Task<SaleDto?> GetSaleByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Returns all sales for the current market — used by Excel export only.
+    /// Capped internally at 10 000 rows; for paged API consumption use <see cref="GetSalesPagedAsync"/>.
+    /// </summary>
     Task<IEnumerable<SaleDto>> GetAllSalesAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<SaleDto>> GetSalesPagedAsync(int page, int size, CancellationToken cancellationToken = default);
     Task<IEnumerable<SaleDto>> GetSalesByDateRangeAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default);
     Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default);
     Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default);

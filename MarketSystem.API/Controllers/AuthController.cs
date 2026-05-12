@@ -23,11 +23,6 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
     {
-        _logger.LogInformation("=== LOGIN REQUEST ===");
-        _logger.LogInformation("Username: {Username}", request.Username);
-        _logger.LogInformation("Password length: {Length}", request.Password?.Length ?? 0);
-        _logger.LogInformation("====================");
-
         var result = await _authService.LoginAsync(request);
 
         if (result is null)
@@ -68,10 +63,14 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost]
-    [AllowAnonymous]
+    [Authorize]
     public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
     {
-        var result = await _authService.LogoutAsync(request.RefreshToken);
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        var result = await _authService.LogoutAsync(request.RefreshToken, userId);
 
         if (!result)
             return BadRequest("Invalid token");
