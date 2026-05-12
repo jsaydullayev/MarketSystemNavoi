@@ -260,6 +260,20 @@ try
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
+
+        // SuperAdmin endpoints — slow enumeration if the obscure URL is leaked.
+        // Per-IP because the JWT role check is the primary gate; this just stops
+        // a sustained scanner from churning the audit log.
+        options.AddPolicy("super-admin", ctx => System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            PartitionKey(ctx),
+            _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
     });
     // Load allowed CORS origins from config (Cors:AllowedOrigins) or env (Cors__AllowedOrigins__0,…).
     var configuredOrigins = builder.Configuration
@@ -378,6 +392,7 @@ try
     builder.Services.AddScoped<ICurrentMarketService, CurrentMarketService>();
     builder.Services.AddScoped<IExcelService, ExcelService>();
     builder.Services.AddSingleton<ITashkentClock, TashkentClock>();
+    builder.Services.AddScoped<IRegistrationRequestService, RegistrationRequestService>();
 
     var app = builder.Build();
 
@@ -410,7 +425,11 @@ try
         }
     }
 
-
+    // Bootstrap the SuperAdmin user from env vars on first launch (idempotent).
+    // See SuperAdminSeeder for details. Must run AFTER migrations.
+    await MarketSystem.API.Bootstrap.SuperAdminSeeder.SeedFromConfigAsync(
+        app.Services,
+        app.Services.GetRequiredService<ILogger<Program>>());
 
     // Trust X-Forwarded-* headers from the reverse proxy (nginx) so HttpContext.Request.Scheme
     // reflects the real HTTPS scheme, RemoteIpAddress is the original client, and
@@ -446,6 +465,10 @@ try
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
 
     app.UseStaticFiles();
+    // SuperAdmin URL gate — MUST run before UseAuthentication so an
+    // unauthenticated probe to the wrong path returns 404 (not 401),
+    // keeping the existence of the console hidden.
+    app.UseMiddleware<SuperAdminPathGateMiddleware>();
     app.UseRateLimiter();
     app.UseAuthentication();
     app.UseAuthorization();

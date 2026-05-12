@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<CashRegister> CashRegisters => Set<CashRegister>();
     public DbSet<CashWithdrawal> CashWithdrawals => Set<CashWithdrawal>();
+    public DbSet<RegistrationRequest> RegistrationRequests => Set<RegistrationRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,6 +68,7 @@ public class AppDbContext : DbContext
             b.Property(x => x.FullName).IsRequired().HasMaxLength(200);
             b.Property(x => x.Username).IsRequired().HasMaxLength(100);
             b.Property(x => x.PasswordHash).IsRequired();
+            b.Property(x => x.Phone).HasMaxLength(20);
             b.Property(x => x.Language).HasDefaultValue(Language.Uzbek).IsRequired();
             // ProfileImage stores base64 encoded image data - use TEXT type for unlimited size
             b.Property(x => x.ProfileImage).HasColumnType("text");
@@ -360,6 +362,46 @@ public class AppDbContext : DbContext
 
             b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
             b.HasIndex(x => x.WithdrawalDate);
+        });
+
+        // Configure RegistrationRequest
+        modelBuilder.Entity<RegistrationRequest>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.FullName).IsRequired().HasMaxLength(200);
+            b.Property(x => x.Phone).IsRequired().HasMaxLength(20);
+            b.Property(x => x.Status).IsRequired();
+            b.Property(x => x.CreatedAt).IsRequired();
+            b.Property(x => x.RejectReason).HasMaxLength(500);
+
+            // Optimistic concurrency via PostgreSQL system column xmin.
+            // Surfaces concurrent approvals as DbUpdateConcurrencyException → 409.
+            b.Property(x => x.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            // SuperAdmin lists are typically filtered by Status and ordered by date.
+            b.HasIndex(x => x.Status);
+            b.HasIndex(x => x.CreatedAt);
+            // Partial unique on Phone WHERE Status=Pending (0) prevents two parallel
+            // submissions from a single phone landing as duplicate pending rows.
+            // Rejected/Approved rows from the same phone are allowed — the applicant
+            // can re-apply after a rejection.
+            b.HasIndex(x => x.Phone)
+                .IsUnique()
+                .HasFilter("\"Status\" = 0")
+                .HasDatabaseName("IX_RegistrationRequests_Phone_Pending");
+
+            // Linkage to the artifacts we create on approval. Use Restrict so a user
+            // can't be cascade-deleted while a historical request still references it.
+            b.HasOne(x => x.ProcessedByUser).WithMany().HasForeignKey(x => x.ProcessedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.CreatedUser).WithMany().HasForeignKey(x => x.CreatedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.CreatedMarket).WithMany().HasForeignKey(x => x.CreatedMarketId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
