@@ -1,10 +1,11 @@
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Infrastructure.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : DbContext, IAppDbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -155,6 +156,14 @@ public class AppDbContext : DbContext
             b.Property(x => x.TotalAmount).HasPrecision(18, 2);
             b.Property(x => x.PaidAmount).HasPrecision(18, 2);
 
+            // Optimistic concurrency via PostgreSQL system column xmin.
+            // No DDL needed — xmin already exists on every PostgreSQL table.
+            b.Property(x => x.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
             // IMPORTANT: Seller/User o'chirilsa, Sale tarixi o'CHMASIN kerak
             b.HasOne(x => x.Seller).WithMany(p => p.Sales).HasForeignKey(x => x.SellerId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -259,6 +268,8 @@ public class AppDbContext : DbContext
             b.HasIndex(x => new { x.CustomerId, x.Status })
                 .HasDatabaseName("IX_Debt_Customer_Status");
             b.HasIndex(x => x.MarketId);
+            b.HasIndex(x => x.SaleId)
+                .HasDatabaseName("IX_Debt_SaleId");
         });
 
         // Configure DebtAuditLog
@@ -320,12 +331,16 @@ public class AppDbContext : DbContext
             // IMPORTANT: Audit log tarixi hech qachon o'CHMASIN kerak
             b.HasOne(x => x.User).WithMany(p => p.AuditLogs).HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+            b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Indexes for performance
             b.HasIndex(x => new { x.EntityType, x.EntityId, x.CreatedAt })
                 .HasDatabaseName("IX_AuditLog_Entity_CreatedAt");
             b.HasIndex(x => new { x.UserId, x.CreatedAt })
                 .HasDatabaseName("IX_AuditLog_User_CreatedAt");
+            b.HasIndex(x => x.MarketId)
+                .HasDatabaseName("IX_AuditLog_MarketId");
         });
 
         // Configure RefreshToken

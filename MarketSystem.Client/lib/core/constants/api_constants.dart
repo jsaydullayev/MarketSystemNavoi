@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show kDebugMode, kIsWeb, defaultTargetPlatform, TargetPlatform;
 
 class ApiConstants {
   // =================== SERVER ===================
@@ -7,22 +8,25 @@ class ApiConstants {
   // so the browser uses a relative `/api` path that the host nginx proxies to the API.
   static const String _serverApiUrl = 'http://114.29.239.156:8080/api';
 
-  // Development server URL (for local testing)
-  static const String _developmentApiUrl = 'http://localhost:8080/api';
+  // Local dev backend (dotnet run / Visual Studio F5 → http://localhost:5050).
+  // Port 5050 chosen over 8080 to avoid Chrome's HSTS cache forcing HTTPS upgrades
+  // on localhost:8080 (which Docker had served at some point).
+  static const String _localDevApiUrl = 'http://localhost:5050/api';
+  // Android emulator can't reach host via "localhost" — it must use 10.0.2.2.
+  static const String _androidEmulatorDevApiUrl = 'http://10.0.2.2:5050/api';
 
   static String get baseUrl {
-    // WEB: relative URL — host nginx proxies /api/ → API container
-    // MOBILE/DESKTOP: direct call to server IP
     if (kIsWeb) {
-      return '/api';
+      // Debug: hit local backend directly (CORS already allows :3000/:8080/:8081).
+      // Release: relative `/api` — host nginx proxies to the API container.
+      return kDebugMode ? _localDevApiUrl : '/api';
     }
 
-    // Check if we're in development environment
-    // You can set this via environment variable or build configuration
-    const bool isDevelopment = bool.fromEnvironment('dart.vm.product', defaultValue: false) == false;
-
-    if (isDevelopment) {
-      return _developmentApiUrl;
+    if (kDebugMode) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        return _androidEmulatorDevApiUrl;
+      }
+      return _localDevApiUrl;
     }
     return _serverApiUrl;
   }

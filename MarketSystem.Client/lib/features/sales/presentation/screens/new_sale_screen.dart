@@ -32,6 +32,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   final _searchController = TextEditingController();
   List<dynamic> _filteredProducts = [];
+  String? _selectedCategoryName;
 
   @override
   void initState() {
@@ -47,17 +48,33 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     super.dispose();
   }
 
+  List<String> get _categories {
+    final set = <String>{};
+    for (final p in _products) {
+      final cat = p['categoryName'];
+      if (cat is String && cat.trim().isNotEmpty) set.add(cat.trim());
+    }
+    final list = set.toList()..sort();
+    return list;
+  }
+
+  void _onCategorySelected(String? category) {
+    setState(() {
+      _selectedCategoryName = category;
+    });
+    _filterProducts();
+  }
+
   void _filterProducts() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      if (query.isEmpty) {
-        _filteredProducts = _products;
-      } else {
-        _filteredProducts = _products.where((product) {
-          final name = (product['name'] ?? '').toLowerCase();
-          return name.contains(query);
-        }).toList();
-      }
+      _filteredProducts = _products.where((product) {
+        final name = (product['name'] ?? '').toString().toLowerCase();
+        final matchesSearch = query.isEmpty || name.contains(query);
+        final matchesCategory = _selectedCategoryName == null ||
+            product['categoryName'] == _selectedCategoryName;
+        return matchesSearch && matchesCategory;
+      }).toList();
     });
   }
 
@@ -535,38 +552,114 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }
   }
 
+  /// Returns true when the screen should pop, false to stay on it.
+  /// Three branches based on dialog answer:
+  ///   - Save  → persist the cart as a Draft sale, then pop.
+  ///   - Discard → just pop, throw away local cart state.
+  ///   - Dismiss (tap outside) → treat as "stay", do NOT pop. Accidental
+  ///     tap should not throw away an in-progress sale.
   Future<bool> _onWillPop() async {
     if (_cartItems.isEmpty) {
       return true;
     }
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final result = await showDialog<bool>(
+    // `null` = dismissed (tap-outside / back), `'save'` / `'discard'` = explicit.
+    final action = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.saveSaleTitle),
-        content: Text(l10n.draftSavePrompt(_cartItems.length)),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context, false),
-            child: Text(l10n.discardSale),
+      // Tap-outside is allowed but treated as cancel (no pop).
+      barrierDismissible: true,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        title: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.14),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.shopping_cart_checkout_rounded,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                l10n.saveSaleTitle,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          l10n.draftSavePrompt(_cartItems.length),
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.white70 : Colors.grey[700],
+            height: 1.4,
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context, true);
-            },
-            child: Text(l10n.saveDraft, style: TextStyle(color: Colors.orange)),
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.pop(dialogCtx, 'discard'),
+            icon: const Icon(Icons.delete_outline_rounded,
+                size: 18, color: Color(0xFFEF4444)),
+            label: Text(
+              l10n.discardSale,
+              style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(dialogCtx, 'save'),
+            icon: const Icon(Icons.bookmark_add_rounded, size: 18),
+            label: Text(
+              l10n.saveDraft,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF28C33),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
           ),
         ],
       ),
     );
 
-    if (result == true) {
+    if (action == 'save') {
       await _saveAsDraft();
+      return true;
     }
-
-    return true;
+    if (action == 'discard') {
+      return true;
+    }
+    // Dismissed — stay on screen.
+    return false;
   }
 
   @override
@@ -599,10 +692,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           searchController: _searchController,
           onSelectCustomer: _showCustomerDialog,
           onAddToCart: _addToCart,
-          onAddExternalProduct: _addExternalProduct,  // ✅ Tashqi mahsulot qo'shish
+          onAddExternalProduct: _addExternalProduct,
           onUpdateQuantity: _updateQuantity,
           onRemoveFromCart: _removeFromCart,
           onEditPrice: _editItemPrice,
+          categories: _categories,
+          selectedCategoryName: _selectedCategoryName,
+          onCategorySelected: _onCategorySelected,
         ),
         bottomNavigationBar: _buildBottomAction(isDark, l10n),
       ),
@@ -610,8 +706,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   }
 
   Widget _buildBottomAction(bool isDark, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final hasItems = _cartItems.isNotEmpty;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.getCard(isDark),
         boxShadow: [
@@ -623,28 +722,454 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         ],
       ),
       child: SafeArea(
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(double.infinity, 55),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
-            elevation: 0,
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasItems)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _buildCartPreviewChip(isDark, theme, l10n),
+              ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 52),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              onPressed: hasItems ? _completeSale : null,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle_outline),
+                  10.width,
+                  Text(
+                    l10n.processReturn
+                        .replaceAll(l10n.returnText, l10n.saleText),
+                    style: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCartPreviewChip(
+      bool isDark, ThemeData theme, AppLocalizations l10n) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _showCartSheet,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3B82F6).withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: const Color(0xFF3B82F6).withOpacity(0.25)),
           ),
-          onPressed: _cartItems.isEmpty ? null : _completeSale,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.check_circle_outline),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.shopping_cart_rounded,
+                    color: Color(0xFF3B82F6), size: 18),
+              ),
               10.width,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${_cartItems.length} ${l10n.productsInCartSuffix}',
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700),
+                    ),
+                    2.height,
+                    Text(
+                      l10n.viewEditCart,
+                      style: TextStyle(
+                          fontSize: 11, color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.keyboard_arrow_up_rounded,
+                  color: Color(0xFF3B82F6)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCartSheet() {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            return DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              minChildSize: 0.4,
+              maxChildSize: 0.92,
+              expand: false,
+              builder: (ctx, scrollController) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.getCard(isDark),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                        child: Row(
+                          children: [
+                            Text(
+                              l10n.cartTitle,
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            8.width,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${_cartItems.length}',
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF3B82F6)),
+                              ),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              icon: const Icon(Icons.close),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: _cartItems.isEmpty
+                            ? Center(
+                                child: Text(
+                                  l10n.cartEmptyWarning,
+                                  style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 13),
+                                ),
+                              )
+                            : ListView.separated(
+                                controller: scrollController,
+                                padding: const EdgeInsets.fromLTRB(
+                                    16, 4, 16, 16),
+                                itemCount: _cartItems.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) =>
+                                    _buildCartSheetItem(
+                                  index,
+                                  _cartItems[index],
+                                  isDark,
+                                  theme,
+                                  l10n,
+                                  () => setSheet(() {}),
+                                ),
+                              ),
+                      ),
+                      _buildCartSheetFooter(
+                        isDark,
+                        theme,
+                        l10n,
+                        () {
+                          Navigator.pop(ctx);
+                          _completeSale();
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCartSheetItem(
+    int index,
+    Map<String, dynamic> item,
+    bool isDark,
+    ThemeData theme,
+    AppLocalizations l10n,
+    VoidCallback refreshSheet,
+  ) {
+    final isExternal = item['isExternal'] ?? false;
+    final qty = (item['quantity'] as num).toDouble();
+    final price = (item['salePrice'] as num).toDouble();
+    final subtotal = qty * price;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isExternal
+            ? Colors.orange.withOpacity(0.06)
+            : AppColors.getBg(isDark),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isExternal
+              ? Colors.orange.withOpacity(0.3)
+              : theme.primaryColor.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: isExternal
+                      ? Colors.orange.withOpacity(0.15)
+                      : theme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isExternal
+                      ? Icons.add_business_rounded
+                      : Icons.inventory_2_rounded,
+                  color: isExternal ? Colors.orange : theme.primaryColor,
+                  size: 18,
+                ),
+              ),
+              10.width,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['productName'] ?? '',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isExternal ? Colors.orange.shade700 : null,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    2.height,
+                    Text(
+                      '${qty % 1 == 0 ? qty.toInt() : qty} × ${NumberFormatter.format(price)}',
+                      style: TextStyle(
+                          fontSize: 11, color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+              ),
               Text(
-                l10n.processReturn.replaceAll(l10n.returnText, l10n.saleText),
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                NumberFormatter.format(subtotal),
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF10B981)),
               ),
             ],
           ),
+          10.height,
+          Row(
+            children: [
+              _sheetQtyBtn(
+                icon: Icons.remove_rounded,
+                onTap: () {
+                  _updateQuantity(index, qty - 1);
+                  refreshSheet();
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  qty % 1 == 0 ? qty.toInt().toString() : qty.toString(),
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+              _sheetQtyBtn(
+                icon: Icons.add_rounded,
+                onTap: () {
+                  _updateQuantity(index, qty + 1);
+                  refreshSheet();
+                },
+              ),
+              const Spacer(),
+              _sheetActionBtn(
+                icon: Icons.edit_rounded,
+                color: const Color(0xFF3B82F6),
+                onTap: () {
+                  Navigator.pop(context);
+                  _editItemPrice(index, item);
+                },
+              ),
+              8.width,
+              _sheetActionBtn(
+                icon: Icons.delete_outline_rounded,
+                color: const Color(0xFFEF4444),
+                onTap: () {
+                  _removeFromCart(index);
+                  refreshSheet();
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sheetQtyBtn(
+      {required IconData icon, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: const Color(0xFF3B82F6).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 16, color: const Color(0xFF3B82F6)),
+      ),
+    );
+  }
+
+  Widget _sheetActionBtn(
+      {required IconData icon,
+      required Color color,
+      required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
+    );
+  }
+
+  Widget _buildCartSheetFooter(
+    bool isDark,
+    ThemeData theme,
+    AppLocalizations l10n,
+    VoidCallback onCheckout,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.getCard(isDark),
+        border: Border(
+          top: BorderSide(
+              color: isDark ? Colors.white10 : Colors.black12),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: const Color(0xFF10B981).withOpacity(0.2)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(l10n.totalSum,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text(
+                    NumberFormatter.format(_totalAmount),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            12.height,
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              onPressed: _cartItems.isEmpty ? null : onCheckout,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle_outline),
+                  10.width,
+                  Text(
+                    l10n.processReturn
+                        .replaceAll(l10n.returnText, l10n.saleText),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

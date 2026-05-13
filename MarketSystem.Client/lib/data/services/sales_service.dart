@@ -12,7 +12,9 @@ class SalesService {
     _httpService = HttpService();
   }
 
-  // Barcha sotuvlarni olish
+  // Barcha sotuvlarni olish.
+  // The API returns a paginated wrapper `{ items: [...], page, size, total, totalPages }`.
+  // We accept both shapes (bare list or wrapped) so older deployments don't break.
   Future<List<dynamic>> getAllSales() async {
     final response = await _httpService.get('${ApiConstants.sales}');
 
@@ -21,7 +23,11 @@ class SalesService {
         return [];
       }
       final data = jsonDecode(response.body);
-      return List<dynamic>.from(data ?? []);
+      if (data is List) return List<dynamic>.from(data);
+      if (data is Map && data['items'] is List) {
+        return List<dynamic>.from(data['items']);
+      }
+      return [];
     } else {
       throw Exception('Failed to load sales: ${response.statusCode}');
     }

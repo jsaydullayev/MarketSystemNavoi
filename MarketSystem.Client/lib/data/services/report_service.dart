@@ -175,6 +175,15 @@ class ReportService {
     }
   }
 
+  /// Download the daily report as raw Excel bytes so the caller can save/open
+  /// or share the file. Returns null if the response was empty or non-200.
+  Future<List<int>?> downloadDailyExcel(DateTime date) async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    return await _httpService.downloadBytes(
+      '${ApiConstants.reports}/daily/export?date=$formattedDate',
+    );
+  }
+
   // Ombor hisobotini Excel ga export qilish
   Future<void> exportInventoryReportToExcel(DateTime date) async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
