@@ -71,12 +71,22 @@ class AuthInitializationGuard {
     final username = prefs.getString('user_username');
 
     if (role != null) {
+      // Immediate stub so the UI doesn't render a "logged out" state
+      // for a frame while we refresh from the API.
       authProvider.setUserFromStorage({
         'role': role,
         'fullName': fullName,
         'username': username,
       });
     }
+
+    // Refresh the full profile from the API. SharedPreferences only stores
+    // role/fullName/username — the profile image (and any other fields the
+    // user has updated) lives only on the server. Without this fetch, the
+    // image disappears on every browser refresh because the local stub
+    // never had it.
+    // ignore: unawaited_futures
+    authProvider.fetchUserProfile();
 
     // Check first-time user
     final bool isFirstTime = prefs.getBool('is_first_time') ?? true;

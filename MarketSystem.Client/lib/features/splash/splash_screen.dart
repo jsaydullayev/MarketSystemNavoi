@@ -7,7 +7,7 @@ import 'package:market_system_client/core/managers/route_state_manager.dart';
 import 'package:market_system_client/data/services/auth_service.dart';
 import 'package:market_system_client/features/auth/presentation/screens/login_screen.dart';
 import 'package:market_system_client/features/auth/presentation/screens/welcome_screen.dart';
-import 'package:market_system_client/screens/dashboard_screen.dart';
+import 'package:market_system_client/features/dashboard/dashboard_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/di.dart' as di;
@@ -72,6 +72,12 @@ class _SplashScreenState extends State<SplashScreen> {
           'username': username,
         });
       }
+
+      // SharedPreferences only stores role/fullName/username — the profile
+      // image lives only on the server. Pull the full profile so the avatar
+      // doesn't vanish on browser refresh.
+      // ignore: unawaited_futures
+      authProvider.fetchUserProfile();
     }
 
     if (!mounted) return;

@@ -11,6 +11,7 @@ import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
+import 'package:market_system_client/features/sales/presentation/screens/%20continue_sale_screen.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
@@ -222,6 +223,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             ];
           }
 
+          // Show a "Davom etish" FAB only for in-progress (Draft) sales
+          // so the seller can pick up where they left off — adding more
+          // items, comments, or completing the sale.
+          final isDraft = state is SaleDetailLoaded &&
+              (state.sale['status']?.toString().toLowerCase() == 'draft');
+
           return NetworkWrapper(
             onRetry: _loadSaleDetails,
             child: Scaffold(
@@ -236,6 +243,30 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 extraActions: extraActions,
               ),
               body: _buildBody(state, theme, isDark, l10n),
+              floatingActionButton: isDraft
+                  ? FloatingActionButton.extended(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ContinueSaleScreen(saleId: widget.saleId),
+                          ),
+                        );
+                        if (result == true && mounted) _loadSaleDetails();
+                      },
+                      backgroundColor: const Color(0xFF3B82F6),
+                      icon: const Icon(Icons.play_arrow_rounded,
+                          color: Colors.white),
+                      label: Text(
+                        l10n.ongoing,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
           );
         },
@@ -388,10 +419,20 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   Widget _buildProductItem(
       Map<String, dynamic> item, String status, ThemeData theme, bool isDark) {
     final l10n = AppLocalizations.of(context)!;
-    final canReturn =
-        status.toLowerCase() == 'paid' || status.toLowerCase() == 'debt';
+    // Sellers can't reverse a closed sale — return is an Admin/Owner action
+    // (matches the backend AdminOrOwner policy on /Sales/{id}/return-item).
+    final userRole = Provider.of<AuthProvider>(context, listen: false)
+        .user?['role']
+        ?.toString();
+    final isAdminOrOwner = userRole == 'Owner' || userRole == 'Admin';
+    final canReturn = isAdminOrOwner &&
+        (status.toLowerCase() == 'paid' ||
+            status.toLowerCase() == 'debt' ||
+            status.toLowerCase() == 'closed');
     final qty = (item['quantity'] as num).toDouble();
     final price = (item['salePrice'] as num).toDouble();
+    final isExternal = item['isExternal'] == true;
+    final comment = (item['comment'] as String?)?.trim() ?? '';
 
     // unitName ga qarab format
     final unitName = (item['unit'] ?? '').toString().toLowerCase();
@@ -399,6 +440,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final isWeight = weightUnits.contains(unitName);
     final qtyDisplay = isWeight ? qty.toString() : qty.toInt().toString();
     final unit = item['unit'] ?? l10n.piece;
+    final iconColor =
+        isExternal ? const Color(0xFFF28C33) : theme.primaryColor;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -406,51 +449,128 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+        border: Border.all(
+          color: isExternal
+              ? iconColor.withOpacity(0.35)
+              : (isDark ? Colors.white10 : Colors.grey[200]!),
+        ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-                color: theme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.shopping_bag_outlined, color: theme.primaryColor),
-          ),
-          12.width,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item['productName'] ?? l10n.unknown,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15)),
-                Text("$qtyDisplay $unit x ${NumberFormatter.format(price)}",
-                    style: TextStyle(color: theme.disabledColor, fontSize: 13)),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Text(NumberFormatter.format(item['totalPrice']),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w900, color: Colors.green)),
-              if (canReturn)
-                GestureDetector(
-                  onTap: () => _showReturnBottomSheet(item),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(l10n.returnAction,
-                        style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline)),
-                  ),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12)),
+                child: Icon(
+                  isExternal
+                      ? Icons.storefront_rounded
+                      : Icons.shopping_bag_outlined,
+                  color: iconColor,
                 ),
+              ),
+              12.width,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            item['productName'] ?? l10n.unknown,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 15),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isExternal) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: iconColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'tashqi',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                                color: iconColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Text(
+                      "$qtyDisplay $unit x ${NumberFormatter.format(price)}",
+                      style:
+                          TextStyle(color: theme.disabledColor, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(NumberFormatter.format(item['totalPrice']),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900, color: Colors.green)),
+                  if (canReturn)
+                    GestureDetector(
+                      onTap: () => _showReturnBottomSheet(item),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(l10n.returnAction,
+                            style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline)),
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.notes_rounded,
+                      size: 14, color: theme.primaryColor),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      comment,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white70 : Colors.grey[800],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
