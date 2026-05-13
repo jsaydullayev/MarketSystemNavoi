@@ -3,7 +3,6 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -11,14 +10,14 @@ namespace MarketSystem.Application.Services;
 
 public class DebtService : IDebtService
 {
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMarketService _currentMarket;
     private readonly IAuditLogService _auditLog;
     private readonly ILogger<DebtService> _logger;
 
     public DebtService(
-        AppDbContext context,
+        IAppDbContext context,
         IUnitOfWork unitOfWork,
         ICurrentMarketService currentMarket,
         IAuditLogService auditLog,
@@ -112,7 +111,7 @@ public class DebtService : IDebtService
 
                 // The sale row needs to move with the debt so we lock that too.
                 var sale = await _context.Sales
-                    .FromSqlInterpolated($"SELECT * FROM \"Sales\" WHERE \"Id\" = {debt.SaleId} FOR UPDATE")
+                    .FromSqlInterpolated($"SELECT *, xmin FROM \"Sales\" WHERE \"Id\" = {debt.SaleId} FOR UPDATE")
                     .FirstOrDefaultAsync(cancellationToken)
                     ?? throw new KeyNotFoundException("Savdo topilmadi.");
                 if (sale.MarketId != marketId)
@@ -184,7 +183,7 @@ public class DebtService : IDebtService
                     request.Amount,
                     debt.Status.ToString());
             }
-            catch
+            catch (Exception)
             {
                 await tx.RollbackAsync(cancellationToken);
                 throw;

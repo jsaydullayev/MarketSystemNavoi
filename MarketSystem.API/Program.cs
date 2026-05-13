@@ -339,18 +339,23 @@ try
     {
         options.AddPolicy("DevelopmentCors", policy =>
         {
-            // Local dev defaults — no credentials, exact origins only.
-            var devOrigins = configuredOrigins.Length > 0
-                ? configuredOrigins
-                : new[]
-                {
-                    "http://localhost:8080",
-                    "http://localhost:8081",
-                    "http://localhost:3000",
-                    "http://127.0.0.1:8080",
-                    "http://127.0.0.1:8081"
-                };
-            policy.WithOrigins(devOrigins)
+            // Local dev: allow ANY localhost / 127.0.0.1 origin regardless of port.
+            // `flutter run -d chrome` picks a random web port on every launch, so a
+            // fixed allow-list keeps breaking the moment the dev re-runs. This is
+            // dev-only — ProductionCors below stays strict.
+            policy.SetIsOriginAllowed(origin =>
+                  {
+                      if (string.IsNullOrWhiteSpace(origin)) return false;
+                      try
+                      {
+                          var uri = new Uri(origin);
+                          return uri.Host is "localhost" or "127.0.0.1";
+                      }
+                      catch
+                      {
+                          return false;
+                      }
+                  })
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();

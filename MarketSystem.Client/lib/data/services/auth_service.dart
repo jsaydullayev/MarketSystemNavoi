@@ -168,10 +168,23 @@ class AuthService {
         return null;
       }
 
+      // Backend requires BOTH tokens — it derives the user id from the
+      // (expired) access token's claims, then checks the refresh row in
+      // the DB. Sending only refreshToken makes the server return 401
+      // because AccessToken=null can't be validated.
+      final accessToken = await _httpService.getAccessToken();
+      if (accessToken == null) {
+        print('No access token to pair with refresh — user must login');
+        return null;
+      }
+
       final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshToken}'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
+        body: jsonEncode({
+          'accessToken': accessToken,
+          'refreshToken': refreshToken,
+        }),
       );
 
       print('Refresh Token Response Status: ${response.statusCode}');

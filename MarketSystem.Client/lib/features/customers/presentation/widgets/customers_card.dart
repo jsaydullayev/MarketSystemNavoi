@@ -268,8 +268,37 @@ class CustomersCard extends StatelessWidget {
       }
       return false;
     } catch (e) {
+      // Fail-closed: if we can't fetch the delete-info preview, fall back to a
+      // plain confirmation dialog. NEVER auto-delete on error — the previous
+      // code did, which meant any network / API hiccup destroyed customer rows
+      // without a single confirmation prompt.
       if (context.mounted) Navigator.pop(context);
-      context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
+      if (!context.mounted) return false;
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(l10n.deleteCustomer),
+          content: Text(
+              '${customer['fullName'] ?? customer['phone']} ${l10n.deleteCustomerConfirm(customer['fullName'] ?? customer['phone'])}'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.no)),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text(l10n.yesDelete),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true && context.mounted) {
+        context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
+      }
       return false;
     }
   }

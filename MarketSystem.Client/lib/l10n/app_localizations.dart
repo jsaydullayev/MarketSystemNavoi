@@ -2606,6 +2606,24 @@ abstract class AppLocalizations {
   /// **'Savdo o\'chirildi'**
   String get saleDeleted;
 
+  /// No description provided for @saleInDebtUseDebtorsSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu sotuv qarzga olingan. To\'lov uchun \"Qarzdor mijozlar\" bo\'limidan foydalaning.'**
+  String get saleInDebtUseDebtorsSection;
+
+  /// No description provided for @saleAlreadyPaid.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu sotuv to\'liq to\'langan. O\'zgartirish kiritib bo\'lmaydi.'**
+  String get saleAlreadyPaid;
+
+  /// No description provided for @hourlySales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Soatlik savdo'**
+  String get hourlySales;
+
   /// No description provided for @draftSaveError.
   ///
   /// In uz, this message translates to:
@@ -3133,6 +3151,24 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko\'rib bo\'lmaydi.'**
   String get superAdminCredentialsWarning;
+
+  /// No description provided for @cartTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savatcha'**
+  String get cartTitle;
+
+  /// No description provided for @viewEditCart.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ko\'rish / tahrirlash'**
+  String get viewEditCart;
+
+  /// No description provided for @productsInCartSuffix.
+  ///
+  /// In uz, this message translates to:
+  /// **'ta mahsulot savatda'**
+  String get productsInCartSuffix;
 }
 
 class _AppLocalizationsDelegate

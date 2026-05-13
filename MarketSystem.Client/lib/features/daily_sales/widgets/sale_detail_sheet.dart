@@ -80,17 +80,17 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
 
       // Platformaga qarab saqlash
       if (kIsWeb) {
-        // Web platformada browser download API orqali yuklash
+        // Web: open the PDF in a new tab. Chrome / Edge / Firefox all have a
+        // built-in PDF viewer, so the user sees the invoice immediately and
+        // can print or save it from there. A silent download (anchor.click)
+        // dumps the file into the Downloads folder with no visible feedback
+        // and the user thinks nothing happened.
         final blob = html.Blob([pdfBytes], 'application/pdf');
         final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement()
-          ..href = url
-          ..download = fileName
-          ..style.display = 'none';
-        html.document.body?.append(anchor);
-        anchor.click();
-        anchor.remove();
-        html.Url.revokeObjectUrl(url);
+        html.window.open(url, '_blank');
+        // Revoke after enough time for the new tab to fetch the blob.
+        Future.delayed(const Duration(seconds: 30),
+            () => html.Url.revokeObjectUrl(url));
       } else if (Platform.isAndroid || Platform.isIOS) {
         // Mobile platformlarda printing orqali yuklash
         await Printing.sharePdf(
