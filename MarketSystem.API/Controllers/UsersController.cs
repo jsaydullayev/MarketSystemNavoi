@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using System.Security.Claims;
 using System.Text.Json;
-using MarketSystem.Application.Interfaces;
 using Serilog;
 
 namespace MarketSystem.API.Controllers;
@@ -137,7 +136,14 @@ public class UsersController : ControllerBase
         Log.Information("=== UPDATE PROFILE IMAGE START ===");
         Log.Information("Request Content-Type: {ContentType}", Request.ContentType);
         Log.Information("HasFormContentType: {HasFormContentType}", Request.HasFormContentType);
-        Log.Information("Files count: {FilesCount}", Request.Form?.Files.Count ?? 0);
+        // `Request.Form` throws InvalidOperationException on a non-multipart
+        // request (e.g. when the client sends a JSON base64 body). Gate the
+        // log on HasFormContentType so the endpoint doesn't 500 on its own
+        // diagnostic line before any business logic runs.
+        if (Request.HasFormContentType)
+        {
+            Log.Information("Files count: {FilesCount}", Request.Form.Files.Count);
+        }
 
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         Log.Information("User ID from token: {UserId}", userIdStr);
@@ -172,7 +178,7 @@ public class UsersController : ControllerBase
                 // Magic-byte sniff — a renamed `payload.exe.png` would pass the extension
                 // check but fail here. We trust the file's actual bytes, not its name.
                 var kind = MarketSystem.API.Validation.ImageContentValidator.Detect(imageBytes);
-                if (kind == MarketSystem.API.Validation.ImageContentValidator.ImageKind.Unknown)
+                if (kind == MarketSystem.API.Validation.ImageKind.Unknown)
                 {
                     return BadRequest("Fayl tasvir emas yoki qo'llab-quvvatlanmaydigan formatda (JPEG/PNG/GIF/WebP qabul qilinadi).");
                 }

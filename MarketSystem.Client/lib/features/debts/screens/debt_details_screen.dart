@@ -326,9 +326,16 @@ class _SaleItemCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final productName = item['productName'] ?? l10n.unknown;
+    final isExternal = item['isExternal'] == true;
     final quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final salePrice = (item['salePrice'] as num).toDouble();
     final totalPrice = salePrice * quantity;
+    // "Description" the user types in the price-input sheet — the API
+    // returns it as `comment`.
+    final comment = (item['comment'] as String?)?.trim() ?? '';
+
+    final iconColor =
+        isExternal ? const Color(0xFFF28C33) : const Color(0xFF3B82F6);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -336,6 +343,9 @@ class _SaleItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.getCard(isDark),
         borderRadius: BorderRadius.circular(16),
+        border: isExternal
+            ? Border.all(color: iconColor.withOpacity(0.35), width: 1)
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
@@ -344,82 +354,149 @@ class _SaleItemCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.inventory_2_rounded,
-                color: Color(0xFF3B82F6), size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  productName,
-                  style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.3),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${quantity.toStringAsFixed(0)} ${l10n.piece} × ${NumberFormatter.format(salePrice)} ${l10n.currencySom}',
-                  style:
-                      const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Text(
-                '${NumberFormatter.format(totalPrice)} ${l10n.currencySom}',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1D4ED8),
-                  letterSpacing: -0.5,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isExternal
+                      ? Icons.storefront_rounded
+                      : Icons.inventory_2_rounded,
+                  color: iconColor,
+                  size: 22,
                 ),
               ),
-              if (_canEdit) ...[
-                const SizedBox(height: 6),
-                GestureDetector(
-                  onTap: onEdit,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        const Icon(Icons.edit_rounded,
-                            size: 12, color: Color(0xFF3B82F6)),
-                        const SizedBox(width: 4),
-                        Text(
-                          l10n.edit,
-                          style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF3B82F6)),
+                        Flexible(
+                          child: Text(
+                            productName,
+                            style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.3),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
+                        if (isExternal) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: iconColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'tashqi',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                                color: iconColor,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${quantity.toStringAsFixed(0)} ${l10n.piece} × ${NumberFormatter.format(salePrice)} ${l10n.currencySom}',
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF9CA3AF)),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${NumberFormatter.format(totalPrice)} ${l10n.currencySom}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1D4ED8),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  if (_canEdit) ...[
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: onEdit,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3B82F6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.edit_rounded,
+                                size: 12, color: Color(0xFF3B82F6)),
+                            const SizedBox(width: 4),
+                            Text(
+                              l10n.edit,
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF3B82F6)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.06),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.notes_rounded,
+                      size: 14, color: Color(0xFF3B82F6)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      comment,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white70 : Colors.grey[800],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

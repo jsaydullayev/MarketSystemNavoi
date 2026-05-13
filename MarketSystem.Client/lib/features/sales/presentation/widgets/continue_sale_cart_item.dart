@@ -11,6 +11,11 @@ class ContinueSaleCartItem extends StatelessWidget {
   final VoidCallback onIncrement;
   final VoidCallback onRemove;
 
+  /// Mirrors the backend's [Authorize(Policy = "AdminOrOwner")] on
+  /// /Sales/{id}/return-item. Hiding the button for Sellers prevents
+  /// them from tapping it and seeing a 403 they can't act on.
+  final bool canReturn;
+
   const ContinueSaleCartItem({
     super.key,
     required this.item,
@@ -20,6 +25,7 @@ class ContinueSaleCartItem extends StatelessWidget {
     required this.onDecrement,
     required this.onIncrement,
     required this.onRemove,
+    this.canReturn = true,
   });
 
   @override
@@ -117,8 +123,9 @@ class ContinueSaleCartItem extends StatelessWidget {
 
             const Spacer(),
 
-            // Qaytarish yoki miqdor o'zgartirish
-            if (isClosed)
+            // Qaytarish yoki miqdor o'zgartirish — vozvrat
+            // faqat Admin/Owner uchun (Seller emas).
+            if (isClosed && canReturn)
               GestureDetector(
                 onTap: onReturn,
                 child: Container(

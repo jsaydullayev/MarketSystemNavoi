@@ -2,7 +2,6 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,13 +9,16 @@ namespace MarketSystem.Application.Services;
 
 public class CashRegisterService : ICashRegisterService
 {
+    private const string WithdrawTypeCash = "cash";
+    private const string WithdrawTypeClick = "click";
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CashRegisterService> _logger;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly ITashkentClock _clock;
 
-    public CashRegisterService(IUnitOfWork unitOfWork, ILogger<CashRegisterService> logger, AppDbContext context, ICurrentMarketService currentMarketService, ITashkentClock clock)
+    public CashRegisterService(IUnitOfWork unitOfWork, ILogger<CashRegisterService> logger, IAppDbContext context, ICurrentMarketService currentMarketService, ITashkentClock clock)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -121,7 +123,7 @@ public class CashRegisterService : ICashRegisterService
                 _logger.LogInformation("WithdrawCashAsync called. Type: {Type}, Amount: {Amount}, MarketId: {MarketId}",
                     request.WithdrawType, request.Amount, marketId);
 
-                if (request.WithdrawType == "cash")
+                if (request.WithdrawType == WithdrawTypeCash)
                 {
                     if (cashRegister.CurrentBalance < request.Amount)
                     {
@@ -137,7 +139,7 @@ public class CashRegisterService : ICashRegisterService
                         Comment = request.Comment,
                         WithdrawalDate = DateTime.UtcNow,
                         UserId = userId,
-                        WithdrawType = "cash"
+                        WithdrawType = WithdrawTypeCash
                     };
 
                     _context.CashWithdrawals.Add(withdrawal);
@@ -149,7 +151,7 @@ public class CashRegisterService : ICashRegisterService
                     await _context.SaveChangesAsync(cancellationToken);
                     _logger.LogInformation("Cash withdrawn. Amount: {Amount}", request.Amount);
                 }
-                else if (request.WithdrawType == "click")
+                else if (request.WithdrawType == WithdrawTypeClick)
                 {
                     var withdrawal = new CashWithdrawal
                     {
@@ -158,7 +160,7 @@ public class CashRegisterService : ICashRegisterService
                         Comment = request.Comment,
                         WithdrawalDate = DateTime.UtcNow,
                         UserId = userId,
-                        WithdrawType = "click"
+                        WithdrawType = WithdrawTypeClick
                     };
 
                     _context.CashWithdrawals.Add(withdrawal);
@@ -196,14 +198,22 @@ public class CashRegisterService : ICashRegisterService
             }
 
             var marketId = _currentMarketService.GetCurrentMarketId();
-            var cashRegister = await GetOrCreateRegisterAsync(marketId, cancellationToken);
 
-            cashRegister.CurrentBalance += amount;
-            cashRegister.LastUpdated = DateTime.UtcNow;
-            await _context.SaveChangesAsync(cancellationToken);
+            // Mirror WithdrawCashAsync — wrap the read/modify/save in a
+            // transaction so two concurrent deposits can't both read the
+            // same balance, both add their amounts, and clobber each other.
+            // The EnableRetryOnFailure on the DbContext also handles transient
+            // failures, but only when the work is inside a transaction.
+            return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                var cashRegister = await GetOrCreateRegisterAsync(marketId, cancellationToken);
+                cashRegister.CurrentBalance += amount;
+                cashRegister.LastUpdated = DateTime.UtcNow;
+                await _context.SaveChangesAsync(cancellationToken);
 
-            _logger.LogInformation("Cash added. Amount: {Amount}, MarketId: {MarketId}", amount, marketId);
-            return true;
+                _logger.LogInformation("Cash added. Amount: {Amount}, MarketId: {MarketId}", amount, marketId);
+                return true;
+            }, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -226,29 +236,7 @@ public class CashRegisterService : ICashRegisterService
                 .Include(s => s.Payments)
                 .ToListAsync(cancellationToken);
 
-            decimal cashPaid = 0;
-            decimal cardPaid = 0;
-            decimal clickPaid = 0;
-
-            foreach (var sale in todaySales)
-            {
-                foreach (var payment in sale.Payments)
-                {
-                    if (payment.PaymentType == Domain.Enums.PaymentType.Cash)
-                    {
-                        cashPaid += payment.Amount;
-                    }
-                    else if (payment.PaymentType == Domain.Enums.PaymentType.Terminal ||
-                             payment.PaymentType == Domain.Enums.PaymentType.Transfer)
-                    {
-                        cardPaid += payment.Amount;
-                    }
-                    else if (payment.PaymentType == Domain.Enums.PaymentType.Click)
-                    {
-                        clickPaid += payment.Amount;
-                    }
-                }
-            }
+            var allPayments = todaySales.SelectMany(s => s.Payments).ToList();
 
             return new TodaySalesSummaryDto
             {
@@ -256,9 +244,16 @@ public class CashRegisterService : ICashRegisterService
                 TotalAmount = todaySales.Sum(s => s.TotalAmount),
                 TotalPaid = todaySales.Sum(s => s.PaidAmount),
                 DebtAmount = todaySales.Sum(s => s.TotalAmount > s.PaidAmount ? s.TotalAmount - s.PaidAmount : 0),
-                CashPaid = cashPaid,
-                CardPaid = cardPaid,
-                ClickPaid = clickPaid,
+                CashPaid = allPayments
+                    .Where(p => p.PaymentType == Domain.Enums.PaymentType.Cash)
+                    .Sum(p => p.Amount),
+                CardPaid = allPayments
+                    .Where(p => p.PaymentType == Domain.Enums.PaymentType.Terminal ||
+                                p.PaymentType == Domain.Enums.PaymentType.Transfer)
+                    .Sum(p => p.Amount),
+                ClickPaid = allPayments
+                    .Where(p => p.PaymentType == Domain.Enums.PaymentType.Click)
+                    .Sum(p => p.Amount),
                 Date = todayLocal
             };
         }

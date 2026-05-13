@@ -168,7 +168,15 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final items = widget.saleDetails['saleItems'] as List<dynamic>? ?? [];
+    // Backend's GetSaleById returns `items`, not `saleItems`. Reading the
+    // wrong key meant the products section in the detail sheet rendered
+    // empty for every sale. Try both keys for back-compat.
+    final items = (widget.saleDetails['items']
+            as List<dynamic>? ??
+        widget.saleDetails['saleItems'] as List<dynamic>? ??
+        const []);
+    final sellerName = (widget.saleDetails['sellerName'] as String?) ??
+        widget.sale.sellerName;
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
@@ -204,6 +212,8 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
                 children: [
                   _buildInfoTile(Icons.person_outline, l10n.customer,
                       widget.sale.customerName ?? l10n.anonymousCustomer, theme),
+                  _buildInfoTile(Icons.badge_outlined, l10n.seller,
+                      sellerName, theme),
                   _buildInfoTile(
                       Icons.account_balance_wallet_outlined,
                       l10n.paymentType,
@@ -285,6 +295,19 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
 
   Widget _buildProductItem(
       dynamic item, ThemeData theme, bool isDark, AppLocalizations l10n) {
+    final isExternal = item['isExternal'] == true;
+    // Comment is what the seller typed in the price-input sheet
+    // ("description" in the user's words). API returns it as `comment`.
+    final comment = (item['comment'] as String?)?.trim() ?? '';
+    // Price column can come as either `salePrice` or `unitPrice` depending
+    // on which endpoint produced the row — handle both.
+    final unitPrice = (item['salePrice'] ?? item['unitPrice'] ?? 0).toString();
+    final qty = (item['quantity'] ?? 0).toString();
+    final totalPrice = (item['totalPrice'] ??
+            ((item['quantity'] as num?) ?? 0) *
+                ((item['salePrice'] as num?) ?? 0))
+        .toString();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -293,23 +316,91 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
             ? Colors.white.withOpacity(0.03)
             : Colors.grey.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
+        border: isExternal
+            ? Border.all(
+                color: const Color(0xFFF28C33).withOpacity(0.4), width: 1)
+            : null,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item['productName'] ?? l10n.unknown,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("${item['quantity']} x ${item['unitPrice']}",
-                    style: theme.textTheme.bodySmall),
-              ],
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            item['productName']?.toString() ?? l10n.unknown,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        if (isExternal) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF28C33).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'tashqi',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                                color: Color(0xFFF28C33),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text("$qty × $unitPrice", style: theme.textTheme.bodySmall),
+                  ],
+                ),
+              ),
+              Text(
+                "$totalPrice ${l10n.currencySom}",
+                style: TextStyle(
+                    color: theme.primaryColor, fontWeight: FontWeight.w900),
+              ),
+            ],
           ),
-          Text("${item['totalPrice']} ${l10n.currencySom}",
-              style: TextStyle(
-                  color: theme.primaryColor, fontWeight: FontWeight.w900)),
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.notes_rounded,
+                      size: 13, color: theme.primaryColor),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      comment,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDark ? Colors.white70 : Colors.grey[800],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
