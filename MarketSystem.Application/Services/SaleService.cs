@@ -4,7 +4,6 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
@@ -13,12 +12,12 @@ public partial class SaleService : ISaleService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ILogger<SaleService> _logger;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly ICustomerService _customerService;
 
-    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService, ICustomerService customerService)
+    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, IAppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService, ICustomerService customerService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
@@ -349,8 +348,7 @@ public partial class SaleService : ISaleService
             await ApplyCustomerCreditInternalAsync(sale.Id, request.CustomerId.Value, cancellationToken);
         }
 
-        // Audit log (temporarily disabled for testing)
-        // await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
+        await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
 
         return await MapToDtoAsync(sale, cancellationToken);
     }
@@ -436,7 +434,23 @@ public partial class SaleService : ISaleService
                 if (request.ProductId == null)
                     throw new InvalidOperationException("ProductId kerak (oddiy mahsulot uchun)");
 
-                var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId.Value, cancellationToken);
+                var productId = request.ProductId.Value;
+                // FOR UPDATE faqat PostgreSQL da ishlaydi; InMemory test DB da oddiy query
+                Product? product;
+                if (_context.Database.ProviderName?.Contains("InMemory") == false)
+                {
+                    // EF Core wraps this query and references xmin (the concurrency
+                    // token on Product). PostgreSQL doesn't include xmin in `SELECT *`,
+                    // so we must list it explicitly — otherwise we get
+                    // `42703: column m.xmin does not exist`.
+                    product = await _context.Products
+                        .FromSqlInterpolated($"SELECT *, xmin FROM \"Products\" WHERE \"Id\" = {productId} FOR UPDATE")
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
+                else
+                {
+                    product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken);
+                }
                 if (product is null)
                     throw new InvalidOperationException("Product not found");
 
@@ -481,7 +495,6 @@ public partial class SaleService : ISaleService
 
                     // Update stock
                     product.Quantity -= request.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
 
                     // Update sale total
@@ -515,7 +528,6 @@ public partial class SaleService : ISaleService
 
                     // Update stock
                     product.Quantity -= request.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
 
                     // Update sale total
@@ -699,7 +711,6 @@ public partial class SaleService : ISaleService
 
                     // ✅ Restore full stock (faqat oddiy mahsulotlar uchun)
                     product.Quantity += saleItem.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
 
                     // Update sale total
@@ -718,7 +729,6 @@ public partial class SaleService : ISaleService
 
                     // ✅ Restore partial stock (faqat oddiy mahsulotlar uchun)
                     product.Quantity += request.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
 
                     // Update sale total
@@ -892,8 +902,18 @@ public partial class SaleService : ISaleService
             // 1. To'liq to'langan savdo
             if (sale.TotalAmount > 0 && sale.PaidAmount >= sale.TotalAmount)
             {
-                _logger.LogInformation("Sale {SaleId} is fully paid, setting status to Paid", saleId);
-                sale.Status = SaleStatus.Paid;
+                // Semantic distinction (mirrors DebtService.PayAsync):
+                //   Paid   = sale was paid in full at sale time, never had debt.
+                //   Closed = sale was previously on debt (partial payment + carried),
+                //            and the customer has now finished paying it off.
+                // Without this branch, paying the final installment via AddPaymentAsync
+                // would land on Paid while paying it via DebtService.PayAsync would land
+                // on Closed — same business event, two different terminal states.
+                var wasOnDebt = sale.Status == SaleStatus.Debt;
+                sale.Status = wasOnDebt ? SaleStatus.Closed : SaleStatus.Paid;
+                _logger.LogInformation(
+                    "Sale {SaleId} is fully paid, setting status to {Status} (wasOnDebt={WasOnDebt})",
+                    saleId, sale.Status, wasOnDebt);
 
                 // Close any associated debt (filtered by market)
                 var existingDebtToClose = (await _unitOfWork.Debts.FindAsync(
@@ -956,7 +976,6 @@ public partial class SaleService : ISaleService
             }
 
             _unitOfWork.Sales.Update(sale);
-            _context.Entry(sale).State = EntityState.Modified;
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Sale {SaleId} final status: {Status}", sale.Id, sale.Status);
@@ -983,11 +1002,6 @@ public partial class SaleService : ISaleService
     /// </summary>
     public async Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("=== CANCEL SALE DEBUG ===");
-        _logger.LogInformation("Sale ID: {SaleId}", saleId);
-        _logger.LogInformation("Admin ID (string): {AdminId}", adminId);
-        _logger.LogInformation("===========================");
-
         // Parse adminId from string to Guid
         if (!Guid.TryParse(adminId, out var adminGuid))
         {
@@ -1035,12 +1049,33 @@ public partial class SaleService : ISaleService
                     if (product != null)
                     {
                         product.Quantity += item.Quantity;
-                        _context.Entry(product).State = EntityState.Modified;
                         _unitOfWork.Products.Update(product);
                     }
                 }
                 // ---- EXTERNAL PRODUCT (Tashqi mahsulot) ----
                 // ✅ Tashqi mahsulotlar - stokni o'zgarmaslik
+            }
+
+            // Refund cash payments back to the till. Card / Click / Terminal payments
+            // flow through external rails (POS / payment processor) so they don't touch
+            // our CashRegister — only Cash payments must be reversed here. The Payment
+            // records themselves stay in place as an audit trail.
+            var cashPayments = await _unitOfWork.Payments.FindAsync(
+                p => p.SaleId == saleId && p.PaymentType == PaymentType.Cash,
+                cancellationToken);
+            var cashRefund = cashPayments.Sum(p => p.Amount);
+            if (cashRefund > 0)
+            {
+                var cashRegister = await _context.CashRegisters
+                    .FirstOrDefaultAsync(cr => cr.MarketId == sale.MarketId, cancellationToken);
+                if (cashRegister != null)
+                {
+                    cashRegister.CurrentBalance -= cashRefund;
+                    cashRegister.LastUpdated = DateTime.UtcNow;
+                    _logger.LogInformation(
+                        "Sale {SaleId} cancelled — refunded {Amount} cash to market {MarketId} till",
+                        saleId, cashRefund, sale.MarketId);
+                }
             }
 
             // Update sale status
@@ -1296,10 +1331,6 @@ public partial class SaleService : ISaleService
     /// </summary>
     public async Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("=== DELETE SALE DEBUG ===");
-        _logger.LogInformation("Sale ID: {SaleId}", saleId);
-        _logger.LogInformation("===========================");
-
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -1343,7 +1374,6 @@ public partial class SaleService : ISaleService
                 {
                     // Faqat oddiy mahsulotlar uchun stokni qaytarish
                     saleItem.Product.Quantity += saleItem.Quantity;
-                    _context.Entry(saleItem.Product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(saleItem.Product);
                     _logger.LogInformation("Product stock restored: {ProductId}, Qty: +{Quantity}",
                         saleItem.ProductId, saleItem.Quantity);
@@ -1404,8 +1434,6 @@ public partial class SaleService : ISaleService
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            _logger.LogInformation("=== DELETE SALE SUCCESS ===");
 
             // DTO ni yaratish
             var itemsDto = new List<SaleItemDto>();

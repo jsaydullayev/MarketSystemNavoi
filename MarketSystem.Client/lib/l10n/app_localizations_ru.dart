@@ -1331,6 +1331,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get saleDeleted => 'Продажа удалена';
 
   @override
+  String get saleInDebtUseDebtorsSection =>
+      'Эта продажа в долг. Для оплаты используйте раздел \"Должники\".';
+
+  @override
+  String get saleAlreadyPaid =>
+      'Эта продажа полностью оплачена. Изменения невозможны.';
+
+  @override
+  String get hourlySales => 'Почасовые продажи';
+
+  @override
   String get draftSaveError => 'Ошибка при сохранении черновика';
 
   @override
@@ -1615,4 +1626,13 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get superAdminCredentialsWarning =>
       'Пароль нигде не хранится. После закрытия его уже не увидеть.';
+
+  @override
+  String get cartTitle => 'Корзина';
+
+  @override
+  String get viewEditCart => 'Просмотр / редактирование';
+
+  @override
+  String get productsInCartSuffix => 'товаров в корзине';
 }

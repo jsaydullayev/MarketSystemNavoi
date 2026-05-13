@@ -26,7 +26,10 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: AppColors.getCard(isDark),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-        onPressed: onBackPressed ?? () => Navigator.pop(context),
+        // maybePop respects any PopScope registered upstream (e.g. the
+        // "save as draft?" prompt in Yangi sotuv). Navigator.pop bypasses
+        // those guards and would silently lose in-progress work.
+        onPressed: onBackPressed ?? () => Navigator.maybePop(context),
       ),
       elevation: 0,
       bottom: bottom,

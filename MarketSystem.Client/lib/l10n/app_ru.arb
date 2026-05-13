@@ -427,6 +427,9 @@
   "debtSales": "Долговые продажи",
   "paidSales": "Оплаченные продажи",
   "saleDeleted": "Продажа удалена",
+  "saleInDebtUseDebtorsSection": "Эта продажа в долг. Для оплаты используйте раздел \"Должники\".",
+  "saleAlreadyPaid": "Эта продажа полностью оплачена. Изменения невозможны.",
+  "hourlySales": "Почасовые продажи",
   "draftSaveError": "Ошибка при сохранении черновика",
   "enterQuantityHint": "Введите количество...",
   "selectCustomerForDebtWarning": "Для продажи в долг выберите клиента!",
@@ -519,5 +522,8 @@
   "superAdminCredentialsCopyBoth": "Скопировать всё",
   "superAdminCredentialsCopied": "Скопировано",
   "superAdminCredentialsDone": "Готово",
-  "superAdminCredentialsWarning": "Пароль нигде не хранится. После закрытия его уже не увидеть."
+  "superAdminCredentialsWarning": "Пароль нигде не хранится. После закрытия его уже не увидеть.",
+  "cartTitle": "Корзина",
+  "viewEditCart": "Просмотр / редактирование",
+  "productsInCartSuffix": "товаров в корзине"
 }

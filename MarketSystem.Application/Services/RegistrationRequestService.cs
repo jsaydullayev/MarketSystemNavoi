@@ -4,7 +4,6 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,12 +11,12 @@ namespace MarketSystem.Application.Services;
 
 public class RegistrationRequestService : IRegistrationRequestService
 {
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ILogger<RegistrationRequestService> _logger;
     private readonly IAuditLogService _auditLog;
 
     public RegistrationRequestService(
-        AppDbContext context,
+        IAppDbContext context,
         ILogger<RegistrationRequestService> logger,
         IAuditLogService auditLog)
     {
@@ -146,7 +145,7 @@ public class RegistrationRequestService : IRegistrationRequestService
                 // concurrent SuperAdmin can't pass the same Pending check. xmin
                 // adds a second layer of protection at SaveChanges time.
                 var request = await _context.RegistrationRequests
-                    .FromSqlInterpolated($"SELECT * FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
+                    .FromSqlInterpolated($"SELECT *, xmin FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
                     .FirstOrDefaultAsync(cancellationToken)
                     ?? throw new KeyNotFoundException("So'rov topilmadi.");
 
@@ -231,7 +230,7 @@ public class RegistrationRequestService : IRegistrationRequestService
                     market.Name
                 );
             }
-            catch
+            catch (Exception)
             {
                 await tx.RollbackAsync(cancellationToken);
                 throw;
@@ -251,7 +250,7 @@ public class RegistrationRequestService : IRegistrationRequestService
             try
             {
                 var request = await _context.RegistrationRequests
-                    .FromSqlInterpolated($"SELECT * FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
+                    .FromSqlInterpolated($"SELECT *, xmin FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
                     .FirstOrDefaultAsync(cancellationToken);
                 if (request == null) return false;
 
@@ -281,7 +280,7 @@ public class RegistrationRequestService : IRegistrationRequestService
 
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 await tx.RollbackAsync(cancellationToken);
                 throw;
@@ -316,7 +315,8 @@ public class RegistrationRequestService : IRegistrationRequestService
         return $"{cleaned}{Guid.NewGuid().ToString("N")[..6]}";
     }
 
-    /// <summary>23505 is PostgreSQL's UNIQUE-violation SQLSTATE.</summary>
+    // PostgreSQL always includes the SQLSTATE code "23505" in the message for unique violations.
+    // Checking the message avoids a direct Npgsql package reference in the Application layer.
     private static bool IsUniqueViolation(DbUpdateException ex) =>
-        ex.InnerException is Npgsql.PostgresException pg && pg.SqlState == "23505";
+        ex.InnerException?.Message?.Contains("23505") == true;
 }
