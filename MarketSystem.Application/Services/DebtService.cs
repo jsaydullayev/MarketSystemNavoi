@@ -200,13 +200,19 @@ public class DebtService : IDebtService
                 si.Id.ToString(),
                 si.SaleId.ToString(),
                 si.ProductId,
-                si.Product?.Name ?? "Noma'lum mahsulot",
+                // External items have no Product row — fall back to the
+                // captured ExternalProductName. Without this they all
+                // showed up as "Noma'lum mahsulot" in the debt details
+                // screen, hiding which goods the customer actually took.
+                si.IsExternal
+                    ? (si.ExternalProductName ?? "Noma'lum mahsulot")
+                    : (si.Product?.Name ?? "Noma'lum mahsulot"),
                 si.Quantity,
                 si.CostPrice,
                 si.SalePrice,
                 si.TotalPrice,
                 si.Profit,
-                si.Product?.GetUnitName() ?? "dona",
+                si.IsExternal ? "" : (si.Product?.GetUnitName() ?? "dona"),
                 si.Comment,
                 si.IsExternal
             )).ToList();
