@@ -57,7 +57,7 @@ class _SalesScreenState extends State<SalesScreen> {
   Color _getStatusColor(String status, ThemeData theme) {
     switch (status.toLowerCase()) {
       case 'draft':
-        return Colors.orange;
+        return const Color(0xFF3B82F6);
       case 'paid':
         return Colors.green;
       case 'closed':
@@ -74,7 +74,9 @@ class _SalesScreenState extends State<SalesScreen> {
   String _getStatusName(String status, AppLocalizations l10n) {
     switch (status.toLowerCase()) {
       case 'draft':
-        return l10n.draft;
+        // User-facing label = "Davom etayotgan" / "В процессе".
+        // Backend keeps `Draft` for the enum.
+        return l10n.ongoing;
       case 'paid':
         return l10n.paid;
       case 'closed':
@@ -244,7 +246,6 @@ class _SalesScreenState extends State<SalesScreen> {
                     final filteredSales = _filterSales(state.sales);
                     return Column(
                       children: [
-                        _buildSummaryHeader(state.sales, theme, l10n, isDark),
                         _buildStatusChips(state.sales, theme, isDark, l10n),
                         Expanded(
                           child: RefreshIndicator(
@@ -290,46 +291,6 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _buildSummaryHeader(List<SaleEntity> sales, ThemeData theme,
-      AppLocalizations l10n, bool isDark) {
-    double total = sales.fold(0, (sum, item) => sum + item.totalAmount);
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : theme.primaryColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.getBorder(isDark)),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                    color: theme.primaryColor.withOpacity(0.3), blurRadius: 12)
-              ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.totalAmount,
-              style: const TextStyle(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(NumberFormatter.format(total),
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold)),
-              const Icon(Icons.payments_outlined,
-                  color: Colors.white24, size: 40),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatusChips(List<SaleEntity> sales, ThemeData theme, bool isDark,
       AppLocalizations l10n) {
@@ -341,10 +302,13 @@ class _SalesScreenState extends State<SalesScreen> {
         'color': theme.primaryColor
       },
       {
+        // Status is still 'Draft' on the backend; only the user-facing
+        // label changes — "Davom etayotgan" / "В процессе" reads more
+        // accurately for a sale the seller is mid-way through.
         'id': 'draft',
-        'label': l10n.draft,
+        'label': l10n.ongoing,
         'icon': Icons.pending_actions_rounded,
-        'color': Colors.orange
+        'color': const Color(0xFF3B82F6),
       },
       {
         'id': 'paid',
