@@ -7,6 +7,8 @@ import 'package:market_system_client/features/sales/presentation/widgets/continu
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_cart_item.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_product_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_bottom_bar.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/customer_selection_dialog.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/external_product_sheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../../data/services/sales_service.dart';
@@ -65,10 +67,15 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         return sum + (price * qty);
       });
 
-  Future<void> _loadData() async {
+  /// Pass `silent: true` for in-place refreshes (after an item add / remove
+  /// / edit) so the entire screen doesn't collapse into a CircularProgress
+  /// while the API call is in flight. The initial load still shows the
+  /// spinner because `_sale` is null at that point and the build method
+  /// needs SOMETHING to render.
+  Future<void> _loadData({bool silent = false}) async {
     final l10n = AppLocalizations.of(context)!;
 
-    setState(() => _isLoading = true);
+    if (!silent) setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
@@ -94,6 +101,13 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
                 'quantity': (item['quantity'] as num?)?.toDouble() ?? 0.0,
                 'comment': item['comment'] ?? '',
+                // External-product fields — without these, _updateQuantity
+                // can't tell an external item apart from an ordinary one
+                // and would call addSaleItem with productId=null → 400.
+                'isExternal': item['isExternal'] == true,
+                'externalProductName': item['externalProductName'],
+                'externalCostPrice':
+                    (item['externalCostPrice'] as num?)?.toDouble(),
               })
           .toList();
 
@@ -146,13 +160,14 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             minSalePrice: (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
             comment: comment,
           );
-          await _loadData();
+          await _loadData(silent: true);
           if (mounted) {
             _showSnack(l10n.productAddedToCart(product['name']),
                 isError: false);
           }
         } catch (e) {
-          await _loadData();
+          await _loadData(silent: true);  // keep the screen on-screen
+          // ignore: empty_catches — fall through to snack below
           if (mounted) _showSnack('${l10n.error}: $e', isError: true);
         }
       },
@@ -173,7 +188,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         saleItemId: item['saleItemId'],
         quantity: (item['quantity'] as num?)?.toDouble() ?? 0.0,
       );
-      await _loadData();
+      await _loadData(silent: true);
       if (mounted) _showSnack(l10n.productRemoved, isError: false);
     } catch (e) {
       if (!mounted) return;
@@ -201,14 +216,34 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       final salesService = SalesService(authProvider: authProvider);
 
       if (diff > 0) {
-        await salesService.addSaleItem(
-          saleId: widget.saleId,
-          productId: item['productId'],
-          quantity: diff,
-          salePrice: item['salePrice'],
-          minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-          comment: item['comment'] ?? '',
-        );
+        // Branch on isExternal so external items (productId=null,
+        // externalProductName=...) don't get rejected by the backend's
+        // "ProductId kerak" guard.
+        final isExternal = item['isExternal'] == true;
+        if (isExternal) {
+          await salesService.addSaleItem(
+            saleId: widget.saleId,
+            isExternal: true,
+            externalProductName: (item['externalProductName'] as String?) ??
+                (item['productName'] as String?) ??
+                '',
+            externalCostPrice:
+                (item['externalCostPrice'] as num?)?.toDouble() ?? 0.0,
+            quantity: diff,
+            salePrice: item['salePrice'],
+            minSalePrice: 0.0,
+            comment: item['comment'] ?? '',
+          );
+        } else {
+          await salesService.addSaleItem(
+            saleId: widget.saleId,
+            productId: item['productId'],
+            quantity: diff,
+            salePrice: item['salePrice'],
+            minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+            comment: item['comment'] ?? '',
+          );
+        }
       } else {
         await salesService.removeSaleItem(
           saleId: widget.saleId,
@@ -216,9 +251,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           quantity: diff.abs(),
         );
       }
-      await _loadData();
+      await _loadData(silent: true);
     } catch (e) {
-      await _loadData();
+      await _loadData(silent: true);
       if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     }
   }
@@ -264,14 +299,35 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           }
 
           if (diff > 0) {
-            await salesService.addSaleItem(
-              saleId: widget.saleId,
-              productId: item['productId'],
-              quantity: diff,
-              salePrice: newPrice,
-              minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-              comment: comment ?? '',
-            );
+            // Same external/ordinary branch as in _updateQuantity — the
+            // backend rejects productId=null for non-external items.
+            final isExternal = item['isExternal'] == true;
+            if (isExternal) {
+              await salesService.addSaleItem(
+                saleId: widget.saleId,
+                isExternal: true,
+                externalProductName:
+                    (item['externalProductName'] as String?) ??
+                        (item['productName'] as String?) ??
+                        '',
+                externalCostPrice:
+                    (item['externalCostPrice'] as num?)?.toDouble() ?? 0.0,
+                quantity: diff,
+                salePrice: newPrice,
+                minSalePrice: 0.0,
+                comment: comment ?? '',
+              );
+            } else {
+              await salesService.addSaleItem(
+                saleId: widget.saleId,
+                productId: item['productId'],
+                quantity: diff,
+                salePrice: newPrice,
+                minSalePrice:
+                    (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+                comment: comment ?? '',
+              );
+            }
           } else if (diff < 0) {
             await salesService.removeSaleItem(
               saleId: widget.saleId,
@@ -280,10 +336,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             );
           }
 
-          await _loadData();
+          await _loadData(silent: true);
           if (mounted) _showSnack(l10n.productUpdated, isError: false);
         } catch (e) {
-          await _loadData();
+          await _loadData(silent: true);
           if (mounted) _showSnack('${l10n.error}: $e', isError: true);
         }
       },
@@ -314,7 +370,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         saleItemId: item['saleItemId'],
         quantity: returnQty,
       );
-      await _loadData();
+      await _loadData(silent: true);
       if (mounted) _showSnack(l10n.productReturned, isError: false);
     } catch (e) {
       if (mounted) _showSnack('${l10n.error}: $e', isError: true);
@@ -350,6 +406,52 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           if (mounted) _showSnack('${l10n.error}: $e', isError: true);
         }
       },
+    );
+  }
+
+  /// Add an external (one-off) product to this in-flight sale. Same UX as
+  /// in NewSaleScreen but here the item must go straight to the API since
+  /// the sale already exists on the server; we don't keep a local-only
+  /// cart in Continue mode.
+  Future<void> _addExternalProduct() async {
+    final l10n = AppLocalizations.of(context)!;
+    ExternalProductSheet.show(
+      context,
+      onConfirm: (name, costPrice, qty, salePrice, comment) async {
+        try {
+          final authProvider =
+              Provider.of<AuthProvider>(context, listen: false);
+          final salesService = SalesService(authProvider: authProvider);
+          await salesService.addSaleItem(
+            saleId: widget.saleId,
+            isExternal: true,
+            externalProductName: name,
+            externalCostPrice: costPrice,
+            quantity: qty,
+            salePrice: salePrice,
+            minSalePrice: 0.0,
+            comment: comment,
+          );
+          await _loadData(silent: true);
+          if (mounted) {
+            _showSnack(l10n.productAddedToCart(name), isError: false);
+          }
+        } catch (e) {
+          if (mounted) _showSnack('${l10n.error}: $e', isError: true);
+        }
+      },
+    );
+  }
+
+  /// Open the customer-picker dialog. The dialog itself calls
+  /// `updateSaleCustomer` on the API; we just refresh after it closes.
+  void _selectOrChangeCustomer() {
+    showDialog(
+      context: context,
+      builder: (_) => CustomerSelectionDialog(
+        saleId: widget.saleId,
+        onCustomerSelected: () => _loadData(silent: true),
+      ),
     );
   }
 
@@ -391,33 +493,78 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         appBar: CommonAppBar(title: l10n.draftSale),
         body: Column(
           children: [
-            if (customerName != null)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                color:
-                    isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF0F9FF),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(9),
+            // Customer pill — always shown, tappable. Lets the seller add or
+            // change the customer for a sale they're continuing (couldn't do
+            // this before, so a debt sale started "Mijozsiz" stayed that way).
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: isClosed ? null : _selectOrChangeCustomer,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color:
+                          isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white12
+                            : Colors.black.withOpacity(0.06),
                       ),
-                      child: const Icon(Icons.person_rounded,
-                          color: Color(0xFF3B82F6), size: 17),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      customerName,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF3B82F6).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: Icon(
+                            customerName != null
+                                ? Icons.person_rounded
+                                : Icons.person_add_alt_1_rounded,
+                            color: const Color(0xFF3B82F6),
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            customerName ?? l10n.customerNotSelected,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: customerName != null
+                                  ? (isDark
+                                      ? Colors.white
+                                      : Colors.black87)
+                                  : (isDark
+                                      ? Colors.white60
+                                      : Colors.grey[600]),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (!isClosed)
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 18,
+                            color: isDark ? Colors.white54 : Colors.grey,
+                          ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
+            ),
             if (_cartItems.isNotEmpty)
               SizedBox(
                 height: 110,
@@ -451,49 +598,99 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: l10n.searchProduct,
-                        hintStyle: TextStyle(
-                            color: Colors.grey.shade400, fontSize: 14),
-                        prefixIcon: const Icon(Icons.search_rounded,
-                            size: 18, color: Color(0xFF9CA3AF)),
-                        suffixIcon: _searchController.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear_rounded, size: 16),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _filterProducts();
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor:
-                            isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.08)
-                                  : const Color(0xFFE5E7EB)),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            style: const TextStyle(fontSize: 14),
+                            decoration: InputDecoration(
+                              hintText: l10n.searchProduct,
+                              hintStyle: TextStyle(
+                                  color: Colors.grey.shade400, fontSize: 14),
+                              prefixIcon: const Icon(Icons.search_rounded,
+                                  size: 18, color: Color(0xFF9CA3AF)),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear_rounded,
+                                          size: 16),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _filterProducts();
+                                      },
+                                    )
+                                  : null,
+                              filled: true,
+                              fillColor: isDark
+                                  ? const Color(0xFF2C2C2E)
+                                  : Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.08)
+                                        : const Color(0xFFE5E7EB)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.08)
+                                        : const Color(0xFFE5E7EB)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: Color(0xFF3B82F6), width: 1.5),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
+                            ),
+                          ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.08)
-                                  : const Color(0xFFE5E7EB)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF3B82F6), width: 1.5),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                      ),
+                        const SizedBox(width: 10),
+                        if (!isClosed)
+                          Tooltip(
+                            message: l10n.addExternalProduct,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFFFFA85C),
+                                      Color(0xFFF28C33),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFF28C33)
+                                          .withOpacity(0.35),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: InkWell(
+                                  onTap: _addExternalProduct,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: const SizedBox(
+                                    width: 44,
+                                    height: 44,
+                                    child: Icon(
+                                      Icons.storefront_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   Expanded(

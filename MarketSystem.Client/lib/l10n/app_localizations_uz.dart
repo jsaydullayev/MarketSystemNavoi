@@ -1327,6 +1327,17 @@ class AppLocalizationsUz extends AppLocalizations {
   String get saleDeleted => 'Savdo o\'chirildi';
 
   @override
+  String get saleInDebtUseDebtorsSection =>
+      'Bu sotuv qarzga olingan. To\'lov uchun \"Qarzdor mijozlar\" bo\'limidan foydalaning.';
+
+  @override
+  String get saleAlreadyPaid =>
+      'Bu sotuv to\'liq to\'langan. O\'zgartirish kiritib bo\'lmaydi.';
+
+  @override
+  String get hourlySales => 'Soatlik savdo';
+
+  @override
   String get draftSaveError => 'Draft saqlashda xatolik';
 
   @override
@@ -1611,4 +1622,13 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get superAdminCredentialsWarning =>
       'Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko\'rib bo\'lmaydi.';
+
+  @override
+  String get cartTitle => 'Savatcha';
+
+  @override
+  String get viewEditCart => 'Ko\'rish / tahrirlash';
+
+  @override
+  String get productsInCartSuffix => 'ta mahsulot savatda';
 }

@@ -426,6 +426,9 @@
   "debtSales": "Qarz savdolar",
   "paidSales": "To'langan savdolar",
   "saleDeleted": "Savdo o'chirildi",
+  "saleInDebtUseDebtorsSection": "Bu sotuv qarzga olingan. To'lov uchun \"Qarzdor mijozlar\" bo'limidan foydalaning.",
+  "saleAlreadyPaid": "Bu sotuv to'liq to'langan. O'zgartirish kiritib bo'lmaydi.",
+  "hourlySales": "Soatlik savdo",
   "draftSaveError": "Draft saqlashda xatolik",
   "enterQuantityHint": "Miqdor kiriting...",
   "selectCustomerForDebtWarning": "Qarzga olish uchun mijoz tanlang!",
@@ -519,5 +522,8 @@
   "superAdminCredentialsCopyBoth": "Hammasini nusxalash",
   "superAdminCredentialsCopied": "Nusxalandi",
   "superAdminCredentialsDone": "Tugatish",
-  "superAdminCredentialsWarning": "Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko'rib bo'lmaydi."
+  "superAdminCredentialsWarning": "Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko'rib bo'lmaydi.",
+  "cartTitle": "Savatcha",
+  "viewEditCart": "Ko'rish / tahrirlash",
+  "productsInCartSuffix": "ta mahsulot savatda"
 }

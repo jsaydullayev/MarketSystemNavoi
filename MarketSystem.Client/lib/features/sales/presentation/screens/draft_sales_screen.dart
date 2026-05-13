@@ -8,11 +8,10 @@ import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
-import 'package:market_system_client/features/sales/presentation/widgets/customer_selection_dialog.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/continuing_sale_row.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/davom_segmented_control.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/debtor_card.dart';
-import 'package:market_system_client/features/sales/presentation/widgets/draft_sale_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/empty_state.dart';
-import 'package:market_system_client/features/sales/presentation/widgets/section_header.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DraftSalesScreen extends StatefulWidget {
@@ -27,12 +26,19 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
   List<dynamic> _debtors = [];
   bool _isLoading = true;
 
+  /// Default tab — the screen exists primarily so a seller can pick up a
+  /// paused Draft after handling a quick walk-in sale.
+  DavomTab _tab = DavomTab.davom;
+
   List<dynamic> get _draftSales =>
       _unfinishedSales.where((s) => s['status'] == 'Draft').toList();
   List<dynamic> get _debtSales =>
       _unfinishedSales.where((s) => s['status'] == 'Debt').toList();
-  List<dynamic> get _paidSales =>
-      _unfinishedSales.where((s) => s['status'] == 'Paid').toList();
+  // "Paid" tab also surfaces Closed (debt-paid-off) — both are terminal-paid.
+  List<dynamic> get _paidSales => _unfinishedSales.where((s) {
+        final st = (s['status'] as String?) ?? '';
+        return st == 'Paid' || st == 'Closed';
+      }).toList();
 
   @override
   void initState() {
@@ -131,16 +137,6 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     );
   }
 
-  void _openEditDialog(dynamic sale) {
-    showDialog(
-      context: context,
-      builder: (_) => CustomerSelectionDialog(
-        saleId: sale['id'],
-        onCustomerSelected: _loadDraftSales,
-      ),
-    );
-  }
-
   void _showDebtorPayment(dynamic debtor) {
     showDebtorPaymentSheet(
       context,
@@ -183,14 +179,18 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
     ));
   }
 
+  // ───────────────────────── Tab colors ─────────────────────────
+  // Mirror the HTML mockup palette: blue for Draft (the "resume" state),
+  // amber for Debt, green for Paid/Closed, red for debtor customers.
+  static const _draftColor = Color(0xFF3B82F6);
+  static const _debtColor = Color(0xFFFCD34D);
+  static const _paidColor = Color(0xFF10B981);
+  static const _debtorColor = Color(0xFFEF4444);
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
-    final isEmpty = _draftSales.isEmpty &&
-        _debtSales.isEmpty &&
-        _paidSales.isEmpty &&
-        _debtors.isEmpty;
 
     return NetworkWrapper(
       onRetry: _loadAll,
@@ -205,80 +205,130 @@ class _DraftSalesScreenState extends State<DraftSalesScreen> {
             : RefreshIndicator(
                 onRefresh: _loadAll,
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                   children: [
-                    if (isEmpty) const EmptyState(),
-
-                    // Qarzdor mijozlar
-                    if (_debtors.isNotEmpty) ...[
-                      SectionHeader(
-                        title: l10n.debtorCustomers,
-                        icon: Icons.person_outline,
-                        color: Colors.red,
-                        count: _debtors.length,
-                      ),
-                      const SizedBox(height: 12),
-                      ..._debtors.map((debtor) => DebtorCard(
-                            debtor: debtor,
-                            onPaymentTap: () => _showDebtorPayment(debtor),
-                            onHistoryTap: () => _showPaymentHistory(debtor),
-                          )),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Draft savdolar
-                    if (_draftSales.isNotEmpty) ...[
-                      SectionHeader(
-                        title: l10n.ongoing,
-                        icon: Icons.edit_note_rounded,
-                        color: Colors.orange,
-                        count: _draftSales.length,
-                      ),
-                      const SizedBox(height: 12),
-                      ..._draftSales.map((sale) => DraftSaleCard(
-                            sale: sale,
-                            onEdit: () => _continueSale(sale),
-                            onDelete: () => _confirmDelete(sale['id']),
-                          )),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Qarz savdolar
-                    if (_debtSales.isNotEmpty) ...[
-                      SectionHeader(
-                        title: l10n.debtSales,
-                        icon: Icons.money_off_rounded,
-                        color: Colors.red,
-                        count: _debtSales.length,
-                      ),
-                      const SizedBox(height: 12),
-                      ..._debtSales.map((sale) => DraftSaleCard(
-                            sale: sale,
-                            onEdit: () => _continueSale(sale),
-                            onDelete: () => _confirmDelete(sale['id']),
-                          )),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // To'langan savdolar
-                    if (_paidSales.isNotEmpty) ...[
-                      SectionHeader(
-                        title: l10n.paidSales,
-                        icon: Icons.assignment_turned_in_outlined,
-                        color: Colors.green,
-                        count: _paidSales.length,
-                      ),
-                      const SizedBox(height: 12),
-                      ..._paidSales.map((sale) => DraftSaleCard(
-                            sale: sale,
-                            onEdit: () => _continueSale(sale),
-                            onDelete: () => _confirmDelete(sale['id']),
-                          )),
-                    ],
+                    DavomSegmentedControl(
+                      active: _tab,
+                      onChanged: (t) => setState(() => _tab = t),
+                      tabs: [
+                        DavomTabSpec(
+                          tab: DavomTab.davom,
+                          label: l10n.ongoing,
+                          count: _draftSales.length,
+                          color: _draftColor,
+                        ),
+                        DavomTabSpec(
+                          tab: DavomTab.qarz,
+                          label: l10n.debt,
+                          count: _debtSales.length,
+                          color: _debtColor,
+                        ),
+                        DavomTabSpec(
+                          tab: DavomTab.paid,
+                          label: l10n.paid,
+                          count: _paidSales.length,
+                          color: _paidColor,
+                        ),
+                        DavomTabSpec(
+                          tab: DavomTab.qarzdor,
+                          label: l10n.debtorCustomers,
+                          count: _debtors.length,
+                          color: _debtorColor,
+                        ),
+                      ],
+                      summaryLabel: _summaryLabel(l10n),
+                      summaryValue: _summaryValue(),
+                    ),
+                    const SizedBox(height: 12),
+                    ..._buildTabBody(l10n),
                   ],
                 ),
               ),
       ),
     );
+  }
+
+  String _summaryLabel(AppLocalizations l10n) {
+    switch (_tab) {
+      case DavomTab.davom:
+        return l10n.ongoing;
+      case DavomTab.qarz:
+        return l10n.debtSales;
+      case DavomTab.paid:
+        return l10n.paidSales;
+      case DavomTab.qarzdor:
+        return l10n.debtorCustomers;
+    }
+  }
+
+  String _summaryValue() {
+    switch (_tab) {
+      case DavomTab.davom:
+        return formatSalesSummary(_draftSales);
+      case DavomTab.qarz:
+        return formatSalesSummary(_debtSales);
+      case DavomTab.paid:
+        return formatSalesSummary(_paidSales);
+      case DavomTab.qarzdor:
+        return formatDebtorsSummary(_debtors);
+    }
+  }
+
+  List<Widget> _buildTabBody(AppLocalizations l10n) {
+    switch (_tab) {
+      case DavomTab.davom:
+        if (_draftSales.isEmpty) return [const EmptyState()];
+        return _draftSales
+            .map((sale) => ContinuingSaleRow(
+                  sale: sale,
+                  stripColor: _draftColor,
+                  amountColor: _draftColor,
+                  hintLabel: 'DAVOM',
+                  onTap: () => _continueSale(sale),
+                  onDelete: () => _confirmDelete(sale['id']),
+                ))
+            .toList();
+
+      case DavomTab.qarz:
+        if (_debtSales.isEmpty) return [const EmptyState()];
+        return _debtSales
+            .map((sale) => ContinuingSaleRow(
+                  sale: sale,
+                  stripColor: _debtColor,
+                  amountColor: _debtColor,
+                  // Debt sales are locked for editing — tap surfaces the
+                  // correct flow (pay via Qarzdor section) instead of
+                  // dumping the user into a broken edit screen.
+                  onTap: () => _showSnack(
+                    l10n.saleInDebtUseDebtorsSection,
+                    isError: false,
+                  ),
+                  onDelete: () => _confirmDelete(sale['id']),
+                ))
+            .toList();
+
+      case DavomTab.paid:
+        if (_paidSales.isEmpty) return [const EmptyState()];
+        return _paidSales
+            .map((sale) => ContinuingSaleRow(
+                  sale: sale,
+                  stripColor: _paidColor,
+                  amountColor: _paidColor,
+                  onTap: () =>
+                      _showSnack(l10n.saleAlreadyPaid, isError: false),
+                  onDelete: () => _confirmDelete(sale['id']),
+                ))
+            .toList();
+
+      case DavomTab.qarzdor:
+        if (_debtors.isEmpty) return [const EmptyState()];
+        return _debtors
+            .map((debtor) => DebtorCard(
+                  debtor: debtor,
+                  onPaymentTap: () => _showDebtorPayment(debtor),
+                  onHistoryTap: () => _showPaymentHistory(debtor),
+                ))
+            .toList();
+    }
   }
 }
