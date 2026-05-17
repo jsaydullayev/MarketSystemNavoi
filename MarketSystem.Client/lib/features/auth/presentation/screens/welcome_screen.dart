@@ -143,12 +143,12 @@ class WelcomeScreen extends StatelessWidget {
           items: [
             DropdownMenuItem(
                 value: 'uz',
-                child: Text(l10n.languageNameUzbek,
+                child: Text("O'zbek",
                     style: TextStyle(
                         color: isDark ? Colors.white : Colors.black))),
             DropdownMenuItem(
                 value: 'ru',
-                child: Text(l10n.languageNameRussian,
+                child: Text('Русский',
                     style: TextStyle(
                         color: isDark ? Colors.white : Colors.black))),
           ],
