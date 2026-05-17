@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -43,8 +43,8 @@ class InventoryItemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.grey.withOpacity(0.12),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.grey.withValues(alpha: 0.12),
         ),
       ),
       child: Column(
@@ -65,7 +65,7 @@ class InventoryItemCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: stockColor.withOpacity(0.1),
+                  color: stockColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -142,8 +142,8 @@ class InventoryItemCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: potentialProfit > 0
-                    ? Colors.green.withOpacity(0.08)
-                    : Colors.red.withOpacity(0.08),
+                    ? Colors.green.withValues(alpha: 0.08)
+                    : Colors.red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(9),
               ),
               child: Row(

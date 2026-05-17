@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/data/models/product_category_model.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -72,13 +72,13 @@ class CategoryCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.07)
-                  : color.withOpacity(0.12),
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : color.withValues(alpha: 0.12),
             ),
             boxShadow: [
               if (!isDark)
                 BoxShadow(
-                  color: color.withOpacity(0.06),
+                  color: color.withValues(alpha: 0.06),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -93,7 +93,7 @@ class CategoryCard extends StatelessWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
@@ -245,7 +245,7 @@ class _IconBtn extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, size: 17, color: color),
@@ -266,7 +266,7 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -295,7 +295,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -343,7 +343,7 @@ class _DeleteDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.delete_outline_rounded,
@@ -375,7 +375,7 @@ class _DeleteDialog extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
-                      side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                      side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       l10n.no,

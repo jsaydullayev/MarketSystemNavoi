@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtToggle extends StatelessWidget {
@@ -67,7 +67,7 @@ class _DebtOption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             color: isSelected
-                ? activeColor.withOpacity(0.15)
+                ? activeColor.withValues(alpha: 0.15)
                 : (isDark ? Colors.white10 : Colors.grey.shade100),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(

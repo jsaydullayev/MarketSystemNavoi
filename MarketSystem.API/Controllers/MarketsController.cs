@@ -160,8 +160,3 @@ public class MarketsController : ControllerBase
         return Ok(new { message = "Market deleted successfully" });
     }
 }
-
-public record UpdateMarketRequest(
-    string Name,
-    string? Description
-);

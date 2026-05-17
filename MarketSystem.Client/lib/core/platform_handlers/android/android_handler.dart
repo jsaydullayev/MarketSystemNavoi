@@ -1,5 +1,4 @@
-/// Android Handler
-/// Platform-specific operations for Android
+import 'package:flutter/foundation.dart';
 
 /// Android Handler implementation
 class AndroidHandler {
@@ -22,7 +21,6 @@ class AndroidHandler {
   }) async {
     // Android specific notification implementation
     // In a real implementation, use flutter_local_notifications
-    // ignore: avoid_print
-    print('Android Notification: $title - $body');
+    debugPrint('Android Notification: $title - $body');
   }
 }

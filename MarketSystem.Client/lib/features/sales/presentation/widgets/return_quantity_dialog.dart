@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ReturnQuantityDialog extends StatefulWidget {
@@ -60,7 +60,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: Icon(Icons.assignment_return_rounded,
@@ -95,8 +95,8 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.withOpacity(0.07),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -126,8 +126,8 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                 errorText: _isValid ? null : l10n.invalidQuantity,
                 filled: true,
                 fillColor: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.withOpacity(0.06),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.withValues(alpha: 0.06),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -158,7 +158,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
-                      side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                      side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                     ),
                     child: Text(l10n.cancel,
                         style: TextStyle(color: Colors.grey[600])),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/theme/app_theme.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -49,7 +49,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.3),
+                color: Colors.grey.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -59,7 +59,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.danger.withOpacity(0.1),
+                  color: AppTheme.danger.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.arrow_circle_up_outlined,
@@ -117,8 +117,8 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
               prefixIcon: const Icon(Icons.monetization_on_outlined),
               filled: true,
               fillColor: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.grey.withOpacity(0.07),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.withValues(alpha: 0.07),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
@@ -141,8 +141,8 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
               prefixIcon: const Icon(Icons.comment_outlined),
               filled: true,
               fillColor: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.grey.withOpacity(0.07),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.withValues(alpha: 0.07),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
@@ -165,7 +165,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
-                    side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                   ),
                   child: Text(l10n.cancel,
                       style: TextStyle(color: Colors.grey[600])),
@@ -235,8 +235,8 @@ class _TypeChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           decoration: BoxDecoration(
             color: selected
-                ? AppTheme.primary.withOpacity(0.12)
-                : Colors.grey.withOpacity(0.08),
+                ? AppTheme.primary.withValues(alpha: 0.12)
+                : Colors.grey.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected ? AppTheme.primary : Colors.transparent,

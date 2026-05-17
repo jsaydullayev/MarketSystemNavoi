@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart'
     as core_auth;
 import 'package:market_system_client/core/utils/number_formatter.dart';
@@ -65,13 +65,13 @@ class CustomersCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: hasDebt
-                ? Colors.red.withOpacity(0.2)
-                : Colors.green.withOpacity(0.2),
+                ? Colors.red.withValues(alpha: 0.2)
+                : Colors.green.withValues(alpha: 0.2),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -102,7 +102,7 @@ class CustomersCard extends StatelessWidget {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
@@ -176,7 +176,7 @@ class CustomersCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: Colors.grey.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(Icons.info_outline_rounded,
@@ -188,9 +188,9 @@ class CustomersCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: color.withOpacity(0.3)),
+                        border: Border.all(color: color.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         hasDebt
@@ -268,8 +268,37 @@ class CustomersCard extends StatelessWidget {
       }
       return false;
     } catch (e) {
+      // Fail-closed: if we can't fetch the delete-info preview, fall back to a
+      // plain confirmation dialog. NEVER auto-delete on error — the previous
+      // code did, which meant any network / API hiccup destroyed customer rows
+      // without a single confirmation prompt.
       if (context.mounted) Navigator.pop(context);
-      context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
+      if (!context.mounted) return false;
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(l10n.deleteCustomer),
+          content: Text(
+              '${customer['fullName'] ?? customer['phone']} ${l10n.deleteCustomerConfirm(customer['fullName'] ?? customer['phone'])}'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.no)),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text(l10n.yesDelete),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true && context.mounted) {
+        context.read<CustomersBloc>().add(DeleteCustomerEvent(customer['id']));
+      }
       return false;
     }
   }

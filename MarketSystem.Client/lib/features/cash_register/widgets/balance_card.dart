@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/theme/app_theme.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -24,14 +24,14 @@ class BalanceCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.75)],
+          colors: [AppTheme.primary, AppTheme.primary.withValues(alpha: 0.75)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary.withOpacity(0.35),
+            color: AppTheme.primary.withValues(alpha: 0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -45,7 +45,7 @@ class BalanceCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.account_balance_wallet_outlined,
@@ -56,7 +56,7 @@ class BalanceCard extends StatelessWidget {
                 l10n.totalBalance,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -78,7 +78,7 @@ class BalanceCard extends StatelessWidget {
               l10n.updatedAt(_formatDate(lastUpdated)),
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.65),
+                color: Colors.white.withValues(alpha: 0.65),
               ),
             ),
           ],
@@ -86,7 +86,7 @@ class BalanceCard extends StatelessWidget {
             const SizedBox(height: 20),
             Container(
               height: 1,
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 16),
             Row(
@@ -148,9 +148,9 @@ class _BalanceChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -162,7 +162,7 @@ class _BalanceChip extends StatelessWidget {
               children: [
                 Text(label,
                     style: TextStyle(
-                        fontSize: 11, color: Colors.white.withOpacity(0.7))),
+                        fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
                 Text(
                   '${amount.toStringAsFixed(0)} ${l10n.currencySom}',
                   style: const TextStyle(

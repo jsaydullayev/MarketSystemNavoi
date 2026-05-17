@@ -5,7 +5,6 @@ using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using MarketSystem.Infrastructure.Data;
 using CommonDTOs = MarketSystem.Application.DTOs;
 
 namespace MarketSystem.Application.Services;
@@ -14,9 +13,9 @@ public class MarketService : IMarketService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<MarketService> _logger;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
 
-    public MarketService(IUnitOfWork unitOfWork, ILogger<MarketService> logger, AppDbContext context)
+    public MarketService(IUnitOfWork unitOfWork, ILogger<MarketService> logger, IAppDbContext context)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -27,7 +26,6 @@ public class MarketService : IMarketService
     {
         _logger.LogInformation("Creating new market: {MarketName}", request.Name);
 
-        // 1. Check if subdomain already exists
         if (!string.IsNullOrEmpty(request.Subdomain))
         {
             var existingSubdomain = await _context.Markets
@@ -39,50 +37,53 @@ public class MarketService : IMarketService
             }
         }
 
-        // 2. Create Market
-        var market = new Market
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            Id = 0, // Auto-increment
-            Name = request.Name,
-            Subdomain = request.Subdomain,
-            Description = request.Description,
-            IsActive = true,
-            ExpiresAt = request.ExpiresAt,
-            CreatedAt = DateTime.UtcNow
-        };
+            // 1. Owner user yaratish (Id avval kerak)
+            var owner = new User
+            {
+                Id = Guid.NewGuid(),
+                FullName = request.AdminFullName,
+                Username = request.AdminUsername,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.AdminPassword),
+                Role = Role.Owner,
+                Language = Language.Uzbek,
+                IsActive = true
+            };
+            await _unitOfWork.Users.AddAsync(owner, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _context.Markets.Add(market);
-        await _context.SaveChangesAsync(cancellationToken);
+            // 2. Market yaratish — OwnerId bilan
+            var market = new Market
+            {
+                Name = request.Name,
+                Subdomain = request.Subdomain,
+                Description = request.Description,
+                IsActive = true,
+                ExpiresAt = request.ExpiresAt,
+                CreatedAt = DateTime.UtcNow,
+                OwnerId = owner.Id
+            };
+            _context.Markets.Add(market);
+            await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Market created with ID: {MarketId}", market.Id);
+            // 3. Owner'ga MarketId biriktirish
+            owner.MarketId = market.Id;
+            _unitOfWork.Users.Update(owner);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // 3. Create Owner user for this market
-        var owner = new User
-        {
-            Id = Guid.NewGuid(),
-            FullName = request.AdminFullName,
-            Username = request.AdminUsername,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.AdminPassword),
-            Role = Role.Owner,
-            Language = Language.Uzbek,
-            IsActive = true,
-            MarketId = market.Id
-        };
+            _logger.LogInformation("Market {MarketId} va owner {Username} yaratildi", market.Id, owner.Username);
 
-        await _unitOfWork.Users.AddAsync(owner, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation("Owner user created for market {MarketId}: {Username}", market.Id, owner.Username);
-
-        return new MarketDto(
-            market.Id,
-            market.Name,
-            market.Subdomain,
-            market.Description,
-            market.IsActive,
-            market.ExpiresAt,
-            market.CreatedAt
-        );
+            return new MarketDto(
+                market.Id,
+                market.Name,
+                market.Subdomain,
+                market.Description,
+                market.IsActive,
+                market.ExpiresAt,
+                market.CreatedAt
+            );
+        }, cancellationToken);
     }
 
     public async Task<RegisterMarketResponse?> RegisterMarketForOwnerAsync(RegisterMarketRequest request, Guid ownerId, CancellationToken cancellationToken = default)
@@ -132,7 +133,6 @@ public class MarketService : IMarketService
 
         // 4. Update Owner's MarketId
         owner.MarketId = market.Id;
-        _context.Entry(owner).State = EntityState.Modified;
         _unitOfWork.Users.Update(owner);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

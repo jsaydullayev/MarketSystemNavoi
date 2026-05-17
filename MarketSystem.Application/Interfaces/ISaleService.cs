@@ -2,7 +2,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 
-namespace MarketSystem.Domain.Interfaces;
+namespace MarketSystem.Application.Interfaces;
 
 public interface ISaleService
 {

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
@@ -58,16 +58,18 @@ class _AddUserSheetState extends State<AddUserSheet> {
         password: _passCtrl.text,
         role: _role,
       );
+      if (!mounted) return;
       setState(() => _loading = false);
       if (mounted) {
         Navigator.pop(context);
         _showSuccess(user);
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${l10n.error}: ' + e.toString()),
+          content: Text('${l10n.error}: ${e.toString()}'),
           backgroundColor: Colors.red,
         ));
       }
@@ -218,7 +220,7 @@ class _SuccessSheet extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(children: [
@@ -268,9 +270,9 @@ class _SuccessSheet extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.08),
+            color: Colors.orange.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
           ),
           child: Row(children: [
             const Icon(Icons.info_outline_rounded,
@@ -338,7 +340,7 @@ class _Header extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary, size: 20),
@@ -403,7 +405,7 @@ class _SheetField extends StatelessWidget {
               : null,
           filled: true,
           fillColor:
-              isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+              isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none),
@@ -462,9 +464,9 @@ class _RoleSelector extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 11),
                   decoration: BoxDecoration(
                     color: sel
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : (isDark
-                            ? Colors.white.withOpacity(0.04)
+                            ? Colors.white.withValues(alpha: 0.04)
                             : Colors.grey.shade50),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(

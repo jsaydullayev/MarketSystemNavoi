@@ -57,12 +57,14 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final categoryService = CategoryService(authProvider: authProvider);
       final categories = await categoryService.getAllCategories();
+      if (!mounted) return;
       setState(() {
         _categories = categories;
         _isLoadingCategories = false;
       });
     } catch (e) {
-      print('Error loading categories: $e');
+      debugPrint('Error loading categories: $e');
+      if (!mounted) return;
       setState(() {
         _isLoadingCategories = false;
       });

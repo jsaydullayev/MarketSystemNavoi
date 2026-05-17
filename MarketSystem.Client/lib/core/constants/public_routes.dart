@@ -2,7 +2,6 @@
 /// Single source of truth for all routes that don't require authentication
 library;
 
-import 'package:flutter/foundation.dart';
 import '../routes/app_routes.dart';
 
 /// Centralized public route definitions
@@ -22,33 +21,22 @@ class PublicRoutes {
   /// Returns true if route requires no authentication
   static bool isPublic(String route) {
     final normalized = _normalizeRoute(route);
-    final result = all.contains(normalized);
-    debugPrint('🔓 PublicRoutes.isPublic("$route") = $result');
-    return result;
+    return all.contains(normalized);
   }
 
   /// Check if route is splash screen
   /// Splash screen is special - it should still check auth and redirect
   static bool isSplash(String route) {
     final normalized = _normalizeRoute(route);
-    final result = normalized == _normalizeRoute(AppRoutes.splash);
-    debugPrint('🔓 PublicRoutes.isSplash("$route") = $result');
-    return result;
+    return normalized == _normalizeRoute(AppRoutes.splash);
   }
 
   /// Check if route should skip auto-navigation (stay on the page)
   /// This is true for routes like /privacy that should NEVER redirect
   /// BUT false for /splash which SHOULD redirect after checking auth
   static bool shouldSkipAutoNavigation(String route) {
-    // Splash screen should NOT skip auto-navigation - it needs to check auth
-    if (isSplash(route)) {
-      debugPrint('🔓 shouldSkipAutoNavigation("$route") = false (is splash)');
-      return false;
-    }
-    // Other public routes should stay where they are
-    final result = isPublic(route);
-    debugPrint('🔓 shouldSkipAutoNavigation("$route") = $result (is public)');
-    return result;
+    if (isSplash(route)) return false;
+    return isPublic(route);
   }
 
   /// Normalize route string for consistent comparison

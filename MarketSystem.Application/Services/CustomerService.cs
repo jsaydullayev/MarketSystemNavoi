@@ -3,7 +3,6 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
@@ -13,11 +12,11 @@ namespace MarketSystem.Application.Services;
 public class CustomerService : ICustomerService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CustomerService(IUnitOfWork unitOfWork, AppDbContext context, ICurrentMarketService currentMarketService, IHttpContextAccessor httpContextAccessor)
+    public CustomerService(IUnitOfWork unitOfWork, IAppDbContext context, ICurrentMarketService currentMarketService, IHttpContextAccessor httpContextAccessor)
     {
         _unitOfWork = unitOfWork;
         _context = context;
@@ -67,22 +66,74 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
-        // FindAsync caches results in memory, causing stale data issues
         var customers = await _context.Customers
+            .AsNoTracking()
             .Where(c => c.MarketId == marketId && !c.IsDeleted)
             .OrderBy(c => c.FullName)
             .ToListAsync(cancellationToken);
 
-        var result = new List<CustomerDto>();
+        if (customers.Count == 0)
+            return [];
 
-        foreach (var customer in customers)
-        {
-            var dto = await MapToDtoAsync(customer, cancellationToken);
-            result.Add(dto);
-        }
+        var customerIds = customers.Select(c => c.Id).ToList();
 
-        return result;
+        var debtsByCustomer = await _context.Debts
+            .Where(d => customerIds.Contains(d.CustomerId) && d.MarketId == marketId && d.Status == DebtStatus.Open)
+            .GroupBy(d => d.CustomerId)
+            .Select(g => new { CustomerId = g.Key, Total = g.Sum(d => d.RemainingDebt) })
+            .ToDictionaryAsync(x => x.CustomerId, x => x.Total, cancellationToken);
+
+        return customers.Select(c => new CustomerDto(
+            c.Id,
+            c.Phone,
+            c.FullName,
+            c.Comment,
+            debtsByCustomer.TryGetValue(c.Id, out var debt) ? debt : 0m
+        )).ToList();
+    }
+
+    public async Task<PagedResult<CustomerDto>> GetAllCustomersPagedAsync(int page, int size, string? search = null, CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(1, page);
+        size = Math.Clamp(size, 1, 200);
+
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var query = _context.Customers
+            .AsNoTracking()
+            .Where(c => c.MarketId == marketId && !c.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(c => c.FullName.Contains(search) || c.Phone.Contains(search));
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var customers = await query
+            .OrderBy(c => c.FullName)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .ToListAsync(cancellationToken);
+
+        if (customers.Count == 0)
+            return PagedResult<CustomerDto>.From([], page, size, total);
+
+        var customerIds = customers.Select(c => c.Id).ToList();
+
+        var debtsByCustomer = await _context.Debts
+            .Where(d => customerIds.Contains(d.CustomerId) && d.MarketId == marketId && d.Status == DebtStatus.Open)
+            .GroupBy(d => d.CustomerId)
+            .Select(g => new { CustomerId = g.Key, Total = g.Sum(d => d.RemainingDebt) })
+            .ToDictionaryAsync(x => x.CustomerId, x => x.Total, cancellationToken);
+
+        var items = customers.Select(c => new CustomerDto(
+            c.Id,
+            c.Phone,
+            c.FullName,
+            c.Comment,
+            debtsByCustomer.TryGetValue(c.Id, out var debt) ? debt : 0m
+        )).ToList();
+
+        return PagedResult<CustomerDto>.From(items, page, size, total);
     }
 
     public async Task<CustomerDto> CreateCustomerAsync(CreateCustomerDto request, CancellationToken cancellationToken = default)
@@ -319,7 +370,6 @@ public class CustomerService : ICustomerService
             return false;
 
         customer.IsDeleted = true;
-        _context.Entry(customer).State = EntityState.Modified;
         _context.Customers.Update(customer);
         await _context.SaveChangesAsync(cancellationToken);
         return true;

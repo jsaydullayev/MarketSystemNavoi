@@ -1,4 +1,4 @@
-// lib/features/zakup/presentation/screens/zakup_screen.dart
+﻿// lib/features/zakup/presentation/screens/zakup_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,7 +41,8 @@ class _ZakupScreenState extends State<ZakupScreen> {
       final products =
           await ProductService(authProvider: authProvider).getAllProducts();
       if (mounted) setState(() => _products = products);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('ZakupScreen._loadProducts error: $e\n$st');
       if (mounted) setState(() => _products = []);
     }
   }
@@ -229,7 +230,7 @@ class _EmptyView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.shopping_bag_outlined,

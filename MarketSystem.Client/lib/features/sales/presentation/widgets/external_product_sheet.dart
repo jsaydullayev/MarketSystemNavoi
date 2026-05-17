@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -356,7 +356,7 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
             prefixIcon: Icon(icon, size: 20, color: orangeColor),
             suffixText: suffix,
             filled: true,
-            fillColor: Colors.grey.withOpacity(0.05),
+            fillColor: Colors.grey.withValues(alpha: 0.05),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,

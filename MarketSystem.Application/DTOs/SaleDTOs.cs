@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using MarketSystem.Domain.Enums;
+using System.Text.Json.Serialization;
 
 namespace MarketSystem.Application.DTOs;
 
@@ -9,3 +11,121 @@ public record AddPaymentRequest(Guid SaleId, PaymentType PaymentType, decimal Am
 public record SaleItemResponse(Guid Id, Guid ProductId, string ProductName, decimal Quantity, decimal CostPrice, decimal SalePrice, decimal TotalPrice, decimal Profit, string Unit, string? Comment);
 public record PaymentResponse(Guid Id, PaymentType PaymentType, decimal Amount, DateTime CreatedAt);
 public record SaleResponse(Guid Id, Guid SellerId, SaleStatus Status, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount, ICollection<SaleItemResponse> Items, ICollection<PaymentResponse> Payments);
+
+public record SaleItemDto(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("saleId")] string SaleId,
+    [property: JsonPropertyName("productId")] Guid? ProductId,
+    [property: JsonPropertyName("productName")] string ProductName,
+    [property: JsonPropertyName("quantity")] decimal Quantity,
+    [property: JsonPropertyName("costPrice")] decimal CostPrice,
+    [property: JsonPropertyName("salePrice")] decimal SalePrice,
+    [property: JsonPropertyName("totalPrice")] decimal TotalPrice,
+    [property: JsonPropertyName("profit")] decimal Profit,
+    [property: JsonPropertyName("unit")] string Unit,
+    [property: JsonPropertyName("comment")] string? Comment,
+    [property: JsonPropertyName("isExternal")] bool IsExternal
+);
+
+public record PaymentDto(
+    [property: JsonPropertyName("paymentId")] Guid PaymentId,
+    [property: JsonPropertyName("paymentType")] string PaymentType,
+    [property: JsonPropertyName("amount")] decimal Amount,
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+    [property: JsonPropertyName("saleStatus")] string? SaleStatus,
+    [property: JsonPropertyName("salePaidAmount")] decimal? SalePaidAmount,
+    [property: JsonPropertyName("saleTotalAmount")] decimal? SaleTotalAmount
+);
+
+public record SaleDto(
+    [property: JsonPropertyName("id")] Guid Id,
+    [property: JsonPropertyName("sellerId")] Guid SellerId,
+    [property: JsonPropertyName("sellerName")] string SellerName,
+    [property: JsonPropertyName("customerId")] Guid? CustomerId,
+    [property: JsonPropertyName("customerName")] string? CustomerName,
+    [property: JsonPropertyName("customerPhone")] string? CustomerPhone,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("totalAmount")] decimal TotalAmount,
+    [property: JsonPropertyName("paidAmount")] decimal PaidAmount,
+    [property: JsonPropertyName("remainingAmount")] decimal RemainingAmount,
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+    [property: JsonPropertyName("items")] List<SaleItemDto> Items,
+    [property: JsonPropertyName("payments")] List<PaymentDto> Payments
+);
+
+public record CreateSaleDto(
+    [property: JsonPropertyName("customerId")] Guid? CustomerId
+);
+
+public record UpdateSaleCustomerDto(
+    [property: JsonPropertyName("customerId")] Guid? CustomerId
+);
+
+public record AddSaleItemDto(
+    [property: JsonPropertyName("isExternal")] bool IsExternal,
+    [property: JsonPropertyName("productId")] Guid? ProductId,
+
+    [property: JsonPropertyName("externalProductName")]
+    [property: StringLength(200, ErrorMessage = "Mahsulot nomi 200 belgidan oshmasligi kerak")]
+    string? ExternalProductName,
+
+    [property: JsonPropertyName("externalCostPrice")]
+    [property: Range(0, double.MaxValue)]
+    decimal? ExternalCostPrice,
+
+    [property: JsonPropertyName("quantity")]
+    [property: Range(0.001, double.MaxValue, ErrorMessage = "Miqdor 0 dan katta bo'lishi kerak")]
+    decimal Quantity,
+
+    [property: JsonPropertyName("salePrice")]
+    [property: Range(0, double.MaxValue)]
+    decimal SalePrice,
+
+    [property: JsonPropertyName("minSalePrice")]
+    [property: Range(0, double.MaxValue)]
+    decimal MinSalePrice,
+
+    [property: JsonPropertyName("comment")]
+    [property: StringLength(500)]
+    string? Comment
+);
+
+public record RemoveSaleItemDto(
+    [property: JsonPropertyName("saleItemId")]
+    [property: Required]
+    string SaleItemId,
+
+    [property: JsonPropertyName("quantity")]
+    [property: Range(0.001, double.MaxValue, ErrorMessage = "Miqdor 0 dan katta bo'lishi kerak")]
+    decimal Quantity
+);
+
+public record AddPaymentDto(
+    [property: JsonPropertyName("paymentType")]
+    [property: Required(ErrorMessage = "To'lov turi majburiy")]
+    string PaymentType,
+
+    [property: JsonPropertyName("amount")]
+    [property: Range(0.01, double.MaxValue, ErrorMessage = "To'lov miqdori 0 dan katta bo'lishi kerak")]
+    decimal Amount
+);
+
+public record CancelSaleDto(
+    [property: JsonPropertyName("adminId")]
+    [property: Required(ErrorMessage = "Admin ID majburiy")]
+    string AdminId
+);
+
+public record UpdateSaleItemPriceDto(
+    [property: JsonPropertyName("saleItemId")]
+    [property: Required]
+    string SaleItemId,
+
+    [property: JsonPropertyName("newPrice")]
+    [property: Range(0, double.MaxValue, ErrorMessage = "Narx manfiy bo'lishi mumkin emas")]
+    decimal NewPrice,
+
+    [property: JsonPropertyName("comment")]
+    [property: StringLength(500)]
+    string? Comment
+);

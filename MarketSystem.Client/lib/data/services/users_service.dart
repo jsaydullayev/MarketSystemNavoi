@@ -6,11 +6,11 @@ import '../../core/constants/api_constants.dart';
 
 class UsersService {
   final AuthProvider authProvider;
-  late final HttpService _httpService;
+  final HttpService _httpService;
 
-  UsersService({required this.authProvider}) {
-    _httpService = HttpService();
-  }
+  UsersService({required this.authProvider, HttpService? httpService})
+      : _httpService = httpService ?? HttpService();
+
 
   // Barcha userlarni olish
   Future<List<dynamic>> getAllUsers() async {
@@ -90,11 +90,8 @@ class UsersService {
   // User o'chirish
   Future<void> deleteUser(dynamic id) async {
     final response = await _httpService.delete(
-      '${ApiConstants.users}/DeleteUser/api/Users/DeleteUser/$id',
+      '${ApiConstants.users}/DeleteUser/$id',
     );
-
-    print('DELETE url: ${ApiConstants.users}/DeleteUser/$id');
-    print('DELETE status: ${response.statusCode}');
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       final msg = response.body.isNotEmpty

@@ -45,7 +45,8 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return false;
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('AuthProvider.login error: $e\n$st');
       _errorCode = 'network_error';
       _isLoading = false;
       notifyListeners();
@@ -92,7 +93,8 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return false;
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('AuthProvider.register error: $e\n$st');
       _errorCode = 'network_error';
       _isLoading = false;
       notifyListeners();
@@ -121,8 +123,8 @@ class AuthProvider extends ChangeNotifier {
 
       _user = profile;
       notifyListeners();
-    } catch (e) {
-      // Silent fail - don't show error to user
+    } catch (e, st) {
+      debugPrint('AuthProvider.fetchUserProfile error: $e\n$st');
     }
   }
 
@@ -136,8 +138,10 @@ class AuthProvider extends ChangeNotifier {
       await fetchUserProfile();
 
       notifyListeners();
-    } catch (e) {
-      print('Error updating token: $e');
+    } catch (e, st) {
+      debugPrint('AuthProvider.updateToken error: $e\n$st');
+      _errorCode = 'token_update_failed';
+      notifyListeners();
     }
   }
 

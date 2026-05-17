@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
@@ -12,40 +12,19 @@ class AuthService {
   // Login
   Future<Map<String, dynamic>?> login(String username, String password) async {
     try {
-      final requestBody = {
-        'username': username,
-        'password': password,
-      };
-
-      print('=== LOGIN DEBUG ===');
-      print('URL: ${ApiConstants.baseUrl}${ApiConstants.login}');
-      print('Request Body: ${jsonEncode(requestBody)}');
-
       final response = await _httpService.post(
         ApiConstants.login,
-        body: requestBody,
+        body: {'username': username, 'password': password},
       );
-
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-      print('==================');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        // Tokenlarni saqlash
-        await _httpService.saveTokens(
-          data['accessToken'],
-          data['refreshToken'],
-        );
-
+        await _httpService.saveTokens(data['accessToken'], data['refreshToken']);
         return data;
-      } else {
-        print('Login failed with status: ${response.statusCode}');
-        return null;
       }
-    } catch (e) {
-      print('Login error: $e');
+      return null;
+    } catch (e, st) {
+      debugPrint('AuthService.login error: $e\n$st');
       return null;
     }
   }
@@ -74,18 +53,12 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        // Tokenlarni saqlash
-        await _httpService.saveTokens(
-          data['accessToken'],
-          data['refreshToken'],
-        );
-
+        await _httpService.saveTokens(data['accessToken'], data['refreshToken']);
         return data;
       }
       return null;
-    } catch (e) {
-      print('Register error: $e');
+    } catch (e, st) {
+      debugPrint('AuthService.register error: $e\n$st');
       return null;
     }
   }
@@ -98,15 +71,13 @@ class AuthService {
 
       final response = await _httpService.post(
         ApiConstants.logout,
-        body: {
-          'refreshToken': refreshToken,
-        },
+        body: {'refreshToken': refreshToken},
       );
 
       await _httpService.clearTokens();
       return response.statusCode == 200;
-    } catch (e) {
-      print('Logout error: $e');
+    } catch (e, st) {
+      debugPrint('AuthService.logout error: $e\n$st');
       await _httpService.clearTokens();
       return true;
     }
@@ -118,11 +89,8 @@ class AuthService {
     if (token == null || token.isEmpty) return false;
 
     if (_isTokenExpired(token)) {
-      print('Access token expired, attempting refresh...');
       final refreshed = await refreshToken();
-
       if (refreshed == null) {
-        print('Token refresh failed - user must login again');
         await _httpService.clearTokens();
         return false;
       }
@@ -142,77 +110,53 @@ class AuthService {
       final data = jsonDecode(payload);
       final exp = data['exp'] as int;
 
-      // JWT exp claim UTC da bo'ladi, shuning uchun DateTime.now().toUtc() ishlatamiz
       final expiryDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-      final now = DateTime.now().toUtc();
-
-      print('=== TOKEN EXPIRY CHECK ===');
-      print('Token expiry (UTC): $expiryDate');
-      print('Current time (UTC): $now');
-      print('Is expired: ${now.isAfter(expiryDate)}');
-      print('=========================');
-
-      return now.isAfter(expiryDate);
+      return DateTime.now().toUtc().isAfter(expiryDate);
     } catch (e) {
-      print('Error checking token expiry: $e');
       return true;
     }
   }
 
-  // ✅ Refresh access token using refresh token
+  // Refresh access token using refresh token
   Future<Map<String, dynamic>?> refreshToken() async {
     try {
       final refreshToken = await _httpService.getRefreshToken();
-      if (refreshToken == null) {
-        print('No refresh token available');
-        return null;
-      }
+      if (refreshToken == null) return null;
+
+      // Backend requires BOTH tokens — it derives the user id from the
+      // (expired) access token's claims, then checks the refresh row in
+      // the DB. Sending only refreshToken makes the server return 401.
+      final accessToken = await _httpService.getAccessToken();
+      if (accessToken == null) return null;
 
       final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshToken}'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
+        body: jsonEncode({
+          'accessToken': accessToken,
+          'refreshToken': refreshToken,
+        }),
       );
-
-      print('Refresh Token Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await _httpService.saveTokens(
-          data['accessToken'],
-          data['refreshToken'],
-        );
-        print('Token refreshed successfully');
+        await _httpService.saveTokens(data['accessToken'], data['refreshToken']);
         return data;
       } else {
-        print('Refresh token expired, user must login again');
         await _httpService.clearTokens();
         return null;
       }
-    } catch (e) {
-      print('Refresh token error: $e');
+    } catch (e, st) {
+      debugPrint('AuthService.refreshToken error: $e\n$st');
       return null;
     }
   }
 
-  // ✅ NEW: Update access token only (for market registration)
+  // Update access token only (for market registration)
   Future<void> updateAccessToken(String newAccessToken) async {
-    try {
-      // Get current refresh token
-      final refreshToken = await _httpService.getRefreshToken();
-
-      if (refreshToken != null) {
-        // Save new access token with existing refresh token
-        await _httpService.saveTokens(newAccessToken, refreshToken);
-      } else {
-        // Fallback: save only access token
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', newAccessToken);
-      }
-    } catch (e) {
-      print('Error updating access token: $e');
-      rethrow;
-    }
+    final refreshToken = await _httpService.getRefreshToken();
+    // saveTokens writes to secure storage; pass empty string if no refresh token
+    await _httpService.saveTokens(newAccessToken, refreshToken ?? '');
   }
 
   // HttpService getter

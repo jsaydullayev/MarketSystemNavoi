@@ -62,6 +62,7 @@ class _ReportsScreenState extends State<ReportsScreen>
         _reportsService.getPeriodReport(_startDate, _endDate),
         _reportsService.getComprehensiveReport(_selectedDate),
       ]);
+      if (!mounted) return;
       setState(() {
         _dailyReport = results[0] as Map<String, dynamic>?;
         _periodReport = results[1] as Map<String, dynamic>?;
@@ -69,6 +70,7 @@ class _ReportsScreenState extends State<ReportsScreen>
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       setState(() => _isLoading = false);
       if (mounted) _showSnack('${l10n.error}: $e', isError: true);
@@ -81,6 +83,7 @@ class _ReportsScreenState extends State<ReportsScreen>
     setState(() => _isLoadingDetails = true);
     try {
       final saleItems = await _reportsService.getDailySaleItems(_selectedDate);
+      if (!mounted) return;
       setState(() => _isLoadingDetails = false);
       if (mounted) {
         Navigator.push(

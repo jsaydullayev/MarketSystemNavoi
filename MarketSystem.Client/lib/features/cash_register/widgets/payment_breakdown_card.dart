@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/data/models/cash_register_model.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -19,7 +19,7 @@ class PaymentBreakdownCard extends StatelessWidget {
         color: isDark ? const Color(0xFF1A1E2A) : Colors.blue.shade50,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.2),
+          color: Colors.blue.withValues(alpha: 0.2),
           width: 1.5,
         ),
       ),
@@ -31,7 +31,7 @@ class PaymentBreakdownCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.15),
+                  color: Colors.blue.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.payments_outlined,
@@ -99,7 +99,7 @@ class _PaymentRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 18),

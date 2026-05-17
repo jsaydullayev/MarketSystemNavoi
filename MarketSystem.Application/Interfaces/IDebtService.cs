@@ -24,9 +24,3 @@ public interface IDebtService
     /// </summary>
     Task<PayDebtResultDto> PayAsync(Guid debtId, PayDebtDto request, Guid actorUserId, CancellationToken cancellationToken = default);
 }
-
-public record PayDebtResultDto(
-    decimal RemainingDebt,
-    decimal PaymentAmount,
-    string DebtStatus
-);

@@ -1,7 +1,7 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 
-namespace MarketSystem.Domain.Interfaces;
+namespace MarketSystem.Application.Interfaces;
 
 public interface IAuthService
 {

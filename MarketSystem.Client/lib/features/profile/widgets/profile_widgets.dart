@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../core/constants/app_styles.dart';
 import '../../../core/extensions/app_extensions.dart';
 
@@ -35,14 +35,14 @@ class ProfileGlassCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
         boxShadow: [
           if (!isDark)
             BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 20,
                 offset: const Offset(0, 10)),
         ],

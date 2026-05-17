@@ -3,7 +3,6 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -11,14 +10,14 @@ namespace MarketSystem.Application.Services;
 
 public class DebtService : IDebtService
 {
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMarketService _currentMarket;
     private readonly IAuditLogService _auditLog;
     private readonly ILogger<DebtService> _logger;
 
     public DebtService(
-        AppDbContext context,
+        IAppDbContext context,
         IUnitOfWork unitOfWork,
         ICurrentMarketService currentMarket,
         IAuditLogService auditLog,
@@ -112,7 +111,7 @@ public class DebtService : IDebtService
 
                 // The sale row needs to move with the debt so we lock that too.
                 var sale = await _context.Sales
-                    .FromSqlInterpolated($"SELECT * FROM \"Sales\" WHERE \"Id\" = {debt.SaleId} FOR UPDATE")
+                    .FromSqlInterpolated($"SELECT *, xmin FROM \"Sales\" WHERE \"Id\" = {debt.SaleId} FOR UPDATE")
                     .FirstOrDefaultAsync(cancellationToken)
                     ?? throw new KeyNotFoundException("Savdo topilmadi.");
                 if (sale.MarketId != marketId)
@@ -184,9 +183,10 @@ public class DebtService : IDebtService
                     request.Amount,
                     debt.Status.ToString());
             }
-            catch
+            catch (Exception ex)
             {
                 await tx.RollbackAsync(cancellationToken);
+                _logger.LogError(ex, "DebtService.PayDebtAsync transaction rolled back for debtId={DebtId}.", debtId);
                 throw;
             }
         });
@@ -201,13 +201,19 @@ public class DebtService : IDebtService
                 si.Id.ToString(),
                 si.SaleId.ToString(),
                 si.ProductId,
-                si.Product?.Name ?? "Noma'lum mahsulot",
+                // External items have no Product row — fall back to the
+                // captured ExternalProductName. Without this they all
+                // showed up as "Noma'lum mahsulot" in the debt details
+                // screen, hiding which goods the customer actually took.
+                si.IsExternal
+                    ? (si.ExternalProductName ?? "Noma'lum mahsulot")
+                    : (si.Product?.Name ?? "Noma'lum mahsulot"),
                 si.Quantity,
                 si.CostPrice,
                 si.SalePrice,
                 si.TotalPrice,
                 si.Profit,
-                si.Product?.GetUnitName() ?? "dona",
+                si.IsExternal ? "" : (si.Product?.GetUnitName() ?? "dona"),
                 si.Comment,
                 si.IsExternal
             )).ToList();

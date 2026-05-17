@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -39,7 +39,7 @@ class ContinueSaleProductCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDark
-                ? Colors.white.withOpacity(0.07)
+                ? Colors.white.withValues(alpha: 0.07)
                 : isInStock
                     ? const Color(0xFFE5E7EB)
                     : Colors.grey.shade200,
@@ -47,7 +47,7 @@ class ContinueSaleProductCard extends StatelessWidget {
           boxShadow: [
             if (!isDark && isInStock)
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),

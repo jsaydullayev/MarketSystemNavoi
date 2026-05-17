@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -178,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         if (enabled)
-          Icon(Icons.edit_rounded, size: 14, color: primary.withOpacity(0.5)),
+          Icon(Icons.edit_rounded, size: 14, color: primary.withValues(alpha: 0.5)),
       ],
     );
   }
@@ -261,8 +261,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             content: Text(l10n.updateSuccess), backgroundColor: Colors.green));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+      }
     } finally {
       setModalState(() => _isChangingPassword = false);
       _currentPasswordController.clear();
@@ -277,7 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: AppColors.getBg(isDark),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -5))
         ],
@@ -334,6 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (confirm == true && mounted) {
       await Provider.of<AuthProvider>(context, listen: false).logout();
+      if (!mounted) return;
       Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -349,7 +352,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: InputDecoration(
         labelText: label,
         filled: true,
-        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none),

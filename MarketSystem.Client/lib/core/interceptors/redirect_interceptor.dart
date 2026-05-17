@@ -18,9 +18,7 @@ class RedirectInterceptor {
     final fromRoute = ModalRoute.of(context)?.settings.name ?? '';
 
     // Check with RouteStateManager first
-    final stateManagerAllowed = RouteStateManager.instance.canRedirect(fromRoute);
-    if (!stateManagerAllowed) {
-      debugPrint('🛑 RedirectInterceptor: Blocked by RouteStateManager');
+    if (!RouteStateManager.instance.canRedirect(fromRoute)) {
       return false;
     }
 
@@ -37,11 +35,9 @@ class RedirectInterceptor {
     Object? arguments,
   }) async {
     if (!canRedirect(context, routeName)) {
-      debugPrint('🚫 Push blocked: $routeName');
       return null;
     }
 
-    debugPrint('✅ Push proceeding: $routeName');
     RouteStateManager.instance.updateRoute(routeName);
     return Navigator.pushNamed<T>(context, routeName, arguments: arguments);
   }
@@ -54,12 +50,8 @@ class RedirectInterceptor {
     TO? result,
     Object? arguments,
   }) async {
-    if (!canRedirect(context, routeName)) {
-      debugPrint('🚫 PushReplacement blocked: $routeName');
-      return null;
-    }
+    if (!canRedirect(context, routeName)) return null;
 
-    debugPrint('✅ PushReplacement proceeding: $routeName');
     RouteStateManager.instance.updateRoute(routeName);
     return Navigator.pushReplacementNamed<T, TO>(
       context,
@@ -77,12 +69,8 @@ class RedirectInterceptor {
     Object? arguments,
     required RoutePredicate predicate,
   }) async {
-    if (!canRedirect(context, routeName)) {
-      debugPrint('🚫 PushAndRemoveUntil blocked: $routeName');
-      return null;
-    }
+    if (!canRedirect(context, routeName)) return null;
 
-    debugPrint('✅ PushAndRemoveUntil proceeding: $routeName');
     RouteStateManager.instance.updateRoute(routeName);
     return Navigator.pushNamedAndRemoveUntil<T>(
       context,
@@ -99,7 +87,6 @@ class RedirectInterceptor {
     String routeName, {
     Object? arguments,
   }) async {
-    debugPrint('⚠️ FORCE Push (bypassing guards): $routeName');
     RouteStateManager.instance.updateRoute(routeName);
     return Navigator.pushNamed<T>(context, routeName, arguments: arguments);
   }
@@ -112,7 +99,6 @@ class RedirectInterceptor {
     TO? result,
     Object? arguments,
   }) async {
-    debugPrint('⚠️ FORCE PushReplacement (bypassing guards): $routeName');
     RouteStateManager.instance.updateRoute(routeName);
     return Navigator.pushReplacementNamed<T, TO>(
       context,
@@ -126,7 +112,7 @@ class RedirectInterceptor {
   static void showBlockMessage(BuildContext context, String toRoute) {
     final fromRoute = ModalRoute.of(context)?.settings.name ?? '';
     final reason = PublicRouteGuard.getBlockReason(fromRoute, toRoute);
-    debugPrint('🚫 Navigation blocked: $reason');
+    assert(false, 'Navigation blocked: $reason');
 
     // Optionally show to user (uncomment if desired)
     // ScaffoldMessenger.of(context).showSnackBar(

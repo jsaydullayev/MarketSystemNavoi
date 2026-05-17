@@ -14,13 +14,7 @@ class PublicRouteGuard {
 
   /// Check if a route should bypass all auth checks
   /// Returns true if the route is public (no auth required)
-  static bool shouldBypassAuth(String route) {
-    final isPublic = PublicRoutes.isPublic(route);
-    if (isPublic) {
-      debugPrint('🔓 PublicRouteGuard: Bypassing auth check for: $route');
-    }
-    return isPublic;
-  }
+  static bool shouldBypassAuth(String route) => PublicRoutes.isPublic(route);
 
   /// Check if redirect is allowed
   /// Returns true if redirect is permitted, false if blocked
@@ -28,18 +22,7 @@ class PublicRouteGuard {
   /// CRITICAL: This is the "Impenetrable Wall"
   /// Once on a public route, NO automatic redirect can force the user away
   static bool allowRedirect(String fromRoute, String toRoute) {
-    // Never redirect FROM a public route
-    if (PublicRoutes.isPublic(fromRoute)) {
-      debugPrint('🚫 BLOCKED: Attempted redirect from public route');
-      debugPrint('   From: $fromRoute (public)');
-      debugPrint('   To: $toRoute');
-      debugPrint('   This redirect has been BLOCKED to protect public route access');
-      return false;
-    }
-
-    // Redirect is allowed
-    debugPrint('✅ ALLOWED: Redirect from $fromRoute → $toRoute');
-    return true;
+    return !PublicRoutes.isPublic(fromRoute);
   }
 
   /// Check if redirect is allowed using BuildContext
@@ -56,10 +39,7 @@ class PublicRouteGuard {
 
     // Special case: if navigating TO a public route, always allow
     // This ensures privacy policy, login, etc. are always accessible
-    if (PublicRoutes.isPublic(toRoute)) {
-      debugPrint('🔓 Navigation allowed to public route: $toRoute');
-      return true;
-    }
+    if (PublicRoutes.isPublic(toRoute)) return true;
 
     // For protected routes, check if redirect is allowed
     return allowRedirect(fromRoute, toRoute);
@@ -69,15 +49,10 @@ class PublicRouteGuard {
   /// Throws an AssertionError if the route is not public
   /// Useful for ensuring public screens stay public
   static void assertPublicRoute(String route, String screenName) {
-    final isPublic = PublicRoutes.isPublic(route);
-    if (!isPublic) {
-      final message = '🚨 SECURITY WARNING: $screenName accessed via non-public route: $route';
-      debugPrint(message);
-      // In debug mode, throw an error to catch this during development
-      assert(isPublic, message);
-    } else {
-      debugPrint('✅ Public route confirmed for $screenName: $route');
-    }
+    assert(
+      PublicRoutes.isPublic(route),
+      '$screenName accessed via non-public route: $route',
+    );
   }
 
   /// Get the reason for a blocked redirect (for user feedback)

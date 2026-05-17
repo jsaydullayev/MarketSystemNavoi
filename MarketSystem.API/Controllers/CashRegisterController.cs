@@ -22,7 +22,7 @@ public class CashRegisterController : ControllerBase
     {
         var result = await _cashRegisterService.GetCashRegisterAsync(cancellationToken);
         if (result == null)
-            return BadRequest(new { message = "Failed to get cash register" });
+            return NotFound(new { message = "Cash register not found" });
 
         return Ok(result);
     }
@@ -32,7 +32,7 @@ public class CashRegisterController : ControllerBase
     {
         var result = await _cashRegisterService.GetTodaySalesSummaryAsync(cancellationToken);
         if (result == null)
-            return BadRequest(new { message = "Failed to get today's sales" });
+            return NotFound(new { message = "Today's sales summary not found" });
 
         return Ok(result);
     }
@@ -55,9 +55,9 @@ public class CashRegisterController : ControllerBase
     }
 
     [HttpPost("add")]
-    public async Task<IActionResult> AddCash([FromQuery] decimal amount, CancellationToken cancellationToken)
+    public async Task<IActionResult> AddCash([FromBody] AddCashRequest request, CancellationToken cancellationToken)
     {
-        var success = await _cashRegisterService.AddCashAsync(amount, cancellationToken);
+        var success = await _cashRegisterService.AddCashAsync(request.Amount, cancellationToken);
         if (!success)
             return BadRequest(new { message = "Failed to add cash" });
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class StatCard extends StatelessWidget {
   final String title;
@@ -31,10 +31,10 @@ class StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? color.withOpacity(0.12) : color.withOpacity(0.07),
+          color: isDark ? color.withValues(alpha: 0.12) : color.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(isDark ? 0.2 : 0.15),
+            color: color.withValues(alpha: isDark ? 0.2 : 0.15),
           ),
         ),
         child: Column(
@@ -45,7 +45,7 @@ class StatCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(9),
                   ),
                   child: Icon(icon, color: color, size: 16),

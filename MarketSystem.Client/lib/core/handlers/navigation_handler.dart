@@ -13,15 +13,20 @@ class NavigationHandler {
   /// Get current context
   BuildContext? get context => navigatorKey.currentContext;
 
+  static NavigatorState? get _state => navigatorKey.currentState;
+  static BuildContext? get _context => navigatorKey.currentContext;
+
   /// Navigate to new route
   static Future<T?> navigateTo<T>(
     String routeName, {
     Object? arguments,
   }) {
-    return navigatorKey.currentState!.pushNamed<T>(
-      routeName,
-      arguments: arguments,
-    );
+    final state = _state;
+    if (state == null) {
+      debugPrint('NavigationHandler: state unavailable for navigateTo($routeName)');
+      return Future.value(null);
+    }
+    return state.pushNamed<T>(routeName, arguments: arguments);
   }
 
   /// Navigate to new route and replace current
@@ -29,10 +34,12 @@ class NavigationHandler {
     String routeName, {
     Object? arguments,
   }) {
-    return navigatorKey.currentState!.pushReplacementNamed<T, Object?>(
-      routeName,
-      arguments: arguments,
-    );
+    final state = _state;
+    if (state == null) {
+      debugPrint('NavigationHandler: state unavailable for navigateToReplacement($routeName)');
+      return Future.value(null);
+    }
+    return state.pushReplacementNamed<T, Object?>(routeName, arguments: arguments);
   }
 
   /// Navigate to new route and clear all previous routes
@@ -40,7 +47,12 @@ class NavigationHandler {
     String routeName, {
     Object? arguments,
   }) {
-    return navigatorKey.currentState!.pushNamedAndRemoveUntil<T>(
+    final state = _state;
+    if (state == null) {
+      debugPrint('NavigationHandler: state unavailable for navigateToAndClear($routeName)');
+      return Future.value(null);
+    }
+    return state.pushNamedAndRemoveUntil<T>(
       routeName,
       (route) => false,
       arguments: arguments,
@@ -50,18 +62,23 @@ class NavigationHandler {
   /// Go back to previous screen
   static void goBack<T>([T? result]) {
     if (canGoBack()) {
-      navigatorKey.currentState!.pop<T>(result);
+      _state?.pop<T>(result);
     }
   }
 
   /// Check if can go back
   static bool canGoBack() {
-    return navigatorKey.currentState?.canPop() ?? false;
+    return _state?.canPop() ?? false;
   }
 
   /// Pop until specific route
   static void popUntil(String routeName) {
-    navigatorKey.currentState!.popUntil(ModalRoute.withName(routeName));
+    final state = _state;
+    if (state == null) {
+      debugPrint('NavigationHandler: state unavailable for popUntil($routeName)');
+      return;
+    }
+    state.popUntil(ModalRoute.withName(routeName));
   }
 
   /// Show dialog
@@ -71,8 +88,13 @@ class NavigationHandler {
     Color? barrierColor,
     String? barrierLabel,
   }) {
+    final ctx = _context;
+    if (ctx == null) {
+      debugPrint('NavigationHandler: context unavailable for showDialog');
+      return Future.value(null);
+    }
     return material.showDialog<T>(
-      context: navigatorKey.currentContext!,
+      context: ctx,
       builder: builder,
       barrierDismissible: barrierDismissible,
       barrierColor: barrierColor,
@@ -89,8 +111,13 @@ class NavigationHandler {
     Clip? clipBehavior,
     BoxConstraints? constraints,
   }) {
+    final ctx = _context;
+    if (ctx == null) {
+      debugPrint('NavigationHandler: context unavailable for showBottomSheet');
+      return Future.value(null);
+    }
     return showModalBottomSheet(
-      context: navigatorKey.currentContext!,
+      context: ctx,
       builder: builder,
       backgroundColor: backgroundColor,
       elevation: elevation,
@@ -107,8 +134,12 @@ class NavigationHandler {
     SnackBarAction? action,
     Color? backgroundColor,
   }) {
-    final scaffoldMessenger = ScaffoldMessenger.of(navigatorKey.currentContext!);
-    scaffoldMessenger.showSnackBar(
+    final ctx = _context;
+    if (ctx == null) {
+      debugPrint('NavigationHandler: context unavailable for showSnackBar');
+      return;
+    }
+    ScaffoldMessenger.of(ctx).showSnackBar(
       SnackBar(
         content: Text(message),
         duration: duration,
@@ -120,13 +151,20 @@ class NavigationHandler {
 
   /// Hide current snackbar
   static void hideSnackBar() {
-    ScaffoldMessenger.of(navigatorKey.currentContext!).hideCurrentSnackBar();
+    final ctx = _context;
+    if (ctx == null) return;
+    ScaffoldMessenger.of(ctx).hideCurrentSnackBar();
   }
 
   /// Remove current route
   static void removeCurrentRoute() {
-    navigatorKey.currentState!.removeRoute(
-      ModalRoute.of(navigatorKey.currentContext!)!,
-    );
+    final ctx = _context;
+    final state = _state;
+    if (ctx == null || state == null) {
+      debugPrint('NavigationHandler: unavailable for removeCurrentRoute');
+      return;
+    }
+    final route = ModalRoute.of(ctx);
+    if (route != null) state.removeRoute(route);
   }
 }

@@ -28,17 +28,12 @@ class RouteProtectionObserver extends NavigatorObserver {
     if (oldRoute != null && newRoute != null) {
       final oldRouteName = oldRoute.settings.name ?? '';
       final newRouteName = newRoute.settings.name ?? '';
-
-      if (isPublicRoute(oldRouteName) && !isPublicRoute(newRouteName)) {
-        debugPrint('⚠️ WARNING: Possible unwanted redirect from public route!');
-        debugPrint('  From: $oldRouteName (public)');
-        debugPrint('  To: $newRouteName (protected)');
-        debugPrint('  This redirect should not happen automatically.');
-      }
+      assert(
+        !(isPublicRoute(oldRouteName) && !isPublicRoute(newRouteName)),
+        'Possible unwanted redirect from public route $oldRouteName → $newRouteName',
+      );
     }
   }
 
-  void _logRouteChange(String action, String? newRoute, String? oldRoute) {
-    debugPrint('🔄 NavigatorObserver: $action - $oldRoute → $newRoute');
-  }
+  void _logRouteChange(String action, String? newRoute, String? oldRoute) {}
 }

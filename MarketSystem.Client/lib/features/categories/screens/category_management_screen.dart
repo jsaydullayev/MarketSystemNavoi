@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
@@ -205,7 +205,7 @@ class _StatsBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3B82F6).withOpacity(0.35),
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -220,7 +220,7 @@ class _StatsBanner extends StatelessWidget {
               label: l10n.total,
             ),
           ),
-          Container(width: 1, height: 36, color: Colors.white.withOpacity(0.2)),
+          Container(width: 1, height: 36, color: Colors.white.withValues(alpha: 0.2)),
           Expanded(
             child: _BannerStat(
               icon: Icons.check_circle_outline_rounded,
@@ -228,7 +228,7 @@ class _StatsBanner extends StatelessWidget {
               label: l10n.active,
             ),
           ),
-          Container(width: 1, height: 36, color: Colors.white.withOpacity(0.2)),
+          Container(width: 1, height: 36, color: Colors.white.withValues(alpha: 0.2)),
           Expanded(
             child: _BannerStat(
               icon: Icons.pause_circle_outline_rounded,
@@ -254,7 +254,7 @@ class _BannerStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white.withOpacity(0.8), size: 18),
+        Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 18),
         const SizedBox(height: 5),
         Text(value,
             style: const TextStyle(
@@ -263,7 +263,7 @@ class _BannerStat extends StatelessWidget {
                 color: Colors.white)),
         Text(label,
             style:
-                TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.7))),
+                TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
       ],
     );
   }
@@ -297,7 +297,7 @@ class _SectionLabel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text('$count',
@@ -310,7 +310,7 @@ class _SectionLabel extends StatelessWidget {
             height: 1,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                  colors: [color.withOpacity(0.25), color.withOpacity(0)]),
+                  colors: [color.withValues(alpha: 0.25), color.withValues(alpha: 0)]),
             ),
           ),
         ),
@@ -339,8 +339,8 @@ class _EmptyView extends StatelessWidget {
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.withOpacity(0.07),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.withValues(alpha: 0.07),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.category_outlined,
@@ -402,7 +402,7 @@ class _ErrorView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.error_outline_rounded,

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
 
@@ -75,10 +77,10 @@ class RegistrationRequestService {
       }
 
       return RegistrationRequestResult(RegistrationRequestStatus.failure);
-    } catch (_) {
-      // Network errors are the only thing we surface as "failure"; the screen
-      // shows a retry option for these. Backend availability shouldn't leak
-      // anything that a normal user could enumerate.
+    } catch (e, st) {
+      // Network errors surface as "failure"; the screen shows a retry option.
+      // Backend availability shouldn't leak anything a normal user could enumerate.
+      debugPrint('RegistrationRequestService.submit error: $e\n$st');
       return RegistrationRequestResult(RegistrationRequestStatus.failure);
     }
   }

@@ -6,11 +6,11 @@ import '../models/market_model.dart';
 
 class MarketService {
   final AuthProvider authProvider;
-  late final HttpService _httpService;
+  final HttpService _httpService;
 
-  MarketService({required this.authProvider}) {
-    _httpService = HttpService();
-  }
+  MarketService({required this.authProvider, HttpService? httpService})
+      : _httpService = httpService ?? HttpService();
+
 
   /// Register market for Owner
   /// Owner creates a new market and gets linked to it
@@ -29,11 +29,14 @@ class MarketService {
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      return RegisterMarketResponseModel.fromJson(data);
+      return RegisterMarketResponseModel.fromJson(jsonDecode(response.body));
     } else {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Market registratsiyada xatolik');
+      String msg = 'Market registratsiyada xatolik';
+      try {
+        final err = jsonDecode(response.body);
+        msg = err['message'] ?? msg;
+      } catch (_) {}
+      throw Exception(msg);
     }
   }
 
@@ -70,8 +73,12 @@ class MarketService {
     );
 
     if (response.statusCode != 200) {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Marketni yangilashda xatolik');
+      String msg = 'Marketni yangilashda xatolik';
+      try {
+        final err = jsonDecode(response.body);
+        msg = err['message'] ?? msg;
+      } catch (_) {}
+      throw Exception(msg);
     }
   }
 
@@ -81,9 +88,8 @@ class MarketService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return (data as List)
-          .map((item) => MarketModel.fromJson(item))
-          .toList();
+      if (data is! List) throw Exception('Noto\'g\'ri server javobi');
+      return data.map((item) => MarketModel.fromJson(item)).toList();
     } else {
       throw Exception('Marketlarni olishda xatolik: ${response.statusCode}');
     }

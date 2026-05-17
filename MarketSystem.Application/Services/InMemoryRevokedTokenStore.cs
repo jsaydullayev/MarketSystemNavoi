@@ -15,19 +15,15 @@ public sealed class InMemoryRevokedTokenStore : IRevokedTokenStore
 {
     private readonly ConcurrentDictionary<string, DateTime> _entries = new();
 
-    public void Revoke(string jti, DateTime expiresAtUtc)
+    public Task RevokeAsync(string jti, DateTime expiresAtUtc, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(jti)) return;
-        // Keep the latest expiry on collision (paranoid double-revoke).
+        if (string.IsNullOrEmpty(jti)) return Task.CompletedTask;
         _entries.AddOrUpdate(jti, expiresAtUtc, (_, existing) => existing > expiresAtUtc ? existing : expiresAtUtc);
 
-        // Opportunistic prune on writes — keeps the dictionary small without a
-        // background sweeper. We don't iterate the whole map on every revoke
-        // because revokes are rare relative to validations.
         if (_entries.Count > 64 && _entries.Count % 32 == 0)
-        {
             PruneExpired();
-        }
+
+        return Task.CompletedTask;
     }
 
     public bool IsRevoked(string jti)

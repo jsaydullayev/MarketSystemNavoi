@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using System.Security.Claims;
 using OfficeOpenXml;
 
@@ -14,12 +14,28 @@ public class ReportsController : ControllerBase
 {
     private readonly IReportService _reportService;
     private readonly ILogger<ReportsController> _logger;
+    private readonly TimeZoneInfo _tashkent;
 
-    public ReportsController(IReportService reportService, ILogger<ReportsController> logger)
+    public ReportsController(
+        IReportService reportService,
+        ILogger<ReportsController> logger,
+        TimeZoneInfo tashkent)
     {
         _reportService = reportService;
         _logger = logger;
+        _tashkent = tashkent;
     }
+
+    /// <summary>
+    /// Format a UTC timestamp as Tashkent local time for Excel display.
+    /// Without this, all CreatedAt values rendered in the spreadsheet are
+    /// 5 hours behind what the seller sees in the Flutter UI, which made
+    /// late-evening sales appear to "fall on the previous day" in reports.
+    /// </summary>
+    private string FmtTashkent(DateTime utc) =>
+        TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.SpecifyKind(utc, DateTimeKind.Utc), _tashkent)
+            .ToString("dd.MM.yyyy HH:mm");
 
     /// <summary>
     /// Get daily sales report
@@ -373,7 +389,7 @@ public class ReportsController : ControllerBase
                 foreach (var sale in filteredSales)
                 {
                     detailsSheet.Cells[detailRow, 1].Value = detailRow - 1;
-                    detailsSheet.Cells[detailRow, 2].Value = sale.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+                    detailsSheet.Cells[detailRow, 2].Value = FmtTashkent(sale.CreatedAt);
                     detailsSheet.Cells[detailRow, 3].Value = sale.Id.ToString();
                     detailsSheet.Cells[detailRow, 4].Value = sale.SellerName ?? "";
                     detailsSheet.Cells[detailRow, 5].Value = sale.CustomerName ?? "Mijoz yo'q";
@@ -513,7 +529,7 @@ public class ReportsController : ControllerBase
                         foreach (var item in sale.Items)
                         {
                             itemsSheet.Cells[itemRow, 1].Value = itemRow - 1;
-                            itemsSheet.Cells[itemRow, 2].Value = sale.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+                            itemsSheet.Cells[itemRow, 2].Value = FmtTashkent(sale.CreatedAt);
                             itemsSheet.Cells[itemRow, 3].Value = sale.Id.ToString();
                             itemsSheet.Cells[itemRow, 4].Value = sale.CustomerName ?? "Mijoz yo'q";
                             itemsSheet.Cells[itemRow, 5].Value = item.ProductName;
@@ -787,7 +803,7 @@ public class ReportsController : ControllerBase
                 foreach (var sale in salesList.Sales)
                 {
                     salesSheet.Cells[salesRow, 1].Value = salesRow - 1;
-                    salesSheet.Cells[salesRow, 2].Value = sale.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+                    salesSheet.Cells[salesRow, 2].Value = FmtTashkent(sale.CreatedAt);
                     salesSheet.Cells[salesRow, 3].Value = sale.Id.ToString();
                     salesSheet.Cells[salesRow, 4].Value = sale.SellerName ?? "";
                     salesSheet.Cells[salesRow, 5].Value = sale.CustomerName ?? "Mijoz yo'q";
@@ -963,56 +979,23 @@ public class ReportsController : ControllerBase
 
     [HttpGet("daily/export-pdf")]
     [Authorize(Policy = "AllRoles")]
-    public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date)
+    public IActionResult ExportDailyReportToPdf([FromQuery] DateTime date)
     {
-        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-        var pdfBytes = await _reportService.ExportDailyReportToPdfAsync(utcDate, userRole);
-
-        return File(
-            pdfBytes,
-            "application/pdf",
-            $"daily_report_{date:yyyyMMdd}.pdf"
-        );
+        return StatusCode(501, new { message = "PDF export vaqtincha o'chirilgan. Iltimos, Excel export'dan foydalaning." });
     }
 
     [HttpGet("period/export-pdf")]
     [Authorize(Policy = "AllRoles")]
-    public async Task<IActionResult> ExportPeriodReportToPdf(
-        [FromQuery] DateTime start,
-        [FromQuery] DateTime end)
+    public IActionResult ExportPeriodReportToPdf([FromQuery] DateTime start, [FromQuery] DateTime end)
     {
-        if (start > end)
-            return BadRequest("Start date cannot be after end date");
-
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-        var utcStart = DateTime.SpecifyKind(start.Date, DateTimeKind.Utc);
-        var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
-
-        var request = new PeriodReportRequest(utcStart, utcEnd);
-        var pdfBytes = await _reportService.ExportPeriodReportToPdfAsync(request, userRole);
-
-        return File(
-            pdfBytes,
-            "application/pdf",
-            $"period_report_{start:yyyyMMdd}_{end:yyyyMMdd}.pdf"
-        );
+        return StatusCode(501, new { message = "PDF export vaqtincha o'chirilgan. Iltimos, Excel export'dan foydalaning." });
     }
 
     [HttpGet("comprehensive/export-pdf")]
     [Authorize(Policy = "AllRoles")]
-    public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date)
+    public IActionResult ExportComprehensiveReportToPdf([FromQuery] DateTime date)
     {
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var pdfBytes = await _reportService.ExportComprehensiveReportToPdfAsync(utcDate, userRole);
-
-        return File(
-            pdfBytes,
-            "application/pdf",
-            $"comprehensive_report_{date:yyyyMMdd}.pdf"
-        );
+        return StatusCode(501, new { message = "PDF export vaqtincha o'chirilgan. Iltimos, Excel export'dan foydalaning." });
     }
 
     /// <summary>
@@ -1156,7 +1139,7 @@ public class ReportsController : ControllerBase
                 foreach (var sale in salesList.Sales)
                 {
                     salesSheet.Cells[salesRow, 1].Value = salesRow - 1;
-                    salesSheet.Cells[salesRow, 2].Value = sale.CreatedAt.ToString("dd.MM.yyyy HH:mm");
+                    salesSheet.Cells[salesRow, 2].Value = FmtTashkent(sale.CreatedAt);
                     salesSheet.Cells[salesRow, 3].Value = sale.Id.ToString();
                     salesSheet.Cells[salesRow, 4].Value = sale.SellerName ?? "";
                     salesSheet.Cells[salesRow, 5].Value = sale.CustomerName ?? "Mijoz yo'q";

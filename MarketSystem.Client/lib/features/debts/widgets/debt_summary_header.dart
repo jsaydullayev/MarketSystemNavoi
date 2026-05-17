@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -27,7 +27,7 @@ class DebtSummaryHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.getCard(isDark),
         border:
-            Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.12))),
+            Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.12))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +37,7 @@ class DebtSummaryHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.12),
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.person_rounded,
@@ -96,13 +96,13 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: isOpen
-            ? const Color(0xFF10B981).withOpacity(0.1)
-            : Colors.grey.withOpacity(0.12),
+            ? const Color(0xFF10B981).withValues(alpha: 0.1)
+            : Colors.grey.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isOpen
-              ? const Color(0xFF10B981).withOpacity(0.3)
-              : Colors.grey.withOpacity(0.2),
+              ? const Color(0xFF10B981).withValues(alpha: 0.3)
+              : Colors.grey.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -149,9 +149,9 @@ class _SummaryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -32,13 +32,13 @@ class CustomerDebtCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: hasDebt
-              ? const Color(0xFFEF4444).withOpacity(0.15)
-              : const Color(0xFF10B981).withOpacity(0.2),
+              ? const Color(0xFFEF4444).withValues(alpha: 0.15)
+              : const Color(0xFF10B981).withValues(alpha: 0.2),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -92,7 +92,7 @@ class _DebtAmountRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withOpacity(0.05)
+            ? Colors.white.withValues(alpha: 0.05)
             : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -105,7 +105,7 @@ class _DebtAmountRow extends StatelessWidget {
               color: const Color(0xFF64748B),
             ),
           ),
-          Container(width: 1, height: 32, color: Colors.grey.withOpacity(0.2)),
+          Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.2)),
           Expanded(
             child: _AmountItem(
               label: l10n.remaining,
@@ -141,7 +141,7 @@ class _CardHeader extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6).withOpacity(0.1),
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(Icons.person_rounded,
@@ -159,8 +159,8 @@ class _CardHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: hasDebt
-                ? const Color(0xFFEF4444).withOpacity(0.1)
-                : const Color(0xFF10B981).withOpacity(0.1),
+                ? const Color(0xFFEF4444).withValues(alpha: 0.1)
+                : const Color(0xFF10B981).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(

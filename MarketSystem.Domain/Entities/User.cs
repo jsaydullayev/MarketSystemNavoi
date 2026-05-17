@@ -3,7 +3,7 @@ using MarketSystem.Domain.Enums;
 
 namespace MarketSystem.Domain.Entities;
 
-public class User : BaseEntity
+public class User : BaseEntity, ISoftDelete
 {
     public string FullName { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;

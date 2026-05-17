@@ -3,7 +3,6 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Application.Services;
@@ -11,10 +10,10 @@ namespace MarketSystem.Application.Services;
 public class UserService : IUserService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
 
-    public UserService(IUnitOfWork unitOfWork, AppDbContext context, ICurrentMarketService currentMarketService)
+    public UserService(IUnitOfWork unitOfWork, IAppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _context = context;
@@ -121,7 +120,6 @@ public class UserService : IUserService
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
         }
 
-        _context.Entry(user).State = EntityState.Modified;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -157,7 +155,6 @@ public class UserService : IUserService
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         }
 
-        _context.Entry(user).State = EntityState.Modified;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -206,7 +203,6 @@ public class UserService : IUserService
 
         user.ProfileImage = request.ProfileImage;
 
-        _context.Entry(user).State = EntityState.Modified;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -254,7 +250,6 @@ public class UserService : IUserService
             return false;
 
         user.IsActive = false;
-        _context.Entry(user).State = EntityState.Modified;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
@@ -276,7 +271,6 @@ public class UserService : IUserService
             return false;
 
         user.IsActive = true;
-        _context.Entry(user).State = EntityState.Modified;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;

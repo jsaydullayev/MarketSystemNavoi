@@ -3,8 +3,8 @@
 library;
 
 import 'package:dio/dio.dart';
-import '../interceptor/api_interceptor.dart';
-import '../interceptor/error_interceptor.dart';
+import '../interceptors/api_interceptor.dart';
+import '../interceptors/error_interceptor.dart';
 
 /// Network Handler - Manages all HTTP operations
 class NetworkHandler {

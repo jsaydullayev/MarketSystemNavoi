@@ -1,12 +1,13 @@
 using MarketSystem.Application.DTOs;
 
-namespace MarketSystem.Domain.Interfaces;
+namespace MarketSystem.Application.Interfaces;
 
 public interface ICustomerService
 {
     Task<CustomerDto?> GetCustomerByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<CustomerDto?> GetCustomerByPhoneAsync(string phone, CancellationToken cancellationToken = default);
     Task<IEnumerable<CustomerDto>> GetAllCustomersAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<CustomerDto>> GetAllCustomersPagedAsync(int page, int size, string? search = null, CancellationToken cancellationToken = default);
     Task<CustomerDto> CreateCustomerAsync(CreateCustomerDto request, CancellationToken cancellationToken = default);
     Task<CustomerDto?> UpdateCustomerAsync(UpdateCustomerDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteCustomerAsync(Guid id, CancellationToken cancellationToken = default);

@@ -1256,12 +1256,6 @@ abstract class AppLocalizations {
   /// **'Kunlik savdo'**
   String get dailySales;
 
-  /// No description provided for @drafts.
-  ///
-  /// In uz, this message translates to:
-  /// **'Draftlar'**
-  String get drafts;
-
   /// No description provided for @darkMode.
   ///
   /// In uz, this message translates to:
@@ -2606,6 +2600,24 @@ abstract class AppLocalizations {
   /// **'Savdo o\'chirildi'**
   String get saleDeleted;
 
+  /// No description provided for @saleInDebtUseDebtorsSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu sotuv qarzga olingan. To\'lov uchun \"Qarzdor mijozlar\" bo\'limidan foydalaning.'**
+  String get saleInDebtUseDebtorsSection;
+
+  /// No description provided for @saleAlreadyPaid.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu sotuv to\'liq to\'langan. O\'zgartirish kiritib bo\'lmaydi.'**
+  String get saleAlreadyPaid;
+
+  /// No description provided for @hourlySales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Soatlik savdo'**
+  String get hourlySales;
+
   /// No description provided for @draftSaveError.
   ///
   /// In uz, this message translates to:
@@ -3133,6 +3145,54 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko\'rib bo\'lmaydi.'**
   String get superAdminCredentialsWarning;
+
+  /// No description provided for @productsInCartSuffix.
+  ///
+  /// In uz, this message translates to:
+  /// **'ta mahsulot'**
+  String get productsInCartSuffix;
+
+  /// No description provided for @viewEditCart.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ko\'rish / tahrirlash'**
+  String get viewEditCart;
+
+  /// No description provided for @cartTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savat'**
+  String get cartTitle;
+
+  /// No description provided for @languageNameUzbek.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'zbekcha'**
+  String get languageNameUzbek;
+
+  /// No description provided for @languageNameRussian.
+  ///
+  /// In uz, this message translates to:
+  /// **'Русский'**
+  String get languageNameRussian;
+
+  /// No description provided for @serverConnectionError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Server bilan aloqa yo\'q. Iltimos, qayta urinib ko\'ring.'**
+  String get serverConnectionError;
+
+  /// No description provided for @sessionExpiredError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Login amali eskirgan. Iltimos, qayta login qiling.'**
+  String get sessionExpiredError;
+
+  /// No description provided for @permissionDeniedError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ruxsat yo\'q. Siz bu amalni bajarish huquqiga ega emassiz.'**
+  String get permissionDeniedError;
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -155,7 +155,8 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
 
     try {
       widget.onConfirm(payments, _hasDebt);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('ContinuePaymentSheet._confirm error: $e\n$st');
       setState(() => _isProcessing = false);
     }
   }
@@ -184,7 +185,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -196,7 +197,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.payments_outlined,
@@ -249,14 +250,14 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: _useDebt
-                      ? Colors.orange.withOpacity(0.1)
+                      ? Colors.orange.withValues(alpha: 0.1)
                       : isDark
-                          ? Colors.white.withOpacity(0.04)
-                          : Colors.grey.withOpacity(0.06),
+                          ? Colors.white.withValues(alpha: 0.04)
+                          : Colors.grey.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _useDebt
-                        ? Colors.orange.withOpacity(0.4)
+                        ? Colors.orange.withValues(alpha: 0.4)
                         : Colors.transparent,
                   ),
                 ),
@@ -282,7 +283,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                       decoration: BoxDecoration(
                         color: _useDebt
                             ? Colors.orange
-                            : Colors.grey.withOpacity(0.2),
+                            : Colors.grey.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -302,8 +303,8 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.04)
-                    : Colors.grey.withOpacity(0.06),
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.grey.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Column(
@@ -347,7 +348,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
-                      side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                      side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                     ),
                     child: Text(l10n.cancel,
                         style: TextStyle(color: Colors.grey[600])),
@@ -422,14 +423,14 @@ class _PaymentMethodRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: isActive
-                    ? option.color.withOpacity(0.08)
+                    ? option.color.withValues(alpha: 0.08)
                     : isDark
-                        ? Colors.white.withOpacity(0.04)
-                        : Colors.grey.withOpacity(0.06),
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.grey.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isActive
-                      ? option.color.withOpacity(0.4)
+                      ? option.color.withValues(alpha: 0.4)
                       : Colors.transparent,
                 ),
               ),
@@ -455,7 +456,7 @@ class _PaymentMethodRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isActive
                           ? option.color
-                          : Colors.grey.withOpacity(0.2),
+                          : Colors.grey.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: isActive
@@ -481,8 +482,8 @@ class _PaymentMethodRow extends StatelessWidget {
                   suffixText: l10n.currencySom,
                   filled: true,
                   fillColor: isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.grey.withOpacity(0.06),
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.grey.withValues(alpha: 0.06),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,

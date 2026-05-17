@@ -3,7 +3,7 @@ using MarketSystem.Domain.Enums;
 
 namespace MarketSystem.Domain.Entities;
 
-public class Product : BaseEntity
+public class Product : BaseEntity, ISoftDelete
 {
     public string Name { get; set; } = string.Empty;
     public bool IsTemporary { get; set; } = false;

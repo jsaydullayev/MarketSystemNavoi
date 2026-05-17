@@ -57,15 +57,14 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
         await authProvider.updateToken(response.accessToken!);
       }
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
 
-      if (mounted) {
-        // Show success dialog
-        _showSuccessDialog(response);
-      }
+      _showSuccessDialog(response);
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });

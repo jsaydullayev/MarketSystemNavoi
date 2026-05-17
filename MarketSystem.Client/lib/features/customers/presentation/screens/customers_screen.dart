@@ -34,6 +34,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
     super.didChangeDependencies();
     if (mounted) {
       Future.delayed(Duration.zero, () {
+        if (!mounted) return;
         context.read<CustomersBloc>().add(const GetCustomersEvent());
       });
     }

@@ -165,13 +165,16 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
 
                         Navigator.pop(context);
 
+                        final messenger = ScaffoldMessenger.of(context);
+                        final nav = Navigator.of(context);
+                        final authProvider =
+                            Provider.of<AuthProvider>(context, listen: false);
+
                         try {
                           setState(() {
                             _isLoading = true;
                           });
 
-                          final authProvider =
-                              Provider.of<AuthProvider>(context, listen: false);
                           final salesService =
                               SalesService(authProvider: authProvider);
 
@@ -184,15 +187,14 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                           );
 
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(
                                 content:
                                     Text(l10n.priceChangedFor(productName)),
                                 backgroundColor: Colors.green,
                               ),
                             );
-                            // Refresh data
-                            Navigator.pop(context, true);
+                            nav.pop(true);
                           }
                         } catch (e) {
                           setState(() {
@@ -200,7 +202,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                           });
 
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(
                                 content: Text('${l10n.error}: $e'),
                                 backgroundColor: Colors.red,

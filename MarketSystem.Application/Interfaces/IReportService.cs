@@ -1,6 +1,6 @@
 using MarketSystem.Application.DTOs;
 
-namespace MarketSystem.Domain.Interfaces;
+namespace MarketSystem.Application.Interfaces;
 
 public interface IReportService
 {

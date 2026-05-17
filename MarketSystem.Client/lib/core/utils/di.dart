@@ -109,15 +109,17 @@ void _initServices() {
   sl.registerLazySingleton<AuthProvider>(
       () => AuthProvider(authService: sl<AuthService>()));
 
-  // Customer Service - needs AuthProvider
+  // Customer Service - needs AuthProvider + shared HttpService
   sl.registerFactory<CustomerService>(
-      () => CustomerService(authProvider: sl()));
+      () => CustomerService(authProvider: sl(), httpService: sl()));
 
-  // Sales Service - needs AuthProvider
-  sl.registerFactory<SalesService>(() => SalesService(authProvider: sl()));
+  // Sales Service - needs AuthProvider + shared HttpService
+  sl.registerFactory<SalesService>(
+      () => SalesService(authProvider: sl(), httpService: sl()));
 
-  // Zakup Service - needs AuthProvider
-  sl.registerFactory<ZakupService>(() => ZakupService(authProvider: sl()));
+  // Zakup Service - needs AuthProvider + shared HttpService
+  sl.registerFactory<ZakupService>(
+      () => ZakupService(authProvider: sl(), httpService: sl()));
 }
 
 /// Initialize Sales Feature (Clean Architecture)

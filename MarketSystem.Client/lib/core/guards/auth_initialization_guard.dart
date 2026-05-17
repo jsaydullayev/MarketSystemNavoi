@@ -36,12 +36,9 @@ class AuthInitializationGuard {
   ) async {
     // CRITICAL: Skip auth check entirely for public routes
     if (PublicRoutes.isPublic(currentRoute)) {
-      debugPrint('🔓 AuthInitializationGuard: Skipping auth check for public route: $currentRoute');
       _hasRun = true;
       return null;
     }
-
-    debugPrint('🔒 AuthInitializationGuard: Checking auth for: $currentRoute');
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final prefs = await SharedPreferences.getInstance();
@@ -52,9 +49,6 @@ class AuthInitializationGuard {
     final bool isAuthenticated = await authHandler.isAuthenticated();
 
     if (!isAuthenticated) {
-      debugPrint('❌ User not authenticated, redirecting to login');
-
-      // Only redirect if not already on login or welcome
       if (currentRoute != '/login' && currentRoute != '/welcome') {
         _hasRun = true;
         return '/login';
@@ -63,14 +57,14 @@ class AuthInitializationGuard {
       return null;
     }
 
-    debugPrint('✅ User authenticated, loading user data');
-
     // Load user data from storage into provider
     final role = prefs.getString('user_role');
     final fullName = prefs.getString('user_full_name');
     final username = prefs.getString('user_username');
 
     if (role != null) {
+      // Immediate stub so the UI doesn't render a "logged out" state
+      // for a frame while we refresh from the API.
       authProvider.setUserFromStorage({
         'role': role,
         'fullName': fullName,
@@ -78,24 +72,30 @@ class AuthInitializationGuard {
       });
     }
 
+    // Refresh the full profile from the API. SharedPreferences only stores
+    // role/fullName/username — the profile image (and any other fields the
+    // user has updated) lives only on the server. Without this fetch, the
+    // image disappears on every browser refresh because the local stub
+    // never had it.
+    // ignore: unawaited_futures
+    authProvider.fetchUserProfile();
+
     // Check first-time user
     final bool isFirstTime = prefs.getBool('is_first_time') ?? true;
 
     if (isFirstTime) {
-      debugPrint('👶 First-time user, redirecting to welcome');
+
       _hasRun = true;
       return '/welcome';
     }
 
     _hasRun = true;
-    debugPrint('✅ Auth initialization complete, user can access: $currentRoute');
     return null;
   }
 
   /// Reset the guard state (useful for testing or logout)
   static void reset() {
     _hasRun = false;
-    debugPrint('🔄 AuthInitializationGuard reset');
   }
 
   /// Check if a protected route requires authentication

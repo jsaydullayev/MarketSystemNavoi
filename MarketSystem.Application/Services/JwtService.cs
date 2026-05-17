@@ -1,9 +1,10 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
-using MarketSystem.Domain.Common;
+using MarketSystem.Application.Settings;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,9 +12,8 @@ using System.Text;
 
 namespace MarketSystem.Application.Services;
 
-public class JwtService(IConfiguration configuration) : IJwtService
+public class JwtService(IConfiguration configuration, ILogger<JwtService> logger) : IJwtService
 {
-
     private readonly JwtSetting _jwtSetting = configuration.GetSection("Jwt")
         .Get<JwtSetting>()!;
 
@@ -64,8 +64,9 @@ public class JwtService(IConfiguration configuration) : IJwtService
                 ? DateTime.UtcNow.AddMinutes(_jwtSetting.AccessTokenExpireMinutes)
                 : jwt.ValidTo);
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogDebug(ex, "GetJtiAndExpiry: failed to read token claims.");
             return null;
         }
     }
@@ -103,8 +104,9 @@ public class JwtService(IConfiguration configuration) : IJwtService
             }
             return new(true, name);
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogDebug(ex, "ValidateAndGetUser: token validation failed (malformed or expired).");
             return new(false, null);
         }
     }

@@ -1,63 +1,101 @@
+# =====================================================================
+# Root .dockerignore — for the .NET API build context
+# =====================================================================
+
 # .NET build outputs
 **/bin/
 **/obj/
 **/out/
+**/publish/
+**/Debug/
+**/Release/
+**/x64/
+**/x86/
+**/Arm/
+**/Arm64/
+**/bld/
+**/Log/
+**/Logs/
 
 # Visual Studio
 .vs/
 .vscode/
-
-# User files
 *.user
 *.suo
 *.userosscache
+*.sln.docstates
 
-# Build results
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Aa]rm/
-[Aa]rm64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-
-# Flutter
-MarketSystem.Client/build/
-MarketSystem.Client/.dart_tool/
-MarketSystem.Client/.flutter-plugins
-MarketSystem.Client/.flutter-plugins-dependencies
-MarketSystem.Client/.packages
-
-# Node (agar backendda ishlatilsa)
-node_modules/
-
-# Environment files
-.env
-.env.local
-
-# IDE
+# JetBrains Rider
 .idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Test results
-TestResults/
-*.trx
 
 # NuGet
 *.nupkg
 *.snupkg
 packages/
+**/packages/
 
-# Docker
-# Don't ignore Dockerfile - Railway needs it!
-# docker-compose.yml
-# .dockerignore
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverlet/
+
+# Flutter (kept out of .NET build context — has its own .dockerignore now)
+MarketSystem.Client/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (not needed in image)
+*.md
+README*
+CHANGELOG*
+LICENSE*
+docs/
+
+# Claude / worktrees / scratch
+.claude/
+.cursor/
+.copilot/
+
+# Docker (don't ship docker files inside images)
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+docker-compose*.yaml
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Node (if any frontend ever lands here)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Python (scripts/)
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Misc
+scripts/
+update.sql
+*.bak
+*.tmp

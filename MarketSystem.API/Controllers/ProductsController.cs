@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Constants;
-using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.API.Helpers;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
@@ -15,14 +15,16 @@ namespace MarketSystem.API.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
+    private readonly IExcelService _excelService;
 
-    public ProductsController(IProductService productService)
+    public ProductsController(IProductService productService, IExcelService excelService)
     {
         _productService = productService;
+        _excelService = excelService;
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<ProductDto>> GetProduct(Guid id)
+    public async Task<ActionResult<ProductDto>> GetProduct(Guid id, CancellationToken ct = default)
     {
         var product = await _productService.GetProductByIdAsync(id);
         if (product is null)
@@ -32,14 +34,24 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts()
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts(CancellationToken ct = default)
     {
         var products = await _productService.GetAllProductsAsync();
         return Ok(products);
     }
 
+    [HttpGet]
+    public async Task<ActionResult<PagedResult<ProductDto>>> GetAllProductsPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 50,
+        CancellationToken ct = default)
+    {
+        var result = await _productService.GetAllProductsPagedAsync(page, size);
+        return Ok(result);
+    }
+
     [HttpGet("low-stock")]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetLowStockProducts()
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetLowStockProducts(CancellationToken ct = default)
     {
         var products = await _productService.GetLowStockProductsAsync();
         return Ok(products);
@@ -57,10 +69,11 @@ public class ProductsController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<ProductDto>> CreateProduct([FromBody] CreateProductDto request)
+    public async Task<ActionResult<ProductDto>> CreateProduct([FromBody] CreateProductDto request, CancellationToken ct = default)
     {
         var sellerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var sellerGuid = string.IsNullOrEmpty(sellerId) ? (Guid?)null : Guid.Parse(sellerId);
+        var sellerGuid = !string.IsNullOrEmpty(sellerId) && Guid.TryParse(sellerId, out var parsed)
+            ? parsed : (Guid?)null;
 
         try
         {
@@ -75,7 +88,7 @@ public class ProductsController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<ProductDto>> UpdateProduct(Guid id, [FromBody] UpdateProductDto request)
+    public async Task<ActionResult<ProductDto>> UpdateProduct(Guid id, [FromBody] UpdateProductDto request, CancellationToken ct = default)
     {
         if (id != request.Id)
             return BadRequest("ID mismatch");
@@ -96,7 +109,7 @@ public class ProductsController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<IActionResult> DeleteProduct(Guid id)
+    public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken ct = default)
     {
         var result = await _productService.DeleteProductAsync(id);
         if (!result)
@@ -106,11 +119,10 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("export")]
-    public async Task<IActionResult> ExportProductsToExcel([FromServices] MarketSystem.Application.Interfaces.IExcelService excelService)
+    public async Task<IActionResult> ExportProductsToExcel(CancellationToken ct = default)
     {
         var products = await _productService.GetAllProductsAsync();
 
-        // Forma dagi ma'lumotlarni sodda va tushunarli qilish uchun yangi ro'yxat shakllantiramiz
         var exportData = products.Select(p => new
         {
             ID = p.Id.ToString(),
@@ -124,7 +136,7 @@ public class ProductsController : ControllerBase
             Vaqtinchalik = p.IsTemporary ? "Ha" : "Yo'q"
         });
 
-        var fileContent = excelService.GenerateExcel(exportData, "Mahsulotlar");
+        var fileContent = _excelService.GenerateExcel(exportData, "Mahsulotlar");
 
         return File(
             fileContent,

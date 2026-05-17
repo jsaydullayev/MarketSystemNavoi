@@ -26,10 +26,7 @@ class AuthRouteGuard extends StatelessWidget {
 
     // Check if current route is public - if so, allow without auth check
     final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
-    if (isPublicRoute(currentRoute)) {
-      debugPrint('🔓 AuthRouteGuard: Skipping auth check for public route: $currentRoute');
-      return child;
-    }
+    if (isPublicRoute(currentRoute)) return child;
 
     if (!authProvider.isAuthenticated) {
       // Show login screen if not authenticated
@@ -60,10 +57,7 @@ class RoleRouteGuard extends StatelessWidget {
 
     // Check if current route is public - if so, skip role check
     final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
-    if (isPublicRoute(currentRoute)) {
-      debugPrint('🔓 RoleRouteGuard: Skipping role check for public route: $currentRoute');
-      return child;
-    }
+    if (isPublicRoute(currentRoute)) return child;
 
     if (!allowedRoles.contains(userRole)) {
       // User doesn't have required role - show access denied page

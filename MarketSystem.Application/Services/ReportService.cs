@@ -212,26 +212,37 @@ public class ReportService : IReportService
             range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
         }
 
+        // Barcha kerakli productlarni bir marta batch yuklash (N+1 oldini olish)
+        var saleProductIds = sales
+            .SelectMany(s => s.SaleItems)
+            .Where(si => !si.IsExternal && si.ProductId.HasValue)
+            .Select(si => si.ProductId!.Value)
+            .Union(zakups.Select(z => z.ProductId))
+            .Distinct()
+            .ToList();
+
+        var productMap = saleProductIds.Count > 0
+            ? (await _unitOfWork.Products.FindAsync(p => saleProductIds.Contains(p.Id), cancellationToken))
+                .ToDictionary(p => p.Id)
+            : new Dictionary<Guid, Product>();
+
         int row = 2;
         foreach (var sale in sales)
         {
-            var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == sale.Id, cancellationToken);
-
-            foreach (var item in saleItems)
+            foreach (var item in sale.SaleItems)
             {
-                // ✅ ISEXTERNAL SHARTI - Product name va CostPrice
                 string productName;
                 Product? product = null;
 
                 if (!item.IsExternal)
                 {
-                    // Oddiy mahsulot - Product ni olish
-                    product = await _unitOfWork.Products.GetByIdAsync(item.ProductId.Value, cancellationToken);
+                    product = item.ProductId.HasValue
+                        ? productMap.GetValueOrDefault(item.ProductId.Value)
+                        : null;
                     productName = product?.Name ?? "Unknown";
                 }
                 else
                 {
-                    // Tashqi mahsulot - ExternalProductName ishlatish
                     productName = item.ExternalProductName ?? "Tashqi mahsulot";
                 }
 
@@ -240,7 +251,6 @@ public class ReportService : IReportService
                 worksheet.Cells[row, 3].Value = productName;
                 worksheet.Cells[row, 4].Value = item.Quantity;
                 worksheet.Cells[row, 5].Value = item.SalePrice * item.Quantity;
-                // ✅ ISEXTERNAL SHARTI - Effective cost price
                 var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
                 worksheet.Cells[row, 6].Value = costPrice * item.Quantity;
                 worksheet.Cells[row, 7].Value = item.Profit;
@@ -248,10 +258,9 @@ public class ReportService : IReportService
             }
         }
 
-
         foreach (var zakup in zakups)
         {
-            var product = await _unitOfWork.Products.GetByIdAsync(zakup.ProductId, cancellationToken);
+            var product = productMap.GetValueOrDefault(zakup.ProductId);
 
             worksheet.Cells[row, 1].Value = zakup.CreatedAt.ToString("yyyy-MM-dd");
             worksheet.Cells[row, 2].Value = "Zakup";
@@ -328,7 +337,7 @@ public class ReportService : IReportService
                         user.Id,
                         user.FullName,
                         totalSales,
-                        totalProfit,  // Already filtered since this is only called when userRole == "Owner"
+                        totalProfit,  // Already filtered since this is only called when userRole == Role.Owner.ToString()
                         userSales.Count
                     ));
                 }
@@ -341,7 +350,7 @@ public class ReportService : IReportService
         decimal totalInventorySaleValue = 0;
 
         // Determine if profit should be included (Owner only)
-        bool includeProfit = userRole == "Owner";
+        bool includeProfit = userRole == Role.Owner.ToString();
 
         // Calculate inventory statistics
         int productCount = products.Count();
@@ -388,8 +397,8 @@ public class ReportService : IReportService
 
     public async Task<byte[]> ExportComprehensiveToExcelAsync(DateTime date, CancellationToken cancellationToken = default)
     {
-        // Export to Excel is Owner-only feature, so pass "Owner" role
-        var report = await GetComprehensiveReportAsync(date, "Owner", cancellationToken);
+        // Export to Excel is Owner-only feature, so pass Role.Owner.ToString() as the role
+        var report = await GetComprehensiveReportAsync(date, Role.Owner.ToString(), cancellationToken);
 
         using var package = new ExcelPackage();
 
@@ -492,7 +501,7 @@ public class ReportService : IReportService
         int totalTransactions = sales.Count();
 
         // Determine if profit should be included (Owner only)
-        bool includeProfit = userRole == "Owner";
+        bool includeProfit = userRole == Role.Owner.ToString();
 
         // Calculate payment breakdown - separate positive and negative payments
         var paymentBreakdown = new Dictionary<string, decimal>();
@@ -728,7 +737,7 @@ public class ReportService : IReportService
         decimal totalDebtSales = 0;
         decimal totalAllSales = 0;
 
-        bool includeProfit = userRole == "Owner";
+        bool includeProfit = userRole == Role.Owner.ToString();
 
         foreach (var sale in sales)
         {
@@ -842,7 +851,7 @@ public class ReportService : IReportService
             cancellationToken);
         var productDict = products.ToDictionary(p => p.Id);
 
-        bool includeProfit = userRole == "Owner";
+        bool includeProfit = userRole == Role.Owner.ToString();
         var categorySales = new Dictionary<int, CategorySalesDto>();
 
         foreach (var category in categories)
@@ -924,7 +933,7 @@ public class ReportService : IReportService
         var start = ToUtcDate(startDate);
         var end = ToUtcDate(endDate.AddDays(1));
 
-        // Use AppDbContext for complex query with proper includes
+        // Use IAppDbContext for complex query with proper includes
         // This is done via the unit of work's context if accessible
         // For now, use the repository and get products in batch
         Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
@@ -951,7 +960,7 @@ public class ReportService : IReportService
             }
         }
 
-        bool includeProfit = userRole == "Owner";
+        bool includeProfit = userRole == Role.Owner.ToString();
         var salesWithItems = new List<SaleWithItemsDto>();
 
         foreach (var sale in sales)
@@ -1221,27 +1230,37 @@ public class ReportService : IReportService
                         });
                     });
 
-                    // Footer with totals
+                    // Footer with totals.
+                    // QuestPDF's `Element(...)` is a single-child slot — passing the
+                    // closure 3 separate items (line, row, page-number) directly into
+                    // `footer` blows up with: "You should not assign multiple child
+                    // elements to a single-child container." Wrap them in a Column.
                     page.Footer().Element(footer =>
                     {
-                        footer.PaddingTop(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                        footer.PaddingTop(5).Row(row =>
+                        footer.Column(column =>
                         {
-                            row.RelativeItem();
-                            row.ConstantItem(150).Text("Jami savdo:").SemiBold();
-                            row.ConstantItem(100).Text($"{totalSales:N0} so'm").Bold();
-                            if (includeProfit)
+                            column.Item().PaddingTop(5).LineHorizontal(1)
+                                .LineColor(Colors.Grey.Lighten2);
+                            column.Item().PaddingTop(5).Row(row =>
                             {
-                                row.ConstantItem(100).Text("Jami foyda:").SemiBold();
-                                row.ConstantItem(100).Text($"{totalProfit:N0} so'm")
-                                    .Bold()
-                                    .FontColor(totalProfit >= 0 ? Colors.Green.Darken2 : Colors.Red.Darken2);
-                            }
-                        });
-                        footer.PaddingTop(5).AlignCenter().Text(x =>
-                        {
-                            x.Span("Sahifa ");
-                            x.CurrentPageNumber();
+                                row.RelativeItem();
+                                row.ConstantItem(150).Text("Jami savdo:").SemiBold();
+                                row.ConstantItem(100).Text($"{totalSales:N0} so'm").Bold();
+                                if (includeProfit)
+                                {
+                                    row.ConstantItem(100).Text("Jami foyda:").SemiBold();
+                                    row.ConstantItem(100).Text($"{totalProfit:N0} so'm")
+                                        .Bold()
+                                        .FontColor(totalProfit >= 0
+                                            ? Colors.Green.Darken2
+                                            : Colors.Red.Darken2);
+                                }
+                            });
+                            column.Item().PaddingTop(5).AlignCenter().Text(x =>
+                            {
+                                x.Span("Sahifa ");
+                                x.CurrentPageNumber();
+                            });
                         });
                     });
                 });
@@ -1305,19 +1324,20 @@ public class ReportService : IReportService
 
         var customer = sale.Customer;
 
-        // If customer was soft-deleted, fetch their name from database (ignoring soft-delete filter)
         string customerName = "Mijoz ko'rsatilmagan";
+        string customerPhone = "";
         if (customer != null)
         {
             customerName = customer.FullName ?? "Mijoz ko'rsatilmagan";
+            customerPhone = customer.Phone ?? "";
         }
         else if (sale.CustomerId.HasValue)
         {
-            // Try to get customer name from database even if deleted
             var deletedCustomer = await _unitOfWork.Customers.GetByIdIncludingDeletedAsync(sale.CustomerId.Value, cancellationToken);
             if (deletedCustomer != null)
             {
                 customerName = deletedCustomer.FullName ?? "Mijoz ko'rsatilmagan";
+                customerPhone = deletedCustomer.Phone ?? "";
             }
         }
 
@@ -1373,22 +1393,37 @@ public class ReportService : IReportService
                 item.Quantity,
                 item.SalePrice,
                 item.SalePrice * item.Quantity,
-                item.Comment
+                item.Comment,
+                item.IsExternal
             ));
         }
+
+        // Uzbek-friendly status labels. Without this the PDF would say
+        // "Paid" / "Closed" in English which feels off in a Uzbek invoice.
+        var statusUz = sale.Status switch
+        {
+            SaleStatus.Draft     => "Yangi (Draft)",
+            SaleStatus.Paid      => "To'langan",
+            SaleStatus.Debt      => "Qarz",
+            SaleStatus.Closed    => "Qarz yopilgan",
+            SaleStatus.Cancelled => "Bekor qilingan",
+            _                    => sale.Status.ToString()
+        };
 
         var invoiceData = new InvoiceData(
             market.Name,
             market.Description ?? "",
             sellerName,
             customerName,
+            customerPhone,
             sale.Id,
             sale.CreatedAt,
             paymentTypeUz,
             invoiceItems,
             sale.TotalAmount,
             sale.PaidAmount,
-            sale.TotalAmount - sale.PaidAmount
+            sale.TotalAmount - sale.PaidAmount,
+            statusUz
         );
 
         // Generate PDF using QuestPDF
@@ -1411,12 +1446,18 @@ public class ReportService : IReportService
                         {
                             row.RelativeItem().Column(col =>
                             {
-                                col.Item().Text(invoiceData.MarketName).FontSize(18).Bold();
-                                col.Item().Text(invoiceData.MarketDescription).FontSize(10).Light();
+                                col.Item().Text("STROTECH").FontSize(22).Bold().FontColor(Colors.Blue.Darken2);
+                                col.Item().Text(invoiceData.MarketName).FontSize(11).SemiBold();
+                                if (!string.IsNullOrEmpty(invoiceData.MarketDescription))
+                                    col.Item().Text(invoiceData.MarketDescription).FontSize(9).Light();
                             });
-                            row.ConstantItem(100).AlignRight().Text("FAKTURA").FontSize(12).Bold();
+                            row.ConstantItem(120).AlignRight().Column(col =>
+                            {
+                                col.Item().AlignRight().Text("FAKTURA").FontSize(14).Bold().FontColor(Colors.Blue.Darken2);
+                                col.Item().AlignRight().Text($"№ {invoiceData.InvoiceNumber.ToString()[..8]}").FontSize(9).Light();
+                            });
                         });
-                        column.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        column.Item().PaddingVertical(5).LineHorizontal(2).LineColor(Colors.Blue.Darken2);
                     });
                 });
 
@@ -1433,17 +1474,24 @@ public class ReportService : IReportService
                             row.RelativeItem().Column(col =>
                             {
                                 col.Item().Text("Faktura №:").SemiBold();
-                                col.Item().Text(invoiceData.InvoiceNumber.ToString());
-                                col.Item().Text("Sana:").SemiBold();
+                                col.Item().Text(invoiceData.InvoiceNumber.ToString()).FontSize(9);
+                                col.Item().PaddingTop(4).Text("Sana:").SemiBold();
                                 col.Item().Text(invoiceData.Date.ToString("dd.MM.yyyy HH:mm"));
+                                col.Item().PaddingTop(4).Text("To'lov turi:").SemiBold();
+                                col.Item().Text(invoiceData.PaymentType);
                             });
 
                             row.RelativeItem().Column(col =>
                             {
                                 col.Item().Text("Sotuvchi:").SemiBold();
                                 col.Item().Text(invoiceData.SellerName);
-                                col.Item().Text("Mijoz:").SemiBold();
+                                col.Item().PaddingTop(4).Text("Mijoz:").SemiBold();
                                 col.Item().Text(invoiceData.CustomerName);
+                                if (!string.IsNullOrEmpty(invoiceData.CustomerPhone))
+                                {
+                                    col.Item().PaddingTop(4).Text("Telefon:").SemiBold();
+                                    col.Item().Text(invoiceData.CustomerPhone);
+                                }
                             });
                         });
 
@@ -1476,7 +1524,22 @@ public class ReportService : IReportService
                                 foreach (var item in invoiceData.Items)
                                 {
                                     table.Cell().Element(CellStyle).Text($"{index++}");
-                                    table.Cell().Element(CellStyle).Text(item.ProductName);
+                                    // External products get a "(tashqi)" tag inline so the
+                                    // customer can see at a glance which items came from
+                                    // outside stock — otherwise external and ordinary look
+                                    // identical in the invoice.
+                                    table.Cell().Element(CellStyle).Text(t =>
+                                    {
+                                        t.Span(item.ProductName);
+                                        if (item.IsExternal)
+                                        {
+                                            t.Span("  ");
+                                            t.Span("(tashqi)")
+                                                .FontSize(8)
+                                                .FontColor(Colors.Orange.Darken2)
+                                                .SemiBold();
+                                        }
+                                    });
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{item.Quantity:N2}");
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{item.Price:N2} so'm");
                                     table.Cell().Element(CellStyle).AlignRight().Text($"{item.Total:N2} so'm");
@@ -1499,14 +1562,21 @@ public class ReportService : IReportService
                                 table.ColumnsDefinition(columns =>
                                 {
                                     columns.RelativeColumn(2);
-                                    columns.ConstantColumn(100);
+                                    columns.ConstantColumn(130);
                                 });
 
-                                table.Cell().Element(TotalCellStyle).Text("To'lov turi:");
-                                table.Cell().Element(TotalCellStyle).AlignRight().Text(invoiceData.PaymentType).SemiBold();
+                                var statusColor = invoiceData.Status switch
+                                {
+                                    "To'langan"      => Colors.Green.Darken2,
+                                    "Qarz"           => Colors.Orange.Darken2,
+                                    "Qarz yopilgan"  => Colors.Blue.Darken2,
+                                    "Bekor qilingan" => Colors.Red.Medium,
+                                    _                => Colors.Grey.Darken2
+                                };
 
-                                table.Cell().Element(TotalCellStyle).Text("Jami summa:").Bold();
-                                table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.TotalAmount:N2} so'm").Bold();
+                                table.Cell().Element(TotalCellStyle).Text("Holat:");
+                                table.Cell().Element(TotalCellStyle).AlignRight()
+                                    .Text(invoiceData.Status).SemiBold().FontColor(statusColor);
 
                                 table.Cell().Element(TotalCellStyle).Text("To'langan:");
                                 table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.PaidAmount:N2} so'm");
@@ -1514,18 +1584,42 @@ public class ReportService : IReportService
                                 if (invoiceData.RemainingAmount > 0)
                                 {
                                     table.Cell().Element(TotalCellStyle).Text("Qarzdorlik:").Bold().FontColor(Colors.Red.Medium);
-                                    table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.RemainingAmount:N2} so'm").Bold().FontColor(Colors.Red.Medium);
+                                    table.Cell().Element(TotalCellStyle).AlignRight()
+                                        .Text($"{invoiceData.RemainingAmount:N2} so'm").Bold().FontColor(Colors.Red.Medium);
                                 }
+                            });
+                        });
+
+                        // Prominent total box at bottom
+                        column.Item().PaddingTop(8).Element(e =>
+                        {
+                            e.Background(Colors.Blue.Lighten4).Padding(12).Row(row =>
+                            {
+                                row.RelativeItem().Text("UMUMIY SUMMA:").FontSize(13).Bold().FontColor(Colors.Blue.Darken3);
+                                row.ConstantItem(160).AlignRight()
+                                    .Text($"{invoiceData.TotalAmount:N2} so'm")
+                                    .FontSize(14).Bold().FontColor(Colors.Blue.Darken3);
                             });
                         });
                     });
                 });
 
                 // Footer
-                page.Footer().AlignCenter().Text(x =>
+                page.Footer().Column(col =>
                 {
-                    x.Span("Sahifa ");
-                    x.CurrentPageNumber();
+                    col.Item().PaddingVertical(4).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    col.Item().Row(row =>
+                    {
+                        row.RelativeItem().AlignLeft()
+                            .Text("STROTECH — Savdo Tizimi").FontSize(8).Light().FontColor(Colors.Grey.Medium);
+                        row.RelativeItem().AlignRight().Text(x =>
+                        {
+                            x.Span("Sahifa ").FontSize(8).Light();
+                            x.CurrentPageNumber().FontSize(8).Light();
+                            x.Span(" / ").FontSize(8).Light();
+                            x.TotalPages().FontSize(8).Light();
+                        });
+                    });
                 });
             });
         }).GeneratePdf();
@@ -1569,13 +1663,15 @@ public class ReportService : IReportService
         string MarketDescription,
         string SellerName,
         string CustomerName,
+        string CustomerPhone,
         Guid InvoiceNumber,
         DateTime Date,
         string PaymentType,
         List<InvoiceItemData> Items,
         decimal TotalAmount,
         decimal PaidAmount,
-        decimal RemainingAmount
+        decimal RemainingAmount,
+        string Status
     );
 
     private record InvoiceItemData(
@@ -1583,7 +1679,8 @@ public class ReportService : IReportService
         decimal Quantity,
         decimal Price,
         decimal Total,
-        string? Comment
+        string? Comment,
+        bool IsExternal
     );
 
     private record SalesReportItem(

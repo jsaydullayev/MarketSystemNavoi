@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppStyles {
@@ -9,16 +9,16 @@ class AppStyles {
       boxShadow: [
         BoxShadow(
           color: isDark
-              ? Colors.black.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.1),
+              ? Colors.black.withValues(alpha: 0.3)
+              : Colors.grey.withValues(alpha: 0.1),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
       ],
       border: Border.all(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.grey.withOpacity(0.1),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.grey.withValues(alpha: 0.1),
       ),
     );
   }

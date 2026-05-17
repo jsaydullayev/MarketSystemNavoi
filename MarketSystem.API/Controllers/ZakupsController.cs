@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using System.Security.Claims;
 using MarketSystem.Domain.Enums;
 
@@ -13,10 +13,12 @@ namespace MarketSystem.API.Controllers;
 public class ZakupsController : ControllerBase
 {
     private readonly IZakupService _zakupService;
+    private readonly IExcelService _excelService;
 
-    public ZakupsController(IZakupService zakupService)
+    public ZakupsController(IZakupService zakupService, IExcelService excelService)
     {
         _zakupService = zakupService;
+        _excelService = excelService;
     }
 
     private bool IsSeller()
@@ -54,21 +56,31 @@ public class ZakupsController : ControllerBase
     {
         var zakups = await _zakupService.GetAllZakupsAsync();
 
-        // Return ZakupSellerDto for Sellers (without cost price)
         if (IsSeller())
         {
             var sellerDtos = zakups.Select(z => new ZakupSellerDto(
-                z.Id,
-                z.ProductId,
-                z.ProductName,
-                z.Quantity,
-                z.CreatedAt,
-                z.CreatedBy
-            ));
+                z.Id, z.ProductId, z.ProductName, z.Quantity, z.CreatedAt, z.CreatedBy));
             return Ok(sellerDtos);
         }
 
         return Ok(zakups);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetZakupsPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 50)
+    {
+        var result = await _zakupService.GetAllZakupsPagedAsync(page, size);
+
+        if (IsSeller())
+        {
+            var sellerItems = result.Items.Select(z => new ZakupSellerDto(
+                z.Id, z.ProductId, z.ProductName, z.Quantity, z.CreatedAt, z.CreatedBy)).ToList();
+            return Ok(new { items = sellerItems, result.Page, result.Size, result.Total, result.TotalPages });
+        }
+
+        return Ok(result);
     }
 
     [HttpGet("by-date")]
@@ -113,7 +125,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpGet("export")]
-    public async Task<IActionResult> ExportZakupsToExcel([FromServices] MarketSystem.Application.Interfaces.IExcelService excelService)
+    public async Task<IActionResult> ExportZakupsToExcel()
     {
         var zakups = await _zakupService.GetAllZakupsAsync();
 
@@ -129,7 +141,7 @@ public class ZakupsController : ControllerBase
             Jami_summa = IsSeller() ? "-" : (z.Quantity * z.CostPrice).ToString()
         });
 
-        var fileContent = excelService.GenerateExcel(exportData, "Xaridlar");
+        var fileContent = _excelService.GenerateExcel(exportData, "Xaridlar");
 
         return File(
             fileContent,

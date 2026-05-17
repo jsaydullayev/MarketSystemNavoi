@@ -14,7 +14,7 @@ import '../managers/route_state_manager.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
-import '../../screens/dashboard_screen.dart';
+import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/products/presentation/screens/products_screen.dart';
 import '../../features/sales/presentation/screens/sales_screen.dart';
 import '../../features/customers/presentation/screens/customers_screen.dart';

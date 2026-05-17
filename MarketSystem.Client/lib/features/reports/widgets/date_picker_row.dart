@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -25,8 +25,8 @@ class DatePickerRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.07)
-              : Colors.grey.withOpacity(0.15),
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.grey.withValues(alpha: 0.15),
         ),
       ),
       child: Row(
@@ -34,7 +34,7 @@ class DatePickerRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(9),
             ),
             child: const Icon(Icons.calendar_today_rounded,
@@ -84,7 +84,7 @@ class DatePickerRow extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -117,8 +117,8 @@ class _NavBtn extends StatelessWidget {
         height: 32,
         decoration: BoxDecoration(
           color: onTap != null
-              ? const Color(0xFF3B82F6).withOpacity(0.08)
-              : Colors.grey.withOpacity(0.05),
+              ? const Color(0xFF3B82F6).withValues(alpha: 0.08)
+              : Colors.grey.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(

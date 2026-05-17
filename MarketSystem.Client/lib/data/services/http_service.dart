@@ -1,31 +1,25 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/api_constants.dart';
 import 'auth_service.dart';
-
-class _RetryRequest {
-  final String method;
-  final String endpoint;
-  final Map<String, String>? headers;
-  final Object? body;
-
-  _RetryRequest({
-    required this.method,
-    required this.endpoint,
-    this.headers,
-    this.body,
-  });
-}
 
 class HttpService {
   String? _accessToken;
   AuthService? _authService;
 
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  static const _keyAccessToken = 'access_token';
+  static const _keyRefreshToken = 'refresh_token';
+
   bool _isRefreshing = false;
-  final List<_RetryRequest> _retryQueue = [];
+  // Completers for concurrent requests waiting on a token refresh
+  final List<Completer<bool>> _refreshWaiters = [];
 
   String get baseUrl => ApiConstants.baseUrl;
 
@@ -35,138 +29,91 @@ class HttpService {
     _authService = authService;
   }
 
-  // Tokenlarni saqlash
   Future<void> saveTokens(String accessToken, String refreshToken) async {
-    print('=== SAVING TOKENS ===');
-    print('Access Token: ${accessToken.substring(0, 20)}...');
-    print('Refresh Token: ${refreshToken.substring(0, 20)}...');
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', accessToken);
-    await prefs.setString('refresh_token', refreshToken);
+    await _secureStorage.write(key: _keyAccessToken, value: accessToken);
+    await _secureStorage.write(key: _keyRefreshToken, value: refreshToken);
     _accessToken = accessToken;
-
-    // Tekshirish: saqlanganni o'qib ko'ramiz
-    final saved = prefs.getString('access_token');
-    print('Token saved: ${saved != null ? "YES" : "NO"}');
-    print('====================');
   }
 
   Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    _accessToken = prefs.getString('access_token');
-
-    if (_accessToken != null) {
-      print(
-          '✅ Token from SharedPreferences: ${_accessToken!.substring(0, 20)}...');
-    } else {
-      print('❌ NO TOKEN FOUND!');
-    }
+    _accessToken = await _secureStorage.read(key: _keyAccessToken);
     return _accessToken;
   }
 
   Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('refresh_token');
+    return _secureStorage.read(key: _keyRefreshToken);
   }
 
-  // Tokenlarni tozalash
   Future<void> clearTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
-    await prefs.remove('refresh_token');
+    await _secureStorage.delete(key: _keyAccessToken);
+    await _secureStorage.delete(key: _keyRefreshToken);
     _accessToken = null;
   }
 
-  // ✅ 401 xatolikni qayta ishlash va token refresh
   Future<http.Response> _handleResponse(
       http.Response response, String method, String endpoint,
       {Object? body}) async {
-    // Agar 401 bo'lsa va refresh qilinayotgan bo'lmasa
-    if (response.statusCode == 401 && !_isRefreshing) {
-      _isRefreshing = true;
+    if (response.statusCode != 401) return response;
 
-      print('Access token expired, attempting refresh...');
-
-      // Tokenni refresh qilish
-      final refreshed = await _authService?.refreshToken();
-
-      _isRefreshing = false;
-
-      if (refreshed != null) {
-        print('Token refreshed successfully, retrying request...');
-
-        // So'rovni yangi token bilan qayta yuborish
-        return _retryRequest(method, endpoint, body);
-      } else {
-        print('Token refresh failed - user must login again');
-        // Queue'dagi barcha so'rovlarni o'chirish
-        _retryQueue.clear();
-        return response; // 401 qaytarish
-      }
+    // Another refresh is already in progress — wait for it to complete
+    if (_isRefreshing) {
+      final completer = Completer<bool>();
+      _refreshWaiters.add(completer);
+      final refreshed = await completer.future;
+      if (refreshed) return _retryRequest(method, endpoint, body);
+      return response;
     }
 
-    return response;
+    _isRefreshing = true;
+    try {
+      final refreshed = await _authService?.refreshToken();
+      final success = refreshed != null;
+
+      for (final w in _refreshWaiters) {
+        w.complete(success);
+      }
+      _refreshWaiters.clear();
+      _isRefreshing = false;
+
+      if (success) return _retryRequest(method, endpoint, body);
+      return response;
+    } catch (e, st) {
+      debugPrint('HttpService: token refresh failed: $e\n$st');
+      for (final w in _refreshWaiters) {
+        w.complete(false);
+      }
+      _refreshWaiters.clear();
+      _isRefreshing = false;
+      return response;
+    }
   }
 
-  // So'rovni qayta yuborish
   Future<http.Response> _retryRequest(
       String method, String endpoint, Object? body) async {
     final token = await getAccessToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    final uri = Uri.parse('$baseUrl$endpoint');
+    final encoded = body != null ? jsonEncode(body) : null;
 
     switch (method.toUpperCase()) {
       case 'GET':
-        return http.get(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
-        );
+        return http.get(uri, headers: headers);
       case 'POST':
-        final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.post(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
-          body: encodedBody,
-        );
+        return http.post(uri, headers: headers, body: encoded);
       case 'PUT':
-        final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.put(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
-          body: encodedBody,
-        );
+        return http.put(uri, headers: headers, body: encoded);
       case 'DELETE':
-        return http.delete(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
-        );
+        return http.delete(uri, headers: headers);
       case 'PATCH':
-        final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.patch(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: {
-            'Content-Type': 'application/json',
-            if (token != null) 'Authorization': 'Bearer $token',
-          },
-          body: encodedBody,
-        );
+        return http.patch(uri, headers: headers, body: encoded);
       default:
         throw Exception('Unsupported method: $method');
     }
   }
 
-  // GET request
   Future<http.Response> get(String endpoint) async {
     final response = await _performGet(endpoint);
     return _handleResponse(response, 'GET', endpoint);
@@ -174,13 +121,6 @@ class HttpService {
 
   Future<http.Response> _performGet(String endpoint) async {
     final token = await getAccessToken();
-
-    print('=== HTTP GET ===');
-    print('URL: $baseUrl$endpoint');
-    print(
-        'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}');
-    print('================');
-
     return http.get(
       Uri.parse('$baseUrl$endpoint'),
       headers: {
@@ -189,13 +129,10 @@ class HttpService {
       },
     ).timeout(
       const Duration(seconds: 30),
-      onTimeout: () {
-        throw Exception('Request timeout after 30 seconds');
-      },
+      onTimeout: () => throw Exception('Request timeout after 30 seconds'),
     );
   }
 
-  // POST request
   Future<http.Response> post(String endpoint, {Object? body}) async {
     final response = await _performPost(endpoint, body: body);
     return _handleResponse(response, 'POST', endpoint, body: body);
@@ -204,14 +141,6 @@ class HttpService {
   Future<http.Response> _performPost(String endpoint, {Object? body}) async {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
-
-    print('=== HTTP POST ===');
-    print('URL: $baseUrl$endpoint');
-    print(
-        'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}');
-    print('Body: $encodedBody');
-    print('================');
-
     return http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: {
@@ -221,13 +150,10 @@ class HttpService {
       body: encodedBody,
     ).timeout(
       const Duration(seconds: 30),
-      onTimeout: () {
-        throw Exception('Request timeout after 30 seconds');
-      },
+      onTimeout: () => throw Exception('Request timeout after 30 seconds'),
     );
   }
 
-  // PUT request
   Future<http.Response> put(String endpoint, {Object? body}) async {
     final response = await _performPut(endpoint, body: body);
     return _handleResponse(response, 'PUT', endpoint, body: body);
@@ -237,19 +163,7 @@ class HttpService {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
 
-    print('=== HTTP PUT ===');
-    print('URL: $baseUrl$endpoint');
-    print('Has body: ${body != null}');
-    print('Has token: ${token != null}');
-    if (body != null && encodedBody != null && encodedBody.length < 500) {
-      print('Body: $encodedBody');
-    } else if (body != null) {
-      print(
-          'Body length: ${encodedBody?.length ?? 0} bytes (too large to display)');
-    }
-    print('================');
-
-    // For large bodies, use a different approach to avoid encoding issues
+    // Large body uchun streaming approach
     if (encodedBody != null && encodedBody.length > 100000) {
       final client = http.Client();
       try {
@@ -259,15 +173,11 @@ class HttpService {
           if (token != null) 'Authorization': 'Bearer $token',
         });
         request.body = encodedBody;
-
         final streamedResponse = await client.send(request).timeout(
           const Duration(seconds: 60),
-          onTimeout: () {
-            throw Exception('Request timeout after 60 seconds');
-          },
+          onTimeout: () => throw Exception('Request timeout after 60 seconds'),
         );
-        final response = await http.Response.fromStream(streamedResponse);
-        return response;
+        return await http.Response.fromStream(streamedResponse);
       } finally {
         client.close();
       }
@@ -282,13 +192,10 @@ class HttpService {
       body: encodedBody,
     ).timeout(
       const Duration(seconds: 60),
-      onTimeout: () {
-        throw Exception('Request timeout after 60 seconds');
-      },
+      onTimeout: () => throw Exception('Request timeout after 60 seconds'),
     );
   }
 
-  // DELETE request
   Future<http.Response> delete(String endpoint) async {
     final response = await _performDelete(endpoint);
     return _handleResponse(response, 'DELETE', endpoint);
@@ -296,22 +203,18 @@ class HttpService {
 
   Future<http.Response> _performDelete(String endpoint) async {
     final token = await getAccessToken();
-
-    final fullUrl = '$baseUrl$endpoint';
-    print('=== HTTP DELETE ===');
-    print('Full URL: $fullUrl');
-    print('==================');
-
     return http.delete(
-      Uri.parse(fullUrl),
+      Uri.parse('$baseUrl$endpoint'),
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       },
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw Exception('Request timeout after 30 seconds'),
     );
   }
 
-  // PATCH request
   Future<http.Response> patch(String endpoint, {Object? body}) async {
     final response = await _performPatch(endpoint, body: body);
     return _handleResponse(response, 'PATCH', endpoint, body: body);
@@ -320,14 +223,6 @@ class HttpService {
   Future<http.Response> _performPatch(String endpoint, {Object? body}) async {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
-
-    print('=== HTTP PATCH ===');
-    print('URL: $baseUrl$endpoint');
-    if (body != null && encodedBody != null && encodedBody.length < 500) {
-      print('Body: $encodedBody');
-    }
-    print('================');
-
     return http.patch(
       Uri.parse('$baseUrl$endpoint'),
       headers: {
@@ -335,87 +230,29 @@ class HttpService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
       body: encodedBody,
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw Exception('Request timeout after 30 seconds'),
     );
   }
 
-  // Multipart file upload (for images, etc.)
-  Future<http.Response> uploadFile(
-    String endpoint, {
-    required String filePath,
-    String? fileFieldName,
-    Map<String, String>? fields,
-  }) async {
+  Future<List<int>> downloadBytes(String endpoint) async {
     final token = await getAccessToken();
-    final file = File(filePath);
-
-    final request = http.MultipartRequest(
-      'PUT',
+    final response = await http.get(
       Uri.parse('$baseUrl$endpoint'),
+      headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    ).timeout(
+      const Duration(seconds: 60),
+      onTimeout: () => throw Exception('Download timeout after 60 seconds'),
     );
 
-    // Add headers - use addAll instead of direct assignment
-    request.headers.addAll({
-      'Authorization': 'Bearer $token',
-    });
+    final handledResponse = await _handleResponse(response, 'GET', endpoint);
 
-    // Add file
-    final fileStream = http.ByteStream(file.openRead());
-    final length = await file.length();
-    final multipartFile = http.MultipartFile(
-      fileFieldName ?? 'file',
-      fileStream,
-      length,
-      filename: filePath.split('/').last,
-    );
-    request.files.add(multipartFile);
-
-    // Add additional fields
-    if (fields != null) {
-      fields.forEach((key, value) {
-        request.fields[key] = value;
-      });
+    if (handledResponse.statusCode == 200) {
+      return handledResponse.bodyBytes;
     }
-
-    print('=== HTTP MULTIPART UPLOAD ===');
-    print('URL: $baseUrl$endpoint');
-    print('File: $filePath');
-    print('File size: ${(length / 1024).toStringAsFixed(2)} KB');
-    print('================');
-
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
-
-    // Upload uchun ham 401 handle qilish
-    return _handleResponse(response, 'PUT', endpoint);
-  }
-
-  // Fayl yuklab olish (byte array qaytaradi)
-  Future<List<int>?> downloadBytes(String endpoint) async {
-    try {
-      final token = await getAccessToken();
-
-      print('=== HTTP DOWNLOAD BYTES ===');
-      print('URL: $baseUrl$endpoint');
-      print('================');
-
-      final response = await http.get(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-
-      // 401 xatolikni handle qilish
-      final handledResponse = await _handleResponse(response, 'GET', endpoint);
-
-      if (handledResponse.statusCode == 200) {
-        return handledResponse.bodyBytes;
-      }
-      print('Download failed with status: ${handledResponse.statusCode}');
-      return null;
-    } catch (e) {
-      print('Download bytes error: $e');
-      return null;
-    }
+    throw Exception('Download failed: ${handledResponse.statusCode}');
   }
 }

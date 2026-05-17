@@ -3,7 +3,6 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Application.Services;
@@ -11,10 +10,10 @@ namespace MarketSystem.Application.Services;
 public class ProductService : IProductService
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
 
-    public ProductService(IUnitOfWork unitOfWork, AppDbContext context, ICurrentMarketService currentMarketService)
+    public ProductService(IUnitOfWork unitOfWork, IAppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _context = context;
@@ -47,6 +46,28 @@ public class ProductService : IProductService
             includeProperties: "Category");
 
         return products.Select(MapToDto);
+    }
+
+    public async Task<PagedResult<ProductDto>> GetAllProductsPagedAsync(int page, int size, CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(1, page);
+        size = Math.Clamp(size, 1, 200);
+
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var query = _context.Products
+            .AsNoTracking()
+            .Include(p => p.Category)
+            .Where(p => p.MarketId == marketId);
+
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderBy(p => p.Name)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .ToListAsync(cancellationToken);
+
+        return PagedResult<ProductDto>.From(items.Select(MapToDto).ToList(), page, size, total);
     }
 
     public async Task<IEnumerable<ProductDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)
@@ -134,7 +155,6 @@ public class ProductService : IProductService
         product.Unit = (UnitType)unitValue;  // ✅ NEW: Update unit
         product.CategoryId = request.CategoryId;  // Category
 
-        _context.Entry(product).State = EntityState.Modified;
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -176,7 +196,6 @@ public class ProductService : IProductService
             throw new InvalidOperationException($"Insufficient stock. Current: {product.Quantity} {product.GetUnitName()}, Requested change: {quantityChange}");
 
         product.Quantity = newQuantity;
-        _context.Entry(product).State = EntityState.Modified;
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;

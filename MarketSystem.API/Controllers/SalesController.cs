@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
-using MarketSystem.Application.Interfaces;
 
 namespace MarketSystem.API.Controllers;
 
@@ -16,16 +15,18 @@ public class SalesController : ControllerBase
     private readonly ISaleService _saleService;
     private readonly ILogger<SalesController> _logger;
     private readonly IReportService _reportService;
+    private readonly IExcelService _excelService;
 
-    public SalesController(ISaleService saleService, ILogger<SalesController> logger, IReportService reportService)
+    public SalesController(ISaleService saleService, ILogger<SalesController> logger, IReportService reportService, IExcelService excelService)
     {
         _saleService = saleService;
         _logger = logger;
         _reportService = reportService;
+        _excelService = excelService;
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<SaleDto>> GetSale(Guid id)
+    public async Task<ActionResult<SaleDto>> GetSale(Guid id, CancellationToken ct = default)
     {
         var sale = await _saleService.GetSaleByIdAsync(id);
         if (sale is null)
@@ -37,7 +38,8 @@ public class SalesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PagedResult<SaleDto>>> GetAllSales(
         [FromQuery] int page = 1,
-        [FromQuery] int size = 50)
+        [FromQuery] int size = 50,
+        CancellationToken ct = default)
     {
         // Returns a paged envelope: { items, page, size, total, totalPages }.
         // Defaults: page=1, size=50. Max size: 200 (clamped server-side).
@@ -46,14 +48,17 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("by-date")]
-    public async Task<ActionResult<IEnumerable<SaleDto>>> GetSalesByDateRange([FromQuery] DateTime start, [FromQuery] DateTime end)
+    public async Task<ActionResult<IEnumerable<SaleDto>>> GetSalesByDateRange([FromQuery] DateTime start, [FromQuery] DateTime end, CancellationToken ct = default)
     {
+        if (start > end)
+            return BadRequest(new { message = "Start date must be before end date" });
+
         var sales = await _saleService.GetSalesByDateRangeAsync(start, end);
         return Ok(sales);
     }
 
     [HttpGet("my-drafts")]
-    public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyDraftSales()
+    public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyDraftSales(CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(sellerIdStr) || !Guid.TryParse(sellerIdStr, out var sellerId))
@@ -64,7 +69,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("my-unfinished")]
-    public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyUnfinishedSales()
+    public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyUnfinishedSales(CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(sellerIdStr) || !Guid.TryParse(sellerIdStr, out var sellerId))
@@ -75,7 +80,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<SaleDto>> CreateSale([FromBody] CreateSaleDto request)
+    public async Task<ActionResult<SaleDto>> CreateSale([FromBody] CreateSaleDto request, CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(sellerIdStr) || !Guid.TryParse(sellerIdStr, out var sellerId))
@@ -93,7 +98,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPatch("{saleId}/customer")]
-    public async Task<ActionResult<SaleDto>> UpdateSaleCustomer(Guid saleId, [FromBody] UpdateSaleCustomerDto request)
+    public async Task<ActionResult<SaleDto>> UpdateSaleCustomer(Guid saleId, [FromBody] UpdateSaleCustomerDto request, CancellationToken ct = default)
     {
         try
         {
@@ -110,7 +115,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/items")]
-    public async Task<ActionResult<SaleItemDto>> AddSaleItem(Guid saleId, [FromBody] AddSaleItemDto request)
+    public async Task<ActionResult<SaleItemDto>> AddSaleItem(Guid saleId, [FromBody] AddSaleItemDto request, CancellationToken ct = default)
     {
         try
         {
@@ -127,7 +132,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/items/remove")]
-    public async Task<ActionResult<SaleItemDto>> RemoveSaleItem(Guid saleId, [FromBody] RemoveSaleItemDto request)
+    public async Task<ActionResult<SaleItemDto>> RemoveSaleItem(Guid saleId, [FromBody] RemoveSaleItemDto request, CancellationToken ct = default)
     {
         _logger.LogInformation("RemoveSaleItem called - SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
             saleId, request.SaleItemId, request.Quantity);
@@ -147,7 +152,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/payments")]
-    public async Task<ActionResult<PaymentDto>> AddPayment(Guid saleId, [FromBody] AddPaymentDto request)
+    public async Task<ActionResult<PaymentDto>> AddPayment(Guid saleId, [FromBody] AddPaymentDto request, CancellationToken ct = default)
     {
         try
         {
@@ -168,7 +173,7 @@ public class SalesController : ControllerBase
     /// </summary>
     [HttpDelete("{saleId}")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<SaleDto>> DeleteSale(Guid saleId)
+    public async Task<ActionResult<SaleDto>> DeleteSale(Guid saleId, CancellationToken ct = default)
     {
         _logger.LogInformation("DeleteSale called - Sale ID: {SaleId}", saleId);
 
@@ -194,7 +199,7 @@ public class SalesController : ControllerBase
 
     [HttpPost("{saleId}/cancel")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request)
+    public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request, CancellationToken ct = default)
     {
         try
         {
@@ -214,7 +219,7 @@ public class SalesController : ControllerBase
 
     [HttpPost("{saleId}/mark-debt")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId)
+    public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId, CancellationToken ct = default)
     {
         try
         {
@@ -239,7 +244,7 @@ public class SalesController : ControllerBase
     /// </summary>
     [HttpPatch("items/price")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<SaleItemDto>> UpdateSaleItemPrice([FromBody] UpdateSaleItemPriceDto request)
+    public async Task<ActionResult<SaleItemDto>> UpdateSaleItemPrice([FromBody] UpdateSaleItemPriceDto request, CancellationToken ct = default)
     {
         try
         {
@@ -253,7 +258,8 @@ public class SalesController : ControllerBase
 
             _logger.LogInformation("UpdateSaleItemPrice called by {UserId} with role {Role}", userId, userRole);
 
-            var saleItemId = Guid.Parse(request.SaleItemId);
+            if (!Guid.TryParse(request.SaleItemId, out var saleItemId))
+                return BadRequest("Noto'g'ri saleItemId formati.");
             var updatedItem = await _saleService.UpdateSaleItemPriceAsync(saleItemId, request);
 
             if (updatedItem == null)
@@ -280,7 +286,7 @@ public class SalesController : ControllerBase
 
     [HttpPost("{saleId}/return-item")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest? request)
+    public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest? request, CancellationToken ct = default)
     {
         try
         {
@@ -306,7 +312,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("debtors")]
-    public async Task<ActionResult<IEnumerable<DebtorDto>>> GetDebtors()
+    public async Task<ActionResult<IEnumerable<DebtorDto>>> GetDebtors(CancellationToken ct = default)
     {
         try
         {
@@ -321,7 +327,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export")]
-    public async Task<IActionResult> ExportSalesToExcel([FromServices] MarketSystem.Application.Interfaces.IExcelService excelService)
+    public async Task<IActionResult> ExportSalesToExcel(CancellationToken ct = default)
     {
         try
         {
@@ -343,7 +349,7 @@ public class SalesController : ControllerBase
                 Foyda = FormatDecimal(item.Profit)
             })).OrderByDescending(x => x.Sana);
 
-            var fileContent = excelService.GenerateExcel(exportData, "Sotuvlar");
+            var fileContent = _excelService.GenerateExcel(exportData, "Sotuvlar");
 
             return File(
                 fileContent,
@@ -359,7 +365,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export-pdf")]
-    public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+    public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, CancellationToken ct = default)
     {
         try
         {
@@ -400,7 +406,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/apply-credit")]
-    public async Task<ActionResult<SaleDto>> ApplyCustomerCredit(Guid saleId)
+    public async Task<ActionResult<SaleDto>> ApplyCustomerCredit(Guid saleId, CancellationToken ct = default)
     {
         try
         {
@@ -425,7 +431,7 @@ public class SalesController : ControllerBase
     /// Generate and download PDF invoice for a sale
     /// </summary>
     [HttpGet("{id}/invoice")]
-    public async Task<IActionResult> GetInvoice(Guid id)
+    public async Task<IActionResult> GetInvoice(Guid id, CancellationToken ct = default)
     {
         try
         {

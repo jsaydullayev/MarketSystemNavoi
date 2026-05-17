@@ -8,6 +8,7 @@
 .env.local
 .env.*.local
 appsettings.Development.json
+docker-compose.override.yml
 appsettings.Local.json
 **/appsettings.Development.json
 **/appsettings.Local.json
@@ -381,4 +382,20 @@ MigrationBackup/
 .ionide/
 
 # Fody - auto-generated XML schema
-FodyWeavers.xsdMarketSystem.Client/android/app/build/outputs/flutter-apk/app-debug.apk
+FodyWeavers.xsd
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Backup files
+*.backup
+*.bak
+
+# Flutter build output and tooling
+MarketSystem.Client/build/
+MarketSystem.Client/.dart_tool/
+MarketSystem.Client/android/build/
+MarketSystem.Client/android/local.properties
+MarketSystem.Client/android/.gradle/
+build_output.txt
