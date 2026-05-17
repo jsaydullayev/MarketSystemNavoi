@@ -1577,6 +1577,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Оставьте пустым — будет сгенерирован автоматически';
 
   @override
+  String get superAdminSubdomainInvalid =>
+      'Только строчные буквы, цифры и «-», 3–50 символов';
+
+  @override
   String get superAdminPasswordMinLength => 'Пароль минимум 8 символов';
 
   @override

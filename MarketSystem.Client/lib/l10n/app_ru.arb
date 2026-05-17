@@ -502,6 +502,7 @@
   "superAdminRejectReasonRequired": "Укажите причину",
   "superAdminSubdomainOptional": "Поддомен (необязательно)",
   "superAdminSubdomainHint": "Оставьте пустым — будет сгенерирован автоматически",
+  "superAdminSubdomainInvalid": "Только строчные буквы, цифры и «-», 3–50 символов",
   "superAdminPasswordMinLength": "Пароль минимум 8 символов",
   "superAdminApproveSuccess": "Владелец {username} создан. Передайте логин и пароль владельцу безопасным каналом.",
   "@superAdminApproveSuccess": {

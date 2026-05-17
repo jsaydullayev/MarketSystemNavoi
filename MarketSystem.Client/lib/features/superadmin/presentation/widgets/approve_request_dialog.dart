@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/models/registration_request.dart';
@@ -155,11 +156,22 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                 TextFormField(
                   controller: _subdomainController,
                   textInputAction: TextInputAction.done,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9\-]')),
+                  ],
                   decoration: InputDecoration(
                     labelText: l10n.superAdminSubdomainOptional,
                     prefixIcon: const Icon(Icons.language_outlined),
                     helperText: l10n.superAdminSubdomainHint,
                   ),
+                  validator: (v) {
+                    final t = v?.trim().toLowerCase() ?? '';
+                    if (t.isEmpty) return null;
+                    if (!RegExp(r'^[a-z0-9][a-z0-9\-]{1,48}[a-z0-9]$').hasMatch(t)) {
+                      return l10n.superAdminSubdomainInvalid;
+                    }
+                    return null;
+                  },
                   onFieldSubmitted: (_) => _submit(),
                 ),
               ],

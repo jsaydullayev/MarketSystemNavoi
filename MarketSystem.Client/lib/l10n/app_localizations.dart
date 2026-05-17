@@ -3062,6 +3062,12 @@ abstract class AppLocalizations {
   /// **'Bo\'sh qoldirsangiz, avtomatik yaratiladi'**
   String get superAdminSubdomainHint;
 
+  /// No description provided for @superAdminSubdomainInvalid.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faqat kichik harf, raqam va \'-\' belgisi, 3–50 belgi'**
+  String get superAdminSubdomainInvalid;
+
   /// No description provided for @superAdminPasswordMinLength.
   ///
   /// In uz, this message translates to:
