@@ -100,7 +100,9 @@ public abstract class TestBase : IDisposable
         DbContext.Database.EnsureCreated();
 
         // Initialize services with UnitOfWork
-        var unitOfWork = new Infrastructure.Repositories.UnitOfWork(DbContext);
+        var unitOfWork = new Infrastructure.Repositories.UnitOfWork(
+            DbContext,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<Infrastructure.Repositories.UnitOfWork>.Instance);
         var clock = new TashkentClock(SharedTashkentTimeZone);
         CustomerService = new CustomerService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, httpContextAccessorMock.Object);
         SaleService = new SaleService(unitOfWork, AuditLogServiceMock.Object, DbContext, SaleServiceLoggerMock.Object, CurrentMarketServiceMock.Object, CustomerService);

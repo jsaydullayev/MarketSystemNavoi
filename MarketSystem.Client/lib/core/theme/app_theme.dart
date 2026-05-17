@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 /// Market System uchun birlashtirilgan dizayn tizimi
 class AppTheme {
@@ -48,7 +48,7 @@ class AppTheme {
     ),
     boxShadow: [
       BoxShadow(
-        color: const Color(0xFF64748B).withOpacity(0.08),
+        color: const Color(0xFF64748B).withValues(alpha: 0.08),
         blurRadius: 8,
         offset: const Offset(0, 2),
       ),
@@ -56,15 +56,15 @@ class AppTheme {
   );
 
   static BoxDecoration menuCardDecoration(Color color) => BoxDecoration(
-    color: color.withOpacity(0.08),
+    color: color.withValues(alpha: 0.08),
     borderRadius: BorderRadius.circular(12),
     border: Border.all(
-      color: color.withOpacity(0.2),
+      color: color.withValues(alpha: 0.2),
       width: 1.5,
     ),
     boxShadow: [
       BoxShadow(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         blurRadius: 6,
         offset: const Offset(0, 2),
       ),

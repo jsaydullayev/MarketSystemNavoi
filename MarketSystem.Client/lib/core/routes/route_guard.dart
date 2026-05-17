@@ -35,26 +35,17 @@ Future<bool> authGuard(BuildContext context, String? routeName) async {
   // CRITICAL: Use PublicRoutes for consistent public route checking
   // If route is public, allow navigation without any auth check
   if (PublicRoutes.isPublic(routeName ?? '')) {
-    debugPrint('🔓 RouteGuard: Public route, bypassing auth check: $routeName');
     return true;
   }
 
-  // Check if user is authenticated
   if (!authProvider.isAuthenticated) {
-    // Not authenticated - redirect to login
-    // Only redirect if we're not already being redirected from a public route
     final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
-
     if (PublicRouteGuard.allowRedirect(currentRoute, '/login')) {
       if (context.mounted) {
-        debugPrint('🔒 RouteGuard: Redirecting to login (not authenticated)');
         Navigator.of(context).pushReplacementNamed('/login');
       }
-      return false;
-    } else {
-      debugPrint('🚫 RouteGuard: Blocked redirect to login (from public route)');
-      return false;
     }
+    return false;
   }
 
   return true;

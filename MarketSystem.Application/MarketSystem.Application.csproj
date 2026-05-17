@@ -5,7 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MarketSystem.Infrastructure\MarketSystem.Infrastructure.csproj" />
+    <ProjectReference Include="..\MarketSystem.Domain\MarketSystem.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/category_service.dart';
 import '../../../data/models/product_category_model.dart';
@@ -103,7 +103,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -115,7 +115,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -179,12 +179,12 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                   decoration: BoxDecoration(
                     color: _isActive
-                        ? Colors.green.withOpacity(0.08)
-                        : Colors.grey.withOpacity(0.06),
+                        ? Colors.green.withValues(alpha: 0.08)
+                        : Colors.grey.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: _isActive
-                          ? Colors.green.withOpacity(0.3)
+                          ? Colors.green.withValues(alpha: 0.3)
                           : Colors.transparent,
                     ),
                   ),
@@ -310,8 +310,8 @@ class _Field extends StatelessWidget {
         prefixIcon: Icon(icon, size: 20),
         filled: true,
         fillColor: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.grey.withOpacity(0.06),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.grey.withValues(alpha: 0.06),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,

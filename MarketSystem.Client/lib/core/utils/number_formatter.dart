@@ -41,14 +41,40 @@ class NumberFormatter {
       number = 0;
     }
 
-    // Use NumberFormat.currency with custom symbol
+    // Decide on decimal digits by VALUE, not by source type. `100` (int)
+    // and `100.0` (double) should format identically; using `number is int`
+    // made the result depend on whether JSON parsed it as int or double.
+    final bool hasDecimals =
+        number is double && number != number.truncateToDouble();
+
     final formatter = NumberFormat.currency(
       locale: 'ru_RU',
       symbol: '',
-      decimalDigits: number is int ? 0 : 2,
+      decimalDigits: hasDecimals ? 2 : 0,
     );
 
     return formatter.format(number);
+  }
+
+  /// Format a quantity for display.
+  /// Whole numbers render without decimals ("5"); fractional kg/m amounts
+  /// keep up to 3 decimals with trailing zeros stripped ("1.5", "1.25").
+  /// Using `.toStringAsFixed(0)` on a quantity would silently turn 1.5 kg
+  /// into "1 kg" — that's a real-world money bug when users see less than
+  /// they bought.
+  static String formatQuantity(dynamic value) {
+    if (value == null) return '0';
+    num n;
+    if (value is num) {
+      n = value;
+    } else if (value is String) {
+      n = num.tryParse(value.replaceAll(',', '.')) ?? 0;
+    } else {
+      return '0';
+    }
+    final d = n.toDouble();
+    if (d == d.truncateToDouble()) return d.toInt().toString();
+    return d.toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '');
   }
 
   /// Format DateTime to GMT+5 (Tashkent time)
@@ -113,10 +139,15 @@ class NumberFormatter {
 }
 
 extension CartTotal on List<Map<String, dynamic>> {
+  /// Sum of `salePrice * quantity` across every cart row. Forces both fields
+  /// through `.toDouble()` so a JSON integer (`price: 80000`) and a JSON
+  /// double (`price: 80000.0`) produce the same total — dynamic numeric
+  /// multiplication in Dart can otherwise stay as int and lose the running
+  /// double sum's precision on later rows.
   double get totalAmount {
     return fold(0.0, (sum, item) {
-      final price = item['salePrice'] ?? 0.0;
-      final qty = item['quantity'] ?? 0.0;
+      final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
+      final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
       return sum + (price * qty);
     });
   }

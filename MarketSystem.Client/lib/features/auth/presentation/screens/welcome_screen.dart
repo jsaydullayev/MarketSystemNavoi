@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -128,8 +128,8 @@ class WelcomeScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.black.withOpacity(0.05),
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
@@ -143,12 +143,12 @@ class WelcomeScreen extends StatelessWidget {
           items: [
             DropdownMenuItem(
                 value: 'uz',
-                child: Text("O'zbekcha",
+                child: Text(l10n.languageNameUzbek,
                     style: TextStyle(
                         color: isDark ? Colors.white : Colors.black))),
             DropdownMenuItem(
                 value: 'ru',
-                child: Text("Русский",
+                child: Text(l10n.languageNameRussian,
                     style: TextStyle(
                         color: isDark ? Colors.white : Colors.black))),
           ],

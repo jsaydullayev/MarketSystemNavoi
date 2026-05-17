@@ -2,6 +2,7 @@ using System.Text.Json;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
@@ -10,11 +11,13 @@ public class AuditLogService : IAuditLogService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AuditLogService> _logger;
+    private readonly ICurrentMarketService _currentMarketService;
 
-    public AuditLogService(IUnitOfWork unitOfWork, ILogger<AuditLogService> logger)
+    public AuditLogService(IUnitOfWork unitOfWork, ILogger<AuditLogService> logger, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _currentMarketService = currentMarketService;
     }
 
     public async Task LogActionAsync(
@@ -34,6 +37,7 @@ public class AuditLogService : IAuditLogService
                 EntityId = entityId,
                 Action = action,
                 UserId = userId,
+                MarketId = _currentMarketService.TryGetCurrentMarketId(),
                 Payload = payload != null ? JsonSerializer.Serialize(payload) : string.Empty,
                 CreatedAt = DateTime.UtcNow
             };
@@ -46,6 +50,9 @@ public class AuditLogService : IAuditLogService
         }
         catch (Exception ex)
         {
+            // Audit logging is a non-critical side effect. Swallowing here is intentional
+            // so that a DB write failure (e.g. transient timeout) never breaks the main
+            // business operation. The error is still surfaced via the log.
             _logger.LogError(ex, "Failed to create audit log for {EntityType} {EntityId}",
                 entityType, entityId);
         }

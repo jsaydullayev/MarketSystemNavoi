@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
@@ -27,6 +27,7 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
     super.initState();
     _checkConnection();
     _subscription = Connectivity().onConnectivityChanged.listen((result) {
+      if (!mounted) return;
       final connected = result != ConnectivityResult.none;
       setState(() => _isConnected = connected);
       if (connected) widget.onRetry?.call();
@@ -98,7 +99,7 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

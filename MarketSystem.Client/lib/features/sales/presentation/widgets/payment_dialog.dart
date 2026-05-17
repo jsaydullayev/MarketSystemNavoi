@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -37,6 +37,15 @@ class PaymentDialogState extends State<PaymentDialog> {
   final TextEditingController _clickController = TextEditingController();
 
   bool _isProcessing = false;
+
+  @override
+  void dispose() {
+    _cashController.dispose();
+    _terminalController.dispose();
+    _transferController.dispose();
+    _clickController.dispose();
+    super.dispose();
+  }
 
   double get _totalPaid {
     double total = 0;
@@ -101,7 +110,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8)),
                     child: Text(
                         NumberFormatter.formatDecimal(widget.totalAmount),
@@ -206,7 +215,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                 hintText: l10n.enterAmount,
                 suffixText: l10n.currencySom,
                 filled: true,
-                fillColor: color.withOpacity(0.05),
+                fillColor: color.withValues(alpha: 0.05),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none),
@@ -223,7 +232,7 @@ class PaymentDialogState extends State<PaymentDialog> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.1),
+          color: Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(15)),
       child: Column(
         children: [
@@ -285,11 +294,6 @@ class PaymentDialogState extends State<PaymentDialog> {
         'amount':
             double.tryParse(_clickController.text.replaceAll(',', '.')) ?? 0
       });
-    print('useDebt: $_useDebt');
-    print('hasDebt: $_hasDebt');
-    print('totalPaid: $_totalPaid');
-    print('remaining: $_remainingAmount');
-
     setState(() => _isProcessing = true);
     widget.onConfirm(payments, _hasDebt);
   }

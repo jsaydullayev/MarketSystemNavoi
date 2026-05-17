@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -59,26 +59,28 @@ class _ProductsScreenState extends State<ProductsScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final productService = ProductService(authProvider: authProvider);
       final products = await productService.getAllProducts();
+      if (!mounted) return;
       setState(() {
         _products = products;
         _filteredProducts = products;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       final errorMsg = e.toString();
       setState(() {
-        // ✅ Tuzatilgan: Aniqroq xato xabari
         if (errorMsg.contains('SocketException') ||
             errorMsg.contains('Connection refused') ||
             errorMsg.contains('Failed to fetch')) {
-          _errorMessage = 'Server bilan aloqa yo\'q. Iltimos, qayta urinib ko\'ring.';
+          _errorMessage = l10n.serverConnectionError;
         } else if (errorMsg.contains('401') ||
             errorMsg.contains('Unauthorized')) {
-          _errorMessage = 'Login amali eskirgan. Iltimos, qayta login qiling.';
+          _errorMessage = l10n.sessionExpiredError;
         } else if (errorMsg.contains('403') || errorMsg.contains('Forbidden')) {
-          _errorMessage = 'Ruxsat yo\'q. Siz bu amalni bajarish huquqiga ega emassiz.';
+          _errorMessage = l10n.permissionDeniedError;
         } else {
-          _errorMessage = 'Xatolik yuz berdi. Iltimos, qayta urinib ko\'ring.';
+          _errorMessage = l10n.errorOccurred;
         }
         _isLoading = false;
       });
@@ -119,6 +121,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         TextEditingController(text: (product['costPrice'] ?? 0).toString());
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).primaryColor;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -145,7 +148,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
@@ -155,7 +158,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: primary.withOpacity(0.1),
+                        color: primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.inventory_2_rounded,
@@ -237,7 +240,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
     if (confirmed == true) {
       setState(() => _isLoading = true);
       try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await ZakupService(authProvider: authProvider).createZakup(
           productId: product['id'],
           quantity: double.parse(qtyController.text),
@@ -264,7 +266,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         prefixIcon: Icon(icon, size: 20),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
         filled: true,
-        fillColor: Colors.grey.withOpacity(0.05),
+        fillColor: Colors.grey.withValues(alpha: 0.05),
       ),
     );
   }

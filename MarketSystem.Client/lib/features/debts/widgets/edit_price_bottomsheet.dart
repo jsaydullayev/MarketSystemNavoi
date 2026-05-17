@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
@@ -139,7 +139,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -152,7 +152,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.edit_rounded,
@@ -173,17 +173,17 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.06),
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: const Color(0xFF3B82F6).withOpacity(0.12)),
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.12)),
               ),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withOpacity(0.1),
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.inventory_2_rounded,
@@ -231,7 +231,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.25)),
+                  borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.25)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -257,7 +257,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                     OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.25)),
+                  borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.25)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -272,10 +272,10 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF97316).withOpacity(0.08),
+                  color: const Color(0xFFF97316).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: const Color(0xFFF97316).withOpacity(0.2)),
+                      color: const Color(0xFFF97316).withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
@@ -300,10 +300,10 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withOpacity(0.08),
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: const Color(0xFFEF4444).withOpacity(0.25)),
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

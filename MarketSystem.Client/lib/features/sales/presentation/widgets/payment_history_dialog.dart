@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -54,7 +54,7 @@ class PaymentHistorySheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -112,7 +112,7 @@ class PaymentHistorySheet extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child:
@@ -123,7 +123,7 @@ class PaymentHistorySheet extends StatelessWidget {
               ),
             ),
 
-            Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
+            Divider(height: 1, color: Colors.grey.withValues(alpha: 0.1)),
 
             // List
             Expanded(
@@ -172,13 +172,13 @@ class _SaleHistoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.04)
-            : Colors.grey.withOpacity(0.04),
+            ? Colors.white.withValues(alpha: 0.04)
+            : Colors.grey.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.07)
-              : Colors.grey.withOpacity(0.12),
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.grey.withValues(alpha: 0.12),
         ),
       ),
       child: Theme(
@@ -201,8 +201,8 @@ class _SaleHistoryCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: saleRemaining > 0
-                      ? Colors.red.withOpacity(0.1)
-                      : Colors.green.withOpacity(0.1),
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -229,8 +229,8 @@ class _SaleHistoryCard extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.04)
-                    : Colors.grey.withOpacity(0.06),
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.grey.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -364,9 +364,9 @@ class _PaymentTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(isDark ? 0.08 : 0.06),
+        color: Colors.green.withValues(alpha: isDark ? 0.08 : 0.06),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.green.withOpacity(0.15)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [

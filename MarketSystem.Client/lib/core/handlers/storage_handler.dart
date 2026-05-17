@@ -9,69 +9,72 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StorageHandler {
   SharedPreferences? _prefs;
 
+  Future<SharedPreferences> _getPrefs() async =>
+      _prefs ??= await SharedPreferences.getInstance();
+
   /// Initialize storage handler
   Future<void> init() async {
-    _prefs ??= await SharedPreferences.getInstance();
+    await _getPrefs();
   }
 
   /// Save string value
   Future<bool> saveString(String key, String value) async {
-    await init();
-    return await _prefs!.setString(key, value);
+    final prefs = await _getPrefs();
+    return prefs.setString(key, value);
   }
 
   /// Get string value
   Future<String?> getString(String key) async {
-    await init();
-    return _prefs!.getString(key);
+    final prefs = await _getPrefs();
+    return prefs.getString(key);
   }
 
   /// Save integer value
   Future<bool> saveInt(String key, int value) async {
-    await init();
-    return await _prefs!.setInt(key, value);
+    final prefs = await _getPrefs();
+    return prefs.setInt(key, value);
   }
 
   /// Get integer value
   Future<int?> getInt(String key) async {
-    await init();
-    return _prefs!.getInt(key);
+    final prefs = await _getPrefs();
+    return prefs.getInt(key);
   }
 
   /// Save double value
   Future<bool> saveDouble(String key, double value) async {
-    await init();
-    return await _prefs!.setDouble(key, value);
+    final prefs = await _getPrefs();
+    return prefs.setDouble(key, value);
   }
 
   /// Get double value
   Future<double?> getDouble(String key) async {
-    await init();
-    return _prefs!.getDouble(key);
+    final prefs = await _getPrefs();
+    return prefs.getDouble(key);
   }
 
   /// Save boolean value
   Future<bool> saveBool(String key, bool value) async {
-    await init();
-    return await _prefs!.setBool(key, value);
+    final prefs = await _getPrefs();
+    return prefs.setBool(key, value);
   }
 
   /// Get boolean value
   Future<bool?> getBool(String key) async {
-    await init();
-    return _prefs!.getBool(key);
+    final prefs = await _getPrefs();
+    return prefs.getBool(key);
   }
 
   /// Save JSON object (as string)
   Future<bool> saveJson(String key, Map<String, dynamic> value) async {
-    await init();
-    return await _prefs!.setString(key, jsonEncode(value));
+    final prefs = await _getPrefs();
+    return prefs.setString(key, jsonEncode(value));
   }
 
   /// Get JSON object (from string)
   Future<Map<String, dynamic>?> getJson(String key) async {
-    await init();
-    final jsonString = _prefs!.getString(key);
+    final prefs = await _getPrefs();
+    final jsonString = prefs.getString(key);
     if (jsonString == null) return null;
     try {
       return jsonDecode(jsonString) as Map<String, dynamic>;
@@ -82,43 +85,43 @@ class StorageHandler {
 
   /// Save string list
   Future<bool> saveStringList(String key, List<String> value) async {
-    await init();
-    return await _prefs!.setStringList(key, value);
+    final prefs = await _getPrefs();
+    return prefs.setStringList(key, value);
   }
 
   /// Get string list
   Future<List<String>?> getStringList(String key) async {
-    await init();
-    return _prefs!.getStringList(key);
+    final prefs = await _getPrefs();
+    return prefs.getStringList(key);
   }
 
   /// Check if key exists
   Future<bool> containsKey(String key) async {
-    await init();
-    return _prefs!.containsKey(key);
+    final prefs = await _getPrefs();
+    return prefs.containsKey(key);
   }
 
   /// Remove specific key
   Future<bool> remove(String key) async {
-    await init();
-    return await _prefs!.remove(key);
+    final prefs = await _getPrefs();
+    return prefs.remove(key);
   }
 
   /// Clear all storage
   Future<bool> clear() async {
-    await init();
-    return await _prefs!.clear();
+    final prefs = await _getPrefs();
+    return prefs.clear();
   }
 
   /// Get all keys
   Future<List<String>> getAllKeys() async {
-    await init();
-    return _prefs!.getKeys().toList();
+    final prefs = await _getPrefs();
+    return prefs.getKeys().toList();
   }
 
   /// Reload preferences
   Future<void> reload() async {
-    await init();
-    await _prefs!.reload();
+    final prefs = await _getPrefs();
+    await prefs.reload();
   }
 }

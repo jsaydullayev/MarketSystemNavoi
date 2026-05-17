@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/custom_text_field.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/phone_validator.dart';
@@ -94,7 +94,7 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: primary.withOpacity(0.1),
+                      color: primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(Icons.person_add_rounded,

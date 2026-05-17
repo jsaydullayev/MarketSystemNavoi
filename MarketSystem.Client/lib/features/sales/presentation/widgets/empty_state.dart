@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class EmptyState extends StatelessWidget {
@@ -23,13 +23,13 @@ class EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.04)
-            : Colors.grey.withOpacity(0.06),
+            ? Colors.white.withValues(alpha: 0.04)
+            : Colors.grey.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.07)
-              : Colors.grey.withOpacity(0.15),
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.grey.withValues(alpha: 0.15),
         ),
       ),
       child: Column(
@@ -39,8 +39,8 @@ class EmptyState extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.white.withOpacity(0.06)
-                  : Colors.grey.withOpacity(0.1),
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.grey.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(

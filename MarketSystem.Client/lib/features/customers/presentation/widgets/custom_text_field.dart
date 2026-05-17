@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class CustomTextField extends StatelessWidget {
   const CustomTextField({
@@ -57,7 +57,7 @@ class CustomTextField extends StatelessWidget {
         ),
         filled: true,
         fillColor:
-            isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+            isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),

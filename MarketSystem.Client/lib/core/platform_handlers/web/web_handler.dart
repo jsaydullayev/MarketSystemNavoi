@@ -1,5 +1,4 @@
-/// Web Handler
-/// Platform-specific operations for Web
+import 'package:flutter/foundation.dart';
 
 /// Web Handler implementation
 class WebHandler {
@@ -21,7 +20,6 @@ class WebHandler {
   }) async {
     // Web notification implementation
     // In a real implementation, use web_notification package
-    // ignore: avoid_print
-    print('Web Notification: $title - $body');
+    debugPrint('Web Notification: $title - $body');
   }
 }

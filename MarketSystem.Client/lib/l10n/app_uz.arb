@@ -196,7 +196,6 @@
   "understand": "Tushunarli",
   "categories": "Kategoriyalar",
   "dailySales": "Kunlik savdo",
-  "drafts": "Draftlar",
   "darkMode": "Qorong'i rejim",
   "user": "Foydalanuvchi",
   "security": "Xavfsizlik",
@@ -426,6 +425,9 @@
   "debtSales": "Qarz savdolar",
   "paidSales": "To'langan savdolar",
   "saleDeleted": "Savdo o'chirildi",
+  "saleInDebtUseDebtorsSection": "Bu sotuv qarzga olingan. To'lov uchun \"Qarzdor mijozlar\" bo'limidan foydalaning.",
+  "saleAlreadyPaid": "Bu sotuv to'liq to'langan. O'zgartirish kiritib bo'lmaydi.",
+  "hourlySales": "Soatlik savdo",
   "draftSaveError": "Draft saqlashda xatolik",
   "enterQuantityHint": "Miqdor kiriting...",
   "selectCustomerForDebtWarning": "Qarzga olish uchun mijoz tanlang!",
@@ -519,5 +521,13 @@
   "superAdminCredentialsCopyBoth": "Hammasini nusxalash",
   "superAdminCredentialsCopied": "Nusxalandi",
   "superAdminCredentialsDone": "Tugatish",
-  "superAdminCredentialsWarning": "Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko'rib bo'lmaydi."
+  "superAdminCredentialsWarning": "Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko'rib bo'lmaydi.",
+  "productsInCartSuffix": "ta mahsulot",
+  "viewEditCart": "Ko'rish / tahrirlash",
+  "cartTitle": "Savat",
+  "languageNameUzbek": "O'zbekcha",
+  "languageNameRussian": "Русский",
+  "serverConnectionError": "Server bilan aloqa yo'q. Iltimos, qayta urinib ko'ring.",
+  "sessionExpiredError": "Login amali eskirgan. Iltimos, qayta login qiling.",
+  "permissionDeniedError": "Ruxsat yo'q. Siz bu amalni bajarish huquqiga ega emassiz."
 }

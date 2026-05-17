@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -80,17 +80,17 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
 
       // Platformaga qarab saqlash
       if (kIsWeb) {
-        // Web platformada browser download API orqali yuklash
+        // Web: open the PDF in a new tab. Chrome / Edge / Firefox all have a
+        // built-in PDF viewer, so the user sees the invoice immediately and
+        // can print or save it from there. A silent download (anchor.click)
+        // dumps the file into the Downloads folder with no visible feedback
+        // and the user thinks nothing happened.
         final blob = html.Blob([pdfBytes], 'application/pdf');
         final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement()
-          ..href = url
-          ..download = fileName
-          ..style.display = 'none';
-        html.document.body?.append(anchor);
-        anchor.click();
-        anchor.remove();
-        html.Url.revokeObjectUrl(url);
+        html.window.open(url, '_blank');
+        // Revoke after enough time for the new tab to fetch the blob.
+        Future.delayed(const Duration(seconds: 30),
+            () => html.Url.revokeObjectUrl(url));
       } else if (Platform.isAndroid || Platform.isIOS) {
         // Mobile platformlarda printing orqali yuklash
         await Printing.sharePdf(
@@ -168,7 +168,15 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final items = widget.saleDetails['saleItems'] as List<dynamic>? ?? [];
+    // Backend's GetSaleById returns `items`, not `saleItems`. Reading the
+    // wrong key meant the products section in the detail sheet rendered
+    // empty for every sale. Try both keys for back-compat.
+    final items = (widget.saleDetails['items']
+            as List<dynamic>? ??
+        widget.saleDetails['saleItems'] as List<dynamic>? ??
+        const []);
+    final sellerName = (widget.saleDetails['sellerName'] as String?) ??
+        widget.sale.sellerName;
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
@@ -204,6 +212,8 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
                 children: [
                   _buildInfoTile(Icons.person_outline, l10n.customer,
                       widget.sale.customerName ?? l10n.anonymousCustomer, theme),
+                  _buildInfoTile(Icons.badge_outlined, l10n.seller,
+                      sellerName, theme),
                   _buildInfoTile(
                       Icons.account_balance_wallet_outlined,
                       l10n.paymentType,
@@ -253,13 +263,13 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
                 icon: const Icon(Icons.download),
                 tooltip: l10n.downloadPdf,
                 style: IconButton.styleFrom(
-                    backgroundColor: theme.primaryColor.withOpacity(0.1)),
+                    backgroundColor: theme.primaryColor.withValues(alpha: 0.1)),
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.close_rounded),
                 style: IconButton.styleFrom(
-                    backgroundColor: theme.dividerColor.withOpacity(0.1)),
+                    backgroundColor: theme.dividerColor.withValues(alpha: 0.1)),
               )
             ],
           )
@@ -285,31 +295,112 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
 
   Widget _buildProductItem(
       dynamic item, ThemeData theme, bool isDark, AppLocalizations l10n) {
+    final isExternal = item['isExternal'] == true;
+    // Comment is what the seller typed in the price-input sheet
+    // ("description" in the user's words). API returns it as `comment`.
+    final comment = (item['comment'] as String?)?.trim() ?? '';
+    // Price column can come as either `salePrice` or `unitPrice` depending
+    // on which endpoint produced the row — handle both.
+    final unitPrice = (item['salePrice'] ?? item['unitPrice'] ?? 0).toString();
+    final qty = (item['quantity'] ?? 0).toString();
+    final totalPrice = (item['totalPrice'] ??
+            ((item['quantity'] as num?) ?? 0) *
+                ((item['salePrice'] as num?) ?? 0))
+        .toString();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.03)
-            : Colors.grey.withOpacity(0.05),
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
+        border: isExternal
+            ? Border.all(
+                color: const Color(0xFFF28C33).withValues(alpha: 0.4), width: 1)
+            : null,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item['productName'] ?? l10n.unknown,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("${item['quantity']} x ${item['unitPrice']}",
-                    style: theme.textTheme.bodySmall),
-              ],
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            item['productName']?.toString() ?? l10n.unknown,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        if (isExternal) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF28C33).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'tashqi',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                                color: Color(0xFFF28C33),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text("$qty × $unitPrice", style: theme.textTheme.bodySmall),
+                  ],
+                ),
+              ),
+              Text(
+                "$totalPrice ${l10n.currencySom}",
+                style: TextStyle(
+                    color: theme.primaryColor, fontWeight: FontWeight.w900),
+              ),
+            ],
           ),
-          Text("${item['totalPrice']} ${l10n.currencySom}",
-              style: TextStyle(
-                  color: theme.primaryColor, fontWeight: FontWeight.w900)),
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.notes_rounded,
+                      size: 13, color: theme.primaryColor),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      comment,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDark ? Colors.white70 : Colors.grey[800],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -341,7 +432,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: TextStyle(color: color.withOpacity(0.8), fontSize: 14)),
+            style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 14)),
         Text(value,
             style: TextStyle(
                 color: color, fontSize: 18, fontWeight: FontWeight.w900)),

@@ -1,33 +1,60 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace MarketSystem.Application.DTOs;
 
 public record LoginRequest(
-    [property: JsonPropertyName("username")] string Username,
-    [property: JsonPropertyName("password")] string Password
+    [property: JsonPropertyName("username")]
+    [property: Required(ErrorMessage = "Username majburiy")]
+    [property: StringLength(50, MinimumLength = 3, ErrorMessage = "Username 3-50 belgi bo'lishi kerak")]
+    string Username,
+
+    [property: JsonPropertyName("password")]
+    [property: Required(ErrorMessage = "Parol majburiy")]
+    [property: StringLength(100, MinimumLength = 6, ErrorMessage = "Parol kamida 6 belgi bo'lishi kerak")]
+    string Password
 ) {
-    // Parameterless constructor for model binding
     public LoginRequest() : this(string.Empty, string.Empty) { }
 }
 
 public record RegisterRequest(
-    [property: JsonPropertyName("fullName")] string FullName,
-    [property: JsonPropertyName("username")] string Username,
-    [property: JsonPropertyName("password")] string Password,
-    [property: JsonPropertyName("role")] string Role,
-    [property: JsonPropertyName("marketId")] int? MarketId = null,  // Multi-tenancy - optional
-    [property: JsonPropertyName("marketName")] string? MarketName = null,  // For Owner to create market during registration
+    [property: JsonPropertyName("fullName")]
+    [property: Required(ErrorMessage = "To'liq ism majburiy")]
+    [property: StringLength(100, MinimumLength = 2, ErrorMessage = "Ism 2-100 belgi bo'lishi kerak")]
+    string FullName,
+
+    [property: JsonPropertyName("username")]
+    [property: Required(ErrorMessage = "Username majburiy")]
+    [property: StringLength(50, MinimumLength = 3, ErrorMessage = "Username 3-50 belgi bo'lishi kerak")]
+    string Username,
+
+    [property: JsonPropertyName("password")]
+    [property: Required(ErrorMessage = "Parol majburiy")]
+    [property: StringLength(100, MinimumLength = 6, ErrorMessage = "Parol kamida 6 belgi bo'lishi kerak")]
+    string Password,
+
+    [property: JsonPropertyName("role")]
+    [property: Required(ErrorMessage = "Rol majburiy")]
+    string Role,
+
+    [property: JsonPropertyName("marketId")] int? MarketId = null,
+    [property: JsonPropertyName("marketName")]
+    [property: StringLength(100, ErrorMessage = "Market nomi 100 belgidan oshmasligi kerak")]
+    string? MarketName = null,
     [property: JsonPropertyName("language")] string? Language = "uz"
 ) {
-    // Parameterless constructor for model binding
     public RegisterRequest() : this(string.Empty, string.Empty, string.Empty, string.Empty) { }
 }
 
 public record RefreshTokenRequest(
-    [property: JsonPropertyName("accessToken")] string AccessToken,
-    [property: JsonPropertyName("refreshToken")] string RefreshToken
+    [property: JsonPropertyName("accessToken")]
+    [property: Required(ErrorMessage = "Access token majburiy")]
+    string AccessToken,
+
+    [property: JsonPropertyName("refreshToken")]
+    [property: Required(ErrorMessage = "Refresh token majburiy")]
+    string RefreshToken
 ) {
-    // Parameterless constructor for model binding
     public RefreshTokenRequest() : this(string.Empty, string.Empty) { }
 }
 
@@ -41,6 +68,5 @@ public record AuthResponse(
     [property: JsonPropertyName("refreshToken")] string RefreshToken,
     [property: JsonPropertyName("expiresAt")] DateTime ExpiresAt
 ) {
-    // Parameterless constructor for model binding
     public AuthResponse() : this(Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, DateTime.MinValue) { }
 }

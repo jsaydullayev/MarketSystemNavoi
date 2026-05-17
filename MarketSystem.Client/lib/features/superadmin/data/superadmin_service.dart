@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import '../../../core/config/app_config.dart';
 import '../../../data/services/http_service.dart';
 import '../domain/models/owner_summary.dart';
@@ -57,7 +59,8 @@ class SuperAdminService {
         return SuperAdminOpResult(SuperAdminOpStatus.success, data: items);
       }
       return _mapNonSuccess<List<RegistrationRequest>>(response.statusCode);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('SuperAdminService.listRequests error: $e\n$st');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -79,7 +82,8 @@ class SuperAdminService {
         return SuperAdminOpResult(SuperAdminOpStatus.success, data: items);
       }
       return _mapNonSuccess<List<OwnerSummary>>(response.statusCode);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('SuperAdminService.listOwners error: $e\n$st');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -122,7 +126,8 @@ class SuperAdminService {
         response.statusCode,
         body: response.body,
       );
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('SuperAdminService.approve error: $e\n$st');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -146,7 +151,8 @@ class SuperAdminService {
         return SuperAdminOpResult(SuperAdminOpStatus.success);
       }
       return _mapNonSuccess<void>(response.statusCode, body: response.body);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('SuperAdminService.reject error: $e\n$st');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }

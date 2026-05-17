@@ -44,6 +44,9 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int?>("MarketId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasColumnType("text");
@@ -52,6 +55,9 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MarketId")
+                        .HasDatabaseName("IX_AuditLog_MarketId");
 
                     b.HasIndex("UserId", "CreatedAt")
                         .HasDatabaseName("IX_AuditLog_User_CreatedAt");
@@ -202,7 +208,8 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasIndex("MarketId");
 
                     b.HasIndex("SaleId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_Debt_SaleId");
 
                     b.HasIndex("CustomerId", "Status")
                         .HasDatabaseName("IX_Debt_Customer_Status");
@@ -566,6 +573,35 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.ToTable("RegistrationRequests");
                 });
 
+            modelBuilder.Entity("MarketSystem.Domain.Entities.RevokedToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Jti")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("Jti")
+                        .IsUnique();
+
+                    b.ToTable("RevokedTokens");
+                });
+
             modelBuilder.Entity("MarketSystem.Domain.Entities.Sale", b =>
                 {
                     b.Property<Guid>("Id")
@@ -597,6 +633,12 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -773,11 +815,18 @@ namespace MarketSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.AuditLog", b =>
                 {
+                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
+                        .WithMany()
+                        .HasForeignKey("MarketId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("MarketSystem.Domain.Entities.User", "User")
                         .WithMany("AuditLogs")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Market");
 
                     b.Navigation("User");
                 });

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -58,7 +58,7 @@ class UserInfoSheet extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20)),
             child: Center(
                 child: Text(initial,
@@ -132,7 +132,7 @@ class _InfoTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
         Icon(icon,

@@ -6,13 +6,12 @@ import '../../core/constants/api_constants.dart';
 
 class CustomerService {
   final AuthProvider authProvider;
-  late final HttpService _httpService;
+  final HttpService _httpService;
 
-  CustomerService({required this.authProvider}) {
-    _httpService = HttpService();
-  }
+  CustomerService({required this.authProvider, HttpService? httpService})
+      : _httpService = httpService ?? HttpService();
 
-  // Barcha mijozlarni olish
+
   Future<List<dynamic>> getAllCustomers() async {
     final response =
         await _httpService.get('${ApiConstants.customers}/GetAllCustomers');
@@ -20,6 +19,22 @@ class CustomerService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
+    } else {
+      throw Exception('Failed to load customers: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> getCustomersPaged({
+    int page = 1,
+    int size = 50,
+    String? search,
+  }) async {
+    var url = '${ApiConstants.customers}/GetCustomersPaged?page=$page&size=$size';
+    if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeComponent(search)}';
+    final response = await _httpService.get(url);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception('Failed to load customers: ${response.statusCode}');
     }

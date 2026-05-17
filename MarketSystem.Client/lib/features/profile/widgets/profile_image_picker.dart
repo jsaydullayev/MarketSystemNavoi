@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -42,10 +42,10 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
             height: 130,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(40),
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.2),
+                  color: primaryColor.withValues(alpha: 0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -90,7 +90,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [primary, primary.withOpacity(0.7)],
+          colors: [primary, primary.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -122,44 +122,32 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
   }
 
   Future<void> _handleImagePick(BuildContext context) async {
-    print('=== PROFILE IMAGE PICKER START ===');
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
 
     final ImagePicker picker = ImagePicker();
     final XFile? image =
         await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
 
-    print('Image picked: ${image != null}');
-    print('Image path: ${image?.path}');
-
-    if (image == null) {
-      print('No image selected, returning');
-      return;
-    }
+    if (image == null) return;
 
     setState(() => _isUploading = true);
 
     try {
-      print('Starting upload...');
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      print('Auth provider obtained');
-
-      final result =
-          await UserService(authProvider: auth).uploadProfileImage(image.path);
-
-      print('Upload result: $result');
+      final imageBytes = await image.readAsBytes();
+      final result = await UserService(authProvider: auth)
+          .uploadProfileImage(imageBytes, image.name);
 
       if (widget.onImageUpdated != null && result != null) {
         widget.onImageUpdated!(result['profileImage']);
       }
     } catch (e) {
-      print('Upload error: $e');
       if (mounted) {
         String errorMessage = e.toString();
-        // Remove "Exception: " prefix for cleaner display
         if (errorMessage.startsWith('Exception: ')) {
           errorMessage = errorMessage.substring(11);
         }
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
             SnackBar(content: Text(errorMessage), backgroundColor: Colors.red));
       }
     } finally {

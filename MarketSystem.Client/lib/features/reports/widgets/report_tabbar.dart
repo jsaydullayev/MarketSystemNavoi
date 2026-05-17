@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ReportTabBar extends StatelessWidget {
@@ -16,8 +16,8 @@ class ReportTabBar extends StatelessWidget {
       height: 42,
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.08)
-            : Colors.black.withOpacity(0.06),
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.black.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TabBar(
@@ -27,7 +27,7 @@ class ReportTabBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

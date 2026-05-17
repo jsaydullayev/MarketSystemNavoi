@@ -1,14 +1,28 @@
 using System.Net;
 using System.Security.Claims;
+using MarketSystem.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using MarketSystem.Infrastructure.Data;
 
 namespace MarketSystem.API.Middleware;
 
-/// <summary>
-/// </summary>
 public class TenantResolutionMiddleware
 {
+    // Allocated once at startup — not per request.
+    private static readonly string[] SkipPaths =
+    [
+        "/api/Auth/Login",
+        "/api/Auth/Register",
+        "/api/Auth/RefreshToken",
+        "/api/Auth/Logout",
+        "/api/_sa",              // SuperAdmin console — no MarketId claim
+        "/api/RegistrationRequests", // public sign-up — anonymous
+        "/health",
+        "/swagger",
+        "/privacy",
+        "/hubs",
+        "/seed"
+    ];
+
     private readonly RequestDelegate _next;
     private readonly ILogger<TenantResolutionMiddleware> _logger;
 
@@ -18,33 +32,26 @@ public class TenantResolutionMiddleware
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext)
+    public async Task InvokeAsync(HttpContext context, IAppDbContext dbContext)
     {
-        // Skip tenant resolution for public endpoints
         var path = context.Request.Path.Value ?? "";
-        var skipPaths = new[] { "/api/Auth/Login", "/api/Auth/Register", "/api/Auth/RefreshToken", "/api/Auth/Logout", "/health", "/swagger", "/privacy", "/hubs" };
 
-        if (skipPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+        if (SkipPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
         {
             await _next(context);
             return;
         }
 
-        // If the user is not authenticated, let the normal auth pipeline handle it
-        // (returns 401 from [Authorize] for protected endpoints, or proceeds for [AllowAnonymous]).
-        // Otherwise we mask the real auth failure with our "Market topilmadi" message.
+        // If unauthenticated, let the normal auth pipeline return 401.
+        // Resolving tenant here would mask the real auth failure.
         if (context.User?.Identity?.IsAuthenticated != true)
         {
             await _next(context);
             return;
         }
 
-        // Avval JWT token'dan MarketId claim ni olamiz (birinchi prioritet)
-        var marketIdClaim = context.User?.FindFirst("MarketId")?.Value;
-
-        _logger.LogInformation("TenantResolution: User={User}, MarketIdClaim={MarketIdClaim}",
-            context.User?.Identity?.Name, marketIdClaim);
-
+        // Priority 1: MarketId claim from JWT token
+        var marketIdClaim = context.User.FindFirst("MarketId")?.Value;
         if (!string.IsNullOrEmpty(marketIdClaim) && int.TryParse(marketIdClaim, out var tokenMarketId))
         {
             context.Items["MarketId"] = tokenMarketId;
@@ -53,7 +60,7 @@ public class TenantResolutionMiddleware
             return;
         }
 
-        // Agar token'da MarketId bo'lmasa, subdomain bo'yicha qidiramiz (ikkinchi prioritet)
+        // Priority 2: resolve market from subdomain
         var host = context.Request.Host.Host;
         if (!host.Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
             host.Contains('.') &&
@@ -72,9 +79,8 @@ public class TenantResolutionMiddleware
             }
         }
 
-        // MarketId topilmadi - 401 Unauthorized qaytarish
-        _logger.LogWarning("MarketId not found for user {User}, path {Path}",
-            context.User?.Identity?.Name, context.Request.Path);
+        _logger.LogWarning("MarketId not resolved for user {User}, path {Path}",
+            context.User.Identity?.Name, context.Request.Path);
 
         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
         context.Response.ContentType = "application/json";

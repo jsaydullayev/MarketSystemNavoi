@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -16,8 +16,12 @@ class SaleBody extends StatelessWidget {
   final Function(int) onRemoveFromCart;
   final Function(int, Map<String, dynamic>) onEditPrice;
   final TextEditingController searchController;
-  final VoidCallback
-      onAddExternalProduct; // ✅ Tashqi mahsulot qo'shish funksiyasi
+  final VoidCallback onAddExternalProduct;
+
+  // V2 — kategoriya filtri
+  final List<String> categories;
+  final String? selectedCategoryName;
+  final ValueChanged<String?> onCategorySelected;
 
   const SaleBody({
     super.key,
@@ -32,7 +36,10 @@ class SaleBody extends StatelessWidget {
     required this.onRemoveFromCart,
     required this.onEditPrice,
     required this.searchController,
-    required this.onAddExternalProduct, // ✅ Tashqi mahsulot qo'shish funksiyasi
+    required this.onAddExternalProduct,
+    required this.categories,
+    required this.selectedCategoryName,
+    required this.onCategorySelected,
   });
 
   @override
@@ -46,250 +53,217 @@ class SaleBody extends StatelessWidget {
     return Column(
       children: [
         _buildTopSection(isDark, l10n, theme),
-        if (cartItems.isNotEmpty) _buildCartList(isDark, l10n, theme),
-        _buildSearchField(isDark, l10n),
-        Expanded(
-          child: Column(
-            children: [
-              // ✅ Tashqi mahsulot tugmasi (Product grid yuqorisida)
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildProductGrid(isDark, l10n, theme),
-                  ),
-                  // Tashqi mahsulot qo'shish tugmasi
-                  _buildExternalProductButton(isDark, l10n),
-                ],
-              ), //new code added successfully
-            ],
-          ),
-        ),
+        _buildSearchRow(isDark, l10n),
+        if (categories.isNotEmpty) _buildCategoryChips(isDark, l10n, theme),
+        Expanded(child: _buildProductGrid(isDark, l10n, theme)),
       ],
     );
   }
 
   Widget _buildTopSection(bool isDark, AppLocalizations l10n, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       decoration: BoxDecoration(
         color: AppColors.getCard(isDark),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          InkWell(
-            onTap: onSelectCustomer,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                border:
-                    Border.all(color: isDark ? Colors.white10 : Colors.black12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.person_add_alt_1_rounded,
-                      color: theme.primaryColor),
-                  12.width,
-                  Text(
-                    selectedCustomer?['fullName'] ?? l10n.customerNotSelected,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  const Icon(Icons.keyboard_arrow_down_rounded),
-                ],
-              ),
-            ),
-          ),
-          12.height,
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.green.withOpacity(0.2)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(l10n.totalSum,
-                    style: const TextStyle(fontWeight: FontWeight.w500)),
-                Text(
-                  NumberFormatter.format(totalAmount),
-                  style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green),
-                ),
-              ],
-            ),
-          ),
+          Expanded(child: _buildCustomerPill(isDark, l10n, theme)),
+          10.width,
+          _buildTotalPill(),
         ],
       ),
     );
   }
 
-  Widget _buildCartList(bool isDark, AppLocalizations l10n, ThemeData theme) {
-    return SizedBox(
-      height: 110,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        scrollDirection: Axis.horizontal,
-        itemCount: cartItems.length,
-        itemBuilder: (context, index) {
-          final item = cartItems[index];
-          final isExternal =
-              item['isExternal'] ?? false; // ✅ Tashqi mahsulot flag
+  Widget _buildCustomerPill(bool isDark, AppLocalizations l10n, ThemeData theme) {
+    final hasCustomer = selectedCustomer != null;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onSelectCustomer,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.getBg(isDark),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark ? Colors.white10 : Colors.black12,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.person_add_alt_1_rounded,
+                  color: theme.primaryColor, size: 18),
+              8.width,
+              Expanded(
+                child: Text(
+                  hasCustomer
+                      ? (selectedCustomer!['fullName'] ?? l10n.unknown)
+                      : l10n.customerNotSelected,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 13),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+              const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-          return Container(
-            width: 180,
-            margin: const EdgeInsets.only(right: 10),
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: isExternal
-                  ? Colors.orange
-                      .withOpacity(0.08) // ✅ Tashqi mahsulot uchun rang
-                  : AppColors.getCard(isDark),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isExternal
-                    ? Colors.orange.withOpacity(0.3)
-                    : theme.primaryColor.withOpacity(0.3),
+  Widget _buildTotalPill() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10B981).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        NumberFormatter.format(totalAmount),
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF10B981),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchRow(bool isDark, AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: l10n.searchProduct,
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: AppColors.getCard(isDark),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item['productName'] ?? '',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                          color: isExternal
-                              ? Colors.orange.shade700
-                              : (isDark
-                                  ? Colors.white
-                                  : const Color(0xFF1F2937)),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (!isExternal)
-                      const Icon(
-                        Icons.cancel_rounded,
-                        size: 14,
-                        color: Color(0xFFEF4444),
-                      ),
-                  ],
+          ),
+          10.width,
+          _buildExternalProductButton(isDark, l10n),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExternalProductButton(bool isDark, AppLocalizations l10n) {
+    return Tooltip(
+      message: l10n.addExternalProduct,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFA85C), Color(0xFFF28C33)],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.orangePrimary.withValues(alpha: 0.35),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: onAddExternalProduct,
+            borderRadius: BorderRadius.circular(14),
+            child: const SizedBox(
+              height: 48,
+              width: 48,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    Icons.storefront_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: _PlusBadge(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips(
+      bool isDark, AppLocalizations l10n, ThemeData theme) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        itemCount: categories.length + 1,
+        separatorBuilder: (_, __) => 8.width,
+        itemBuilder: (context, i) {
+          final isAll = i == 0;
+          final name = isAll ? l10n.all : categories[i - 1];
+          final isSelected = isAll
+              ? selectedCategoryName == null
+              : selectedCategoryName == categories[i - 1];
+
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => onCategorySelected(isAll ? null : categories[i - 1]),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.primaryColor
+                      : (isDark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "${item['quantity']} × ${NumberFormatter.format(item['salePrice'])}",
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                child: Center(
+                  child: Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white70 : Colors.black54),
                     ),
-                    // ✅ Tashqi mahsulotlar uchun edit tugmasi yo'q
-                    if (!isExternal)
-                      GestureDetector(
-                        onTap: () => onEditPrice(index, item),
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: theme.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: const Icon(
-                            Icons.edit_rounded,
-                            size: 11,
-                            color: Color(0xFF3B82F6),
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (!isExternal)
-                      _buildQtyButton(
-                        icon: Icons.remove_rounded,
-                        onTap: () => onRemoveFromCart(index),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        isExternal
-                            ? "${item['quantity']}"
-                            : "${item['quantity'] % 1 == 0 ? (item['quantity'] as num).toInt() : item['quantity']}",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: isExternal
-                              ? Colors.orange.shade700
-                              : (isDark
-                                  ? Colors.white
-                                  : const Color(0xFF1F2937)),
-                        ),
-                      ),
-                    ),
-                    if (!isExternal)
-                      _buildQtyButton(
-                        icon: Icons.add_rounded,
-                        onTap: () => onUpdateQuantity(
-                          index,
-                          (item['quantity'] as num).toDouble() + 1,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+              ),
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildQtyButton(
-      {required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: const Color(0xFF3B82F6).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(icon, size: 13, color: const Color(0xFF3B82F6)),
-      ),
-    );
-  }
-
-  Widget _buildSearchField(bool isDark, AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        controller: searchController,
-        decoration: InputDecoration(
-          hintText: l10n.searchProduct,
-          prefixIcon: const Icon(Icons.search_rounded),
-          filled: true,
-          fillColor: AppColors.getCard(isDark),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide.none),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        ),
       ),
     );
   }
@@ -299,71 +273,155 @@ class SaleBody extends StatelessWidget {
     AppLocalizations l10n,
     ThemeData theme,
   ) {
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 0.75,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-      ),
-      itemCount: filteredProducts.length,
-      itemBuilder: (context, index) {
-        final p = filteredProducts[index];
-        final stock = (p['quantity'] ?? 0).toDouble();
-        final isInStock = stock > 0;
-        final isLow = stock > 0 && stock <= 5;
-
-        final stockColor = isLow
-            ? Colors.orange
-            : isInStock
-                ? const Color(0xFF10B981)
-                : Colors.grey;
-
-        return InkWell(
-          onTap: isInStock ? () => onAddToCart(p) : null,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF1C1C1E)
-                  : isInStock
-                      ? Colors.white
-                      : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.07)
-                      : const Color(0xFFE5E7EB)),
+    if (filteredProducts.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inventory_2_outlined,
+                size: 56, color: Colors.grey.shade400),
+            12.height,
+            Text(
+              l10n.noProductsFound,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
             ),
+          ],
+        ),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tighter responsive grid — old aspect ratio of 0.75 with center-
+        // aligned Column left a tall empty card with the content bunched in
+        // the middle. New: ~1:1 aspect ratio, content top-aligned.
+        final int crossAxisCount;
+        if (constraints.maxWidth >= 900) {
+          crossAxisCount = 5;
+        } else if (constraints.maxWidth >= 600) {
+          crossAxisCount = 4;
+        } else if (constraints.maxWidth >= 400) {
+          crossAxisCount = 3;
+        } else {
+          crossAxisCount = 2;
+        }
+
+        return GridView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: 1.0,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+          ),
+          itemCount: filteredProducts.length,
+          itemBuilder: (context, index) {
+            final p = filteredProducts[index];
+            return _ProductCard(
+              product: p,
+              isDark: isDark,
+              theme: theme,
+              onAdd: () => onAddToCart(p),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Compact product card used inside the New-Sale product grid. Icon top-left
+/// (28×28 tile), name (2 lines max), price, then a footer row with the stock
+/// indicator on the left and an add-to-cart button on the right. Greys-out
+/// and disables interaction when stock is 0.
+class _ProductCard extends StatelessWidget {
+  final Map<String, dynamic> product;
+  final bool isDark;
+  final ThemeData theme;
+  final VoidCallback onAdd;
+
+  const _ProductCard({
+    required this.product,
+    required this.isDark,
+    required this.theme,
+    required this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final stock = (product['quantity'] ?? 0).toDouble();
+    final isInStock = stock > 0;
+    final isLow = stock > 0 && stock <= 5;
+
+    final stockColor = isLow
+        ? const Color(0xFFFCD34D)
+        : isInStock
+            ? const Color(0xFF10B981)
+            : Colors.grey;
+
+    return Opacity(
+      opacity: isInStock ? 1.0 : 0.55,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isInStock ? onAdd : null,
+          borderRadius: BorderRadius.circular(14),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color:
+                    isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  backgroundColor: theme.primaryColor.withOpacity(0.1),
-                  child: Icon(Icons.inventory_2_rounded,
-                      color: theme.primaryColor, size: 20),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: theme.primaryColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.inventory_2_rounded,
+                    color: theme.primaryColor,
+                    size: 15,
+                  ),
                 ),
-                8.height,
-                Text(p['name'] ?? '',
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    style: const TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.bold)),
-                4.height,
-                Text(NumberFormatter.format(p['salePrice']),
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: isInStock
-                            ? const Color(0xFF10B981)
-                            : Colors.grey.shade400,
-                        fontWeight: FontWeight.bold)),
-                // Qoldiq + Tugma
+                const SizedBox(height: 8),
+                Text(
+                  product['name']?.toString() ?? '',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  NumberFormatter.format(product['salePrice']),
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: isInStock
+                        ? const Color(0xFF10B981)
+                        : Colors.grey.shade400,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+                const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Qoldiq
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 6,
@@ -373,91 +431,69 @@ class SaleBody extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                         ),
-                        4.width,
+                        const SizedBox(width: 4),
                         Text(
-                          stock.toString(),
+                          _formatStock(stock),
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 10.5,
                             color: stockColor,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
-                    // Tugma (faqat oddiy mahsulot uchun)
                     Container(
-                      width: 26,
-                      height: 26,
+                      width: 24,
+                      height: 24,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6).withOpacity(0.1),
+                        color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(7),
                       ),
-                      child: const Icon(Icons.add_rounded,
-                          size: 15, color: const Color(0xFF3B82F6)),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        size: 14,
+                        color: Color(0xFF3B82F6),
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  /// ✅ Tashqi mahsulot qo'shish tugmasi
-  Widget _buildExternalProductButton(bool isDark, AppLocalizations l10n) {
+  String _formatStock(double n) {
+    if (n == n.toInt()) return n.toInt().toString();
+    return n.toStringAsFixed(2);
+  }
+}
+
+class _PlusBadge extends StatelessWidget {
+  const _PlusBadge();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(0, 16, 16, 0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onAddExternalProduct,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.orange.withOpacity(0.1), // Light
-                  Colors.orange.withOpacity(0.05), // Dark
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange.withOpacity(0.3)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // ✅ Tashqi mahsulot uchun ikon
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons
-                        .add_business_rounded, // Business icon for external products
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                8.width,
-                Text(
-                  l10n.addExternalProduct,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange.shade800,
-                  ),
-                ),
-              ],
-            ),
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
           ),
-        ),
+        ],
+      ),
+      child: const Icon(
+        Icons.add_rounded,
+        color: AppColors.orangePrimary,
+        size: 11,
       ),
     );
   }

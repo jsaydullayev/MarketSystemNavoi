@@ -11,9 +11,7 @@ class RouteStateManager {
   static RouteStateManager? _instance;
   static RouteStateManager get instance => _instance ??= RouteStateManager._();
 
-  RouteStateManager._() {
-    debugPrint('📋 RouteStateManager initialized');
-  }
+  RouteStateManager._();
 
   /// The initial route captured when the app starts
   String? _initialRoute;
@@ -50,13 +48,6 @@ class RouteStateManager {
       _isPublicRoute = PublicRoutes.isPublic(route);
       _currentRoute.value = route;
       _isInitialized = true;
-
-      debugPrint('📋 Route State Initialized:');
-      debugPrint('   Initial Route: $route');
-      debugPrint('   Is Public: $_isPublicRoute');
-      debugPrint('   Auth Check: ${_isPublicRoute ? "SKIPPED" : "REQUIRED"}');
-    } else {
-      debugPrint('⚠️ RouteStateManager: Attempted to re-initialize (ignored)');
     }
   }
 
@@ -64,7 +55,6 @@ class RouteStateManager {
   void updateRoute(String route) {
     _currentRoute.value = route;
     _isPublicRoute = PublicRoutes.isPublic(route);
-    debugPrint('📋 Route updated: $route (public: $_isPublicRoute)');
   }
 
   /// Reset the manager (useful for testing or hot reload)
@@ -74,17 +64,12 @@ class RouteStateManager {
     _isInitialized = false;
     _currentRoute.value = null;
     _instance = null;
-    debugPrint('📋 RouteStateManager reset');
   }
 
   /// Check if redirect is allowed from current route
   /// Returns false if current route is public (impenetrable wall)
   bool canRedirect(String fromRoute) {
-    final result = PublicRoutes.isPublic(fromRoute);
-    if (result) {
-      debugPrint('🛑 REDIRECT BLOCKED: Attempted redirect from public route: $fromRoute');
-    }
-    return !result;
+    return !PublicRoutes.isPublic(fromRoute);
   }
 
   /// Check if redirect is allowed from current route (using context)

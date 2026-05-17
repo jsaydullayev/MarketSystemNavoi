@@ -26,13 +26,7 @@ bool isPublicRoute(String routeName) {
 /// This is used by splash screen and other auto-redirect logic
 bool shouldSkipAutoRedirect(BuildContext context) {
   final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
-  final isPublic = PublicRoutes.isPublic(currentRoute);
-
-  debugPrint('🔍 Route Helper - Current route: $currentRoute');
-  debugPrint('🔍 Route Helper - Is public: $isPublic');
-  debugPrint('🔍 Route Helper - Should skip redirect: $isPublic');
-
-  return isPublic;
+  return PublicRoutes.isPublic(currentRoute);
 }
 
 /// Get the current route name from navigator state

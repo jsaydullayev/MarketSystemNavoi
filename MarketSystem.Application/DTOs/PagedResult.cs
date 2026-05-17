@@ -20,3 +20,10 @@ public record PagedResult<T>(
         return new PagedResult<T>(items, page, size, total, totalPages);
     }
 }
+
+public record PagedResponse<T>(
+    [property: JsonPropertyName("items")] List<T> Items,
+    [property: JsonPropertyName("totalCount")] int TotalCount,
+    [property: JsonPropertyName("page")] int Page,
+    [property: JsonPropertyName("pageSize")] int PageSize
+);

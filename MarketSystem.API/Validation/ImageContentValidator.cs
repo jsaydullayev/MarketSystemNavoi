@@ -7,8 +7,6 @@ namespace MarketSystem.API.Validation;
 /// </summary>
 public static class ImageContentValidator
 {
-    public enum ImageKind { Unknown, Jpeg, Png, Gif, WebP }
-
     /// <summary>
     /// Detects the image format from the first bytes. Returns Unknown if no known
     /// signature matches — callers should reject those payloads.

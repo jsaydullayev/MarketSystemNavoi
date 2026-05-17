@@ -10,6 +10,9 @@ public class AuditLog : BaseEntity
     public Guid UserId { get; set; }
     public string Payload { get; set; } = string.Empty;
 
+    public int? MarketId { get; set; }
+
     // Navigation properties
     public User User { get; set; } = null!;
+    public Market? Market { get; set; }
 }

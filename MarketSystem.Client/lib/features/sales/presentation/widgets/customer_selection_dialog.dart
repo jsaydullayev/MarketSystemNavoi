@@ -86,6 +86,7 @@ class CustomerSelectionDialog extends StatelessWidget {
                           subtitle: Text(customerPhone),
                           onTap: () async {
                             Navigator.pop(context);
+                            final messenger = ScaffoldMessenger.of(context);
                             try {
                               final salesService =
                                   SalesService(authProvider: authProvider);
@@ -93,7 +94,7 @@ class CustomerSelectionDialog extends StatelessWidget {
                                 saleId: saleId,
                                 customerId: customerId,
                               );
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              messenger.showSnackBar(
                                 SnackBar(
                                   content: Text(
                                       '${l10n.customerAdded}: $customerName'),
@@ -102,7 +103,7 @@ class CustomerSelectionDialog extends StatelessWidget {
                               );
                               onCustomerSelected();
                             } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              messenger.showSnackBar(
                                 SnackBar(
                                   content: Text('${l10n.error}: $e'),
                                   backgroundColor: Colors.red,
@@ -120,13 +121,14 @@ class CustomerSelectionDialog extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
+                final messenger = ScaffoldMessenger.of(context);
                 try {
                   final salesService = SalesService(authProvider: authProvider);
                   await salesService.updateSaleCustomer(
                     saleId: saleId,
                     customerId: null,
                   );
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text(l10n.customerRemoved),
                       backgroundColor: Colors.orange,
@@ -134,7 +136,7 @@ class CustomerSelectionDialog extends StatelessWidget {
                   );
                   onCustomerSelected();
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text('${l10n.error}: $e'),
                       backgroundColor: Colors.red,

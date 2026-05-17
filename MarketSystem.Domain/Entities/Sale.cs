@@ -3,7 +3,7 @@ using MarketSystem.Domain.Enums;
 
 namespace MarketSystem.Domain.Entities;
 
-public class Sale : BaseEntity
+public class Sale : BaseEntity, ISoftDelete
 {
     public Guid SellerId { get; set; }
     public Guid? CustomerId { get; set; }
@@ -11,6 +11,11 @@ public class Sale : BaseEntity
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public bool IsDeleted { get; set; } = false;
+
+    // Optimistic concurrency token. Mapped to PostgreSQL's built-in xmin column
+    // so concurrent payment / cancellation writes detect each other instead of
+    // silently overwriting Status (Paid vs Debt vs Cancelled).
+    public uint Xmin { get; set; }
 
     // Multi-tenancy
     public int MarketId { get; set; }

@@ -5,11 +5,11 @@ import '../../core/constants/api_constants.dart';
 
 class DebtService {
   final AuthProvider authProvider;
-  late final HttpService _httpService;
+  final HttpService _httpService;
 
-  DebtService({required this.authProvider}) {
-    _httpService = HttpService();
-  }
+  DebtService({required this.authProvider, HttpService? httpService})
+      : _httpService = httpService ?? HttpService();
+
 
   // Get all debts
   Future<List<dynamic>> getAllDebts({String? status}) async {

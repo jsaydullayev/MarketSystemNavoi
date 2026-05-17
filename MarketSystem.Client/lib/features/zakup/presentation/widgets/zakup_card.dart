@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -37,14 +37,14 @@ class ZakupCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.grey.withOpacity(0.1),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.grey.withValues(alpha: 0.1),
         ),
         boxShadow: isDark
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -59,7 +59,7 @@ class ZakupCard extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(
@@ -168,8 +168,8 @@ class _Chip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: isAccent
-            ? AppColors.primary.withOpacity(0.08)
-            : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100),
+            ? AppColors.primary.withValues(alpha: 0.08)
+            : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

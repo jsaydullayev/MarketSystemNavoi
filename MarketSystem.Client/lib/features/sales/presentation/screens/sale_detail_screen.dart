@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +11,7 @@ import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
+import 'package:market_system_client/features/sales/presentation/screens/%20continue_sale_screen.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
@@ -222,6 +223,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             ];
           }
 
+          // Show a "Davom etish" FAB only for in-progress (Draft) sales
+          // so the seller can pick up where they left off — adding more
+          // items, comments, or completing the sale.
+          final isDraft = state is SaleDetailLoaded &&
+              (state.sale['status']?.toString().toLowerCase() == 'draft');
+
           return NetworkWrapper(
             onRetry: _loadSaleDetails,
             child: Scaffold(
@@ -236,6 +243,30 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 extraActions: extraActions,
               ),
               body: _buildBody(state, theme, isDark, l10n),
+              floatingActionButton: isDraft
+                  ? FloatingActionButton.extended(
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ContinueSaleScreen(saleId: widget.saleId),
+                          ),
+                        );
+                        if (result == true && mounted) _loadSaleDetails();
+                      },
+                      backgroundColor: const Color(0xFF3B82F6),
+                      icon: const Icon(Icons.play_arrow_rounded,
+                          color: Colors.white),
+                      label: Text(
+                        l10n.ongoing,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
           );
         },
@@ -298,11 +329,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4))
         ],
@@ -356,7 +387,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: theme.primaryColor.withOpacity(0.3),
+              color: theme.primaryColor.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 6))
         ],
@@ -369,7 +400,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             children: [
               Expanded(
                   child: _buildFinMiniRow(
-                      l10n.paid, paid, Colors.white.withOpacity(0.8))),
+                      l10n.paid, paid, Colors.white.withValues(alpha: 0.8))),
               Container(width: 1, height: 30, color: Colors.white24),
               Expanded(
                   child: _buildFinMiniRow(
@@ -377,7 +408,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                       debt,
                       debt > 0
                           ? Colors.orangeAccent
-                          : Colors.white.withOpacity(0.8))),
+                          : Colors.white.withValues(alpha: 0.8))),
             ],
           ),
         ],
@@ -388,10 +419,20 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   Widget _buildProductItem(
       Map<String, dynamic> item, String status, ThemeData theme, bool isDark) {
     final l10n = AppLocalizations.of(context)!;
-    final canReturn =
-        status.toLowerCase() == 'paid' || status.toLowerCase() == 'debt';
+    // Sellers can't reverse a closed sale — return is an Admin/Owner action
+    // (matches the backend AdminOrOwner policy on /Sales/{id}/return-item).
+    final userRole = Provider.of<AuthProvider>(context, listen: false)
+        .user?['role']
+        ?.toString();
+    final isAdminOrOwner = userRole == 'Owner' || userRole == 'Admin';
+    final canReturn = isAdminOrOwner &&
+        (status.toLowerCase() == 'paid' ||
+            status.toLowerCase() == 'debt' ||
+            status.toLowerCase() == 'closed');
     final qty = (item['quantity'] as num).toDouble();
     final price = (item['salePrice'] as num).toDouble();
+    final isExternal = item['isExternal'] == true;
+    final comment = (item['comment'] as String?)?.trim() ?? '';
 
     // unitName ga qarab format
     final unitName = (item['unit'] ?? '').toString().toLowerCase();
@@ -399,58 +440,137 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     final isWeight = weightUnits.contains(unitName);
     final qtyDisplay = isWeight ? qty.toString() : qty.toInt().toString();
     final unit = item['unit'] ?? l10n.piece;
+    final iconColor =
+        isExternal ? const Color(0xFFF28C33) : theme.primaryColor;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
+        border: Border.all(
+          color: isExternal
+              ? iconColor.withValues(alpha: 0.35)
+              : (isDark ? Colors.white10 : Colors.grey[200]!),
+        ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-                color: theme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.shopping_bag_outlined, color: theme.primaryColor),
-          ),
-          12.width,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item['productName'] ?? l10n.unknown,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15)),
-                Text("$qtyDisplay $unit x ${NumberFormatter.format(price)}",
-                    style: TextStyle(color: theme.disabledColor, fontSize: 13)),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Text(NumberFormatter.format(item['totalPrice']),
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w900, color: Colors.green)),
-              if (canReturn)
-                GestureDetector(
-                  onTap: () => _showReturnBottomSheet(item),
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(l10n.returnAction,
-                        style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline)),
-                  ),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12)),
+                child: Icon(
+                  isExternal
+                      ? Icons.storefront_rounded
+                      : Icons.shopping_bag_outlined,
+                  color: iconColor,
                 ),
+              ),
+              12.width,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            item['productName'] ?? l10n.unknown,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 15),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isExternal) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: iconColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'tashqi',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                                color: iconColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Text(
+                      "$qtyDisplay $unit x ${NumberFormatter.format(price)}",
+                      style:
+                          TextStyle(color: theme.disabledColor, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(NumberFormatter.format(item['totalPrice']),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900, color: Colors.green)),
+                  if (canReturn)
+                    GestureDetector(
+                      onTap: () => _showReturnBottomSheet(item),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(l10n.returnAction,
+                            style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline)),
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.notes_rounded,
+                      size: 14, color: theme.primaryColor),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      comment,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white70 : Colors.grey[800],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -460,7 +580,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color, width: 1.5)),
       child: Text(status.toUpperCase(),
@@ -491,7 +611,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: TextStyle(color: color.withOpacity(0.8), fontSize: 14)),
+            style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 14)),
         Text(NumberFormatter.format(amount),
             style: TextStyle(
                 color: color, fontWeight: FontWeight.bold, fontSize: fontSize)),
@@ -503,7 +623,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     return Column(
       children: [
         Text(label,
-            style: TextStyle(color: color.withOpacity(0.6), fontSize: 12)),
+            style: TextStyle(color: color.withValues(alpha: 0.6), fontSize: 12)),
         4.height,
         Text(NumberFormatter.format(amount),
             style: TextStyle(
@@ -557,7 +677,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                        color: theme.disabledColor.withOpacity(0.3),
+                        color: theme.disabledColor.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(2)),
                   ),
                 ),
@@ -615,9 +735,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.green.withOpacity(0.2)),
+                    border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -699,7 +819,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       hintText: hint,
       suffixText: suffix,
       filled: true,
-      fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+      fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
       border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

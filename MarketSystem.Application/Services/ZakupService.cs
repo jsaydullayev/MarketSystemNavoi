@@ -2,7 +2,6 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.Application.Services;
@@ -11,10 +10,10 @@ public class ZakupService : IZakupService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
 
-    public ZakupService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ICurrentMarketService currentMarketService)
+    public ZakupService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, IAppDbContext context, ICurrentMarketService currentMarketService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
@@ -42,35 +41,53 @@ public class ZakupService : IZakupService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.MarketId == marketId,
-            cancellationToken);
+        var zakups = await _context.Zakups
+            .AsNoTracking()
+            .Include(z => z.Product)
+            .Include(z => z.CreatedByAdmin)
+            .Where(z => z.MarketId == marketId)
+            .OrderByDescending(z => z.CreatedAt)
+            .ToListAsync(cancellationToken);
 
-        var result = new List<ZakupDto>();
+        return zakups.Select(MapToDtoEager).ToList();
+    }
 
-        foreach (var zakup in zakups)
-        {
-            result.Add(await MapToDtoAsync(zakup, cancellationToken));
-        }
+    public async Task<PagedResult<ZakupDto>> GetAllZakupsPagedAsync(int page, int size, CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(1, page);
+        size = Math.Clamp(size, 1, 200);
 
-        return result;
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var query = _context.Zakups
+            .AsNoTracking()
+            .Include(z => z.Product)
+            .Include(z => z.CreatedByAdmin)
+            .Where(z => z.MarketId == marketId);
+
+        var total = await query.CountAsync(cancellationToken);
+        var zakups = await query
+            .OrderByDescending(z => z.CreatedAt)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .ToListAsync(cancellationToken);
+
+        return PagedResult<ZakupDto>.From(zakups.Select(MapToDtoEager).ToList(), page, size, total);
     }
 
     public async Task<IEnumerable<ZakupDto>> GetZakupsByDateRangeAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.MarketId == marketId && z.CreatedAt >= start && z.CreatedAt <= end,
-            cancellationToken);
+        var zakups = await _context.Zakups
+            .AsNoTracking()
+            .Include(z => z.Product)
+            .Include(z => z.CreatedByAdmin)
+            .Where(z => z.MarketId == marketId && z.CreatedAt >= start && z.CreatedAt <= end)
+            .OrderByDescending(z => z.CreatedAt)
+            .ToListAsync(cancellationToken);
 
-        var result = new List<ZakupDto>();
-        foreach (var zakup in zakups)
-        {
-            result.Add(await MapToDtoAsync(zakup, cancellationToken));
-        }
-
-        return result;
+        return zakups.Select(MapToDtoEager).ToList();
     }
 
     public async Task<ZakupDto> CreateZakupAsync(CreateZakupDto request, Guid adminId, CancellationToken cancellationToken = default)
@@ -104,7 +121,6 @@ public class ZakupService : IZakupService
             product.CostPrice = request.CostPrice; // Use latest purchase price
 
             // Ensure EF Core tracks the product entity explicitly
-            _context.Entry(product).State = EntityState.Modified;
             _unitOfWork.Products.Update(product);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -115,6 +131,16 @@ public class ZakupService : IZakupService
             return await MapToDtoAsync(zakup, cancellationToken);
         }, cancellationToken);
     }
+
+    private static ZakupDto MapToDtoEager(Zakup zakup) => new(
+        zakup.Id,
+        zakup.ProductId,
+        zakup.Product?.Name ?? "Unknown",
+        zakup.Quantity,
+        zakup.CostPrice,
+        zakup.CreatedAt,
+        zakup.CreatedByAdmin?.FullName ?? "Unknown"
+    );
 
     private async Task<ZakupDto> MapToDtoAsync(Zakup zakup, CancellationToken cancellationToken)
     {

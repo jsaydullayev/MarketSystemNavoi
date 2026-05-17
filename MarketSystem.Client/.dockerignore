@@ -1,0 +1,85 @@
+# =====================================================================
+# Flutter .dockerignore — minimize build context sent to Docker daemon
+# =====================================================================
+
+# Flutter build outputs (these can be MULTI-GB)
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# IDE & editor
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.metadata
+
+# Platform-specific build artifacts (huge!)
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+android/local.properties
+android/key.properties
+android/**/*.iml
+android/**/GeneratedPluginRegistrant.java
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework/
+ios/Flutter/Flutter.podspec
+ios/Flutter/ephemeral/
+ios/Runner.xcworkspace/xcuserdata/
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner.xcodeproj/project.xcworkspace/xcuserdata/
+
+# macOS
+macos/Pods/
+macos/Flutter/ephemeral/
+
+# Windows / Linux desktop
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Documentation
+*.md
+README*
+CHANGELOG*
+LICENSE*
+docs/
+
+# Test results & coverage
+coverage/
+test/coverage_helper_test.dart
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files (secrets!)
+.env
+.env.*
+!.env.example

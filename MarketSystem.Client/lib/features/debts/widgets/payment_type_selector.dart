@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class PaymentTypeSelector extends StatelessWidget {
   final String selected;
@@ -35,7 +35,7 @@ class PaymentTypeSelector extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? const Color(0xFF3B82F6)
-                    : const Color(0xFF3B82F6).withOpacity(0.07),
+                    : const Color(0xFF3B82F6).withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color:

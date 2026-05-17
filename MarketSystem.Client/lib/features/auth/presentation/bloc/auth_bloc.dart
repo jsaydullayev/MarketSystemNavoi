@@ -1,6 +1,3 @@
-/// Auth Bloc
-/// State management for authentication using BLoC pattern
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'events/auth_event.dart';

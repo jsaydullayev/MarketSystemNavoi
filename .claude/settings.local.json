@@ -5,7 +5,28 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(ping -c 3 github.com)",
-      "Bash(find . -name \"*.cs\" -exec grep -l \"await.*MigrateAsync\" {} \\\\;)"
+      "Bash(find . -name \"*.cs\" -exec grep -l \"await.*MigrateAsync\" {} \\\\;)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\" -Force)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(Get-ChildItem -Recurse -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\" -Depth 3 | Where-Object { !$_.PSIsContainer } | Select-Object FullName, Length | Format-Table -AutoSize)",
+      "PowerShell(Move-Item -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\BackendNewTZ.md\" \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\docs\\\\features\\\\EXTERNAL_PRODUCTS_SPEC.md\")",
+      "PowerShell(Move-Item -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\deploy_fix.md\" \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\docs\\\\runbooks\\\\deployment-troubleshooting.md\")",
+      "PowerShell(Move-Item -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.API\\\\update.sql\" \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\database\\\\scripts\\\\maintenance\\\\schema_baseline.sql\")",
+      "PowerShell(Move-Item -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Infrastructure\\\\Migrations\\\\20260219100000_AddProductCategories.sql\" \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\database\\\\scripts\\\\maintenance\\\\20260219100000_AddProductCategories.sql\")",
+      "PowerShell(Move-Item -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Infrastructure\\\\Migrations\\\\20260222100000_AddLogsTable.sql\" \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\database\\\\scripts\\\\maintenance\\\\20260222100000_AddLogsTable.sql\")",
+      "PowerShell(Move-Item -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Infrastructure\\\\Migrations\\\\20260223100000_AddUnitTypeToProducts.sql\" \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\database\\\\scripts\\\\maintenance\\\\20260223100000_AddUnitTypeToProducts.sql\")",
+      "PowerShell(docker system df -v 2>&1)",
+      "PowerShell(Get-PSDrive C | Select-Object @{N=\"Jami \\(GB\\)\";E={[math]::Round\\(\\($_.Used+$_.Free\\)/1GB,1\\)}}, @{N=\"Ishlatilgan \\(GB\\)\";E={[math]::Round\\($_.Used/1GB,1\\)}}, @{N=\"Bo'sh \\(GB\\)\";E={[math]::Round\\($_.Free/1GB,1\\)}})",
+      "PowerShell(Get-WmiObject Win32_LogicalDisk -Filter \"DeviceID='C:'\" | Select-Object @{N=\"Jami GB\";E={[math]::Round\\($_.Size/1GB,1\\)}}, @{N=\"Bo'sh GB\";E={[math]::Round\\($_.FreeSpace/1GB,1\\)}}, @{N=\"Ishlatilgan GB\";E={[math]::Round\\(\\($_.Size-$_.FreeSpace\\)/1GB,1\\)}})",
+      "PowerShell(git -C \"C:\\\\Users\\\\joo\" remote -v 2>&1)",
+      "PowerShell(git -C \"C:\\\\Users\\\\joo\" log --oneline -5 2>&1)",
+      "PowerShell(git -C \"C:\\\\Users\\\\joo\" status --short 2>&1)",
+      "PowerShell(docker system prune -a --volumes -f 2>&1)",
+      "PowerShell(docker system df 2>&1)",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Application\\\\Settings\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Domain\\\\Common\\\\JwtSetting.cs\" \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Application\\\\Settings\\\\JwtSetting.cs\")",
+      "Bash(dotnet build *)"
     ]
   }
 }

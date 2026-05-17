@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -142,7 +142,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -302,7 +302,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
             prefixIcon: Icon(icon, size: 20, color: AppColors.primary),
             suffixText: suffix,
             filled: true,
-            fillColor: Colors.grey.withOpacity(0.05),
+            fillColor: Colors.grey.withValues(alpha: 0.05),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,

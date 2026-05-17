@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -56,12 +56,14 @@ class _UsersScreenState extends State<UsersScreen> {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final users = await UsersService(authProvider: auth).getAllUsers();
+      if (!mounted) return;
       setState(() {
         _users = users;
         _filtered = users;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         final l10n = AppLocalizations.of(context)!;
         _error = '${l10n.error}: $e';
@@ -218,7 +220,7 @@ class _SearchBar extends StatelessWidget {
               : null,
           filled: true,
           fillColor:
-              isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade50,
+              isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey.shade50,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none),
@@ -243,7 +245,7 @@ class _EmptyView extends StatelessWidget {
         Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle),
             child: Icon(Icons.people_outline_rounded,
                 size: 44, color: AppColors.primary)),

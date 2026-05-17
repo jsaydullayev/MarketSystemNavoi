@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using System.Security.Claims;
 using System.Text.Json;
-using MarketSystem.Application.Interfaces;
 using Serilog;
 
 namespace MarketSystem.API.Controllers;
@@ -24,7 +23,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<UserDto>> GetUser(Guid id)
+    public async Task<ActionResult<UserDto>> GetUser(Guid id, CancellationToken ct)
     {
         var user = await _userService.GetUserByIdAsync(id);
         if (user is null)
@@ -34,7 +33,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<UserDto>> MyProfile()
+    public async Task<ActionResult<UserDto>> MyProfile(CancellationToken ct)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdStr, out var userId))
@@ -48,7 +47,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers(CancellationToken ct)
     {
         var users = await _userService.GetAllUsersAsync();
 
@@ -72,7 +71,7 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto request)
+    public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto request, CancellationToken ct)
     {
         try
         {
@@ -87,7 +86,7 @@ public class UsersController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto request)
+    public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto request, CancellationToken ct)
     {
         if (id != request.Id)
             return BadRequest("ID mismatch");
@@ -107,7 +106,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<ActionResult<UserDto>> UpdateMyProfile([FromBody] UpdateProfileDto request)
+    public async Task<ActionResult<UserDto>> UpdateMyProfile([FromBody] UpdateProfileDto request, CancellationToken ct)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdStr, out var userId))
@@ -132,12 +131,19 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<ActionResult<UserDto>> UpdateProfileImage()
+    public async Task<ActionResult<UserDto>> UpdateProfileImage(CancellationToken ct)
     {
         Log.Information("=== UPDATE PROFILE IMAGE START ===");
         Log.Information("Request Content-Type: {ContentType}", Request.ContentType);
         Log.Information("HasFormContentType: {HasFormContentType}", Request.HasFormContentType);
-        Log.Information("Files count: {FilesCount}", Request.Form?.Files.Count ?? 0);
+        // `Request.Form` throws InvalidOperationException on a non-multipart
+        // request (e.g. when the client sends a JSON base64 body). Gate the
+        // log on HasFormContentType so the endpoint doesn't 500 on its own
+        // diagnostic line before any business logic runs.
+        if (Request.HasFormContentType)
+        {
+            Log.Information("Files count: {FilesCount}", Request.Form.Files.Count);
+        }
 
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         Log.Information("User ID from token: {UserId}", userIdStr);
@@ -172,7 +178,7 @@ public class UsersController : ControllerBase
                 // Magic-byte sniff — a renamed `payload.exe.png` would pass the extension
                 // check but fail here. We trust the file's actual bytes, not its name.
                 var kind = MarketSystem.API.Validation.ImageContentValidator.Detect(imageBytes);
-                if (kind == MarketSystem.API.Validation.ImageContentValidator.ImageKind.Unknown)
+                if (kind == MarketSystem.API.Validation.ImageKind.Unknown)
                 {
                     return BadRequest("Fayl tasvir emas yoki qo'llab-quvvatlanmaydigan formatda (JPEG/PNG/GIF/WebP qabul qilinadi).");
                 }
@@ -223,7 +229,7 @@ public class UsersController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<IActionResult> DeleteUser(Guid id)
+    public async Task<IActionResult> DeleteUser(Guid id, CancellationToken ct)
     {
         var result = await _userService.DeleteUserAsync(id);
         if (!result)
@@ -234,7 +240,7 @@ public class UsersController : ControllerBase
 
     [HttpPost("{id}/deactivate")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<IActionResult> DeactivateUser(Guid id)
+    public async Task<IActionResult> DeactivateUser(Guid id, CancellationToken ct)
     {
         var result = await _userService.DeactivateUserAsync(id);
         if (!result)
@@ -245,7 +251,7 @@ public class UsersController : ControllerBase
 
     [HttpPost("{id}/activate")]
     [Authorize(Policy = "AdminOrOwner")]
-    public async Task<IActionResult> ActivateUser(Guid id)
+    public async Task<IActionResult> ActivateUser(Guid id, CancellationToken ct)
     {
         var result = await _userService.ActivateUserAsync(id);
         if (!result)

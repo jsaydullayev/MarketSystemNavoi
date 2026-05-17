@@ -39,3 +39,8 @@ public record UpdateMyMarketRequest(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("description")] string? Description
 );
+
+public record UpdateMarketRequest(
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("description")] string? Description
+);

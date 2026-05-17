@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -76,8 +76,8 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.06)
-              : Colors.grey.withOpacity(0.12),
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.grey.withValues(alpha: 0.12),
         ),
       ),
       child: Row(
@@ -86,7 +86,7 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -115,7 +115,7 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: totalSales > 0 ? amount / totalSales : 0,
-                      backgroundColor: color.withOpacity(0.1),
+                      backgroundColor: color.withValues(alpha: 0.1),
                       valueColor: AlwaysStoppedAnimation(color),
                       minHeight: 4,
                     ),
@@ -125,7 +125,7 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: totalSales > 0 ? displayAmount / totalSales : 0,
-                      backgroundColor: color.withOpacity(0.1),
+                      backgroundColor: color.withValues(alpha: 0.1),
                       valueColor: const AlwaysStoppedAnimation(Colors.red),
                       minHeight: 4,
                     ),

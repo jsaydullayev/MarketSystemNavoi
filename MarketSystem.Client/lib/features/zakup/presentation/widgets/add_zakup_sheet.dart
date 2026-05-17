@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
@@ -138,7 +138,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                   size: 20),
               filled: true,
               fillColor:
-                  isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade50,
+                  isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey.shade50,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
@@ -175,12 +175,12 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                             horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? Colors.white.withOpacity(0.04)
+                              ? Colors.white.withValues(alpha: 0.04)
                               : Colors.grey.shade50,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isDark
-                                ? Colors.white.withOpacity(0.06)
+                                ? Colors.white.withValues(alpha: 0.06)
                                 : Colors.grey.shade100,
                           ),
                         ),
@@ -190,7 +190,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                               width: 38,
                               height: 38,
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(Icons.inventory_2_rounded,
@@ -265,7 +265,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -480,7 +480,7 @@ class _InputField extends StatelessWidget {
             suffixText: suffix,
             filled: true,
             fillColor:
-                isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+                isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,

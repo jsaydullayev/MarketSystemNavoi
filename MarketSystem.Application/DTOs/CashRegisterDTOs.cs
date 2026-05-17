@@ -38,6 +38,12 @@ public class CashWithdrawalDto
     public string WithdrawType { get; set; } = "cash"; // 'cash' or 'click'
 }
 
+public class AddCashRequest
+{
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+}
+
 public class WithdrawCashRequest
 {
     [JsonPropertyName("amount")]
@@ -76,3 +82,9 @@ public class TodaySalesSummaryDto
     [JsonPropertyName("date")]
     public DateTime Date { get; set; }
 }
+
+public record CashBalanceDto(
+    [property: JsonPropertyName("cashInRegister")] decimal CashInRegister,
+    [property: JsonPropertyName("cardPayments")] decimal CardPayments,
+    [property: JsonPropertyName("totalBalance")] decimal TotalBalance
+);

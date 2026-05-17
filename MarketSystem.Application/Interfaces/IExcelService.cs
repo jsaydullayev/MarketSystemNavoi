@@ -1,9 +1,6 @@
-using System.Collections.Generic;
+namespace MarketSystem.Application.Interfaces;
 
-namespace MarketSystem.Application.Interfaces
+public interface IExcelService
 {
-    public interface IExcelService
-    {
-        byte[] GenerateExcel<T>(IEnumerable<T> data, string sheetName = "Sheet1");
-    }
+    byte[] GenerateExcel<T>(IEnumerable<T> data, string sheetName = "Sheet1");
 }

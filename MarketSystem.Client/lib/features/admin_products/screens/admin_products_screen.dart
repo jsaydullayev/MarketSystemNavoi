@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/product_service.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../screens/dashboard_screen.dart';
+import '../../dashboard/dashboard_screen.dart';
 import 'admin_product_form_screen.dart';
 
 class AdminProductsScreen extends StatefulWidget {
@@ -73,6 +73,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   }
 
   Future<void> _deleteProduct(dynamic product) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -95,14 +98,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
     if (confirmed == true) {
       try {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final productService = ProductService(authProvider: authProvider);
 
         await productService.deleteProduct(product['id']);
         _loadProducts();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(
               content: Text('Mahsulot muvaffaqiyatli o\'chirildi'),
               backgroundColor: Colors.green,
@@ -111,7 +113,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(
               content: Text('Xatolik: $e'),
               backgroundColor: Colors.red,
@@ -281,7 +283,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Icon(
@@ -345,7 +347,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                     'Vaqtinchalik',
                     style: TextStyle(fontSize: 10),
                   ),
-                  backgroundColor: Colors.purple.withOpacity(0.1),
+                  backgroundColor: Colors.purple.withValues(alpha: 0.1),
                   padding: EdgeInsets.zero,
                 ),
               ),

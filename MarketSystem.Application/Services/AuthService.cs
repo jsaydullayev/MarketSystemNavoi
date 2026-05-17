@@ -4,8 +4,7 @@ using MarketSystem.Domain.Enums;
 using MarketSystem.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
-using MarketSystem.Domain.Common;
+using MarketSystem.Application.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -16,7 +15,7 @@ public class AuthService : IAuthService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtService _jwtService;
     private readonly ILogger<AuthService> _logger;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly JwtSetting _jwtSetting;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly IRevokedTokenStore _revokedTokens;
@@ -25,7 +24,7 @@ public class AuthService : IAuthService
         IUnitOfWork unitOfWork,
         IJwtService jwtService,
         ILogger<AuthService> logger,
-        AppDbContext context,
+        IAppDbContext context,
         IConfiguration configuration,
         ICurrentMarketService currentMarketService,
         IRevokedTokenStore revokedTokens)
@@ -134,7 +133,7 @@ public class AuthService : IAuthService
                 var sanitizedUsername = new string(user.Username.ToLower().Where(c => char.IsLetterOrDigit(c)).ToArray());
                 if (string.IsNullOrEmpty(sanitizedUsername))
                     sanitizedUsername = "market";
-                string subdomain = $"{sanitizedUsername}{Guid.NewGuid().ToString("N")[..6]}";
+                string subdomain = $"{sanitizedUsername}{Guid.NewGuid().ToString("N")[..12]}";
 
                 var newMarket = new Market
                 {
@@ -158,7 +157,6 @@ public class AuthService : IAuthService
                 });
 
                 user.MarketId = newMarket.Id;
-                _context.Entry(user).State = EntityState.Modified;
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 await tx.CommitAsync(cancellationToken);
@@ -167,7 +165,7 @@ public class AuthService : IAuthService
 
                 return await GenerateAuthResponseAsync(user, cancellationToken);
             }
-            catch
+            catch (Exception)
             {
                 await tx.RollbackAsync(cancellationToken);
                 throw;
@@ -205,7 +203,6 @@ public class AuthService : IAuthService
 
         // Mark current refresh token as used (one-time use)
         refreshToken.IsUsed = true;
-        _context.Entry(refreshToken).State = EntityState.Modified;
         _unitOfWork.RefreshTokens.Update(refreshToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -216,7 +213,7 @@ public class AuthService : IAuthService
         var oldToken = _jwtService.GetJtiAndExpiry(request.AccessToken);
         if (oldToken is { } ot)
         {
-            _revokedTokens.Revoke(ot.Jti, ot.ExpiresAtUtc);
+            await _revokedTokens.RevokeAsync(ot.Jti, ot.ExpiresAtUtc, cancellationToken);
         }
 
         return await GenerateAuthResponseAsync(user, cancellationToken);
@@ -242,7 +239,7 @@ public class AuthService : IAuthService
         // otherwise it would remain usable for the rest of its 30-min TTL.
         if (!string.IsNullOrEmpty(accessTokenJti) && accessTokenExpiry.HasValue)
         {
-            _revokedTokens.Revoke(accessTokenJti, accessTokenExpiry.Value);
+            await _revokedTokens.RevokeAsync(accessTokenJti, accessTokenExpiry.Value, cancellationToken);
         }
 
         return true;

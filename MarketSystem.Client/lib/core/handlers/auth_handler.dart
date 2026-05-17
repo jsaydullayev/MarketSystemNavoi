@@ -14,69 +14,72 @@ class AuthHandler {
 
   SharedPreferences? _prefs;
 
+  Future<SharedPreferences> _getPrefs() async =>
+      _prefs ??= await SharedPreferences.getInstance();
+
   /// Initialize auth handler
   Future<void> init() async {
-    _prefs ??= await SharedPreferences.getInstance();
+    await _getPrefs();
   }
 
   /// Save authentication token
   Future<bool> saveToken(String token) async {
-    await init();
-    return await _prefs!.setString(_tokenKey, token);
+    final prefs = await _getPrefs();
+    return prefs.setString(_tokenKey, token);
   }
 
   /// Get authentication token
   Future<String?> getToken() async {
-    await init();
-    return _prefs!.getString(_tokenKey);
+    final prefs = await _getPrefs();
+    return prefs.getString(_tokenKey);
   }
 
   /// Save refresh token
   Future<bool> saveRefreshToken(String refreshToken) async {
-    await init();
-    return await _prefs!.setString(_refreshTokenKey, refreshToken);
+    final prefs = await _getPrefs();
+    return prefs.setString(_refreshTokenKey, refreshToken);
   }
 
   /// Get refresh token
   Future<String?> getRefreshToken() async {
-    await init();
-    return _prefs!.getString(_refreshTokenKey);
+    final prefs = await _getPrefs();
+    return prefs.getString(_refreshTokenKey);
   }
 
   /// Save user ID
   Future<bool> saveUserId(int userId) async {
-    await init();
-    return await _prefs!.setInt(_userIdKey, userId);
+    final prefs = await _getPrefs();
+    return prefs.setInt(_userIdKey, userId);
   }
 
   /// Get user ID
   Future<int?> getUserId() async {
-    await init();
-    return _prefs!.getInt(_userIdKey);
+    final prefs = await _getPrefs();
+    return prefs.getInt(_userIdKey);
   }
 
   /// Save user name
   Future<bool> saveUserName(String userName) async {
-    await init();
-    return await _prefs!.setString(_userNameKey, userName);
+    final prefs = await _getPrefs();
+    return prefs.setString(_userNameKey, userName);
   }
 
   /// Get user name
   Future<String?> getUserName() async {
-    await init();
-    return _prefs!.getString(_userNameKey);
+    final prefs = await _getPrefs();
+    return prefs.getString(_userNameKey);
   }
 
   /// Save user role
   Future<bool> saveUserRole(String role) async {
-    await init();
-    return await _prefs!.setString(_userRoleKey, role);
+    final prefs = await _getPrefs();
+    return prefs.setString(_userRoleKey, role);
   }
 
   /// Get user role
   Future<String?> getUserRole() async {
-    await init();
-    return _prefs!.getString(_userRoleKey);
+    final prefs = await _getPrefs();
+    return prefs.getString(_userRoleKey);
   }
 
   /// Check if user is authenticated
@@ -87,24 +90,23 @@ class AuthHandler {
 
   /// Clear all authentication data (logout)
   Future<bool> clearAuth() async {
-    await init();
-    await _prefs!.remove(_tokenKey);
-    await _prefs!.remove(_refreshTokenKey);
-    await _prefs!.remove(_userIdKey);
-    await _prefs!.remove(_userNameKey);
-    await _prefs!.remove(_userRoleKey);
+    final prefs = await _getPrefs();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_refreshTokenKey);
+    await prefs.remove(_userIdKey);
+    await prefs.remove(_userNameKey);
+    await prefs.remove(_userRoleKey);
     return true;
   }
 
   /// Clear specific key
   Future<bool> clearKey(String key) async {
-    await init();
-    return await _prefs!.remove(key);
+    final prefs = await _getPrefs();
+    return prefs.remove(key);
   }
 
   /// Get all auth data as map
   Future<Map<String, dynamic>> getAuthData() async {
-    await init();
     return {
       'token': await getToken(),
       'refreshToken': await getRefreshToken(),

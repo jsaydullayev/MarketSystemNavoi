@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -11,6 +11,11 @@ class ContinueSaleCartItem extends StatelessWidget {
   final VoidCallback onIncrement;
   final VoidCallback onRemove;
 
+  /// Mirrors the backend's [Authorize(Policy = "AdminOrOwner")] on
+  /// /Sales/{id}/return-item. Hiding the button for Sellers prevents
+  /// them from tapping it and seeing a 403 they can't act on.
+  final bool canReturn;
+
   const ContinueSaleCartItem({
     super.key,
     required this.item,
@@ -20,6 +25,7 @@ class ContinueSaleCartItem extends StatelessWidget {
     required this.onDecrement,
     required this.onIncrement,
     required this.onRemove,
+    this.canReturn = true,
   });
 
   @override
@@ -38,12 +44,12 @@ class ContinueSaleCartItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color:
-              isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE5E7EB),
+              isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE5E7EB),
         ),
         boxShadow: [
           if (!isDark)
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -105,7 +111,7 @@ class ContinueSaleCartItem extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6).withOpacity(0.1),
+                        color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: const Icon(Icons.edit_rounded,
@@ -117,17 +123,18 @@ class ContinueSaleCartItem extends StatelessWidget {
 
             const Spacer(),
 
-            // Qaytarish yoki miqdor o'zgartirish
-            if (isClosed)
+            // Qaytarish yoki miqdor o'zgartirish — vozvrat
+            // faqat Admin/Owner uchun (Seller emas).
+            if (isClosed && canReturn)
               GestureDetector(
                 onTap: onReturn,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(7),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -187,7 +194,7 @@ class _QtyButton extends StatelessWidget {
         width: 24,
         height: 24,
         decoration: BoxDecoration(
-          color: const Color(0xFF3B82F6).withOpacity(0.1),
+          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Icon(icon, size: 13, color: const Color(0xFF3B82F6)),

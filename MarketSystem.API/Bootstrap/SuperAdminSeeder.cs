@@ -1,6 +1,6 @@
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.API.Bootstrap;
@@ -50,7 +50,7 @@ public static class SuperAdminSeeder
             return;
         }
 
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
         // Soft-deleted SuperAdmins are filtered out by the User entity's query
         // filter; we bypass it so we can also detect (and not re-create) ones

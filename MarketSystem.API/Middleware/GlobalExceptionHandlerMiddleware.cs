@@ -53,12 +53,12 @@ public class GlobalExceptionHandlerMiddleware
 
             case InvalidOperationException:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                response.Message = exception.Message;
+                response.Message = isDev ? exception.Message : "So'rov noto'g'ri. Iltimos, ma'lumotlarni tekshiring.";
                 break;
 
             case ArgumentException:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                response.Message = exception.Message;
+                response.Message = isDev ? exception.Message : "Noto'g'ri parametr yuborildi.";
                 break;
 
             case KeyNotFoundException:
@@ -89,13 +89,17 @@ public class GlobalExceptionHandlerMiddleware
                 {
                     "23505" => (int)HttpStatusCode.Conflict,
                     "23503" => (int)HttpStatusCode.BadRequest,
+                    "23502" => (int)HttpStatusCode.BadRequest,
+                    "23514" => (int)HttpStatusCode.BadRequest,
                     _ => (int)HttpStatusCode.ServiceUnavailable
                 };
-                _logger.LogError(postgresEx, "PostgreSQL error: {SqlState}", postgresEx.SqlState);
+                _logger.LogError(postgresEx, "PostgreSQL error: SqlState={SqlState}", postgresEx.SqlState);
                 response.Message = postgresEx.SqlState switch
                 {
                     "23505" => "Bu ma'lumot allaqachon mavjud.",
                     "23503" => "Bog'liq ma'lumot topilmadi.",
+                    "23502" => "Majburiy maydon to'ldirilmagan.",
+                    "23514" => "Ma'lumot tekshiruv shartiga mos kelmaydi.",
                     _ => "Ma'lumotlar bazasi bilan bog'lanishda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring."
                 };
                 break;

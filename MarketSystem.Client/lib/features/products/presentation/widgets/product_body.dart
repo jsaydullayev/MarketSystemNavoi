@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
@@ -186,7 +186,7 @@ class _ProductCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4))
             ],
@@ -207,7 +207,7 @@ class _ProductCard extends StatelessWidget {
                     if (product['categoryName'] != null)
                       Text(product['categoryName'],
                           style: TextStyle(
-                              color: primaryColor.withOpacity(0.8),
+                              color: primaryColor.withValues(alpha: 0.8),
                               fontSize: 12)),
                     8.height,
                     _PriceRow(
@@ -292,7 +292,7 @@ class _Avatar extends StatelessWidget {
       width: 50,
       height: 50,
       decoration: BoxDecoration(
-          color: primaryColor.withOpacity(0.1),
+          color: primaryColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12)),
       child: Icon(Icons.inventory_2_rounded, color: primaryColor, size: 28),
     );
@@ -375,7 +375,7 @@ class _StockBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -403,7 +403,7 @@ class _EmptyView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.shopping_basket_outlined,
-              size: 100, color: primaryColor.withOpacity(0.3)),
+              size: 100, color: primaryColor.withValues(alpha: 0.3)),
           20.height,
           Text(l10n.noProducts,
               style: const TextStyle(fontSize: 18, color: Colors.grey)),

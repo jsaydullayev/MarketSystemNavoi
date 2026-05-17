@@ -12,13 +12,11 @@ class CashRegisterService {
   Future<CashRegisterModel?> getCashRegister() async {
     try {
       final response = await _httpService.get(ApiConstants.cashRegister);
-
       if (response.statusCode == 200) {
         return CashRegisterModel.fromJson(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
-      print('Error getting cash register: $e');
       return null;
     }
   }
@@ -27,13 +25,11 @@ class CashRegisterService {
     try {
       final response =
           await _httpService.get('${ApiConstants.cashRegister}/today-sales');
-
       if (response.statusCode == 200) {
         return TodaySalesSummaryModel.fromJson(jsonDecode(response.body));
       }
       return null;
     } catch (e) {
-      print('Error getting today sales: $e');
       return null;
     }
   }
@@ -41,12 +37,6 @@ class CashRegisterService {
   Future<bool> withdrawCash(double amount, String comment,
       [String withdrawType = 'cash']) async {
     try {
-      print('=== WITHDRAW CASH ===');
-      print('Amount: $amount');
-      print('Comment: $comment');
-      print('Type: $withdrawType');
-      print('==================');
-
       final response = await _httpService.post(
         '${ApiConstants.cashRegister}/withdraw',
         body: {
@@ -55,12 +45,8 @@ class CashRegisterService {
           'withdrawType': withdrawType,
         },
       );
-
-      print('Response Status: ${response.statusCode}');
-
       return response.statusCode == 200;
     } catch (e) {
-      print('Error withdrawing cash: $e');
       return false;
     }
   }
@@ -71,10 +57,8 @@ class CashRegisterService {
         '${ApiConstants.cashRegister}/add',
         body: amount.toString(),
       );
-
       return response.statusCode == 200;
     } catch (e) {
-      print('Error adding cash: $e');
       return false;
     }
   }

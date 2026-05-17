@@ -34,8 +34,6 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
     super.didChangeDependencies();
     // Screen focus qaytganda refresh qilish
     if (mounted) {
-      print(
-          '🔄 DebtorsScreen: didChangeDependencies called, refreshing debtors...');
       Future.delayed(Duration.zero, () {
         _loadDebtors();
       });
@@ -45,7 +43,6 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
   Future<void> _loadDebtors() async {
     final l10n = AppLocalizations.of(context)!;
 
-    print('📥 DebtorsScreen: _loadDebtors called...');
     setState(() {
       _isLoading = true;
     });
@@ -55,14 +52,11 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
       final salesService = SalesService(authProvider: authProvider);
 
       final debtors = await salesService.getDebtors();
-      print('✅ DebtorsScreen: Loaded ${debtors.length} debtors');
-
       setState(() {
         _debtors = debtors;
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ DebtorsScreen: Error loading debtors: $e');
       setState(() {
         _isLoading = false;
       });

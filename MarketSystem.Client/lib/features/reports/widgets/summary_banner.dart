@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -25,14 +25,14 @@ class DailySummaryBanner extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             const Color(0xFF3B82F6),
-            const Color(0xFF3B82F6).withOpacity(0.75),
+            const Color(0xFF3B82F6).withValues(alpha: 0.75),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3B82F6).withOpacity(0.3),
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -47,7 +47,7 @@ class DailySummaryBanner extends StatelessWidget {
                 Text(
                   l10n.totalSale,
                   style: TextStyle(
-                      fontSize: 12, color: Colors.white.withOpacity(0.75)),
+                      fontSize: 12, color: Colors.white.withValues(alpha: 0.75)),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -64,7 +64,7 @@ class DailySummaryBanner extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -82,9 +82,9 @@ class DailySummaryBanner extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -92,7 +92,7 @@ class DailySummaryBanner extends StatelessWidget {
                   Text(
                     l10n.netProfit,
                     style: TextStyle(
-                        fontSize: 11, color: Colors.white.withOpacity(0.75)),
+                        fontSize: 11, color: Colors.white.withValues(alpha: 0.75)),
                   ),
                   const SizedBox(height: 4),
                   Text(

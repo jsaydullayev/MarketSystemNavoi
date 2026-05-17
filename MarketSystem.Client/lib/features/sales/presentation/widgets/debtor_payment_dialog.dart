@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
@@ -171,7 +171,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.3),
+                color: Colors.grey.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -223,7 +223,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -231,7 +231,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
                   children: [
                     Text(l10n.debt,
                         style: TextStyle(
-                            fontSize: 10, color: Colors.red.withOpacity(0.7))),
+                            fontSize: 10, color: Colors.red.withValues(alpha: 0.7))),
                     Text(
                       '${NumberFormatter.formatDecimal(remainingDebt)} ${l10n.currencySom}',
                       style: const TextStyle(
@@ -258,8 +258,8 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
               suffixText: l10n.currencySom,
               filled: true,
               fillColor: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.grey.withOpacity(0.07),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.withValues(alpha: 0.07),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
@@ -298,10 +298,10 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? opt.color.withOpacity(0.12)
+                            ? opt.color.withValues(alpha: 0.12)
                             : isDark
-                                ? Colors.white.withOpacity(0.05)
-                                : Colors.grey.withOpacity(0.07),
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.grey.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected ? opt.color : Colors.transparent,
@@ -342,7 +342,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
-                    side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
                   ),
                   child: Text(l10n.cancel,
                       style: TextStyle(color: Colors.grey[600])),

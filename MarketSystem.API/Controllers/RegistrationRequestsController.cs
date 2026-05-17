@@ -15,6 +15,7 @@ namespace MarketSystem.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class RegistrationRequestsController : ControllerBase
 {
     private readonly IRegistrationRequestService _service;
@@ -37,7 +38,7 @@ public class RegistrationRequestsController : ControllerBase
     /// </summary>
     [HttpPost]
     [AllowAnonymous]
-    [EnableRateLimiting("auth-register")]
+    [EnableRateLimiting("registration-submit")]
     public async Task<IActionResult> Submit([FromBody] SubmitRegistrationRequestDto request, CancellationToken ct)
     {
         const string genericMessage = "Adminga yubordik. Admin tez orada javob beradi.";

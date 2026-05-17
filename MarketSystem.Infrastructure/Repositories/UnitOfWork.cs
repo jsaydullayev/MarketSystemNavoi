@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
@@ -8,6 +9,7 @@ namespace MarketSystem.Infrastructure.Repositories;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<UnitOfWork> _logger;
     private IDbContextTransaction? _transaction;
     private bool _disposed;
 
@@ -24,9 +26,10 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<AuditLog> AuditLogs { get; }
     public IRefreshTokenRepository RefreshTokens { get; }
 
-    public UnitOfWork(AppDbContext context)
+    public UnitOfWork(AppDbContext context, ILogger<UnitOfWork> logger)
     {
         _context = context;
+        _logger = logger;
 
         Customers = new CustomerRepository(context);
         Users = new UserRepository(context);
@@ -86,8 +89,9 @@ public class UnitOfWork : IUnitOfWork
                     await CommitTransactionAsync(cancellationToken);
                     return result;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "UnitOfWork: transaction rolled back.");
                     await RollbackTransactionAsync(cancellationToken);
                     throw;
                 }
@@ -107,8 +111,9 @@ public class UnitOfWork : IUnitOfWork
                     await operation();
                     await CommitTransactionAsync(cancellationToken);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "UnitOfWork: transaction rolled back.");
                     await RollbackTransactionAsync(cancellationToken);
                     throw;
                 }

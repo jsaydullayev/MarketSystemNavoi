@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class EmptyItems extends StatelessWidget {
@@ -17,8 +17,8 @@ class EmptyItems extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.grey.withOpacity(0.08),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.receipt_long_outlined,

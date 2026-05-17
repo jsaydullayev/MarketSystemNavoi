@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/theme/app_theme.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -19,7 +19,7 @@ class WithdrawalHistoryList extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 40),
         decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.07),
+          color: Colors.grey.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -73,15 +73,15 @@ class _WithdrawalItem extends StatelessWidget {
         boxShadow: [
           if (!isDark)
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
         ],
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.07)
-              : Colors.grey.withOpacity(0.12),
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.grey.withValues(alpha: 0.12),
         ),
       ),
       child: Row(
@@ -90,7 +90,7 @@ class _WithdrawalItem extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppTheme.danger.withOpacity(0.1),
+              color: AppTheme.danger.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -134,7 +134,7 @@ class _WithdrawalItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

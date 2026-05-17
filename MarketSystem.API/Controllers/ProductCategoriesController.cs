@@ -8,6 +8,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize]
 public class ProductCategoriesController : ControllerBase
 {
     private readonly IProductCategoryService _categoryService;

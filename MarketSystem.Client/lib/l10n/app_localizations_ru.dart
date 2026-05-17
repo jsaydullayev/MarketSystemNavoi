@@ -598,9 +598,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dailySales => 'Ежедневные продажи';
 
   @override
-  String get drafts => 'Драфты';
-
-  @override
   String get darkMode => 'Темный режим';
 
   @override
@@ -1331,6 +1328,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String get saleDeleted => 'Продажа удалена';
 
   @override
+  String get saleInDebtUseDebtorsSection =>
+      'Эта продажа в долг. Для оплаты используйте раздел \"Должники\".';
+
+  @override
+  String get saleAlreadyPaid =>
+      'Эта продажа полностью оплачена. Изменения невозможны.';
+
+  @override
+  String get hourlySales => 'Почасовые продажи';
+
+  @override
   String get draftSaveError => 'Ошибка при сохранении черновика';
 
   @override
@@ -1615,4 +1623,31 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get superAdminCredentialsWarning =>
       'Пароль нигде не хранится. После закрытия его уже не увидеть.';
+
+  @override
+  String get productsInCartSuffix => 'тов.';
+
+  @override
+  String get viewEditCart => 'Посмотреть / изменить';
+
+  @override
+  String get cartTitle => 'Корзина';
+
+  @override
+  String get languageNameUzbek => 'O\'zbekcha';
+
+  @override
+  String get languageNameRussian => 'Русский';
+
+  @override
+  String get serverConnectionError =>
+      'Нет связи с сервером. Пожалуйста, попробуйте ещё раз.';
+
+  @override
+  String get sessionExpiredError =>
+      'Сессия истекла. Пожалуйста, войдите снова.';
+
+  @override
+  String get permissionDeniedError =>
+      'Нет доступа. У вас нет прав для выполнения этого действия.';
 }

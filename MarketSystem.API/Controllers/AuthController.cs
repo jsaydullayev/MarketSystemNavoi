@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using MarketSystem.Application.DTOs;
-using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.API.Controllers;

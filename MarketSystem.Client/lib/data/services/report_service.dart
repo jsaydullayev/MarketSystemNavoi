@@ -8,11 +8,11 @@ import '../models/profit_model.dart';
 
 class ReportService {
   final AuthProvider authProvider;
-  late final HttpService _httpService;
+  final HttpService _httpService;
 
-  ReportService({required this.authProvider}) {
-    _httpService = HttpService();
-  }
+  ReportService({required this.authProvider, HttpService? httpService})
+      : _httpService = httpService ?? HttpService();
+
 
   // Get comprehensive report
   Future<Map<String, dynamic>> getComprehensiveReport(DateTime date) async {
@@ -173,6 +173,15 @@ class ReportService {
     if (response.statusCode != 200) {
       throw Exception('Failed to export daily report: ${response.statusCode}');
     }
+  }
+
+  /// Download the daily report as raw Excel bytes so the caller can save/open
+  /// or share the file. Returns null if the response was empty or non-200.
+  Future<List<int>?> downloadDailyExcel(DateTime date) async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    return await _httpService.downloadBytes(
+      '${ApiConstants.reports}/daily/export?date=$formattedDate',
+    );
   }
 
   // Ombor hisobotini Excel ga export qilish

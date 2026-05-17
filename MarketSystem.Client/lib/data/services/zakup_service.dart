@@ -6,11 +6,11 @@ import '../../core/constants/api_constants.dart';
 
 class ZakupService {
   final AuthProvider authProvider;
-  late final HttpService _httpService;
+  final HttpService _httpService;
 
-  ZakupService({required this.authProvider}) {
-    _httpService = HttpService();
-  }
+  ZakupService({required this.authProvider, HttpService? httpService})
+      : _httpService = httpService ?? HttpService();
+
 
   Future<List<dynamic>> getAllZakups() async {
     final response = await _httpService.get('${ApiConstants.zakups}/GetAllZakups');
@@ -18,6 +18,21 @@ class ZakupService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
+    } else {
+      throw Exception('Failed to load zakups: ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> getZakupsPaged({
+    int page = 1,
+    int size = 50,
+  }) async {
+    final response = await _httpService.get(
+      '${ApiConstants.zakups}/GetZakupsPaged?page=$page&size=$size',
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception('Failed to load zakups: ${response.statusCode}');
     }

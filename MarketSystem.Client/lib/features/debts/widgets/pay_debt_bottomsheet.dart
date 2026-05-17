@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
@@ -112,7 +112,7 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.3),
+                color: Colors.grey.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -123,7 +123,7 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.12),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.payment_rounded,
@@ -154,10 +154,10 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFEF4444).withOpacity(0.08),
+              color: const Color(0xFFEF4444).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
               border:
-                  Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
+                  Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.2)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -192,7 +192,7 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
                   OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.withOpacity(0.25)),
+                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.25)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -206,10 +206,10 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF97316).withOpacity(0.08),
+                color: const Color(0xFFF97316).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: const Color(0xFFF97316).withOpacity(0.25)),
+                    color: const Color(0xFFF97316).withValues(alpha: 0.25)),
               ),
               child: Row(
                 children: [
@@ -237,10 +237,10 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withOpacity(0.08),
+                color: const Color(0xFFEF4444).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: const Color(0xFFEF4444).withOpacity(0.25)),
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,

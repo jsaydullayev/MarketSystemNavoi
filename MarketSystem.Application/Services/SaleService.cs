@@ -4,7 +4,6 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
-using MarketSystem.Infrastructure.Data;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
@@ -13,12 +12,12 @@ public partial class SaleService : ISaleService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
     private readonly ILogger<SaleService> _logger;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly ICustomerService _customerService;
 
-    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, AppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService, ICustomerService customerService)
+    public SaleService(IUnitOfWork unitOfWork, IAuditLogService auditLogService, IAppDbContext context, ILogger<SaleService> logger, ICurrentMarketService currentMarketService, ICustomerService customerService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
@@ -349,8 +348,7 @@ public partial class SaleService : ISaleService
             await ApplyCustomerCreditInternalAsync(sale.Id, request.CustomerId.Value, cancellationToken);
         }
 
-        // Audit log (temporarily disabled for testing)
-        // await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
+        await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
 
         return await MapToDtoAsync(sale, cancellationToken);
     }
@@ -436,7 +434,23 @@ public partial class SaleService : ISaleService
                 if (request.ProductId == null)
                     throw new InvalidOperationException("ProductId kerak (oddiy mahsulot uchun)");
 
-                var product = await _unitOfWork.Products.GetByIdAsync(request.ProductId.Value, cancellationToken);
+                var productId = request.ProductId.Value;
+                // FOR UPDATE faqat PostgreSQL da ishlaydi; InMemory test DB da oddiy query
+                Product? product;
+                if (_context.Database.ProviderName?.Contains("InMemory") == false)
+                {
+                    // EF Core wraps this query and references xmin (the concurrency
+                    // token on Product). PostgreSQL doesn't include xmin in `SELECT *`,
+                    // so we must list it explicitly — otherwise we get
+                    // `42703: column m.xmin does not exist`.
+                    product = await _context.Products
+                        .FromSqlInterpolated($"SELECT *, xmin FROM \"Products\" WHERE \"Id\" = {productId} FOR UPDATE")
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
+                else
+                {
+                    product = await _unitOfWork.Products.GetByIdAsync(productId, cancellationToken);
+                }
                 if (product is null)
                     throw new InvalidOperationException("Product not found");
 
@@ -481,15 +495,9 @@ public partial class SaleService : ISaleService
 
                     // Update stock
                     product.Quantity -= request.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
 
-                    // Update sale total
-                    var oldItemTotal = oldQuantity * existingItem.SalePrice;
                     itemTotal = existingItem.Quantity * existingItem.SalePrice;
-                    sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
-                    _unitOfWork.Sales.Update(sale);
-
                     resultSaleItem = existingItem;
                 }
                 else
@@ -515,17 +523,19 @@ public partial class SaleService : ISaleService
 
                     // Update stock
                     product.Quantity -= request.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
 
-                    // Update sale total
                     itemTotal = request.Quantity * request.SalePrice;
-                    sale.TotalAmount += itemTotal;
-                    _unitOfWork.Sales.Update(sale);
-
                     resultSaleItem = saleItem;
                 }
 
+                // Persist the SaleItem change first, then recompute Sale.TotalAmount
+                // from the authoritative SUM over SaleItems. Replacing the old
+                // arithmetic `sale.TotalAmount = old - x + new` with a fresh SUM kills
+                // a race where two concurrent AddSaleItem calls each read a stale
+                // in-memory total and overwrite each other's increment.
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await RecalculateSaleTotalAsync(sale, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // After the item lands and the sale total grows, re-apply any outstanding
@@ -579,12 +589,7 @@ public partial class SaleService : ISaleService
 
                     _unitOfWork.SaleItems.Update(existingItem);
 
-                    // Update sale total
-                    var oldItemTotal = oldQuantity * existingItem.SalePrice;
                     itemTotal = existingItem.Quantity * existingItem.SalePrice;
-                    sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
-                    _unitOfWork.Sales.Update(sale);
-
                     resultSaleItem = existingItem;
                 }
                 else
@@ -611,14 +616,13 @@ public partial class SaleService : ISaleService
 
                     // ✅ NO STOCK UPDATE - Tashqi mahsulotlar ombor qoldig'iga ta'sir qilmaydi
 
-                    // Update sale total
                     itemTotal = request.Quantity * request.SalePrice;
-                    sale.TotalAmount += itemTotal;
-                    _unitOfWork.Sales.Update(sale);
-
                     resultSaleItem = saleItem;
                 }
 
+                // Same SUM-from-items recompute as the ordinary branch.
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await RecalculateSaleTotalAsync(sale, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // External items also count toward the bill, so re-apply credit.
@@ -699,37 +703,29 @@ public partial class SaleService : ISaleService
 
                     // ✅ Restore full stock (faqat oddiy mahsulotlar uchun)
                     product.Quantity += saleItem.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
 
-                    // Update sale total
                     itemTotal = saleItem.Quantity * saleItem.SalePrice;
-                    sale.TotalAmount -= itemTotal;
-                    _unitOfWork.Sales.Update(sale);
-
                     resultSaleItem = saleItem; // Return deleted item info
                 }
                 else
                 {
                     // Partial quantity removal
-                    var oldQuantity = saleItem.Quantity;
                     saleItem.Quantity -= request.Quantity;
                     _unitOfWork.SaleItems.Update(saleItem);
 
                     // ✅ Restore partial stock (faqat oddiy mahsulotlar uchun)
                     product.Quantity += request.Quantity;
-                    _context.Entry(product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(product);
 
-                    // Update sale total
-                    var oldItemTotal = oldQuantity * saleItem.SalePrice;
                     itemTotal = saleItem.Quantity * saleItem.SalePrice;
-                    sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
-                    _unitOfWork.Sales.Update(sale);
-
                     resultSaleItem = saleItem;
                 }
 
+                // SUM-from-items recompute — matches AddSaleItem (kills the
+                // same race condition under concurrent remove + add).
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await RecalculateSaleTotalAsync(sale, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 return MapSaleItemToDto(resultSaleItem, product.Name, product.GetUnitName());
@@ -746,30 +742,21 @@ public partial class SaleService : ISaleService
                 {
                     // Remove entire item from sale
                     _unitOfWork.SaleItems.Delete(saleItem);
-
-                    // Update sale total
                     itemTotal = saleItem.Quantity * saleItem.SalePrice;
-                    sale.TotalAmount -= itemTotal;
-                    _unitOfWork.Sales.Update(sale);
-
                     resultSaleItem = saleItem;
                 }
                 else
                 {
                     // Partial quantity removal
-                    var oldQuantity = saleItem.Quantity;
                     saleItem.Quantity -= request.Quantity;
                     _unitOfWork.SaleItems.Update(saleItem);
-
-                    // Update sale total
-                    var oldItemTotal = oldQuantity * saleItem.SalePrice;
                     itemTotal = saleItem.Quantity * saleItem.SalePrice;
-                    sale.TotalAmount = sale.TotalAmount - oldItemTotal + itemTotal;
-                    _unitOfWork.Sales.Update(sale);
-
                     resultSaleItem = saleItem;
                 }
 
+                // SUM-from-items recompute.
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await RecalculateSaleTotalAsync(sale, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // Mapping: Product name = ExternalProductName, Unit = empty
@@ -892,8 +879,18 @@ public partial class SaleService : ISaleService
             // 1. To'liq to'langan savdo
             if (sale.TotalAmount > 0 && sale.PaidAmount >= sale.TotalAmount)
             {
-                _logger.LogInformation("Sale {SaleId} is fully paid, setting status to Paid", saleId);
-                sale.Status = SaleStatus.Paid;
+                // Semantic distinction (mirrors DebtService.PayAsync):
+                //   Paid   = sale was paid in full at sale time, never had debt.
+                //   Closed = sale was previously on debt (partial payment + carried),
+                //            and the customer has now finished paying it off.
+                // Without this branch, paying the final installment via AddPaymentAsync
+                // would land on Paid while paying it via DebtService.PayAsync would land
+                // on Closed — same business event, two different terminal states.
+                var wasOnDebt = sale.Status == SaleStatus.Debt;
+                sale.Status = wasOnDebt ? SaleStatus.Closed : SaleStatus.Paid;
+                _logger.LogInformation(
+                    "Sale {SaleId} is fully paid, setting status to {Status} (wasOnDebt={WasOnDebt})",
+                    saleId, sale.Status, wasOnDebt);
 
                 // Close any associated debt (filtered by market)
                 var existingDebtToClose = (await _unitOfWork.Debts.FindAsync(
@@ -956,7 +953,6 @@ public partial class SaleService : ISaleService
             }
 
             _unitOfWork.Sales.Update(sale);
-            _context.Entry(sale).State = EntityState.Modified;
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Sale {SaleId} final status: {Status}", sale.Id, sale.Status);
@@ -983,11 +979,6 @@ public partial class SaleService : ISaleService
     /// </summary>
     public async Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("=== CANCEL SALE DEBUG ===");
-        _logger.LogInformation("Sale ID: {SaleId}", saleId);
-        _logger.LogInformation("Admin ID (string): {AdminId}", adminId);
-        _logger.LogInformation("===========================");
-
         // Parse adminId from string to Guid
         if (!Guid.TryParse(adminId, out var adminGuid))
         {
@@ -1035,12 +1026,33 @@ public partial class SaleService : ISaleService
                     if (product != null)
                     {
                         product.Quantity += item.Quantity;
-                        _context.Entry(product).State = EntityState.Modified;
                         _unitOfWork.Products.Update(product);
                     }
                 }
                 // ---- EXTERNAL PRODUCT (Tashqi mahsulot) ----
                 // ✅ Tashqi mahsulotlar - stokni o'zgarmaslik
+            }
+
+            // Refund cash payments back to the till. Card / Click / Terminal payments
+            // flow through external rails (POS / payment processor) so they don't touch
+            // our CashRegister — only Cash payments must be reversed here. The Payment
+            // records themselves stay in place as an audit trail.
+            var cashPayments = await _unitOfWork.Payments.FindAsync(
+                p => p.SaleId == saleId && p.PaymentType == PaymentType.Cash,
+                cancellationToken);
+            var cashRefund = cashPayments.Sum(p => p.Amount);
+            if (cashRefund > 0)
+            {
+                var cashRegister = await _context.CashRegisters
+                    .FirstOrDefaultAsync(cr => cr.MarketId == sale.MarketId, cancellationToken);
+                if (cashRegister != null)
+                {
+                    cashRegister.CurrentBalance -= cashRefund;
+                    cashRegister.LastUpdated = DateTime.UtcNow;
+                    _logger.LogInformation(
+                        "Sale {SaleId} cancelled — refunded {Amount} cash to market {MarketId} till",
+                        saleId, cashRefund, sale.MarketId);
+                }
             }
 
             // Update sale status
@@ -1092,6 +1104,24 @@ public partial class SaleService : ISaleService
 
         // Returns true if price is valid (>= min price) or comment is provided
         return saleItem.SalePrice >= product.MinSalePrice || !string.IsNullOrWhiteSpace(saleItem.Comment);
+    }
+
+    /// <summary>
+    /// Recompute Sale.TotalAmount from the authoritative SUM over its SaleItems.
+    /// Replaces the old `sale.TotalAmount += x` / `-= x` arithmetic that was
+    /// race-prone under concurrent AddSaleItem / RemoveSaleItem calls — two
+    /// callers could each read the same stale in-memory total, each apply
+    /// their own delta, and the last write would clobber the other's
+    /// contribution. SUM-from-DB is deterministic regardless of order.
+    /// Callers should SaveChanges BEFORE invoking this so newly added/removed
+    /// items are visible in the SUM.
+    /// </summary>
+    private async Task RecalculateSaleTotalAsync(Sale sale, CancellationToken cancellationToken = default)
+    {
+        sale.TotalAmount = await _context.SaleItems
+            .Where(si => si.SaleId == sale.Id)
+            .SumAsync(si => si.SalePrice * si.Quantity, cancellationToken);
+        _unitOfWork.Sales.Update(sale);
     }
 
     /// <summary>
@@ -1296,10 +1326,6 @@ public partial class SaleService : ISaleService
     /// </summary>
     public async Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("=== DELETE SALE DEBUG ===");
-        _logger.LogInformation("Sale ID: {SaleId}", saleId);
-        _logger.LogInformation("===========================");
-
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -1343,7 +1369,6 @@ public partial class SaleService : ISaleService
                 {
                     // Faqat oddiy mahsulotlar uchun stokni qaytarish
                     saleItem.Product.Quantity += saleItem.Quantity;
-                    _context.Entry(saleItem.Product).State = EntityState.Modified;
                     _unitOfWork.Products.Update(saleItem.Product);
                     _logger.LogInformation("Product stock restored: {ProductId}, Qty: +{Quantity}",
                         saleItem.ProductId, saleItem.Quantity);
@@ -1404,8 +1429,6 @@ public partial class SaleService : ISaleService
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            _logger.LogInformation("=== DELETE SALE SUCCESS ===");
 
             // DTO ni yaratish
             var itemsDto = new List<SaleItemDto>();
@@ -1658,9 +1681,13 @@ public partial class SaleService : ISaleService
                 _context.Products.Update(saleItem.Product);
             }
 
-            // Update sale total
-            sale.TotalAmount -= refundAmount;
-            _context.Sales.Update(sale);
+            // Save the SaleItem deletion/update so SUM-from-items sees the
+            // post-return state, then recompute Sale.TotalAmount as the
+            // authoritative SUM. Replaces the old `-= refundAmount`
+            // arithmetic with the same drift-resistant pattern used by
+            // Add/Remove SaleItem.
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await RecalculateSaleTotalAsync(sale, cancellationToken);
 
             // Adjust paid amount if overpaid
             if (sale.PaidAmount > sale.TotalAmount)
@@ -1713,6 +1740,32 @@ public partial class SaleService : ISaleService
                             marketId, sale.Id);
                     }
                 }
+            }
+
+            // Sync the Debt record if one exists. Without this, returning items
+            // from a debt-sale left the customer's debt frozen at the original
+            // amount even though they actually owe less now (e.g. 100k debt
+            // with 50k paid; return 20k of items → debt is now 30k, not 50k).
+            var debt = (await _unitOfWork.Debts.FindAsync(
+                d => d.SaleId == saleId && d.MarketId == marketId,
+                cancellationToken)).FirstOrDefault();
+            if (debt != null && debt.Status == DebtStatus.Open)
+            {
+                // Source of truth = sale.TotalAmount and PaidAmount (already
+                // updated above). RemainingDebt = TotalAmount - PaidAmount.
+                var newRemaining = Math.Max(0m, sale.TotalAmount - sale.PaidAmount);
+                debt.RemainingDebt = newRemaining;
+                // Reduce TotalDebt proportionally so reports show the
+                // adjusted debt amount, not the historic original.
+                debt.TotalDebt = Math.Max(0m, debt.TotalDebt - refundAmount);
+                if (newRemaining <= 0)
+                {
+                    debt.Status = DebtStatus.Closed;
+                    _logger.LogInformation(
+                        "Debt auto-closed by return: SaleId={SaleId} (full return covered remaining debt)",
+                        sale.Id);
+                }
+                _unitOfWork.Debts.Update(debt);
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);

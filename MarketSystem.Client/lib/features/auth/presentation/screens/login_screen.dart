@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:market_system_client/core/constants/app_styles.dart';
@@ -6,7 +6,7 @@ import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/providers/locale_provider.dart';
 import 'package:market_system_client/core/routes/app_routes.dart';
 import 'package:market_system_client/core/theme/app_theme.dart';
-import 'package:market_system_client/screens/dashboard_screen.dart';
+import 'package:market_system_client/features/dashboard/dashboard_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -94,8 +94,8 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.white.withOpacity(0.7),
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.white.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: isDark ? Colors.white10 : Colors.white),
           ),
@@ -147,8 +147,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final textColor = isDark ? Colors.white : Colors.black87;
     final hintColor = isDark ? Colors.white54 : Colors.black45;
     final fillColor = isDark
-        ? Colors.white.withOpacity(0.12) // 0.08 → 0.12 (yaxshiroq kontrast)
-        : Colors.black.withOpacity(0.06); // 0.04 → 0.06
+        ? Colors.white.withValues(alpha: 0.12) // 0.08 → 0.12 (yaxshiroq kontrast)
+        : Colors.black.withValues(alpha: 0.06); // 0.04 → 0.06
     final iconColor = isDark ? Colors.white60 : Colors.black54;
     final cursorColor = isDark ? Colors.white : Colors.black87;
 
@@ -204,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Dark mode'da buttonni doimo ko'rinadigan qilamiz
         final buttonColor = isDark
-            ? primaryColor.withOpacity(0.85) // yoki Colors.blue.shade400
+            ? primaryColor.withValues(alpha: 0.85) // yoki Colors.blue.shade400
             : primaryColor;
 
         return SizedBox(

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -42,8 +42,8 @@ class DateRangeRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isDark
-                ? Colors.white.withOpacity(0.07)
-                : Colors.grey.withOpacity(0.15),
+                ? Colors.white.withValues(alpha: 0.07)
+                : Colors.grey.withValues(alpha: 0.15),
           ),
         ),
         child: Row(
@@ -51,7 +51,7 @@ class DateRangeRow extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.1),
+                color: Colors.purple.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(9),
               ),
               child: const Icon(Icons.date_range_rounded,

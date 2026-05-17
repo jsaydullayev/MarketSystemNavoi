@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:market_system_client/core/theme/app_theme.dart';
 import 'package:market_system_client/data/models/cash_register_model.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -20,7 +20,7 @@ class TodaySalesCard extends StatelessWidget {
         color: isDark ? const Color(0xFF1E2A1E) : Colors.green.shade50,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.green.withOpacity(0.25),
+          color: Colors.green.withValues(alpha: 0.25),
           width: 1.5,
         ),
       ),
@@ -32,7 +32,7 @@ class TodaySalesCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.15),
+                  color: Colors.green.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.today_outlined,
