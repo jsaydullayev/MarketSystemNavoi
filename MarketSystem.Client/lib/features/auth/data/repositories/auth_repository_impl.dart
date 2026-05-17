@@ -89,11 +89,11 @@ class AuthRepositoryImpl implements AuthRepositoryInterface {
 
     if (userId != null && userName != null && role != null) {
       return ApiResult.success(UserEntity(
-        id: userId!,
-        userName: userName!,
+        id: userId,
+        userName: userName,
         email: userName,
         profileImage: null,
-        role: role!,
+        role: role,
         token: '',
       ));
     }

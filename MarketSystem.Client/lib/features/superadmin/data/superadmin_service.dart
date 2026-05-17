@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../../../core/config/app_config.dart';
 import '../../../data/services/http_service.dart';
+import '../domain/models/owner_detail.dart';
 import '../domain/models/owner_summary.dart';
 import '../domain/models/registration_request.dart';
 
@@ -127,6 +128,54 @@ class SuperAdminService {
     }
   }
 
+  /// Real-time availability check for username / market name / subdomain.
+  /// Pass `null` (or empty) for fields you don't want to check; the response
+  /// mirrors that — `null` means "not asked", `true` is free, `false` is taken.
+  /// When [username] is supplied and [subdomain] is omitted, the response also
+  /// carries a `suggestedSubdomain` for live preview.
+  Future<SuperAdminOpResult<Map<String, dynamic>>> checkAvailability({
+    String? username,
+    String? marketName,
+    String? subdomain,
+  }) async {
+    if (!AppConfig.hasSuperAdminConsole) {
+      return SuperAdminOpResult(
+        SuperAdminOpStatus.failure,
+        message: 'console_not_configured',
+      );
+    }
+    try {
+      final params = <String, String>{};
+      if (username != null && username.isNotEmpty) params['username'] = username;
+      if (marketName != null && marketName.isNotEmpty) {
+        params['marketName'] = marketName;
+      }
+      if (subdomain != null && subdomain.isNotEmpty) {
+        params['subdomain'] = subdomain;
+      }
+      if (params.isEmpty) {
+        return SuperAdminOpResult(
+          SuperAdminOpStatus.success,
+          data: const <String, dynamic>{},
+        );
+      }
+      final query = params.entries
+          .map((e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+          .join('&');
+      final response = await _http.get('$_basePath/check-availability?$query');
+      if (response.statusCode == 200) {
+        return SuperAdminOpResult(
+          SuperAdminOpStatus.success,
+          data: jsonDecode(response.body) as Map<String, dynamic>,
+        );
+      }
+      return _mapNonSuccess<Map<String, dynamic>>(response.statusCode);
+    } catch (_) {
+      return SuperAdminOpResult(SuperAdminOpStatus.failure);
+    }
+  }
+
   Future<SuperAdminOpResult<void>> reject({
     required String requestId,
     required String reason,
@@ -146,6 +195,216 @@ class SuperAdminService {
         return SuperAdminOpResult(SuperAdminOpStatus.success);
       }
       return _mapNonSuccess<void>(response.statusCode, body: response.body);
+    } catch (_) {
+      return SuperAdminOpResult(SuperAdminOpStatus.failure);
+    }
+  }
+
+  // ─── Owner CRUD ─────────────────────────────────────────────────────────
+
+  /// Fetch full owner detail (Owner + Market + live stats).
+  Future<SuperAdminOpResult<OwnerDetail>> getOwnerDetail(String userId) async {
+    if (!AppConfig.hasSuperAdminConsole) {
+      return SuperAdminOpResult(
+        SuperAdminOpStatus.failure,
+        message: 'console_not_configured',
+      );
+    }
+    try {
+      final response = await _http.get('$_basePath/owners/$userId');
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        return SuperAdminOpResult(
+          SuperAdminOpStatus.success,
+          data: OwnerDetail.fromJson(decoded),
+        );
+      }
+      return _mapNonSuccess<OwnerDetail>(response.statusCode, body: response.body);
+    } catch (_) {
+      return SuperAdminOpResult(SuperAdminOpStatus.failure);
+    }
+  }
+
+  /// Manually create an owner+market (no backing registration request).
+  /// Mirrors [approve]'s success payload (with `Guid.Empty` requestId).
+  Future<SuperAdminOpResult<Map<String, dynamic>>> createOwner({
+    required String fullName,
+    required String phone,
+    required String username,
+    required String password,
+    required String marketName,
+    String? subdomain,
+    String language = 'uz',
+  }) async {
+    if (!AppConfig.hasSuperAdminConsole) {
+      return SuperAdminOpResult(
+        SuperAdminOpStatus.failure,
+        message: 'console_not_configured',
+      );
+    }
+    try {
+      final response = await _http.post(
+        '$_basePath/owners',
+        body: {
+          'fullName': fullName,
+          'phone': phone,
+          'username': username,
+          'password': password,
+          'marketName': marketName,
+          if (subdomain != null && subdomain.isNotEmpty) 'subdomain': subdomain,
+          'language': language,
+        },
+      );
+      if (response.statusCode == 200) {
+        return SuperAdminOpResult(
+          SuperAdminOpStatus.success,
+          data: jsonDecode(response.body) as Map<String, dynamic>,
+        );
+      }
+      return _mapNonSuccess<Map<String, dynamic>>(
+        response.statusCode,
+        body: response.body,
+      );
+    } catch (_) {
+      return SuperAdminOpResult(SuperAdminOpStatus.failure);
+    }
+  }
+
+  /// Update owner+market editable fields. Returns the refreshed [OwnerDetail].
+  Future<SuperAdminOpResult<OwnerDetail>> updateOwner({
+    required String userId,
+    required String fullName,
+    required String marketName,
+    String? phone,
+    String? language,
+    String? subdomain,
+    String? description,
+    bool? ownerActive,
+    bool? marketActive,
+    DateTime? expiresAt,
+  }) async {
+    if (!AppConfig.hasSuperAdminConsole) {
+      return SuperAdminOpResult(
+        SuperAdminOpStatus.failure,
+        message: 'console_not_configured',
+      );
+    }
+    try {
+      final response = await _http.put(
+        '$_basePath/owners/$userId',
+        body: {
+          'fullName': fullName,
+          'marketName': marketName,
+          if (phone != null) 'phone': phone,
+          if (language != null) 'language': language,
+          if (subdomain != null && subdomain.isNotEmpty) 'subdomain': subdomain,
+          if (description != null) 'description': description,
+          if (ownerActive != null) 'ownerActive': ownerActive,
+          if (marketActive != null) 'marketActive': marketActive,
+          if (expiresAt != null) 'expiresAt': expiresAt.toUtc().toIso8601String(),
+        },
+      );
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        return SuperAdminOpResult(
+          SuperAdminOpStatus.success,
+          data: OwnerDetail.fromJson(decoded),
+        );
+      }
+      return _mapNonSuccess<OwnerDetail>(response.statusCode, body: response.body);
+    } catch (_) {
+      return SuperAdminOpResult(SuperAdminOpStatus.failure);
+    }
+  }
+
+  /// Soft-delete owner + deactivate market. Typed confirmation: the caller
+  /// must pass the EXACT current market name in [confirmMarketName] or the
+  /// backend bounces with a 400.
+  Future<SuperAdminOpResult<void>> deleteOwner({
+    required String userId,
+    required String confirmMarketName,
+    required String reason,
+  }) async {
+    if (!AppConfig.hasSuperAdminConsole) {
+      return SuperAdminOpResult(
+        SuperAdminOpStatus.failure,
+        message: 'console_not_configured',
+      );
+    }
+    try {
+      final response = await _http.delete(
+        '$_basePath/owners/$userId',
+        body: {
+          'confirmMarketName': confirmMarketName,
+          'reason': reason,
+        },
+      );
+      if (response.statusCode == 200) {
+        return SuperAdminOpResult(SuperAdminOpStatus.success);
+      }
+      return _mapNonSuccess<void>(response.statusCode, body: response.body);
+    } catch (_) {
+      return SuperAdminOpResult(SuperAdminOpStatus.failure);
+    }
+  }
+
+  // ─── Market block / unblock ─────────────────────────────────────────────
+
+  /// Administratively block a market — every login + tenant resolution
+  /// attempt for it returns 423 until unblocked. Used for non-payment etc.
+  Future<SuperAdminOpResult<Map<String, dynamic>>> blockMarket({
+    required int marketId,
+    required String reason,
+  }) async {
+    if (!AppConfig.hasSuperAdminConsole) {
+      return SuperAdminOpResult(
+        SuperAdminOpStatus.failure,
+        message: 'console_not_configured',
+      );
+    }
+    try {
+      final response = await _http.post(
+        '$_basePath/markets/$marketId/block',
+        body: {'reason': reason},
+      );
+      if (response.statusCode == 200) {
+        return SuperAdminOpResult(
+          SuperAdminOpStatus.success,
+          data: jsonDecode(response.body) as Map<String, dynamic>,
+        );
+      }
+      return _mapNonSuccess<Map<String, dynamic>>(
+        response.statusCode,
+        body: response.body,
+      );
+    } catch (_) {
+      return SuperAdminOpResult(SuperAdminOpStatus.failure);
+    }
+  }
+
+  Future<SuperAdminOpResult<Map<String, dynamic>>> unblockMarket({
+    required int marketId,
+  }) async {
+    if (!AppConfig.hasSuperAdminConsole) {
+      return SuperAdminOpResult(
+        SuperAdminOpStatus.failure,
+        message: 'console_not_configured',
+      );
+    }
+    try {
+      final response = await _http.post(
+        '$_basePath/markets/$marketId/unblock',
+      );
+      if (response.statusCode == 200) {
+        return SuperAdminOpResult(
+          SuperAdminOpStatus.success,
+          data: jsonDecode(response.body) as Map<String, dynamic>,
+        );
+      }
+      return _mapNonSuccess<Map<String, dynamic>>(
+        response.statusCode,
+        body: response.body,
+      );
     } catch (_) {
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }

@@ -1,5 +1,5 @@
-using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Interfaces;
 using MarketSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,6 +40,16 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.Description).HasMaxLength(500);
             b.HasIndex(x => x.Subdomain).IsUnique();
             b.HasIndex(x => x.Name).IsUnique();  // Market nomi unikal bo'lishi kerak
+
+            // Block state — TenantResolutionMiddleware queries (Id, IsBlocked) on
+            // every authenticated request, so cover both columns with a partial
+            // index. The partial index keeps the on-disk size tiny because the
+            // common case is `IsBlocked = false`.
+            b.Property(x => x.IsBlocked).HasDefaultValue(false);
+            b.Property(x => x.BlockedReason).HasMaxLength(500);
+            b.HasIndex(x => new { x.Id, x.IsBlocked })
+                .HasFilter("\"IsBlocked\" = TRUE")
+                .HasDatabaseName("IX_Markets_Blocked");
 
             // Owner relationship
             b.HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerId);

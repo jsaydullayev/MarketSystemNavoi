@@ -13,7 +13,6 @@ import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/products/presentation/screens/products_screen.dart';
 import '../features/categories/screens/category_management_screen.dart';
 import '../features/daily_sales/screens/daily_sales_screen.dart';
-import '../features/sales/presentation/screens/draft_sales_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -297,12 +296,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'onTap': () => Navigator.push(context,
             MaterialPageRoute(builder: (_) => const DailySalesScreen()))
       },
-      {
-        'title': l10n.drafts,
-        'icon': Icons.edit_calendar_rounded,
-        'onTap': () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const DraftSalesScreen()))
-      },
+      // Draft sales tile removed — the Sales screen's status filter chips
+      // ("Davom etayotgan") already cover the in-progress sale flow.
       {
         'title': l10n.customers,
         'icon': Icons.people_alt_rounded,
