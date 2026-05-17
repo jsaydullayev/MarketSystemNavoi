@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
