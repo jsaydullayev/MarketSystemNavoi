@@ -73,12 +73,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
         if (errorMsg.contains('SocketException') ||
             errorMsg.contains('Connection refused') ||
             errorMsg.contains('Failed to fetch')) {
-          _errorMessage = l10n.serverConnectionError;
+          _errorMessage = "Serverga ulanib bo'lmadi";
         } else if (errorMsg.contains('401') ||
             errorMsg.contains('Unauthorized')) {
-          _errorMessage = l10n.sessionExpiredError;
+          _errorMessage = 'Sessiya tugadi, qayta kiring';
         } else if (errorMsg.contains('403') || errorMsg.contains('Forbidden')) {
-          _errorMessage = l10n.permissionDeniedError;
+          _errorMessage = "Sizga ruxsat yo'q";
         } else {
           _errorMessage = l10n.errorOccurred;
         }
