@@ -2,7 +2,6 @@
 /// Sales state management
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/entities/sale_entity.dart';
 import '../../domain/usecases/add_payment_usecase.dart';
 import '../../domain/usecases/add_sale_item_usecase.dart';
 import '../../domain/usecases/cancel_sale_usecase.dart';

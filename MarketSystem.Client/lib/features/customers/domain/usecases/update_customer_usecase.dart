@@ -27,7 +27,7 @@ class UpdateCustomerUseCase {
     }
 
     // Agar ism berilgan bo'lsa, u bo'sh bo'lmasligi kerak
-    if (fullName != null && fullName!.trim().isEmpty) {
+    if (fullName != null && fullName.trim().isEmpty) {
       return ApiResult.failure('Mijoz ismi bo\'sh bo\'lishi mumkin emas');
     }
 
