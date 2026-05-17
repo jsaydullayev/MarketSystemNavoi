@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using OfficeOpenXml;
 
@@ -979,23 +980,56 @@ public class ReportsController : ControllerBase
 
     [HttpGet("daily/export-pdf")]
     [Authorize(Policy = "AllRoles")]
-    public IActionResult ExportDailyReportToPdf([FromQuery] DateTime date)
+    public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date)
     {
-        return StatusCode(501, new { message = "PDF export vaqtincha o'chirilgan. Iltimos, Excel export'dan foydalaning." });
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var pdfBytes = await _reportService.ExportDailyReportToPdfAsync(utcDate, userRole);
+
+        return File(
+            pdfBytes,
+            "application/pdf",
+            $"daily_report_{date:yyyyMMdd}.pdf"
+        );
     }
 
     [HttpGet("period/export-pdf")]
     [Authorize(Policy = "AllRoles")]
-    public IActionResult ExportPeriodReportToPdf([FromQuery] DateTime start, [FromQuery] DateTime end)
+    public async Task<IActionResult> ExportPeriodReportToPdf(
+        [FromQuery] DateTime start,
+        [FromQuery] DateTime end)
     {
-        return StatusCode(501, new { message = "PDF export vaqtincha o'chirilgan. Iltimos, Excel export'dan foydalaning." });
+        if (start > end)
+            return BadRequest("Start date cannot be after end date");
+
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        var utcStart = DateTime.SpecifyKind(start.Date, DateTimeKind.Utc);
+        var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
+
+        var request = new PeriodReportRequest(utcStart, utcEnd);
+        var pdfBytes = await _reportService.ExportPeriodReportToPdfAsync(request, userRole);
+
+        return File(
+            pdfBytes,
+            "application/pdf",
+            $"period_report_{start:yyyyMMdd}_{end:yyyyMMdd}.pdf"
+        );
     }
 
     [HttpGet("comprehensive/export-pdf")]
     [Authorize(Policy = "AllRoles")]
-    public IActionResult ExportComprehensiveReportToPdf([FromQuery] DateTime date)
+    public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date)
     {
-        return StatusCode(501, new { message = "PDF export vaqtincha o'chirilgan. Iltimos, Excel export'dan foydalaning." });
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+        var pdfBytes = await _reportService.ExportComprehensiveReportToPdfAsync(utcDate, userRole);
+
+        return File(
+            pdfBytes,
+            "application/pdf",
+            $"comprehensive_report_{date:yyyyMMdd}.pdf"
+        );
     }
 
     /// <summary>

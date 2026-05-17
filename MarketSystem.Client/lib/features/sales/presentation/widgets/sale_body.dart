@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -121,9 +121,9 @@ class SaleBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF10B981).withValues(alpha: 0.12),
+        color: const Color(0xFF10B981).withOpacity(0.12),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
+        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.25)),
       ),
       child: Text(
         NumberFormatter.format(totalAmount),
@@ -181,7 +181,7 @@ class SaleBody extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: AppColors.orangePrimary.withValues(alpha: 0.35),
+                color: AppColors.orangePrimary.withOpacity(0.35),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -244,8 +244,8 @@ class SaleBody extends StatelessWidget {
                   color: isSelected
                       ? theme.primaryColor
                       : (isDark
-                          ? Colors.white.withValues(alpha: 0.06)
-                          : Colors.black.withValues(alpha: 0.05)),
+                          ? Colors.white.withOpacity(0.06)
+                          : Colors.black.withOpacity(0.05)),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Center(
@@ -372,7 +372,7 @@ class _ProductCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color:
-                    isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                    isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
               ),
             ),
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
@@ -383,7 +383,7 @@ class _ProductCard extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: theme.primaryColor.withValues(alpha: 0.14),
+                    color: theme.primaryColor.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -446,7 +446,7 @@ class _ProductCard extends StatelessWidget {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
+                        color: const Color(0xFF3B82F6).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(7),
                       ),
                       child: const Icon(
@@ -484,7 +484,7 @@ class _PlusBadge extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),

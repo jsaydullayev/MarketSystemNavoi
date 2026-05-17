@@ -11,22 +11,6 @@ class PrivacyScreen extends StatefulWidget {
 }
 
 class _PrivacyScreenState extends State<PrivacyScreen> {
-  // Prevent any auto-navigation by tracking mount state
-  bool _isScreenMounted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _isScreenMounted = true;
-    // No auto-navigation logic here
-  }
-
-  @override
-  void dispose() {
-    _isScreenMounted = false;
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);

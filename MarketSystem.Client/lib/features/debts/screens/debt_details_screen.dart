@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -344,11 +344,11 @@ class _SaleItemCard extends StatelessWidget {
         color: AppColors.getCard(isDark),
         borderRadius: BorderRadius.circular(16),
         border: isExternal
-            ? Border.all(color: iconColor.withValues(alpha: 0.35), width: 1)
+            ? Border.all(color: iconColor.withOpacity(0.35), width: 1)
             : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -362,7 +362,7 @@ class _SaleItemCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.08),
+                  color: iconColor.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -397,7 +397,7 @@ class _SaleItemCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: iconColor.withValues(alpha: 0.15),
+                              color: iconColor.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
@@ -415,7 +415,7 @@ class _SaleItemCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '${NumberFormatter.formatQuantity(quantity)} ${l10n.piece} × ${NumberFormatter.format(salePrice)} ${l10n.currencySom}',
+                      '${quantity.toStringAsFixed(0)} ${l10n.piece} × ${NumberFormatter.format(salePrice)} ${l10n.currencySom}',
                       style: const TextStyle(
                           fontSize: 12, color: Color(0xFF9CA3AF)),
                     ),
@@ -443,7 +443,7 @@ class _SaleItemCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                          color: const Color(0xFF3B82F6).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -474,7 +474,7 @@ class _SaleItemCard extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withValues(alpha: 0.06),
+                color: const Color(0xFF3B82F6).withOpacity(0.06),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(

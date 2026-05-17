@@ -197,6 +197,7 @@
   "understand": "Понятно",
   "categories": "Категории",
   "dailySales": "Ежедневные продажи",
+  "drafts": "Драфты",
   "darkMode": "Темный режим",
   "user": "Пользователь",
   "security": "Безопасность",
@@ -502,7 +503,6 @@
   "superAdminRejectReasonRequired": "Укажите причину",
   "superAdminSubdomainOptional": "Поддомен (необязательно)",
   "superAdminSubdomainHint": "Оставьте пустым — будет сгенерирован автоматически",
-  "superAdminSubdomainInvalid": "Только строчные буквы, цифры и «-», 3–50 символов",
   "superAdminPasswordMinLength": "Пароль минимум 8 символов",
   "superAdminApproveSuccess": "Владелец {username} создан. Передайте логин и пароль владельцу безопасным каналом.",
   "@superAdminApproveSuccess": {
@@ -523,12 +523,7 @@
   "superAdminCredentialsCopied": "Скопировано",
   "superAdminCredentialsDone": "Готово",
   "superAdminCredentialsWarning": "Пароль нигде не хранится. После закрытия его уже не увидеть.",
-  "productsInCartSuffix": "тов.",
-  "viewEditCart": "Посмотреть / изменить",
   "cartTitle": "Корзина",
-  "languageNameUzbek": "O'zbekcha",
-  "languageNameRussian": "Русский",
-  "serverConnectionError": "Нет связи с сервером. Пожалуйста, попробуйте ещё раз.",
-  "sessionExpiredError": "Сессия истекла. Пожалуйста, войдите снова.",
-  "permissionDeniedError": "Нет доступа. У вас нет прав для выполнения этого действия."
+  "viewEditCart": "Просмотр / редактирование",
+  "productsInCartSuffix": "товаров в корзине"
 }

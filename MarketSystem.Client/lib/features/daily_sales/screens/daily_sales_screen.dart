@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/file_helper.dart';
@@ -71,13 +71,11 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       final reportService = ReportService(authProvider: authProvider);
       final sales = await reportService.getDailySalesList(_selectedDate);
 
-      if (!mounted) return;
       setState(() {
         _dailySales = sales;
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -345,9 +343,9 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
         border: Border(
-            bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+            bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -388,7 +386,7 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.receipt_long_outlined,
-                size: 80, color: theme.disabledColor.withValues(alpha: 0.2)),
+                size: 80, color: theme.disabledColor.withOpacity(0.2)),
             const SizedBox(height: 16),
             Text(l10n.noData, style: TextStyle(color: theme.disabledColor)),
           ],
@@ -431,7 +429,7 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _filterColor(_filter).withValues(alpha: 0.14),
+                          color: _filterColor(_filter).withOpacity(0.14),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Row(
@@ -459,7 +457,7 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: theme.primaryColor.withValues(alpha: 0.12),
+                  color: theme.primaryColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -549,9 +547,9 @@ class _ExportOption extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.04) : color.withValues(alpha: 0.06),
+            color: isDark ? Colors.white.withOpacity(0.04) : color.withOpacity(0.06),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
           child: Row(
             children: [
@@ -559,7 +557,7 @@ class _ExportOption extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.18),
+                  color: color.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 20),

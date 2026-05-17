@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -348,7 +348,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
   Future<void> _returnItem(int index) async {
     final l10n = AppLocalizations.of(context)!;
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final item = _cartItems[index];
     final currentQty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     if (currentQty <= 0) return;
@@ -364,6 +363,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     if (returnQty == null || returnQty <= 0) return;
 
     try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
       await salesService.returnSaleItem(
         saleId: widget.saleId,
@@ -485,14 +485,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
     final customerName = _sale!['customerName'] as String?;
     final isClosed = _sale?['status'] == 'Closed';
-    // Sellers can edit prices/qty but can't reverse a closed sale — that's
-    // an Admin/Owner action. The backend also enforces this (AdminOrOwner
-    // policy on /Sales/{id}/return-item); hiding the button stops sellers
-    // from tapping it and hitting a 403 they can't act on.
-    final userRole = Provider.of<AuthProvider>(context, listen: false)
-        .user?['role']
-        ?.toString();
-    final canReturn = userRole == 'Owner' || userRole == 'Admin';
 
     return NetworkWrapper(
       onRetry: _loadData,
@@ -521,7 +513,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                       border: Border.all(
                         color: isDark
                             ? Colors.white12
-                            : Colors.black.withValues(alpha: 0.06),
+                            : Colors.black.withOpacity(0.06),
                       ),
                     ),
                     child: Row(
@@ -531,7 +523,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                           height: 30,
                           decoration: BoxDecoration(
                             color:
-                                const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                                const Color(0xFF3B82F6).withOpacity(0.15),
                             borderRadius: BorderRadius.circular(9),
                           ),
                           child: Icon(
@@ -583,7 +575,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                   itemBuilder: (context, index) => ContinueSaleCartItem(
                     item: _cartItems[index],
                     isClosed: isClosed,
-                    canReturn: canReturn,
                     onEditPrice: () => _updateItemPrice(index),
                     onReturn: () => _returnItem(index),
                     onDecrement: () async {
@@ -637,14 +628,14 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
                                     color: isDark
-                                        ? Colors.white.withValues(alpha: 0.08)
+                                        ? Colors.white.withOpacity(0.08)
                                         : const Color(0xFFE5E7EB)),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
                                     color: isDark
-                                        ? Colors.white.withValues(alpha: 0.08)
+                                        ? Colors.white.withOpacity(0.08)
                                         : const Color(0xFFE5E7EB)),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -677,7 +668,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                                   boxShadow: [
                                     BoxShadow(
                                       color: const Color(0xFFF28C33)
-                                          .withValues(alpha: 0.35),
+                                          .withOpacity(0.35),
                                       blurRadius: 8,
                                       offset: const Offset(0, 3),
                                     ),

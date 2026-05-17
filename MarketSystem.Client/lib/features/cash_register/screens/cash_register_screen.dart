@@ -35,7 +35,6 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
 
   final _amountController = TextEditingController();
   final _commentController = TextEditingController();
-  String? _selectedWithdrawType;
 
   @override
   void initState() {
@@ -68,7 +67,6 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
   Future<void> _showWithdrawDialog() async {
     _amountController.clear();
     _commentController.clear();
-    _selectedWithdrawType = null;
 
     await showModalBottomSheet(
       context: context,

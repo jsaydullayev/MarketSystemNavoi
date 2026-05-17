@@ -79,6 +79,29 @@ public class AuthService : IAuthService
             return null;
         }
 
+        // Market block check — reject login before issuing a token when the
+        // tenant has been administratively blocked. SuperAdmin (MarketId=null)
+        // bypasses this so the SuperAdmin can always reach the console even if
+        // every tenant is blocked. The body of the 423 (built by the global
+        // exception handler) carries the reason so the client can render
+        // "Market blocked — contact admin" with context.
+        if (matched.MarketId.HasValue)
+        {
+            var block = await _context.Markets
+                .AsNoTracking()
+                .Where(m => m.Id == matched.MarketId.Value)
+                .Select(m => new { m.IsBlocked, m.BlockedAt, m.BlockedReason })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (block is { IsBlocked: true })
+            {
+                _logger.LogWarning(
+                    "Login blocked — market {MarketId} is blocked. User={Username} Reason={Reason}",
+                    matched.MarketId, matched.Username, block.BlockedReason);
+                throw new MarketSystem.Domain.Exceptions.MarketBlockedException(
+                    matched.MarketId.Value, block.BlockedReason, block.BlockedAt);
+            }
+        }
+
         _logger.LogInformation("Login successful for user: {Username}, ID: {UserId}", matched.Username, matched.Id);
         return await GenerateAuthResponseAsync(matched, cancellationToken);
     }
@@ -200,6 +223,28 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null || !user.IsActive)
             return null;
+
+        // Block-state check on refresh — without this, an owner whose market
+        // gets blocked could keep issuing fresh access tokens (and bombarding
+        // the TenantResolutionMiddleware with 423s) until the refresh token
+        // itself expires. Surface the same MarketBlockedException as Login
+        // so the client sees one consistent failure shape.
+        if (user.MarketId.HasValue)
+        {
+            var block = await _context.Markets
+                .AsNoTracking()
+                .Where(m => m.Id == user.MarketId.Value && m.IsBlocked)
+                .Select(m => new { m.BlockedAt, m.BlockedReason })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (block != null)
+            {
+                _logger.LogWarning(
+                    "Refresh denied — market {MarketId} is blocked. User={Username}",
+                    user.MarketId, user.Username);
+                throw new MarketSystem.Domain.Exceptions.MarketBlockedException(
+                    user.MarketId.Value, block.BlockedReason, block.BlockedAt);
+            }
+        }
 
         // Mark current refresh token as used (one-time use)
         refreshToken.IsUsed = true;

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -58,7 +58,7 @@ class DailySummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1843B8).withValues(alpha: 0.25),
+            color: const Color(0xFF1843B8).withOpacity(0.25),
             blurRadius: 18,
             offset: const Offset(0, 8),
           )
@@ -175,15 +175,15 @@ class _MiniStat extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
           decoration: BoxDecoration(
             color: isSelected
-                ? color.withValues(alpha: 0.10)
+                ? color.withOpacity(0.10)
                 : (isDark ? const Color(0xFF1E293B) : Colors.white),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected
-                  ? color.withValues(alpha: 0.55)
+                  ? color.withOpacity(0.55)
                   : (isDark
                       ? Colors.white12
-                      : Colors.black.withValues(alpha: 0.06)),
+                      : Colors.black.withOpacity(0.06)),
               width: isSelected ? 1.5 : 1,
             ),
           ),

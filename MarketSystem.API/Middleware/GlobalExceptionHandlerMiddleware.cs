@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using MarketSystem.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -49,6 +50,18 @@ public class GlobalExceptionHandlerMiddleware
             case UnauthorizedAccessException:
                 context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 response.Message = "Sizga bu amalni bajarishga ruxsat yo'q.";
+                break;
+
+            case MarketBlockedException blockedEx:
+                // 423 Locked — the resource exists but the SuperAdmin has
+                // administratively blocked it. The Flutter client looks at
+                // `code` to know whether to surface the "contact admin" UI
+                // versus a generic error.
+                context.Response.StatusCode = 423;
+                response.Message = "Do'kon administrator tomonidan bloklangan. Iltimos, administrator bilan bog'laning.";
+                response.Code = "MARKET_BLOCKED";
+                response.Reason = blockedEx.Reason;
+                response.BlockedAt = blockedEx.BlockedAt;
                 break;
 
             case InvalidOperationException:
@@ -141,5 +154,11 @@ public class GlobalExceptionHandlerMiddleware
         public string? DevDetails { get; set; }
         public string? StackTrace { get; set; }
         public string? InnerExceptionMessage { get; set; }
+
+        // Filled by domain-specific exceptions (e.g. MARKET_BLOCKED) so the
+        // client can branch on error type without parsing the message string.
+        public string? Code { get; set; }
+        public string? Reason { get; set; }
+        public DateTime? BlockedAt { get; set; }
     }
 }

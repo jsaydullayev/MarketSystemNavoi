@@ -1324,20 +1324,19 @@ public class ReportService : IReportService
 
         var customer = sale.Customer;
 
+        // If customer was soft-deleted, fetch their name from database (ignoring soft-delete filter)
         string customerName = "Mijoz ko'rsatilmagan";
-        string customerPhone = "";
         if (customer != null)
         {
             customerName = customer.FullName ?? "Mijoz ko'rsatilmagan";
-            customerPhone = customer.Phone ?? "";
         }
         else if (sale.CustomerId.HasValue)
         {
+            // Try to get customer name from database even if deleted
             var deletedCustomer = await _unitOfWork.Customers.GetByIdIncludingDeletedAsync(sale.CustomerId.Value, cancellationToken);
             if (deletedCustomer != null)
             {
                 customerName = deletedCustomer.FullName ?? "Mijoz ko'rsatilmagan";
-                customerPhone = deletedCustomer.Phone ?? "";
             }
         }
 
@@ -1415,7 +1414,6 @@ public class ReportService : IReportService
             market.Description ?? "",
             sellerName,
             customerName,
-            customerPhone,
             sale.Id,
             sale.CreatedAt,
             paymentTypeUz,
@@ -1446,18 +1444,12 @@ public class ReportService : IReportService
                         {
                             row.RelativeItem().Column(col =>
                             {
-                                col.Item().Text("STROTECH").FontSize(22).Bold().FontColor(Colors.Blue.Darken2);
-                                col.Item().Text(invoiceData.MarketName).FontSize(11).SemiBold();
-                                if (!string.IsNullOrEmpty(invoiceData.MarketDescription))
-                                    col.Item().Text(invoiceData.MarketDescription).FontSize(9).Light();
+                                col.Item().Text(invoiceData.MarketName).FontSize(18).Bold();
+                                col.Item().Text(invoiceData.MarketDescription).FontSize(10).Light();
                             });
-                            row.ConstantItem(120).AlignRight().Column(col =>
-                            {
-                                col.Item().AlignRight().Text("FAKTURA").FontSize(14).Bold().FontColor(Colors.Blue.Darken2);
-                                col.Item().AlignRight().Text($"№ {invoiceData.InvoiceNumber.ToString()[..8]}").FontSize(9).Light();
-                            });
+                            row.ConstantItem(100).AlignRight().Text("FAKTURA").FontSize(12).Bold();
                         });
-                        column.Item().PaddingVertical(5).LineHorizontal(2).LineColor(Colors.Blue.Darken2);
+                        column.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                     });
                 });
 
@@ -1474,24 +1466,17 @@ public class ReportService : IReportService
                             row.RelativeItem().Column(col =>
                             {
                                 col.Item().Text("Faktura №:").SemiBold();
-                                col.Item().Text(invoiceData.InvoiceNumber.ToString()).FontSize(9);
-                                col.Item().PaddingTop(4).Text("Sana:").SemiBold();
+                                col.Item().Text(invoiceData.InvoiceNumber.ToString());
+                                col.Item().Text("Sana:").SemiBold();
                                 col.Item().Text(invoiceData.Date.ToString("dd.MM.yyyy HH:mm"));
-                                col.Item().PaddingTop(4).Text("To'lov turi:").SemiBold();
-                                col.Item().Text(invoiceData.PaymentType);
                             });
 
                             row.RelativeItem().Column(col =>
                             {
                                 col.Item().Text("Sotuvchi:").SemiBold();
                                 col.Item().Text(invoiceData.SellerName);
-                                col.Item().PaddingTop(4).Text("Mijoz:").SemiBold();
+                                col.Item().Text("Mijoz:").SemiBold();
                                 col.Item().Text(invoiceData.CustomerName);
-                                if (!string.IsNullOrEmpty(invoiceData.CustomerPhone))
-                                {
-                                    col.Item().PaddingTop(4).Text("Telefon:").SemiBold();
-                                    col.Item().Text(invoiceData.CustomerPhone);
-                                }
                             });
                         });
 
@@ -1562,21 +1547,30 @@ public class ReportService : IReportService
                                 table.ColumnsDefinition(columns =>
                                 {
                                     columns.RelativeColumn(2);
-                                    columns.ConstantColumn(130);
+                                    columns.ConstantColumn(100);
                                 });
 
+                                // Status — colored to match its meaning (green=Paid,
+                                // amber=Debt, blue=Closed, red=Cancelled, grey=Draft).
                                 var statusColor = invoiceData.Status switch
                                 {
                                     "To'langan"      => Colors.Green.Darken2,
                                     "Qarz"           => Colors.Orange.Darken2,
-                                    "Qarz yopilgan"  => Colors.Blue.Darken2,
+                                    "Qarz yopilgan" => Colors.Blue.Darken2,
                                     "Bekor qilingan" => Colors.Red.Medium,
                                     _                => Colors.Grey.Darken2
                                 };
-
                                 table.Cell().Element(TotalCellStyle).Text("Holat:");
                                 table.Cell().Element(TotalCellStyle).AlignRight()
-                                    .Text(invoiceData.Status).SemiBold().FontColor(statusColor);
+                                    .Text(invoiceData.Status)
+                                    .SemiBold()
+                                    .FontColor(statusColor);
+
+                                table.Cell().Element(TotalCellStyle).Text("To'lov turi:");
+                                table.Cell().Element(TotalCellStyle).AlignRight().Text(invoiceData.PaymentType).SemiBold();
+
+                                table.Cell().Element(TotalCellStyle).Text("Jami summa:").Bold();
+                                table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.TotalAmount:N2} so'm").Bold();
 
                                 table.Cell().Element(TotalCellStyle).Text("To'langan:");
                                 table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.PaidAmount:N2} so'm");
@@ -1584,42 +1578,18 @@ public class ReportService : IReportService
                                 if (invoiceData.RemainingAmount > 0)
                                 {
                                     table.Cell().Element(TotalCellStyle).Text("Qarzdorlik:").Bold().FontColor(Colors.Red.Medium);
-                                    table.Cell().Element(TotalCellStyle).AlignRight()
-                                        .Text($"{invoiceData.RemainingAmount:N2} so'm").Bold().FontColor(Colors.Red.Medium);
+                                    table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.RemainingAmount:N2} so'm").Bold().FontColor(Colors.Red.Medium);
                                 }
-                            });
-                        });
-
-                        // Prominent total box at bottom
-                        column.Item().PaddingTop(8).Element(e =>
-                        {
-                            e.Background(Colors.Blue.Lighten4).Padding(12).Row(row =>
-                            {
-                                row.RelativeItem().Text("UMUMIY SUMMA:").FontSize(13).Bold().FontColor(Colors.Blue.Darken3);
-                                row.ConstantItem(160).AlignRight()
-                                    .Text($"{invoiceData.TotalAmount:N2} so'm")
-                                    .FontSize(14).Bold().FontColor(Colors.Blue.Darken3);
                             });
                         });
                     });
                 });
 
                 // Footer
-                page.Footer().Column(col =>
+                page.Footer().AlignCenter().Text(x =>
                 {
-                    col.Item().PaddingVertical(4).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                    col.Item().Row(row =>
-                    {
-                        row.RelativeItem().AlignLeft()
-                            .Text("STROTECH — Savdo Tizimi").FontSize(8).Light().FontColor(Colors.Grey.Medium);
-                        row.RelativeItem().AlignRight().Text(x =>
-                        {
-                            x.Span("Sahifa ").FontSize(8).Light();
-                            x.CurrentPageNumber().FontSize(8).Light();
-                            x.Span(" / ").FontSize(8).Light();
-                            x.TotalPages().FontSize(8).Light();
-                        });
-                    });
+                    x.Span("Sahifa ");
+                    x.CurrentPageNumber();
                 });
             });
         }).GeneratePdf();
@@ -1663,7 +1633,6 @@ public class ReportService : IReportService
         string MarketDescription,
         string SellerName,
         string CustomerName,
-        string CustomerPhone,
         Guid InvoiceNumber,
         DateTime Date,
         string PaymentType,
