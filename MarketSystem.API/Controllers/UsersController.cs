@@ -179,7 +179,7 @@ public class UsersController : ControllerBase
                 // Magic-byte sniff — a renamed `payload.exe.png` would pass the extension
                 // check but fail here. We trust the file's actual bytes, not its name.
                 var kind = MarketSystem.API.Validation.ImageContentValidator.Detect(imageBytes);
-                if (kind == MarketSystem.API.Validation.ImageContentValidator.ImageKind.Unknown)
+                if (kind == MarketSystem.API.Validation.ImageKind.Unknown)
                 {
                     return BadRequest("Fayl tasvir emas yoki qo'llab-quvvatlanmaydigan formatda (JPEG/PNG/GIF/WebP qabul qilinadi).");
                 }

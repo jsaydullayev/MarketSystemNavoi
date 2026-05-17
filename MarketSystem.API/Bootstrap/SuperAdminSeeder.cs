@@ -1,6 +1,6 @@
-using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
+using MarketSystem.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace MarketSystem.API.Bootstrap;
