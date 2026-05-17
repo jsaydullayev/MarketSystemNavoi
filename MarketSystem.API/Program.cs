@@ -2,6 +2,7 @@ using MarketSystem.API;
 using MarketSystem.API.Middleware;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Application.Services;
+using MarketSystem.Application.Settings;
 using MarketSystem.Domain.Common;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;

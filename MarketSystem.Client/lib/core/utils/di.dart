@@ -113,9 +113,9 @@ void _initServices() {
   sl.registerFactory<CustomerService>(
       () => CustomerService(authProvider: sl(), httpService: sl()));
 
-  // Sales Service - needs AuthProvider + shared HttpService
+  // Sales Service - needs AuthProvider (HttpService is wired from AuthProvider)
   sl.registerFactory<SalesService>(
-      () => SalesService(authProvider: sl(), httpService: sl()));
+      () => SalesService(authProvider: sl()));
 
   // Zakup Service - needs AuthProvider + shared HttpService
   sl.registerFactory<ZakupService>(
