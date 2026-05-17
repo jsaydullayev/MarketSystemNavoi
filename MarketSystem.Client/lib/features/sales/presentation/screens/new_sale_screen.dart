@@ -28,7 +28,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   Map<String, dynamic>? _selectedCustomer;
 
   bool _isLoading = false;
-  bool _isCreating = false;
 
   final _searchController = TextEditingController();
   List<dynamic> _filteredProducts = [];
@@ -187,15 +186,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _editItemPrice(int index, Map<String, dynamic> item) {
     final l10n = AppLocalizations.of(context)!;
-    final currentPrice = item['salePrice'] ?? 0.0;
     final currentQuantity = item['quantity'] is num
         ? (item['quantity'] as num).toDouble()
         : 1.0;
-    final minPrice = item['minSalePrice'] ?? 0.0;
-    final product = _products.firstWhere(
-      (p) => p['id'] == item['productId'],
-      orElse: () => {},
-    );
 
     PriceInputSheet.show(context, product: {
       'name': item['productName'] ?? l10n.unknownProduct,
@@ -204,7 +197,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
       'id': item['productId'] ?? '',
       'unitName': (item['unitName'] ?? 'dona'),
-      'initialQuantity': (currentQuantity ?? 1.0).toDouble(),
+      'initialQuantity': currentQuantity,
     }, onConfirm: (newPrice, newQuantity, comment) {
       setState(() {
         _cartItems[index]['salePrice'] = newPrice;
@@ -486,10 +479,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }
 
     try {
-      setState(() {
-        _isCreating = true;
-      });
-
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
 
@@ -523,10 +512,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         }
       }
 
-      setState(() {
-        _isCreating = false;
-      });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -537,10 +522,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         );
       }
     } catch (e) {
-      setState(() {
-        _isCreating = false;
-      });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

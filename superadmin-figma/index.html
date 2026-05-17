@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SuperAdmin Console — MarketSystem</title>
+<style>
+  /* ─── Design Tokens ─── */
+  :root {
+    --primary: #1A73E8;
+    --primary-dark: #1557B0;
+    --primary-container: #E8F0FE;
+    --error: #D93025;
+    --error-container: #FCE8E6;
+    --success: #137333;
+    --success-container: #E6F4EA;
+    --warning: #F9AB00;
+    --warning-container: #FEF7E0;
+    --surface: #FFFFFF;
+    --surface-variant: #F8F9FA;
+    --outline: #DADCE0;
+    --on-surface: #202124;
+    --on-surface-variant: #5F6368;
+    --shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
+    --shadow-md: 0 3px 6px rgba(0,0,0,.16), 0 3px 6px rgba(0,0,0,.23);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font: 'Google Sans', 'Segoe UI', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: #F0F4F9;
+    color: var(--on-surface);
+    min-height: 100vh;
+  }
+
+  /* ─── Prototype nav ─── */
+  .page-nav {
+    display: flex;
+    gap: 6px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--outline);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .page-nav h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-right: 12px;
+    letter-spacing: -.3px;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .nav-group {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  }
+  .nav-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-right: 6px;
+  }
+  .page-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--outline);
+    border-radius: 16px;
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--on-surface-variant);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .page-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    font-weight: 500;
+  }
+  .page-btn:hover:not(.active) { background: var(--surface-variant); }
+  .page-btn.crud-create { border-left: 3px solid var(--success); }
+  .page-btn.crud-read { border-left: 3px solid var(--primary); }
+  .page-btn.crud-update { border-left: 3px solid var(--warning); }
+  .page-btn.crud-delete { border-left: 3px solid var(--error); }
+
+  /* ─── Pages ─── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── AppBar ─── */
+  .appbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--outline);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow);
+  }
+  .appbar-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--on-surface);
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .appbar-title .badge {
+    background: var(--primary-container);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px;
+    color: var(--on-surface-variant);
+  }
+  .breadcrumb a {
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: var(--outline); }
+
+  /* ─── Tab bar ─── */
+  .tabbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--outline);
+    display: flex;
+    padding: 0 24px;
+  }
+  .tab {
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+    display: flex; align-items: center; gap: 8px;
+    user-select: none;
+  }
+  .tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+  .tab .count {
+    background: var(--primary-container);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    min-width: 22px;
+    text-align: center;
+  }
+  .tab.active .count { background: var(--primary); color: #fff; }
+
+  /* ─── Content ─── */
+  .content {
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  .section-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    letter-spacing: .3px;
+    text-transform: uppercase;
+  }
+  .section-actions { display: flex; gap: 8px; }
+
+  /* ─── Buttons ─── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: var(--font);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #0d5c29; }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-warning:hover { background: #d99100; }
+  .btn-danger { background: var(--error); color: #fff; }
+  .btn-danger:hover { background: #b0241c; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--on-surface-variant);
+    border: 1px solid var(--outline);
+  }
+  .btn-ghost:hover { background: var(--surface-variant); }
+  .btn-outline-danger {
+    background: transparent;
+    border: 1px solid var(--error);
+    color: var(--error);
+  }
+  .btn-outline-danger:hover { background: var(--error-container); }
+
+  .btn-refresh {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid var(--outline);
+    border-radius: 20px;
+    background: var(--surface);
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--on-surface-variant);
+    transition: background .15s;
+  }
+  .btn-refresh:hover { background: var(--surface-variant); }
+
+  .btn-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+    color: var(--on-surface-variant);
+    font-size: 16px;
+    transition: background .15s;
+  }
+  .btn-icon:hover { background: var(--surface-variant); }
+
+  .btn-logout {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid var(--outline);
+    border-radius: 20px;
+    background: transparent;
+    font-size: 13px; font-family: var(--font);
+    color: var(--error);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-logout:hover { background: var(--error-container); border-color: var(--error); }
+
+  /* ─── Cards ─── */
+  .request-card, .owner-card-wrap {
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    transition: box-shadow .2s;
+  }
+  .request-card:hover, .owner-card-wrap:hover { box-shadow: var(--shadow-md); }
+
+  .card-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .card-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-right: 14px;
+  }
+  .card-info { flex: 1; }
+  .card-name {
+    font-size: 16px; font-weight: 600;
+    color: var(--on-surface);
+    margin-bottom: 3px;
+  }
+  .card-phone, .card-sub {
+    font-size: 13px; color: var(--on-surface-variant);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .card-date {
+    font-size: 12px;
+    color: var(--on-surface-variant);
+    white-space: nowrap;
+  }
+  .status-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .status-pending { background: var(--warning-container); color: #856404; }
+  .status-active { background: var(--success-container); color: var(--success); }
+  .status-inactive { background: #F3F4F6; color: var(--on-surface-variant); }
+
+  .card-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--outline);
+  }
+
+  /* ─── Owner card (extended for CRUD) ─── */
+  .owner-card-wrap {
+    padding: 14px 20px;
+    cursor: pointer;
+  }
+  .owner-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .owner-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    font-size: 18px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  .owner-info { flex: 1; min-width: 0; }
+  .owner-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .owner-username { font-size: 13px; color: var(--primary); margin-bottom: 2px; }
+  .owner-sub { font-size: 12px; color: var(--on-surface-variant); }
+  .owner-market {
+    text-align: right;
+    font-size: 13px;
+    margin-right: 8px;
+  }
+  .market-name {
+    font-weight: 600;
+    color: var(--on-surface);
+    margin-bottom: 4px;
+  }
+  .active-dot {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px;
+    color: var(--success);
+    font-weight: 500;
+  }
+  .active-dot::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--success);
+    border-radius: 50%;
+  }
+  .inactive-dot::before { background: #9AA0A6; }
+  .inactive-dot { color: var(--on-surface-variant); }
+
+  /* ─── Action menu (3-dots) ─── */
+  .menu-wrap { position: relative; }
+  .menu-dropdown {
+    display: none;
+    position: absolute;
+    right: 0; top: 40px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    min-width: 180px;
+    z-index: 100;
+    padding: 6px 0;
+    border: 1px solid var(--outline);
+  }
+  .menu-dropdown.open { display: block; }
+  .menu-item {
+    padding: 10px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    color: var(--on-surface);
+    transition: background .15s;
+  }
+  .menu-item:hover { background: var(--surface-variant); }
+  .menu-item.danger { color: var(--error); }
+  .menu-item.danger:hover { background: var(--error-container); }
+  .menu-divider {
+    height: 1px;
+    background: var(--outline);
+    margin: 4px 0;
+  }
+
+  /* ─── Empty state ─── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--on-surface-variant);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ─── Modal ─── */
+  .modal-container {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 64px);
+    padding: 24px;
+    background: #F0F4F9;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 28px;
+    width: 480px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+  .modal-title {
+    font-size: 18px; font-weight: 700;
+    color: var(--on-surface);
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .modal-subtitle {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+    margin-bottom: 20px;
+  }
+  .modal-title .icon-circle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .icon-circle.green { background: var(--success-container); }
+  .icon-circle.red { background: var(--error-container); }
+  .icon-circle.blue { background: var(--primary-container); }
+  .icon-circle.amber { background: var(--warning-container); }
+
+  /* ─── Info box ─── */
+  .info-box {
+    background: var(--surface-variant);
+    border: 1px solid var(--outline);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--on-surface-variant);
+  }
+  .info-box .row {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 4px;
+  }
+  .info-box .row:last-child { margin-bottom: 0; }
+  .info-box .label { font-weight: 600; color: var(--on-surface); min-width: 90px; }
+
+  /* ─── Form ─── */
+  .form-group { margin-bottom: 16px; }
+  .form-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  .form-label {
+    display: block;
+    font-size: 13px; font-weight: 600;
+    color: var(--on-surface-variant);
+    margin-bottom: 6px;
+  }
+  .form-label .required { color: var(--error); }
+  .form-input, .form-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--outline);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: var(--font);
+    color: var(--on-surface);
+    background: var(--surface);
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(26,115,232,.15);
+  }
+  .form-input.error { border-color: var(--error); }
+  .form-input:disabled { background: var(--surface-variant); color: var(--on-surface-variant); }
+  .form-helper { font-size: 12px; color: var(--on-surface-variant); margin-top: 4px; }
+  .form-error { font-size: 12px; color: var(--error); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .form-success { font-size: 12px; color: var(--success); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .input-wrapper { position: relative; }
+  .input-wrapper .toggle-eye, .input-wrapper .input-suffix {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--on-surface-variant); font-size: 14px;
+    padding: 4px;
+  }
+  .input-suffix { cursor: default; font-size: 12px; }
+  textarea.form-input { resize: none; min-height: 90px; }
+
+  .toggle-switch {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+  }
+  .switch {
+    position: relative;
+    width: 44px; height: 24px;
+    background: #BDC1C6;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: left .2s;
+    box-shadow: var(--shadow);
+  }
+  .switch.on { background: var(--primary); }
+  .switch.on::after { left: 22px; }
+
+  /* ─── Modal footer ─── */
+  .modal-footer {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--outline);
+  }
+  .modal-footer.spread { justify-content: space-between; }
+
+  /* ─── Stats row ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stats-row.four { grid-template-columns: repeat(4, 1fr); }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--on-surface-variant); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--on-surface); }
+  .stat-sub { font-size: 12px; color: var(--on-surface-variant); margin-top: 4px; }
+
+  /* ─── Avatar colors ─── */
+  .av-blue { background: linear-gradient(135deg,#1A73E8,#4285F4); }
+  .av-green { background: linear-gradient(135deg,#137333,#1E8E3E); }
+  .av-purple { background: linear-gradient(135deg,#7B1FA2,#9C27B0); }
+  .av-orange { background: linear-gradient(135deg,#E65100,#F57C00); }
+  .av-teal { background: linear-gradient(135deg,#00695C,#00897B); }
+  .av-red { background: linear-gradient(135deg,#C5221F,#D93025); }
+
+  /* ─── Search bar ─── */
+  .search-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface);
+    border: 1.5px solid var(--outline);
+    border-radius: 24px;
+    padding: 8px 16px;
+    margin-bottom: 20px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search-bar:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(26,115,232,.1);
+  }
+  .search-bar input {
+    flex: 1; border: none; outline: none;
+    font-size: 14px; font-family: var(--font);
+    color: var(--on-surface); background: transparent;
+  }
+  .search-bar .icon { color: var(--on-surface-variant); font-size: 17px; }
+
+  /* ─── Owner Detail page ─── */
+  .detail-hero {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .detail-hero .avatar-lg {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 32px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .detail-hero .info { flex: 1; }
+  .detail-hero h1 {
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .detail-hero .meta {
+    font-size: 13px; color: var(--on-surface-variant);
+    margin-bottom: 8px;
+  }
+  .detail-hero .meta-row {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .detail-hero .meta-item {
+    font-size: 13px; color: var(--on-surface-variant);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .detail-actions {
+    display: flex; gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .detail-section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .detail-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 14px;
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 24px;
+  }
+  .detail-field {
+    display: flex; flex-direction: column;
+  }
+  .detail-field .label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    margin-bottom: 4px;
+  }
+  .detail-field .value {
+    font-size: 14px;
+    color: var(--on-surface);
+    font-weight: 500;
+  }
+  .detail-field .value.mono {
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ─── FAB ─── */
+  .fab {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(26,115,232,.4);
+    cursor: pointer;
+    font-size: 24px;
+    transition: all .15s;
+    z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fab:hover { background: var(--primary-dark); transform: scale(1.05); }
+  .fab.extended {
+    width: auto;
+    padding: 0 22px 0 18px;
+    border-radius: 28px;
+    height: 56px;
+    font-size: 14px; font-weight: 500;
+    gap: 8px;
+  }
+
+  /* ─── Toast (in-page demo) ─── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--on-surface);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    box-shadow: var(--shadow-lg);
+    display: none;
+    z-index: 200;
+  }
+  .toast.show { display: block; animation: slideUpToast .3s ease; }
+  @keyframes slideUpToast {
+    from { opacity: 0; transform: translate(-50%, 20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+
+  /* ─── Warning banner ─── */
+  .alert {
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    display: flex; gap: 10px;
+    font-size: 13px;
+    align-items: flex-start;
+  }
+  .alert-warning { background: #FEF7E0; border: 1px solid #F9AB00; color: #5C3D02; }
+  .alert-danger { background: var(--error-container); border: 1px solid var(--error); color: #5F1410; }
+  .alert-info { background: var(--primary-container); border: 1px solid var(--primary); color: #0D47A1; }
+  .alert .icon { font-size: 16px; flex-shrink: 0; line-height: 1.2; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     PROTOTYPE NAVIGATION
+     ════════════════════════════════════════════ -->
+<nav class="page-nav">
+  <h1>🎨 SuperAdmin Figma Prototype — CRUD</h1>
+
+  <div class="nav-group">
+    <span class="nav-label">List:</span>
+    <button class="page-btn active" onclick="showPage('console')">📋 Main Console</button>
+  </div>
+
+  <div class="nav-group" style="margin-left:8px">
+    <span class="nav-label">Owner CRUD:</span>
+    <button class="page-btn crud-create" onclick="showPage('owner-create')">➕ Create</button>
+    <button class="page-btn crud-read" onclick="showPage('owner-detail')">👁 Read (Detail)</button>
+    <button class="page-btn crud-update" onclick="showPage('owner-edit')">✏️ Update</button>
+    <button class="page-btn crud-delete" onclick="showPage('owner-delete')">🗑 Delete</button>
+  </div>
+
+  <div class="nav-group" style="margin-left:8px">
+    <span class="nav-label">Requests:</span>
+    <button class="page-btn" onclick="showPage('approve')">✅ Approve</button>
+    <button class="page-btn" onclick="showPage('reject')">❌ Reject</button>
+    <button class="page-btn" onclick="showPage('credentials')">🔑 Credentials</button>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════
+     PAGE 1 — MAIN CONSOLE
+     ════════════════════════════════════════════ -->
+<div id="page-console" class="page active">
+  <div class="appbar">
+    <div class="appbar-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      SuperAdmin Console
+      <span class="badge">v1.0</span>
+    </div>
+    <button class="btn-logout">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Chiqish
+    </button>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab active" id="tab-requests" onclick="switchTab('requests')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      So'rovlar
+      <span class="count">3</span>
+    </div>
+    <div class="tab" id="tab-owners" onclick="switchTab('owners')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Egalar
+      <span class="count">5</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Tab: Requests -->
+    <div id="tab-content-requests" class="tab-content active">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Kutilmoqda</div>
+          <div class="stat-value" style="color:#856404">3</div>
+          <div class="stat-sub">Yangi so'rovlar</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Tasdiqlangan</div>
+          <div class="stat-value" style="color:var(--success)">24</div>
+          <div class="stat-sub">Jami bu oy</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Rad etilgan</div>
+          <div class="stat-value" style="color:var(--error)">2</div>
+          <div class="stat-sub">Jami bu oy</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>Kutilayotgan so'rovlar</h2>
+        <button class="btn-refresh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Yangilash
+        </button>
+      </div>
+
+      <div class="request-card">
+        <div class="card-top">
+          <div style="display:flex;align-items:center;gap:14px;flex:1">
+            <div class="card-avatar av-blue">S</div>
+            <div class="card-info">
+              <div class="card-name">Sardor Abdullayev</div>
+              <div class="card-phone">📞 +998 90 123 45 67</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="status-chip status-pending">⏳ Kutilmoqda</span>
+            <span class="card-date">2026-05-17  09:42</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-outline-danger" onclick="showPage('reject')">❌ Rad etish</button>
+          <button class="btn btn-success" onclick="showPage('approve')">✅ Tasdiqlash</button>
+        </div>
+      </div>
+
+      <div class="request-card">
+        <div class="card-top">
+          <div style="display:flex;align-items:center;gap:14px;flex:1">
+            <div class="card-avatar av-purple">M</div>
+            <div class="card-info">
+              <div class="card-name">Malika Yusupova</div>
+              <div class="card-phone">📞 +998 91 234 56 78</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="status-chip status-pending">⏳ Kutilmoqda</span>
+            <span class="card-date">2026-05-17  08:15</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-outline-danger" onclick="showPage('reject')">❌ Rad etish</button>
+          <button class="btn btn-success" onclick="showPage('approve')">✅ Tasdiqlash</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Owners -->
+    <div id="tab-content-owners" class="tab-content">
+      <div class="search-bar">
+        <svg class="icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Ism, username yoki do'kon nomi bo'yicha qidirish..."/>
+      </div>
+
+      <div class="section-header">
+        <h2>Faol Egalar (5)</h2>
+        <div class="section-actions">
+          <button class="btn-refresh">🔄 Yangilash</button>
+          <button class="btn btn-primary" onclick="showPage('owner-create')">
+            ➕ Yangi qo'shish
+          </button>
+        </div>
+      </div>
+
+      <!-- Owner 1 — full CRUD card -->
+      <div class="owner-card-wrap">
+        <div class="owner-row">
+          <div class="owner-avatar av-blue" onclick="showPage('owner-detail')">A</div>
+          <div class="owner-info" onclick="showPage('owner-detail')">
+            <div class="owner-name">Abdullo Raxmatov</div>
+            <div class="owner-username">@abdullorx</div>
+            <div class="owner-sub">📞 +998 90 111 22 33</div>
+          </div>
+          <div class="owner-market">
+            <div class="market-name">🏪 Navoiy Bozor</div>
+            <span class="active-dot">Faol</span>
+          </div>
+          <div class="menu-wrap">
+            <button class="btn-icon" onclick="toggleMenu(event, 'menu-1')">⋮</button>
+            <div class="menu-dropdown" id="menu-1">
+              <div class="menu-item" onclick="showPage('owner-detail')">
+                👁  Batafsil ko'rish
+              </div>
+              <div class="menu-item" onclick="showPage('owner-edit')">
+                ✏️  Tahrirlash
+              </div>
+              <div class="menu-item">
+                🔑  Parolni yangilash
+              </div>
+              <div class="menu-divider"></div>
+              <div class="menu-item">
+                ⏸  Faolsizlantirish
+              </div>
+              <div class="menu-item danger" onclick="showPage('owner-delete')">
+                🗑  O'chirish
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="owner-card-wrap">
+        <div class="owner-row">
+          <div class="owner-avatar av-green">D</div>
+          <div class="owner-info">
+            <div class="owner-name">Dilnoza Hasanova</div>
+            <div class="owner-username">@dilnoza_h</div>
+            <div class="owner-sub">📞 +998 91 222 33 44</div>
+          </div>
+          <div class="owner-market">
+            <div class="market-name">🏪 Chorsu Market</div>
+            <span class="active-dot">Faol</span>
+          </div>
+          <div class="menu-wrap">
+            <button class="btn-icon" onclick="toggleMenu(event, 'menu-2')">⋮</button>
+            <div class="menu-dropdown" id="menu-2">
+              <div class="menu-item" onclick="showPage('owner-detail')">👁  Batafsil</div>
+              <div class="menu-item" onclick="showPage('owner-edit')">✏️  Tahrirlash</div>
+              <div class="menu-item">🔑  Parol yangilash</div>
+              <div class="menu-divider"></div>
+              <div class="menu-item">⏸  Faolsizlantirish</div>
+              <div class="menu-item danger" onclick="showPage('owner-delete')">🗑  O'chirish</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="owner-card-wrap">
+        <div class="owner-row">
+          <div class="owner-avatar av-purple">J</div>
+          <div class="owner-info">
+            <div class="owner-name">Jasur Mirzayev</div>
+            <div class="owner-username">@jasur_m</div>
+            <div class="owner-sub">📞 +998 93 333 44 55</div>
+          </div>
+          <div class="owner-market">
+            <div class="market-name">🏪 Samarqand Savdo</div>
+            <span class="active-dot inactive-dot">Faolsiz</span>
+          </div>
+          <div class="menu-wrap">
+            <button class="btn-icon" onclick="toggleMenu(event, 'menu-3')">⋮</button>
+            <div class="menu-dropdown" id="menu-3">
+              <div class="menu-item" onclick="showPage('owner-detail')">👁  Batafsil</div>
+              <div class="menu-item" onclick="showPage('owner-edit')">✏️  Tahrirlash</div>
+              <div class="menu-item">▶️  Faollashtirish</div>
+              <div class="menu-divider"></div>
+              <div class="menu-item danger" onclick="showPage('owner-delete')">🗑  O'chirish</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="owner-card-wrap">
+        <div class="owner-row">
+          <div class="owner-avatar av-orange">N</div>
+          <div class="owner-info">
+            <div class="owner-name">Nodira Qodirov</div>
+            <div class="owner-username">@nodira_q</div>
+            <div class="owner-sub">📞 +998 94 444 55 66</div>
+          </div>
+          <div class="owner-market">
+            <div class="market-name">🏪 Andijon Bozor</div>
+            <span class="active-dot">Faol</span>
+          </div>
+          <div class="menu-wrap">
+            <button class="btn-icon" onclick="toggleMenu(event, 'menu-4')">⋮</button>
+            <div class="menu-dropdown" id="menu-4">
+              <div class="menu-item" onclick="showPage('owner-detail')">👁  Batafsil</div>
+              <div class="menu-item" onclick="showPage('owner-edit')">✏️  Tahrirlash</div>
+              <div class="menu-item">🔑  Parol yangilash</div>
+              <div class="menu-divider"></div>
+              <div class="menu-item">⏸  Faolsizlantirish</div>
+              <div class="menu-item danger" onclick="showPage('owner-delete')">🗑  O'chirish</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="owner-card-wrap">
+        <div class="owner-row">
+          <div class="owner-avatar av-teal">O</div>
+          <div class="owner-info">
+            <div class="owner-name">Otabek Yuldashev</div>
+            <div class="owner-username">@otabek_y</div>
+            <div class="owner-sub">📞 +998 95 555 66 77</div>
+          </div>
+          <div class="owner-market">
+            <div class="market-name">🏪 Fergana Savdo</div>
+            <span class="active-dot">Faol</span>
+          </div>
+          <div class="menu-wrap">
+            <button class="btn-icon" onclick="toggleMenu(event, 'menu-5')">⋮</button>
+            <div class="menu-dropdown" id="menu-5">
+              <div class="menu-item" onclick="showPage('owner-detail')">👁  Batafsil</div>
+              <div class="menu-item" onclick="showPage('owner-edit')">✏️  Tahrirlash</div>
+              <div class="menu-item">🔑  Parol yangilash</div>
+              <div class="menu-divider"></div>
+              <div class="menu-item">⏸  Faolsizlantirish</div>
+              <div class="menu-item danger" onclick="showPage('owner-delete')">🗑  O'chirish</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="fab extended" onclick="showPage('owner-create')" title="Yangi Owner">
+        ➕ Yangi Owner
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 2 — CREATE OWNER (ADD)
+     ════════════════════════════════════════════ -->
+<div id="page-owner-create" class="page">
+  <div class="appbar">
+    <div class="appbar-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div>
+        <div style="font-size:18px">SuperAdmin Console</div>
+        <div class="breadcrumb" style="font-size:11px">
+          <a onclick="showPage('console')">Egalar</a>
+          <span class="sep">›</span>
+          <span>Yangi qo'shish</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn-ghost btn" onclick="showPage('console')" style="font-size:13px">← Orqaga</button>
+  </div>
+
+  <div class="modal-container">
+    <div class="modal" style="width:560px">
+      <div class="modal-title">
+        <div class="icon-circle green">➕</div>
+        Yangi Owner qo'shish
+      </div>
+      <div class="modal-subtitle">
+        Yangi do'kon va uning egasini qo'lda yarating. Bu ro'yxatdan o'tish so'rovini chetlab o'tadi.
+      </div>
+
+      <div class="alert alert-info">
+        <span class="icon">ℹ️</span>
+        <div>
+          <strong>Eslatma:</strong> Odatda do'konlar foydalanuvchi ro'yxatdan o'tish so'rovi orqali yaratiladi.
+          Bu form faqat alohida hollar uchun (masalan, telefon orqali kelgan murojaatlar).
+        </div>
+      </div>
+
+      <form>
+        <h3 style="font-size:12px;color:var(--on-surface-variant);text-transform:uppercase;margin-bottom:12px;letter-spacing:.5px">👤 Owner ma'lumotlari</h3>
+
+        <div class="form-group">
+          <label class="form-label">To'liq ism <span class="required">*</span></label>
+          <input class="form-input" type="text" placeholder="Masalan: Sardor Abdullayev"/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Telefon <span class="required">*</span></label>
+            <input class="form-input" type="tel" placeholder="+998 90 123 45 67"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Til</label>
+            <select class="form-select">
+              <option>O'zbek</option>
+              <option>Русский</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username <span class="required">*</span></label>
+            <input class="form-input" type="text" placeholder="sardor_market"/>
+            <div class="form-success">✓ Bu username bo'sh</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Parol <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <input class="form-input" type="password" placeholder="••••••••" style="padding-right:90px"/>
+              <button type="button" class="toggle-eye" style="right:36px">👁</button>
+              <button type="button" class="toggle-eye" title="Generate" style="font-size:13px">🎲</button>
+            </div>
+            <div class="form-helper">Min. 8 belgi</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:12px;color:var(--on-surface-variant);text-transform:uppercase;margin:20px 0 12px;letter-spacing:.5px">🏪 Do'kon ma'lumotlari</h3>
+
+        <div class="form-group">
+          <label class="form-label">Do'kon nomi <span class="required">*</span></label>
+          <input class="form-input" type="text" placeholder="Masalan: Sardor Market"/>
+          <div class="form-error">⚠ Bu nom band — boshqasini tanlang</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Subdomain</label>
+          <div class="input-wrapper">
+            <input class="form-input" type="text" placeholder="sardor-market" style="padding-right:120px"/>
+            <span class="input-suffix">.strotech.uz</span>
+          </div>
+          <div class="form-success">✓ sardor-market.strotech.uz mavjud</div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Obuna tugashi</label>
+            <input class="form-input" type="date" value="2027-05-17"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Holat</label>
+            <div class="toggle-switch">
+              <div class="switch on" onclick="this.classList.toggle('on')"></div>
+              <span style="font-size:14px">Faol</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tavsif (ixtiyoriy)</label>
+          <textarea class="form-input" placeholder="Do'kon haqida qisqacha..."></textarea>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="showPage('console')">Bekor qilish</button>
+        <button class="btn btn-success" onclick="showToast('✅ Yangi owner muvaffaqiyatli yaratildi!'); showPage('credentials')">
+          ✓ Yaratish
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 3 — OWNER DETAIL (READ)
+     ════════════════════════════════════════════ -->
+<div id="page-owner-detail" class="page">
+  <div class="appbar">
+    <div class="appbar-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div>
+        <div style="font-size:18px">Owner ma'lumotlari</div>
+        <div class="breadcrumb" style="font-size:11px">
+          <a onclick="showPage('console')">Egalar</a>
+          <span class="sep">›</span>
+          <span>Abdullo Raxmatov</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn-ghost btn" onclick="showPage('console')" style="font-size:13px">← Orqaga</button>
+  </div>
+
+  <div class="content" style="max-width:1000px">
+
+    <!-- Hero -->
+    <div class="detail-hero">
+      <div class="avatar-lg av-blue">A</div>
+      <div class="info">
+        <h1>
+          Abdullo Raxmatov
+          <span class="status-chip status-active">● Faol</span>
+        </h1>
+        <div class="meta">@abdullorx · Owner · 2024-03-10 dan beri</div>
+        <div class="meta-row">
+          <div class="meta-item">📞 +998 90 111 22 33</div>
+          <div class="meta-item">🏪 Navoiy Bozor</div>
+          <div class="meta-item">🌐 abdullorx.strotech.uz</div>
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="btn btn-ghost" onclick="showPage('owner-edit')">✏️ Tahrirlash</button>
+        <button class="btn btn-outline-danger" onclick="showPage('owner-delete')">🗑 O'chirish</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row four" style="margin-bottom:16px">
+      <div class="stat-card">
+        <div class="stat-label">Mahsulotlar</div>
+        <div class="stat-value">1,247</div>
+        <div class="stat-sub">📦 Faol turlari</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sotuvlar</div>
+        <div class="stat-value" style="color:var(--success)">8,432</div>
+        <div class="stat-sub">💰 Jami chek</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Mijozlar</div>
+        <div class="stat-value">512</div>
+        <div class="stat-sub">👥 Faol mijozlar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Aylanma</div>
+        <div class="stat-value" style="color:var(--primary)">142M</div>
+        <div class="stat-sub">UZS bu oy</div>
+      </div>
+    </div>
+
+    <!-- Owner info -->
+    <div class="detail-section">
+      <h3>👤 Owner ma'lumotlari</h3>
+      <div class="detail-grid">
+        <div class="detail-field">
+          <span class="label">To'liq ism</span>
+          <span class="value">Abdullo Raxmatov</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Username</span>
+          <span class="value mono">@abdullorx</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Telefon</span>
+          <span class="value">+998 90 111 22 33</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Til</span>
+          <span class="value">🇺🇿 O'zbek</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Ro'yxatdan o'tgan</span>
+          <span class="value">2024-03-10 14:23</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Oxirgi kirish</span>
+          <span class="value">2026-05-17 08:45</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Market info -->
+    <div class="detail-section">
+      <h3>🏪 Do'kon ma'lumotlari</h3>
+      <div class="detail-grid">
+        <div class="detail-field">
+          <span class="label">Nomi</span>
+          <span class="value">Navoiy Bozor</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Subdomain</span>
+          <span class="value mono">abdullorx.strotech.uz</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Market ID</span>
+          <span class="value mono">#1042</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Holat</span>
+          <span class="value"><span class="status-chip status-active">● Faol</span></span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Obuna tugashi</span>
+          <span class="value">2027-03-10  (10 oy qoldi)</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Yaratilgan</span>
+          <span class="value">2024-03-10 14:23</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div class="detail-section">
+      <h3>📊 Faollik (so'nggi 7 kun)</h3>
+      <div class="detail-grid">
+        <div class="detail-field">
+          <span class="label">Sotuvlar bu hafta</span>
+          <span class="value">342 ta</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Eng faol kassir</span>
+          <span class="value">Karim T. (@karim_t)</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Eng ko'p sotilgan</span>
+          <span class="value">Coca-Cola 1.5L</span>
+        </div>
+        <div class="detail-field">
+          <span class="label">Qarzlar</span>
+          <span class="value" style="color:var(--warning)">2.4M UZS (12 mijoz)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 4 — EDIT OWNER (UPDATE)
+     ════════════════════════════════════════════ -->
+<div id="page-owner-edit" class="page">
+  <div class="appbar">
+    <div class="appbar-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div>
+        <div style="font-size:18px">Owner tahrirlash</div>
+        <div class="breadcrumb" style="font-size:11px">
+          <a onclick="showPage('console')">Egalar</a>
+          <span class="sep">›</span>
+          <a onclick="showPage('owner-detail')">Abdullo Raxmatov</a>
+          <span class="sep">›</span>
+          <span>Tahrirlash</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn-ghost btn" onclick="showPage('owner-detail')" style="font-size:13px">← Orqaga</button>
+  </div>
+
+  <div class="modal-container">
+    <div class="modal" style="width:560px">
+      <div class="modal-title">
+        <div class="icon-circle amber">✏️</div>
+        Ma'lumotlarni yangilash
+      </div>
+      <div class="modal-subtitle">
+        <strong>Abdullo Raxmatov</strong> · @abdullorx
+      </div>
+
+      <div class="alert alert-warning">
+        <span class="icon">⚠️</span>
+        <div>Username va parolni alohida bo'limdan tahrirlang. Bu yerda asosiy ma'lumotlar yangilanadi.</div>
+      </div>
+
+      <form>
+        <h3 style="font-size:12px;color:var(--on-surface-variant);text-transform:uppercase;margin-bottom:12px;letter-spacing:.5px">👤 Owner ma'lumotlari</h3>
+
+        <div class="form-group">
+          <label class="form-label">To'liq ism <span class="required">*</span></label>
+          <input class="form-input" type="text" value="Abdullo Raxmatov"/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Telefon <span class="required">*</span></label>
+            <input class="form-input" type="tel" value="+998 90 111 22 33"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Til</label>
+            <select class="form-select">
+              <option selected>O'zbek</option>
+              <option>Русский</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" type="text" value="@abdullorx" disabled/>
+          <div class="form-helper">🔒 Username o'zgartirib bo'lmaydi. Yangi parol uchun "Parolni yangilash"</div>
+        </div>
+
+        <h3 style="font-size:12px;color:var(--on-surface-variant);text-transform:uppercase;margin:20px 0 12px;letter-spacing:.5px">🏪 Do'kon ma'lumotlari</h3>
+
+        <div class="form-group">
+          <label class="form-label">Do'kon nomi <span class="required">*</span></label>
+          <input class="form-input" type="text" value="Navoiy Bozor"/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Subdomain</label>
+          <div class="input-wrapper">
+            <input class="form-input" type="text" value="abdullorx" style="padding-right:120px"/>
+            <span class="input-suffix">.strotech.uz</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Obuna tugashi</label>
+            <input class="form-input" type="date" value="2027-03-10"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Holat</label>
+            <div class="toggle-switch">
+              <div class="switch on" onclick="this.classList.toggle('on')"></div>
+              <span style="font-size:14px">Faol</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tavsif</label>
+          <textarea class="form-input">Navoiy shahridagi yirik bozor</textarea>
+        </div>
+      </form>
+
+      <div class="modal-footer spread">
+        <button class="btn btn-ghost" onclick="showPage('owner-detail')">Bekor qilish</button>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-warning" onclick="showToast('✅ Ma\'lumotlar yangilandi'); showPage('owner-detail')">
+            💾 Saqlash
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 5 — DELETE CONFIRMATION (DELETE)
+     ════════════════════════════════════════════ -->
+<div id="page-owner-delete" class="page">
+  <div class="appbar">
+    <div class="appbar-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div>
+        <div style="font-size:18px">Owner o'chirish</div>
+        <div class="breadcrumb" style="font-size:11px">
+          <a onclick="showPage('console')">Egalar</a>
+          <span class="sep">›</span>
+          <a onclick="showPage('owner-detail')">Abdullo Raxmatov</a>
+          <span class="sep">›</span>
+          <span style="color:var(--error)">O'chirish</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn-ghost btn" onclick="showPage('owner-detail')" style="font-size:13px">← Orqaga</button>
+  </div>
+
+  <div class="modal-container">
+    <div class="modal" style="width:480px">
+      <div class="modal-title">
+        <div class="icon-circle red">⚠️</div>
+        O'chirishni tasdiqlang
+      </div>
+      <div class="modal-subtitle">
+        Bu amalni qaytarib bo'lmaydi
+      </div>
+
+      <div class="alert alert-danger">
+        <span class="icon">🚨</span>
+        <div>
+          <strong>DIQQAT!</strong> Siz <strong>Abdullo Raxmatov</strong> va uning do'koni <strong>"Navoiy Bozor"</strong>'ni o'chirmoqchisiz.
+        </div>
+      </div>
+
+      <div class="info-box" style="background:#FFFBEB;border-color:#F9AB00;color:#5C3D02">
+        <div style="font-weight:600;margin-bottom:8px">⚠ Quyidagilar ham o'chiriladi:</div>
+        <div class="row">📦 <strong>1,247</strong> ta mahsulot</div>
+        <div class="row">💰 <strong>8,432</strong> ta sotuv</div>
+        <div class="row">👥 <strong>512</strong> ta mijoz</div>
+        <div class="row">💸 <strong>2.4M UZS</strong> qarz ma'lumotlari</div>
+        <div class="row">🧾 <strong>3</strong> ta kassir akkaunti</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tasdiqlash uchun do'kon nomini kiriting <span class="required">*</span></label>
+        <input class="form-input" type="text" placeholder="Navoiy Bozor" id="delete-confirm-input"/>
+        <div class="form-helper">Aniq <strong>"Navoiy Bozor"</strong> deb yozing</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">O'chirish sababi <span class="required">*</span></label>
+        <textarea class="form-input" placeholder="Masalan: Obuna to'lovi muddati o'tdi va aloqaga chiqmadi"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="showPage('owner-detail')">Bekor qilish</button>
+        <button class="btn btn-danger" onclick="showToast('🗑 Owner o\'chirildi'); showPage('console')">
+          🗑 O'chirish
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 6 — APPROVE DIALOG
+     ════════════════════════════════════════════ -->
+<div id="page-approve" class="page">
+  <div class="appbar">
+    <div class="appbar-title">SuperAdmin · Tasdiqlash</div>
+    <button class="btn-ghost btn" onclick="showPage('console')" style="font-size:13px">← Orqaga</button>
+  </div>
+
+  <div class="modal-container">
+    <div class="modal">
+      <div class="modal-title">
+        <div class="icon-circle green">✅</div>
+        Ro'yxatdan o'tishni tasdiqlash
+      </div>
+
+      <div class="info-box">
+        <div class="row"><span class="label">Ism:</span> Sardor Abdullayev</div>
+        <div class="row"><span class="label">Telefon:</span> +998 90 123 45 67</div>
+        <div class="row"><span class="label">Sana:</span> 2026-05-17  09:42</div>
+      </div>
+
+      <form>
+        <div class="form-group">
+          <label class="form-label">Username <span class="required">*</span></label>
+          <input class="form-input" type="text" value="sardor_market"/>
+          <div class="form-helper">Min. 3 belgi</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Parol <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <input class="form-input" type="password" value="Sardor@2026" style="padding-right:44px"/>
+            <button type="button" class="toggle-eye">👁</button>
+          </div>
+          <div class="form-helper">Min. 8 belgi</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Do'kon nomi <span class="required">*</span></label>
+          <input class="form-input" type="text" value="Sardor Market"/>
+          <div class="form-success">✓ Bu nom bo'sh</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subdomain</label>
+          <input class="form-input" type="text" placeholder="sardor-market"/>
+          <div class="form-helper">Misol: sardor-market.strotech.uz</div>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="showPage('console')">Bekor qilish</button>
+        <button class="btn btn-success" onclick="showPage('credentials')">✅ Tasdiqlash</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 7 — REJECT DIALOG
+     ════════════════════════════════════════════ -->
+<div id="page-reject" class="page">
+  <div class="appbar">
+    <div class="appbar-title">SuperAdmin · Rad etish</div>
+    <button class="btn-ghost btn" onclick="showPage('console')" style="font-size:13px">← Orqaga</button>
+  </div>
+
+  <div class="modal-container">
+    <div class="modal">
+      <div class="modal-title">
+        <div class="icon-circle red">❌</div>
+        Ro'yxatdan o'tishni rad etish
+      </div>
+      <div class="info-box">
+        <div class="row"><span class="label">Ism:</span> Malika Yusupova</div>
+        <div class="row"><span class="label">Telefon:</span> +998 91 234 56 78</div>
+      </div>
+      <form>
+        <div class="form-group">
+          <label class="form-label">Rad etish sababi <span class="required">*</span></label>
+          <textarea class="form-input" rows="3">Taqdim etilgan ma'lumotlar yetarli emas. Iltimos, qayta murojaat qiling.</textarea>
+          <div class="form-helper">Maksimum 500 belgi</div>
+        </div>
+      </form>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="showPage('console')">Bekor qilish</button>
+        <button class="btn btn-danger" onclick="showToast('❌ Rad etildi'); showPage('console')">❌ Rad etish</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE 8 — CREDENTIALS HANDOFF
+     ════════════════════════════════════════════ -->
+<div id="page-credentials" class="page">
+  <div class="appbar">
+    <div class="appbar-title">SuperAdmin · Kirish ma'lumotlari</div>
+    <button class="btn-ghost btn" onclick="showPage('console')" style="font-size:13px">← Orqaga</button>
+  </div>
+
+  <div class="modal-container">
+    <div class="modal">
+      <div class="modal-title">
+        <div class="icon-circle blue">🔑</div>
+        Kirish ma'lumotlari
+      </div>
+      <p style="font-size:13px;color:var(--on-surface-variant);margin-bottom:20px">
+        <strong style="color:var(--on-surface)">Sardor Market</strong> uchun kirish ma'lumotlari.
+      </p>
+
+      <div style="background:var(--surface-variant);border:1px solid var(--outline);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--on-surface-variant);margin-bottom:4px">FOYDALANUVCHI NOMI</div>
+          <div style="font-size:15px;font-family:monospace;font-weight:600">sardor_market</div>
+        </div>
+        <button class="btn-icon">📋</button>
+      </div>
+
+      <div style="background:var(--surface-variant);border:1px solid var(--outline);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--on-surface-variant);margin-bottom:4px">PAROL</div>
+          <div style="font-size:15px;font-family:monospace;font-weight:600" id="cred-pass">••••••••••</div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button class="btn-icon" onclick="togglePass()">👁</button>
+          <button class="btn-icon">📋</button>
+        </div>
+      </div>
+
+      <div class="alert alert-warning">
+        <span class="icon">⚠️</span>
+        <span>Bu parol faqat bir marta ko'rsatiladi va tizimda saqlanmaydi.</span>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost">📋 Ikkalasini nusxalash</button>
+        <button class="btn btn-primary" onclick="showPage('console')">Tayyor</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+     ════════════════════════════════════════════ -->
+<script>
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.menu-dropdown.open').forEach(m => m.classList.remove('open'));
+  document.getElementById('page-' + name).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('tab-content-' + name).classList.add('active');
+}
+
+function toggleMenu(e, id) {
+  e.stopPropagation();
+  const m = document.getElementById(id);
+  document.querySelectorAll('.menu-dropdown.open').forEach(x => {
+    if (x.id !== id) x.classList.remove('open');
+  });
+  m.classList.toggle('open');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.menu-wrap')) {
+    document.querySelectorAll('.menu-dropdown.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+let passVisible = false;
+function togglePass() {
+  passVisible = !passVisible;
+  const el = document.getElementById('cred-pass');
+  if (el) el.textContent = passVisible ? 'Sardor@2026' : '••••••••••';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

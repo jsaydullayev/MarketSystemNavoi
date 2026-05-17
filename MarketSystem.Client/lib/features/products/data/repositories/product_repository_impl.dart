@@ -2,7 +2,6 @@
 /// Data layer implementation for products
 library;
 
-import '../../../../core/failure/failures.dart';
 import '../../../../core/handlers/network_handler.dart';
 import '../../../../core/utils/di.dart' as di;
 

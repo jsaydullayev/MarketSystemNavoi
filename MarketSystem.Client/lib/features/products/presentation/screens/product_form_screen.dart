@@ -27,7 +27,6 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   bool _isLoading = false;
   List<ProductCategoryModel> _categories = [];
   int? _selectedCategory;
-  bool _isLoadingCategories = true;
 
   int _selectedUnit = 1;
   final List<Map<String, dynamic>> _units = [
@@ -61,10 +60,9 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       setState(() {
         final seen = <int>{};
         _categories = categories.where((c) => seen.add(c.id)).toList();
-        _isLoadingCategories = false;
       });
-    } catch (e) {
-      setState(() => _isLoadingCategories = false);
+    } catch (_) {
+      // Categories optional — silent fallback to empty list is fine here.
     }
   }
 

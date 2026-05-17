@@ -9,6 +9,7 @@ class OwnerSummary {
     this.phone,
     this.marketId,
     this.marketName,
+    this.isMarketBlocked = false,
   });
 
   final String userId;
@@ -18,6 +19,10 @@ class OwnerSummary {
   final bool isActive;
   final int? marketId;
   final String? marketName;
+  /// True when the SuperAdmin has administratively blocked this owner's
+  /// market (e.g. non-payment). Defaulted false so older API responses
+  /// without the field decode safely.
+  final bool isMarketBlocked;
   final DateTime createdAt;
 
   factory OwnerSummary.fromJson(Map<String, dynamic> json) {
@@ -29,6 +34,7 @@ class OwnerSummary {
       isActive: json['isActive'] as bool? ?? false,
       marketId: json['marketId'] as int?,
       marketName: json['marketName'] as String?,
+      isMarketBlocked: json['isMarketBlocked'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String).toUtc(),
     );
   }
