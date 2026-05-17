@@ -183,10 +183,9 @@ public class DebtService : IDebtService
                     request.Amount,
                     debt.Status.ToString());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await tx.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "DebtService.PayDebtAsync transaction rolled back for debtId={DebtId}.", debtId);
                 throw;
             }
         });

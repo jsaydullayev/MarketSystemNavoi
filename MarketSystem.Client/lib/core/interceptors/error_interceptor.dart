@@ -48,7 +48,6 @@ class ErrorInterceptor extends Interceptor {
         return 'Xavfsizlik xatosi. Sertifikat noto\'g\'ri';
 
       case DioExceptionType.unknown:
-      default:
         return 'Xatolik yuz berdi. Iltimos, qaytadan urinib ko\'ring.';
     }
   }

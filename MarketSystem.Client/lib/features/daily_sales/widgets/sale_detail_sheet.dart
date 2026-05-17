@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -263,13 +263,13 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
                 icon: const Icon(Icons.download),
                 tooltip: l10n.downloadPdf,
                 style: IconButton.styleFrom(
-                    backgroundColor: theme.primaryColor.withValues(alpha: 0.1)),
+                    backgroundColor: theme.primaryColor.withOpacity(0.1)),
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.close_rounded),
                 style: IconButton.styleFrom(
-                    backgroundColor: theme.dividerColor.withValues(alpha: 0.1)),
+                    backgroundColor: theme.dividerColor.withOpacity(0.1)),
               )
             ],
           )
@@ -313,12 +313,12 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withValues(alpha: 0.03)
-            : Colors.grey.withValues(alpha: 0.05),
+            ? Colors.white.withOpacity(0.03)
+            : Colors.grey.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
         border: isExternal
             ? Border.all(
-                color: const Color(0xFFF28C33).withValues(alpha: 0.4), width: 1)
+                color: const Color(0xFFF28C33).withOpacity(0.4), width: 1)
             : null,
       ),
       child: Column(
@@ -344,7 +344,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF28C33).withValues(alpha: 0.15),
+                              color: const Color(0xFFF28C33).withOpacity(0.15),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: const Text(
@@ -378,7 +378,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: theme.primaryColor.withValues(alpha: 0.08),
+                color: theme.primaryColor.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -432,7 +432,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 14)),
+            style: TextStyle(color: color.withOpacity(0.8), fontSize: 14)),
         Text(value,
             style: TextStyle(
                 color: color, fontSize: 18, fontWeight: FontWeight.w900)),

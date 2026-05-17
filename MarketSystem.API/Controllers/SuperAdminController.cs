@@ -41,6 +41,20 @@ public class SuperAdminController : ControllerBase
     public async Task<IActionResult> ListOwners(CancellationToken ct)
         => Ok(await _service.ListOwnersAsync(ct));
 
+    /// <summary>
+    /// Real-time uniqueness check for the approve form. Any of the three fields
+    /// may be omitted; each comes back as true (free), false (taken), or null
+    /// (not asked). When the caller supplies a username but no subdomain, the
+    /// response includes a generated <c>suggestedSubdomain</c> for preview.
+    /// </summary>
+    [HttpGet("check-availability")]
+    public async Task<IActionResult> CheckAvailability(
+        [FromQuery] string? username,
+        [FromQuery] string? marketName,
+        [FromQuery] string? subdomain,
+        CancellationToken ct)
+        => Ok(await _service.CheckAvailabilityAsync(username, marketName, subdomain, ct));
+
     [HttpPost("requests/{id:guid}/approve")]
     public async Task<IActionResult> Approve(
         Guid id,
@@ -69,6 +83,98 @@ public class SuperAdminController : ControllerBase
             return ok ? Ok(new { message = "Rad etildi." }) : NotFound(new { message = "So'rov topilmadi." });
         }
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    // ─── Owner CRUD ─────────────────────────────────────────────────────────
+
+    /// <summary>Full owner profile (Owner + Market + live stats).</summary>
+    [HttpGet("owners/{id:guid}")]
+    public async Task<IActionResult> GetOwner(Guid id, CancellationToken ct)
+    {
+        var detail = await _service.GetOwnerDetailAsync(id, ct);
+        return detail is null
+            ? NotFound(new { message = "Owner topilmadi." })
+            : Ok(detail);
+    }
+
+    /// <summary>Manual create — same shape as Approve, no backing request.</summary>
+    [HttpPost("owners")]
+    public async Task<IActionResult> CreateOwner(
+        [FromBody] CreateOwnerDto body,
+        CancellationToken ct)
+    {
+        if (!TryGetCallerId(out var superAdminId)) return Unauthorized();
+        try
+        {
+            return Ok(await _service.CreateOwnerAsync(body, superAdminId, ct));
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    /// <summary>Update Owner+Market mutable fields. Username/password are not editable here.</summary>
+    [HttpPut("owners/{id:guid}")]
+    public async Task<IActionResult> UpdateOwner(
+        Guid id,
+        [FromBody] UpdateOwnerDto body,
+        CancellationToken ct)
+    {
+        if (!TryGetCallerId(out var superAdminId)) return Unauthorized();
+        try
+        {
+            return Ok(await _service.UpdateOwnerAsync(id, body, superAdminId, ct));
+        }
+        catch (KeyNotFoundException) { return NotFound(new { message = "Owner topilmadi." }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    /// <summary>Soft-delete: Owner → IsDeleted, Market → IsActive=false. Historical data preserved.</summary>
+    [HttpDelete("owners/{id:guid}")]
+    public async Task<IActionResult> DeleteOwner(
+        Guid id,
+        [FromBody] DeleteOwnerDto body,
+        CancellationToken ct)
+    {
+        if (!TryGetCallerId(out var superAdminId)) return Unauthorized();
+        try
+        {
+            var ok = await _service.DeleteOwnerAsync(id, body, superAdminId, ct);
+            return ok ? Ok(new { message = "Owner o'chirildi." }) : NotFound(new { message = "Owner topilmadi." });
+        }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    // ─── Market block / unblock ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Block a market — all login/tenant-resolution attempts return 423 until
+    /// unblocked. Primary use: subscription non-payment. Reversible.
+    /// </summary>
+    [HttpPost("markets/{marketId:int}/block")]
+    public async Task<IActionResult> BlockMarket(
+        int marketId,
+        [FromBody] BlockMarketDto body,
+        CancellationToken ct)
+    {
+        if (!TryGetCallerId(out var superAdminId)) return Unauthorized();
+        try
+        {
+            return Ok(await _service.BlockMarketAsync(marketId, body, superAdminId, ct));
+        }
+        catch (KeyNotFoundException) { return NotFound(new { message = "Do'kon topilmadi." }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+    }
+
+    [HttpPost("markets/{marketId:int}/unblock")]
+    public async Task<IActionResult> UnblockMarket(
+        int marketId,
+        CancellationToken ct)
+    {
+        if (!TryGetCallerId(out var superAdminId)) return Unauthorized();
+        try
+        {
+            return Ok(await _service.UnblockMarketAsync(marketId, superAdminId, ct));
+        }
+        catch (KeyNotFoundException) { return NotFound(new { message = "Do'kon topilmadi." }); }
     }
 
     private bool TryGetCallerId(out Guid id)

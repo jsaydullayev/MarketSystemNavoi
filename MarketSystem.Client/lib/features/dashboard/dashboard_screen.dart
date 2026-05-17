@@ -1,4 +1,3 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -91,8 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     title: Text(isDark ? l10n.lightMode : l10n.darkMode),
                     trailing: Switch.adaptive(
                       value: isDark,
-                      activeThumbColor: primary,
-                      activeTrackColor: primary.withValues(alpha: 0.5),
+                      activeColor: primary,
                       onChanged: (v) {
                         if (isDark) {
                           AdaptiveTheme.of(context).setLight();
@@ -106,8 +104,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     builder: (context, localeProvider, _) => ListTile(
                       leading: const Icon(Icons.translate_rounded),
                       title: Text(localeProvider.locale.languageCode == 'uz'
-                          ? l10n.languageNameUzbek
-                          : l10n.languageNameRussian),
+                          ? "O'zbekcha"
+                          : "Русский"),
                       onTap: () => _showLanguageDialog(context, localeProvider),
                     ),
                   ),
@@ -120,7 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
             title: Text(l10n.logout,
                 style: const TextStyle(color: Colors.redAccent)),
-            onTap: () => _handleLogout(),
+            onTap: () => _handleLogout(context),
           ),
           20.height,
         ],
@@ -130,7 +128,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildDrawerHeader(BuildContext context, dynamic user, String role,
       Color primary, bool isDark, var l10n, imageVersion) {
-    final String defaultName = l10n.user;
+    final String defaultName =
+        l10n.localeName == 'uz' ? "Foydalanuvchi" : "Пользователь";
     return ZoomTapAnimation(
       onTap: () {
         Navigator.pop(context);
@@ -144,10 +143,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+              color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: Colors.black.withOpacity(0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4))
           ],
@@ -156,14 +155,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             ClipOval(
               child: user?['profileImage'] != null
-                  ? CachedNetworkImage(
-                      imageUrl: user!['profileImage'],
+                  ? Image.network(
+                      user!['profileImage'],
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => _avatarFallback(user, primary),
-                      errorWidget: (_, __, ___) =>
+                      // Xato bo'lsa harf ko'rsat
+                      errorBuilder: (_, __, ___) =>
                           _avatarFallback(user, primary),
+                      // Yuklanayotganda harf ko'rsat
+                      loadingBuilder: (_, child, loadingProgress) =>
+                          loadingProgress == null
+                              ? child
+                              : _avatarFallback(user, primary),
                     )
                   : _avatarFallback(user, primary),
             ),
@@ -181,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   Text(role,
                       style: TextStyle(
-                          color: isDark ? primary.withValues(alpha: 0.9) : primary,
+                          color: isDark ? primary.withOpacity(0.9) : primary,
                           fontSize: 13,
                           fontWeight: FontWeight.w600)),
                 ],
@@ -342,10 +346,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+              color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: Colors.black.withOpacity(0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4))
           ],
@@ -355,7 +359,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                  color: primary.withValues(alpha: 0.1),
+                  color: primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12)),
               child: Icon(icon, color: primary, size: 24),
             ),
@@ -364,7 +368,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Text(title,
                     style: AppStyles.cardTitle.copyWith(fontSize: 15))),
             Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: primary.withValues(alpha: 0.5)),
+                size: 14, color: primary.withOpacity(0.5)),
           ],
         ),
       ),
@@ -406,8 +410,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildLanguageOption(ctx, lp, AppLocalizations.of(ctx)!.languageNameUzbek, 'uz', '🇺🇿', primary),
-            _buildLanguageOption(ctx, lp, AppLocalizations.of(ctx)!.languageNameRussian, 'ru', '🇷🇺', primary),
+            _buildLanguageOption(ctx, lp, "O'zbekcha", 'uz', '🇺🇿', primary),
+            _buildLanguageOption(ctx, lp, "Русский", 'ru', '🇷🇺', primary),
           ],
         ),
       ),
@@ -420,7 +424,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return RadioListTile<String>(
       value: code,
       groupValue: lp.locale.languageCode,
-      fillColor: WidgetStatePropertyAll(primary),
+      activeColor: primary,
       title: Row(
         children: [
           Text(flag, style: const TextStyle(fontSize: 20)),
@@ -437,10 +441,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<void> _handleLogout() async {
+  Future<void> _handleLogout(BuildContext context) async {
     await Provider.of<AuthProvider>(context, listen: false).logout();
-    if (!mounted) return;
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    if (mounted)
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 }

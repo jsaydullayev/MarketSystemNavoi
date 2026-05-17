@@ -80,13 +80,12 @@ class _ZakupScreenState extends State<ZakupScreen> {
           await ZakupService(authProvider: authProvider).downloadZakupsExcel();
 
       if (bytes != null && bytes.isNotEmpty) {
-        final path = await core_file_helper.FileHelper.saveAndOpenExcel(
+        final ok = await core_file_helper.FileHelper.saveAndOpenExcel(
             bytes, 'Xaridlar.xlsx');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                path != null ? '${l10n.fileSaved}: $path' : l10n.fileSaveError),
-            backgroundColor: path != null ? Colors.green : Colors.red,
+            content: Text(ok ? l10n.fileSaved : l10n.fileSaveError),
+            backgroundColor: ok ? Colors.green : Colors.red,
           ));
         }
       } else {

@@ -196,6 +196,7 @@
   "understand": "Tushunarli",
   "categories": "Kategoriyalar",
   "dailySales": "Kunlik savdo",
+  "drafts": "Draftlar",
   "darkMode": "Qorong'i rejim",
   "user": "Foydalanuvchi",
   "security": "Xavfsizlik",
@@ -502,7 +503,6 @@
   "superAdminRejectReasonRequired": "Sababini kiriting",
   "superAdminSubdomainOptional": "Subdomen (ixtiyoriy)",
   "superAdminSubdomainHint": "Bo'sh qoldirsangiz, avtomatik yaratiladi",
-  "superAdminSubdomainInvalid": "Faqat kichik harf, raqam va '-' belgisi, 3–50 belgi",
   "superAdminPasswordMinLength": "Parol kamida 8 ta belgi",
   "superAdminApproveSuccess": "{username} egasi yaratildi. Login ma'lumotlarini xavfsiz uzating.",
   "@superAdminApproveSuccess": {
@@ -523,12 +523,7 @@
   "superAdminCredentialsCopied": "Nusxalandi",
   "superAdminCredentialsDone": "Tugatish",
   "superAdminCredentialsWarning": "Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko'rib bo'lmaydi.",
-  "productsInCartSuffix": "ta mahsulot",
+  "cartTitle": "Savatcha",
   "viewEditCart": "Ko'rish / tahrirlash",
-  "cartTitle": "Savat",
-  "languageNameUzbek": "O'zbekcha",
-  "languageNameRussian": "Русский",
-  "serverConnectionError": "Server bilan aloqa yo'q. Iltimos, qayta urinib ko'ring.",
-  "sessionExpiredError": "Login amali eskirgan. Iltimos, qayta login qiling.",
-  "permissionDeniedError": "Ruxsat yo'q. Siz bu amalni bajarish huquqiga ega emassiz."
+  "productsInCartSuffix": "ta mahsulot savatda"
 }

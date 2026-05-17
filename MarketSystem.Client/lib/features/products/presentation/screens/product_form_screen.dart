@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -27,7 +27,6 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   bool _isLoading = false;
   List<ProductCategoryModel> _categories = [];
   int? _selectedCategory;
-  bool _isLoadingCategories = true;
 
   int _selectedUnit = 1;
   final List<Map<String, dynamic>> _units = [
@@ -58,15 +57,12 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final categoryService = CategoryService(authProvider: authProvider);
       final categories = await categoryService.getAllCategories();
-      if (!mounted) return;
       setState(() {
         final seen = <int>{};
         _categories = categories.where((c) => seen.add(c.id)).toList();
-        _isLoadingCategories = false;
       });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoadingCategories = false);
+    } catch (_) {
+      // Categories optional — silent fallback to empty list is fine here.
     }
   }
 
@@ -122,7 +118,6 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (!mounted) return;
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -265,7 +260,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
         labelText: label,
         prefixIcon: Icon(icon, size: 20),
         filled: true,
-        fillColor: Colors.grey.withValues(alpha: 0.08),
+        fillColor: Colors.grey.withOpacity(0.08),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none),
@@ -296,7 +291,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       decoration: InputDecoration(
         labelText: l10n.categories,
         filled: true,
-        fillColor: Colors.grey.withValues(alpha: 0.08),
+        fillColor: Colors.grey.withOpacity(0.08),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none),
@@ -323,7 +318,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       decoration: InputDecoration(
         labelText: l10n.unit,
         filled: true,
-        fillColor: Colors.grey.withValues(alpha: 0.08),
+        fillColor: Colors.grey.withOpacity(0.08),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none),
@@ -342,7 +337,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-          color: Colors.purple.withValues(alpha: 0.05),
+          color: Colors.purple.withOpacity(0.05),
           borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
@@ -351,8 +346,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
             scale: 0.8,
             child: Switch(
               value: _isTemporary,
-              activeThumbColor: Colors.purple,
-              activeTrackColor: Colors.purple.withValues(alpha: 0.5),
+              activeColor: Colors.purple,
               onChanged: (v) => setState(() => _isTemporary = v),
             ),
           ),

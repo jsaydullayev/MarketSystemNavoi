@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -329,11 +329,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 10,
               offset: const Offset(0, 4))
         ],
@@ -387,7 +387,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: theme.primaryColor.withValues(alpha: 0.3),
+              color: theme.primaryColor.withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 6))
         ],
@@ -400,7 +400,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             children: [
               Expanded(
                   child: _buildFinMiniRow(
-                      l10n.paid, paid, Colors.white.withValues(alpha: 0.8))),
+                      l10n.paid, paid, Colors.white.withOpacity(0.8))),
               Container(width: 1, height: 30, color: Colors.white24),
               Expanded(
                   child: _buildFinMiniRow(
@@ -408,7 +408,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                       debt,
                       debt > 0
                           ? Colors.orangeAccent
-                          : Colors.white.withValues(alpha: 0.8))),
+                          : Colors.white.withOpacity(0.8))),
             ],
           ),
         ],
@@ -447,11 +447,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isExternal
-              ? iconColor.withValues(alpha: 0.35)
+              ? iconColor.withOpacity(0.35)
               : (isDark ? Colors.white10 : Colors.grey[200]!),
         ),
       ),
@@ -463,7 +463,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
+                    color: iconColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12)),
                 child: Icon(
                   isExternal
@@ -494,7 +494,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: iconColor.withValues(alpha: 0.15),
+                              color: iconColor.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
@@ -548,7 +548,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                color: theme.primaryColor.withValues(alpha: 0.08),
+                color: theme.primaryColor.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -580,7 +580,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color, width: 1.5)),
       child: Text(status.toUpperCase(),
@@ -611,7 +611,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: TextStyle(color: color.withValues(alpha: 0.8), fontSize: 14)),
+            style: TextStyle(color: color.withOpacity(0.8), fontSize: 14)),
         Text(NumberFormatter.format(amount),
             style: TextStyle(
                 color: color, fontWeight: FontWeight.bold, fontSize: fontSize)),
@@ -623,7 +623,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     return Column(
       children: [
         Text(label,
-            style: TextStyle(color: color.withValues(alpha: 0.6), fontSize: 12)),
+            style: TextStyle(color: color.withOpacity(0.6), fontSize: 12)),
         4.height,
         Text(NumberFormatter.format(amount),
             style: TextStyle(
@@ -677,7 +677,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                        color: theme.disabledColor.withValues(alpha: 0.3),
+                        color: theme.disabledColor.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(2)),
                   ),
                 ),
@@ -735,9 +735,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                    border: Border.all(color: Colors.green.withOpacity(0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -819,7 +819,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       hintText: hint,
       suffixText: suffix,
       filled: true,
-      fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
+      fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
       border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

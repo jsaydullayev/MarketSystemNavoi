@@ -364,11 +364,6 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                             final sale = sales[saleIndex];
                             final items = sale['items'] as List<dynamic>? ?? [];
                             final saleDate = sale['createdAt'];
-                            final saleTotal =
-                                (sale['totalAmount'] as num?)?.toDouble() ??
-                                    0.0;
-                            final salePaid =
-                                (sale['paidAmount'] as num?)?.toDouble() ?? 0.0;
                             final saleRemaining =
                                 (sale['remainingAmount'] as num?)?.toDouble() ??
                                     0.0;
@@ -377,8 +372,6 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                             final formattedDate =
                                 NumberFormatter.formatDateTime(saleDate,
                                     showTime: true);
-                            final formattedTime =
-                                NumberFormatter.formatTime(saleDate);
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 16),

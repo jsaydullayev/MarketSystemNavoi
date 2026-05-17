@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/data/models/profit_model.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -33,7 +33,7 @@ class HourlyChart extends StatelessWidget {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
         ),
       ),
       child: Column(
@@ -106,7 +106,7 @@ class HourlyChart extends StatelessWidget {
                             : Colors.black87,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: const Color(0xFFF28C33).withValues(alpha: 0.4),
+                          color: const Color(0xFFF28C33).withOpacity(0.4),
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(
@@ -125,10 +125,10 @@ class HourlyChart extends StatelessWidget {
                               color: isHighlighted
                                   ? const Color(0xFFF28C33)
                                   : (hasAnyData && v > 0
-                                      ? const Color(0xFFF28C33).withValues(alpha: 0.55)
+                                      ? const Color(0xFFF28C33).withOpacity(0.55)
                                       : (isDark
                                           ? Colors.white10
-                                          : Colors.black.withValues(alpha: 0.06))),
+                                          : Colors.black.withOpacity(0.06))),
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(3),
                               ),

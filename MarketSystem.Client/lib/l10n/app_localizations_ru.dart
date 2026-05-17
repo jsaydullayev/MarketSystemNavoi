@@ -598,6 +598,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dailySales => 'Ежедневные продажи';
 
   @override
+  String get drafts => 'Драфты';
+
+  @override
   String get darkMode => 'Темный режим';
 
   @override
@@ -1577,10 +1580,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Оставьте пустым — будет сгенерирован автоматически';
 
   @override
-  String get superAdminSubdomainInvalid =>
-      'Только строчные буквы, цифры и «-», 3–50 символов';
-
-  @override
   String get superAdminPasswordMinLength => 'Пароль минимум 8 символов';
 
   @override
@@ -1629,29 +1628,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Пароль нигде не хранится. После закрытия его уже не увидеть.';
 
   @override
-  String get productsInCartSuffix => 'тов.';
-
-  @override
-  String get viewEditCart => 'Посмотреть / изменить';
-
-  @override
   String get cartTitle => 'Корзина';
 
   @override
-  String get languageNameUzbek => 'O\'zbekcha';
+  String get viewEditCart => 'Просмотр / редактирование';
 
   @override
-  String get languageNameRussian => 'Русский';
-
-  @override
-  String get serverConnectionError =>
-      'Нет связи с сервером. Пожалуйста, попробуйте ещё раз.';
-
-  @override
-  String get sessionExpiredError =>
-      'Сессия истекла. Пожалуйста, войдите снова.';
-
-  @override
-  String get permissionDeniedError =>
-      'Нет доступа. У вас нет прав для выполнения этого действия.';
+  String get productsInCartSuffix => 'товаров в корзине';
 }

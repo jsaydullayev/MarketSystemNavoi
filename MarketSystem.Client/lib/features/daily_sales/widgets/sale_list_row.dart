@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/data/models/profit_model.dart';
 
@@ -31,7 +31,7 @@ class SaleListRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color:
-                    isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                    isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
               ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -121,7 +121,7 @@ class _TimeBadge extends StatelessWidget {
       width: 50,
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
+        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -158,8 +158,8 @@ class _CustomerAvatar extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: (name == null || name!.isEmpty)
-            ? (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06))
-            : const Color(0xFFF28C33).withValues(alpha: 0.16),
+            ? (isDark ? Colors.white10 : Colors.black.withOpacity(0.06))
+            : const Color(0xFFF28C33).withOpacity(0.16),
         shape: BoxShape.circle,
       ),
       child: Text(
@@ -186,7 +186,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
+        color: color.withOpacity(0.14),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

@@ -1,4 +1,3 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import '../../../core/constants/app_colors.dart';
@@ -22,9 +21,9 @@ Widget buildCustomThemeSwitch(BuildContext context, bool isDark) {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color:
-            isDark ? const Color(0xFF334155) : Colors.orange.withValues(alpha: 0.2),
+            isDark ? const Color(0xFF334155) : Colors.orange.withOpacity(0.2),
         border: Border.all(
-          color: isDark ? Colors.blueAccent.withValues(alpha: 0.5) : Colors.orange,
+          color: isDark ? Colors.blueAccent.withOpacity(0.5) : Colors.orange,
           width: 1.5,
         ),
       ),
@@ -40,7 +39,7 @@ Widget buildCustomThemeSwitch(BuildContext context, bool isDark) {
             boxShadow: [
               BoxShadow(
                 color: (isDark ? Colors.blueAccent : Colors.orange)
-                    .withValues(alpha: 0.4),
+                    .withOpacity(0.4),
                 blurRadius: 8,
                 spreadRadius: 1,
               ),
@@ -67,14 +66,7 @@ Widget buildMobileProfileHeader(
                 border: Border.all(color: primary, width: 2)),
             child: ClipOval(
               child: user?['profileImage'] != null
-                  ? CachedNetworkImage(
-                      imageUrl: user!['profileImage'],
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Icon(Icons.person_rounded, size: 45, color: primary),
-                      errorWidget: (_, __, ___) =>
-                          Icon(Icons.person_rounded, size: 45, color: primary),
-                    )
+                  ? Image.network(user?['profileImage'], fit: BoxFit.cover)
                   : Icon(Icons.person_rounded, size: 45, color: primary),
             ),
           ),
@@ -112,11 +104,11 @@ void showLanguageDialog(BuildContext context, LocaleProvider provider) {
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
               color:
-                  isDark ? primaryColor.withValues(alpha: 0.3) : Colors.transparent,
+                  isDark ? primaryColor.withOpacity(0.3) : Colors.transparent,
               width: 1.5),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: Colors.black.withOpacity(0.2),
                 blurRadius: 20,
                 offset: const Offset(0, 10))
           ],
@@ -158,10 +150,10 @@ Widget _langOption(BuildContext context, String title, String flag,
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
       decoration: BoxDecoration(
         color: isSelected
-            ? primary.withValues(alpha: 0.1)
+            ? primary.withOpacity(0.1)
             : (isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.grey.withValues(alpha: 0.05)),
+                ? Colors.white.withOpacity(0.05)
+                : Colors.grey.withOpacity(0.05)),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
             color: isSelected ? primary : Colors.transparent, width: 1.5),

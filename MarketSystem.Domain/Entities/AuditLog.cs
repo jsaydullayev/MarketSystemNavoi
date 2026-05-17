@@ -10,6 +10,8 @@ public class AuditLog : BaseEntity
     public Guid UserId { get; set; }
     public string Payload { get; set; } = string.Empty;
 
+    // Multi-tenancy — nullable so cross-tenant operations (e.g. SuperAdmin
+    // approving a registration before a market exists) can still be logged.
     public int? MarketId { get; set; }
 
     // Navigation properties

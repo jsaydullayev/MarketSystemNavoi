@@ -598,6 +598,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get dailySales => 'Kunlik savdo';
 
   @override
+  String get drafts => 'Draftlar';
+
+  @override
   String get darkMode => 'Qorong\'i rejim';
 
   @override
@@ -1573,10 +1576,6 @@ class AppLocalizationsUz extends AppLocalizations {
       'Bo\'sh qoldirsangiz, avtomatik yaratiladi';
 
   @override
-  String get superAdminSubdomainInvalid =>
-      'Faqat kichik harf, raqam va \'-\' belgisi, 3–50 belgi';
-
-  @override
   String get superAdminPasswordMinLength => 'Parol kamida 8 ta belgi';
 
   @override
@@ -1625,29 +1624,11 @@ class AppLocalizationsUz extends AppLocalizations {
       'Parol bu yerdan tashqarida saqlanmaydi. Yopgandan keyin uni ko\'rib bo\'lmaydi.';
 
   @override
-  String get productsInCartSuffix => 'ta mahsulot';
+  String get cartTitle => 'Savatcha';
 
   @override
   String get viewEditCart => 'Ko\'rish / tahrirlash';
 
   @override
-  String get cartTitle => 'Savat';
-
-  @override
-  String get languageNameUzbek => 'O\'zbekcha';
-
-  @override
-  String get languageNameRussian => 'Русский';
-
-  @override
-  String get serverConnectionError =>
-      'Server bilan aloqa yo\'q. Iltimos, qayta urinib ko\'ring.';
-
-  @override
-  String get sessionExpiredError =>
-      'Login amali eskirgan. Iltimos, qayta login qiling.';
-
-  @override
-  String get permissionDeniedError =>
-      'Ruxsat yo\'q. Siz bu amalni bajarish huquqiga ega emassiz.';
+  String get productsInCartSuffix => 'ta mahsulot savatda';
 }
