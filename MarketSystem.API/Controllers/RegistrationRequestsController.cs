@@ -15,7 +15,6 @@ namespace MarketSystem.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class RegistrationRequestsController : ControllerBase
 {
     private readonly IRegistrationRequestService _service;

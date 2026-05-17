@@ -502,6 +502,7 @@
   "superAdminRejectReasonRequired": "Sababini kiriting",
   "superAdminSubdomainOptional": "Subdomen (ixtiyoriy)",
   "superAdminSubdomainHint": "Bo'sh qoldirsangiz, avtomatik yaratiladi",
+  "superAdminSubdomainInvalid": "Faqat kichik harf, raqam va '-' belgisi, 3–50 belgi",
   "superAdminPasswordMinLength": "Parol kamida 8 ta belgi",
   "superAdminApproveSuccess": "{username} egasi yaratildi. Login ma'lumotlarini xavfsiz uzating.",
   "@superAdminApproveSuccess": {

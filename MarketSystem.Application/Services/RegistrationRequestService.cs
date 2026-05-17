@@ -162,6 +162,12 @@ public class RegistrationRequestService : IRegistrationRequestService
                 var subdomain = string.IsNullOrWhiteSpace(dto.Subdomain)
                     ? GenerateSubdomain(dto.Username)
                     : dto.Subdomain.Trim().ToLowerInvariant();
+
+                if (!Regex.IsMatch(subdomain, @"^[a-z0-9][a-z0-9\-]{1,48}[a-z0-9]$"))
+                    throw new InvalidOperationException(
+                        "Subdomen faqat kichik harf, raqam va '-' belgisidan iborat bo'lishi, " +
+                        "3–50 belgi uzunligida bo'lishi va harf/raqam bilan boshlanib-tugashi kerak.");
+
                 if (await _context.Markets.AnyAsync(m => m.Subdomain == subdomain, cancellationToken))
                     throw new InvalidOperationException($"'{subdomain}' subdomeni allaqachon band.");
 

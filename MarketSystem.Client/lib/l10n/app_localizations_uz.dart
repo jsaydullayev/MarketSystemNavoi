@@ -1573,6 +1573,10 @@ class AppLocalizationsUz extends AppLocalizations {
       'Bo\'sh qoldirsangiz, avtomatik yaratiladi';
 
   @override
+  String get superAdminSubdomainInvalid =>
+      'Faqat kichik harf, raqam va \'-\' belgisi, 3–50 belgi';
+
+  @override
   String get superAdminPasswordMinLength => 'Parol kamida 8 ta belgi';
 
   @override
