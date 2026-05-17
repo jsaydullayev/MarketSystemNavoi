@@ -2,7 +2,6 @@
 library;
 
 import 'dart:html' as html;
-import 'dart:js' as js;
 
 import '../platform_interface.dart';
 
@@ -61,7 +60,7 @@ class WebHandler extends PlatformHandler {
   }) {
     final blob = html.Blob([data], mimeType);
     final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
+    html.AnchorElement(href: url)
       ..setAttribute('download', fileName)
       ..click();
     html.Url.revokeObjectUrl(url);

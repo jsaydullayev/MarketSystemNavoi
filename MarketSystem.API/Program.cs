@@ -98,10 +98,17 @@ try
                 npgsqlOptions.MigrationsAssembly("MarketSystem.Infrastructure");
             });
         options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
-        
+
         options.ConfigureWarnings(warnings =>
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
+
+    // Application-layer services depend on IAppDbContext (Domain abstraction)
+    // rather than the concrete AppDbContext. Both resolutions share the same
+    // scoped instance — without this binding, DI throws "Unable to resolve
+    // service for type 'IAppDbContext'" on every service that wants the abstraction.
+    builder.Services.AddScoped<MarketSystem.Domain.Interfaces.IAppDbContext>(
+        sp => sp.GetRequiredService<AppDbContext>());
 
     var port = Environment.GetEnvironmentVariable("PORT") ??
                Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS") ??

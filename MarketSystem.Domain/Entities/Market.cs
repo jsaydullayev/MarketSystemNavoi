@@ -13,6 +13,16 @@ public class Market
     public DateTime? ExpiresAt { get; set; }  // Subscription uchun
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // ── Block state (operational, reversible) ────────────────────────────
+    // Separate from IsActive (which is the soft-delete flag set by
+    // DeleteOwner). A blocked market still exists and can be restored — it
+    // simply rejects all authentication and tenant resolution attempts.
+    // Typical use: subscription payment lapsed.
+    public bool IsBlocked { get; set; } = false;
+    public DateTime? BlockedAt { get; set; }
+    public string? BlockedReason { get; set; }
+    public Guid? BlockedByUserId { get; set; }
+
     // Owner who created this market
     public Guid OwnerId { get; set; }
 

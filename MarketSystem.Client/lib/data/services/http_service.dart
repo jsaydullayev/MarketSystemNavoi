@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -6,18 +7,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/api_constants.dart';
 import 'auth_service.dart';
 
-class _RetryRequest {
-  final String method;
-  final String endpoint;
-  final Map<String, String>? headers;
-  final Object? body;
-
-  _RetryRequest({
-    required this.method,
-    required this.endpoint,
-    this.headers,
-    this.body,
+/// Carries the reason a market was administratively blocked. Surfaced through
+/// [HttpService.marketBlockedStream] so the app shell can show a dedicated
+/// "contact admin" screen on top of whichever route the user was on.
+class MarketBlockedInfo {
+  MarketBlockedInfo({
+    required this.message,
+    this.reason,
+    this.blockedAt,
   });
+
+  final String message;
+  final String? reason;
+  final DateTime? blockedAt;
 }
 
 class HttpService {
@@ -25,7 +27,14 @@ class HttpService {
   AuthService? _authService;
 
   bool _isRefreshing = false;
-  final List<_RetryRequest> _retryQueue = [];
+
+  // Broadcast so multiple listeners (auth provider, app shell, login screen)
+  // can react. Late events do not need to be replayed — a fresh login attempt
+  // will surface the 423 again.
+  static final StreamController<MarketBlockedInfo> _marketBlockedController =
+      StreamController<MarketBlockedInfo>.broadcast();
+  static Stream<MarketBlockedInfo> get marketBlockedStream =>
+      _marketBlockedController.stream;
 
   String get baseUrl => ApiConstants.baseUrl;
 
@@ -82,6 +91,33 @@ class HttpService {
   Future<http.Response> _handleResponse(
       http.Response response, String method, String endpoint,
       {Object? body}) async {
+    // 423 Locked = market was blocked by a SuperAdmin. The session is now
+    // unusable — wipe tokens so the user can't keep retrying on a doomed
+    // JWT, and emit the reason so the app shell can pop to a block screen.
+    // Parse defensively: an upstream proxy returning 423 with no JSON body
+    // shouldn't crash the client.
+    if (response.statusCode == 423) {
+      MarketBlockedInfo info;
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        info = MarketBlockedInfo(
+          message: decoded['message'] as String? ??
+              'Do\'kon administrator tomonidan bloklangan.',
+          reason: decoded['reason'] as String?,
+          blockedAt: decoded['blockedAt'] is String
+              ? DateTime.tryParse(decoded['blockedAt'] as String)
+              : null,
+        );
+      } catch (_) {
+        info = MarketBlockedInfo(
+          message: 'Do\'kon administrator tomonidan bloklangan.',
+        );
+      }
+      await clearTokens();
+      _marketBlockedController.add(info);
+      return response;
+    }
+
     // Agar 401 bo'lsa va refresh qilinayotgan bo'lmasa
     if (response.statusCode == 401 && !_isRefreshing) {
       _isRefreshing = true;
@@ -100,8 +136,6 @@ class HttpService {
         return _retryRequest(method, endpoint, body);
       } else {
         print('Token refresh failed - user must login again');
-        // Queue'dagi barcha so'rovlarni o'chirish
-        _retryQueue.clear();
         return response; // 401 qaytarish
       }
     }
@@ -288,13 +322,14 @@ class HttpService {
     );
   }
 
-  // DELETE request
-  Future<http.Response> delete(String endpoint) async {
-    final response = await _performDelete(endpoint);
-    return _handleResponse(response, 'DELETE', endpoint);
+  // DELETE request (optionally with a JSON body — used by the SuperAdmin
+  // owner-delete endpoint, which carries a typed-confirmation payload).
+  Future<http.Response> delete(String endpoint, {Object? body}) async {
+    final response = await _performDelete(endpoint, body);
+    return _handleResponse(response, 'DELETE', endpoint, body: body);
   }
 
-  Future<http.Response> _performDelete(String endpoint) async {
+  Future<http.Response> _performDelete(String endpoint, Object? body) async {
     final token = await getAccessToken();
 
     final fullUrl = '$baseUrl$endpoint';
@@ -302,13 +337,25 @@ class HttpService {
     print('Full URL: $fullUrl');
     print('==================');
 
-    return http.delete(
-      Uri.parse(fullUrl),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
-    );
+    // The http package's delete() convenience method doesn't accept a body, so
+    // hand-roll the request when one is supplied. RFC 7231 permits a body on
+    // DELETE — ASP.NET Core accepts it with [FromBody].
+    if (body == null) {
+      return http.delete(
+        Uri.parse(fullUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+    }
+
+    final request = http.Request('DELETE', Uri.parse(fullUrl));
+    request.headers['Content-Type'] = 'application/json';
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.body = jsonEncode(body);
+    final streamed = await http.Client().send(request);
+    return http.Response.fromStream(streamed);
   }
 
   // PATCH request
