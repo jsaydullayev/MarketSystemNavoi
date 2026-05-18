@@ -160,10 +160,12 @@ public class ReportsController : ControllerBase
     /// Profit values are zero unless the caller is Owner.
     /// </summary>
     [HttpGet("weekly-series")]
-    public async Task<ActionResult<WeeklySeriesDto>> GetWeeklySeries([FromQuery] int days = 7)
+    public async Task<ActionResult<WeeklySeriesDto>> GetWeeklySeries(
+        [FromQuery] int days = 7,
+        [FromQuery] bool compare = false)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-        var series = await _reportService.GetWeeklySeriesAsync(days, userRole);
+        var series = await _reportService.GetWeeklySeriesAsync(days, compare, userRole);
         return Ok(series);
     }
 

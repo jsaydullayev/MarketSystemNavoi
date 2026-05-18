@@ -48,6 +48,21 @@ class AuthRepositoryImpl implements AuthRepositoryInterface {
     }
   }
 
+  /// Register a new Owner. The production register flow today goes through
+  /// `lib/data/services/auth_service.dart`'s `AuthService.register()`, which
+  /// posts the canonical body `{fullName, username, password, role, marketName,
+  /// language}` to `/Auth/Register`. This Clean-Arch wrapper is kept around
+  /// for future callers (e.g. a new BLoC-driven flow) but currently has no
+  /// production caller — the legacy `{userName, email, password,
+  /// confirmPassword}` body it used to send would 400 because the backend
+  /// stopped accepting that shape after Owner provisioning moved to the
+  /// SuperAdmin console. Body below is realigned with what the API really
+  /// expects so the path stays usable.
+  ///
+  /// `email` is reused as `fullName` (treated as the human's display name)
+  /// since the Clean-Arch interface has no separate fullName field. Callers
+  /// that need fine-grained control should use `AuthService.register()`
+  /// directly until the interface adds dedicated fullName/marketName params.
   @override
   Future<ApiResult<UserEntity?>> register({
     required String userName,
@@ -58,10 +73,11 @@ class AuthRepositoryImpl implements AuthRepositoryInterface {
       final response = await _networkHandler.post(
         '/Auth/Register',
         data: {
-          'userName': userName,
-          'email': email,
+          'fullName': email,
+          'username': userName,
           'password': password,
-          'confirmPassword': password,
+          'role': 'Owner',
+          'language': 'uz',
         },
       );
 

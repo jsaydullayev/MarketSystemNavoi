@@ -7,7 +7,12 @@ namespace MarketSystem.Application.DTOs;
 /// frontend can plot a continuous bar chart without gap-filling logic.
 /// </summary>
 /// <param name="Points">Ordered day points; length equals the requested day count.</param>
-public record WeeklySeriesDto(List<DailyPoint> Points);
+/// <param name="CurrentTotal">Sum of <c>Revenue</c> across <c>Points</c> — pre-computed so the frontend doesn't have to reduce the list.</param>
+/// <param name="PreviousTotal">Sum of revenue for the equally-sized window immediately before <c>Points</c> (only when <c>?compare=true</c>; null otherwise). Used by the dashboard ChartCard footer to display a week-over-week delta.</param>
+public record WeeklySeriesDto(
+    List<DailyPoint> Points,
+    decimal CurrentTotal,
+    decimal? PreviousTotal);
 
 /// <summary>
 /// Aggregate metrics for one day in the series.

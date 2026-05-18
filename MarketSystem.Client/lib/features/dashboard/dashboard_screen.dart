@@ -366,14 +366,26 @@ class _OwnerBody extends StatelessWidget {
     final footerValue = totalWeek > 0
         ? '${NumberFormatter.format(totalWeek)} UZS'
         : '— UZS';
+
+    // Week-over-week delta — sourced from /weekly-series?compare=true. We
+    // render the sign + integer percent + a localized "vs last week" hint.
+    // Falls back to blank when the previous week was empty (division-by-zero
+    // would otherwise yield infinity) or the comparison wasn't requested.
+    final delta = summary.weeklyDeltaPercent;
+    String footerDelta;
+    if (delta == null || delta.isNaN || delta.isInfinite) {
+      footerDelta = '';
+    } else {
+      final sign = delta >= 0 ? '↑' : '↓';
+      footerDelta = '$sign ${delta.abs().toStringAsFixed(0)}%';
+    }
+
     return ChartCard(
       title: l10n.thisWeekLabel,
       period: l10n.thisWeekLabel,
       bars: bars,
       footerValue: footerValue,
-      // Backend doesn't yet expose a previous-period comparison endpoint,
-      // so we leave the delta blank — the widget renders an empty arrow.
-      footerDelta: '',
+      footerDelta: footerDelta,
     );
   }
 
