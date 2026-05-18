@@ -42,6 +42,7 @@ class DashboardSummary {
     this.pendingDebtsCount = 0,
     this.topProducts = const [],
     this.weeklySeries = const [],
+    this.weeklyDeltaPercent,
     this.topProductRows = const [],
   });
 
@@ -65,6 +66,12 @@ class DashboardSummary {
   /// 7-day revenue/profit time series (oldest → newest) for the ChartCard.
   /// Empty if the new endpoint is unavailable or the caller lacks access.
   final List<DailyPoint> weeklySeries;
+
+  /// Percent change from previous-week total → current-week total. Null when
+  /// the comparison data isn't available (previous week empty, endpoint
+  /// failed, or `compare=true` wasn't requested). The ChartCard footer
+  /// renders "↑ X%" / "↓ Y%" when present, blank when null.
+  final double? weeklyDeltaPercent;
 
   /// Top-N products of today, ranked by quantity (descending). Comes from
   /// the /Reports/top-products?period=today endpoint. Empty on failure.
@@ -127,7 +134,8 @@ class DashboardService {
     //   top-products   → "Eng ko'p sotilgan" card (replaces local aggregation)
     // Each is _safe() wrapped so an empty / failing endpoint falls back to
     // null and the rest of the dashboard still renders.
-    final weeklySeriesFuture = _safe(() => _reports.getWeeklySeries(days: 7));
+    final weeklySeriesFuture =
+        _safe(() => _reports.getWeeklySeries(days: 7, compare: true));
     final topProductsTodayFuture = _safe(() => _reports.getTopProducts(
           period: 'today',
           sortBy: 'quantity',
@@ -215,6 +223,7 @@ class DashboardService {
       pendingDebtsCount: pendingDebtsCount,
       topProducts: topProducts,
       weeklySeries: weeklySeries?.points ?? const [],
+      weeklyDeltaPercent: weeklySeries?.deltaPercent,
       topProductRows: topProductsToday?.items ?? const [],
     );
   }

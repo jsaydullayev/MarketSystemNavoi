@@ -136,14 +136,14 @@ class DownloadService {
     }
   }
 
-  /// Mijozlarni Excel formatida yuklab olish
-  // FIXME: backend exposes no customer Excel export today — this call will 404
-  // until ProductCategories/Customers controller adds an export endpoint.
-  // (Audited 2026-05-18 against swagger v1.)
+  /// Mijozlarni Excel formatida yuklab olish.
+  /// Backend endpoint: GET /api/Customers/ExportCustomersToExcel/export
+  /// (added 2026-05-18 — mirrors /api/Products/.../export so the same
+  /// download flow handles both files).
   Future<void> downloadCustomers() async {
     try {
       final response =
-          await _httpService.get('/Reports/ExportCustomersToExcel');
+          await _httpService.get('/Customers/ExportCustomersToExcel/export');
 
       if (response.statusCode == 200) {
         final filename =

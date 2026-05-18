@@ -7,6 +7,7 @@
 // - Brand-orange extended FAB to open [AddUserSheet]
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -15,6 +16,7 @@ import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../data/services/report_service.dart';
 import '../../../data/services/users_service.dart';
 import '../widgets/add_user_sheet.dart';
 import '../widgets/user_card.dart';
@@ -32,6 +34,11 @@ class UsersScreen extends StatefulWidget {
 
 class _UsersScreenState extends State<UsersScreen> {
   List<dynamic> _users = [];
+  // Today's combined sales revenue across all staff — sourced from the
+  // /Reports/staff-performance?period=today endpoint, summed across rows.
+  // Null while loading; falls back to 0 on error so the UI shows "0 UZS"
+  // rather than "—" once we've finished trying.
+  double? _todayRevenue;
   bool _isLoading = false;
   String? _error;
   final _searchCtrl = TextEditingController();
@@ -84,10 +91,25 @@ class _UsersScreenState extends State<UsersScreen> {
     });
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final users = await UsersService(authProvider: auth).getAllUsers();
+      // Fire users + today's staff-performance in parallel — the page is
+      // pretty empty until both resolve, but a slow performance call should
+      // not block the user list from rendering, so we tolerate either
+      // future failing independently below.
+      final usersFuture = UsersService(authProvider: auth).getAllUsers();
+      final perfFuture = ReportService(authProvider: auth)
+          .getStaffPerformance(period: 'today')
+          .then((perf) =>
+              perf.staff.fold<double>(0, (sum, s) => sum + s.revenue))
+          // Endpoint is AdminOrOwner-gated; for Sellers (and on network errors)
+          // we'd rather show 0 UZS than block the whole page.
+          .catchError((_) => 0.0);
+
+      final users = await usersFuture;
+      final revenue = await perfFuture;
       if (!mounted) return;
       setState(() {
         _users = users;
+        _todayRevenue = revenue;
         _isLoading = false;
       });
     } catch (e) {
@@ -238,7 +260,7 @@ class _UsersScreenState extends State<UsersScreen> {
         children: [
           _SearchBar(controller: _searchCtrl),
           const SizedBox(height: AppSpacing.lg),
-          _StaffSummary(users: _users),
+          _StaffSummary(users: _users, todayRevenue: _todayRevenue),
           const SizedBox(height: AppSpacing.lg),
           _FilterChips(
             active: _filter,
@@ -310,16 +332,40 @@ class _SearchBar extends StatelessWidget {
 }
 
 /// 3-stat summary card matching the demo's `.prod-summary` block:
-/// JAMI (total users) / SMENADA (active users) / BUGUN TUSHUM (placeholder).
+/// JAMI (total users) / SMENADA (active users) / BUGUN TUSHUM (today's
+/// combined sales from /Reports/staff-performance, summed across staff).
 class _StaffSummary extends StatelessWidget {
-  const _StaffSummary({required this.users});
+  const _StaffSummary({required this.users, this.todayRevenue});
   final List<dynamic> users;
+
+  /// Today's combined revenue across all staff (sum of `StaffRow.revenue`).
+  /// Null while the parent's load future is still in flight — we render "…"
+  /// in that case so it visually differs from a clean "0 UZS" zero state.
+  final double? todayRevenue;
 
   @override
   Widget build(BuildContext context) {
     final total = users.length;
     final onShift =
         users.where((u) => (u['isActive'] ?? false) == true).length;
+
+    // Compact a big number (450 000 → 450K, 12.4M → 12.4M) for the stat
+    // tile so it stays on one line even on narrow screens.
+    String revenueLabel;
+    if (todayRevenue == null) {
+      revenueLabel = '…';
+    } else {
+      final v = todayRevenue!.abs();
+      if (v >= 1000000) {
+        final m = todayRevenue! / 1000000;
+        revenueLabel = '${m.toStringAsFixed(m >= 10 ? 0 : 1)}M';
+      } else if (v >= 1000) {
+        final k = todayRevenue! / 1000;
+        revenueLabel = '${k.toStringAsFixed(k >= 100 ? 0 : 1)}K';
+      } else {
+        revenueLabel = NumberFormatter.format(todayRevenue!);
+      }
+    }
 
     return Container(
       width: double.infinity,
@@ -350,17 +396,11 @@ class _StaffSummary extends StatelessWidget {
             ),
           ),
           const _Divider(),
-          const Expanded(
-            // TODO(staff-performance): wire to /Reports/staff-performance?period=today.
-            // ReportService.getStaffPerformance() returns StaffPerformance with
-            // a `staff` list; sum staff.revenue (or filter to today's active
-            // sellers) and render via NumberFormatter.format. Skipped here to
-            // keep the change focused on the dashboard wiring — needs its own
-            // loader, refresh wiring, and l10n key for the label.
+          Expanded(
             child: _SummaryStat(
-              value: '—',
+              value: revenueLabel,
               label: 'BUGUN TUSHUM',
-              valueColor: AppColors.text,
+              valueColor: AppColors.brand,
             ),
           ),
         ],

@@ -209,14 +209,19 @@ class ReportService {
   /// 7-day (or N-day) revenue / profit / check-count series for the dashboard
   /// ChartCard. Days are returned oldest-to-newest with zero rows for empty
   /// days, so the bar chart can render without gap filling.
-  Future<WeeklySeries> getWeeklySeries({int days = 7}) async {
+  ///
+  /// When [compare] is true the response also includes <c>previousTotal</c> —
+  /// the equally-sized window immediately before the current one. The
+  /// ChartCard footer uses it to display a "↑/↓ X% vs last week" delta
+  /// without a second round-trip.
+  Future<WeeklySeries> getWeeklySeries({int days = 7, bool compare = false}) async {
     final response = await _httpService.get(
-      '${ApiConstants.reports}/weekly-series?days=$days',
+      '${ApiConstants.reports}/weekly-series?days=$days&compare=$compare',
     );
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
-        return const WeeklySeries(points: []);
+        return const WeeklySeries(points: [], currentTotal: 0);
       }
       return WeeklySeries.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>);
@@ -316,11 +321,27 @@ DateTime _asDate(dynamic v) {
   return DateTime.fromMillisecondsSinceEpoch(0);
 }
 
-/// Mirrors `WeeklySeriesDto { List<DailyPoint> Points }`.
+/// Mirrors `WeeklySeriesDto { List<DailyPoint> Points, decimal CurrentTotal,
+/// decimal? PreviousTotal }`. [previousTotal] is null when the response was
+/// requested without `?compare=true`.
 class WeeklySeries {
-  const WeeklySeries({required this.points});
+  const WeeklySeries({
+    required this.points,
+    required this.currentTotal,
+    this.previousTotal,
+  });
 
   final List<DailyPoint> points;
+  final double currentTotal;
+  final double? previousTotal;
+
+  /// Percent change from previous → current (e.g. +18 means current is 18 %
+  /// higher). Returns null when there's no previous-period data, or when the
+  /// previous total is zero (division-by-zero would yield ±infinity).
+  double? get deltaPercent {
+    if (previousTotal == null || previousTotal == 0) return null;
+    return ((currentTotal - previousTotal!) / previousTotal!) * 100;
+  }
 
   factory WeeklySeries.fromJson(Map<String, dynamic> json) {
     final raw = json['points'];
@@ -330,6 +351,8 @@ class WeeklySeries {
           .whereType<Map<String, dynamic>>()
           .map(DailyPoint.fromJson)
           .toList(),
+      currentTotal: _asDouble(json['currentTotal']),
+      previousTotal: _asDoubleOrNull(json['previousTotal']),
     );
   }
 }

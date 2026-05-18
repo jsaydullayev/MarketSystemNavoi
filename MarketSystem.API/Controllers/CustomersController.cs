@@ -11,10 +11,12 @@ namespace MarketSystem.API.Controllers;
 public class CustomersController : ControllerBase
 {
     private readonly ICustomerService _customerService;
+    private readonly IExcelService _excelService;
 
-    public CustomersController(ICustomerService customerService)
+    public CustomersController(ICustomerService customerService, IExcelService excelService)
     {
         _customerService = customerService;
+        _excelService = excelService;
     }
 
     [HttpGet("{id}")]
@@ -113,5 +115,35 @@ public class CustomersController : ControllerBase
             return NotFound();
 
         return Ok(new { message = "Customer soft deleted" });
+    }
+
+    /// <summary>
+    /// Export all customers as an Excel spreadsheet. Mirrors the
+    /// /api/Products/.../export pattern so the same DownloadService
+    /// helper handles both files on the Flutter side.
+    /// </summary>
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportCustomersToExcel(CancellationToken ct = default)
+    {
+        var customers = await _customerService.GetAllCustomersAsync(ct);
+
+        // Headers are intentionally in Uzbek to match the Products export
+        // and the spreadsheet's audience (small-shop owners, not analysts).
+        var exportData = customers.Select(c => new
+        {
+            ID = c.Id.ToString(),
+            Ism = c.FullName ?? "",
+            Telefon = c.Phone,
+            Jami_qarz = c.TotalDebt,
+            Izoh = c.Comment ?? ""
+        });
+
+        var fileContent = _excelService.GenerateExcel(exportData, "Mijozlar");
+
+        return File(
+            fileContent,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Mijozlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+        );
     }
 }

@@ -35,7 +35,7 @@ public interface IReportService
     // ChartCard (weekly bar series), TopSellersCard (ranking), and the
     // Users / Reports → Staff page. All three are read-only aggregations
     // over existing tables; no new domain entities required.
-    Task<WeeklySeriesDto> GetWeeklySeriesAsync(int days, string? userRole = null, CancellationToken cancellationToken = default);
+    Task<WeeklySeriesDto> GetWeeklySeriesAsync(int days, bool compare = false, string? userRole = null, CancellationToken cancellationToken = default);
     Task<TopProductsDto> GetTopProductsAsync(string period, string sortBy, int limit, string? userRole = null, CancellationToken cancellationToken = default);
     Task<StaffPerformanceDto> GetStaffPerformanceAsync(string period, CancellationToken cancellationToken = default);
 }
