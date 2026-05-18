@@ -1635,4 +1635,568 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get productsInCartSuffix => 'товаров в корзине';
+
+  @override
+  String get greetingHello => 'Привет';
+
+  @override
+  String get todaysSale => 'Продажи за сегодня';
+
+  @override
+  String get checkLabel => 'Чек';
+
+  @override
+  String get mijozLabel => 'Клиент';
+
+  @override
+  String get profitLabel => 'Прибыль';
+
+  @override
+  String get statisticsSectionLabel => 'Статистика';
+
+  @override
+  String get alertsSectionLabel => 'Уведомления';
+
+  @override
+  String get weekProfit => 'Прибыль за неделю';
+
+  @override
+  String get monthRevenue => 'Оборот за месяц';
+
+  @override
+  String get topProduct => 'Топ товар';
+
+  @override
+  String get analysisSectionLabel => 'Анализ';
+
+  @override
+  String get reportsActionLabel => 'Отчёты';
+
+  @override
+  String get thisWeekLabel => 'Эта неделя';
+
+  @override
+  String get thisMonthLabel => 'Этот месяц';
+
+  @override
+  String get todayLabel => 'Сегодня';
+
+  @override
+  String get viewAll => 'Показать всё';
+
+  @override
+  String get bestSellersTitle => 'Самые продаваемые';
+
+  @override
+  String get oneSaleInProgress => '1 продажа в процессе';
+
+  @override
+  String get revenueLabel => 'Выручка';
+
+  @override
+  String get shiftLabel => 'Смена';
+
+  @override
+  String get refundLabel => 'Возврат';
+
+  @override
+  String get cashRegisterShort => 'Касса';
+
+  @override
+  String get defaultUserName => 'Пользователь';
+
+  @override
+  String get adminSectionLabel => 'Админ';
+
+  @override
+  String get reportLabel => 'Отчёт';
+
+  @override
+  String get tapToSelectProduct => 'Нажмите для выбора товара';
+
+  @override
+  String get hour => 'час';
+
+  @override
+  String get quickActions => 'Быстрые действия';
+
+  @override
+  String get debtPayments => 'Принять оплату долга';
+
+  @override
+  String get pullToRefresh =>
+      'Не удалось загрузить данные. Потяните вниз, чтобы повторить.';
+
+  @override
+  String get adminProductsManagement => 'Админ: Управление товарами';
+
+  @override
+  String get adminPriceTemporaryThresholdInfo =>
+      'Админ может обновлять только цены, временный статус и минимальный порог. Название и количество товара изменить нельзя.';
+
+  @override
+  String get deleteProductTitle => 'Удалить товар';
+
+  @override
+  String deleteProductConfirm(String name) {
+    return 'Вы действительно хотите удалить товар $name?';
+  }
+
+  @override
+  String get productDeletedSuccess => 'Товар успешно удалён';
+
+  @override
+  String salePriceLabel(Object price) {
+    return 'Цена продажи: $price сум';
+  }
+
+  @override
+  String costPriceLabel(Object price) {
+    return 'Себестоимость: $price сум';
+  }
+
+  @override
+  String quantityImmutable(Object quantity, String unit) {
+    return 'Количество: $quantity $unit (неизменяемое)';
+  }
+
+  @override
+  String lowStockWarning(Object min) {
+    return 'Мало! Мин: $min';
+  }
+
+  @override
+  String get adminEditProductTitle => 'Админ: Редактирование товара';
+
+  @override
+  String get adminNewProductTitle => 'Админ: Новый товар';
+
+  @override
+  String get adminCanEditPriceAndSettings =>
+      'Админ может изменять только цены и настройки';
+
+  @override
+  String get selectCategory => 'Выберите категорию';
+
+  @override
+  String get categoryNotSelected => 'Категория не выбрана';
+
+  @override
+  String get measureUnit => 'Единица измерения';
+
+  @override
+  String get selectUnit => 'Выберите единицу';
+
+  @override
+  String get temporaryProductTitle => 'Временный товар';
+
+  @override
+  String get temporaryProductDescription =>
+      'Товар, временно хранимый на складе';
+
+  @override
+  String get salePriceField => 'Цена продажи (сум)';
+
+  @override
+  String get enterSalePrice => 'Введите цену продажи';
+
+  @override
+  String get enterValidPrice => 'Введите корректную цену';
+
+  @override
+  String get pricePositive => 'Цена должна быть положительной';
+
+  @override
+  String get minSalePriceField => 'Минимальная цена продажи (сум)';
+
+  @override
+  String get enterMinSalePrice => 'Введите минимальную цену продажи';
+
+  @override
+  String get priceNonNegative => 'Цена не может быть отрицательной';
+
+  @override
+  String get minThresholdField => 'Минимальный порог (для предупреждений)';
+
+  @override
+  String get enterMinThreshold => 'Введите минимальный порог';
+
+  @override
+  String get enterValidNumber => 'Введите корректное число';
+
+  @override
+  String get numberNonNegative => 'Число не может быть отрицательным';
+
+  @override
+  String productQuantityImmutable(Object quantity) {
+    return 'Количество товара: $quantity (неизменяемое)';
+  }
+
+  @override
+  String get productCreatedWithZeroInfo =>
+      'Товар создаётся с количеством 0, затем увеличивается через Закупки';
+
+  @override
+  String errorWithMessage(String message) {
+    return 'Ошибка: $message';
+  }
+
+  @override
+  String get superAdminConsoleTitleShort => 'SuperAdmin Console';
+
+  @override
+  String get superAdminPending => 'В ожидании';
+
+  @override
+  String get superAdminNewRequests => 'Новые заявки';
+
+  @override
+  String get superAdminApproved => 'ОДОБРЕНО';
+
+  @override
+  String get superAdminRejected => 'ОТКЛОНЕНО';
+
+  @override
+  String get superAdminServerStatsNeeded => 'Требуется статистика сервера';
+
+  @override
+  String get superAdminPendingRequestsHeader => 'ОЖИДАЮЩИЕ ЗАЯВКИ';
+
+  @override
+  String get refresh => 'Обновить';
+
+  @override
+  String superAdminActiveOwnersHeader(Object count) {
+    return 'АКТИВНЫЕ ВЛАДЕЛЬЦЫ ($count)';
+  }
+
+  @override
+  String get addNew => 'Добавить';
+
+  @override
+  String get nothingFound => 'Ничего не найдено';
+
+  @override
+  String get newOwner => 'Новый Владелец';
+
+  @override
+  String newOwnerCreated(String username) {
+    return 'Новый владелец создан: $username';
+  }
+
+  @override
+  String get ownerSearchHint => 'Имя, username или название магазина…';
+
+  @override
+  String get statusBlocked => 'Заблокирован';
+
+  @override
+  String get statusActive => 'Активен';
+
+  @override
+  String get statusInactive => 'Неактивен';
+
+  @override
+  String get ownerInfoTitle => 'Информация о владельце';
+
+  @override
+  String get ownerNotFound => 'Владелец не найден';
+
+  @override
+  String get block => 'Заблокировать';
+
+  @override
+  String get unblock => 'Разблокировать';
+
+  @override
+  String get infoUpdated => 'Информация обновлена';
+
+  @override
+  String get ownerSectionHeader => 'ИНФОРМАЦИЯ О ВЛАДЕЛЬЦЕ';
+
+  @override
+  String get shopSectionHeader => 'ИНФОРМАЦИЯ О МАГАЗИНЕ';
+
+  @override
+  String get fullNameUpper => 'ПОЛНОЕ ИМЯ';
+
+  @override
+  String get usernameUpper => 'USERNAME';
+
+  @override
+  String get phoneUpper => 'ТЕЛЕФОН';
+
+  @override
+  String get languageUpper => 'ЯЗЫК';
+
+  @override
+  String get registeredUpper => 'ЗАРЕГИСТРИРОВАН';
+
+  @override
+  String get statusUpper => 'СТАТУС';
+
+  @override
+  String get nameUpper => 'НАЗВАНИЕ';
+
+  @override
+  String get subdomainUpper => 'ПОДДОМЕН';
+
+  @override
+  String get marketIdUpper => 'MARKET ID';
+
+  @override
+  String get blockReasonUpper => 'ПРИЧИНА БЛОКИРОВКИ';
+
+  @override
+  String get blockedAtUpper => 'ЗАБЛОКИРОВАН';
+
+  @override
+  String get subscriptionExpiresUpper => 'ИСТЕЧЕНИЕ ПОДПИСКИ';
+
+  @override
+  String get createdUpper => 'СОЗДАНО';
+
+  @override
+  String registeredSince(String date) {
+    return 'с $date';
+  }
+
+  @override
+  String get updateInfoTitle => 'Обновить информацию';
+
+  @override
+  String get ownerSection => 'Владелец';
+
+  @override
+  String get shopSection => 'Магазин';
+
+  @override
+  String get fullNameLabel => 'Полное имя';
+
+  @override
+  String get nameRequiredShort => 'Имя обязательно';
+
+  @override
+  String get phoneLabel => 'Телефон';
+
+  @override
+  String get ownerActive => 'Владелец активен';
+
+  @override
+  String get shopName => 'Название магазина';
+
+  @override
+  String get minCharsShort => 'Мин. 3 символа';
+
+  @override
+  String get subdomainLabel => 'Поддомен';
+
+  @override
+  String get subdomainHintExample => 'subdomain.strotech.uz';
+
+  @override
+  String get descriptionLabel => 'Описание';
+
+  @override
+  String get shopActive => 'Магазин активен';
+
+  @override
+  String get updateFailed => 'Ошибка обновления';
+
+  @override
+  String get addNewOwner => 'Добавить нового владельца';
+
+  @override
+  String get createOwnerSubtitle =>
+      'Эта форма обходит запрос на регистрацию. Используется только для особых случаев (звонки, индивидуальные обращения).';
+
+  @override
+  String get fullNameRequired => 'Полное имя *';
+
+  @override
+  String get phoneRequiredShort => 'Телефон обязателен';
+
+  @override
+  String get phoneFormatInvalid => 'Неверный формат';
+
+  @override
+  String get phoneHintExample => '+998 90 ...';
+
+  @override
+  String get usernameRequiredShort => 'username *';
+
+  @override
+  String get passwordRequiredShort => 'Пароль *';
+
+  @override
+  String get minThreeCharsShort => 'Мин. 3';
+
+  @override
+  String get minEightChars => 'Мин. 8';
+
+  @override
+  String get minEightCharsHelper => 'Мин. 8 символов';
+
+  @override
+  String get show => 'Показать';
+
+  @override
+  String get generatePassword => 'Сгенерировать';
+
+  @override
+  String get shopNameRequired => 'Название магазина *';
+
+  @override
+  String get subdomainOptionalShort => 'поддомен (опционально)';
+
+  @override
+  String get autoLabel => 'Авто: ';
+
+  @override
+  String get urlLabel => 'URL: ';
+
+  @override
+  String get create => 'Создать';
+
+  @override
+  String get createOwnerFailed => 'Ошибка при создании';
+
+  @override
+  String usernameTaken(String username) {
+    return '\'$username\' занят';
+  }
+
+  @override
+  String marketNameTaken(String name) {
+    return '\'$name\' занято';
+  }
+
+  @override
+  String subdomainTaken(String subdomain) {
+    return '\'$subdomain\' занят';
+  }
+
+  @override
+  String get confirmDeleteTitle => 'Подтвердите удаление';
+
+  @override
+  String get cannotUndoAction => 'Это действие нельзя отменить';
+
+  @override
+  String get warning => 'ВНИМАНИЕ!';
+
+  @override
+  String get deleteOwnerPart1 => 'Вы ';
+
+  @override
+  String get deleteOwnerPart2 => ' и его магазин ';
+
+  @override
+  String get deleteOwnerPart3 => ' собираетесь удалить.';
+
+  @override
+  String get dataWillBeKept =>
+      'Следующие данные сохранятся (только деактивация владельца+магазина):';
+
+  @override
+  String get countProducts => 'товаров';
+
+  @override
+  String get countSales => 'продаж';
+
+  @override
+  String get countCustomers => 'клиентов';
+
+  @override
+  String get countCashiers => 'аккаунтов кассиров';
+
+  @override
+  String get enterShopNameUpper => 'ВВЕДИТЕ НАЗВАНИЕ МАГАЗИНА *';
+
+  @override
+  String typeShopNameExact(String name) {
+    return 'Введите точно \"$name\"';
+  }
+
+  @override
+  String get shopNameMismatch => 'Название магазина не совпадает';
+
+  @override
+  String get deleteReasonUpper => 'ПРИЧИНА УДАЛЕНИЯ *';
+
+  @override
+  String get deleteReasonHint => 'Например: Просрочка оплаты и нет связи';
+
+  @override
+  String get reasonRequiredDetailed => 'Опишите причину подробно';
+
+  @override
+  String get deleteFailed => 'Ошибка при удалении';
+
+  @override
+  String get blockShopTitle => 'Заблокировать магазин';
+
+  @override
+  String get blocking => 'Блокируется: ';
+
+  @override
+  String get unblocking => 'Разблокируется: ';
+
+  @override
+  String get blockImmediateInfo =>
+      'Блокировка вступает в силу немедленно: Владелец и все сотрудники магазина (Admin/Seller) не смогут войти. Старые JWT токены также вернут 423.';
+
+  @override
+  String get blockReasonRequired => 'ПРИЧИНА БЛОКИРОВКИ *';
+
+  @override
+  String get blockReasonHint =>
+      'Например: Просрочка оплаты подписки на 30 дней';
+
+  @override
+  String get unblockInfo =>
+      'После разблокировки Владелец и сотрудники снова смогут войти.';
+
+  @override
+  String get previousBlockReason => 'ПРИЧИНА БЛОКИРОВКИ (РАНЕЕ):';
+
+  @override
+  String get blockFailed => 'Ошибка при блокировке';
+
+  @override
+  String get unblockFailed => 'Ошибка при разблокировке';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get privacyPolicyTitle => 'Политика конфиденциальности';
+
+  @override
+  String get privacyIntroTitle => 'Введение';
+
+  @override
+  String get privacyDataCollectionTitle => 'Сбор данных';
+
+  @override
+  String get privacyDataUsageTitle => 'Использование данных';
+
+  @override
+  String get privacyDataSecurityTitle => 'Безопасность данных';
+
+  @override
+  String get privacyYourRightsTitle => 'Ваши права';
+
+  @override
+  String get privacyContactTitle => 'Контактная информация';
+
+  @override
+  String get privacyContactPrompt =>
+      'Если у вас есть вопросы о настоящей Политике конфиденциальности или ваших данных, свяжитесь с нами:';
+
+  @override
+  String get emailLabel => 'Email: ';
+
+  @override
+  String get noAccount => 'Нет аккаунта? ';
 }

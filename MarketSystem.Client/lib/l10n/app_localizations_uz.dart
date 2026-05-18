@@ -1631,4 +1631,568 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get productsInCartSuffix => 'ta mahsulot savatda';
+
+  @override
+  String get greetingHello => 'Salom';
+
+  @override
+  String get todaysSale => 'Bugungi sotuv';
+
+  @override
+  String get checkLabel => 'Chek';
+
+  @override
+  String get mijozLabel => 'Mijoz';
+
+  @override
+  String get profitLabel => 'Foyda';
+
+  @override
+  String get statisticsSectionLabel => 'Statistika';
+
+  @override
+  String get alertsSectionLabel => 'Ogohlantirish';
+
+  @override
+  String get weekProfit => 'Bu hafta foyda';
+
+  @override
+  String get monthRevenue => 'Bu oy aylanma';
+
+  @override
+  String get topProduct => 'Top mahsulot';
+
+  @override
+  String get analysisSectionLabel => 'Tahlil';
+
+  @override
+  String get reportsActionLabel => 'Hisobotlar';
+
+  @override
+  String get thisWeekLabel => 'Bu hafta';
+
+  @override
+  String get thisMonthLabel => 'Bu oy';
+
+  @override
+  String get todayLabel => 'Bugun';
+
+  @override
+  String get viewAll => 'Hammasini ko\'rish';
+
+  @override
+  String get bestSellersTitle => 'Eng ko\'p sotilgan';
+
+  @override
+  String get oneSaleInProgress => '1 ta sotuv davom etmoqda';
+
+  @override
+  String get revenueLabel => 'Tushum';
+
+  @override
+  String get shiftLabel => 'Smena';
+
+  @override
+  String get refundLabel => 'Qaytarish';
+
+  @override
+  String get cashRegisterShort => 'Kassa';
+
+  @override
+  String get defaultUserName => 'Foydalanuvchi';
+
+  @override
+  String get adminSectionLabel => 'Admin';
+
+  @override
+  String get reportLabel => 'Hisobot';
+
+  @override
+  String get tapToSelectProduct => 'Mahsulot tanlash uchun bosing';
+
+  @override
+  String get hour => 'soat';
+
+  @override
+  String get quickActions => 'Tezkor amallar';
+
+  @override
+  String get debtPayments => 'Qarz qabul qilish';
+
+  @override
+  String get pullToRefresh =>
+      'Ma\'lumotni yuklab bo\'lmadi. Pastga torting va qayta urinib ko\'ring.';
+
+  @override
+  String get adminProductsManagement => 'Admin: Mahsulotlar boshqaruvi';
+
+  @override
+  String get adminPriceTemporaryThresholdInfo =>
+      'Admin faqat narxlarni, vaqtinchaliklik va minimal chegara yangilay oladi. Mahsulot nomi va sonini o\'zgartira olmaydi.';
+
+  @override
+  String get deleteProductTitle => 'Mahsulotni o\'chirish';
+
+  @override
+  String deleteProductConfirm(String name) {
+    return '$name mahsulotini rostdan ham o\'chirmoqchimisiz?';
+  }
+
+  @override
+  String get productDeletedSuccess => 'Mahsulot muvaffaqiyatli o\'chirildi';
+
+  @override
+  String salePriceLabel(Object price) {
+    return 'Sotish narxi: $price so\'m';
+  }
+
+  @override
+  String costPriceLabel(Object price) {
+    return 'Olingan narxi: $price so\'m';
+  }
+
+  @override
+  String quantityImmutable(Object quantity, String unit) {
+    return 'Soni: $quantity $unit (o\'zgarmas)';
+  }
+
+  @override
+  String lowStockWarning(Object min) {
+    return 'Kam! Min: $min';
+  }
+
+  @override
+  String get adminEditProductTitle => 'Admin: Mahsulotni tahrirlash';
+
+  @override
+  String get adminNewProductTitle => 'Admin: Yangi mahsulot';
+
+  @override
+  String get adminCanEditPriceAndSettings =>
+      'Admin faqat narxlarni va sozlamalarni o\'zgartira oladi';
+
+  @override
+  String get selectCategory => 'Kategoriyani tanlang';
+
+  @override
+  String get categoryNotSelected => 'Kategoriya tanlanmagan';
+
+  @override
+  String get measureUnit => 'O\'lchov birligi';
+
+  @override
+  String get selectUnit => 'Birligni tanlang';
+
+  @override
+  String get temporaryProductTitle => 'Vaqtinchalik mahsulot';
+
+  @override
+  String get temporaryProductDescription =>
+      'Omborda vaqtincha saqlanadigan mahsulot';
+
+  @override
+  String get salePriceField => 'Sotish narxi (so\'m)';
+
+  @override
+  String get enterSalePrice => 'Sotish narxini kiriting';
+
+  @override
+  String get enterValidPrice => 'To\'g\'ri narx kiriting';
+
+  @override
+  String get pricePositive => 'Narx musbat bo\'lishi kerak';
+
+  @override
+  String get minSalePriceField => 'Minimum sotish narxi (so\'m)';
+
+  @override
+  String get enterMinSalePrice => 'Minimum sotish narxini kiriting';
+
+  @override
+  String get priceNonNegative => 'Narx manfiy bo\'lmasligi kerak';
+
+  @override
+  String get minThresholdField => 'Minimum chegara (ogohlantirish uchun)';
+
+  @override
+  String get enterMinThreshold => 'Minimum chegara kiriting';
+
+  @override
+  String get enterValidNumber => 'To\'g\'ri son kiriting';
+
+  @override
+  String get numberNonNegative => 'Son manfiy bo\'lmasligi kerak';
+
+  @override
+  String productQuantityImmutable(Object quantity) {
+    return 'Mahsulot soni: $quantity (o\'zgarmas)';
+  }
+
+  @override
+  String get productCreatedWithZeroInfo =>
+      'Mahsulot soni 0 bilan yaratiladi, keyin Zakup orqali oshiriladi';
+
+  @override
+  String errorWithMessage(String message) {
+    return 'Xatolik: $message';
+  }
+
+  @override
+  String get superAdminConsoleTitleShort => 'SuperAdmin Console';
+
+  @override
+  String get superAdminPending => 'Kutilmoqda';
+
+  @override
+  String get superAdminNewRequests => 'Yangi so\'rovlar';
+
+  @override
+  String get superAdminApproved => 'TASDIQLANGAN';
+
+  @override
+  String get superAdminRejected => 'RAD ETILGAN';
+
+  @override
+  String get superAdminServerStatsNeeded => 'Server stats kerak';
+
+  @override
+  String get superAdminPendingRequestsHeader => 'KUTILAYOTGAN SO\'ROVLAR';
+
+  @override
+  String get refresh => 'Yangilash';
+
+  @override
+  String superAdminActiveOwnersHeader(Object count) {
+    return 'FAOL EGALAR ($count)';
+  }
+
+  @override
+  String get addNew => 'Yangi qo\'shish';
+
+  @override
+  String get nothingFound => 'Hech narsa topilmadi';
+
+  @override
+  String get newOwner => 'Yangi Owner';
+
+  @override
+  String newOwnerCreated(String username) {
+    return 'Yangi owner yaratildi: $username';
+  }
+
+  @override
+  String get ownerSearchHint => 'Ism, username yoki do\'kon nomi…';
+
+  @override
+  String get statusBlocked => 'Bloklangan';
+
+  @override
+  String get statusActive => 'Faol';
+
+  @override
+  String get statusInactive => 'Faolsiz';
+
+  @override
+  String get ownerInfoTitle => 'Owner ma\'lumotlari';
+
+  @override
+  String get ownerNotFound => 'Owner topilmadi';
+
+  @override
+  String get block => 'Bloklash';
+
+  @override
+  String get unblock => 'Blokdan chiqarish';
+
+  @override
+  String get infoUpdated => 'Ma\'lumotlar yangilandi';
+
+  @override
+  String get ownerSectionHeader => 'OWNER MA\'LUMOTLARI';
+
+  @override
+  String get shopSectionHeader => 'DO\'KON MA\'LUMOTLARI';
+
+  @override
+  String get fullNameUpper => 'TO\'LIQ ISM';
+
+  @override
+  String get usernameUpper => 'USERNAME';
+
+  @override
+  String get phoneUpper => 'TELEFON';
+
+  @override
+  String get languageUpper => 'TIL';
+
+  @override
+  String get registeredUpper => 'RO\'YXATDAN O\'TGAN';
+
+  @override
+  String get statusUpper => 'HOLAT';
+
+  @override
+  String get nameUpper => 'NOMI';
+
+  @override
+  String get subdomainUpper => 'SUBDOMAIN';
+
+  @override
+  String get marketIdUpper => 'MARKET ID';
+
+  @override
+  String get blockReasonUpper => 'BLOKLASH SABABI';
+
+  @override
+  String get blockedAtUpper => 'BLOKLANGAN';
+
+  @override
+  String get subscriptionExpiresUpper => 'OBUNA TUGASHI';
+
+  @override
+  String get createdUpper => 'YARATILGAN';
+
+  @override
+  String registeredSince(String date) {
+    return '$date dan beri';
+  }
+
+  @override
+  String get updateInfoTitle => 'Ma\'lumotlarni yangilash';
+
+  @override
+  String get ownerSection => 'Owner';
+
+  @override
+  String get shopSection => 'Do\'kon';
+
+  @override
+  String get fullNameLabel => 'To\'liq ism';
+
+  @override
+  String get nameRequiredShort => 'Ism kerak';
+
+  @override
+  String get phoneLabel => 'Telefon';
+
+  @override
+  String get ownerActive => 'Owner faol';
+
+  @override
+  String get shopName => 'Do\'kon nomi';
+
+  @override
+  String get minCharsShort => 'Min. 3 belgi';
+
+  @override
+  String get subdomainLabel => 'Subdomain';
+
+  @override
+  String get subdomainHintExample => 'subdomain.strotech.uz';
+
+  @override
+  String get descriptionLabel => 'Tavsif';
+
+  @override
+  String get shopActive => 'Do\'kon faol';
+
+  @override
+  String get updateFailed => 'Yangilashda xatolik';
+
+  @override
+  String get addNewOwner => 'Yangi Owner qo\'shish';
+
+  @override
+  String get createOwnerSubtitle =>
+      'Bu form ro\'yxatdan o\'tish so\'rovini chetlab o\'tadi. Faqat alohida hollar uchun (telefon orqali kelgan murojaatlar) ishlatiladi.';
+
+  @override
+  String get fullNameRequired => 'To\'liq ism *';
+
+  @override
+  String get phoneRequiredShort => 'Telefon kerak';
+
+  @override
+  String get phoneFormatInvalid => 'Format noto\'g\'ri';
+
+  @override
+  String get phoneHintExample => '+998 90 ...';
+
+  @override
+  String get usernameRequiredShort => 'username *';
+
+  @override
+  String get passwordRequiredShort => 'Parol *';
+
+  @override
+  String get minThreeCharsShort => 'Min. 3';
+
+  @override
+  String get minEightChars => 'Min. 8';
+
+  @override
+  String get minEightCharsHelper => 'Min. 8 belgi';
+
+  @override
+  String get show => 'Ko\'rsatish';
+
+  @override
+  String get generatePassword => 'Generate';
+
+  @override
+  String get shopNameRequired => 'Do\'kon nomi *';
+
+  @override
+  String get subdomainOptionalShort => 'subdomain (ixtiyoriy)';
+
+  @override
+  String get autoLabel => 'Avto: ';
+
+  @override
+  String get urlLabel => 'URL: ';
+
+  @override
+  String get create => 'Yaratish';
+
+  @override
+  String get createOwnerFailed => 'Yaratishda xatolik yuz berdi';
+
+  @override
+  String usernameTaken(String username) {
+    return '\'$username\' band';
+  }
+
+  @override
+  String marketNameTaken(String name) {
+    return '\'$name\' band';
+  }
+
+  @override
+  String subdomainTaken(String subdomain) {
+    return '\'$subdomain\' band';
+  }
+
+  @override
+  String get confirmDeleteTitle => 'O\'chirishni tasdiqlang';
+
+  @override
+  String get cannotUndoAction => 'Bu amalni qaytarib bo\'lmaydi';
+
+  @override
+  String get warning => 'DIQQAT!';
+
+  @override
+  String get deleteOwnerPart1 => 'Siz ';
+
+  @override
+  String get deleteOwnerPart2 => ' va uning do\'koni ';
+
+  @override
+  String get deleteOwnerPart3 => '\'ni o\'chirmoqchisiz.';
+
+  @override
+  String get dataWillBeKept =>
+      'Quyidagi ma\'lumotlar saqlanib qoladi (faqat owner+market deaktivatsiya):';
+
+  @override
+  String get countProducts => 'ta mahsulot';
+
+  @override
+  String get countSales => 'ta sotuv';
+
+  @override
+  String get countCustomers => 'ta mijoz';
+
+  @override
+  String get countCashiers => 'ta kassir akkaunti';
+
+  @override
+  String get enterShopNameUpper => 'DO\'KON NOMINI KIRITING *';
+
+  @override
+  String typeShopNameExact(String name) {
+    return 'Aniq \"$name\" deb yozing';
+  }
+
+  @override
+  String get shopNameMismatch => 'Do\'kon nomi mos kelmadi';
+
+  @override
+  String get deleteReasonUpper => 'O\'CHIRISH SABABI *';
+
+  @override
+  String get deleteReasonHint =>
+      'Masalan: To\'lov muddati o\'tdi va aloqaga chiqmadi';
+
+  @override
+  String get reasonRequiredDetailed => 'Sababini batafsil yozing';
+
+  @override
+  String get deleteFailed => 'O\'chirishda xatolik yuz berdi';
+
+  @override
+  String get blockShopTitle => 'Do\'konni bloklash';
+
+  @override
+  String get blocking => 'Bloklanadi: ';
+
+  @override
+  String get unblocking => 'Blokdan chiqariladi: ';
+
+  @override
+  String get blockImmediateInfo =>
+      'Bloklash darhol kuchga kiradi: Owner va do\'kondagi barcha xodimlar (Admin/Seller) tizimga kira olmaydi. Eski JWT tokenlar ham 423 qaytaradi.';
+
+  @override
+  String get blockReasonRequired => 'BLOKLASH SABABI *';
+
+  @override
+  String get blockReasonHint => 'Masalan: Obuna to\'lovi 30 kun kechiktirilgan';
+
+  @override
+  String get unblockInfo =>
+      'Blokdan chiqarilgach Owner va xodimlar yana login qila olishadi.';
+
+  @override
+  String get previousBlockReason => 'BLOKLASH SABABI (AVVAL):';
+
+  @override
+  String get blockFailed => 'Bloklashda xatolik yuz berdi';
+
+  @override
+  String get unblockFailed => 'Blokdan chiqarishda xatolik yuz berdi';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get privacyPolicyTitle => 'Maxfiylik siyosati';
+
+  @override
+  String get privacyIntroTitle => 'Kirish';
+
+  @override
+  String get privacyDataCollectionTitle => 'Ma\'lumotlarni yig\'ish';
+
+  @override
+  String get privacyDataUsageTitle => 'Ma\'lumotlardan foydalanish';
+
+  @override
+  String get privacyDataSecurityTitle => 'Ma\'lumotlar xavfsizligi';
+
+  @override
+  String get privacyYourRightsTitle => 'Sizning huquqlaringiz';
+
+  @override
+  String get privacyContactTitle => 'Aloqa ma\'lumotlari';
+
+  @override
+  String get privacyContactPrompt =>
+      'Ushbu Maxfiylik Siyosati yoki ma\'lumotlaringiz haqida savollaringiz bo\'lsa, biz bilan bog\'laning:';
+
+  @override
+  String get emailLabel => 'Email: ';
+
+  @override
+  String get noAccount => 'Akkauntingiz yo\'qmi? ';
 }

@@ -196,4 +196,281 @@ class ReportService {
       throw Exception('Failed to export inventory report: ${response.statusCode}');
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Dashboard analytics endpoints (added in the 2026-05 backend update).
+  //
+  // Each method returns a strongly-typed object so callers don't have to deal
+  // with raw maps. All three are read-only GETs that follow the same pattern
+  // as the rest of the file: build the query string, call _httpService.get,
+  // jsonDecode → DTO.fromJson, throw on non-200.
+  // ---------------------------------------------------------------------------
+
+  /// 7-day (or N-day) revenue / profit / check-count series for the dashboard
+  /// ChartCard. Days are returned oldest-to-newest with zero rows for empty
+  /// days, so the bar chart can render without gap filling.
+  Future<WeeklySeries> getWeeklySeries({int days = 7}) async {
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/weekly-series?days=$days',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return const WeeklySeries(points: []);
+      }
+      return WeeklySeries.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    } else if (response.statusCode == 403) {
+      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
+    } else {
+      throw Exception('Failed to load weekly series: ${response.statusCode}');
+    }
+  }
+
+  /// Top-N products in the selected period, ranked by quantity / revenue /
+  /// profit. Backs the dashboard "Eng ko'p sotilgan" card and the Reports
+  /// → Top Products page. Profit is null for non-Owner callers.
+  Future<TopProducts> getTopProducts({
+    String period = 'month',
+    String sortBy = 'quantity',
+    int limit = 10,
+  }) async {
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/top-products'
+      '?period=$period&sortBy=$sortBy&limit=$limit',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return TopProducts(period: period, sortBy: sortBy, items: const []);
+      }
+      return TopProducts.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    } else if (response.statusCode == 403) {
+      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
+    } else {
+      throw Exception('Failed to load top products: ${response.statusCode}');
+    }
+  }
+
+  /// Per-staff sales metrics for the period. Backs the Users list "BUGUN
+  /// TUSHUM" stat and the Reports → Staff page. Includes zero-sales staff
+  /// so the whole team is visible.
+  Future<StaffPerformance> getStaffPerformance({String period = 'week'}) async {
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/staff-performance?period=$period',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return StaffPerformance(period: period, staff: const []);
+      }
+      return StaffPerformance.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    } else if (response.statusCode == 403) {
+      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
+    } else {
+      throw Exception(
+          'Failed to load staff performance: ${response.statusCode}');
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Data classes for the dashboard analytics endpoints.
+//
+// JSON shape matches the C# DTOs in MarketSystem.Application/DTOs/
+// (WeeklySeriesDto, TopProductsDto, StaffPerformanceDto). All numeric fields
+// use Dart `double` because the backend uses C# `decimal`. DateTime fields
+// are parsed from ISO 8601 strings.
+// ---------------------------------------------------------------------------
+
+/// Safe num→double conversion: handles num, numeric strings, and null.
+double _asDouble(dynamic v) {
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? 0.0;
+  return 0.0;
+}
+
+/// Safe nullable double — preserves null (so "profit hidden from Seller"
+/// doesn't get coerced to 0).
+double? _asDoubleOrNull(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v);
+  return null;
+}
+
+int _asInt(dynamic v) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? 0;
+  return 0;
+}
+
+DateTime _asDate(dynamic v) {
+  if (v is DateTime) return v;
+  if (v is String) {
+    return DateTime.tryParse(v) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+  return DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+/// Mirrors `WeeklySeriesDto { List<DailyPoint> Points }`.
+class WeeklySeries {
+  const WeeklySeries({required this.points});
+
+  final List<DailyPoint> points;
+
+  factory WeeklySeries.fromJson(Map<String, dynamic> json) {
+    final raw = json['points'];
+    final list = raw is List ? raw : const <dynamic>[];
+    return WeeklySeries(
+      points: list
+          .whereType<Map<String, dynamic>>()
+          .map(DailyPoint.fromJson)
+          .toList(),
+    );
+  }
+}
+
+/// Mirrors `DailyPoint { DateTime Date, decimal Revenue, decimal Profit, int CheckCount }`.
+class DailyPoint {
+  const DailyPoint({
+    required this.date,
+    required this.revenue,
+    required this.profit,
+    required this.checkCount,
+  });
+
+  final DateTime date;
+  final double revenue;
+  final double profit;
+  final int checkCount;
+
+  factory DailyPoint.fromJson(Map<String, dynamic> json) => DailyPoint(
+        date: _asDate(json['date']),
+        revenue: _asDouble(json['revenue']),
+        profit: _asDouble(json['profit']),
+        checkCount: _asInt(json['checkCount']),
+      );
+}
+
+/// Mirrors `TopProductsDto { string Period, string SortBy, List<TopProductRow> Items }`.
+class TopProducts {
+  const TopProducts({
+    required this.period,
+    required this.sortBy,
+    required this.items,
+  });
+
+  final String period;
+  final String sortBy;
+  final List<TopProductRow> items;
+
+  factory TopProducts.fromJson(Map<String, dynamic> json) {
+    final raw = json['items'];
+    final list = raw is List ? raw : const <dynamic>[];
+    return TopProducts(
+      period: (json['period'] ?? '') as String,
+      sortBy: (json['sortBy'] ?? '') as String,
+      items: list
+          .whereType<Map<String, dynamic>>()
+          .map(TopProductRow.fromJson)
+          .toList(),
+    );
+  }
+}
+
+/// Mirrors `TopProductRow { int Rank, string ProductId, string Name, string Category,
+/// int Sellers, decimal Quantity, decimal Revenue, decimal? Profit }`.
+class TopProductRow {
+  const TopProductRow({
+    required this.rank,
+    required this.productId,
+    required this.name,
+    required this.category,
+    required this.sellers,
+    required this.quantity,
+    required this.revenue,
+    required this.profit,
+  });
+
+  final int rank;
+  final String productId;
+  final String name;
+  final String category;
+  final int sellers;
+  final double quantity;
+  final double revenue;
+  final double? profit;
+
+  factory TopProductRow.fromJson(Map<String, dynamic> json) => TopProductRow(
+        rank: _asInt(json['rank']),
+        productId: (json['productId'] ?? '').toString(),
+        name: (json['name'] ?? '').toString(),
+        category: (json['category'] ?? '').toString(),
+        sellers: _asInt(json['sellers']),
+        quantity: _asDouble(json['quantity']),
+        revenue: _asDouble(json['revenue']),
+        profit: _asDoubleOrNull(json['profit']),
+      );
+}
+
+/// Mirrors `StaffPerformanceDto { string Period, List<StaffRow> Staff }`.
+class StaffPerformance {
+  const StaffPerformance({required this.period, required this.staff});
+
+  final String period;
+  final List<StaffRow> staff;
+
+  factory StaffPerformance.fromJson(Map<String, dynamic> json) {
+    final raw = json['staff'];
+    final list = raw is List ? raw : const <dynamic>[];
+    return StaffPerformance(
+      period: (json['period'] ?? '') as String,
+      staff: list
+          .whereType<Map<String, dynamic>>()
+          .map(StaffRow.fromJson)
+          .toList(),
+    );
+  }
+}
+
+/// Mirrors `StaffRow { int Rank, string UserId, string FullName, string Role,
+/// int SaleCount, decimal Revenue, decimal AverageCheck, int ShiftCount, bool IsActiveShift }`.
+class StaffRow {
+  const StaffRow({
+    required this.rank,
+    required this.userId,
+    required this.fullName,
+    required this.role,
+    required this.saleCount,
+    required this.revenue,
+    required this.averageCheck,
+    required this.shiftCount,
+    required this.isActiveShift,
+  });
+
+  final int rank;
+  final String userId;
+  final String fullName;
+  final String role;
+  final int saleCount;
+  final double revenue;
+  final double averageCheck;
+  final int shiftCount;
+  final bool isActiveShift;
+
+  factory StaffRow.fromJson(Map<String, dynamic> json) => StaffRow(
+        rank: _asInt(json['rank']),
+        userId: (json['userId'] ?? '').toString(),
+        fullName: (json['fullName'] ?? '').toString(),
+        role: (json['role'] ?? '').toString(),
+        saleCount: _asInt(json['saleCount']),
+        revenue: _asDouble(json['revenue']),
+        averageCheck: _asDouble(json['averageCheck']),
+        shiftCount: _asInt(json['shiftCount']),
+        isActiveShift: json['isActiveShift'] == true,
+      );
 }

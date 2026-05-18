@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../data/services/product_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../dashboard/dashboard_screen.dart';
 import 'admin_product_form_screen.dart';
 
@@ -65,8 +66,10 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
-        _errorMessage = 'Xatolik: $e';
+        _errorMessage = l10n.errorWithMessage(e.toString());
         _isLoading = false;
       });
     }
@@ -75,22 +78,22 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   Future<void> _deleteProduct(dynamic product) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Mahsulotni o\'chirish'),
-        content: Text(
-            '${product['name']} mahsulotini rostdan ham o\'chirmoqchimisiz?'),
+        title: Text(l10n.deleteProductTitle),
+        content: Text(l10n.deleteProductConfirm(product['name'] ?? '')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Yo\'q'),
+            child: Text(l10n.no),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Ha'),
+            child: Text(l10n.yes),
           ),
         ],
       ),
@@ -105,8 +108,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
         if (mounted) {
           messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Mahsulot muvaffaqiyatli o\'chirildi'),
+            SnackBar(
+              content: Text(l10n.productDeletedSuccess),
               backgroundColor: Colors.green,
             ),
           );
@@ -115,7 +118,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         if (mounted) {
           messenger.showSnackBar(
             SnackBar(
-              content: Text('Xatolik: $e'),
+              content: Text(l10n.errorWithMessage(e.toString())),
               backgroundColor: Colors.red,
             ),
           );
@@ -128,12 +131,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final userRole = authProvider.user?['role'];
+    final l10n = AppLocalizations.of(context)!;
 
     return NetworkWrapper(
       onRetry: _loadProducts,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Admin: Mahsulotlar boshqaruvi'),
+          title: Text(l10n.adminProductsManagement),
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -158,14 +162,14 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               color: Colors.blue.shade50,
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue),
-                  SizedBox(width: 12),
+                  const Icon(Icons.info_outline, color: Colors.blue),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Admin faqat narxlarni, vaqtinchaliklik va minimal chegara yangilay oladi. Mahsulot nomi va sonini o\'zgartira olmaydi.',
-                      style: TextStyle(color: Colors.blue, fontSize: 12),
+                      l10n.adminPriceTemporaryThresholdInfo,
+                      style: const TextStyle(color: Colors.blue, fontSize: 12),
                     ),
                   ),
                 ],
@@ -178,7 +182,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 controller: _searchController,
                 onChanged: (_) => _filterProducts(),
                 decoration: InputDecoration(
-                  hintText: 'Mahsulot qidirish...',
+                  hintText: l10n.searchProduct,
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -214,7 +218,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                               const SizedBox(height: 16),
                               ElevatedButton(
                                 onPressed: _loadProducts,
-                                child: const Text('Qayta urinish'),
+                                child: Text(l10n.retry),
                               ),
                             ],
                           ),
@@ -232,8 +236,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                   const SizedBox(height: 16),
                                   Text(
                                     _searchController.text.isNotEmpty
-                                        ? 'Mahsulot topilmadi'
-                                        : 'Mahsulotlar yo\'q',
+                                        ? l10n.productNotFound
+                                        : l10n.noProducts,
                                     style: TextStyle(
                                       fontSize: 18,
                                       color: Colors.grey[600],
@@ -275,6 +279,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   }
 
   Widget _buildProductCard(dynamic product, String? userRole) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -292,14 +297,14 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           ),
         ),
         title: Text(
-          product['name'] ?? 'Noma\'lum',
+          product['name'] ?? l10n.unknown,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Sotish narxi: ${product['salePrice'] ?? 0} so\'m'),
-            Text('Olingan narxi: ${product['costPrice'] ?? 0} so\'m'),
+            Text(l10n.salePriceLabel(product['salePrice'] ?? 0)),
+            Text(l10n.costPriceLabel(product['costPrice'] ?? 0)),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -310,7 +315,10 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Soni: ${product['quantity']?.toString() ?? '0'} ${product['unitName'] ?? 'dona'} (o\'zgarmas)', // ✅ UNIT
+                  l10n.quantityImmutable(
+                    product['quantity']?.toString() ?? '0',
+                    product['unitName'] ?? l10n.piece,
+                  ),
                   style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 12,
@@ -329,7 +337,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Kam! Min: ${product['minThreshold'] ?? 0}',
+                    l10n.lowStockWarning(product['minThreshold'] ?? 0),
                     style: TextStyle(
                       color: Colors.orange.shade700,
                       fontSize: 11,
@@ -343,9 +351,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Chip(
-                  label: const Text(
-                    'Vaqtinchalik',
-                    style: TextStyle(fontSize: 10),
+                  label: Text(
+                    l10n.temporary,
+                    style: const TextStyle(fontSize: 10),
                   ),
                   backgroundColor: Colors.purple.withValues(alpha: 0.1),
                   padding: EdgeInsets.zero,

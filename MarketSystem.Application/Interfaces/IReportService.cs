@@ -30,4 +30,12 @@ public interface IReportService
 
     // Sales list export to PDF
     Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, CancellationToken cancellationToken = default);
+
+    // Dashboard aggregations — added 2026-05-18 to back the new design's
+    // ChartCard (weekly bar series), TopSellersCard (ranking), and the
+    // Users / Reports → Staff page. All three are read-only aggregations
+    // over existing tables; no new domain entities required.
+    Task<WeeklySeriesDto> GetWeeklySeriesAsync(int days, string? userRole = null, CancellationToken cancellationToken = default);
+    Task<TopProductsDto> GetTopProductsAsync(string period, string sortBy, int limit, string? userRole = null, CancellationToken cancellationToken = default);
+    Task<StaffPerformanceDto> GetStaffPerformanceAsync(string period, CancellationToken cancellationToken = default);
 }

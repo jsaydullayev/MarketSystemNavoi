@@ -13,6 +13,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/superadmin_service.dart';
 
 class CreatedOwnerResult {
@@ -212,8 +213,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
         ),
       );
     } else {
+      final l10n = AppLocalizations.of(context)!;
       setState(
-          () => _errorMessage = res.message ?? 'Yaratishda xatolik yuz berdi');
+          () => _errorMessage = res.message ?? l10n.createOwnerFailed);
     }
   }
 
@@ -289,6 +291,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final typedSubdomain = _subdomain.text.trim().toLowerCase();
     final previewSubdomain =
         typedSubdomain.isNotEmpty ? typedSubdomain : _suggestedSubdomain;
@@ -331,7 +334,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                       const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: Text(
-                          "Yangi Owner qo'shish",
+                          l10n.addNewOwner,
                           style: AppTextStyles.titleMedium(),
                         ),
                       ),
@@ -346,7 +349,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    "Bu form ro'yxatdan o'tish so'rovini chetlab o'tadi. Faqat alohida hollar uchun (telefon orqali kelgan murojaatlar) ishlatiladi.",
+                    l10n.createOwnerSubtitle,
                     style: AppTextStyles.bodySmall(),
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -366,17 +369,17 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
-                  const _Section('Owner'),
+                  _Section(l10n.ownerSection),
                   const SizedBox(height: AppSpacing.sm),
                   TextFormField(
                     controller: _fullName,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
                       prefix: Icons.person_outline,
-                      hint: "To'liq ism *",
+                      hint: l10n.fullNameRequired,
                     ),
                     validator: (v) =>
-                        (v ?? '').trim().length < 2 ? 'Ism kerak' : null,
+                        (v ?? '').trim().length < 2 ? l10n.nameRequiredShort : null,
                   ),
                   const SizedBox(height: AppSpacing.md + 2),
                   Row(
@@ -389,13 +392,13 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                           keyboardType: TextInputType.phone,
                           decoration: _decoration(
                             prefix: Icons.phone_outlined,
-                            hint: '+998 90 ...',
+                            hint: l10n.phoneHintExample,
                           ),
                           validator: (v) {
                             final s = (v ?? '').trim();
-                            if (s.isEmpty) return 'Telefon kerak';
+                            if (s.isEmpty) return l10n.phoneRequiredShort;
                             if (s.replaceAll(RegExp(r'\D'), '').length < 9) {
-                              return "Format noto'g'ri";
+                              return l10n.phoneFormatInvalid;
                             }
                             return null;
                           },
@@ -415,15 +418,15 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                               .copyWith(fontSize: 15),
                           decoration: _decoration(
                             prefix: Icons.alternate_email,
-                            hint: 'username *',
+                            hint: l10n.usernameRequiredShort,
                             suffixIcon: _suffix(_userState),
                             errorText: _userState == _Check.taken
-                                ? "'${_username.text.trim()}' band"
+                                ? l10n.usernameTaken(_username.text.trim())
                                 : null,
-                            helper: 'Min. 3 belgi',
+                            helper: l10n.minCharsShort,
                           ),
                           validator: (v) =>
-                              (v ?? '').trim().length < 3 ? 'Min. 3' : null,
+                              (v ?? '').trim().length < 3 ? l10n.minThreeCharsShort : null,
                         ),
                       ),
                       const SizedBox(width: AppSpacing.lg),
@@ -435,7 +438,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                               .copyWith(fontSize: 15),
                           decoration: _decoration(
                             prefix: Icons.lock_outline,
-                            hint: 'Parol *',
+                            hint: l10n.passwordRequiredShort,
                             suffixIcon: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -449,7 +452,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                                   ),
                                   onPressed: () => setState(() =>
                                       _obscurePassword = !_obscurePassword),
-                                  tooltip: "Ko'rsatish",
+                                  tooltip: l10n.show,
                                 ),
                                 IconButton(
                                   icon: const Icon(
@@ -458,34 +461,34 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                                     size: 20,
                                   ),
                                   onPressed: _generatePassword,
-                                  tooltip: 'Generate',
+                                  tooltip: l10n.generatePassword,
                                 ),
                               ],
                             ),
-                            helper: 'Min. 8 belgi',
+                            helper: l10n.minEightCharsHelper,
                           ),
                           validator: (v) =>
-                              (v ?? '').length < 8 ? 'Min. 8' : null,
+                              (v ?? '').length < 8 ? l10n.minEightChars : null,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  const _Section("Do'kon"),
+                  _Section(l10n.shopSection),
                   const SizedBox(height: AppSpacing.sm),
                   TextFormField(
                     controller: _marketName,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
                       prefix: Icons.storefront_outlined,
-                      hint: "Do'kon nomi *",
+                      hint: l10n.shopNameRequired,
                       suffixIcon: _suffix(_marketState),
                       errorText: _marketState == _Check.taken
-                          ? "'${_marketName.text.trim()}' band"
+                          ? l10n.marketNameTaken(_marketName.text.trim())
                           : null,
                     ),
                     validator: (v) =>
-                        (v ?? '').trim().length < 3 ? 'Min. 3' : null,
+                        (v ?? '').trim().length < 3 ? l10n.minThreeCharsShort : null,
                   ),
                   const SizedBox(height: AppSpacing.md + 2),
                   TextFormField(
@@ -493,11 +496,11 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
                       prefix: Icons.language_outlined,
-                      hint: 'subdomain (ixtiyoriy)',
+                      hint: l10n.subdomainOptionalShort,
                       suffixText: '.strotech.uz',
                       suffixIcon: _suffix(_subdomainState),
                       errorText: _subdomainState == _Check.taken
-                          ? "'$typedSubdomain' band"
+                          ? l10n.subdomainTaken(typedSubdomain)
                           : null,
                     ),
                   ),
@@ -514,7 +517,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            typedSubdomain.isEmpty ? 'Avto: ' : 'URL: ',
+                            typedSubdomain.isEmpty ? l10n.autoLabel : l10n.urlLabel,
                             style: AppTextStyles.bodySmall()
                                 .copyWith(fontSize: 12),
                           ),
@@ -535,7 +538,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                     children: [
                       Expanded(
                         child: AppSecondaryButton(
-                          label: 'Bekor qilish',
+                          label: l10n.cancel,
                           onPressed: _submitting
                               ? null
                               : () => Navigator.pop(context),
@@ -544,7 +547,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                       const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: AppPrimaryButton(
-                          label: 'Yaratish',
+                          label: l10n.create,
                           icon: Icons.check,
                           isLoading: _submitting,
                           onPressed: disabled ? null : _submit,

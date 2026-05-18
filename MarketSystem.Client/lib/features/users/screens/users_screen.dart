@@ -351,6 +351,12 @@ class _StaffSummary extends StatelessWidget {
           ),
           const _Divider(),
           const Expanded(
+            // TODO(staff-performance): wire to /Reports/staff-performance?period=today.
+            // ReportService.getStaffPerformance() returns StaffPerformance with
+            // a `staff` list; sum staff.revenue (or filter to today's active
+            // sellers) and render via NumberFormatter.format. Skipped here to
+            // keep the change focused on the dashboard wiring — needs its own
+            // loader, refresh wiring, and l10n key for the label.
             child: _SummaryStat(
               value: '—',
               label: 'BUGUN TUSHUM',

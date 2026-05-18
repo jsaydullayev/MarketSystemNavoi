@@ -23,8 +23,10 @@ class ProductRemoteDataSource {
   }
 
   /// Get low stock products
+  // TODO: hoist into ApiConstants as `lowStockProducts` constant.
   Future<Response> getLowStockProducts() async {
-    return await _networkHandler.get('/Products/GetLowStock');
+    return await _networkHandler
+        .get('/Products/GetLowStockProducts/low-stock');
   }
 
   /// Create new product

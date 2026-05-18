@@ -32,6 +32,21 @@ class AppColors {
 
   // Auxiliary input fill (gray) used by inputs/secondary buttons.
   static const Color inputFill = Color(0xFFF3F4F6);
+
+  // ─── Dark theme palette ──────────────────────────────────────
+  // Uses the old design's dark-blue family so users who prefer the
+  // previous look still feel at home in dark mode.
+  static const Color darkPrimary = Color(0xFF1E3A8A);
+  static const Color darkPrimaryLight = Color(0xFF3B82F6);
+  static const Color darkBg = Color(0xFF0F172A);
+  static const Color darkSurface = Color(0xFF1E293B);
+  static const Color darkSurface2 = Color(0xFF334155);
+  static const Color darkBorder = Color(0xFF334155);
+  static const Color darkBorderSoft = Color(0xFF1E293B);
+  static const Color darkText = Color(0xFFE5E7EB);
+  static const Color darkTextSecondary = Color(0xFF94A3B8);
+  static const Color darkTextMuted = Color(0xFF64748B);
+  static const Color darkInputFill = Color(0xFF334155);
 }
 
 class AppSpacing {

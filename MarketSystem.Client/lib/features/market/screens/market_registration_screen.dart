@@ -70,9 +70,10 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
       });
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Xatolik: $e'),
+            content: Text(l10n.errorWithMessage(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -106,7 +107,7 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
               Navigator.of(context).pop(); // Close dialog
               Navigator.of(context).pop(); // Go back to dashboard
             },
-            child: const Text('OK'),
+            child: Text(l10n.ok),
           ),
         ],
       ),

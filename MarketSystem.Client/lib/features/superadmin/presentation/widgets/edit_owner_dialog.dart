@@ -10,6 +10,7 @@ import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
 import '../../../../design/widgets/app_text_input.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/superadmin_service.dart';
 import '../../domain/models/owner_detail.dart';
 
@@ -83,12 +84,14 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
     if (res.status == SuperAdminOpStatus.success && res.data != null) {
       Navigator.of(context).pop(res.data);
     } else {
-      setState(() => _errorMessage = res.message ?? 'Yangilashda xatolik');
+      final l10n = AppLocalizations.of(context)!;
+      setState(() => _errorMessage = res.message ?? l10n.updateFailed);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Dialog(
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -123,7 +126,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                       const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: Text(
-                          "Ma'lumotlarni yangilash",
+                          l10n.updateInfoTitle,
                           style: AppTextStyles.titleMedium(),
                         ),
                       ),
@@ -170,24 +173,24 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
-                  const _SectionTitle('Owner'),
+                  _SectionTitle(l10n.ownerSection),
                   const SizedBox(height: AppSpacing.md),
                   AppTextInput(
-                    label: "To'liq ism",
+                    label: l10n.fullNameLabel,
                     controller: _fullName,
                     prefixIcon: Icons.person_outline,
                     validator: (v) =>
-                        (v ?? '').trim().length < 2 ? 'Ism kerak' : null,
+                        (v ?? '').trim().length < 2 ? l10n.nameRequiredShort : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Row(
                     children: [
                       Expanded(
                         child: AppTextInput(
-                          label: 'Telefon',
+                          label: l10n.phoneLabel,
                           controller: _phone,
                           prefixIcon: Icons.phone_outlined,
-                          hint: '+998 90 ...',
+                          hint: l10n.phoneHintExample,
                           keyboardType: TextInputType.phone,
                         ),
                       ),
@@ -197,36 +200,36 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SwitchTile(
-                    title: 'Owner faol',
+                    title: l10n.ownerActive,
                     value: _ownerActive,
                     onChanged: (v) => setState(() => _ownerActive = v),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  const _SectionTitle("Do'kon"),
+                  _SectionTitle(l10n.shopSection),
                   const SizedBox(height: AppSpacing.md),
                   AppTextInput(
-                    label: "Do'kon nomi",
+                    label: l10n.shopName,
                     controller: _marketName,
                     prefixIcon: Icons.storefront_outlined,
                     validator: (v) =>
-                        (v ?? '').trim().length < 3 ? 'Min. 3 belgi' : null,
+                        (v ?? '').trim().length < 3 ? l10n.minCharsShort : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppTextInput(
-                    label: 'Subdomain',
+                    label: l10n.subdomainLabel,
                     controller: _subdomain,
                     prefixIcon: Icons.language_outlined,
-                    hint: 'subdomain.strotech.uz',
+                    hint: l10n.subdomainHintExample,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppTextInput(
-                    label: 'Tavsif',
+                    label: l10n.descriptionLabel,
                     controller: _description,
                     prefixIcon: Icons.notes_outlined,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SwitchTile(
-                    title: "Do'kon faol",
+                    title: l10n.shopActive,
                     value: _marketActive,
                     onChanged: (v) => setState(() => _marketActive = v),
                   ),
@@ -235,7 +238,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                     children: [
                       Expanded(
                         child: AppSecondaryButton(
-                          label: 'Bekor qilish',
+                          label: l10n.cancel,
                           onPressed: _submitting
                               ? null
                               : () => Navigator.pop(context),
@@ -244,7 +247,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                       const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: AppPrimaryButton(
-                          label: 'Saqlash',
+                          label: l10n.save,
                           icon: Icons.save_outlined,
                           isLoading: _submitting,
                           onPressed: _submitting ? null : _submit,
@@ -262,12 +265,13 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
   }
 
   Widget _languageDropdown() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'TIL',
+          l10n.languageUpper,
           style: AppTextStyles.caption().copyWith(
             color: AppColors.textSecondary,
           ),

@@ -9,6 +9,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/superadmin_service.dart';
 
 class BlockMarketDialog extends StatefulWidget {
@@ -64,8 +65,9 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
     if (res.status == SuperAdminOpStatus.success) {
       Navigator.of(context).pop(true);
     } else {
+      final l10n = AppLocalizations.of(context)!;
       setState(() =>
-          _errorMessage = res.message ?? 'Bloklashda xatolik yuz berdi');
+          _errorMessage = res.message ?? l10n.blockFailed);
     }
   }
 
@@ -81,18 +83,20 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
     if (res.status == SuperAdminOpStatus.success) {
       Navigator.of(context).pop(true);
     } else {
+      final l10n = AppLocalizations.of(context)!;
       setState(() => _errorMessage =
-          res.message ?? 'Blokdan chiqarishda xatolik yuz berdi');
+          res.message ?? l10n.unblockFailed);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final blocking = !widget.currentlyBlocked;
     final accent = blocking ? AppColors.warning : AppColors.success;
     final accentBg = blocking ? AppColors.warningLight : AppColors.successLight;
     final icon = blocking ? Icons.block_outlined : Icons.lock_open_outlined;
-    final title = blocking ? "Do'konni bloklash" : 'Blokdan chiqarish';
+    final title = blocking ? l10n.blockShopTitle : l10n.unblock;
 
     return Dialog(
       backgroundColor: AppColors.surface,
@@ -143,8 +147,8 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     children: [
                       TextSpan(
                         text: blocking
-                            ? 'Bloklanadi: '
-                            : 'Blokdan chiqariladi: ',
+                            ? l10n.blocking
+                            : l10n.unblocking,
                       ),
                       TextSpan(
                         text: widget.marketName,
@@ -175,7 +179,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
-                            "Bloklash darhol kuchga kiradi: Owner va do'kondagi barcha xodimlar (Admin/Seller) tizimga kira olmaydi. Eski JWT tokenlar ham 423 qaytaradi.",
+                            l10n.blockImmediateInfo,
                             style: AppTextStyles.bodySmall().copyWith(
                               color: AppColors.text,
                               fontSize: 12,
@@ -187,7 +191,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'BLOKLASH SABABI *',
+                    l10n.blockReasonRequired,
                     style: AppTextStyles.caption().copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -199,8 +203,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     autofocus: true,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: InputDecoration(
-                      hintText:
-                          "Masalan: Obuna to'lovi 30 kun kechiktirilgan",
+                      hintText: l10n.blockReasonHint,
                       hintStyle: AppTextStyles.bodyMedium().copyWith(
                         color: AppColors.textMuted,
                         fontSize: 15,
@@ -229,7 +232,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                       ),
                     ),
                     validator: (v) => (v ?? '').trim().length < 3
-                        ? 'Sababini batafsil yozing'
+                        ? l10n.reasonRequiredDetailed
                         : null,
                   ),
                 ] else ...[
@@ -253,7 +256,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
-                            'Blokdan chiqarilgach Owner va xodimlar yana login qila olishadi.',
+                            l10n.unblockInfo,
                             style: AppTextStyles.bodySmall().copyWith(
                               color: AppColors.text,
                               fontSize: 12,
@@ -266,7 +269,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                   if (widget.currentReason != null) ...[
                     const SizedBox(height: AppSpacing.lg),
                     Text(
-                      'BLOKLASH SABABI (AVVAL):',
+                      l10n.previousBlockReason,
                       style: AppTextStyles.caption().copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -299,7 +302,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                   children: [
                     Expanded(
                       child: AppSecondaryButton(
-                        label: 'Bekor qilish',
+                        label: l10n.cancel,
                         onPressed: _submitting
                             ? null
                             : () => Navigator.pop(context),
@@ -309,13 +312,13 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     Expanded(
                       child: blocking
                           ? AppDangerButton(
-                              label: 'Bloklash',
+                              label: l10n.block,
                               icon: Icons.block_outlined,
                               isLoading: _submitting,
                               onPressed: _submitting ? null : _doBlock,
                             )
                           : AppPrimaryButton(
-                              label: 'Blokdan chiqarish',
+                              label: l10n.unblock,
                               icon: Icons.lock_open_outlined,
                               isLoading: _submitting,
                               onPressed: _submitting ? null : _doUnblock,
