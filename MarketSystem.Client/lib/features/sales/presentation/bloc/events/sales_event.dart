@@ -1,5 +1,5 @@
-/// Sales Events
-/// Sales BLoC uchun hodisalar
+// Sales Events
+// Sales BLoC uchun hodisalar
 
 import 'package:equatable/equatable.dart';
 

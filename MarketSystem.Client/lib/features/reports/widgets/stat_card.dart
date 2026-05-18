@@ -1,5 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 
+/// KPI tile shown in 2x2 grids on the Reports hub.
+///
+/// Demo reference: `id="page-rpt-hub"` cards in `design-demo/index.html` —
+/// white surface with a colored icon tile + label on top, then a big
+/// brand-tinted value. The `color` parameter is the accent for the icon
+/// tile and the value; the card itself stays neutral (AppColors.surface)
+/// so a row of cards reads as a calm grid instead of a rainbow.
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -24,72 +33,75 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? color.withValues(alpha: 0.12) : color.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.2 : 0.15),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Ink(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(9),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md - 1),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(icon, color: color, size: 16),
                   ),
-                  child: Icon(icon, color: color, size: 16),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.grey[300] : Colors.grey[600],
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppTextStyles.labelSmall(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (isLoading)
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: color),
+                    )
+                  else if (isClickable)
+                    Icon(Icons.arrow_forward_ios_rounded,
+                        size: 13, color: color),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md + 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: AppTextStyles.titleMedium().copyWith(
+                    fontSize: 20,
+                    color: color,
+                    letterSpacing: -0.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                if (isLoading)
-                  SizedBox(
-                    width: 14,
-                    height: 14,
-                    child:
-                        CircularProgressIndicator(strokeWidth: 2, color: color),
-                  )
-                else if (isClickable)
-                  Icon(Icons.arrow_forward_ios_rounded, size: 13, color: color),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 3),
+                Text(
+                  subtitle!,
+                  style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
+                ),
               ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: -0.5,
-              ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 3),
-              Text(
-                subtitle!,
-                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );

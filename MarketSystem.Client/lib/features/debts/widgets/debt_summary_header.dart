@@ -1,6 +1,8 @@
-﻿import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtSummaryHeader extends StatelessWidget {
@@ -10,6 +12,7 @@ class DebtSummaryHeader extends StatelessWidget {
   final AppLocalizations l10n;
 
   const DebtSummaryHeader({
+    super.key,
     required this.customerName,
     required this.debt,
     required this.debtStatus,
@@ -19,15 +22,18 @@ class DebtSummaryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOpen = debtStatus == 'Open';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final avatarColor = CustomerAvatarPalette.pick(customerName);
+    final initial = customerName.isNotEmpty
+        ? customerName.characters.first.toUpperCase()
+        : '?';
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      decoration: BoxDecoration(
-        color: AppColors.getCard(isDark),
-        border:
-            Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.12))),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl2, AppSpacing.xl, AppSpacing.xl2, AppSpacing.xl2),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,28 +41,29 @@ class DebtSummaryHeader extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                    color: avatarColor, shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: Text(
+                  initial,
+                  style: AppTextStyles.labelLarge().copyWith(
+                    color: Colors.white,
+                  ),
                 ),
-                child: const Icon(Icons.person_rounded,
-                    color: Color(0xFF3B82F6), size: 20),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Text(
                   customerName,
-                  style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.4),
+                  style: AppTextStyles.titleMedium(),
                 ),
               ),
               _StatusBadge(isOpen: isOpen),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
               Expanded(
@@ -64,16 +71,16 @@ class DebtSummaryHeader extends StatelessWidget {
                   label: l10n.totalDebt,
                   value:
                       '${NumberFormatter.format(debt['totalDebt'])} ${l10n.currencySom}',
-                  color: const Color(0xFF64748B),
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: _SummaryChip(
                   label: l10n.remaining,
                   value:
                       '${NumberFormatter.format(debt['remainingDebt'])} ${l10n.currencySom}',
-                  color: const Color(0xFFEF4444),
+                  color: AppColors.danger,
                   isBold: true,
                 ),
               ),
@@ -92,18 +99,14 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final color = isOpen ? AppColors.success : AppColors.textMuted;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md + 2, vertical: AppSpacing.xs + 1),
       decoration: BoxDecoration(
-        color: isOpen
-            ? const Color(0xFF10B981).withValues(alpha: 0.1)
-            : Colors.grey.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isOpen
-              ? const Color(0xFF10B981).withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.2),
-        ),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -111,18 +114,15 @@ class _StatusBadge extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isOpen ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: AppSpacing.xs + 1),
           Text(
             isOpen ? l10n.open : l10n.cls,
-            style: TextStyle(
+            style: AppTextStyles.bodyMedium().copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isOpen ? const Color(0xFF059669) : const Color(0xFF9CA3AF),
+              color: color,
             ),
           ),
         ],
@@ -147,21 +147,22 @@ class _SummaryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg + 2, vertical: AppSpacing.md + 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
         border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF))),
+              style: AppTextStyles.caption().copyWith(fontSize: 11)),
           const SizedBox(height: 3),
           Text(
             value,
-            style: TextStyle(
+            style: AppTextStyles.bodyMedium().copyWith(
               fontSize: isBold ? 15 : 13,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
               color: color,

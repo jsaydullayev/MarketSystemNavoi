@@ -1,9 +1,16 @@
+// Approve-registration dialog — migrated to the new design system. All
+// live-validation logic (debounced availability checks, suggested
+// subdomain) is preserved from the original.
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_tokens.dart';
+import '../../../../design/tokens/app_typography.dart';
+import '../../../../design/widgets/app_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../data/superadmin_service.dart';
 import '../../domain/models/registration_request.dart';
@@ -23,7 +30,7 @@ class ApproveResult {
   final String? subdomain;
 }
 
-/// State of a single live-validation field. `null` = nothing typed yet,
+/// State of a single live-validation field. `idle` = nothing typed yet,
 /// `checking` = debounce or request in flight, `free` / `taken` = settled.
 enum _CheckState { idle, checking, free, taken }
 
@@ -89,12 +96,15 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       setState(() {
         _usernameState = _CheckState.idle;
         // Clear the suggestion too — it depends on the username.
-        if (_subdomainController.text.trim().isEmpty) _suggestedSubdomain = null;
+        if (_subdomainController.text.trim().isEmpty) {
+          _suggestedSubdomain = null;
+        }
       });
       return;
     }
     setState(() => _usernameState = _CheckState.checking);
-    _usernameTimer = Timer(_debounce, () => _checkAvailability(usernameQuery: value));
+    _usernameTimer =
+        Timer(_debounce, () => _checkAvailability(usernameQuery: value));
   }
 
   void _onMarketChanged() {
@@ -105,7 +115,8 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       return;
     }
     setState(() => _marketState = _CheckState.checking);
-    _marketTimer = Timer(_debounce, () => _checkAvailability(marketQuery: value));
+    _marketTimer =
+        Timer(_debounce, () => _checkAvailability(marketQuery: value));
   }
 
   void _onSubdomainChanged() {
@@ -124,7 +135,8 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       return;
     }
     setState(() => _subdomainState = _CheckState.checking);
-    _subdomainTimer = Timer(_debounce, () => _checkAvailability(subdomainQuery: value));
+    _subdomainTimer =
+        Timer(_debounce, () => _checkAvailability(subdomainQuery: value));
   }
 
   Future<void> _checkAvailability({
@@ -146,7 +158,8 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
         (marketQuery == null ||
             _marketNameController.text.trim() == marketQuery) &&
         (subdomainQuery == null ||
-            _subdomainController.text.trim().toLowerCase() == subdomainQuery);
+            _subdomainController.text.trim().toLowerCase() ==
+                subdomainQuery);
     if (!stillCurrent) return;
 
     if (result.status != SuperAdminOpStatus.success || result.data == null) {
@@ -208,17 +221,66 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
         return const Padding(
           padding: EdgeInsets.all(12),
           child: SizedBox(
-            width: 16, height: 16,
+            width: 16,
+            height: 16,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
         );
       case _CheckState.free:
-        return const Icon(Icons.check_circle, color: Color(0xFF137333));
+        return const Icon(Icons.check_circle, color: AppColors.success);
       case _CheckState.taken:
-        return const Icon(Icons.error_outline, color: Color(0xFFD93025));
+        return const Icon(Icons.error_outline, color: AppColors.danger);
       case _CheckState.idle:
         return null;
     }
+  }
+
+  InputDecoration _decoration({
+    required IconData prefix,
+    required String hint,
+    Widget? suffixIcon,
+    String? errorText,
+    String? helper,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: AppTextStyles.bodyMedium().copyWith(
+        color: AppColors.textMuted,
+        fontSize: 15,
+      ),
+      prefixIcon:
+          Icon(prefix, size: 20, color: AppColors.textSecondary),
+      suffixIcon: suffixIcon,
+      errorText: errorText,
+      helperText: helper,
+      helperStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
+      filled: true,
+      fillColor: AppColors.inputFill,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg + 2,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      ),
+    );
   }
 
   String? _errorTextForState(_CheckState state, String takenMessage) =>
@@ -235,176 +297,258 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
     final previewSubdomain =
         typedSubdomain.isNotEmpty ? typedSubdomain : _suggestedSubdomain;
 
-    return AlertDialog(
-      title: Text(l10n.superAdminApproveTitle),
-      content: SizedBox(
-        width: 420,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    final disabled = _usernameState == _CheckState.taken ||
+        _marketState == _CheckState.taken ||
+        _subdomainState == _CheckState.taken;
+
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl2),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
                     children: [
-                      Text(widget.request.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 2),
-                      Text(widget.request.phone,
-                          style: const TextStyle(
-                              color: Color(0xFF64748B), fontSize: 13)),
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.successLight,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: const Icon(
+                          Icons.check_circle_outline,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: Text(
+                          l10n.superAdminApproveTitle,
+                          style: AppTextStyles.titleMedium(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        color: AppColors.textSecondary,
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _usernameController,
-                  textInputAction: TextInputAction.next,
-                  autofillHints: const [AutofillHints.newUsername],
-                  decoration: InputDecoration(
-                    labelText: l10n.username,
-                    prefixIcon: const Icon(Icons.person_outline),
-                    suffixIcon: _suffixForState(_usernameState),
-                    errorText: _errorTextForState(
-                      _usernameState,
-                      "'${_usernameController.text.trim()}' allaqachon band",
+                  const SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputFill,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                  ),
-                  validator: (v) {
-                    final t = v?.trim() ?? '';
-                    if (t.isEmpty) return l10n.enterUsername;
-                    if (t.length < 3) return l10n.usernameMinLength;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  textInputAction: TextInputAction.next,
-                  autofillHints: const [AutofillHints.newPassword],
-                  decoration: InputDecoration(
-                    labelText: l10n.password,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                    ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return l10n.enterPassword;
-                    if (v.length < 8) return l10n.superAdminPasswordMinLength;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _marketNameController,
-                  textInputAction: TextInputAction.next,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: InputDecoration(
-                    labelText: l10n.marketName,
-                    prefixIcon: const Icon(Icons.store_outlined),
-                    suffixIcon: _suffixForState(_marketState),
-                    errorText: _errorTextForState(
-                      _marketState,
-                      "'${_marketNameController.text.trim()}' nomli do'kon allaqachon mavjud",
-                    ),
-                  ),
-                  validator: (v) {
-                    final t = v?.trim() ?? '';
-                    if (t.isEmpty) return l10n.enterMarketName;
-                    if (t.length < 3) return l10n.marketNameTooShort;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _subdomainController,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(
-                    labelText: l10n.superAdminSubdomainOptional,
-                    prefixIcon: const Icon(Icons.language_outlined),
-                    suffixIcon: _suffixForState(_subdomainState),
-                    helperText: l10n.superAdminSubdomainHint,
-                    errorText: _errorTextForState(
-                      _subdomainState,
-                      "'$typedSubdomain' subdomeni band",
-                    ),
-                  ),
-                  onFieldSubmitted: (_) => _submit(),
-                ),
-                // Live preview of the resolved subdomain — shows what URL the
-                // owner will actually log in at, even if the field is empty.
-                if (previewSubdomain != null && previewSubdomain.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.public,
-                            size: 14, color: Color(0xFF5F6368)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text.rich(
-                            TextSpan(
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF5F6368),
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: typedSubdomain.isEmpty
-                                      ? 'Avto: '
-                                      : 'URL: ',
-                                ),
-                                TextSpan(
-                                  text: '$previewSubdomain.strotech.uz',
-                                  style: const TextStyle(
-                                    color: Color(0xFF1A73E8),
-                                    fontFamily: 'monospace',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        Text(
+                          widget.request.fullName,
+                          style: AppTextStyles.labelLarge(),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.request.phone,
+                          style: AppTextStyles.bodySmall(),
                         ),
                       ],
                     ),
                   ),
-              ],
+                  const SizedBox(height: AppSpacing.xl),
+                  _Label(l10n.username),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _usernameController,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.newUsername],
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      prefix: Icons.person_outline,
+                      hint: 'username',
+                      suffixIcon: _suffixForState(_usernameState),
+                      errorText: _errorTextForState(
+                        _usernameState,
+                        "'${_usernameController.text.trim()}' allaqachon band",
+                      ),
+                    ),
+                    validator: (v) {
+                      final t = v?.trim() ?? '';
+                      if (t.isEmpty) return l10n.enterUsername;
+                      if (t.length < 3) return l10n.usernameMinLength;
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _Label(l10n.password),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.newPassword],
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      prefix: Icons.lock_outline,
+                      hint: 'Min. 8 belgi',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return l10n.enterPassword;
+                      if (v.length < 8) {
+                        return l10n.superAdminPasswordMinLength;
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _Label(l10n.marketName),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _marketNameController,
+                    textInputAction: TextInputAction.next,
+                    textCapitalization: TextCapitalization.words,
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      prefix: Icons.storefront_outlined,
+                      hint: "Do'kon nomi",
+                      suffixIcon: _suffixForState(_marketState),
+                      errorText: _errorTextForState(
+                        _marketState,
+                        "'${_marketNameController.text.trim()}' nomli do'kon allaqachon mavjud",
+                      ),
+                    ),
+                    validator: (v) {
+                      final t = v?.trim() ?? '';
+                      if (t.isEmpty) return l10n.enterMarketName;
+                      if (t.length < 3) return l10n.marketNameTooShort;
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _Label(l10n.superAdminSubdomainOptional),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _subdomainController,
+                    textInputAction: TextInputAction.done,
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      prefix: Icons.language_outlined,
+                      hint: 'subdomain (ixtiyoriy)',
+                      suffixIcon: _suffixForState(_subdomainState),
+                      helper: l10n.superAdminSubdomainHint,
+                      errorText: _errorTextForState(
+                        _subdomainState,
+                        "'$typedSubdomain' subdomeni band",
+                      ),
+                    ),
+                    onFieldSubmitted: (_) => _submit(),
+                  ),
+                  // Live preview of the resolved subdomain — shows what URL the
+                  // owner will actually log in at, even if the field is empty.
+                  if (previewSubdomain != null &&
+                      previewSubdomain.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.public,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text.rich(
+                              TextSpan(
+                                style: AppTextStyles.bodySmall().copyWith(
+                                  fontSize: 12,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: typedSubdomain.isEmpty
+                                        ? 'Avto: '
+                                        : 'URL: ',
+                                  ),
+                                  TextSpan(
+                                    text: '$previewSubdomain.strotech.uz',
+                                    style: AppTextStyles.bodySmall().copyWith(
+                                      color: AppColors.brand,
+                                      fontFamily: 'monospace',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppSecondaryButton(
+                          label: l10n.cancel,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: AppPrimaryButton(
+                          label: l10n.superAdminApprove,
+                          icon: Icons.check,
+                          onPressed: disabled ? null : _submit,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        ElevatedButton.icon(
-          // Disable the submit button when any field is known-taken so the
-          // operator can't fire a 400 on purpose.
-          onPressed: (_usernameState == _CheckState.taken ||
-                  _marketState == _CheckState.taken ||
-                  _subdomainState == _CheckState.taken)
-              ? null
-              : _submit,
-          icon: const Icon(Icons.check),
-          label: Text(l10n.superAdminApprove),
-        ),
-      ],
+    );
+  }
+}
+
+class _Label extends StatelessWidget {
+  const _Label(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.caption().copyWith(
+        color: AppColors.textSecondary,
+      ),
     );
   }
 }

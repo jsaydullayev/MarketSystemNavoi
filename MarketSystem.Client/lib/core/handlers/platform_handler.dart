@@ -1,5 +1,5 @@
-/// Platform Handler
-/// Unified interface for all platform-specific operations
+// Platform Handler
+// Unified interface for all platform-specific operations
 
 import 'dart:io' as io;
 

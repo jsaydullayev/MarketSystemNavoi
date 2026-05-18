@@ -1,5 +1,5 @@
-/// Zakup Repository Interface
-/// Xarid (Zakup) repository interfeysi - data layer uchun kontrakt
+// Zakup Repository Interface
+// Xarid (Zakup) repository interfeysi - data layer uchun kontrakt
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/zakup_entity.dart';

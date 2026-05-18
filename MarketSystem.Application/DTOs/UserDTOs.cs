@@ -16,22 +16,22 @@ public record UserDto(
 
 public record CreateUserDto(
     [property: JsonPropertyName("fullName")]
-    [property: Required(ErrorMessage = "To'liq ism majburiy")]
-    [property: StringLength(100, MinimumLength = 2)]
+    [param: Required(ErrorMessage = "To'liq ism majburiy")]
+    [param: StringLength(100, MinimumLength = 2)]
     string FullName,
 
     [property: JsonPropertyName("username")]
-    [property: Required(ErrorMessage = "Username majburiy")]
-    [property: StringLength(50, MinimumLength = 3)]
+    [param: Required(ErrorMessage = "Username majburiy")]
+    [param: StringLength(50, MinimumLength = 3)]
     string Username,
 
     [property: JsonPropertyName("password")]
-    [property: Required(ErrorMessage = "Parol majburiy")]
-    [property: StringLength(100, MinimumLength = 6)]
+    [param: Required(ErrorMessage = "Parol majburiy")]
+    [param: StringLength(100, MinimumLength = 6)]
     string Password,
 
     [property: JsonPropertyName("role")]
-    [property: Required(ErrorMessage = "Rol majburiy")]
+    [param: Required(ErrorMessage = "Rol majburiy")]
     string Role,
 
     [property: JsonPropertyName("language")] string? Language = "uz"
@@ -41,16 +41,16 @@ public record UpdateUserDto(
     [property: JsonPropertyName("id")] Guid Id,
 
     [property: JsonPropertyName("fullName")]
-    [property: Required(ErrorMessage = "To'liq ism majburiy")]
-    [property: StringLength(100, MinimumLength = 2)]
+    [param: Required(ErrorMessage = "To'liq ism majburiy")]
+    [param: StringLength(100, MinimumLength = 2)]
     string FullName,
 
     [property: JsonPropertyName("password")]
-    [property: StringLength(100, MinimumLength = 6, ErrorMessage = "Parol kamida 6 belgi bo'lishi kerak")]
+    [param: StringLength(100, MinimumLength = 6, ErrorMessage = "Parol kamida 6 belgi bo'lishi kerak")]
     string? Password,
 
     [property: JsonPropertyName("role")]
-    [property: Required(ErrorMessage = "Rol majburiy")]
+    [param: Required(ErrorMessage = "Rol majburiy")]
     string Role,
 
     [property: JsonPropertyName("isActive")] bool IsActive
@@ -58,20 +58,20 @@ public record UpdateUserDto(
 
 public record UpdateProfileDto(
     [property: JsonPropertyName("fullName")]
-    [property: StringLength(100, MinimumLength = 2)]
+    [param: StringLength(100, MinimumLength = 2)]
     string? FullName,
 
     [property: JsonPropertyName("currentPassword")]
-    [property: StringLength(100, MinimumLength = 6)]
+    [param: StringLength(100, MinimumLength = 6)]
     string? CurrentPassword,
 
     [property: JsonPropertyName("newPassword")]
-    [property: StringLength(100, MinimumLength = 6)]
+    [param: StringLength(100, MinimumLength = 6)]
     string? NewPassword
 );
 
 public record UpdateProfileImageDto(
     [property: JsonPropertyName("profileImage")]
-    [property: Required(ErrorMessage = "Rasm majburiy")]
+    [param: Required(ErrorMessage = "Rasm majburiy")]
     string ProfileImage
 );

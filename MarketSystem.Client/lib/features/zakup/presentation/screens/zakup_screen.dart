@@ -1,10 +1,12 @@
-﻿// lib/features/zakup/presentation/screens/zakup_screen.dart
+// lib/features/zakup/presentation/screens/zakup_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -53,18 +55,12 @@ class _ZakupScreenState extends State<ZakupScreen> {
     final userRole = authProvider.user?['role'];
 
     if (userRole != 'Admin' && userRole != 'Owner') {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(l10n.onlyAdminOwnerCanAdd),
-        backgroundColor: Colors.red,
-      ));
+      _showSnack(l10n.onlyAdminOwnerCanAdd, isError: true);
       return;
     }
 
     if (_products.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(l10n.noProductsAddFirst),
-        backgroundColor: Colors.orange,
-      ));
+      _showSnack(l10n.noProductsAddFirst, warning: true);
       return;
     }
 
@@ -83,35 +79,47 @@ class _ZakupScreenState extends State<ZakupScreen> {
         final ok = await core_file_helper.FileHelper.saveAndOpenExcel(
             bytes, 'Xaridlar.xlsx');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(ok ? l10n.fileSaved : l10n.fileSaveError),
-            backgroundColor: ok ? Colors.green : Colors.red,
-          ));
+          _showSnack(
+            ok ? l10n.fileSaved : l10n.fileSaveError,
+            isError: !ok,
+          );
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l10n.errorLoadingData),
-            backgroundColor: Colors.red,
-          ));
+          _showSnack(l10n.errorLoadingData, isError: true);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${l10n.errorOccurred}: $e'),
-          backgroundColor: Colors.red,
-        ));
+        _showSnack('${l10n.errorOccurred}: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
   }
 
+  void _showSnack(String message,
+      {bool isError = false, bool warning = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? AppColors.danger
+            : warning
+                ? AppColors.warning
+                : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authProvider = Provider.of<AuthProvider>(context);
     final userRole = authProvider.user?['role'];
     final canAdd = userRole == 'Admin' || userRole == 'Owner';
@@ -119,16 +127,10 @@ class _ZakupScreenState extends State<ZakupScreen> {
     return BlocListener<ZakupBloc, ZakupState>(
       listener: (context, state) {
         if (state is ZakupCreated) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l10n.zakupSuccess),
-            backgroundColor: Colors.green,
-          ));
+          _showSnack(l10n.zakupSuccess);
           context.read<ZakupBloc>().add(const GetZakupsEvent());
         } else if (state is ZakupError) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(state.message),
-            backgroundColor: Colors.red,
-          ));
+          _showSnack(state.message, isError: true);
         }
       },
       child: NetworkWrapper(
@@ -137,7 +139,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
           context.read<ZakupBloc>().add(const GetZakupsEvent());
         },
         child: Scaffold(
-          backgroundColor: AppColors.getBg(isDark),
+          backgroundColor: AppColors.bg,
           appBar: CommonAppBar(
             title: l10n.zakup,
             onRefresh: () =>
@@ -145,7 +147,8 @@ class _ZakupScreenState extends State<ZakupScreen> {
             extraActions: [
               _isExporting
                   ? const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                       child: Center(
                         child: SizedBox(
                           width: 20,
@@ -185,8 +188,14 @@ class _ZakupScreenState extends State<ZakupScreen> {
                 return RefreshIndicator(
                   onRefresh: () async =>
                       context.read<ZakupBloc>().add(const GetZakupsEvent()),
+                  color: AppColors.brand,
                   child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.lg,
+                      AppSpacing.xl,
+                      100,
+                    ),
                     itemCount: zakups.length,
                     itemBuilder: (_, i) => ZakupCard(zakup: zakups[i]),
                   ),
@@ -199,13 +208,15 @@ class _ZakupScreenState extends State<ZakupScreen> {
           floatingActionButton: canAdd
               ? FloatingActionButton.extended(
                   onPressed: () => _openAddSheet(context),
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.brand,
                   foregroundColor: Colors.white,
                   elevation: 2,
                   icon: const Icon(Icons.add_rounded),
                   label: Text(
                     l10n.addPurchase,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: AppTextStyles.labelLarge().copyWith(
+                      color: Colors.white,
+                    ),
                   ),
                 )
               : null,
@@ -221,27 +232,28 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
+            padding: const EdgeInsets.all(AppSpacing.xl3),
+            decoration: const BoxDecoration(
+              color: AppColors.brandLight,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.shopping_bag_outlined,
-                size: 48, color: AppColors.primary),
+            child: const Icon(
+              Icons.shopping_bag_outlined,
+              size: 48,
+              color: AppColors.brand,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xl),
           Text(
             l10n.noPurchases,
-            style: TextStyle(
-              fontSize: 16,
+            style: AppTextStyles.bodyLarge().copyWith(
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white54 : Colors.grey.shade500,
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -260,21 +272,21 @@ class _ErrorView extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xl4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(message,
-                style: const TextStyle(color: Colors.red),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+            Text(
+              message,
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: AppColors.danger,
               ),
-              child: Text(l10n.retry),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            AppPrimaryButton(
+              label: l10n.retry,
+              onPressed: onRetry,
             ),
           ],
         ),

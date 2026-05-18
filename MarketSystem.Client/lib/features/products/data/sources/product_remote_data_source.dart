@@ -1,5 +1,5 @@
-/// Product Remote Data Source
-/// API data source for products
+// Product Remote Data Source
+// API data source for products
 
 import 'package:dio/dio.dart';
 

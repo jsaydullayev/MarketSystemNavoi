@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
-import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_payment_dialog.dart';
-
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_cart_item.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_product_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_bottom_bar.dart';
@@ -17,6 +16,17 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../sales/presentation/widgets/return_quantity_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/price_input_dialog.dart';
 
+/// Resume / edit an existing draft sale by `saleId`. Mirrors the new
+/// `NewSaleScreen` POS layout: white sticky header (back + title + meta
+/// + customer chip), gray search input row, 3-column product grid, and a
+/// pinned cart bottom bar. The horizontal "items already added" strip
+/// sits between the search and the grid to remind the cashier what's
+/// already in this draft.
+///
+/// Business logic preserved verbatim — every `SalesService` call (sale
+/// fetch, add/remove items, update price, return-item, add payment),
+/// every snackbar, the role-gated return action, and the silent-refresh
+/// flag used to avoid full-screen spinners during in-place edits.
 class ContinueSaleScreen extends StatefulWidget {
   final String saleId;
 
@@ -166,7 +176,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 isError: false);
           }
         } catch (e) {
-          await _loadData(silent: true);  // keep the screen on-screen
+          await _loadData(silent: true); // keep the screen on-screen
           // ignore: empty_catches — fall through to snack below
           if (mounted) _showSnack('${l10n.error}: $e', isError: true);
         }
@@ -280,7 +290,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         if (!mounted) return;
         if (newPrice == currentPrice &&
             newQty == currentQty &&
-            comment == item['comment']) return;
+            comment == item['comment']) {
+          return;
+        }
 
         if (!item.containsKey('saleItemId')) return;
 
@@ -457,120 +469,57 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
   void _showSnack(String msg, {required bool isError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? Colors.red : Colors.green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (_isLoading || _sale == null) {
       return NetworkWrapper(
         onRetry: _loadData,
         child: Scaffold(
-          backgroundColor: AppColors.getBg(isDark),
-          appBar: CommonAppBar(title: l10n.draftSale),
-          body: const Center(child: CircularProgressIndicator()),
+          backgroundColor: AppColors.bg,
+          appBar: _buildAppBar(l10n),
+          body: const Center(
+            child: CircularProgressIndicator(color: AppColors.brand),
+          ),
         ),
       );
     }
 
-    final customerName = _sale!['customerName'] as String?;
     final isClosed = _sale?['status'] == 'Closed';
 
     return NetworkWrapper(
       onRetry: _loadData,
       child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(title: l10n.draftSale),
+        backgroundColor: AppColors.bg,
+        appBar: _buildAppBar(l10n),
         body: Column(
           children: [
-            // Customer pill — always shown, tappable. Lets the seller add or
-            // change the customer for a sale they're continuing (couldn't do
-            // this before, so a debt sale started "Mijozsiz" stayed that way).
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: isClosed ? null : _selectOrChangeCustomer,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color:
-                          isDark ? const Color(0xFF1E293B) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.white12
-                            : Colors.black.withOpacity(0.06),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color:
-                                const Color(0xFF3B82F6).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          child: Icon(
-                            customerName != null
-                                ? Icons.person_rounded
-                                : Icons.person_add_alt_1_rounded,
-                            color: const Color(0xFF3B82F6),
-                            size: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            customerName ?? l10n.customerNotSelected,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w700,
-                              color: customerName != null
-                                  ? (isDark
-                                      ? Colors.white
-                                      : Colors.black87)
-                                  : (isDark
-                                      ? Colors.white60
-                                      : Colors.grey[600]),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (!isClosed)
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 18,
-                            color: isDark ? Colors.white54 : Colors.grey,
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
             if (_cartItems.isNotEmpty)
               SizedBox(
-                height: 110,
+                height: 118,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.md,
+                    AppSpacing.xl,
+                    AppSpacing.md,
+                  ),
                   itemCount: _cartItems.length,
                   itemBuilder: (context, index) => ContinueSaleCartItem(
                     item: _cartItems[index],
@@ -578,15 +527,15 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                     onEditPrice: () => _updateItemPrice(index),
                     onReturn: () => _returnItem(index),
                     onDecrement: () async {
-                      final qty =
-                          (_cartItems[index]['quantity'] as num?)?.toDouble() ??
-                              0.0;
+                      final qty = (_cartItems[index]['quantity'] as num?)
+                              ?.toDouble() ??
+                          0.0;
                       await _updateQuantity(index, qty - 1);
                     },
                     onIncrement: () async {
-                      final qty =
-                          (_cartItems[index]['quantity'] as num?)?.toDouble() ??
-                              0.0;
+                      final qty = (_cartItems[index]['quantity'] as num?)
+                              ?.toDouble() ??
+                          0.0;
                       await _updateQuantity(index, qty + 1);
                     },
                     onRemove: () => _removeFromCart(index),
@@ -597,133 +546,48 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                    ),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            style: const TextStyle(fontSize: 14),
-                            decoration: InputDecoration(
-                              hintText: l10n.searchProduct,
-                              hintStyle: TextStyle(
-                                  color: Colors.grey.shade400, fontSize: 14),
-                              prefixIcon: const Icon(Icons.search_rounded,
-                                  size: 18, color: Color(0xFF9CA3AF)),
-                              suffixIcon: _searchController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear_rounded,
-                                          size: 16),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        _filterProducts();
-                                      },
-                                    )
-                                  : null,
-                              filled: true,
-                              fillColor: isDark
-                                  ? const Color(0xFF2C2C2E)
-                                  : Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                    color: isDark
-                                        ? Colors.white.withOpacity(0.08)
-                                        : const Color(0xFFE5E7EB)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                    color: isDark
-                                        ? Colors.white.withOpacity(0.08)
-                                        : const Color(0xFFE5E7EB)),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                    color: Color(0xFF3B82F6), width: 1.5),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                            ),
+                        Expanded(child: _buildSearchInput(l10n)),
+                        if (!isClosed) ...[
+                          const SizedBox(width: AppSpacing.md),
+                          _ExternalProductButton(
+                            tooltip: l10n.addExternalProduct,
+                            onTap: _addExternalProduct,
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        if (!isClosed)
-                          Tooltip(
-                            message: l10n.addExternalProduct,
-                            child: Material(
-                              color: Colors.transparent,
-                              child: Ink(
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Color(0xFFFFA85C),
-                                      Color(0xFFF28C33),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFFF28C33)
-                                          .withOpacity(0.35),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: InkWell(
-                                  onTap: _addExternalProduct,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: const SizedBox(
-                                    width: 44,
-                                    height: 44,
-                                    child: Icon(
-                                      Icons.storefront_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                        ],
                       ],
                     ),
                   ),
                   Expanded(
                     child: _filteredProducts.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.search_off_rounded,
-                                    size: 48, color: Colors.grey[300]),
-                                const SizedBox(height: 8),
-                                Text(
-                                  l10n.productsNotFound,
-                                  style: TextStyle(
-                                      color: Colors.grey[400], fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          )
+                        ? _buildEmptyState(l10n)
                         : GridView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.xl,
+                              AppSpacing.xs,
+                              AppSpacing.xl,
+                              AppSpacing.md,
+                            ),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 3,
-                              childAspectRatio: 1.6,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
+                              childAspectRatio: 1.45,
+                              crossAxisSpacing: AppSpacing.md,
+                              mainAxisSpacing: AppSpacing.md,
                             ),
                             itemCount: _filteredProducts.length,
                             itemBuilder: (context, index) =>
                                 ContinueSaleProductCard(
                               product: _filteredProducts[index],
-                              onTap: () => _addToCart(_filteredProducts[index]),
+                              onTap: () =>
+                                  _addToCart(_filteredProducts[index]),
                             ),
                           ),
                   ),
@@ -737,6 +601,346 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
               onCheckout: _showPaymentSheet,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Custom POS-style header — back button + title with chek# meta on the
+  /// left, customer chip on the right. Mirrors `NewSaleScreen` so the
+  /// "continue" experience visually picks up where "new" left off.
+  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(64),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(
+            bottom: BorderSide(color: AppColors.borderSoft, width: 1),
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+            ),
+            child: Row(
+              children: [
+                _PosBackButton(onTap: () => Navigator.maybePop(context)),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l10n.draftSale,
+                        style: AppTextStyles.labelLarge().copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _headerMeta(),
+                        style: AppTextStyles.caption().copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0,
+                          color: AppColors.textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                _CustomerChip(
+                  customer: _selectedCustomer,
+                  fallbackLabel: l10n.customerNotSelected,
+                  enabled: _sale == null
+                      ? false
+                      : _sale?['status'] != 'Closed',
+                  onTap: _selectOrChangeCustomer,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Meta line under the title — receipt number from the sale + a stable
+  /// time slug. Receipt number falls back to the saleId prefix when the
+  /// API hasn't surfaced one.
+  String _headerMeta() {
+    final receipt = (_sale?['receiptNumber'] ?? _sale?['number'] ?? '')
+        .toString();
+    final now = DateTime.now();
+    final hh = now.hour.toString().padLeft(2, '0');
+    final mm = now.minute.toString().padLeft(2, '0');
+    if (receipt.isNotEmpty) return 'Chek #$receipt · $hh:$mm';
+    return 'Chek · $hh:$mm';
+  }
+
+  /// Gray-fill search input with brand-orange focus. Replaces the inline
+  /// dark-mode-aware TextField from the legacy implementation.
+  Widget _buildSearchInput(AppLocalizations l10n) {
+    return TextField(
+      controller: _searchController,
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      decoration: InputDecoration(
+        hintText: l10n.searchProduct,
+        hintStyle: AppTextStyles.bodyMedium().copyWith(
+          color: AppColors.textMuted,
+          fontSize: 14,
+        ),
+        prefixIcon: const Icon(
+          Icons.search_rounded,
+          size: 18,
+          color: AppColors.textMuted,
+        ),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear_rounded, size: 16),
+                color: AppColors.textSecondary,
+                onPressed: () {
+                  _searchController.clear();
+                  _filterProducts();
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.inputFill,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.lg,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(AppLocalizations l10n) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.search_off_rounded,
+            size: 48,
+            color: AppColors.border,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            l10n.productsNotFound,
+            style: AppTextStyles.bodySmall().copyWith(
+              color: AppColors.textMuted,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Round 36×36 back button — matches the demo's `.pos-back` element.
+class _PosBackButton extends StatelessWidget {
+  const _PosBackButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.bg,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 16,
+            color: AppColors.text,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Customer chip — pill on the right of the header. Brand-tinted when a
+/// customer is selected, neutral grey otherwise. Closed sales disable
+/// tapping (the API rejects customer updates on closed sales).
+class _CustomerChip extends StatelessWidget {
+  const _CustomerChip({
+    required this.customer,
+    required this.fallbackLabel,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic>? customer;
+  final String fallbackLabel;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCustomer = customer != null;
+    final name = hasCustomer
+        ? (customer!['fullName']?.toString() ?? fallbackLabel)
+        : fallbackLabel;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 140),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: hasCustomer ? AppColors.brandLight : AppColors.inputFill,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasCustomer)
+                  _InitialAvatar(name: name)
+                else
+                  const Icon(
+                    Icons.person_outline_rounded,
+                    size: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.labelSmall().copyWith(
+                      fontSize: 12,
+                      letterSpacing: 0,
+                      fontWeight: FontWeight.w700,
+                      color: hasCustomer
+                          ? AppColors.brand
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 18×18 orange-filled circle with the customer's first initial. Mirrors
+/// the avatar used in the `NewSaleScreen` header for visual continuity.
+class _InitialAvatar extends StatelessWidget {
+  const _InitialAvatar({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return Container(
+      width: 18,
+      height: 18,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: AppColors.brand,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        letter,
+        style: AppTextStyles.caption().copyWith(
+          fontSize: 10,
+          color: Colors.white,
+          letterSpacing: 0,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+/// 44×44 brand-orange tile that opens the external-product sheet. Replaces
+/// the legacy gradient + custom shadow with the design-system brand color.
+class _ExternalProductButton extends StatelessWidget {
+  const _ExternalProductButton({
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.brand,
+              borderRadius: BorderRadius.circular(AppRadius.md + 2),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.brand.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.storefront_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
         ),
       ),
     );

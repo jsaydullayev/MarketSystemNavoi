@@ -1,17 +1,21 @@
+// Owner profile — migrated to the new design system. Hero card
+// (avatar + identity + market + Tahrirlash / Bloklash / O'chirish), stat
+// tiles (Mahsulotlar / Sotuvlar / Mijozlar / Qarz), Owner info, Market info,
+// and Block/Unblock control. Business logic (SuperAdminService) untouched.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../design/tokens/app_tokens.dart';
+import '../../../design/tokens/app_typography.dart';
+import '../../../design/widgets/app_button.dart';
 import '../data/superadmin_service.dart';
 import '../domain/models/owner_detail.dart';
 import 'widgets/block_market_dialog.dart';
 import 'widgets/delete_owner_dialog.dart';
 import 'widgets/edit_owner_dialog.dart';
 
-/// Owner profile — Hero card (avatar + identity + market + Tahrirlash/O'chirish),
-/// stat tiles (Mahsulotlar / Sotuvlar / Mijozlar / Aylanma), Owner info,
-/// Market info, and Block/Unblock control.
 class OwnerDetailScreen extends StatefulWidget {
   const OwnerDetailScreen({super.key, required this.userId});
   final String userId;
@@ -58,7 +62,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
     );
     if (updated != null && mounted) {
       setState(() => _detail = updated);
-      _snack('Ma\'lumotlar yangilandi', isError: false);
+      _snack("Ma'lumotlar yangilandi", isError: false);
     }
   }
 
@@ -97,24 +101,37 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F9),
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text("Owner ma'lumotlari"),
-        backgroundColor: Colors.white,
-        foregroundColor: AppTheme.textPrimary,
-        elevation: 1,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.text,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: AppColors.border, width: 1),
+        ),
+        title: Text(
+          "Owner ma'lumotlari",
+          style: AppTextStyles.titleMedium(),
+        ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.brand))
           : _error != null
               ? _ErrorState(error: _error!, onRetry: _load)
               : _detail == null
-                  ? const Center(child: Text('Owner topilmadi'))
+                  ? Center(
+                      child: Text(
+                        'Owner topilmadi',
+                        style: AppTextStyles.bodyMedium(),
+                      ),
+                    )
                   : RefreshIndicator(
+                      color: AppColors.brand,
                       onRefresh: _load,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.xl),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -124,14 +141,14 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                               onDelete: _onDelete,
                               onBlock: _onBlock,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.lg),
                             _StatsGrid(stats: _detail!.stats),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.lg),
                             _OwnerInfoCard(detail: _detail!),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.lg),
                             if (_detail!.market != null)
                               _MarketInfoCard(market: _detail!.market!),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: AppSpacing.xl3),
                           ],
                         ),
                       ),
@@ -143,7 +160,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : Colors.green,
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -166,165 +183,194 @@ class _HeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final market = detail.market;
     final blocked = market?.isBlocked ?? false;
-    final initial = detail.fullName.isNotEmpty
-        ? detail.fullName[0].toUpperCase()
-        : '?';
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: LayoutBuilder(
-          builder: (ctx, constraints) {
-            final narrow = constraints.maxWidth < 520;
-            final identity = Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: const Color(0xFF1A73E8),
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+    final initial =
+        detail.fullName.isNotEmpty ? detail.fullName[0].toUpperCase() : '?';
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl2),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: LayoutBuilder(
+        builder: (ctx, constraints) {
+          final narrow = constraints.maxWidth < 540;
+          final identity = Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  initial,
+                  style: AppTextStyles.titleLarge().copyWith(
+                    color: Colors.white,
+                    fontSize: 28,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              detail.fullName,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+              ),
+              const SizedBox(width: AppSpacing.xl),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            detail.fullName,
+                            style: AppTextStyles.titleLarge(),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 10),
-                          _StatusChip(
-                            label: blocked
-                                ? 'Bloklangan'
-                                : (detail.isActive ? 'Faol' : 'Faolsiz'),
-                            color: blocked
-                                ? const Color(0xFFD93025)
-                                : (detail.isActive
-                                    ? const Color(0xFF137333)
-                                    : const Color(0xFF9AA0A6)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '@${detail.username} · Owner · '
-                        '${_formatDate(detail.createdAt, withTime: false)} dan beri',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textSecondary,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 8,
-                        children: [
-                          if (detail.phone != null)
-                            _MetaItem(
-                              icon: Icons.phone_outlined,
-                              text: detail.phone!,
-                            ),
-                          if (market != null)
-                            _MetaItem(
-                              icon: Icons.storefront_outlined,
-                              text: market.name,
-                            ),
-                          if (market?.subdomain != null)
-                            _MetaItem(
-                              icon: Icons.language_outlined,
-                              text: '${market!.subdomain}.strotech.uz',
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: AppSpacing.md),
+                        _StatusChip(
+                          label: blocked
+                              ? 'Bloklangan'
+                              : (detail.isActive ? 'Faol' : 'Faolsiz'),
+                          color: blocked
+                              ? AppColors.danger
+                              : (detail.isActive
+                                  ? AppColors.success
+                                  : AppColors.textMuted),
+                          background: blocked
+                              ? AppColors.dangerLight
+                              : (detail.isActive
+                                  ? AppColors.successLight
+                                  : AppColors.inputFill),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      '@${detail.username} · Owner · ${_formatDate(detail.createdAt, withTime: false)} dan beri',
+                      style: AppTextStyles.bodySmall(),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Wrap(
+                      spacing: AppSpacing.xl,
+                      runSpacing: AppSpacing.md,
+                      children: [
+                        if (detail.phone != null)
+                          _MetaItem(
+                            icon: Icons.phone_outlined,
+                            text: detail.phone!,
+                          ),
+                        if (market != null)
+                          _MetaItem(
+                            icon: Icons.storefront_outlined,
+                            text: market.name,
+                          ),
+                        if (market?.subdomain != null)
+                          _MetaItem(
+                            icon: Icons.language_outlined,
+                            text: '${market!.subdomain}.strotech.uz',
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            );
-            final actions = Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: narrow ? WrapAlignment.start : WrapAlignment.end,
+              ),
+            ],
+          );
+          final actions = _ActionButtons(
+            blocked: blocked,
+            onEdit: onEdit,
+            onBlock: onBlock,
+            onDelete: onDelete,
+            narrow: narrow,
+          );
+          if (narrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                OutlinedButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text('Tahrirlash'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: onBlock,
-                  icon: Icon(
-                    blocked ? Icons.lock_open_outlined : Icons.block_outlined,
-                    size: 16,
-                  ),
-                  label: Text(blocked ? 'Blokdan chiqarish' : 'Bloklash'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: blocked
-                        ? const Color(0xFF137333)
-                        : const Color(0xFFF57C00),
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, size: 16),
-                  label: const Text("O'chirish"),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFD93025),
-                  ),
-                ),
-              ],
-            );
-            if (narrow) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [identity, const SizedBox(height: 16), actions],
-              );
-            }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: identity),
-                const SizedBox(width: 16),
+                identity,
+                const SizedBox(height: AppSpacing.xl),
                 actions,
               ],
             );
-          },
-        ),
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: identity),
+              const SizedBox(width: AppSpacing.xl),
+              SizedBox(width: 220, child: actions),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
+class _ActionButtons extends StatelessWidget {
+  const _ActionButtons({
+    required this.blocked,
+    required this.onEdit,
+    required this.onBlock,
+    required this.onDelete,
+    required this.narrow,
+  });
+  final bool blocked;
+  final VoidCallback onEdit;
+  final VoidCallback onBlock;
+  final VoidCallback onDelete;
+  final bool narrow;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppPrimaryButton(
+          label: 'Tahrirlash',
+          icon: Icons.edit_outlined,
+          onPressed: onEdit,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppSecondaryButton(
+          label: blocked ? 'Blokdan chiqarish' : 'Bloklash',
+          icon: blocked ? Icons.lock_open_outlined : Icons.block_outlined,
+          onPressed: onBlock,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppDangerButton(
+          label: "O'chirish",
+          icon: Icons.delete_outline,
+          onPressed: onDelete,
+        ),
+      ],
+    );
+  }
+}
+
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label, required this.color});
+  const _StatusChip({
+    required this.label,
+    required this.color,
+    required this.background,
+  });
   final String label;
   final Color color;
+  final Color background;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md + 2,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -334,13 +380,13 @@ class _StatusChip extends StatelessWidget {
             height: 7,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSpacing.sm),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.bodySmall().copyWith(
               color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
             ),
           ),
         ],
@@ -359,15 +405,9 @@ class _MetaItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppTheme.textSecondary),
+        Icon(icon, size: 14, color: AppColors.textSecondary),
         const SizedBox(width: 5),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppTheme.textSecondary,
-          ),
-        ),
+        Text(text, style: AppTextStyles.bodySmall()),
       ],
     );
   }
@@ -386,39 +426,39 @@ class _StatsGrid extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: cross,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: cross == 2 ? 1.8 : 1.4,
+          mainAxisSpacing: AppSpacing.lg,
+          crossAxisSpacing: AppSpacing.lg,
+          childAspectRatio: cross == 2 ? 1.7 : 1.35,
           children: [
             _StatTile(
               label: 'MAHSULOTLAR',
               value: _fmtNum(stats.productsCount),
               subtitle: 'Faol turlari',
-              color: AppTheme.textPrimary,
-              icon: '📦',
+              color: AppColors.text,
+              icon: Icons.inventory_2_outlined,
             ),
             _StatTile(
               label: 'SOTUVLAR',
               value: _fmtNum(stats.salesCount),
               subtitle: 'Jami chek',
-              color: const Color(0xFF137333),
-              icon: '💰',
+              color: AppColors.success,
+              icon: Icons.point_of_sale_outlined,
             ),
             _StatTile(
               label: 'MIJOZLAR',
               value: _fmtNum(stats.customersCount),
               subtitle: 'Faol mijozlar',
-              color: AppTheme.textPrimary,
-              icon: '👥',
+              color: AppColors.text,
+              icon: Icons.people_outline,
             ),
             _StatTile(
               label: 'QARZ',
               value: _fmtMoney(stats.outstandingDebt),
               subtitle: 'UZS jami',
               color: stats.outstandingDebt > 0
-                  ? const Color(0xFFF57C00)
-                  : AppTheme.textPrimary,
-              icon: '💸',
+                  ? AppColors.warning
+                  : AppColors.text,
+              icon: Icons.account_balance_wallet_outlined,
             ),
           ],
         );
@@ -450,16 +490,16 @@ class _StatTile extends StatelessWidget {
   final String value;
   final String subtitle;
   final Color color;
-  final String icon;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDADCE0)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,32 +507,25 @@ class _StatTile extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondary,
-              letterSpacing: 0.5,
-            ),
+            style: AppTextStyles.caption()
+                .copyWith(color: AppColors.textSecondary),
           ),
           Text(
             value,
-            style: TextStyle(
+            style: AppTextStyles.titleLarge().copyWith(
               fontSize: 26,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: color,
             ),
           ),
           Row(
             children: [
-              Text(icon, style: const TextStyle(fontSize: 13)),
-              const SizedBox(width: 4),
+              Icon(icon, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: AppSpacing.xs),
               Flexible(
                 child: Text(
                   subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: AppTextStyles.bodySmall(),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -511,7 +544,8 @@ class _OwnerInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: "👤 OWNER MA'LUMOTLARI",
+      title: "OWNER MA'LUMOTLARI",
+      icon: Icons.person_outline,
       children: [
         _InfoRow(label: "TO'LIQ ISM", value: detail.fullName),
         _InfoRow(label: 'USERNAME', value: '@${detail.username}', mono: true),
@@ -526,10 +560,9 @@ class _OwnerInfoCard extends StatelessWidget {
         ),
         _InfoRow(
           label: 'HOLAT',
-          value: detail.isActive ? '● Faol' : '● Faolsiz',
-          valueColor: detail.isActive
-              ? const Color(0xFF137333)
-              : const Color(0xFF9AA0A6),
+          value: detail.isActive ? 'Faol' : 'Faolsiz',
+          valueColor:
+              detail.isActive ? AppColors.success : AppColors.textMuted,
         ),
       ],
     );
@@ -543,7 +576,8 @@ class _MarketInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: "🏪 DO'KON MA'LUMOTLARI",
+      title: "DO'KON MA'LUMOTLARI",
+      icon: Icons.storefront_outlined,
       children: [
         _InfoRow(label: 'NOMI', value: market.name),
         _InfoRow(
@@ -557,19 +591,17 @@ class _MarketInfoCard extends StatelessWidget {
         _InfoRow(
           label: 'HOLAT',
           value: market.isBlocked
-              ? '🔒 Bloklangan'
-              : (market.isActive ? '● Faol' : '● Faolsiz'),
+              ? 'Bloklangan'
+              : (market.isActive ? 'Faol' : 'Faolsiz'),
           valueColor: market.isBlocked
-              ? const Color(0xFFD93025)
-              : (market.isActive
-                  ? const Color(0xFF137333)
-                  : const Color(0xFF9AA0A6)),
+              ? AppColors.danger
+              : (market.isActive ? AppColors.success : AppColors.textMuted),
         ),
         if (market.isBlocked && market.blockedReason != null)
           _InfoRow(
             label: 'BLOKLASH SABABI',
             value: market.blockedReason!,
-            valueColor: const Color(0xFFD93025),
+            valueColor: AppColors.danger,
           ),
         if (market.isBlocked && market.blockedAt != null)
           _InfoRow(
@@ -588,47 +620,54 @@ class _MarketInfoCard extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.children});
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
   final String title;
+  final IconData icon;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textSecondary,
-                letterSpacing: 0.5,
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl2),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: AppSpacing.md),
+              Text(
+                title,
+                style: AppTextStyles.caption()
+                    .copyWith(color: AppColors.textSecondary),
               ),
-            ),
-            const SizedBox(height: 14),
-            LayoutBuilder(
-              builder: (ctx, c) {
-                final cross = c.maxWidth < 480 ? 1 : 2;
-                return GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: cross,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 24,
-                  childAspectRatio: cross == 1 ? 6 : 4,
-                  children: children,
-                );
-              },
-            ),
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          LayoutBuilder(
+            builder: (ctx, c) {
+              final cross = c.maxWidth < 480 ? 1 : 2;
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: cross,
+                mainAxisSpacing: AppSpacing.lg,
+                crossAxisSpacing: AppSpacing.xl,
+                childAspectRatio: cross == 1 ? 6 : 4,
+                children: children,
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -654,20 +693,15 @@ class _InfoRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textSecondary,
-            letterSpacing: 0.3,
-          ),
+          style: AppTextStyles.caption()
+              .copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: valueColor ?? AppTheme.textPrimary,
+          style: AppTextStyles.bodyMedium().copyWith(
+            fontWeight: FontWeight.w600,
+            color: valueColor ?? AppColors.text,
             fontFamily: mono ? 'monospace' : null,
           ),
           overflow: TextOverflow.ellipsis,
@@ -685,19 +719,30 @@ class _ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xl3),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
-            const SizedBox(height: 12),
-            Text(error, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Qayta urinish'),
+            const Icon(
+              Icons.error_outline,
+              color: AppColors.danger,
+              size: 48,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium(),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            SizedBox(
+              width: 200,
+              child: AppPrimaryButton(
+                label: 'Qayta urinish',
+                icon: Icons.refresh,
+                onPressed: onRetry,
+              ),
             ),
           ],
         ),

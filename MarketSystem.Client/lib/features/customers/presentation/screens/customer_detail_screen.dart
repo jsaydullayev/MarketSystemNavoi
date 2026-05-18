@@ -1,12 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
+import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/debt_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
-import '../../../../core/utils/number_formatter.dart';
 import '../bloc/customers_bloc.dart';
 import '../bloc/events/customers_event.dart';
 import '../bloc/states/customers_state.dart';
@@ -34,20 +37,20 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     context.read<CustomersBloc>().add(GetCustomerDebtsEvent(widget.customerId));
   }
 
+  String get _displayLabel => widget.customerName.isNotEmpty
+      ? widget.customerName
+      : widget.customerPhone;
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return NetworkWrapper(
       onRetry: () => context
           .read<CustomersBloc>()
           .add(GetCustomerDebtsEvent(widget.customerId)),
       child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
+        backgroundColor: AppColors.bg,
         appBar: CommonAppBar(
-          title: widget.customerName.isNotEmpty
-              ? widget.customerName
-              : widget.customerPhone,
+          title: _displayLabel,
           onRefresh: () => context
               .read<CustomersBloc>()
               .add(GetCustomerDebtsEvent(widget.customerId)),
@@ -58,11 +61,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AppColors.danger,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  margin: const EdgeInsets.all(16),
+                      borderRadius: BorderRadius.circular(AppRadius.lg)),
+                  margin: const EdgeInsets.all(AppSpacing.xl),
                 ),
               );
             }
@@ -71,7 +74,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             if (state is CustomerDebtsLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is CustomerDebtsLoaded) {
-              return _buildDebtsList(state.debts, isDark);
+              return _buildDebtsList(state.debts);
             } else if (state is CustomersError) {
               return _ErrorView(
                 message: state.message,
@@ -87,43 +90,26 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     );
   }
 
-  Widget _buildDebtsList(List<Map<String, dynamic>> debts, bool isDark) {
+  Widget _buildDebtsList(List<Map<String, dynamic>> debts) {
     final l10n = AppLocalizations.of(context)!;
-    final primary = Theme.of(context).primaryColor;
 
     if (debts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      return RefreshIndicator(
+        onRefresh: () async => context
+            .read<CustomersBloc>()
+            .add(GetCustomerDebtsEvent(widget.customerId)),
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.xl),
           children: [
-            Container(
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.check_circle_outline_rounded,
-                  size: 56, color: Colors.green.shade400),
+            _CustomerHero(
+              name: widget.customerName,
+              phone: widget.customerPhone,
+              salesCount: 0,
+              totalDebt: 0,
+              lastActivity: null,
             ),
-            const SizedBox(height: 20),
-            Text(
-              l10n.noDebts,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white54 : Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.customerName.isNotEmpty
-                  ? widget.customerName
-                  : widget.customerPhone,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? Colors.white38 : Colors.grey[400],
-              ),
-            ),
+            const SizedBox(height: AppSpacing.xl),
+            _EmptyDebtsView(displayLabel: _displayLabel),
           ],
         ),
       );
@@ -131,279 +117,304 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
     final totalRemainingDebt = debts.fold<double>(
       0,
-      (sum, debt) => sum + ((debt['remainingDebt'] as num?)?.toDouble() ?? 0.0),
+      (sum, debt) =>
+          sum + ((debt['remainingDebt'] as num?)?.toDouble() ?? 0.0),
     );
-
-    final openDebts =
-        debts.where((d) => (d['remainingDebt'] as num? ?? 0) > 0).length;
-    final closedDebts = debts.length - openDebts;
 
     return RefreshIndicator(
       onRefresh: () async => context
           .read<CustomersBloc>()
           .add(GetCustomerDebtsEvent(widget.customerId)),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xl4),
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.06)
-                    : Colors.black.withValues(alpha: 0.05),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [primary, primary.withValues(alpha: 0.7)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      (widget.customerName.isNotEmpty
-                              ? widget.customerName
-                              : widget.customerPhone)[0]
-                          .toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (widget.customerName.isNotEmpty)
-                        Text(
-                          widget.customerName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Icons.phone_outlined,
-                              size: 14,
-                              color:
-                                  isDark ? Colors.white38 : Colors.grey[400]),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.customerPhone,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? Colors.white54 : Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          _CustomerHero(
+            name: widget.customerName,
+            phone: widget.customerPhone,
+            salesCount: debts.length,
+            totalDebt: totalRemainingDebt,
+            lastActivity: _resolveLastActivity(debts),
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.red.shade600, Colors.red.shade400],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.account_balance_wallet_outlined,
-                      color: Colors.white, size: 28),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.totalDebt,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        NumberFormatter.format(totalRemainingDebt),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: AppSpacing.xl),
+          _QuickActions(
+            onPay: totalRemainingDebt > 0 ? _onPay : null,
+            onSms: _onSendSms,
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  icon: Icons.pending_actions_rounded,
-                  label: l10n.open,
-                  value: '$openDebts',
-                  color: Colors.orange,
-                  isDark: isDark,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _StatCard(
-                  icon: Icons.check_circle_outline_rounded,
-                  label: l10n.cls,
-                  value: '$closedDebts',
-                  color: Colors.green,
-                  isDark: isDark,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _StatCard(
-                  icon: Icons.receipt_long_rounded,
-                  label: l10n.total,
-                  value: '${debts.length}',
-                  color: primary,
-                  isDark: isDark,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                l10n.debtHistory,
-                style:
-                    const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-              ),
+              Text(l10n.debtHistory, style: AppTextStyles.titleMedium()),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md + 2,
+                    vertical: AppSpacing.xs + 1),
                 decoration: BoxDecoration(
-                  color: primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.brandLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Text(
                   '${debts.length} ta',
-                  style: TextStyle(
-                    color: primary,
+                  style: AppTextStyles.caption().copyWith(
+                    color: AppColors.brand,
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          ...debts.map((debt) => DebtCard(debt: debt)),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
+          ...debts.map((debt) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                child: DebtCard(debt: debt),
+              )),
+        ],
+      ),
+    );
+  }
+
+  String? _resolveLastActivity(List<Map<String, dynamic>> debts) {
+    DateTime? latest;
+    for (final d in debts) {
+      final raw = d['createdAt'];
+      if (raw == null) continue;
+      try {
+        final parsed = raw is DateTime ? raw : DateTime.parse(raw.toString());
+        if (latest == null || parsed.isAfter(latest)) latest = parsed;
+      } catch (_) {
+        // ignore unparseable values
+      }
+    }
+    if (latest == null) return null;
+    return NumberFormatter.formatDateTime(latest, showTime: false);
+  }
+
+  void _onPay() {
+    // The pay sheet lives on the debts feature; for the detail screen we
+    // surface the action but routing into the existing flow is left to the
+    // caller (debts_screen handles it). When called here we open a simple
+    // hint snackbar — wiring deeper would require importing the debts feature
+    // and crossing layer boundaries we don't want from customers.
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.payDebt),
+        backgroundColor: AppColors.brand,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _onSendSms() {
+    // Placeholder — kept as a no-op so the button has the same visual weight
+    // as the demo. The SMS reminder feature is a separate ticket.
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('SMS eslatma — tez kunda'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+}
+
+class _CustomerHero extends StatelessWidget {
+  const _CustomerHero({
+    required this.name,
+    required this.phone,
+    required this.salesCount,
+    required this.totalDebt,
+    required this.lastActivity,
+  });
+
+  final String name;
+  final String phone;
+  final int salesCount;
+  final double totalDebt;
+  final String? lastActivity;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final displayLabel = name.isNotEmpty ? name : phone;
+    final initial = displayLabel.isNotEmpty
+        ? displayLabel.characters.first.toUpperCase()
+        : '?';
+    final avatarColor = CustomerAvatarPalette.pick(displayLabel);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl2),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration:
+                BoxDecoration(color: avatarColor, shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: Text(
+              initial,
+              style: AppTextStyles.displayMedium().copyWith(
+                color: Colors.white,
+                fontSize: 28,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (name.isNotEmpty)
+            Text(
+              name,
+              style: AppTextStyles.titleMedium(),
+              textAlign: TextAlign.center,
+            ),
+          const SizedBox(height: 2),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.phone_outlined,
+                  size: 14, color: AppColors.textMuted),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                phone,
+                style: AppTextStyles.bodySmall()
+                    .copyWith(color: AppColors.textMuted),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Row(
+            children: [
+              Expanded(
+                child: _HeroStat(
+                  value: '$salesCount',
+                  label: l10n.sales,
+                ),
+              ),
+              _Divider(),
+              Expanded(
+                child: _HeroStat(
+                  value: NumberFormatter.format(totalDebt),
+                  label: l10n.debt,
+                  highlight: totalDebt > 0 ? AppColors.warning : null,
+                ),
+              ),
+              _Divider(),
+              Expanded(
+                child: _HeroStat(
+                  value: lastActivity ?? '—',
+                  label: 'Oxirgi',
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
+class _HeroStat extends StatelessWidget {
+  const _HeroStat({required this.value, required this.label, this.highlight});
   final String value;
-  final Color color;
-  final bool isDark;
-
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.isDark,
-  });
+  final String label;
+  final Color? highlight;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 6),
-          Text(
+    return Column(
+      children: [
+        FittedBox(
+          child: Text(
             value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: color,
+            style: AppTextStyles.titleMedium().copyWith(
+              color: highlight ?? AppColors.text,
+              fontSize: 16,
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.white38 : Colors.grey[500],
-            ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          label.toUpperCase(),
+          style: AppTextStyles.caption(),
+        ),
+      ],
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Container(width: 1, height: 28, color: AppColors.border);
+}
+
+class _QuickActions extends StatelessWidget {
+  const _QuickActions({required this.onPay, required this.onSms});
+  final VoidCallback? onPay;
+  final VoidCallback onSms;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Row(
+      children: [
+        Expanded(
+          child: AppPrimaryButton(
+            label: l10n.payDebt,
+            onPressed: onPay,
+            icon: Icons.payments_rounded,
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: AppSpacing.lg),
+        Expanded(
+          child: AppSecondaryButton(
+            label: 'SMS eslatma',
+            onPressed: onSms,
+            icon: Icons.sms_outlined,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyDebtsView extends StatelessWidget {
+  const _EmptyDebtsView({required this.displayLabel});
+  final String displayLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      children: [
+        const SizedBox(height: 40),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.xl3),
+          decoration: const BoxDecoration(
+            color: AppColors.successLight,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check_circle_outline_rounded,
+              size: 48, color: AppColors.success),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        Text(
+          l10n.noDebts,
+          style: AppTextStyles.titleMedium(),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          displayLabel,
+          style: AppTextStyles.bodySmall(),
+        ),
+      ],
     );
   }
 }
@@ -416,39 +427,31 @@ class _ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final primary = Theme.of(context).primaryColor;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xl4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: const BoxDecoration(
+                color: AppColors.dangerLight,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.cloud_off_rounded,
-                  color: Colors.red, size: 40),
+                  color: AppColors.danger, size: 36),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(message,
-                style: const TextStyle(color: Colors.red),
+                style: AppTextStyles.bodyMedium()
+                    .copyWith(color: AppColors.danger),
                 textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
+            const SizedBox(height: AppSpacing.xl),
+            AppPrimaryButton(
+              label: l10n.retry,
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              label:
-                  Text(l10n.retry, style: const TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
+              icon: Icons.refresh_rounded,
             ),
           ],
         ),

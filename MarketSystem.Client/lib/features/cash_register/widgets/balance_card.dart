@@ -1,7 +1,15 @@
-﻿import 'package:flutter/material.dart';
-import 'package:market_system_client/core/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Orange gradient "hero" balance card.
+///
+/// Demo reference: the `.z-header` block in `id="page-staff-shift"` (10.4
+/// Smena yopish / Z-report). Brand-orange gradient block at the top of the
+/// cash register screen with a large total, a meta line for last update,
+/// and optional cash/click chips on a translucent divider.
 class BalanceCard extends StatelessWidget {
   final double cashBalance;
   final double clickBalance;
@@ -21,17 +29,17 @@ class BalanceCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xl3),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.primary, AppTheme.primary.withValues(alpha: 0.75)],
+        gradient: const LinearGradient(
+          colors: [AppColors.brand, AppColors.brandDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.35),
+            color: AppColors.brand.withValues(alpha: 0.30),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -43,52 +51,55 @@ class BalanceCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white.withValues(alpha: 0.20),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: const Icon(Icons.account_balance_wallet_outlined,
-                    color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.md + 2),
               Text(
-                l10n.totalBalance,
-                style: TextStyle(
-                  fontSize: 14,
+                l10n.totalBalance.toUpperCase(),
+                style: AppTextStyles.labelSmall().copyWith(
                   color: Colors.white.withValues(alpha: 0.85),
-                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                  letterSpacing: 0.8,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xl),
           Text(
-            '${_formatAmount(total)} ${l10n.currencySom}',
-            style: const TextStyle(
+            '${NumberFormatter.format(total)} ${l10n.currencySom}',
+            style: AppTextStyles.displayLarge().copyWith(
+              color: Colors.white,
               fontSize: 34,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
               letterSpacing: -1,
             ),
           ),
           if (lastUpdated != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               l10n.updatedAt(_formatDate(lastUpdated)),
-              style: TextStyle(
+              style: AppTextStyles.bodySmall().copyWith(
+                color: Colors.white.withValues(alpha: 0.70),
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.65),
               ),
             ),
           ],
           if (cashBalance > 0 || clickBalance > 0) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
             Container(
               height: 1,
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withValues(alpha: 0.20),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xl),
             Row(
               children: [
                 if (cashBalance > 0)
@@ -100,7 +111,7 @@ class BalanceCard extends StatelessWidget {
                     ),
                   ),
                 if (cashBalance > 0 && clickBalance > 0)
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.lg),
                 if (clickBalance > 0)
                   Expanded(
                     child: _BalanceChip(
@@ -115,12 +126,6 @@ class BalanceCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatAmount(double amount) {
-    return amount
-        .toStringAsFixed(0)
-        .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]} ');
   }
 
   String _formatDate(DateTime? date) {
@@ -146,29 +151,37 @@ class _BalanceChip extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg + 2,
+        vertical: AppSpacing.md + 2,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
           Icon(icon, size: 16, color: Colors.white),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: TextStyle(
-                        fontSize: 11, color: Colors.white.withValues(alpha: 0.7))),
                 Text(
-                  '${amount.toStringAsFixed(0)} ${l10n.currencySom}',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white),
+                  label,
+                  style: AppTextStyles.bodySmall().copyWith(
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.70),
+                  ),
+                ),
+                Text(
+                  '${NumberFormatter.format(amount)} ${l10n.currencySom}',
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

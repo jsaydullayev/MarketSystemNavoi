@@ -1,17 +1,33 @@
-﻿import 'package:flutter/material.dart';
-import 'package:market_system_client/core/widgets/common_app_bar.dart';
-import 'package:provider/provider.dart';
-import 'package:adaptive_theme/adaptive_theme.dart';
+// lib/features/profile/screens/profile_screen.dart
+//
+// Profile + Settings screen mapped to demo `id="page-sett-hub"`:
+// - Settings-profile top card (48x48 brand-light circle + greeting + role)
+// - Profile avatar picker (camera/gallery via [ProfileImagePicker])
+// - Grouped settings sections (DO'KON / SOZLASH / QO'LLAB-QUVVATLASH / etc.)
+// - Editable info card (username / fullName / role)
+// - Change-password row opening a bottom-sheet flow
+// - Theme toggle (AdaptiveTheme) and language switcher (LocaleProvider)
+// - Tizimdan chiqish (logout) danger row at the bottom
+//
+// All business logic (auth provider, user service, image upload, snackbars,
+// preferences) is preserved exactly as before.
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_styles.dart';
-import '../../../core/extensions/app_extensions.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/locale_provider.dart';
+import '../../../core/widgets/common_app_bar.dart';
 import '../../../data/services/user_service.dart';
+import '../../../design/tokens/app_tokens.dart';
+import '../../../design/tokens/app_typography.dart';
+import '../../../design/widgets/app_button.dart';
+import '../../../design/widgets/app_text_input.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/presentation/screens/login_screen.dart';
 import '../widgets/profile_image_picker.dart';
 import '../widgets/profile_widgets.dart';
-import '../../auth/presentation/screens/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -57,20 +73,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     final l10n = AppLocalizations.of(context)!;
-    final isDark = AdaptiveTheme.of(context).mode.isDark;
-    final primaryColor = AppColors.getPrimary(context);
 
     return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      appBar: CommonAppBar(
-        title: l10n.profile,
-        extraActions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-            onPressed: () => _handleLogout(l10n),
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.bg,
+      appBar: CommonAppBar(title: l10n.profile),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
@@ -78,9 +84,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.xl,
+                    AppSpacing.xl,
+                    AppSpacing.xl,
+                  ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Avatar picker (camera/gallery).
                       ProfileImagePicker(
                         currentImageUrl: user?['profileImage'],
                         onImageUpdated: (url) async {
@@ -90,59 +103,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           await authProvider.fetchUserProfile();
                         },
                       ),
-                      32.height,
-                      ProfileSectionTitle(title: l10n.info, isDark: isDark),
-                      12.height,
-                      ProfileGlassCard(
-                        isDark: isDark,
-                        child: Column(
-                          children: [
-                            _buildEditableRow(
-                                Icons.alternate_email_rounded,
-                                l10n.username,
-                                _usernameController,
-                                isDark,
-                                primaryColor,
-                                enabled: false),
-                            const Divider(height: 32, thickness: 0.5),
-                            _buildEditableRow(
-                                Icons.person_outline_rounded,
-                                l10n.fullName,
-                                _fullNameController,
-                                isDark,
-                                primaryColor),
-                            const Divider(height: 32, thickness: 0.5),
-                            ProfileInfoRow(
-                                icon: Icons.verified_user_outlined,
-                                label: l10n.role,
-                                value: user?['role'] ?? 'Seller',
-                                isDark: isDark),
-                          ],
-                        ),
+                      const SizedBox(height: AppSpacing.xl),
+
+                      // Settings-profile top card.
+                      ProfileTopCard(
+                        fullName: user?['fullName'],
+                        role: user?['role'],
+                        marketName: user?['marketName'],
                       ),
-                      24.height,
-                      ProfileSectionTitle(title: l10n.security, isDark: isDark),
-                      12.height,
-                      ProfileGlassCard(
-                        isDark: isDark,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(Icons.lock_reset_rounded,
-                              color: primaryColor),
-                          title: Text(l10n.changePassword,
-                              style:
-                                  AppStyles.cardTitle.copyWith(fontSize: 15)),
-                          trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                              size: 16),
-                          onTap: () => _showChangePasswordSheet(
-                              context, l10n, primaryColor, isDark),
-                        ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // MA'LUMOT (Info) — editable + read-only fields.
+                      ProfileSettingsCard(
+                        header: ProfileSectionTitle(title: l10n.info),
+                        children: [
+                          ProfileEditableField(
+                            icon: Icons.lock_outline_rounded,
+                            label: l10n.username,
+                            controller: _usernameController,
+                            enabled: false,
+                          ),
+                          ProfileEditableField(
+                            icon: Icons.edit_rounded,
+                            label: l10n.fullName,
+                            controller: _fullNameController,
+                          ),
+                          ProfileInfoRow(
+                            icon: Icons.verified_user_outlined,
+                            label: l10n.role,
+                            value: user?['role'] ?? 'Seller',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // XAVFSIZLIK (Security) — change password.
+                      ProfileSettingsCard(
+                        header: ProfileSectionTitle(title: l10n.security),
+                        children: [
+                          ProfileSettingsRow(
+                            icon: Icons.lock_reset_rounded,
+                            tone: ProfileRowIconTone.purple,
+                            title: l10n.changePassword,
+                            meta: l10n.changePasswordHint,
+                            onTap: () =>
+                                _showChangePasswordSheet(context, l10n),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // SOZLASH — language + theme.
+                      ProfileSettingsCard(
+                        header:
+                            const ProfileSectionTitle(title: 'SOZLASH'),
+                        children: [
+                          _buildLanguageRow(context),
+                          _buildThemeRow(context),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Tizimdan chiqish — danger row.
+                      ProfileSettingsCard(
+                        children: [
+                          ProfileSettingsRow(
+                            icon: Icons.logout_rounded,
+                            tone: ProfileRowIconTone.red,
+                            title: l10n.logout,
+                            danger: true,
+                            onTap: () => _handleLogout(l10n),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
               ),
-              _buildBottomAction(primaryColor, l10n, isDark),
+              _buildBottomAction(l10n),
             ],
           ),
         ),
@@ -150,103 +188,184 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildEditableRow(IconData icon, String label,
-      TextEditingController controller, bool isDark, Color primary,
-      {bool enabled = true}) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: isDark ? Colors.white38 : Colors.black38),
-        16.width,
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: AppStyles.subtitle
-                      .copyWith(fontSize: 10, color: Colors.grey)),
-              TextField(
-                controller: controller,
-                enabled: enabled,
-                style: AppStyles.cardTitle.copyWith(
-                    fontSize: 15, color: enabled ? null : Colors.grey),
-                decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero),
-              ),
-            ],
-          ),
-        ),
-        if (enabled)
-          Icon(Icons.edit_rounded, size: 14, color: primary.withValues(alpha: 0.5)),
-      ],
+  // ─────────────────────────────────────────────────────────────────────────
+  // Settings rows: language + theme
+  // ─────────────────────────────────────────────────────────────────────────
+
+  String _languageLabel(String code) {
+    switch (code) {
+      case 'uz':
+        return "O'zbekcha";
+      case 'ru':
+        return 'Русский';
+      case 'en':
+        return 'English';
+      default:
+        return code;
+    }
+  }
+
+  Widget _buildLanguageRow(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final code = localeProvider.locale.languageCode;
+    return ProfileSettingsRow(
+      icon: Icons.language_rounded,
+      tone: ProfileRowIconTone.green,
+      title: 'Til',
+      value: _languageLabel(code),
+      onTap: () => _showLanguageSheet(context),
     );
   }
 
-  void _showChangePasswordSheet(
-      BuildContext context, var l10n, Color primary, bool isDark) {
-    showModalBottomSheet(
+  Future<void> _showLanguageSheet(BuildContext context) async {
+    final localeProvider =
+        Provider.of<LocaleProvider>(context, listen: false);
+    final current = localeProvider.locale.languageCode;
+    final selected = await showModalBottomSheet<String>(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              left: 24,
-              right: 24,
-              top: 24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.xl3,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10))),
-              24.height,
-              Text(l10n.changePassword,
-                  style: AppStyles.brandTitle.copyWith(fontSize: 18)),
-              24.height,
-              _buildDialogField(
-                  _currentPasswordController, l10n.currentPassword, isDark),
-              16.height,
-              _buildDialogField(
-                  _newPasswordController, l10n.newPassword, isDark),
-              24.height,
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text('Til', style: AppTextStyles.titleMedium()),
+              const SizedBox(height: AppSpacing.lg),
+              for (final entry in const [
+                ('uz', "O'zbekcha"),
+                ('ru', 'Русский'),
+                ('en', 'English'),
+              ])
+                _LanguageOption(
+                  code: entry.$1,
+                  label: entry.$2,
+                  selected: current == entry.$1,
+                  onTap: () => Navigator.pop(ctx, entry.$1),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null) {
+      await localeProvider.setLocale(selected);
+    }
+  }
+
+  Widget _buildThemeRow(BuildContext context) {
+    final mode = AdaptiveTheme.of(context).mode;
+    return ProfileSettingsRow(
+      icon: Icons.palette_outlined,
+      tone: ProfileRowIconTone.gray,
+      title: 'Mavzu',
+      value: mode.isDark ? 'Tungi' : "Yorug'",
+      onTap: () {
+        AdaptiveTheme.of(context).toggleThemeMode();
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Change password bottom sheet (logic preserved from previous version)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  void _showChangePasswordSheet(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.lg,
+              AppSpacing.xl,
+              AppSpacing.xl3,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Text(
+                  l10n.changePassword,
+                  style: AppTextStyles.titleMedium(),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                AppTextInput(
+                  label: l10n.currentPassword,
+                  controller: _currentPasswordController,
+                  obscureText: true,
+                  prefixIcon: Icons.lock_outline_rounded,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextInput(
+                  label: l10n.newPassword,
+                  controller: _newPasswordController,
+                  obscureText: true,
+                  prefixIcon: Icons.lock_reset_rounded,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                AppPrimaryButton(
+                  label: l10n.confirm,
+                  isLoading: _isChangingPassword,
                   onPressed: _isChangingPassword
                       ? null
                       : () => _changePassword(setModalState, l10n),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: primary,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
-                  child: _isChangingPassword
-                      ? const CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2)
-                      : Text(l10n.confirm,
-                          style: const TextStyle(color: Colors.white)),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Future<void> _changePassword(Function setModalState, var l10n) async {
+  Future<void> _changePassword(
+      void Function(void Function()) setModalState, AppLocalizations l10n) async {
     if (_currentPasswordController.text.isEmpty ||
-        _newPasswordController.text.isEmpty) return;
+        _newPasswordController.text.isEmpty) {
+      return;
+    }
 
     setModalState(() => _isChangingPassword = true);
     try {
@@ -257,13 +376,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l10n.updateSuccess), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.updateSuccess),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.danger,
+          ),
+        );
       }
     } finally {
       setModalState(() => _isChangingPassword = false);
@@ -272,33 +399,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _buildBottomAction(Color primary, var l10n, bool isDark) {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Bottom save bar + profile save
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _buildBottomAction(AppLocalizations l10n) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-      decoration: BoxDecoration(
-        color: AppColors.getBg(isDark),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5))
-        ],
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.xl4,
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: ElevatedButton(
-          onPressed: _isSaving ? null : _updateProfile,
-          style: ElevatedButton.styleFrom(
-              backgroundColor: primary,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16))),
-          child: _isSaving
-              ? const CircularProgressIndicator(
-                  color: Colors.white, strokeWidth: 2)
-              : Text(l10n.save,
-                  style: AppStyles.cardTitle.copyWith(color: Colors.white)),
+      decoration: const BoxDecoration(
+        color: AppColors.bg,
+        border: Border(
+          top: BorderSide(color: AppColors.border),
         ),
+      ),
+      child: AppPrimaryButton(
+        label: l10n.save,
+        isLoading: _isSaving,
+        onPressed: _isSaving ? null : _updateProfile,
       ),
     );
   }
@@ -311,26 +433,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await UserService(authProvider: auth)
           .updateProfile(fullName: _fullNameController.text.trim());
       await auth.fetchUserProfile();
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l10n.profileSaved), backgroundColor: Colors.green));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.profileSaved),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
-  Future<void> _handleLogout(var l10n) async {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Logout
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Future<void> _handleLogout(AppLocalizations l10n) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.logout),
-        content: Text(l10n.logoutConfirm),
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Text(l10n.logout, style: AppTextStyles.titleMedium()),
+        content: Text(
+          l10n.logoutConfirm,
+          style: AppTextStyles.bodyMedium(),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.no)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              l10n.no,
+              style: AppTextStyles.labelLarge()
+                  .copyWith(color: AppColors.textSecondary),
+            ),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.yes, style: const TextStyle(color: Colors.red))),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              l10n.yes,
+              style:
+                  AppTextStyles.labelLarge().copyWith(color: AppColors.danger),
+            ),
+          ),
         ],
       ),
     );
@@ -343,19 +492,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
           (r) => false);
     }
   }
+}
 
-  Widget _buildDialogField(
-      TextEditingController controller, String label, bool isDark) {
-    return TextField(
-      controller: controller,
-      obscureText: true,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none),
+class _LanguageOption extends StatelessWidget {
+  final String code;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _LanguageOption({
+    required this.code,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Material(
+        color: selected ? AppColors.brandLight : AppColors.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl,
+              vertical: AppSpacing.lg,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: selected ? AppColors.brand : AppColors.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    code.toUpperCase(),
+                    style: AppTextStyles.caption().copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: selected ? Colors.white : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      fontWeight: FontWeight.w600,
+                      color:
+                          selected ? AppColors.brandDark : AppColors.text,
+                    ),
+                  ),
+                ),
+                if (selected)
+                  const Icon(
+                    Icons.check_rounded,
+                    color: AppColors.brand,
+                    size: 20,
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

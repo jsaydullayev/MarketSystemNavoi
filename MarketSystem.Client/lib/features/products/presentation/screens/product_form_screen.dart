@@ -1,11 +1,24 @@
+// Product add/edit bottom sheet — migrated to the new design system.
+//
+// Layout follows HTML demo page 7.5 (`#page-addproduct`):
+// - Sheet handle + title + subtitle
+// - "Asosiy ma'lumotlar" section with name + (kategoriya, birlik) row
+// - Brand-light "Narxlar" card (tannarx, sotish narxi, minimum sotish narxi)
+// - "Stok" section (hozirgi stok, minimum stok) with helper text
+// - Sticky primary CTA at the bottom
+
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/extensions/app_extensions.dart';
-import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import '../../../../data/services/product_service.dart';
-import '../../../../data/services/category_service.dart';
-import '../../../../data/models/product_category_model.dart';
+
+import '../../../../core/extensions/app_extensions.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../data/models/product_category_model.dart';
+import '../../../../data/services/category_service.dart';
+import '../../../../data/services/product_service.dart';
+import '../../../../design/tokens/app_tokens.dart';
+import '../../../../design/tokens/app_typography.dart';
+import '../../../../design/widgets/app_button.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class ProductBottomSheet extends StatefulWidget {
   final dynamic product;
@@ -19,8 +32,10 @@ class ProductBottomSheet extends StatefulWidget {
 class _ProductBottomSheetState extends State<ProductBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _costPriceController = TextEditingController();
   final _salePriceController = TextEditingController();
   final _minSalePriceController = TextEditingController();
+  final _stockController = TextEditingController();
   final _minThresholdController = TextEditingController();
 
   bool _isTemporary = false;
@@ -30,10 +45,12 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
   int _selectedUnit = 1;
   final List<Map<String, dynamic>> _units = [
-    {'value': 1, 'name': 'dona', 'icon': Icons.inventory_2_outlined},
-    {'value': 2, 'name': 'kg', 'icon': Icons.scale_outlined},
-    {'value': 3, 'name': 'm', 'icon': Icons.straighten_rounded},
+    {'value': 1, 'name': 'dona'},
+    {'value': 2, 'name': 'kg'},
+    {'value': 3, 'name': 'm'},
   ];
+
+  bool get _isEditing => widget.product != null;
 
   @override
   void initState() {
@@ -41,9 +58,11 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
     _loadCategories();
     if (widget.product != null) {
       _nameController.text = widget.product['name'] ?? '';
+      _costPriceController.text = (widget.product['costPrice'] ?? 0).toString();
       _salePriceController.text = (widget.product['salePrice'] ?? 0).toString();
       _minSalePriceController.text =
           (widget.product['minSalePrice'] ?? 0).toString();
+      _stockController.text = (widget.product['quantity'] ?? 0).toString();
       _minThresholdController.text =
           (widget.product['minThreshold'] ?? 0).toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
@@ -57,6 +76,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final categoryService = CategoryService(authProvider: authProvider);
       final categories = await categoryService.getAllCategories();
+      if (!mounted) return;
       setState(() {
         final seen = <int>{};
         _categories = categories.where((c) => seen.add(c.id)).toList();
@@ -69,8 +89,10 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   @override
   void dispose() {
     _nameController.dispose();
+    _costPriceController.dispose();
     _salePriceController.dispose();
     _minSalePriceController.dispose();
+    _stockController.dispose();
     _minThresholdController.dispose();
     super.dispose();
   }
@@ -121,7 +143,10 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Xatolik: $e'),
+            backgroundColor: AppColors.danger,
+          ),
         );
       }
     }
@@ -129,12 +154,14 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isWeb = screenWidth > 600;
+    final unitName = _units.firstWhere(
+      (u) => u['value'] == _selectedUnit,
+      orElse: () => _units.first,
+    )['name'] as String;
 
     return Padding(
       padding:
@@ -146,94 +173,209 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
             maxWidth: isWeb ? 500 : double.infinity,
             maxHeight: MediaQuery.of(context).size.height * 0.9,
           ),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius:
+                BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
           ),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.lg,
+              AppSpacing.xl,
+              AppSpacing.xl,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
+                  // Handle
+                  Center(
+                    child: Container(
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                          color: Colors.grey[400],
-                          borderRadius: BorderRadius.circular(10))),
-                  20.height,
-                  Text(
-                      widget.product != null
-                          ? l10n.editProduct
-                          : l10n.addProduct,
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)),
-                  25.height,
-                  _buildField(
-                      l10n: l10n,
-                      controller: _nameController,
-                      label: l10n.productName,
-                      icon: Icons.inventory_2_rounded),
-                  16.height,
-                  Row(
-                    children: [
-                      Expanded(child: _buildCategoryDropdown(isDark, l10n)),
-                      12.width,
-                      Expanded(child: _buildUnitDropdown(isDark, l10n)),
-                    ],
-                  ),
-                  16.height,
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _buildField(
-                              l10n: l10n,
-                              controller: _salePriceController,
-                              label: l10n.salePrice,
-                              icon: Icons.payments_outlined,
-                              isNumber: true)),
-                      12.width,
-                      Expanded(
-                          child: _buildField(
-                              l10n: l10n,
-                              controller: _minSalePriceController,
-                              label: l10n.minPrice,
-                              icon: Icons.trending_down,
-                              isNumber: true)),
-                    ],
-                  ),
-                  16.height,
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _buildField(
-                              controller: _minThresholdController,
-                              label: l10n.minThreshold,
-                              icon: Icons.warning_amber,
-                              l10n: l10n,
-                              isNumber: true)),
-                      12.width,
-                      _buildTempSwitch(isDark, l10n),
-                    ],
-                  ),
-                  24.height,
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _saveProduct,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.primaryColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16))),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(widget.product != null ? l10n.save : l10n.add),
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
+                  ),
+                  16.height,
+                  // Title + subtitle (centered)
+                  Center(
+                    child: Text(
+                      _isEditing ? l10n.editProduct : l10n.addProduct,
+                      style: AppTextStyles.titleLarge()
+                          .copyWith(fontSize: 19),
+                    ),
+                  ),
+                  6.height,
+                  Center(
+                    child: Text(
+                      "Barcha maydonlarni to'ldiring. * — majburiy",
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  20.height,
+
+                  // === Asosiy ma'lumotlar ===
+                  const _SectionLabel(text: "Asosiy ma'lumotlar"),
+                  10.height,
+                  _LabeledField(
+                    label: l10n.productName,
+                    required: true,
+                    child: _buildTextField(
+                      controller: _nameController,
+                      hint: 'Masalan: Coca-Cola 1.5L',
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? l10n.fillIn : null,
+                    ),
+                  ),
+                  12.height,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _LabeledField(
+                          label: l10n.categories,
+                          required: true,
+                          child: _buildCategoryDropdown(l10n),
+                        ),
+                      ),
+                      12.width,
+                      Expanded(
+                        child: _LabeledField(
+                          label: l10n.unit,
+                          required: true,
+                          child: _buildUnitDropdown(l10n),
+                        ),
+                      ),
+                    ],
+                  ),
+                  18.height,
+
+                  // === Narxlar (brand-light card) ===
+                  _PriceCard(
+                    title: 'Narxlar',
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _LabeledField(
+                              label: 'Tannarx',
+                              required: true,
+                              compact: true,
+                              child: _buildSuffixField(
+                                controller: _costPriceController,
+                                suffix: 'UZS',
+                                isNumber: true,
+                              ),
+                            ),
+                          ),
+                          12.width,
+                          Expanded(
+                            child: _LabeledField(
+                              label: l10n.salePrice,
+                              required: true,
+                              compact: true,
+                              child: _buildSuffixField(
+                                controller: _salePriceController,
+                                suffix: 'UZS',
+                                isNumber: true,
+                                validator: (v) => (v == null || v.isEmpty)
+                                    ? l10n.fillIn
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      12.height,
+                      _LabeledField(
+                        label: 'Minimum sotish narxi',
+                        optional: '(chegirma uchun)',
+                        compact: true,
+                        child: _buildSuffixField(
+                          controller: _minSalePriceController,
+                          suffix: 'UZS',
+                          isNumber: true,
+                        ),
+                      ),
+                      8.height,
+                      _PriceTip(
+                        text:
+                            'Sotuvchi mijozga ${_minSalePriceController.text.isEmpty ? "X" : _minSalePriceController.text} UZS gacha tushira oladi. Pastroq narx uchun Owner ruxsati kerak.',
+                      ),
+                    ],
+                  ),
+                  18.height,
+
+                  // === Stok ===
+                  const _SectionLabel(text: 'Stok'),
+                  10.height,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _LabeledField(
+                          label: 'Hozirgi stok',
+                          required: !_isEditing,
+                          child: _buildSuffixField(
+                            controller: _stockController,
+                            suffix: unitName,
+                            isNumber: true,
+                            // Stock is set via zakup once the product exists,
+                            // so editing it here would be misleading.
+                            enabled: !_isEditing,
+                          ),
+                        ),
+                      ),
+                      12.width,
+                      Expanded(
+                        child: _LabeledField(
+                          label: 'Min. stok',
+                          optional: '(ogoh.)',
+                          child: _buildSuffixField(
+                            controller: _minThresholdController,
+                            suffix: unitName,
+                            isNumber: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  8.height,
+                  Text(
+                    "Stok ${_minThresholdController.text.isEmpty ? "N" : _minThresholdController.text} donadan tushganda Owner'ga xabar yuboriladi",
+                    style: AppTextStyles.caption().copyWith(
+                      fontSize: 11,
+                      letterSpacing: 0,
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+
+                  // Temporary product toggle preserved from the legacy form
+                  // (visible to power users; not in the demo but the schema
+                  // still carries it).
+                  16.height,
+                  _TempToggle(
+                    value: _isTemporary,
+                    onChanged: (v) => setState(() => _isTemporary = v),
+                  ),
+
+                  24.height,
+                  AppPrimaryButton(
+                    label: _isEditing
+                        ? l10n.save
+                        : "Mahsulotni qo'shish",
+                    icon: _isEditing ? Icons.check_rounded : Icons.add_rounded,
+                    onPressed: _isLoading ? null : _saveProduct,
+                    isLoading: _isLoading,
                   ),
                 ],
               ),
@@ -244,33 +386,90 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
     );
   }
 
-  Widget _buildField(
-      {required TextEditingController controller,
-      required String label,
-      required AppLocalizations l10n,
-      required IconData icon,
-      bool isNumber = false}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    String? hint,
+    String? Function(String?)? validator,
+    bool isNumber = false,
+    bool enabled = true,
+  }) {
     return TextFormField(
       controller: controller,
+      enabled: enabled,
       keyboardType: isNumber
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
-      validator: (v) => (v == null || v.isEmpty) ? l10n.fillIn : null,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, size: 20),
-        filled: true,
-        fillColor: Colors.grey.withOpacity(0.08),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      validator: validator,
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      decoration: _inputDecoration(hint: hint),
+    );
+  }
+
+  Widget _buildSuffixField({
+    required TextEditingController controller,
+    required String suffix,
+    bool isNumber = false,
+    String? Function(String?)? validator,
+    bool enabled = true,
+  }) {
+    return TextFormField(
+      controller: controller,
+      enabled: enabled,
+      keyboardType: isNumber
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
+      validator: validator,
+      onChanged: (_) => setState(() {}),
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      decoration: _inputDecoration().copyWith(
+        suffixText: suffix,
+        suffixStyle: AppTextStyles.caption().copyWith(
+          fontSize: 11,
+          letterSpacing: 0.5,
+          color: AppColors.textSecondary,
+        ),
       ),
     );
   }
 
-  Widget _buildCategoryDropdown(bool isDark, AppLocalizations l10n) {
+  InputDecoration _inputDecoration({String? hint}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: AppTextStyles.bodyMedium().copyWith(
+        color: AppColors.textMuted,
+        fontSize: 14,
+      ),
+      filled: true,
+      fillColor: AppColors.inputFill,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.lg,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildCategoryDropdown(AppLocalizations l10n) {
     final uniqueCategories = _categories
         .fold<Map<int, ProductCategoryModel>>(
           {},
@@ -286,68 +485,278 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
             : null;
 
     return DropdownButtonFormField<int?>(
-      value: safeCategory,
+      initialValue: safeCategory,
       isExpanded: true,
-      decoration: InputDecoration(
-        labelText: l10n.categories,
-        filled: true,
-        fillColor: Colors.grey.withOpacity(0.08),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none),
-      ),
+      decoration: _inputDecoration(),
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      icon: const Icon(Icons.keyboard_arrow_down_rounded,
+          color: AppColors.textSecondary),
       items: [
         DropdownMenuItem(
-            value: null, child: Text(l10n.no, style: TextStyle(fontSize: 14))),
-        ...uniqueCategories.map((c) => DropdownMenuItem(
+          value: null,
+          child: Text(
+            l10n.no,
+            style: AppTextStyles.bodyMedium()
+                .copyWith(fontSize: 14, color: AppColors.textMuted),
+          ),
+        ),
+        ...uniqueCategories.map(
+          (c) => DropdownMenuItem(
             value: c.id,
-            child: Text(c.name,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14)))),
+            child: Text(
+              c.name,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+            ),
+          ),
+        ),
       ],
       onChanged: (v) => setState(() => _selectedCategory = v),
     );
   }
 
-  Widget _buildUnitDropdown(bool isDark, AppLocalizations l10n) {
+  Widget _buildUnitDropdown(AppLocalizations l10n) {
     final validValues = _units.map((u) => u['value'] as int).toSet();
     final safeValue = validValues.contains(_selectedUnit) ? _selectedUnit : 1;
 
     return DropdownButtonFormField<int>(
-      value: safeValue,
-      decoration: InputDecoration(
-        labelText: l10n.unit,
-        filled: true,
-        fillColor: Colors.grey.withOpacity(0.08),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none),
-      ),
+      initialValue: safeValue,
+      isExpanded: true,
+      decoration: _inputDecoration(),
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      icon: const Icon(Icons.keyboard_arrow_down_rounded,
+          color: AppColors.textSecondary),
       items: _units
-          .map((u) => DropdownMenuItem(
+          .map(
+            (u) => DropdownMenuItem(
               value: u['value'] as int,
-              child: Text(u['name'] as String,
-                  style: const TextStyle(fontSize: 14))))
+              child: Text(
+                u['name'] as String,
+                style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+              ),
+            ),
+          )
           .toList(),
       onChanged: (v) => setState(() => _selectedUnit = v!),
     );
   }
+}
 
-  Widget _buildTempSwitch(bool isDark, AppLocalizations l10n) {
+/// Uppercase section label used to title each form section.
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.caption().copyWith(
+        fontSize: 11,
+        letterSpacing: 0.8,
+        color: AppColors.textSecondary,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+/// Label + required/optional marker stacked above a child input. Demo's
+/// `.form-label` look.
+class _LabeledField extends StatelessWidget {
+  final String label;
+  final bool required;
+  final String? optional;
+  final bool compact;
+  final Widget child;
+
+  const _LabeledField({
+    required this.label,
+    required this.child,
+    this.required = false,
+    this.optional,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                label,
+                style: AppTextStyles.caption().copyWith(
+                  fontSize: compact ? 10 : 11,
+                  letterSpacing: 0.5,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (required)
+              Padding(
+                padding: const EdgeInsets.only(left: 3),
+                child: Text(
+                  '*',
+                  style: AppTextStyles.caption().copyWith(
+                    color: AppColors.danger,
+                    fontSize: compact ? 10 : 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            if (optional != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 3),
+                child: Text(
+                  optional!,
+                  style: AppTextStyles.caption().copyWith(
+                    fontSize: compact ? 10 : 11,
+                    letterSpacing: 0,
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
+    );
+  }
+}
+
+/// Brand-light card grouping pricing inputs. Demo's `.price-grid`.
+class _PriceCard extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+  const _PriceCard({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(AppSpacing.lg + 2),
       decoration: BoxDecoration(
-          color: Colors.purple.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(14)),
+        color: AppColors.brandLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.brandTint, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.payments_rounded,
+                size: 14,
+                color: AppColors.brandDark,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                title.toUpperCase(),
+                style: AppTextStyles.caption().copyWith(
+                  fontSize: 11,
+                  letterSpacing: 0.8,
+                  color: AppColors.brandDark,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+/// Soft yellow hint shown under the "minimum sotish narxi" input.
+class _PriceTip extends StatelessWidget {
+  final String text;
+  const _PriceTip({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+      decoration: BoxDecoration(
+        color: AppColors.warningLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.lightbulb_rounded,
+            size: 12,
+            color: AppColors.warning,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.caption().copyWith(
+                fontSize: 10,
+                letterSpacing: 0,
+                color: AppColors.text,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact toggle for the "vaqtinchalik mahsulot" flag. Brand-light pill
+/// with a brand-orange-tinted switch.
+class _TempToggle extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _TempToggle({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg, vertical: AppSpacing.md - 2),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.borderSoft, width: 1),
+      ),
       child: Row(
         children: [
-          const Icon(Icons.timer_outlined, size: 18, color: Colors.purple),
+          const Icon(
+            Icons.timer_outlined,
+            size: 18,
+            color: AppColors.textSecondary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Vaqtinchalik mahsulot',
+              style: AppTextStyles.bodySmall().copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.text,
+              ),
+            ),
+          ),
           Transform.scale(
-            scale: 0.8,
+            scale: 0.85,
             child: Switch(
-              value: _isTemporary,
-              activeColor: Colors.purple,
-              onChanged: (v) => setState(() => _isTemporary = v),
+              value: value,
+              activeThumbColor: AppColors.brand,
+              onChanged: onChanged,
             ),
           ),
         ],

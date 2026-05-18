@@ -1,5 +1,5 @@
-/// Zakup Repository Implementation
-/// Zakup Repository interfeysining amaliyoti
+// Zakup Repository Implementation
+// Zakup Repository interfeysining amaliyoti
 
 import '../../../../core/failure/api_result.dart';
 import '../../domain/entities/zakup_entity.dart';

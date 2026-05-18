@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Shown when a report tab has no data loaded yet (e.g. API failure).
 class EmptyReport extends StatelessWidget {
-  const EmptyReport();
+  const EmptyReport({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,11 +15,13 @@ class EmptyReport extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bar_chart_rounded, size: 64, color: Colors.grey[300]),
-          const SizedBox(height: 12),
+          const Icon(Icons.bar_chart_rounded,
+              size: 64, color: AppColors.textMuted),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             l10n.noReports,
-            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+            style: AppTextStyles.bodyLarge()
+                .copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

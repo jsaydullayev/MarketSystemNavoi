@@ -1,7 +1,7 @@
-/// Register Request Model
-/// Data transfer object for registration requests
+// Register Request Model
+// Data transfer object for registration requests
 
-/// Register request DTO
+// Register request DTO
 class RegisterRequestModel {
   final String userName;
   final String email;

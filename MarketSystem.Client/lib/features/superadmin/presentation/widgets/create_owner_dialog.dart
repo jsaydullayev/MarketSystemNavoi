@@ -1,3 +1,8 @@
+// Manually create an owner+market without a backing registration request —
+// migrated to the new design system. Used when the SuperAdmin onboards a
+// tenant out-of-band (phone, walk-in). Returns a [CreatedOwnerResult] so the
+// console can show the credentials hand-off dialog right after.
+
 import 'dart:async';
 import 'dart:math';
 
@@ -5,12 +10,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_tokens.dart';
+import '../../../../design/tokens/app_typography.dart';
+import '../../../../design/widgets/app_button.dart';
 import '../../data/superadmin_service.dart';
 
-/// Manually create an owner+market without a backing registration request.
-/// Used when the SuperAdmin onboards a tenant out-of-band (phone, walk-in).
-/// Returns a [CreatedOwnerResult] so the console can show the credentials
-/// hand-off dialog right after.
 class CreatedOwnerResult {
   CreatedOwnerResult({
     required this.username,
@@ -127,17 +131,18 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
       subdomain: subdomainQ,
     );
     if (!mounted) return;
-    final stillCurrent = (usernameQ == null ||
-            _username.text.trim() == usernameQ) &&
-        (marketQ == null || _marketName.text.trim() == marketQ) &&
-        (subdomainQ == null ||
-            _subdomain.text.trim().toLowerCase() == subdomainQ);
+    final stillCurrent =
+        (usernameQ == null || _username.text.trim() == usernameQ) &&
+            (marketQ == null || _marketName.text.trim() == marketQ) &&
+            (subdomainQ == null ||
+                _subdomain.text.trim().toLowerCase() == subdomainQ);
     if (!stillCurrent) return;
     if (res.status != SuperAdminOpStatus.success || res.data == null) return;
     setState(() {
       final d = res.data!;
       if (usernameQ != null && d['usernameAvailable'] is bool) {
-        _userState = (d['usernameAvailable'] as bool) ? _Check.free : _Check.taken;
+        _userState =
+            (d['usernameAvailable'] as bool) ? _Check.free : _Check.taken;
       }
       if (marketQ != null && d['marketNameAvailable'] is bool) {
         _marketState =
@@ -159,7 +164,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
     const lower = 'abcdefghjkmnpqrstuvwxyz';
     const digits = '23456789';
     const symbols = '!@#\$%&*';
-    final all = upper + lower + digits + symbols;
+    const all = upper + lower + digits + symbols;
     final pw = StringBuffer()
       ..write(upper[r.nextInt(upper.length)])
       ..write(lower[r.nextInt(lower.length)])
@@ -208,7 +213,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
       );
     } else {
       setState(
-          () => _errorMessage = res.message ?? "Yaratishda xatolik yuz berdi");
+          () => _errorMessage = res.message ?? 'Yaratishda xatolik yuz berdi');
     }
   }
 
@@ -224,12 +229,62 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
           ),
         );
       case _Check.free:
-        return const Icon(Icons.check_circle, color: Color(0xFF137333));
+        return const Icon(Icons.check_circle, color: AppColors.success);
       case _Check.taken:
-        return const Icon(Icons.error_outline, color: Color(0xFFD93025));
+        return const Icon(Icons.error_outline, color: AppColors.danger);
       case _Check.idle:
         return null;
     }
+  }
+
+  InputDecoration _decoration({
+    required IconData prefix,
+    required String hint,
+    Widget? suffixIcon,
+    String? errorText,
+    String? helper,
+    String? suffixText,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: AppTextStyles.bodyMedium().copyWith(
+        color: AppColors.textMuted,
+        fontSize: 15,
+      ),
+      prefixIcon: Icon(prefix, size: 20, color: AppColors.textSecondary),
+      suffixIcon: suffixIcon,
+      suffixText: suffixText,
+      suffixStyle: AppTextStyles.bodySmall(),
+      errorText: errorText,
+      helperText: helper,
+      helperStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
+      filled: true,
+      fillColor: AppColors.inputFill,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg + 2,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      ),
+    );
   }
 
   @override
@@ -242,234 +297,306 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
         _marketState == _Check.taken ||
         _subdomainState == _Check.taken;
 
-    return AlertDialog(
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6F4EA),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(Icons.person_add_outlined,
-                color: Color(0xFF137333), size: 20),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(child: Text("Yangi Owner qo'shish")),
-        ],
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      content: SizedBox(
-        width: 520,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Bu form ro'yxatdan o'tish so'rovini chetlab o'tadi. Faqat alohida hollar uchun (telefon orqali kelgan murojaatlar) ishlatiladi.",
-                  style: TextStyle(fontSize: 12, color: Color(0xFF5F6368)),
-                ),
-                const SizedBox(height: 16),
-                if (_errorMessage != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFCE8E6),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(
-                          fontSize: 13, color: Color(0xFFD93025)),
-                    ),
-                  ),
-                _Section('👤 Owner'),
-                TextFormField(
-                  controller: _fullName,
-                  decoration: const InputDecoration(
-                    labelText: "To'liq ism *",
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (v) =>
-                      (v ?? '').trim().length < 2 ? 'Ism kerak' : null,
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _phone,
-                        decoration: const InputDecoration(
-                          labelText: 'Telefon *',
-                          border: OutlineInputBorder(),
-                          hintText: '+998 90 ...',
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 580),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl2),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.brandLight,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        validator: (v) {
-                          final s = (v ?? '').trim();
-                          if (s.isEmpty) return 'Telefon kerak';
-                          if (s.replaceAll(RegExp(r'\D'), '').length < 9) {
-                            return "Format noto'g'ri";
-                          }
-                          return null;
-                        },
+                        child: const Icon(
+                          Icons.person_add_outlined,
+                          color: AppColors.brand,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: Text(
+                          "Yangi Owner qo'shish",
+                          style: AppTextStyles.titleMedium(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        color: AppColors.textSecondary,
+                        onPressed: _submitting
+                            ? null
+                            : () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    "Bu form ro'yxatdan o'tish so'rovini chetlab o'tadi. Faqat alohida hollar uchun (telefon orqali kelgan murojaatlar) ishlatiladi.",
+                    style: AppTextStyles.bodySmall(),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md + 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerLight,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: AppTextStyles.bodySmall().copyWith(
+                          color: AppColors.danger,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _language,
-                        decoration: const InputDecoration(
-                          labelText: 'Til',
-                          border: OutlineInputBorder(),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                  const _Section('Owner'),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _fullName,
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      prefix: Icons.person_outline,
+                      hint: "To'liq ism *",
+                    ),
+                    validator: (v) =>
+                        (v ?? '').trim().length < 2 ? 'Ism kerak' : null,
+                  ),
+                  const SizedBox(height: AppSpacing.md + 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _phone,
+                          style: AppTextStyles.bodyMedium()
+                              .copyWith(fontSize: 15),
+                          keyboardType: TextInputType.phone,
+                          decoration: _decoration(
+                            prefix: Icons.phone_outlined,
+                            hint: '+998 90 ...',
+                          ),
+                          validator: (v) {
+                            final s = (v ?? '').trim();
+                            if (s.isEmpty) return 'Telefon kerak';
+                            if (s.replaceAll(RegExp(r'\D'), '').length < 9) {
+                              return "Format noto'g'ri";
+                            }
+                            return null;
+                          },
                         ),
-                        items: const [
-                          DropdownMenuItem(value: 'uz', child: Text("O'zbek")),
-                          DropdownMenuItem(value: 'ru', child: Text('Русский')),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(child: _languageDropdown()),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md + 2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _username,
+                          style: AppTextStyles.bodyMedium()
+                              .copyWith(fontSize: 15),
+                          decoration: _decoration(
+                            prefix: Icons.alternate_email,
+                            hint: 'username *',
+                            suffixIcon: _suffix(_userState),
+                            errorText: _userState == _Check.taken
+                                ? "'${_username.text.trim()}' band"
+                                : null,
+                            helper: 'Min. 3 belgi',
+                          ),
+                          validator: (v) =>
+                              (v ?? '').trim().length < 3 ? 'Min. 3' : null,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _password,
+                          obscureText: _obscurePassword,
+                          style: AppTextStyles.bodyMedium()
+                              .copyWith(fontSize: 15),
+                          decoration: _decoration(
+                            prefix: Icons.lock_outline,
+                            hint: 'Parol *',
+                            suffixIcon: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: AppColors.textSecondary,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => setState(() =>
+                                      _obscurePassword = !_obscurePassword),
+                                  tooltip: "Ko'rsatish",
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.casino_outlined,
+                                    color: AppColors.textSecondary,
+                                    size: 20,
+                                  ),
+                                  onPressed: _generatePassword,
+                                  tooltip: 'Generate',
+                                ),
+                              ],
+                            ),
+                            helper: 'Min. 8 belgi',
+                          ),
+                          validator: (v) =>
+                              (v ?? '').length < 8 ? 'Min. 8' : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  const _Section("Do'kon"),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _marketName,
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      prefix: Icons.storefront_outlined,
+                      hint: "Do'kon nomi *",
+                      suffixIcon: _suffix(_marketState),
+                      errorText: _marketState == _Check.taken
+                          ? "'${_marketName.text.trim()}' band"
+                          : null,
+                    ),
+                    validator: (v) =>
+                        (v ?? '').trim().length < 3 ? 'Min. 3' : null,
+                  ),
+                  const SizedBox(height: AppSpacing.md + 2),
+                  TextFormField(
+                    controller: _subdomain,
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      prefix: Icons.language_outlined,
+                      hint: 'subdomain (ixtiyoriy)',
+                      suffixText: '.strotech.uz',
+                      suffixIcon: _suffix(_subdomainState),
+                      errorText: _subdomainState == _Check.taken
+                          ? "'$typedSubdomain' band"
+                          : null,
+                    ),
+                  ),
+                  if (previewSubdomain != null &&
+                      previewSubdomain.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, left: 4),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.public,
+                            size: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            typedSubdomain.isEmpty ? 'Avto: ' : 'URL: ',
+                            style: AppTextStyles.bodySmall()
+                                .copyWith(fontSize: 12),
+                          ),
+                          Text(
+                            '$previewSubdomain.strotech.uz',
+                            style: AppTextStyles.bodySmall().copyWith(
+                              fontSize: 12,
+                              fontFamily: 'monospace',
+                              color: AppColors.brand,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
-                        onChanged: (v) {
-                          if (v != null) setState(() => _language = v);
-                        },
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _username,
-                        decoration: InputDecoration(
-                          labelText: 'Username *',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: _suffix(_userState),
-                          errorText: _userState == _Check.taken
-                              ? "'${_username.text.trim()}' band"
-                              : null,
-                          helperText: 'Min. 3 belgi',
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppSecondaryButton(
+                          label: 'Bekor qilish',
+                          onPressed: _submitting
+                              ? null
+                              : () => Navigator.pop(context),
                         ),
-                        validator: (v) =>
-                            (v ?? '').trim().length < 3 ? 'Min. 3' : null,
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _password,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Parol *',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(_obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined),
-                                onPressed: () => setState(() =>
-                                    _obscurePassword = !_obscurePassword),
-                                tooltip: "Ko'rsatish",
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.casino_outlined),
-                                onPressed: _generatePassword,
-                                tooltip: 'Generate',
-                              ),
-                            ],
-                          ),
-                          helperText: 'Min. 8 belgi',
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: AppPrimaryButton(
+                          label: 'Yaratish',
+                          icon: Icons.check,
+                          isLoading: _submitting,
+                          onPressed: disabled ? null : _submit,
                         ),
-                        validator: (v) =>
-                            (v ?? '').length < 8 ? 'Min. 8' : null,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _Section("🏪 Do'kon"),
-                TextFormField(
-                  controller: _marketName,
-                  decoration: InputDecoration(
-                    labelText: "Do'kon nomi *",
-                    border: const OutlineInputBorder(),
-                    suffixIcon: _suffix(_marketState),
-                    errorText: _marketState == _Check.taken
-                        ? "'${_marketName.text.trim()}' band"
-                        : null,
+                    ],
                   ),
-                  validator: (v) =>
-                      (v ?? '').trim().length < 3 ? 'Min. 3' : null,
-                ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _subdomain,
-                  decoration: InputDecoration(
-                    labelText: 'Subdomain (ixtiyoriy)',
-                    border: const OutlineInputBorder(),
-                    suffixText: '.strotech.uz',
-                    suffixIcon: _suffix(_subdomainState),
-                    errorText: _subdomainState == _Check.taken
-                        ? "'$typedSubdomain' band"
-                        : null,
-                  ),
-                ),
-                if (previewSubdomain != null && previewSubdomain.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6, left: 4),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.public,
-                            size: 13, color: Color(0xFF5F6368)),
-                        const SizedBox(width: 5),
-                        Text(
-                          typedSubdomain.isEmpty ? 'Avto: ' : 'URL: ',
-                          style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF5F6368)),
-                        ),
-                        Text(
-                          '$previewSubdomain.strotech.uz',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontFamily: 'monospace',
-                            color: Color(0xFF1A73E8),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _submitting ? null : () => Navigator.pop(context),
-          child: const Text('Bekor qilish'),
+    );
+  }
+
+  Widget _languageDropdown() {
+    return DropdownButtonFormField<String>(
+      initialValue: _language,
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+      decoration: InputDecoration(
+        prefixIcon: const Icon(
+          Icons.translate_rounded,
+          size: 20,
+          color: AppColors.textSecondary,
         ),
-        ElevatedButton.icon(
-          onPressed: disabled ? null : _submit,
-          icon: _submitting
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : const Icon(Icons.check, size: 18),
-          label: const Text('Yaratish'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF137333),
-            foregroundColor: Colors.white,
-          ),
+        filled: true,
+        fillColor: AppColors.inputFill,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.lg + 2,
         ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        ),
+      ),
+      items: const [
+        DropdownMenuItem(value: 'uz', child: Text("O'zbek")),
+        DropdownMenuItem(value: 'ru', child: Text('Русский')),
       ],
+      onChanged: (v) {
+        if (v != null) setState(() => _language = v);
+      },
     );
   }
 }
@@ -480,16 +607,10 @@ class _Section extends StatelessWidget {
   const _Section(this.title);
   final String title;
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF5F6368),
-            letterSpacing: 0.5,
-          ),
+  Widget build(BuildContext context) => Text(
+        title.toUpperCase(),
+        style: AppTextStyles.caption().copyWith(
+          color: AppColors.textSecondary,
         ),
       );
 }

@@ -1,5 +1,5 @@
-/// Return Sale Item Use Case
-/// Sotilgan mahsulotni qaytarish biznes mantig'i
+// Return Sale Item Use Case
+// Sotilgan mahsulotni qaytarish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../repositories/sale_repository_interface.dart';

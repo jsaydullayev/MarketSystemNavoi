@@ -1,14 +1,18 @@
+// Destructive "soft-delete the owner + deactivate the market" dialog —
+// migrated to the new design system. Requires the operator to type the
+// EXACT market name to confirm; matches the backend's typed-confirmation
+// guard so a slip-of-the-thumb can't take out the wrong tenant.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_tokens.dart';
+import '../../../../design/tokens/app_typography.dart';
+import '../../../../design/widgets/app_button.dart';
 import '../../data/superadmin_service.dart';
 import '../../domain/models/owner_detail.dart';
 
-/// Destructive "soft-delete the owner + deactivate the market" dialog.
-/// Requires the operator to type the EXACT market name to confirm — matches
-/// the backend's typed-confirmation guard so a slip-of-the-thumb can't take
-/// out the wrong tenant.
 class DeleteOwnerDialog extends StatefulWidget {
   const DeleteOwnerDialog({
     super.key,
@@ -62,196 +66,286 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
     }
   }
 
+  InputDecoration _decoration({
+    required String hint,
+    String? helper,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: AppTextStyles.bodyMedium().copyWith(
+        color: AppColors.textMuted,
+        fontSize: 15,
+      ),
+      helperText: helper,
+      helperStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
+      filled: true,
+      fillColor: AppColors.inputFill,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg + 2,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFCE8E6),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(Icons.warning_amber_rounded,
-                color: Color(0xFFD93025), size: 22),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(child: Text("O'chirishni tasdiqlang")),
-        ],
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      content: SizedBox(
-        width: 460,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Bu amalni qaytarib bo'lmaydi",
-                  style: TextStyle(fontSize: 13, color: Color(0xFF5F6368)),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFCE8E6),
-                    border: Border.all(color: const Color(0xFFD93025)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl2),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
                     children: [
-                      const Text('🚨', style: TextStyle(fontSize: 16)),
-                      const SizedBox(width: 8),
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.dangerLight,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: const Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppColors.danger,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
                       Expanded(
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF5F1410),
+                        child: Text(
+                          "O'chirishni tasdiqlang",
+                          style: AppTextStyles.titleMedium(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        color: AppColors.textSecondary,
+                        onPressed: _submitting
+                            ? null
+                            : () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    "Bu amalni qaytarib bo'lmaydi",
+                    style: AppTextStyles.bodySmall(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.dangerLight,
+                      border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.5),
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: AppColors.danger,
+                          size: 18,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: AppTextStyles.bodySmall().copyWith(
+                                color: AppColors.text,
+                              ),
+                              children: [
+                                const TextSpan(
+                                  text: 'DIQQAT! ',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.danger,
+                                  ),
+                                ),
+                                const TextSpan(text: 'Siz '),
+                                TextSpan(
+                                  text: widget.ownerName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const TextSpan(text: " va uning do'koni "),
+                                TextSpan(
+                                  text: '"${widget.marketName}"',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const TextSpan(text: "'ni o'chirmoqchisiz."),
+                              ],
                             ),
-                            children: [
-                              const TextSpan(
-                                text: 'DIQQAT! ',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                              const TextSpan(text: 'Siz '),
-                              TextSpan(
-                                text: widget.ownerName,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w700),
-                              ),
-                              const TextSpan(text: " va uning do'koni "),
-                              TextSpan(
-                                text: '"${widget.marketName}"',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w700),
-                              ),
-                              const TextSpan(
-                                  text: "'ni o'chirmoqchisiz."),
-                            ],
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningLight,
+                      border: Border.all(
+                        color: AppColors.warning.withValues(alpha: 0.5),
                       ),
-                    ],
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Quyidagi ma'lumotlar saqlanib qoladi (faqat owner+market deaktivatsiya):",
+                          style: AppTextStyles.bodySmall().copyWith(
+                            color: AppColors.text,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _CascadeRow(
+                          icon: Icons.inventory_2_outlined,
+                          count: widget.stats.productsCount,
+                          label: 'ta mahsulot',
+                        ),
+                        _CascadeRow(
+                          icon: Icons.receipt_long_outlined,
+                          count: widget.stats.salesCount,
+                          label: 'ta sotuv',
+                        ),
+                        _CascadeRow(
+                          icon: Icons.people_outline,
+                          count: widget.stats.customersCount,
+                          label: 'ta mijoz',
+                        ),
+                        _CascadeRow(
+                          icon: Icons.badge_outlined,
+                          count: widget.stats.cashiersCount,
+                          label: 'ta kassir akkaunti',
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFBEB),
-                    border: Border.all(color: const Color(0xFFF9AB00)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "⚠ Quyidagi ma'lumotlar mavjud bo'lib qoladi (faqat owner+market deaktivatsiya):",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF5C3D02),
+                  const SizedBox(height: AppSpacing.xl),
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md + 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerLight,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: AppTextStyles.bodySmall().copyWith(
+                          color: AppColors.danger,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      _CascadeRow(
-                        icon: '📦',
-                        count: widget.stats.productsCount,
-                        label: 'ta mahsulot',
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                  Text(
+                    "DO'KON NOMINI KIRITING *",
+                    style: AppTextStyles.caption().copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _confirm,
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      hint: widget.marketName,
+                      helper: 'Aniq "${widget.marketName}" deb yozing',
+                    ),
+                    validator: (v) {
+                      if ((v ?? '').trim() != widget.marketName.trim()) {
+                        return "Do'kon nomi mos kelmadi";
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    "O'CHIRISH SABABI *",
+                    style: AppTextStyles.caption().copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _reason,
+                    maxLines: 2,
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: _decoration(
+                      hint: "Masalan: To'lov muddati o'tdi va aloqaga chiqmadi",
+                    ),
+                    validator: (v) => (v ?? '').trim().length < 3
+                        ? 'Sababini batafsil yozing'
+                        : null,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppSecondaryButton(
+                          label: 'Bekor qilish',
+                          onPressed: _submitting
+                              ? null
+                              : () => Navigator.pop(context),
+                        ),
                       ),
-                      _CascadeRow(
-                        icon: '💰',
-                        count: widget.stats.salesCount,
-                        label: 'ta sotuv',
-                      ),
-                      _CascadeRow(
-                        icon: '👥',
-                        count: widget.stats.customersCount,
-                        label: 'ta mijoz',
-                      ),
-                      _CascadeRow(
-                        icon: '🧾',
-                        count: widget.stats.cashiersCount,
-                        label: 'ta kassir akkaunti',
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: AppDangerButton(
+                          label: "O'chirish",
+                          icon: Icons.delete_outline,
+                          isLoading: _submitting,
+                          onPressed: _submitting ? null : _submit,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                if (_errorMessage != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFCE8E6),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(
-                          fontSize: 13, color: Color(0xFFD93025)),
-                    ),
-                  ),
-                TextFormField(
-                  controller: _confirm,
-                  decoration: InputDecoration(
-                    labelText: "Do'kon nomini kiriting *",
-                    border: const OutlineInputBorder(),
-                    helperText: 'Aniq "${widget.marketName}" deb yozing',
-                  ),
-                  validator: (v) {
-                    if ((v ?? '').trim() != widget.marketName.trim()) {
-                      return "Do'kon nomi mos kelmadi";
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _reason,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: "O'chirish sababi *",
-                    border: OutlineInputBorder(),
-                    hintText: "Masalan: To'lov muddati o'tdi va aloqaga chiqmadi",
-                  ),
-                  validator: (v) => (v ?? '').trim().length < 3
-                      ? "Sababini batafsil yozing"
-                      : null,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _submitting ? null : () => Navigator.pop(context),
-          child: const Text('Bekor qilish'),
-        ),
-        ElevatedButton.icon(
-          onPressed: _submitting ? null : _submit,
-          icon: _submitting
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : const Icon(Icons.delete_outline, size: 18),
-          label: const Text("O'chirish"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFD93025),
-            foregroundColor: Colors.white,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -262,7 +356,7 @@ class _CascadeRow extends StatelessWidget {
     required this.count,
     required this.label,
   });
-  final String icon;
+  final IconData icon;
   final int count;
   final String label;
 
@@ -272,20 +366,18 @@ class _CascadeRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Text(icon, style: const TextStyle(fontSize: 13)),
-          const SizedBox(width: 6),
+          Icon(icon, size: 14, color: AppColors.warning),
+          const SizedBox(width: AppSpacing.md),
           Text(
-            ' $count ',
-            style: const TextStyle(
-              fontSize: 13,
+            '$count ',
+            style: AppTextStyles.bodySmall().copyWith(
+              color: AppColors.text,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF5C3D02),
             ),
           ),
           Text(
             label,
-            style:
-                const TextStyle(fontSize: 13, color: Color(0xFF5C3D02)),
+            style: AppTextStyles.bodySmall().copyWith(color: AppColors.text),
           ),
         ],
       ),

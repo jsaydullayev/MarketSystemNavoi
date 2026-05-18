@@ -1,13 +1,18 @@
+// Editable Owner+Market fields — migrated to the new design system.
+// Username/password are intentionally NOT editable here — both invalidate
+// JWTs and audit links and live behind separate operations.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_tokens.dart';
+import '../../../../design/tokens/app_typography.dart';
+import '../../../../design/widgets/app_button.dart';
+import '../../../../design/widgets/app_text_input.dart';
 import '../../data/superadmin_service.dart';
 import '../../domain/models/owner_detail.dart';
 
-/// Editable Owner+Market fields. Username/password are intentionally NOT
-/// editable here — both invalidate JWTs and audit links, and live behind
-/// separate operations.
 class EditOwnerDialog extends StatefulWidget {
   const EditOwnerDialog({super.key, required this.detail});
   final OwnerDetail detail;
@@ -78,179 +83,227 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
     if (res.status == SuperAdminOpStatus.success && res.data != null) {
       Navigator.of(context).pop(res.data);
     } else {
-      setState(() => _errorMessage = res.message ?? "Yangilashda xatolik");
+      setState(() => _errorMessage = res.message ?? 'Yangilashda xatolik');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF7E0),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(Icons.edit_outlined,
-                color: Color(0xFFF57C00), size: 20),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(child: Text("Ma'lumotlarni yangilash")),
-        ],
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      content: SizedBox(
-        width: 480,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '${widget.detail.fullName} · @${widget.detail.username}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF5F6368),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 540),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl2),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.brandLight,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: const Icon(
+                          Icons.edit_outlined,
+                          color: AppColors.brand,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: Text(
+                          "Ma'lumotlarni yangilash",
+                          style: AppTextStyles.titleMedium(),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        color: AppColors.textSecondary,
+                        onPressed: _submitting
+                            ? null
+                            : () => Navigator.pop(context),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                if (_errorMessage != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFCE8E6),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline,
-                            color: Color(0xFFD93025), size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFFD93025),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    '${widget.detail.fullName} · @${widget.detail.username}',
+                    style: AppTextStyles.bodySmall(),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md + 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerLight,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.danger,
+                            size: 18,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: AppTextStyles.bodySmall().copyWith(
+                                color: AppColors.danger,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                _SectionTitle("👤 Owner"),
-                TextFormField(
-                  controller: _fullName,
-                  decoration: const InputDecoration(
-                    labelText: "To'liq ism *",
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (v) =>
-                      (v ?? '').trim().length < 2 ? "Ism kerak" : null,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _phone,
-                        decoration: const InputDecoration(
-                          labelText: 'Telefon',
-                          border: OutlineInputBorder(),
-                          hintText: '+998 90 ...',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _language,
-                        decoration: const InputDecoration(
-                          labelText: 'Til',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: 'uz', child: Text("O'zbek")),
-                          DropdownMenuItem(value: 'ru', child: Text('Русский')),
                         ],
-                        onChanged: (v) {
-                          if (v != null) setState(() => _language = v);
-                        },
                       ),
                     ),
+                    const SizedBox(height: AppSpacing.lg),
                   ],
-                ),
-                const SizedBox(height: 8),
-                _SwitchTile(
-                  title: 'Owner faol',
-                  value: _ownerActive,
-                  onChanged: (v) => setState(() => _ownerActive = v),
-                ),
-                const SizedBox(height: 16),
-                _SectionTitle("🏪 Do'kon"),
-                TextFormField(
-                  controller: _marketName,
-                  decoration: const InputDecoration(
-                    labelText: "Do'kon nomi *",
-                    border: OutlineInputBorder(),
+                  const _SectionTitle('Owner'),
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextInput(
+                    label: "To'liq ism",
+                    controller: _fullName,
+                    prefixIcon: Icons.person_outline,
+                    validator: (v) =>
+                        (v ?? '').trim().length < 2 ? 'Ism kerak' : null,
                   ),
-                  validator: (v) =>
-                      (v ?? '').trim().length < 3 ? "Min. 3 belgi" : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _subdomain,
-                  decoration: const InputDecoration(
-                    labelText: 'Subdomain',
-                    border: OutlineInputBorder(),
-                    suffixText: '.strotech.uz',
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppTextInput(
+                          label: 'Telefon',
+                          controller: _phone,
+                          prefixIcon: Icons.phone_outlined,
+                          hint: '+998 90 ...',
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(child: _languageDropdown()),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _description,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Tavsif',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: AppSpacing.md),
+                  _SwitchTile(
+                    title: 'Owner faol',
+                    value: _ownerActive,
+                    onChanged: (v) => setState(() => _ownerActive = v),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _SwitchTile(
-                  title: "Do'kon faol",
-                  value: _marketActive,
-                  onChanged: (v) => setState(() => _marketActive = v),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.xl),
+                  const _SectionTitle("Do'kon"),
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextInput(
+                    label: "Do'kon nomi",
+                    controller: _marketName,
+                    prefixIcon: Icons.storefront_outlined,
+                    validator: (v) =>
+                        (v ?? '').trim().length < 3 ? 'Min. 3 belgi' : null,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  AppTextInput(
+                    label: 'Subdomain',
+                    controller: _subdomain,
+                    prefixIcon: Icons.language_outlined,
+                    hint: 'subdomain.strotech.uz',
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  AppTextInput(
+                    label: 'Tavsif',
+                    controller: _description,
+                    prefixIcon: Icons.notes_outlined,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SwitchTile(
+                    title: "Do'kon faol",
+                    value: _marketActive,
+                    onChanged: (v) => setState(() => _marketActive = v),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppSecondaryButton(
+                          label: 'Bekor qilish',
+                          onPressed: _submitting
+                              ? null
+                              : () => Navigator.pop(context),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: AppPrimaryButton(
+                          label: 'Saqlash',
+                          icon: Icons.save_outlined,
+                          isLoading: _submitting,
+                          onPressed: _submitting ? null : _submit,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _submitting ? null : () => Navigator.pop(context),
-          child: const Text('Bekor qilish'),
-        ),
-        ElevatedButton.icon(
-          onPressed: _submitting ? null : _submit,
-          icon: _submitting
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : const Icon(Icons.save_outlined, size: 18),
-          label: const Text('Saqlash'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFF57C00),
-            foregroundColor: Colors.white,
+    );
+  }
+
+  Widget _languageDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'TIL',
+          style: AppTextStyles.caption().copyWith(
+            color: AppColors.textSecondary,
           ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DropdownButtonFormField<String>(
+          initialValue: _language,
+          style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.inputFill,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl,
+              vertical: AppSpacing.lg + 2,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md + 2),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md + 2),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md + 2),
+              borderSide:
+                  const BorderSide(color: AppColors.brand, width: 1.5),
+            ),
+          ),
+          items: const [
+            DropdownMenuItem(value: 'uz', child: Text("O'zbek")),
+            DropdownMenuItem(value: 'ru', child: Text('Русский')),
+          ],
+          onChanged: (v) {
+            if (v != null) setState(() => _language = v);
+          },
         ),
       ],
     );
@@ -262,18 +315,14 @@ class _SectionTitle extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF5F6368),
-            letterSpacing: 0.5,
-          ),
-        ),
-      );
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.caption().copyWith(
+        color: AppColors.textSecondary,
+      ),
+    );
+  }
 }
 
 class _SwitchTile extends StatelessWidget {
@@ -288,12 +337,30 @@ class _SwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Switch(value: value, onChanged: onChanged),
-        const SizedBox(width: 8),
-        Text(title, style: const TextStyle(fontSize: 14)),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.md + 2),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.brand,
+          ),
+        ],
+      ),
     );
   }
 }

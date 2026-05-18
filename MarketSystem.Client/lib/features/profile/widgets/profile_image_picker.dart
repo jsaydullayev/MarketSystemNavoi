@@ -1,11 +1,22 @@
-﻿import 'dart:convert';
+// Profile avatar picker mapped to the demo's profile/logo upload visuals.
+//
+// Public API (unchanged):
+// - [ProfileImagePicker]({ currentImageUrl, onImageUpdated })
+//
+// Visuals are light-only and based on the design system tokens:
+// - 120x120 brand-light circle showing image, base64, or first letter
+// - Brand-orange floating action chip with camera icon
+// - Bottom sheet with two options: Galereya / Kamera (driven by image_picker)
+
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_styles.dart';
+
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/services/user_service.dart';
+import '../../../design/tokens/app_tokens.dart';
+import '../../../design/tokens/app_typography.dart';
 
 class ProfileImagePicker extends StatefulWidget {
   final String? currentImageUrl;
@@ -29,43 +40,39 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     final profileImage = widget.currentImageUrl ?? user?['profileImage'];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = AppColors.getPrimary(context);
 
-    return GestureDetector(
-      onTap: _isUploading ? null : () => _handleImagePick(context),
-      child: Stack(
-        alignment: Alignment.bottomRight,
-        children: [
-          Container(
-            width: 130,
-            height: 130,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(40),
-              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-              border: Border.all(
-                color: isDark ? Colors.white10 : Colors.white,
-                width: 2,
+    return Center(
+      child: GestureDetector(
+        onTap: _isUploading ? null : () => _showImageSourceSheet(context),
+        child: Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.brandLight,
+                border: Border.all(color: AppColors.surface, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.brand.withValues(alpha: 0.12),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: _isUploading
+                    ? _buildLoadingOverlay()
+                    : (profileImage != null && profileImage.isNotEmpty)
+                        ? _buildSmartImage(profileImage)
+                        : _buildDefaultPlaceholder(user),
               ),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(38),
-              child: _isUploading
-                  ? _buildLoadingOverlay()
-                  : (profileImage != null && profileImage.isNotEmpty)
-                      ? _buildSmartImage(profileImage)
-                      : _buildDefaultPlaceholder(user, primaryColor),
-            ),
-          ),
-          _buildEditIcon(primaryColor, isDark),
-        ],
+            _buildEditBadge(),
+          ],
+        ),
       ),
     );
   }
@@ -79,55 +86,132 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
             imageStr.contains(',') ? imageStr.split(',').last : imageStr;
         return Image.memory(base64Decode(base64Str), fit: BoxFit.cover);
       } catch (_) {
-        return const Icon(Icons.broken_image_outlined);
+        return const Icon(
+          Icons.broken_image_outlined,
+          color: AppColors.textMuted,
+        );
       }
     }
-    return const Icon(Icons.person_outline);
+    return const Icon(Icons.person_outline, color: AppColors.textMuted);
   }
 
-  Widget _buildDefaultPlaceholder(dynamic user, Color primary) {
+  Widget _buildDefaultPlaceholder(dynamic user) {
     final initial = (user?['fullName'] ?? 'U')[0].toUpperCase();
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primary, primary.withValues(alpha: 0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      color: AppColors.brandLight,
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: AppTextStyles.displayLarge().copyWith(
+          fontSize: 44,
+          fontWeight: FontWeight.w800,
+          color: AppColors.brand,
         ),
-      ),
-      child: Center(
-        child: Text(initial,
-            style: AppStyles.brandTitle
-                .copyWith(fontSize: 40, color: Colors.white)),
       ),
     );
   }
 
-  Widget _buildEditIcon(Color primary, bool isDark) {
+  Widget _buildEditBadge() {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: primary,
+        color: AppColors.brand,
         shape: BoxShape.circle,
-        border: Border.all(
-            color: isDark ? const Color(0xFF0F172A) : Colors.white, width: 3),
+        border: Border.all(color: AppColors.surface, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.brand.withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child:
-          const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 20),
+      child: const Icon(
+        Icons.camera_alt_rounded,
+        color: Colors.white,
+        size: 18,
+      ),
     );
   }
 
   Widget _buildLoadingOverlay() {
-    return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    return Container(
+      color: AppColors.brandLight,
+      child: const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+          ),
+        ),
+      ),
+    );
   }
 
-  Future<void> _handleImagePick(BuildContext context) async {
+  /// Bottom sheet with two options. Mirrors the brand-light tile look used by
+  /// the demo's settings rows / logo upload section.
+  Future<void> _showImageSourceSheet(BuildContext context) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.lg,
+          AppSpacing.xl,
+          AppSpacing.xl3,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(AppRadius.full),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'Rasm tanlang',
+              style: AppTextStyles.titleMedium(),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            _SourceTile(
+              icon: Icons.photo_camera_rounded,
+              label: 'Kameradan',
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _SourceTile(
+              icon: Icons.photo_library_rounded,
+              label: 'Galereyadan',
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null && mounted) {
+      await _handleImagePick(source);
+    }
+  }
+
+  Future<void> _handleImagePick(ImageSource source) async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
 
     final ImagePicker picker = ImagePicker();
     final XFile? image =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+        await picker.pickImage(source: source, imageQuality: 50);
 
     if (image == null) return;
 
@@ -148,10 +232,66 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
           errorMessage = errorMessage.substring(11);
         }
         messenger.showSnackBar(
-            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red));
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: AppColors.danger,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
+  }
+}
+
+class _SourceTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SourceTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.brandLight,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.lg + 2,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.brand, size: 20),
+              ),
+              const SizedBox(width: AppSpacing.lg),
+              Text(
+                label,
+                style: AppTextStyles.bodyMedium().copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.brandDark,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

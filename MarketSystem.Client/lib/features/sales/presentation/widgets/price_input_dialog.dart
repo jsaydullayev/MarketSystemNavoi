@@ -1,5 +1,7 @@
-﻿import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 
@@ -97,7 +99,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     final price = double.tryParse(cleanPriceText) ?? 0;
     final rawQty = double.tryParse(cleanQtyText) ?? 1;
 
-    // BUG FIX: Remove truncation - allow decimal quantities for all units
+    // BUG FIX: Remove truncation - allow decimal quantities for all units.
     final double qty = rawQty;
 
     widget.onConfirm(price, qty, _commentController.text);
@@ -107,8 +109,6 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
     final unitName = widget.product['unitName'] ?? l10n.piece;
 
     return Padding(
@@ -116,11 +116,17 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.getCard(isDark),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
         ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl2,
+          AppSpacing.lg,
+          AppSpacing.xl2,
+          AppSpacing.xl3,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,43 +137,45 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
 
             // Product header
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
+                color: AppColors.brandLight,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.brand,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: const Icon(Icons.shopping_bag_outlined,
-                        color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.shopping_bag_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Text(
                       widget.product['name'] ?? l10n.unknown,
-                      style: const TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.bold),
+                      style: AppTextStyles.titleMedium(),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
 
             // Qty + Price
             Row(
@@ -182,7 +190,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                     isNum: true,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   flex: 3,
                   child: _buildField(
@@ -196,23 +204,29 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
               ],
             ),
 
-            // Min narx ogohlantirish
+            // Min price warning
             AnimatedSize(
               duration: const Duration(milliseconds: 200),
               child: _showMinPrice
                   ? Padding(
-                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      padding: const EdgeInsets.only(
+                        top: AppSpacing.md,
+                        left: AppSpacing.xs,
+                      ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded,
-                              size: 14, color: Colors.orange),
-                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            size: 14,
+                            color: AppColors.warning,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
                           Text(
-                            "${l10n.minPrice}: ${NumberFormatter.format(_minPrice)}",
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.orange,
-                                fontWeight: FontWeight.w500),
+                            '${l10n.minPrice}: ${NumberFormatter.format(_minPrice)}',
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: AppColors.warning,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -220,7 +234,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                   : const SizedBox.shrink(),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xl),
 
             // Comment
             _buildField(
@@ -230,40 +244,23 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
               isNum: false,
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl3),
 
             // Buttons
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      side: BorderSide(color: theme.dividerColor),
-                    ),
+                  child: AppSecondaryButton(
+                    label: l10n.cancel,
                     onPressed: () => Navigator.pop(context),
-                    child: Text(l10n.cancel,
-                        style: TextStyle(color: theme.hintColor)),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   flex: 2,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                    ),
+                  child: AppPrimaryButton(
+                    label: l10n.add,
                     onPressed: _submit,
-                    child: Text(l10n.add,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15)),
                   ),
                 ),
               ],
@@ -285,38 +282,48 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
-          child: Text(label,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey)),
+          padding: const EdgeInsets.only(
+            left: AppSpacing.xs,
+            bottom: AppSpacing.sm,
+          ),
+          child: Text(
+            label,
+            style: AppTextStyles.bodySmall().copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ),
         TextField(
           controller: controller,
           keyboardType: isNum
               ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.text,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: AppTextStyles.bodyLarge().copyWith(
+            fontWeight: FontWeight.w700,
+          ),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20, color: AppColors.primary),
+            prefixIcon: Icon(icon, size: 20, color: AppColors.brand),
             suffixText: suffix,
+            suffixStyle: AppTextStyles.bodySmall(),
             filled: true,
-            fillColor: Colors.grey.withValues(alpha: 0.05),
+            fillColor: AppColors.inputFill,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: AppColors.primary, width: 1.5),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              borderSide: const BorderSide(
+                color: AppColors.brand,
+                width: 1.5,
+              ),
             ),
-            contentPadding: const EdgeInsets.all(16),
+            contentPadding: const EdgeInsets.all(AppSpacing.xl),
           ),
         ),
       ],

@@ -5,13 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
-import 'package:market_system_client/features/sales/presentation/screens/%20continue_sale_screen.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
+import 'package:market_system_client/design/widgets/app_card.dart';
+import 'package:market_system_client/features/sales/presentation/screens/continue_sale_screen.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
@@ -58,7 +61,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+        ),
       ),
     );
 
@@ -71,7 +76,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(l10n.errorOccurred),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.danger,
           ));
         }
         return;
@@ -138,14 +143,14 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text('${l10n.errorOccurred}: ${result.message}'),
-                backgroundColor: Colors.orange,
+                backgroundColor: AppColors.warning,
               ));
             }
           } else {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(l10n.pdfDownloaded),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
               ));
             }
           }
@@ -160,7 +165,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(l10n.pdfDownloaded),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ));
       }
     } catch (e) {
@@ -169,42 +174,56 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('${l10n.errorOccurred}: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ));
       }
     }
   }
 
-  Color _getStatusColor(String status, ThemeData theme) {
+  Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'paid':
-        return Colors.green;
+        return AppColors.success;
       case 'debt':
-        return Colors.red;
+        return AppColors.danger;
       case 'draft':
-        return Colors.orange;
+        return AppColors.warning;
       case 'closed':
-        return theme.primaryColor;
+        return const Color(0xFF6366F1);
       default:
-        return Colors.grey;
+        return AppColors.textMuted;
+    }
+  }
+
+  String _statusLabel(String status, AppLocalizations l10n) {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return l10n.paid;
+      case 'debt':
+        return l10n.debt;
+      case 'draft':
+        return l10n.ongoing;
+      case 'closed':
+        return l10n.closed;
+      default:
+        return status;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final isDark = theme.brightness == Brightness.dark;
 
     return BlocListener<SalesBloc, SalesState>(
       listener: (context, state) {
         if (state is SalesError) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(state.message), backgroundColor: Colors.red));
+              content: Text(state.message),
+              backgroundColor: AppColors.danger));
         } else if (state is SaleItemReturned) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(l10n.returnSuccess),
-              backgroundColor: Colors.green));
+              backgroundColor: AppColors.success));
           _loadSaleDetails();
         }
       },
@@ -216,7 +235,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           if (state is SaleDetailLoaded) {
             extraActions = [
               IconButton(
-                icon: const Icon(Icons.download),
+                icon: const Icon(Icons.download, color: AppColors.text),
                 onPressed: () => _downloadPdf(state.sale),
                 tooltip: l10n.downloadPdf,
               ),
@@ -232,7 +251,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           return NetworkWrapper(
             onRetry: _loadSaleDetails,
             child: Scaffold(
-              backgroundColor: AppColors.getBg(isDark),
+              backgroundColor: AppColors.bg,
               appBar: CommonAppBar(
                 title: l10n.sales,
                 onRefresh: _loadSaleDetails,
@@ -242,7 +261,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 },
                 extraActions: extraActions,
               ),
-              body: _buildBody(state, theme, isDark, l10n),
+              body: _buildBody(state, l10n),
               floatingActionButton: isDraft
                   ? FloatingActionButton.extended(
                       onPressed: () async {
@@ -260,10 +279,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                           color: Colors.white),
                       label: Text(
                         l10n.ongoing,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppTextStyles.labelLarge()
+                            .copyWith(color: Colors.white),
                       ),
                     )
                   : null,
@@ -274,10 +291,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     );
   }
 
-  Widget _buildBody(SalesState state, ThemeData theme, bool isDark,
-      AppLocalizations l10n) {
-    if (state is SaleDetailLoading)
-      return const Center(child: CircularProgressIndicator());
+  Widget _buildBody(SalesState state, AppLocalizations l10n) {
+    if (state is SaleDetailLoading) {
+      return const Center(
+          child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand)));
+    }
     if (state is SaleDetailLoaded) {
       final sale = state.sale;
       final status = sale['status']?.toString() ?? '';
@@ -286,193 +305,231 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final remainingAmount = totalAmount - paidAmount;
       final items = sale['items'] as List<dynamic>? ?? [];
 
-      return SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            _buildInfoCard(sale, theme, isDark, l10n, status),
-            _buildFinancialCard(
-                totalAmount, paidAmount, remainingAmount, theme, isDark, l10n),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.inventory_2_outlined, size: 20),
-                  8.width,
-                  Text(l10n.all,
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
-              ),
+      // Refund control: sellers can't reverse a closed sale — return is an
+      // Admin/Owner action (matches backend AdminOrOwner policy on
+      // /Sales/{id}/return-item).
+      final userRole = Provider.of<AuthProvider>(context, listen: false)
+          .user?['role']
+          ?.toString();
+      final isAdminOrOwner = userRole == 'Owner' || userRole == 'Admin';
+      final statusLower = status.toLowerCase();
+      final canReturn = isAdminOrOwner &&
+          (statusLower == 'paid' ||
+              statusLower == 'debt' ||
+              statusLower == 'closed');
+
+      return Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, 100),
+            child: Column(
+              children: [
+                _buildMetaCard(sale, l10n, status),
+                const SizedBox(height: AppSpacing.lg),
+                _buildReceiptCard(
+                    items, totalAmount, paidAmount, remainingAmount, l10n),
+                const SizedBox(height: AppSpacing.lg),
+                _buildActionTiles(l10n, sale),
+                const SizedBox(height: AppSpacing.lg),
+                if (canReturn)
+                  AppDangerButton(
+                    label: l10n.returnAction,
+                    icon: Icons.keyboard_return_rounded,
+                    onPressed: () => _showRefundPicker(items),
+                  ),
+              ],
             ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: items.length,
-              itemBuilder: (context, index) =>
-                  _buildProductItem(items[index], status, theme, isDark),
-            ),
-            32.height,
-          ],
+          ),
         ),
       );
     }
-    return Center(child: Text(l10n.errorOccurred));
+    return Center(
+      child: Text(l10n.errorOccurred, style: AppTextStyles.bodyMedium()),
+    );
   }
 
-  Widget _buildInfoCard(Map<String, dynamic> sale, ThemeData theme, bool isDark,
-      AppLocalizations l10n, String status) {
-    final color = _getStatusColor(status, theme);
+  /// Meta card matching demo's `.detail-meta-card` — soft `#F8FAFC` bg + a
+  /// stack of label/value rows.
+  Widget _buildMetaCard(
+      Map<String, dynamic> sale, AppLocalizations l10n, String status) {
+    final color = _getStatusColor(status);
+    final paymentType = sale['paymentType']?.toString();
+
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
-        ],
+        color: AppColors.bg,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.borderSoft),
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(sale['customerName'] ?? l10n.noCustomer,
-                        style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
-                    4.height,
-                    Text(
-                        DateFormat('dd.MM.yyyy HH:mm').format(
-                          sale['createdAt'] is DateTime
-                              ? sale['createdAt'] as DateTime
-                              : DateTime.parse(sale['createdAt'].toString()),
-                        ),
-                        style: TextStyle(color: theme.disabledColor)),
-                  ],
-                ),
-              ),
-              _buildStatusBadge(status, color),
-            ],
+          _metaRow(l10n.seller, sale['sellerName']?.toString() ?? l10n.unknown,
+              AppColors.text),
+          _metaDivider(),
+          _metaRow(
+            'Sana / vaqt',
+            DateFormat('dd.MM.yyyy HH:mm').format(
+              sale['createdAt'] is DateTime
+                  ? sale['createdAt'] as DateTime
+                  : DateTime.parse(sale['createdAt'].toString()),
+            ),
+            AppColors.text,
           ),
-          const Divider(height: 32),
-          _buildInfoRow(Icons.person_outline, l10n.seller,
-              sale['sellerName'] ?? l10n.unknown, theme),
-          if (sale['customerPhone'] != null) ...[
-            16.height,
-            _buildInfoRow(
-                Icons.phone_outlined, l10n.phone, sale['customerPhone'], theme),
+          if (paymentType != null && paymentType.isNotEmpty) ...[
+            _metaDivider(),
+            _metaRow(
+              l10n.paymentType,
+              _paymentLabel(paymentType, l10n),
+              AppColors.text,
+            ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFinancialCard(double total, double paid, double debt,
-      ThemeData theme, bool isDark, AppLocalizations l10n) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.primaryColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-              color: theme.primaryColor.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6))
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildFinRow(l10n.totalSum, total, Colors.white, 20),
-          16.height,
-          Row(
-            children: [
-              Expanded(
-                  child: _buildFinMiniRow(
-                      l10n.paid, paid, Colors.white.withOpacity(0.8))),
-              Container(width: 1, height: 30, color: Colors.white24),
-              Expanded(
-                  child: _buildFinMiniRow(
-                      l10n.debt,
-                      debt,
-                      debt > 0
-                          ? Colors.orangeAccent
-                          : Colors.white.withOpacity(0.8))),
-            ],
+          if (sale['customerName'] != null) ...[
+            _metaDivider(),
+            _metaRow(l10n.customer, sale['customerName'].toString(),
+                AppColors.text),
+          ],
+          _metaDivider(),
+          _metaRow(
+            'Status',
+            _statusLabel(status, l10n),
+            color,
+            valueWeight: FontWeight.w800,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProductItem(
-      Map<String, dynamic> item, String status, ThemeData theme, bool isDark) {
-    final l10n = AppLocalizations.of(context)!;
-    // Sellers can't reverse a closed sale — return is an Admin/Owner action
-    // (matches the backend AdminOrOwner policy on /Sales/{id}/return-item).
-    final userRole = Provider.of<AuthProvider>(context, listen: false)
-        .user?['role']
-        ?.toString();
-    final isAdminOrOwner = userRole == 'Owner' || userRole == 'Admin';
-    final canReturn = isAdminOrOwner &&
-        (status.toLowerCase() == 'paid' ||
-            status.toLowerCase() == 'debt' ||
-            status.toLowerCase() == 'closed');
+  Widget _metaRow(String label, String value, Color valueColor,
+      {FontWeight? valueWeight}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(label,
+                style: AppTextStyles.bodySmall()
+                    .copyWith(color: AppColors.textSecondary)),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: valueColor,
+                fontWeight: valueWeight ?? FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metaDivider() => Container(
+        height: 1,
+        color: AppColors.border.withValues(alpha: 0.6),
+      );
+
+  String _paymentLabel(String type, AppLocalizations l10n) {
+    switch (type.toLowerCase()) {
+      case 'cash':
+        return l10n.cash;
+      case 'card':
+        return l10n.card;
+      case 'terminal':
+        return l10n.terminal;
+      case 'debt':
+        return l10n.debt;
+      default:
+        return type;
+    }
+  }
+
+  /// Receipt block with dashed border + items + totals (matches demo's
+  /// `.receipt-block`).
+  Widget _buildReceiptCard(List<dynamic> items, double total, double paid,
+      double remaining, AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: CustomPaint(
+        painter: _DashedBorderPainter(
+          color: AppColors.border,
+          radius: AppRadius.lg,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.inventory_2_outlined,
+                      size: 18, color: AppColors.textSecondary),
+                  8.width,
+                  Text(l10n.products,
+                      style: AppTextStyles.labelLarge().copyWith(fontSize: 14)),
+                  const Spacer(),
+                  Text('${items.length}',
+                      style: AppTextStyles.labelSmall()),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              ...items.map((item) => _buildReceiptLine(item, l10n)),
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                height: 1,
+                color: AppColors.border,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              _totalsRow(l10n.totalSum, NumberFormatter.format(total),
+                  emphasize: false),
+              const SizedBox(height: AppSpacing.md),
+              _totalsRow(l10n.paid, NumberFormatter.format(paid),
+                  emphasize: true, valueColor: AppColors.success),
+              if (remaining > 0) ...[
+                const SizedBox(height: AppSpacing.md),
+                _totalsRow(l10n.debt, NumberFormatter.format(remaining),
+                    emphasize: false, valueColor: AppColors.danger),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReceiptLine(Map<String, dynamic> item, AppLocalizations l10n) {
     final qty = (item['quantity'] as num).toDouble();
     final price = (item['salePrice'] as num).toDouble();
     final isExternal = item['isExternal'] == true;
     final comment = (item['comment'] as String?)?.trim() ?? '';
 
-    // unitName ga qarab format
     final unitName = (item['unit'] ?? '').toString().toLowerCase();
     const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
     final isWeight = weightUnits.contains(unitName);
     final qtyDisplay = isWeight ? qty.toString() : qty.toInt().toString();
     final unit = item['unit'] ?? l10n.piece;
-    final iconColor =
-        isExternal ? const Color(0xFFF28C33) : theme.primaryColor;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isExternal
-              ? iconColor.withOpacity(0.35)
-              : (isDark ? Colors.white10 : Colors.grey[200]!),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12)),
-                child: Icon(
-                  isExternal
-                      ? Icons.storefront_rounded
-                      : Icons.shopping_bag_outlined,
-                  color: iconColor,
-                ),
-              ),
-              12.width,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,8 +539,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         Flexible(
                           child: Text(
                             item['productName'] ?? l10n.unknown,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 15),
+                            style: AppTextStyles.labelLarge()
+                                .copyWith(fontSize: 14),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -494,78 +551,54 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: iconColor.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(999),
+                              color: AppColors.brandTint,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.full),
                             ),
-                            child: Text(
-                              'tashqi',
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.3,
-                                color: iconColor,
-                              ),
-                            ),
+                            child: Text('tashqi',
+                                style: AppTextStyles.caption().copyWith(
+                                  color: AppColors.brandDark,
+                                  fontSize: 9,
+                                )),
                           ),
                         ],
                       ],
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      "$qtyDisplay $unit x ${NumberFormatter.format(price)}",
-                      style:
-                          TextStyle(color: theme.disabledColor, fontSize: 13),
+                      '$qtyDisplay $unit × ${NumberFormatter.format(price)}',
+                      style: AppTextStyles.bodySmall(),
                     ),
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(NumberFormatter.format(item['totalPrice']),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w900, color: Colors.green)),
-                  if (canReturn)
-                    GestureDetector(
-                      onTap: () => _showReturnBottomSheet(item),
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(l10n.returnAction,
-                            style: TextStyle(
-                                color: Colors.orange,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline)),
-                      ),
-                    ),
-                ],
-              ),
+              const SizedBox(width: AppSpacing.md),
+              Text(NumberFormatter.format(item['totalPrice']),
+                  style: AppTextStyles.labelLarge().copyWith(fontSize: 14)),
             ],
           ),
           if (comment.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Container(
               width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: 6),
               decoration: BoxDecoration(
-                color: theme.primaryColor.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.brandLight,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.notes_rounded,
-                      size: 14, color: theme.primaryColor),
+                  const Icon(Icons.notes_rounded,
+                      size: 13, color: AppColors.brandDark),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
-                      comment,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.white70 : Colors.grey[800],
-                        height: 1.3,
-                      ),
-                    ),
+                    child: Text(comment,
+                        style: AppTextStyles.bodySmall().copyWith(
+                          fontSize: 12,
+                          color: AppColors.text,
+                        )),
                   ),
                 ],
               ),
@@ -576,66 +609,205 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String status, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color, width: 1.5)),
-      child: Text(status.toUpperCase(),
-          style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 10,
-              letterSpacing: 1)),
-    );
-  }
-
-  Widget _buildInfoRow(
-      IconData icon, String label, String value, ThemeData theme) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: theme.disabledColor),
-        12.width,
-        Text(label, style: TextStyle(color: theme.disabledColor)),
-        const Spacer(),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-      ],
-    );
-  }
-
-  Widget _buildFinRow(
-      String label, double amount, Color color, double fontSize) {
+  Widget _totalsRow(String label, String value,
+      {required bool emphasize, Color? valueColor}) {
+    final labelStyle = emphasize
+        ? AppTextStyles.labelLarge()
+        : AppTextStyles.bodyMedium().copyWith(color: AppColors.textSecondary);
+    final valueStyle = emphasize
+        ? AppTextStyles.titleMedium().copyWith(
+            color: valueColor ?? AppColors.text,
+            fontSize: 16,
+          )
+        : AppTextStyles.bodyMedium().copyWith(
+            color: valueColor ?? AppColors.text,
+            fontWeight: FontWeight.w700,
+          );
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: TextStyle(color: color.withOpacity(0.8), fontSize: 14)),
-        Text(NumberFormatter.format(amount),
-            style: TextStyle(
-                color: color, fontWeight: FontWeight.bold, fontSize: fontSize)),
+        Text(label, style: labelStyle),
+        Text(value, style: valueStyle),
       ],
     );
   }
 
-  Widget _buildFinMiniRow(String label, double amount, Color color) {
-    return Column(
+  /// Action tiles (print + SMS) matching demo's `.action-grid`.
+  Widget _buildActionTiles(AppLocalizations l10n, Map<String, dynamic> sale) {
+    return Row(
       children: [
-        Text(label,
-            style: TextStyle(color: color.withOpacity(0.6), fontSize: 12)),
-        4.height,
-        Text(NumberFormatter.format(amount),
-            style: TextStyle(
-                color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+        Expanded(
+          child: _actionTile(
+            icon: Icons.print_outlined,
+            label: 'Chop etish',
+            onTap: () => _downloadPdf(sale),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.lg),
+        Expanded(
+          child: _actionTile(
+            icon: Icons.sms_outlined,
+            label: 'SMS yuborish',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tez orada...'),
+                  backgroundColor: AppColors.warning,
+                ),
+              );
+            },
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _actionTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: AppCard(
+          padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.xl, horizontal: AppSpacing.lg),
+          child: Column(
+            children: [
+              Icon(icon, color: AppColors.brand, size: 22),
+              const SizedBox(height: 6),
+              Text(label,
+                  style:
+                      AppTextStyles.labelLarge().copyWith(fontSize: 13),
+                  textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────── Refund flow ───────────────────────────
+
+  /// Picks an item to refund from the receipt, then opens the quantity sheet.
+  /// One sheet per item keeps the API call surface unchanged
+  /// (`ReturnSaleItemEvent` operates on a single saleItemId).
+  void _showRefundPicker(List<dynamic> items) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xl2),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: AppSpacing.xl),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.warningLight,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: const Border(
+                  left: BorderSide(color: AppColors.warning, width: 3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded,
+                      color: AppColors.warning, size: 18),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'Qaytarish Owner\'ga xabar yuboradi va stokga qaytariladi',
+                      style:
+                          AppTextStyles.bodySmall().copyWith(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text('QAYSI MAHSULOT QAYTARILYAPTI?',
+                style: AppTextStyles.caption()),
+            const SizedBox(height: AppSpacing.md),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: items.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.md),
+                itemBuilder: (_, i) {
+                  final item = items[i] as Map<String, dynamic>;
+                  return InkWell(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showReturnBottomSheet(item);
+                    },
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.bg,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['productName']?.toString() ??
+                                      l10n.unknown,
+                                  style: AppTextStyles.labelLarge()
+                                      .copyWith(fontSize: 14),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Sotildi: ${item['quantity']} × ${NumberFormatter.format(item['salePrice'])}',
+                                  style: AppTextStyles.bodySmall(),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded,
+                              color: AppColors.textMuted),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   void _showReturnBottomSheet(Map<String, dynamic> item) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final productName = item['productName'] ?? l10n.unknownProduct;
     final saleItemId = item['id']?.toString() ?? '';
     final maxQuantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
@@ -643,13 +815,15 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
     final quantityController = TextEditingController(text: '1');
     final commentController = TextEditingController();
+    String selectedReason = 'Sifatsiz';
+    String selectedMethod = 'cash';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) {
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
           final qtyText = quantityController.text
               .replaceAll(RegExp(r'\s+'), '')
               .replaceAll(',', '.');
@@ -658,139 +832,225 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
           return Container(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              top: 20,
-              left: 20,
-              right: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
+              top: AppSpacing.xl,
+              left: AppSpacing.xl,
+              right: AppSpacing.xl,
             ),
-            decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor,
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(30)),
+                  BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                        color: theme.disabledColor.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(2)),
-                  ),
-                ),
-                20.height,
-                Row(
-                  children: [
-                    const Icon(Icons.keyboard_return_rounded,
-                        color: Colors.orange, size: 28),
-                    12.width,
-                    Text(l10n.processReturn,
-                        style: theme.textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const Divider(height: 32),
-                Text(productName,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-                4.height,
-                Text("${l10n.maxReturn}: $maxQuantity ${l10n.piece}",
-                    style: const TextStyle(
-                        color: Colors.orange, fontWeight: FontWeight.w600)),
-                24.height,
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildFieldLabel(
-                          l10n.amount,
-                          theme,
-                          TextField(
-                            controller: quantityController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            onChanged: (v) => setSheetState(() {}),
-                            decoration: _inputStyle(theme, isDark, "1",
-                                suffix: l10n.piece),
-                          )),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                    12.width,
-                    Expanded(
-                      flex: 3,
-                      child: _buildFieldLabel(
-                          l10n.reasonOptional,
-                          theme,
-                          TextField(
-                            controller: commentController,
-                            decoration: _inputStyle(theme, isDark, l10n.defect),
-                          )),
-                    ),
-                  ],
-                ),
-                24.height,
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.green.withOpacity(0.2)),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  20.height,
+                  Row(
                     children: [
-                      Text("${l10n.returnAmount}:",
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                      Text(NumberFormatter.format(returnSum),
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green)),
+                      const Icon(Icons.keyboard_return_rounded,
+                          color: AppColors.danger, size: 24),
+                      const SizedBox(width: AppSpacing.lg),
+                      Text(l10n.processReturn,
+                          style: AppTextStyles.titleMedium()),
                     ],
                   ),
-                ),
-                24.height,
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
+                  16.height,
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningLight,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: const Border(
+                        left: BorderSide(color: AppColors.warning, width: 3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded,
+                            color: AppColors.warning, size: 18),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            'Qaytarish Owner\'ga xabar yuboradi va stokga qaytariladi',
+                            style: AppTextStyles.bodySmall()
+                                .copyWith(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  16.height,
+                  Text(productName,
+                      style: AppTextStyles.labelLarge().copyWith(fontSize: 14)),
+                  4.height,
+                  Text('${l10n.maxReturn}: $maxQuantity ${l10n.piece}',
+                      style: AppTextStyles.bodySmall()
+                          .copyWith(color: AppColors.warning)),
+                  16.height,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _fieldLabel(
+                            l10n.amount,
+                            TextField(
+                              controller: quantityController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              onChanged: (v) => setSheetState(() {}),
+                              decoration: _inputStyle('1',
+                                  suffix: l10n.piece),
+                            )),
+                      ),
+                    ],
+                  ),
+                  16.height,
+                  Text('SABAB', style: AppTextStyles.caption()),
+                  const SizedBox(height: AppSpacing.md),
+                  Wrap(
+                    spacing: AppSpacing.md,
+                    runSpacing: AppSpacing.md,
+                    children: [
+                      'Sifatsiz',
+                      'Muddat o\'tgan',
+                      'Yoqmadi',
+                      'Boshqa',
+                    ].map((reason) {
+                      final sel = selectedReason == reason;
+                      return GestureDetector(
+                        onTap: () =>
+                            setSheetState(() => selectedReason = reason),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: sel ? AppColors.text : AppColors.inputFill,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.full),
+                          ),
+                          child: Text(
+                            reason,
+                            style: AppTextStyles.labelSmall().copyWith(
+                              color:
+                                  sel ? Colors.white : AppColors.text,
+                              fontSize: 12,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  16.height,
+                  TextField(
+                    controller: commentController,
+                    maxLines: 2,
+                    decoration:
+                        _inputStyle('Qo\'shimcha izoh (ixtiyoriy)'),
+                  ),
+                  16.height,
+                  Text('QAYTARISH USULI', style: AppTextStyles.caption()),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _methodTile(
+                          icon: Icons.payments_outlined,
+                          title: 'Naqd qaytarish',
+                          subtitle: 'Mijozga shu yerda',
+                          selected: selectedMethod == 'cash',
+                          onTap: () =>
+                              setSheetState(() => selectedMethod = 'cash'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: _methodTile(
+                          icon: Icons.assignment_outlined,
+                          title: 'Balansga',
+                          subtitle: 'Keyingi sotuvga',
+                          selected: selectedMethod == 'balance',
+                          onTap: () =>
+                              setSheetState(() => selectedMethod = 'balance'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  16.height,
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    decoration: BoxDecoration(
+                      color: AppColors.dangerLight,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(
+                          color: AppColors.danger.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text('QAYTARILADI',
+                            style: AppTextStyles.caption()
+                                .copyWith(color: AppColors.danger)),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${NumberFormatter.format(returnSum)} UZS',
+                          style: AppTextStyles.displayMedium()
+                              .copyWith(color: AppColors.danger),
+                        ),
+                      ],
+                    ),
+                  ),
+                  16.height,
+                  AppDangerButton(
+                    label: 'Tasdiqlash va qaytarish',
+                    icon: Icons.keyboard_return_rounded,
                     onPressed: () {
                       final qtyText = quantityController.text
                           .replaceAll(RegExp(r'\s+'), '')
                           .replaceAll(',', '.');
                       final qty = double.tryParse(qtyText);
                       if (qty == null || qty <= 0 || qty > maxQuantity) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                             content: Text(l10n.invalidQuantity),
-                            backgroundColor: Colors.red));
+                            backgroundColor: AppColors.danger));
                         return;
                       }
-                      Navigator.pop(context);
+                      Navigator.pop(ctx);
+                      // Compose reason + free-form note into a single comment
+                      // — the API currently accepts one `comment` field.
+                      final note = commentController.text.trim();
+                      final combined =
+                          note.isEmpty ? selectedReason : '$selectedReason — $note';
                       context.read<SalesBloc>().add(ReturnSaleItemEvent(
                             saleId: widget.saleId,
                             saleItemId: saleItemId,
                             quantity: qty,
-                            comment: commentController.text.isEmpty
-                                ? null
-                                : commentController.text,
+                            comment: combined,
                           ));
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                    child: Text(l10n.finishReturn,
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.md),
+                  AppSecondaryButton(
+                    label: l10n.cancel,
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -798,31 +1058,104 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     );
   }
 
-  Widget _buildFieldLabel(String label, ThemeData theme, Widget child) {
+  Widget _methodTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color:
+              selected ? AppColors.brandLight : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: selected ? AppColors.brand : AppColors.border,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: AppColors.brand, size: 22),
+            const SizedBox(height: AppSpacing.md),
+            Text(title,
+                style: AppTextStyles.labelLarge().copyWith(fontSize: 13)),
+            const SizedBox(height: 2),
+            Text(subtitle, style: AppTextStyles.bodySmall()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _fieldLabel(String label, Widget child) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: TextStyle(
-                fontSize: 13,
-                color: theme.disabledColor,
-                fontWeight: FontWeight.bold)),
+        Text(label, style: AppTextStyles.labelSmall()),
         8.height,
         child,
       ],
     );
   }
 
-  InputDecoration _inputStyle(ThemeData theme, bool isDark, String hint,
-      {String? suffix}) {
+  InputDecoration _inputStyle(String hint, {String? suffix}) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: AppTextStyles.bodyMedium().copyWith(color: AppColors.textMuted),
       suffixText: suffix,
+      suffixStyle: AppTextStyles.bodySmall(),
       filled: true,
-      fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+      fillColor: AppColors.inputFill,
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
     );
   }
+}
+
+/// Lightweight dashed-border painter used for the receipt card outline.
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+
+  _DashedBorderPainter({required this.color, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+    const dashLen = 4.0;
+    const gapLen = 3.0;
+    for (final metric in metrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = (distance + dashLen).clamp(0, metric.length).toDouble();
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + gapLen;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter old) =>
+      old.color != color || old.radius != radius;
 }

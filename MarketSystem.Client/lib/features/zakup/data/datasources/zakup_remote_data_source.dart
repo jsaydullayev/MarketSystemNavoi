@@ -1,5 +1,5 @@
-/// Zakup Remote Data Source
-/// Zakups API dan ma'lumot olish
+// Zakup Remote Data Source
+// Zakups API dan ma'lumot olish
 
 import '../../../../data/services/zakup_service.dart';
 

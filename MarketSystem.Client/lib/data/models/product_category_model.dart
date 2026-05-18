@@ -1,5 +1,5 @@
-/// Product Category Model
-/// Data transfer object for product categories
+// Product Category Model
+// Data transfer object for product categories
 
 class ProductCategoryModel {
   final int id;

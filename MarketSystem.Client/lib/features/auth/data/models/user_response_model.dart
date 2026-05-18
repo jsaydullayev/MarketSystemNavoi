@@ -1,5 +1,5 @@
-/// User Response Model
-/// Data transfer object for user responses from API
+// User Response Model
+// Data transfer object for user responses from API
 
 import '../../domain/entities/user_entity.dart';
 

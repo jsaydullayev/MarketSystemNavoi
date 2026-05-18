@@ -1,6 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Segmented tab control rendered under the Reports AppBar.
+///
+/// Demo reference: segmented control at the top of `id="page-rpt-hub"` —
+/// inputFill pill with a brand-tinted pill indicator behind the active
+/// tab and `text` / `textSecondary` foreground.
 class ReportTabBar extends StatelessWidget {
   final TabController controller;
 
@@ -8,26 +15,24 @@ class ReportTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      margin: const EdgeInsets.fromLTRB(
+          AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.md + 2),
       height: 42,
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: TabBar(
         controller: controller,
         indicator: BoxDecoration(
-          color: isDark ? Colors.white : Theme.of(context).primaryColor,
-          borderRadius: BorderRadius.circular(10),
+          color: AppColors.brand,
+          borderRadius: BorderRadius.circular(AppRadius.md),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: AppColors.brand.withValues(alpha: 0.25),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -35,10 +40,12 @@ class ReportTabBar extends StatelessWidget {
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
-        labelColor: isDark ? Theme.of(context).primaryColor : Colors.white,
-        unselectedLabelColor: isDark ? Colors.white60 : Colors.black45,
-        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: const TextStyle(fontSize: 13),
+        labelColor: Colors.white,
+        unselectedLabelColor: AppColors.textSecondary,
+        labelStyle: AppTextStyles.labelSmall()
+            .copyWith(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: AppTextStyles.labelSmall()
+            .copyWith(fontSize: 13, fontWeight: FontWeight.w500),
         tabs: [
           Tab(text: l10n.daily),
           Tab(text: l10n.monthly),

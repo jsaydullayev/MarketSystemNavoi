@@ -1,5 +1,5 @@
-/// Customers States
-/// Customers BLoC uchun holatlar
+// Customers States
+// Customers BLoC uchun holatlar
 
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/customer_entity.dart';

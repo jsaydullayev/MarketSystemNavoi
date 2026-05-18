@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/data/models/profit_model.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 
 /// Compact one-row sale entry (Variant A timeline). Replaces the old square
 /// grid card so 10+ sales/day stay scannable. Tapping opens the detail sheet
@@ -13,76 +15,77 @@ class SaleListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = _statusColor(sale.status);
     final customerName = (sale.customerName ?? '').trim();
     final hasCustomer = customerName.isNotEmpty;
 
+    // Refunded / cancelled rows are dimmed so they read as "done, but not
+    // a contributing sale" — matches the demo's `.sale-row.refunded` styling.
+    final isCancelled = sale.status.toLowerCase() == 'cancelled';
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Ink(
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color:
-                    isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Opacity(
+            opacity: isCancelled ? 0.65 : 1,
+            child: Ink(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.border),
               ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                _TimeBadge(time: sale.createdAt, isDark: isDark),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          _CustomerAvatar(
-                            name: hasCustomer ? customerName : null,
-                            isDark: isDark,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              hasCustomer ? customerName : '—',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? Colors.white70
-                                    : Colors.grey[800],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              child: Row(
+                children: [
+                  _TimeBadge(time: sale.createdAt),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            _CustomerAvatar(
+                              name: hasCustomer ? customerName : null,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_fmt(sale.totalAmount)} so\'m',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : Colors.black87,
-                          letterSpacing: -0.2,
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                hasCustomer ? customerName : '—',
+                                style: AppTextStyles.bodySmall().copyWith(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_fmt(sale.totalAmount)} so\'m',
+                          style: AppTextStyles.labelLarge().copyWith(
+                            fontSize: 15,
+                            decoration: isCancelled
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                _StatusChip(status: sale.status, color: statusColor),
-              ],
+                  const SizedBox(width: AppSpacing.md),
+                  _StatusChip(status: sale.status, color: statusColor),
+                ],
+              ),
             ),
           ),
         ),
@@ -93,15 +96,15 @@ class SaleListRow extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'paid':
-        return const Color(0xFF4ADE80);
+        return AppColors.success;
       case 'debt':
-        return const Color(0xFFFCD34D);
+        return AppColors.warning;
       case 'closed':
-        return const Color(0xFFA5B4FC);
+        return const Color(0xFF6366F1);
       case 'cancelled':
-        return const Color(0xFFFCA5A5);
+        return AppColors.danger;
       default:
-        return const Color(0xFF94A3B8);
+        return AppColors.textMuted;
     }
   }
 
@@ -112,28 +115,25 @@ class SaleListRow extends StatelessWidget {
 
 class _TimeBadge extends StatelessWidget {
   final DateTime time;
-  final bool isDark;
-  const _TimeBadge({required this.time, required this.isDark});
+  const _TimeBadge({required this.time});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 50,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(10),
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             DateFormat('HH:mm').format(time),
-            style: TextStyle(
+            style: AppTextStyles.labelLarge().copyWith(
               fontSize: 13,
-              fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
-              color: isDark ? Colors.white : Colors.black87,
             ),
           ),
         ],
@@ -144,32 +144,26 @@ class _TimeBadge extends StatelessWidget {
 
 class _CustomerAvatar extends StatelessWidget {
   final String? name;
-  final bool isDark;
-  const _CustomerAvatar({required this.name, required this.isDark});
+  const _CustomerAvatar({required this.name});
 
   @override
   Widget build(BuildContext context) {
-    final initial = (name == null || name!.isEmpty)
-        ? '?'
-        : name!.trim()[0].toUpperCase();
+    final hasName = name != null && name!.isNotEmpty;
+    final initial = hasName ? name!.trim()[0].toUpperCase() : '?';
     return Container(
       width: 18,
       height: 18,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: (name == null || name!.isEmpty)
-            ? (isDark ? Colors.white10 : Colors.black.withOpacity(0.06))
-            : const Color(0xFFF28C33).withOpacity(0.16),
+        color: hasName ? AppColors.brandTint : AppColors.inputFill,
         shape: BoxShape.circle,
       ),
       child: Text(
         initial,
-        style: TextStyle(
+        style: AppTextStyles.caption().copyWith(
           fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: (name == null || name!.isEmpty)
-              ? (isDark ? Colors.white54 : Colors.grey)
-              : const Color(0xFFF28C33),
+          color: hasName ? AppColors.brandDark : AppColors.textMuted,
+          letterSpacing: 0,
         ),
       ),
     );
@@ -184,18 +178,17 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(999),
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Text(
         status.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
+        style: AppTextStyles.caption().copyWith(
           color: color,
-          letterSpacing: 0.4,
+          fontSize: 10,
         ),
       ),
     );

@@ -1,6 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Staff row card matching `id="page-staff-list"` rows in the demo:
+/// rounded avatar tile with role-tinted bg + online indicator dot,
+/// name + `@username` + role chip (semantic colors per role),
+/// trailing action buttons (activate/deactivate, delete).
 class UserCard extends StatelessWidget {
   final dynamic user;
   final VoidCallback onToggleStatus;
@@ -15,16 +21,25 @@ class UserCard extends StatelessWidget {
     required this.onTap,
   });
 
-  Color _roleColor(String role) {
+  /// Role chip colors per design spec:
+  /// - Admin: purple bg #F3E8FF, text #7C3AED
+  /// - Seller: green bg #ECFDF5, text #047857
+  /// - Owner: brand orange tones
+  static const _adminBg = Color(0xFFF3E8FF);
+  static const _adminFg = Color(0xFF7C3AED);
+  static const _sellerBg = Color(0xFFECFDF5);
+  static const _sellerFg = Color(0xFF047857);
+
+  ({Color bg, Color fg}) _roleColors(String role) {
     switch (role.toLowerCase()) {
       case 'owner':
-        return const Color(0xFF7C3AED);
+        return (bg: AppColors.brandLight, fg: AppColors.brandDark);
       case 'admin':
-        return const Color(0xFF2563EB);
+        return (bg: _adminBg, fg: _adminFg);
       case 'seller':
-        return const Color(0xFF059669);
+        return (bg: _sellerBg, fg: _sellerFg);
       default:
-        return Colors.grey;
+        return (bg: AppColors.inputFill, fg: AppColors.textSecondary);
     }
   }
 
@@ -44,38 +59,27 @@ class UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isActive = user['isActive'] ?? false;
     final role = user['role'] ?? '';
     final fullName = user['fullName'] ?? l10n.unknown;
     final username = user['username'] ?? '';
     final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : '?';
-    final color = _roleColor(role);
+    final colors = _roleColors(role);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: AppSpacing.md + 2),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.grey.withValues(alpha: 0.1),
-          ),
-          boxShadow: isDark
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.xl2),
+          border: Border.all(color: AppColors.border, width: 1),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg + 2,
+            vertical: AppSpacing.lg,
+          ),
           child: Row(
             children: [
               Stack(
@@ -84,20 +88,21 @@ class UserCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(14),
+                      color: colors.bg,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
                     child: Center(
                       child: Text(
                         initial,
-                        style: TextStyle(
-                          fontSize: 20,
+                        style: AppTextStyles.titleMedium().copyWith(
+                          color: colors.fg,
                           fontWeight: FontWeight.w700,
-                          color: color,
+                          fontSize: 20,
                         ),
                       ),
                     ),
                   ),
+                  // Online indicator dot (smena ochiq xodimlar uchun)
                   Positioned(
                     right: 0,
                     bottom: 0,
@@ -105,13 +110,10 @@ class UserCard extends StatelessWidget {
                       width: 12,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: isActive
-                            ? const Color(0xFF10B981)
-                            : Colors.grey.shade400,
+                        color: isActive ? AppColors.success : AppColors.textMuted,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color:
-                              isDark ? const Color(0xFF1A1A1A) : Colors.white,
+                          color: AppColors.surface,
                           width: 2,
                         ),
                       ),
@@ -119,18 +121,16 @@ class UserCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(width: 14),
-
+              const SizedBox(width: AppSpacing.lg + 2),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       fullName,
-                      style: TextStyle(
+                      style: AppTextStyles.bodyLarge().copyWith(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
-                        color: isDark ? Colors.white : const Color(0xFF111111),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -138,30 +138,33 @@ class UserCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '@$username',
-                      style: TextStyle(
+                      style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 12,
-                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                        color: AppColors.textMuted,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: AppSpacing.md,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: colors.bg,
+                        borderRadius: BorderRadius.circular(AppRadius.md - 2),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(_roleIcon(role), size: 11, color: color),
+                          Icon(_roleIcon(role), size: 11, color: colors.fg),
                           const SizedBox(width: 4),
                           Text(
                             role,
-                            style: TextStyle(
+                            style: AppTextStyles.caption().copyWith(
+                              color: colors.fg,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: color,
+                              letterSpacing: 0,
                             ),
                           ),
                         ],
@@ -170,7 +173,6 @@ class UserCard extends StatelessWidget {
                   ],
                 ),
               ),
-
               // Actions
               Column(
                 children: [
@@ -178,16 +180,14 @@ class UserCard extends StatelessWidget {
                     icon: isActive
                         ? Icons.block_rounded
                         : Icons.check_circle_rounded,
-                    color: isActive ? Colors.orange : const Color(0xFF10B981),
+                    color: isActive ? AppColors.warning : AppColors.success,
                     onTap: onToggleStatus,
-                    isDark: isDark,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm),
                   _ActionBtn(
                     icon: Icons.delete_rounded,
-                    color: Colors.red,
+                    color: AppColors.danger,
                     onTap: onDelete,
-                    isDark: isDark,
                   ),
                 ],
               ),
@@ -203,13 +203,11 @@ class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  final bool isDark;
 
   const _ActionBtn({
     required this.icon,
     required this.color,
     required this.onTap,
-    required this.isDark,
   });
 
   @override
@@ -221,7 +219,7 @@ class _ActionBtn extends StatelessWidget {
         height: 34,
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Icon(icon, size: 17, color: color),
       ),

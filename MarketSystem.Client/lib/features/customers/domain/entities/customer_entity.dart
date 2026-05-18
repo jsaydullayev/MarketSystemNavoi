@@ -1,5 +1,5 @@
-/// Customer Entity
-/// Mijoz obyekti - biznes mantik uchun asosiy model
+// Customer Entity
+// Mijoz obyekti - biznes mantik uchun asosiy model
 
 import 'package:equatable/equatable.dart';
 

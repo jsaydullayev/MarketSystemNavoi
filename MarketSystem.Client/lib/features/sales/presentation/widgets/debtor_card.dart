@@ -1,5 +1,15 @@
-﻿import 'package:flutter/material.dart';
+// Compact debtor row used by the sales-debtors quick views. Mirrors the
+// "8.1 Mijozlar ro'yxati" pattern from the HTML demo: coloured avatar, name +
+// phone, debt badge, and two side-by-side action buttons (history + pay).
+//
+// Public constructor (debtor, onPaymentTap, onHistoryTap) is kept identical so
+// other screens that already import this widget continue to compile.
+
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtorCard extends StatelessWidget {
@@ -17,124 +27,108 @@ class DebtorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final customerName = debtor['customerName'] ?? l10n.noCustomer;
-    final customerPhone = debtor['customerPhone'];
-    final remainingDebt = (debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
+    final customerName =
+        (debtor['customerName'] as String?) ?? l10n.noCustomer;
+    final customerPhone = debtor['customerPhone'] as String?;
+    final remainingDebt =
+        (debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
 
-    // Avatar harf
-    final initial =
-        customerName.isNotEmpty ? customerName[0].toUpperCase() : '?';
+    final initial = customerName.isNotEmpty
+        ? customerName.characters.first.toUpperCase()
+        : '?';
+    final avatarColor = CustomerAvatarPalette.pick(customerName);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md + 2),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.red.withValues(alpha: 0.2)
-              : Colors.red.withValues(alpha: 0.15),
-        ),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.red.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
-            ),
-        ],
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Row(
           children: [
-            // Avatar
+            // Avatar — solid colour from CustomerAvatarPalette so the same
+            // customer keeps the same colour across all "qarzdorlar" views.
             Container(
-              width: 50,
-              height: 50,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.red.shade400,
-                    Colors.red.shade600,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
+                color: avatarColor,
+                shape: BoxShape.circle,
               ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
+              alignment: Alignment.center,
+              child: Text(
+                initial,
+                style: AppTextStyles.labelLarge().copyWith(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
-            const SizedBox(width: 14),
-
-            // Info
+            const SizedBox(width: AppSpacing.lg + 2),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     customerName,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF1F2937),
-                    ),
+                    style: AppTextStyles.labelLarge(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (customerPhone != null) ...[
+                  if (customerPhone != null && customerPhone.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       customerPhone,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                  const SizedBox(height: 6),
-                  // Qarz badge
+                  const SizedBox(height: AppSpacing.sm),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md + 2,
+                      vertical: AppSpacing.xs + 1,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.dangerLight,
+                      borderRadius: BorderRadius.circular(AppRadius.md - 2),
                     ),
                     child: Text(
                       '${NumberFormatter.formatDecimal(remainingDebt)} ${l10n.currencySom}',
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: AppTextStyles.bodyMedium().copyWith(
+                        color: AppColors.danger,
                         fontWeight: FontWeight.w700,
-                        color: Colors.red,
+                        fontSize: 13,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 10),
-
-            // Tugmalar
+            const SizedBox(width: AppSpacing.md + 2),
             Column(
               children: [
                 _ActionButton(
                   icon: Icons.history_rounded,
-                  color: Colors.blue,
                   onTap: onHistoryTap,
+                  background: AppColors.inputFill,
+                  iconColor: AppColors.textSecondary,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.md),
                 _ActionButton(
                   icon: Icons.payments_outlined,
-                  color: Colors.green,
                   onTap: onPaymentTap,
+                  background: AppColors.brandLight,
+                  iconColor: AppColors.brand,
                 ),
               ],
             ),
@@ -147,12 +141,14 @@ class DebtorCard extends StatelessWidget {
 
 class _ActionButton extends StatelessWidget {
   final IconData icon;
-  final Color color;
+  final Color background;
+  final Color iconColor;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.icon,
-    required this.color,
+    required this.background,
+    required this.iconColor,
     required this.onTap,
   });
 
@@ -164,11 +160,10 @@ class _ActionButton extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+          color: background,
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        child: Icon(icon, size: 18, color: color),
+        child: Icon(icon, size: 18, color: iconColor),
       ),
     );
   }

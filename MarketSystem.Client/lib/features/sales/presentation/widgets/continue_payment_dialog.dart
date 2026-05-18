@@ -1,7 +1,20 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Modal bottom sheet for capturing payment on a "continue sale" flow.
+///
+/// Visually aligned with the already-migrated `PaymentDialog` and the
+/// demo's `#page-pos-pay`: payment-method selector cards, optional amount
+/// inputs with brand-orange focus, a debt toggle, a totals summary, and
+/// `AppPrimaryButton` + `AppSecondaryButton` actions.
+///
+/// Business logic preserved verbatim: per-method controllers, parse-with-
+/// comma fallback, debt requires a selected customer, confirm only when
+/// the remaining balance reconciles.
 class ContinuePaymentSheet extends StatefulWidget {
   final String saleId;
   final double totalAmount;
@@ -33,29 +46,6 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
   bool _useDebt = false;
   bool _isProcessing = false;
 
-  static const _paymentOptions = [
-    _PaymentOption(
-        key: 'cash',
-        label: 'Naqd',
-        icon: Icons.payments_outlined,
-        color: Colors.green),
-    _PaymentOption(
-        key: 'terminal',
-        label: 'Karta',
-        icon: Icons.credit_card_outlined,
-        color: Colors.blue),
-    _PaymentOption(
-        key: 'transfer',
-        label: 'Hisob',
-        icon: Icons.account_balance_outlined,
-        color: Colors.purple),
-    _PaymentOption(
-        key: 'click',
-        label: 'Click',
-        icon: Icons.phone_android_outlined,
-        color: Colors.orange),
-  ];
-
   @override
   void dispose() {
     _cashCtrl.dispose();
@@ -85,60 +75,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
     return _remaining <= 0.01 || _totalPaid > 0;
   }
 
-  bool _isActive(String key) {
-    switch (key) {
-      case 'cash':
-        return _useCash;
-      case 'terminal':
-        return _useTerminal;
-      case 'transfer':
-        return _useTransfer;
-      case 'click':
-        return _useClick;
-      default:
-        return false;
-    }
-  }
-
-  void _toggle(String key, bool val) {
-    setState(() {
-      switch (key) {
-        case 'cash':
-          _useCash = val;
-          if (!val) _cashCtrl.clear();
-          break;
-        case 'terminal':
-          _useTerminal = val;
-          if (!val) _terminalCtrl.clear();
-          break;
-        case 'transfer':
-          _useTransfer = val;
-          if (!val) _transferCtrl.clear();
-          break;
-        case 'click':
-          _useClick = val;
-          if (!val) _clickCtrl.clear();
-          break;
-      }
-    });
-  }
-
-  TextEditingController _ctrl(String key) {
-    switch (key) {
-      case 'cash':
-        return _cashCtrl;
-      case 'terminal':
-        return _terminalCtrl;
-      case 'transfer':
-        return _transferCtrl;
-      case 'click':
-        return _clickCtrl;
-      default:
-        return _cashCtrl;
-    }
-  }
-
-  void _onConfirm() async {
+  void _onConfirm() {
     setState(() => _isProcessing = true);
     final payments = <Map<String, dynamic>>[];
 
@@ -163,117 +100,182 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
     final l10n = AppLocalizations.of(context)!;
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + bottomPadding),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xl3,
+        0,
+        AppSpacing.xl3,
+        AppSpacing.xl3 + bottomPadding,
+      ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
+            // Drag handle.
             Center(
               child: Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
+                margin: const EdgeInsets.only(
+                  top: AppSpacing.lg,
+                  bottom: AppSpacing.xl2,
+                ),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
 
-            // Sarlavha
+            // Title with brand-tinted icon and total chip.
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(9),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.payments_outlined,
-                      color: Color(0xFF10B981), size: 20),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    Text(l10n.paymentMethods,
-                        style: const TextStyle(
-                            fontSize: 17, fontWeight: FontWeight.w800)),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandLight,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: const Icon(
+                        Icons.payments_outlined,
+                        color: AppColors.brand,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
                     Text(
-                      "${l10n.total}: ${NumberFormatter.formatDecimal(widget.totalAmount)} ${l10n.currencySom}",
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      l10n.paymentMethods,
+                      style: AppTextStyles.titleMedium(),
                     ),
                   ],
                 ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandLight,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Text(
+                    '${NumberFormatter.formatDecimal(widget.totalAmount)} ${l10n.currencySom}',
+                    style: AppTextStyles.labelLarge().copyWith(
+                      color: AppColors.brand,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
 
-            // To'lov usullari
-            ..._paymentOptions.map((opt) => _PaymentMethodRow(
-                  option: opt,
-                  isActive: _isActive(opt.key),
-                  controller: _ctrl(opt.key),
-                  isDark: isDark,
-                  onToggle: (val) => _toggle(opt.key, val),
-                  onChanged: () => setState(() {}),
-                )),
+            // Payment-method selector cards.
+            _PaymentMethodRow(
+              label: l10n.cash,
+              icon: Icons.payments_outlined,
+              isActive: _useCash,
+              controller: _cashCtrl,
+              onToggle: (v) => setState(() {
+                _useCash = v;
+                if (!v) _cashCtrl.clear();
+              }),
+              onChanged: () => setState(() {}),
+            ),
+            _PaymentMethodRow(
+              label: l10n.bankCard,
+              icon: Icons.credit_card_outlined,
+              isActive: _useTerminal,
+              controller: _terminalCtrl,
+              onToggle: (v) => setState(() {
+                _useTerminal = v;
+                if (!v) _terminalCtrl.clear();
+              }),
+              onChanged: () => setState(() {}),
+            ),
+            _PaymentMethodRow(
+              label: l10n.transfer,
+              icon: Icons.account_balance_outlined,
+              isActive: _useTransfer,
+              controller: _transferCtrl,
+              onToggle: (v) => setState(() {
+                _useTransfer = v;
+                if (!v) _transferCtrl.clear();
+              }),
+              onChanged: () => setState(() {}),
+            ),
+            _PaymentMethodRow(
+              label: l10n.click,
+              icon: Icons.phone_android_outlined,
+              isActive: _useClick,
+              controller: _clickCtrl,
+              onToggle: (v) => setState(() {
+                _useClick = v;
+                if (!v) _clickCtrl.clear();
+              }),
+              onChanged: () => setState(() {}),
+            ),
 
-            // Qarzga olish
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
+
+            // Debt toggle. Requires a selected customer — otherwise we
+            // surface a warning snack instead of toggling.
             GestureDetector(
               onTap: () {
                 if (widget.selectedCustomer == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(l10n.selectCustomerForDebtWarning),
-                    backgroundColor: Colors.orange,
-                    behavior: SnackBarBehavior.floating,
-                  ));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(l10n.selectCustomerForDebtWarning),
+                      backgroundColor: AppColors.warning,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
                   return;
                 }
                 setState(() => _useDebt = !_useDebt);
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xl,
+                  vertical: AppSpacing.lg,
+                ),
                 decoration: BoxDecoration(
-                  color: _useDebt
-                      ? Colors.orange.withValues(alpha: 0.1)
-                      : isDark
-                          ? Colors.white.withValues(alpha: 0.04)
-                          : Colors.grey.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(12),
+                  color: _useDebt ? AppColors.brandLight : AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   border: Border.all(
-                    color: _useDebt
-                        ? Colors.orange.withValues(alpha: 0.4)
-                        : Colors.transparent,
+                    color:
+                        _useDebt ? AppColors.brand : Colors.transparent,
+                    width: 1,
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.money_off_rounded,
-                        size: 20,
-                        color: _useDebt ? Colors.orange : Colors.grey[500]),
-                    const SizedBox(width: 10),
+                    Icon(
+                      Icons.money_off_rounded,
+                      size: 20,
+                      color: _useDebt ? AppColors.brand : AppColors.textMuted,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         l10n.takeAsDebt,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: _useDebt ? Colors.orange : Colors.grey[600],
+                        style: AppTextStyles.bodyMedium().copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: _useDebt
+                              ? AppColors.brand
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -281,106 +283,84 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                       width: 22,
                       height: 22,
                       decoration: BoxDecoration(
-                        color: _useDebt
-                            ? Colors.orange
-                            : Colors.grey.withValues(alpha: 0.2),
+                        color: _useDebt ? AppColors.brand : AppColors.border,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        _useDebt ? Icons.check_rounded : null,
-                        size: 13,
-                        color: Colors.white,
-                      ),
+                      child: _useDebt
+                          ? const Icon(
+                              Icons.check_rounded,
+                              size: 13,
+                              color: Colors.white,
+                            )
+                          : null,
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xl),
 
-            // Summary
+            // Totals summary.
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.grey.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(14),
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.borderSoft),
               ),
               child: Column(
                 children: [
                   _SummaryRow(
-                      label: l10n.total,
-                      value:
-                          "${NumberFormatter.formatDecimal(widget.totalAmount)} ${l10n.currencySom}"),
-                  const SizedBox(height: 8),
+                    label: l10n.total,
+                    value:
+                        '${NumberFormatter.formatDecimal(widget.totalAmount)} ${l10n.currencySom}',
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                   _SummaryRow(
-                      label: l10n.paid,
-                      value:
-                          "${NumberFormatter.formatDecimal(_totalPaid)} ${l10n.currencySom}",
-                      valueColor: Colors.green),
+                    label: l10n.paid,
+                    value:
+                        '${NumberFormatter.formatDecimal(_totalPaid)} ${l10n.currencySom}',
+                    valueColor: AppColors.success,
+                  ),
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Divider(height: 1),
+                    padding:
+                        EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    child: Divider(height: 1, color: AppColors.border),
                   ),
                   _SummaryRow(
                     label: _hasDebt ? l10n.onDebt : l10n.remaining,
                     value:
-                        "${NumberFormatter.formatDecimal(_remaining)} ${l10n.currencySom}",
+                        '${NumberFormatter.formatDecimal(_remaining)} ${l10n.currencySom}',
                     valueColor: _hasDebt
-                        ? Colors.orange
-                        : (_remaining <= 0 ? Colors.green : Colors.red),
+                        ? AppColors.brand
+                        : (_remaining <= 0
+                            ? AppColors.success
+                            : AppColors.danger),
                     bold: true,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
 
-            // Tugmalar
+            // Footer buttons — cancel + confirm.
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: AppSecondaryButton(
+                    label: l10n.cancel,
                     onPressed:
                         _isProcessing ? null : () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(l10n.cancel,
-                        style: TextStyle(color: Colors.grey[600])),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   flex: 2,
-                  child: ElevatedButton(
+                  child: AppPrimaryButton(
+                    label: _hasDebt ? l10n.takeAsDebt : l10n.confirm,
+                    isLoading: _isProcessing,
                     onPressed:
                         (_isProcessing || !_canConfirm) ? null : _onConfirm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          _hasDebt ? Colors.orange : const Color(0xFF10B981),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: _isProcessing
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                        : Text(
-                            _hasDebt ? l10n.takeAsDebt : l10n.confirm,
-                            style: const TextStyle(
-                                fontSize: 15, fontWeight: FontWeight.w700),
-                          ),
                   ),
                 ),
               ],
@@ -392,19 +372,21 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
   }
 }
 
+/// Single payment-method row — toggle card + optional amount input.
+/// Active state uses brand-orange tints; inactive shows neutral grey.
 class _PaymentMethodRow extends StatelessWidget {
-  final _PaymentOption option;
+  final String label;
+  final IconData icon;
   final bool isActive;
   final TextEditingController controller;
-  final bool isDark;
-  final Function(bool) onToggle;
+  final ValueChanged<bool> onToggle;
   final VoidCallback onChanged;
 
   const _PaymentMethodRow({
-    required this.option,
+    required this.label,
+    required this.icon,
     required this.isActive,
     required this.controller,
-    required this.isDark,
     required this.onToggle,
     required this.onChanged,
   });
@@ -412,41 +394,43 @@ class _PaymentMethodRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md + 2),
       child: Column(
         children: [
           GestureDetector(
             onTap: () => onToggle(!isActive),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl,
+                vertical: AppSpacing.lg,
+              ),
               decoration: BoxDecoration(
-                color: isActive
-                    ? option.color.withValues(alpha: 0.08)
-                    : isDark
-                        ? Colors.white.withValues(alpha: 0.04)
-                        : Colors.grey.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
+                color: isActive ? AppColors.brandLight : AppColors.inputFill,
+                borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 border: Border.all(
-                  color: isActive
-                      ? option.color.withValues(alpha: 0.4)
-                      : Colors.transparent,
+                  color: isActive ? AppColors.brand : Colors.transparent,
+                  width: 1,
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(option.icon,
-                      size: 20,
-                      color: isActive ? option.color : Colors.grey[500]),
-                  const SizedBox(width: 10),
+                  Icon(
+                    icon,
+                    size: 20,
+                    color: isActive ? AppColors.brand : AppColors.textMuted,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
-                      option.label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isActive ? option.color : Colors.grey[600],
+                      label,
+                      style: AppTextStyles.bodyMedium().copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: isActive
+                            ? AppColors.brand
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -454,14 +438,15 @@ class _PaymentMethodRow extends StatelessWidget {
                     width: 22,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: isActive
-                          ? option.color
-                          : Colors.grey.withValues(alpha: 0.2),
+                      color: isActive ? AppColors.brand : AppColors.border,
                       shape: BoxShape.circle,
                     ),
                     child: isActive
-                        ? const Icon(Icons.check_rounded,
-                            size: 13, color: Colors.white)
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 13,
+                            color: Colors.white,
+                          )
                         : null,
                   ),
                 ],
@@ -470,30 +455,42 @@ class _PaymentMethodRow extends StatelessWidget {
           ),
           if (isActive)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: AppSpacing.md),
               child: TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 autofocus: true,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: AppTextStyles.bodyLarge().copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
                 decoration: InputDecoration(
-                  hintText: l10n.enterQuantityHint,
+                  hintText: l10n.enterAmount,
+                  hintStyle: AppTextStyles.bodyMedium().copyWith(
+                    color: AppColors.textMuted,
+                  ),
                   suffixText: l10n.currencySom,
+                  suffixStyle: AppTextStyles.bodySmall(),
                   filled: true,
-                  fillColor: isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.grey.withValues(alpha: 0.06),
+                  fillColor: AppColors.inputFill,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md + 2),
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: option.color, width: 1.5),
+                    borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                    borderSide: const BorderSide(
+                      color: AppColors.brand,
+                      width: 1.5,
+                    ),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl,
+                    vertical: AppSpacing.lg,
+                  ),
                 ),
                 onChanged: (_) => onChanged(),
               ),
@@ -522,32 +519,33 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall().copyWith(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+          ),
+        ),
         Text(
           value,
-          style: TextStyle(
-            fontSize: bold ? 15 : 13,
-            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-            color: valueColor,
-          ),
+          style: bold
+              ? AppTextStyles.labelLarge().copyWith(
+                  fontSize: 15,
+                  color: valueColor ?? AppColors.text,
+                )
+              : AppTextStyles.bodySmall().copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: valueColor ?? AppColors.text,
+                ),
         ),
       ],
     );
   }
 }
 
-class _PaymentOption {
-  final String key;
-  final String label;
-  final IconData icon;
-  final Color color;
-  const _PaymentOption(
-      {required this.key,
-      required this.label,
-      required this.icon,
-      required this.color});
-}
-
+/// Convenience launcher — mirrors the public function from the original
+/// file so existing call sites in `ContinueSaleScreen` don't have to change.
 Future<void> showContinuePaymentSheet(
   BuildContext context, {
   required String saleId,

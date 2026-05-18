@@ -1,5 +1,5 @@
-/// Update Product Use Case
-/// Business logic for updating a product
+// Update Product Use Case
+// Business logic for updating a product
 
 import 'package:equatable/equatable.dart';
 

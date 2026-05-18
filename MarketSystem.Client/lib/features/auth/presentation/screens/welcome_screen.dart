@@ -1,47 +1,55 @@
-﻿import 'dart:ui';
+// Welcome screen — first-time entry point. Uses the new design system tokens
+// while preserving the existing orangeLogo.png asset, language switcher, theme
+// toggle, and Privacy Policy access from the original implementation.
+
+import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../core/providers/locale_provider.dart';
-import '../../../../l10n/app_localizations.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_styles.dart';
-import '../../../../core/extensions/app_extensions.dart';
-import 'login_screen.dart';
+import '../../../../core/routes/app_routes.dart';
+import '../../../../design/tokens/app_tokens.dart';
+import '../../../../design/tokens/app_typography.dart';
+import '../../../../design/widgets/app_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final isDark = AdaptiveTheme.of(context).mode.isDark;
-    final primaryColor = AppColors.getPrimary(context);
 
     return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
-      body: SafeArea(
-        child: Center(
+      // Subtle gradient bg from white to brand-tint (orange light).
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white,
+              AppColors.brandLight,
+            ],
+          ),
+        ),
+        child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl3, // 24 horizontal
+              AppSpacing.xl4, // 32 top
+              AppSpacing.xl3,
+              AppSpacing.xl3,
+            ),
             child: Column(
               children: [
-                20.height,
-                _buildHeader(context, isDark, l10n),
+                _buildTopBar(context, isDark),
                 const Spacer(flex: 2),
-                _buildBrandSection(isDark),
+                _buildBrandSection(),
                 const Spacer(flex: 3),
-                _buildStartButton(context, primaryColor, l10n),
-                20.height,
-                TextButton(
-                  onPressed: () => _showPrivacyDialog(context, isDark),
-                  child: Text(
-                    'Privacy Policy',
-                    style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
-                  ),
-                ),
-                20.height,
+                _buildActions(context),
+                const SizedBox(height: AppSpacing.lg),
+                _buildPrivacyCaption(context, isDark),
               ],
             ),
           ),
@@ -50,161 +58,139 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(
-      BuildContext context, bool isDark, AppLocalizations l10n) {
+  /// Top row: language switcher (left) + theme toggle (right).
+  Widget _buildTopBar(BuildContext context, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Consumer<LocaleProvider>(
-          builder: (context, localeProvider, _) {
-            return _buildLanguageDropdown(
-                context, localeProvider, l10n, isDark);
-          },
+          builder: (context, localeProvider, _) =>
+              _LanguageChip(provider: localeProvider),
         ),
-        _buildThemeToggle(context, isDark),
+        _ThemeToggleButton(isDark: isDark),
       ],
     );
   }
 
-  Widget _buildBrandSection(bool isDark) {
+  /// Brand: existing orangeLogo.png asset (120x120) + "Strotech" title + subtitle.
+  Widget _buildBrandSection() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Image.asset(
-          isDark
-              ? 'assets/images/blueLogo.png'
-              : 'assets/images/orangeLogo.png',
+          'assets/images/orangeLogo.png',
           width: 120,
           height: 120,
           fit: BoxFit.contain,
         ),
-        24.height,
+        const SizedBox(height: AppSpacing.lg),
         Text(
-          "STROTECH",
-          style: AppStyles.brandTitle.copyWith(
-            fontSize: 28,
-            letterSpacing: 8,
-            color: isDark ? Colors.white : Colors.black87,
+          'Strotech',
+          style: AppTextStyles.displayLarge().copyWith(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: AppColors.text,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          "Kichik do'konlar uchun savdo va hisob tizimi",
+          textAlign: TextAlign.center,
+          style: AppTextStyles.bodyMedium().copyWith(
+            color: AppColors.textSecondary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStartButton(
-      BuildContext context, Color primaryColor, AppLocalizations l10n) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+  /// CTA buttons: "Tizimga kirish" (primary) + "Yangi do'kon" (secondary).
+  Widget _buildActions(BuildContext context) {
+    return Column(
+      children: [
+        AppPrimaryButton(
+          label: 'Tizimga kirish',
+          onPressed: () => _onLoginPressed(context),
         ),
-        onPressed: () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('is_first_time', false);
-          if (context.mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            );
-          }
-        },
-        child: Text(
-          l10n.login,
-          style: AppStyles.cardTitle.copyWith(color: Colors.white),
+        const SizedBox(height: AppSpacing.lg),
+        AppSecondaryButton(
+          label: "Yangi do'kon — ro'yxatdan o'tish",
+          onPressed: () => Navigator.of(context).pushNamed(AppRoutes.register),
+        ),
+      ],
+    );
+  }
+
+  /// Footer caption with Privacy Policy link.
+  Widget _buildPrivacyCaption(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: GestureDetector(
+        onTap: () => _showPrivacyDialog(context, isDark),
+        child: RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: AppTextStyles.caption().copyWith(
+              color: AppColors.textMuted,
+            ),
+            children: [
+              const TextSpan(text: 'Davom etish orqali '),
+              TextSpan(
+                text: 'Maxfiylik siyosati',
+                style: AppTextStyles.caption().copyWith(
+                  color: AppColors.brand,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const TextSpan(text: 'ga rozisiz'),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildLanguageDropdown(BuildContext context, LocaleProvider provider,
-      AppLocalizations l10n, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: provider.locale.languageCode,
-          icon: Icon(Icons.keyboard_arrow_down_rounded,
-              color: isDark ? Colors.white70 : Colors.black54),
-          dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          onChanged: (value) =>
-              value != null ? provider.setLocale(value) : null,
-          items: [
-            DropdownMenuItem(
-                value: 'uz',
-                child: Text("O'zbek",
-                    style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black))),
-            DropdownMenuItem(
-                value: 'ru',
-                child: Text('Русский',
-                    style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black))),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeToggle(BuildContext context, bool isDark) {
-    return IconButton(
-      onPressed: () => isDark
-          ? AdaptiveTheme.of(context).setLight()
-          : AdaptiveTheme.of(context).setDark(),
-      icon: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: Icon(
-          isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round_outlined,
-          key: ValueKey(isDark),
-          color: isDark ? Colors.amber : Colors.black87,
-        ),
-      ),
-    );
+  Future<void> _onLoginPressed(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_first_time', false);
+    if (context.mounted) {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+    }
   }
 
   void _showPrivacyDialog(BuildContext context, bool isDark) {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: true,
       builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl2),
+        ),
         child: Container(
           width: double.infinity,
           constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.getPrimary(context),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                padding: const EdgeInsets.all(AppSpacing.xl2),
+                decoration: const BoxDecoration(
+                  color: AppColors.brand,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(AppRadius.xl2),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Privacy Policy',
-                      style: TextStyle(
+                    Text(
+                      'Maxfiylik siyosati',
+                      style: AppTextStyles.titleMedium().copyWith(
                         color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     IconButton(
@@ -215,66 +201,41 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               // Content
-              Expanded(
+              const Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(AppSpacing.xl2),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildPrivacySection(
-                        'Introduction',
-                        'This Privacy Policy describes how MarketSystem collects, uses, and protects your personal information. By using our application, you agree to the terms of this policy.',
-                        isDark,
+                      _PrivacySection(
+                        title: 'Kirish',
+                        body:
+                            'Ushbu Maxfiylik siyosati MarketSystem sizning shaxsiy maʼlumotlaringizni qanday yigʻishini, ishlatishini va himoya qilishini tushuntiradi.',
                       ),
-                      const SizedBox(height: 20),
-                      _buildPrivacySection(
-                        'Data Collection',
-                        'We collect the following types of information:\n\n'
-                        '1. Personal Information: Name, email address, phone number\n'
-                        '2. Usage Data: How you interact with the application\n'
-                        '3. Device Information: Device type, operating system, unique device identifiers\n'
-                        '4. Business Data: Sales, inventory, customer information (if you are a business user)',
-                        isDark,
+                      _PrivacySection(
+                        title: 'Maʼlumot yigʻish',
+                        body:
+                            'Quyidagi maʼlumotlar yigʻiladi:\n\n• Ism, telefon raqami, email\n• Doʻkon maʼlumotlari (mahsulot, sotuv, mijoz)\n• Qurilma maʼlumotlari va foydalanish statistikasi',
                       ),
-                      const SizedBox(height: 20),
-                      _buildPrivacySection(
-                        'Data Usage',
-                        'We use the collected information for:\n\n'
-                        '• Providing and maintaining our services\n'
-                        '• Improving user experience\n'
-                        '• Processing transactions\n'
-                        '• Sending notifications about important updates\n'
-                        '• Analyzing usage patterns to enhance our services',
-                        isDark,
+                      _PrivacySection(
+                        title: 'Maʼlumot ishlatilishi',
+                        body:
+                            'Maʼlumotlar quyidagilar uchun ishlatiladi:\n\n• Xizmat koʻrsatish va yaxshilash\n• Tranzaksiyalarni qayta ishlash\n• Muhim yangilanishlar haqida xabar berish',
                       ),
-                      const SizedBox(height: 20),
-                      _buildPrivacySection(
-                        'Data Security',
-                        'We take data security seriously and implement appropriate measures to protect your information:\n\n'
-                        '• Encryption of sensitive data in transit and at rest\n'
-                        '• Regular security audits\n'
-                        '• Access controls and authentication\n'
-                        '• Secure data storage and backup systems',
-                        isDark,
+                      _PrivacySection(
+                        title: 'Maʼlumot xavfsizligi',
+                        body:
+                            'Maʼlumotlar shifrlangan va himoyalangan serverlarda saqlanadi. Muntazam xavfsizlik tekshiruvlari oʻtkaziladi.',
                       ),
-                      const SizedBox(height: 20),
-                      _buildPrivacySection(
-                        'Your Rights',
-                        'You have the following rights regarding your data:\n\n'
-                        '• Access to your personal information\n'
-                        '• Request correction of inaccurate data\n'
-                        '• Request deletion of your account and data\n'
-                        '• Opt-out of marketing communications\n'
-                        '• Export your data',
-                        isDark,
+                      _PrivacySection(
+                        title: 'Sizning huquqlaringiz',
+                        body:
+                            '• Maʼlumotlaringizni koʻrish\n• Notoʻgʻri maʼlumotlarni tuzatish\n• Hisobni oʻchirish\n• Maʼlumotlarni eksport qilish',
                       ),
-                      const SizedBox(height: 20),
-                      _buildPrivacySection(
-                        'Contact Information',
-                        'If you have questions about this Privacy Policy or your data, please contact us at:\n\n'
-                        'Email: support@strotech.uz\n'
-                        'Website: https://strotech.uz',
-                        isDark,
+                      _PrivacySection(
+                        title: 'Bogʻlanish',
+                        body:
+                            'Savollar boʻlsa:\n\nEmail: support@strotech.uz\nWebsite: https://strotech.uz',
                       ),
                     ],
                   ),
@@ -286,29 +247,169 @@ class WelcomeScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildPrivacySection(String title, String content, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2196F3),
+/// Language switcher chip — opens a modal bottom sheet with locale options.
+class _LanguageChip extends StatelessWidget {
+  const _LanguageChip({required this.provider});
+  final LocaleProvider provider;
+
+  static const _options = [
+    {'code': 'uz', 'label': "🇺🇿 O'zbekcha"},
+    {'code': 'ru', 'label': '🇷🇺 Русский'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final current = _options.firstWhere(
+      (o) => o['code'] == provider.locale.languageCode,
+      orElse: () => _options.first,
+    );
+
+    return GestureDetector(
+      onTap: () => _openSheet(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🌐', style: TextStyle(fontSize: 13)),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              current['label']!,
+              style: AppTextStyles.bodySmall().copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: AppColors.textMuted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppSpacing.lg),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text('Tilni tanlang', style: AppTextStyles.titleMedium()),
+              const SizedBox(height: AppSpacing.lg),
+              for (final option in _options)
+                ListTile(
+                  onTap: () {
+                    provider.setLocale(option['code']!);
+                    Navigator.pop(ctx);
+                  },
+                  title: Text(
+                    option['label']!,
+                    style: AppTextStyles.bodyLarge(),
+                  ),
+                  trailing: option['code'] == provider.locale.languageCode
+                      ? const Icon(Icons.check_rounded, color: AppColors.brand)
+                      : null,
+                ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Sun/moon icon button — toggles between light/dark themes.
+class _ThemeToggleButton extends StatelessWidget {
+  const _ThemeToggleButton({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: IconButton(
+        onPressed: () => isDark
+            ? AdaptiveTheme.of(context).setLight()
+            : AdaptiveTheme.of(context).setDark(),
+        icon: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Icon(
+            isDark
+                ? Icons.wb_sunny_outlined
+                : Icons.nightlight_round_outlined,
+            key: ValueKey(isDark),
+            color: isDark ? Colors.amber : AppColors.text,
+            size: 20,
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          content,
-          style: TextStyle(
-            fontSize: 14,
-            color: isDark ? Colors.white70 : Colors.black87,
-            height: 1.5,
+      ),
+    );
+  }
+}
+
+class _PrivacySection extends StatelessWidget {
+  const _PrivacySection({required this.title, required this.body});
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xl2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppTextStyles.titleMedium().copyWith(
+              color: AppColors.brand,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            body,
+            style: AppTextStyles.bodyMedium().copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -66,66 +66,66 @@ public record AddSaleItemDto(
     [property: JsonPropertyName("productId")] Guid? ProductId,
 
     [property: JsonPropertyName("externalProductName")]
-    [property: StringLength(200, ErrorMessage = "Mahsulot nomi 200 belgidan oshmasligi kerak")]
+    [param: StringLength(200, ErrorMessage = "Mahsulot nomi 200 belgidan oshmasligi kerak")]
     string? ExternalProductName,
 
     [property: JsonPropertyName("externalCostPrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal? ExternalCostPrice,
 
     [property: JsonPropertyName("quantity")]
-    [property: Range(0.001, double.MaxValue, ErrorMessage = "Miqdor 0 dan katta bo'lishi kerak")]
+    [param: Range(0.001, double.MaxValue, ErrorMessage = "Miqdor 0 dan katta bo'lishi kerak")]
     decimal Quantity,
 
     [property: JsonPropertyName("salePrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal SalePrice,
 
     [property: JsonPropertyName("minSalePrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal MinSalePrice,
 
     [property: JsonPropertyName("comment")]
-    [property: StringLength(500)]
+    [param: StringLength(500)]
     string? Comment
 );
 
 public record RemoveSaleItemDto(
     [property: JsonPropertyName("saleItemId")]
-    [property: Required]
+    [param: Required]
     string SaleItemId,
 
     [property: JsonPropertyName("quantity")]
-    [property: Range(0.001, double.MaxValue, ErrorMessage = "Miqdor 0 dan katta bo'lishi kerak")]
+    [param: Range(0.001, double.MaxValue, ErrorMessage = "Miqdor 0 dan katta bo'lishi kerak")]
     decimal Quantity
 );
 
 public record AddPaymentDto(
     [property: JsonPropertyName("paymentType")]
-    [property: Required(ErrorMessage = "To'lov turi majburiy")]
+    [param: Required(ErrorMessage = "To'lov turi majburiy")]
     string PaymentType,
 
     [property: JsonPropertyName("amount")]
-    [property: Range(0.01, double.MaxValue, ErrorMessage = "To'lov miqdori 0 dan katta bo'lishi kerak")]
+    [param: Range(0.01, double.MaxValue, ErrorMessage = "To'lov miqdori 0 dan katta bo'lishi kerak")]
     decimal Amount
 );
 
 public record CancelSaleDto(
     [property: JsonPropertyName("adminId")]
-    [property: Required(ErrorMessage = "Admin ID majburiy")]
+    [param: Required(ErrorMessage = "Admin ID majburiy")]
     string AdminId
 );
 
 public record UpdateSaleItemPriceDto(
     [property: JsonPropertyName("saleItemId")]
-    [property: Required]
+    [param: Required]
     string SaleItemId,
 
     [property: JsonPropertyName("newPrice")]
-    [property: Range(0, double.MaxValue, ErrorMessage = "Narx manfiy bo'lishi mumkin emas")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Narx manfiy bo'lishi mumkin emas")]
     decimal NewPrice,
 
     [property: JsonPropertyName("comment")]
-    [property: StringLength(500)]
+    [param: StringLength(500)]
     string? Comment
 );

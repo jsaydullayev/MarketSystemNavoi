@@ -1,5 +1,5 @@
-/// Market Model
-/// Data transfer object for markets
+// Market Model
+// Data transfer object for markets
 
 class MarketModel {
   final int id;

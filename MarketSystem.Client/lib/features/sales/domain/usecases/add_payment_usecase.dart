@@ -1,5 +1,5 @@
-/// Add Payment Use Case
-/// Sotuvga to'lov qo'shish biznes mantig'i
+// Add Payment Use Case
+// Sotuvga to'lov qo'shish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../repositories/sale_repository_interface.dart';

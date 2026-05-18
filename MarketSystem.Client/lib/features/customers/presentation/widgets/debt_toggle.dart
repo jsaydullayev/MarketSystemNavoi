@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtToggle extends StatelessWidget {
@@ -13,7 +15,6 @@ class DebtToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     return Row(
@@ -21,18 +22,16 @@ class DebtToggle extends StatelessWidget {
         _DebtOption(
           label: l10n.noDebt,
           icon: Icons.check_circle_rounded,
-          activeColor: Colors.green,
+          activeColor: AppColors.success,
           isSelected: !hasDebt,
-          isDark: isDark,
           onTap: () => onChanged(false),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSpacing.md),
         _DebtOption(
           label: l10n.debtor,
           icon: Icons.money_off_rounded,
-          activeColor: Colors.orange,
+          activeColor: AppColors.warning,
           isSelected: hasDebt,
-          isDark: isDark,
           onTap: () => onChanged(true),
         ),
       ],
@@ -46,7 +45,6 @@ class _DebtOption extends StatelessWidget {
     required this.icon,
     required this.activeColor,
     required this.isSelected,
-    required this.isDark,
     required this.onTap,
   });
 
@@ -54,7 +52,6 @@ class _DebtOption extends StatelessWidget {
   final IconData icon;
   final Color activeColor;
   final bool isSelected;
-  final bool isDark;
   final VoidCallback onTap;
 
   @override
@@ -64,12 +61,12 @@ class _DebtOption extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
           decoration: BoxDecoration(
             color: isSelected
-                ? activeColor.withValues(alpha: 0.15)
-                : (isDark ? Colors.white10 : Colors.grey.shade100),
-            borderRadius: BorderRadius.circular(12),
+                ? activeColor.withValues(alpha: 0.12)
+                : AppColors.inputFill,
+            borderRadius: BorderRadius.circular(AppRadius.md + 2),
             border: Border.all(
               color: isSelected ? activeColor : Colors.transparent,
               width: 1.5,
@@ -79,12 +76,13 @@ class _DebtOption extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon,
-                  color: isSelected ? activeColor : Colors.grey, size: 18),
-              const SizedBox(width: 6),
+                  color: isSelected ? activeColor : AppColors.textMuted,
+                  size: 18),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 label,
-                style: TextStyle(
-                  color: isSelected ? activeColor : Colors.grey,
+                style: AppTextStyles.bodyMedium().copyWith(
+                  color: isSelected ? activeColor : AppColors.textMuted,
                   fontWeight: FontWeight.w600,
                 ),
               ),

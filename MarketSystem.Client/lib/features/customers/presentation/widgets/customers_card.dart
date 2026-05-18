@@ -1,13 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart'
     as core_auth;
 import 'package:market_system_client/core/utils/number_formatter.dart';
-import 'package:market_system_client/l10n/app_localizations.dart';
-import 'package:provider/provider.dart';
 import 'package:market_system_client/data/services/customer_service.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/bloc/customers_bloc.dart';
 import 'package:market_system_client/features/customers/presentation/bloc/events/customers_event.dart';
 import 'package:market_system_client/features/customers/presentation/screens/customer_detail_screen.dart';
+import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
 
 class CustomersCard extends StatelessWidget {
   final dynamic customer;
@@ -15,42 +18,42 @@ class CustomersCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final totalDebt = (customer['totalDebt'] as num?)?.toDouble() ?? 0.0;
     final hasDebt = totalDebt > 0;
     final comment = customer['comment']?.toString() ?? '';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final name = customer['fullName']?.toString() ?? '';
     final phone = customer['phone']?.toString() ?? '';
-    final initial = name.isNotEmpty
-        ? name[0].toUpperCase()
-        : phone.isNotEmpty
-            ? phone[0]
-            : '?';
-    final color = hasDebt ? Colors.red : Colors.green;
-    final l10n = AppLocalizations.of(context)!;
+    final displayLabel = name.isNotEmpty ? name : phone;
+    final initial = displayLabel.isNotEmpty
+        ? displayLabel.characters.first.toUpperCase()
+        : '?';
+    final avatarColor = CustomerAvatarPalette.pick(displayLabel);
 
     return Dismissible(
       key: Key('customer_${customer['id']}'),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(right: AppSpacing.xl2),
+        margin: const EdgeInsets.only(bottom: AppSpacing.lg),
         decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.danger,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.delete_forever_rounded,
-                color: Colors.white, size: 28),
-            const SizedBox(height: 4),
-            Text(l10n.delete,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold)),
+                color: Colors.white, size: 26),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              l10n.delete,
+              style: AppTextStyles.caption().copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ],
         ),
       ),
@@ -59,153 +62,100 @@ class CustomersCard extends StatelessWidget {
         return false;
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: AppSpacing.lg),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: hasDebt
-                ? Colors.red.withValues(alpha: 0.2)
-                : Colors.green.withValues(alpha: 0.2),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
         ),
-        child: InkWell(
-          onTap: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CustomerDetailScreen(
-                  customerId: customer['id']?.toString() ?? '',
-                  customerName: name,
-                  customerPhone: phone,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: InkWell(
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CustomerDetailScreen(
+                    customerId: customer['id']?.toString() ?? '',
+                    customerName: name,
+                    customerPhone: phone,
+                  ),
                 ),
+              );
+              if (context.mounted) {
+                context.read<CustomersBloc>().add(const GetCustomersEvent());
+              }
+            },
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg + 2,
+                vertical: AppSpacing.lg + 2,
               ),
-            );
-            if (context.mounted) {
-              context.read<CustomersBloc>().add(const GetCustomersEvent());
-            }
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name.isNotEmpty ? name : phone,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: isDark ? Colors.white : Colors.black87,
+              child: Row(
+                children: [
+                  _Avatar(initial: initial, color: avatarColor),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayLabel,
+                          style: AppTextStyles.labelLarge(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          Icon(Icons.phone_rounded,
-                              size: 12, color: Colors.grey.shade500),
-                          const SizedBox(width: 4),
+                        const SizedBox(height: 3),
+                        Text(
+                          phone,
+                          style: AppTextStyles.bodySmall().copyWith(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (comment.isNotEmpty) ...[
+                          const SizedBox(height: 2),
                           Text(
-                            phone,
-                            style: TextStyle(
-                                fontSize: 12, color: Colors.grey.shade500),
+                            comment,
+                            style: AppTextStyles.bodySmall().copyWith(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                      ),
-                      if (comment.isNotEmpty) ...[
-                        const SizedBox(height: 3),
-                        Row(
-                          children: [
-                            Icon(Icons.comment_rounded,
-                                size: 12, color: Colors.grey.shade400),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                comment,
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey.shade400,
-                                    fontStyle: FontStyle.italic),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      GestureDetector(
+                        onTap: () => _showInfoSheet(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.inputFill,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.md - 2),
+                          ),
+                          child: const Icon(Icons.info_outline_rounded,
+                              size: 18, color: AppColors.textMuted),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _DebtBadge(hasDebt: hasDebt, totalDebt: totalDebt),
                     ],
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    GestureDetector(
-                      onTap: () => _showInfoSheet(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(Icons.info_outline_rounded,
-                            size: 18, color: Colors.grey.shade500),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: color.withValues(alpha: 0.3)),
-                      ),
-                      child: Text(
-                        hasDebt
-                            ? NumberFormatter.format(totalDebt)
-                            : l10n.noDebt,
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -234,29 +184,36 @@ class CustomersCard extends StatelessWidget {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(l10n.deleteCustomer),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.xl)),
+          title: Text(l10n.deleteCustomer, style: AppTextStyles.titleMedium()),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                  '${customer['fullName'] ?? customer['phone']} ${l10n.deleteCustomerConfirm(customer['fullName'] ?? customer['phone'])}'),
+                '${customer['fullName'] ?? customer['phone']} ${l10n.deleteCustomerConfirm(customer['fullName'] ?? customer['phone'])}',
+                style: AppTextStyles.bodyMedium(),
+              ),
               if (deleteInfo['warningMessage'] != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(deleteInfo['warningMessage'],
-                      style: const TextStyle(color: Colors.orange)),
+                  padding: const EdgeInsets.only(top: AppSpacing.lg),
+                  child: Text(
+                    deleteInfo['warningMessage'],
+                    style: AppTextStyles.bodySmall()
+                        .copyWith(color: AppColors.warning),
+                  ),
                 ),
             ],
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(l10n.no)),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.no),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
               child: Text(l10n.yesDelete),
             ),
           ],
@@ -278,18 +235,21 @@ class CustomersCard extends StatelessWidget {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(l10n.deleteCustomer),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.xl)),
+          title: Text(l10n.deleteCustomer, style: AppTextStyles.titleMedium()),
           content: Text(
-              '${customer['fullName'] ?? customer['phone']} ${l10n.deleteCustomerConfirm(customer['fullName'] ?? customer['phone'])}'),
+            '${customer['fullName'] ?? customer['phone']} ${l10n.deleteCustomerConfirm(customer['fullName'] ?? customer['phone'])}',
+            style: AppTextStyles.bodyMedium(),
+          ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(l10n.no)),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.no),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
               child: Text(l10n.yesDelete),
             ),
           ],
@@ -307,27 +267,28 @@ class CustomersCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final totalDebt = (customer['totalDebt'] as num?)?.toDouble() ?? 0.0;
     final hasDebt = totalDebt > 0;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        padding: const EdgeInsets.all(AppSpacing.xl3),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 20),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl2),
             _InfoRow(
                 icon: Icons.person_rounded,
                 label: l10n.fullName,
@@ -339,16 +300,69 @@ class CustomersCard extends StatelessWidget {
             _InfoRow(
               icon: Icons.monetization_on_rounded,
               label: l10n.debt,
-              value: hasDebt ? NumberFormatter.format(totalDebt) : l10n.noDebt,
-              valueColor: hasDebt ? Colors.red : Colors.green,
+              value:
+                  hasDebt ? NumberFormatter.format(totalDebt) : l10n.noDebt,
+              valueColor: hasDebt ? AppColors.danger : AppColors.success,
             ),
             if ((customer['comment']?.toString() ?? '').isNotEmpty)
               _InfoRow(
                   icon: Icons.comment_rounded,
                   label: l10n.comment,
                   value: customer['comment']),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.md),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.initial, required this.color});
+  final String initial;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: AppTextStyles.labelLarge().copyWith(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _DebtBadge extends StatelessWidget {
+  const _DebtBadge({required this.hasDebt, required this.totalDebt});
+  final bool hasDebt;
+  final double totalDebt;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final color = hasDebt ? AppColors.danger : AppColors.success;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md + 2, vertical: AppSpacing.xs + 1),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.md - 2),
+      ),
+      child: Text(
+        hasDebt ? NumberFormatter.format(totalDebt) : l10n.noDebt,
+        style: AppTextStyles.bodyMedium().copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
         ),
       ),
     );
@@ -360,28 +374,32 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final Color? valueColor;
-  const _InfoRow(
-      {required this.icon,
-      required this.label,
-      required this.value,
-      this.valueColor});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md + 2),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey.shade500),
-          const SizedBox(width: 12),
+          Icon(icon, size: 20, color: AppColors.textMuted),
+          const SizedBox(width: AppSpacing.lg),
           Text(label,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+              style: AppTextStyles.bodyMedium()
+                  .copyWith(color: AppColors.textSecondary)),
           const Spacer(),
-          Text(value,
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: valueColor)),
+          Text(
+            value,
+            style: AppTextStyles.bodyMedium().copyWith(
+              fontWeight: FontWeight.w700,
+              color: valueColor ?? AppColors.text,
+            ),
+          ),
         ],
       ),
     );
