@@ -1,5 +1,5 @@
-/// Create Customer Use Case
-/// Yangi mijoz yaratish biznes mantig'i
+// Create Customer Use Case
+// Yangi mijoz yaratish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/customer_entity.dart';

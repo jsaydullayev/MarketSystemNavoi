@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtCard extends StatelessWidget {
@@ -20,159 +22,123 @@ class DebtCard extends StatelessWidget {
 
     final isOpen = status.toLowerCase() == 'open';
     final hasProducts = saleItems != null && saleItems.isNotEmpty;
+    final accent = isOpen ? AppColors.danger : AppColors.success;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: isOpen ? Colors.red.shade300 : Colors.grey.shade300,
-          width: 2,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: accent.withValues(alpha: 0.25),
+          width: 1,
         ),
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: isOpen
-              ? LinearGradient(
-                  colors: [Colors.red.shade50, Colors.white],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    formattedDate,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color:
-                          isOpen ? Colors.red.shade100 : Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isOpen ? Colors.red : Colors.green,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isOpen ? Icons.money_off : Icons.check_circle,
-                          size: 14,
-                          color: isOpen ? Colors.red : Colors.green,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          isOpen ? l10n.inDebt : l10n.completed,
-                          style: TextStyle(
-                            color: isOpen ? Colors.red : Colors.green,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              Text(
+                formattedDate,
+                style: AppTextStyles.bodySmall()
+                    .copyWith(color: AppColors.textSecondary, fontSize: 13),
               ),
-
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _BuildAmountColumn(
-                      label: l10n.totalSum,
-                      amount: totalDebt,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _BuildAmountColumn(
-                      label: l10n.remainingDebt,
-                      amount: remainingDebt,
-                      color: isOpen ? Colors.red : Colors.green,
-                      isMain: true,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Show products if available
-              if (hasProducts) ...[
-                const SizedBox(height: 12),
-                const Divider(),
-                const SizedBox(height: 8),
-                // Products header with time
-                Row(
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg, vertical: AppSpacing.xs + 2),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.shopping_cart,
-                      size: 16,
-                      color: Colors.grey.shade700,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${l10n.products} (${saleItems.length})',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(
-                      Icons.access_time,
+                      isOpen ? Icons.money_off : Icons.check_circle,
                       size: 14,
-                      color: Colors.grey.shade600,
+                      color: accent,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.xs + 2),
                     Text(
-                      NumberFormatter.formatTime(createdAt),
-                      style: TextStyle(
+                      isOpen ? l10n.inDebt : l10n.completed,
+                      style: AppTextStyles.bodyMedium().copyWith(
+                        color: accent,
+                        fontWeight: FontWeight.w700,
                         fontSize: 12,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                ...saleItems.map((item) => _BuildSaleItem(item: item)),
-              ] else if (!hasProducts && isOpen) ...[
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    l10n.noProductsFound,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.orange.shade700,
-                      fontStyle: FontStyle.italic,
-                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              Expanded(
+                child: _BuildAmountColumn(
+                  label: l10n.totalSum,
+                  amount: totalDebt,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.lg),
+              Expanded(
+                child: _BuildAmountColumn(
+                  label: l10n.remainingDebt,
+                  amount: remainingDebt,
+                  color: accent,
+                  isMain: true,
+                ),
+              ),
+            ],
+          ),
+          if (hasProducts) ...[
+            const SizedBox(height: AppSpacing.lg),
+            const Divider(color: AppColors.borderSoft, height: 1),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                const Icon(Icons.shopping_cart,
+                    size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  '${l10n.products} (${saleItems.length})',
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.access_time,
+                    size: 14, color: AppColors.textMuted),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  NumberFormatter.formatTime(createdAt),
+                  style: AppTextStyles.bodySmall().copyWith(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ...saleItems.map((item) => _BuildSaleItem(item: item)),
+          ] else if (!hasProducts && isOpen) ...[
+            const SizedBox(height: AppSpacing.md),
+            Center(
+              child: Text(
+                l10n.noProductsFound,
+                style: AppTextStyles.bodySmall().copyWith(
+                  color: AppColors.warning,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -195,60 +161,59 @@ class _BuildSaleItem extends StatelessWidget {
         ? quantity.toInt().toString()
         : quantity.toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '');
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.brandLight,
+              borderRadius: BorderRadius.circular(AppRadius.md - 2),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.shopping_bag_outlined,
               size: 16,
-              color: Colors.blue.shade700,
+              color: AppColors.brand,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   productName,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: AppTextStyles.bodyMedium().copyWith(
                     fontWeight: FontWeight.w600,
+                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                          horizontal: AppSpacing.sm, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade50,
+                        color: AppColors.successLight,
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.green.shade200),
                       ),
                       child: Text(
                         '$quantityDisplay ${l10n.piece}',
-                        style: TextStyle(
+                        style: AppTextStyles.bodySmall().copyWith(
                           fontSize: 11,
-                          color: Colors.green.shade700,
+                          color: AppColors.success,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.md),
                     Text(
                       '× ${NumberFormatter.format(salePrice)}',
-                      style: TextStyle(
+                      style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -257,9 +222,9 @@ class _BuildSaleItem extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     comment,
-                    style: TextStyle(
+                    style: AppTextStyles.bodySmall().copyWith(
                       fontSize: 11,
-                      color: Colors.grey.shade500,
+                      color: AppColors.textMuted,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -272,18 +237,14 @@ class _BuildSaleItem extends StatelessWidget {
             children: [
               Text(
                 NumberFormatter.format(totalPrice),
-                style: const TextStyle(
+                style: AppTextStyles.bodyMedium().copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1F2937),
                 ),
               ),
               Text(
                 l10n.currencySom,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey.shade500,
-                ),
+                style: AppTextStyles.caption().copyWith(fontSize: 10),
               ),
             ],
           ),
@@ -298,11 +259,12 @@ class _BuildAmountColumn extends StatelessWidget {
   final double amount;
   final Color color;
   final bool isMain;
-  const _BuildAmountColumn(
-      {required this.label,
-      required this.amount,
-      required this.color,
-      this.isMain = false});
+  const _BuildAmountColumn({
+    required this.label,
+    required this.amount,
+    required this.color,
+    this.isMain = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -311,18 +273,17 @@ class _BuildAmountColumn extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: AppTextStyles.caption().copyWith(
+            color: AppColors.textSecondary,
             fontSize: 12,
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w500,
+            letterSpacing: 0.4,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           NumberFormatter.format(amount),
-          style: TextStyle(
+          style: AppTextStyles.titleMedium().copyWith(
             fontSize: isMain ? 18 : 15,
-            fontWeight: FontWeight.w700,
             color: color,
           ),
         ),

@@ -1,5 +1,5 @@
-/// Zakup Entity
-/// Xarid (Zakup) obyekti - biznes mantik uchun asosiy model
+// Zakup Entity
+// Xarid (Zakup) obyekti - biznes mantik uchun asosiy model
 
 import 'package:equatable/equatable.dart';
 

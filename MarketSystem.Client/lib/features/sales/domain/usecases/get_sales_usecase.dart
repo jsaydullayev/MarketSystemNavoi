@@ -1,5 +1,5 @@
-/// Get Sales Use Case
-/// Barcha sotuvlarni olish biznes mantig'i
+// Get Sales Use Case
+// Barcha sotuvlarni olish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/sale_entity.dart';

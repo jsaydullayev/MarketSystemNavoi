@@ -1,5 +1,5 @@
-/// Customer Repository Interface
-/// Mijoz repository interfeysi - data layer uchun kontrakt
+// Customer Repository Interface
+// Mijoz repository interfeysi - data layer uchun kontrakt
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/customer_entity.dart';

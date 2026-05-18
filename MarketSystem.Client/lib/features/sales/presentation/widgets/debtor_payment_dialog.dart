@@ -1,11 +1,26 @@
-﻿import 'package:flutter/material.dart';
+// Bottom-sheet for accepting a debt payment from a debtor. Mirrors the
+// "8.4 Qarz to'lov qabul qilish" page in the HTML demo: customer info row,
+// amber-gradient balance card, TO'LANADI input, quick amounts, payment-type
+// selector and a green "QABUL QILGANDAN KEYIN" preview, ending with
+// AppPrimary + AppSecondary buttons.
+//
+// Public API (`showDebtorPaymentSheet` helper and `DebtorPaymentSheet` widget)
+// is preserved so other screens that already call into this file keep working.
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:market_system_client/core/providers/auth_provider.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/data/services/sales_service.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
+import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:market_system_client/core/providers/auth_provider.dart';
-import 'package:market_system_client/data/services/sales_service.dart';
-import 'package:market_system_client/core/utils/number_formatter.dart';
 
-// Chaqirish uchun helper funksiya
+/// Helper that opens the sheet. Kept top-level so existing call sites that
+/// used the legacy free function continue to compile unchanged.
 Future<void> showDebtorPaymentSheet(
   BuildContext context, {
   required dynamic debtor,
@@ -41,40 +56,30 @@ class DebtorPaymentSheet extends StatefulWidget {
 }
 
 class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
-  late TextEditingController _amountController;
-  String? _selectedPaymentType;
+  late final TextEditingController _amountController;
+  // Cash is pre-selected so a tap on "Tasdiqlash" works in one go, matching
+  // the demo. The user can still switch to Karta. Keeping it nullable would
+  // force the cashier to make two taps every time.
+  String _selectedPaymentType = 'Cash';
   bool _isLoading = false;
 
-  static const _paymentTypes = [
-    _PaymentOption(
-        type: 'Cash',
-        label: 'Naqd',
-        icon: Icons.payments_outlined,
-        color: Colors.green),
-    _PaymentOption(
-        type: 'Terminal',
-        label: 'Karta',
-        icon: Icons.credit_card_outlined,
-        color: Colors.blue),
-    _PaymentOption(
-        type: 'Transfer',
-        label: 'Hisob',
-        icon: Icons.account_balance_outlined,
-        color: Colors.purple),
-    _PaymentOption(
-        type: 'Click',
-        label: 'Click',
-        icon: Icons.phone_android_outlined,
-        color: Colors.orange),
-  ];
+  double get _remainingDebt =>
+      (widget.debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
+
+  double get _entered =>
+      double.tryParse(
+        _amountController.text.replaceAll(',', '.').replaceAll(' ', ''),
+      ) ??
+      0;
 
   @override
   void initState() {
     super.initState();
-    final remainingDebt =
-        (widget.debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
-    _amountController =
-        TextEditingController(text: remainingDebt.toStringAsFixed(0));
+    final v = _remainingDebt;
+    _amountController = TextEditingController(
+      text: v == v.truncateToDouble() ? v.toInt().toString() : v.toString(),
+    );
+    _amountController.addListener(() => setState(() {}));
   }
 
   @override
@@ -83,19 +88,25 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
     super.dispose();
   }
 
+  void _applyQuickAdd(double delta) {
+    final next = (_entered + delta).clamp(0, double.infinity);
+    _setAmount(next.toDouble());
+  }
+
+  void _setAmount(double value) {
+    final str = value == value.truncateToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(2);
+    _amountController.text = str;
+  }
+
   Future<void> _onConfirm() async {
     final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
 
-    final amount =
-        double.tryParse(_amountController.text.replaceAll(',', '.').trim()) ??
-            0;
-
+    final amount = _entered;
     if (amount <= 0) {
-      _showSnack(l10n.enterValidAmount, isError: true);
-      return;
-    }
-    if (_selectedPaymentType == null) {
-      _showSnack(l10n.selectPaymentMethod, isError: true);
+      _showSnack(messenger, l10n.enterValidAmount, isError: true);
       return;
     }
 
@@ -110,267 +121,364 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
           .where((sale) => sale['customerId'] == customerId)
           .toList();
 
-      if (debtorSales.isEmpty) throw Exception(l10n.noDebtSalesFound);
+      if (debtorSales.isEmpty) {
+        throw Exception(l10n.noDebtSalesFound);
+      }
 
       await salesService.addPayment(
         saleId: debtorSales[0]['id'],
-        paymentType: _selectedPaymentType!,
+        paymentType: _selectedPaymentType,
         amount: amount,
       );
 
       if (mounted) {
         Navigator.pop(context);
         _showSnack(
-          "${l10n.paymentSuccess}: ${NumberFormatter.formatDecimal(amount)} ${l10n.currencySom}",
+          messenger,
+          '${l10n.paymentSuccess}: ${NumberFormatter.formatDecimal(amount)} ${l10n.currencySom}',
           isError: false,
         );
         widget.onPaymentSuccess();
       }
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) _showSnack('${l10n.error}: $e', isError: true);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnack(messenger, '${l10n.error}: $e', isError: true);
+      }
     }
   }
 
-  void _showSnack(String msg, {required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? Colors.red : Colors.green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-    ));
+  void _showSnack(ScaffoldMessengerState messenger, String msg,
+      {required bool isError}) {
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-    final customerName = widget.debtor['customerName'] ?? l10n.noCustomer;
-    final remainingDebt =
-        (widget.debtor['remainingDebt'] as num?)?.toDouble() ?? 0.0;
-    final initial =
-        customerName.isNotEmpty ? customerName[0].toUpperCase() : '?';
+    final remaining = _remainingDebt;
+    final entered = _entered;
+    final newBalance =
+        (remaining - entered).clamp(0, double.infinity).toDouble();
 
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + bottomPadding),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xl2,
+        0,
+        AppSpacing.xl2,
+        AppSpacing.xl3 + bottomPadding,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(
+                    top: AppSpacing.lg, bottom: AppSpacing.xl2),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+            _CustomerRow(debtor: widget.debtor),
+            const SizedBox(height: AppSpacing.lg),
+
+            _BalanceCard(remaining: remaining),
+            const SizedBox(height: AppSpacing.xl),
+
+            Text(
+              "MIJOZ QANCHA TO'LAYDI?",
+              style: AppTextStyles.caption().copyWith(
+                color: AppColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            _PayAmountInput(
+              controller: _amountController,
+              currencyLabel: l10n.currencySom,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            _QuickAmounts(
+              remaining: remaining,
+              onAdd: _applyQuickAdd,
+              onSet: _setAmount,
+              onClear: () => _amountController.text = '0',
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            Text(
+              "TO'LOV USULI",
+              style: AppTextStyles.caption().copyWith(
+                color: AppColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            _PayMethodGrid(
+              selected: _selectedPaymentType,
+              onChanged: (v) => setState(() => _selectedPaymentType = v),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            _NewBalanceCard(
+              newBalance: newBalance,
+              customerName:
+                  widget.debtor['customerName'] ?? l10n.noCustomer,
+              currencyLabel: l10n.currencySom,
+            ),
+            const SizedBox(height: AppSpacing.xl2),
+
+            AppPrimaryButton(
+              label: l10n.pay,
+              onPressed: _isLoading ? null : _onConfirm,
+              icon: Icons.check_rounded,
+              isLoading: _isLoading,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppSecondaryButton(
+              label: l10n.cancel,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomerRow extends StatelessWidget {
+  const _CustomerRow({required this.debtor});
+  final dynamic debtor;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final customerName = (debtor['customerName'] as String?) ?? l10n.noCustomer;
+    final phone = debtor['customerPhone'] as String?;
+    final initial = customerName.isNotEmpty
+        ? customerName.characters.first.toUpperCase()
+        : '?';
+    final avatarColor = CustomerAvatarPalette.pick(customerName);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.borderSoft,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration:
+                BoxDecoration(color: avatarColor, shape: BoxShape.circle),
+            alignment: Alignment.center,
+            child: Text(
+              initial,
+              style: AppTextStyles.labelLarge().copyWith(color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  customerName,
+                  style: AppTextStyles.labelLarge(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (phone != null && phone.isNotEmpty)
+                  Text(
+                    phone,
+                    style: AppTextStyles.bodySmall().copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Amber gradient balance card (matches "8.4" balance-card pattern).
+class _BalanceCard extends StatelessWidget {
+  const _BalanceCard({required this.remaining});
+  final double remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFB45309), Color(0xFFF59E0B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.22),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        children: [
+          _BalanceRow(
+              label: l10n.totalDebt,
+              value: NumberFormatter.format(remaining),
+              currency: l10n.currencySom),
+          const SizedBox(height: AppSpacing.sm),
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.2)),
+          const SizedBox(height: AppSpacing.sm),
+          _BalanceRow(
+            label: l10n.remainingDebt,
+            value: NumberFormatter.format(remaining),
+            currency: l10n.currencySom,
+            isBig: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BalanceRow extends StatelessWidget {
+  const _BalanceRow({
+    required this.label,
+    required this.value,
+    required this.currency,
+    this.isBig = false,
+  });
+  final String label;
+  final String value;
+  final String currency;
+  final bool isBig;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodyMedium().copyWith(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: isBig ? 14 : 13,
+          ),
+        ),
+        Text(
+          '$value $currency',
+          style: (isBig
+                  ? AppTextStyles.titleLarge()
+                  : AppTextStyles.bodyMedium())
+              .copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PayAmountInput extends StatelessWidget {
+  const _PayAmountInput(
+      {required this.controller, required this.currencyLabel});
+  final TextEditingController controller;
+  final String currencyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.brandLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 20),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-
-          // Mijoz info row
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.green.shade400, Colors.green.shade600],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Text(initial,
-                      style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white)),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      customerName,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : const Color(0xFF1F2937),
-                      ),
-                    ),
-                    Text(l10n.payDebt,
-                        style:
-                            TextStyle(fontSize: 12, color: Colors.grey[500])),
-                  ],
-                ),
-              ),
-              // Qarz miqdori
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(l10n.debt,
-                        style: TextStyle(
-                            fontSize: 10, color: Colors.red.withValues(alpha: 0.7))),
-                    Text(
-                      '${NumberFormatter.formatDecimal(remainingDebt)} ${l10n.currencySom}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Miqdor input
-          TextField(
-            controller: _amountController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            decoration: InputDecoration(
-              labelText: l10n.paymentAmount,
-              prefixIcon: const Icon(Icons.monetization_on_outlined),
-              suffixText: l10n.currencySom,
-              filled: true,
-              fillColor: isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : Colors.grey.withValues(alpha: 0.07),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Colors.green, width: 1.5),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // To'lov usuli
           Text(
-            l10n.paymentMethod,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.grey[300] : Colors.grey[700],
+            "TO'LANADI",
+            style: AppTextStyles.caption().copyWith(
+              color: AppColors.brandDark,
+              letterSpacing: 0.8,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.xs),
           Row(
-            children: _paymentTypes.map((opt) {
-              final isSelected = _selectedPaymentType == opt.type;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () =>
-                        setState(() => _selectedPaymentType = opt.type),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? opt.color.withValues(alpha: 0.12)
-                            : isDark
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.grey.withValues(alpha: 0.07),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? opt.color : Colors.transparent,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(opt.icon,
-                              size: 22,
-                              color: isSelected ? opt.color : Colors.grey[500]),
-                          const SizedBox(height: 4),
-                          Text(
-                            opt.label,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected ? opt.color : Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 24),
-
-          // Tugmalar
-          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                child: TextField(
+                  controller: controller,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                  ],
+                  style: AppTextStyles.displayMedium().copyWith(
+                    color: AppColors.brandDark,
+                    fontSize: 26,
+                    letterSpacing: -0.5,
                   ),
-                  child: Text(l10n.cancel,
-                      style: TextStyle(color: Colors.grey[600])),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _onConfirm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+              const SizedBox(width: AppSpacing.md),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  currencyLabel,
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    color: AppColors.brandDark,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : Text(l10n.pay,
-                          style: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
@@ -381,14 +489,198 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
   }
 }
 
-class _PaymentOption {
-  final String type;
+class _QuickAmounts extends StatelessWidget {
+  const _QuickAmounts({
+    required this.remaining,
+    required this.onAdd,
+    required this.onSet,
+    required this.onClear,
+  });
+  final double remaining;
+  final ValueChanged<double> onAdd;
+  final ValueChanged<double> onSet;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.md,
+      children: [
+        _QuickButton(label: '+10K', onTap: () => onAdd(10000)),
+        _QuickButton(label: '+50K', onTap: () => onAdd(50000)),
+        _QuickButton(label: '+100K', onTap: () => onAdd(100000)),
+        _QuickButton(label: 'Yarim', onTap: () => onSet(remaining / 2)),
+        _QuickButton(label: 'Hammasi', onTap: () => onSet(remaining)),
+        _QuickButton(label: 'Tozalash', onTap: onClear, isDanger: true),
+      ],
+    );
+  }
+}
+
+class _QuickButton extends StatelessWidget {
+  const _QuickButton({
+    required this.label,
+    required this.onTap,
+    this.isDanger = false,
+  });
+  final String label;
+  final VoidCallback onTap;
+  final bool isDanger;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isDanger ? AppColors.danger : AppColors.text;
+    final bg = isDanger ? AppColors.dangerLight : AppColors.inputFill;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.bodyMedium().copyWith(
+            color: fg,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Two-column pay-method grid (Naqd / Karta) — Naqd is selected by default,
+/// the legacy four-method list (Transfer / Click) was dropped to match the
+/// demo. Backend still accepts only the two canonical values: 'Cash' and
+/// 'Terminal'.
+class _PayMethodGrid extends StatelessWidget {
+  const _PayMethodGrid({required this.selected, required this.onChanged});
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final methods = <_PayMethod>[
+      _PayMethod(value: 'Cash', label: l10n.cash, icon: Icons.payments_rounded),
+      _PayMethod(
+          value: 'Terminal',
+          label: l10n.card,
+          icon: Icons.credit_card_rounded),
+    ];
+    return Row(
+      children: [
+        for (var i = 0; i < methods.length; i++) ...[
+          if (i > 0) const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(methods[i].value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.lg + 2),
+                decoration: BoxDecoration(
+                  color: selected == methods[i].value
+                      ? AppColors.brand
+                      : AppColors.brandLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      methods[i].icon,
+                      size: 22,
+                      color: selected == methods[i].value
+                          ? Colors.white
+                          : AppColors.brand,
+                    ),
+                    const SizedBox(height: AppSpacing.xs + 2),
+                    Text(
+                      methods[i].label,
+                      style: AppTextStyles.bodyMedium().copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: selected == methods[i].value
+                            ? Colors.white
+                            : AppColors.brand,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PayMethod {
+  final String value;
   final String label;
   final IconData icon;
-  final Color color;
-  const _PaymentOption(
-      {required this.type,
-      required this.label,
-      required this.icon,
-      required this.color});
+  const _PayMethod(
+      {required this.value, required this.label, required this.icon});
+}
+
+class _NewBalanceCard extends StatelessWidget {
+  const _NewBalanceCard({
+    required this.newBalance,
+    required this.customerName,
+    required this.currencyLabel,
+  });
+  final double newBalance;
+  final String customerName;
+  final String currencyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.successLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'QABUL QILGANDAN KEYIN',
+            style: AppTextStyles.caption().copyWith(
+              color: AppColors.success,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${NumberFormatter.format(newBalance)} $currencyLabel',
+            style: AppTextStyles.titleLarge().copyWith(
+              color: AppColors.success,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            newBalance > 0
+                ? '${l10n.remaining} · $customerName'
+                : "Qarz to'liq yopiladi",
+            style: AppTextStyles.bodySmall().copyWith(
+              color: AppColors.success.withValues(alpha: 0.8),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

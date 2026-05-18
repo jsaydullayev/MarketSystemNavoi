@@ -30,7 +30,10 @@ class SuperAdminService {
   final HttpService _http;
 
   String get _basePath {
-    const segment = AppConfig.superAdminConsoleSegment;
+    // Resolved at runtime (debug builds fall back to a hardcoded dev segment;
+    // see AppConfig). Was `const` before — that's no longer legal now that
+    // AppConfig.superAdminConsoleSegment is a getter rather than a const field.
+    final segment = AppConfig.superAdminConsoleSegment;
     return '/_sa/$segment';
   }
 

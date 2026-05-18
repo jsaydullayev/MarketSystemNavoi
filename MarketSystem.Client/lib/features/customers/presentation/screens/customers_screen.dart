@@ -2,15 +2,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/add_customer_sheet.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/customers_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import '../bloc/customers_bloc.dart';
 import '../bloc/events/customers_event.dart';
 import '../bloc/states/customers_state.dart';
+
+/// Quick-filter taxonomy mirroring the demo's filter chips.
+enum _CustomerFilter { all, debtors, clean }
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -21,6 +26,7 @@ class CustomersScreen extends StatefulWidget {
 
 class _CustomersScreenState extends State<CustomersScreen> {
   final _searchController = TextEditingController();
+  _CustomerFilter _filter = _CustomerFilter.all;
 
   @override
   void initState() {
@@ -46,13 +52,24 @@ class _CustomersScreenState extends State<CustomersScreen> {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> _filterCustomers(
+  List<Map<String, dynamic>> _applyFilters(
       List<Map<String, dynamic>> customers) {
-    final query = _searchController.text.toLowerCase();
-    if (query.isEmpty) return customers;
+    final query = _searchController.text.toLowerCase().trim();
     return customers.where((c) {
-      return (c['fullName'] ?? '').toLowerCase().contains(query) ||
-          (c['phone'] ?? '').toLowerCase().contains(query);
+      final debt = (c['totalDebt'] as num?)?.toDouble() ?? 0.0;
+      switch (_filter) {
+        case _CustomerFilter.debtors:
+          if (debt <= 0) return false;
+          break;
+        case _CustomerFilter.clean:
+          if (debt > 0) return false;
+          break;
+        case _CustomerFilter.all:
+          break;
+      }
+      if (query.isEmpty) return true;
+      return (c['fullName'] ?? '').toString().toLowerCase().contains(query) ||
+          (c['phone'] ?? '').toString().toLowerCase().contains(query);
     }).toList();
   }
 
@@ -71,7 +88,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return BlocListener<CustomersBloc, CustomersState>(
       listener: (context, state) {
@@ -80,12 +96,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
               ? l10n.customerDeleted
               : l10n.customerAdded;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: Colors.green),
+            SnackBar(content: Text(msg), backgroundColor: AppColors.success),
           );
           context.read<CustomersBloc>().add(const GetCustomersEvent());
         } else if (state is CustomersError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+                content: Text(state.message),
+                backgroundColor: AppColors.danger),
           );
         }
       },
@@ -93,23 +111,71 @@ class _CustomersScreenState extends State<CustomersScreen> {
         onRetry: () =>
             context.read<CustomersBloc>().add(const GetCustomersEvent()),
         child: Scaffold(
-          backgroundColor: AppColors.getBg(isDark),
+          backgroundColor: AppColors.bg,
           appBar: CommonAppBar(
             title: l10n.customers,
             onRefresh: () =>
                 context.read<CustomersBloc>().add(const GetCustomersEvent()),
           ),
-          body: Column(
-            children: [
-              _SearchBar(controller: _searchController),
-              Expanded(child: _CustomersList(filter: _filterCustomers)),
-            ],
+          body: BlocBuilder<CustomersBloc, CustomersState>(
+            builder: (context, state) {
+              if (state is CustomersLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state is CustomersError) {
+                return _ErrorView(
+                  message: state.message,
+                  onRetry: () => context
+                      .read<CustomersBloc>()
+                      .add(const GetCustomersEvent()),
+                );
+              }
+              if (state is CustomersLoaded) {
+                final all =
+                    state.customers.map((e) => e.toJson()).toList();
+                final filtered = _applyFilters(all);
+                return RefreshIndicator(
+                  onRefresh: () async => context
+                      .read<CustomersBloc>()
+                      .add(const GetCustomersEvent()),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.xl,
+                      AppSpacing.xl,
+                      96,
+                    ),
+                    children: [
+                      _SearchBar(controller: _searchController),
+                      const SizedBox(height: AppSpacing.lg),
+                      _CustomersHero(customers: all),
+                      const SizedBox(height: AppSpacing.lg),
+                      _FilterChips(
+                        active: _filter,
+                        onChanged: (f) => setState(() => _filter = f),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      if (filtered.isEmpty)
+                        _EmptyView(
+                          isSearching: _searchController.text.isNotEmpty ||
+                              _filter != _CustomerFilter.all,
+                        )
+                      else
+                        ...filtered
+                            .map((c) => CustomersCard(customer: c)),
+                    ],
+                  ),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
           ),
-          floatingActionButton: FloatingActionButton.extended(
+          floatingActionButton: FloatingActionButton(
             onPressed: _openAddSheet,
-            icon: const Icon(Icons.person_add, color: Colors.white),
-            label: Text(l10n.addNewCustomer,
-                style: TextStyle(color: Colors.white)),
+            backgroundColor: AppColors.brand,
+            foregroundColor: Colors.white,
+            elevation: 4,
+            child: const Icon(Icons.add, size: 28),
           ),
         ),
       ),
@@ -124,69 +190,224 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: l10n.searchCustomer,
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: controller.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: controller.clear,
-                )
-              : null,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          filled: true,
-          fillColor: Colors.transparent,
+    return TextField(
+      controller: controller,
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+      decoration: InputDecoration(
+        hintText: l10n.searchCustomer,
+        hintStyle: AppTextStyles.bodyMedium().copyWith(
+          color: AppColors.textMuted,
+          fontSize: 15,
+        ),
+        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+        suffixIcon: controller.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear, color: AppColors.textMuted),
+                onPressed: controller.clear,
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.inputFill,
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl, vertical: AppSpacing.lg + 2),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
         ),
       ),
     );
   }
 }
 
-class _CustomersList extends StatelessWidget {
-  const _CustomersList({required this.filter});
-  final List<Map<String, dynamic>> Function(List<Map<String, dynamic>>) filter;
+/// Amber hero card with the JAMI QARZ total + three mini stats below
+/// (debtors / clean balance / count). Demo uses #B45309 → #F59E0B.
+class _CustomersHero extends StatelessWidget {
+  const _CustomersHero({required this.customers});
+  final List<Map<String, dynamic>> customers;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CustomersBloc, CustomersState>(
-      builder: (context, state) {
-        if (state is CustomersLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    final l10n = AppLocalizations.of(context)!;
+    final totalDebt = customers.fold<double>(
+      0,
+      (sum, c) => sum + ((c['totalDebt'] as num?)?.toDouble() ?? 0.0),
+    );
+    final debtors =
+        customers.where((c) => ((c['totalDebt'] as num?) ?? 0) > 0).length;
+    final clean = customers.length - debtors;
 
-        if (state is CustomersError) {
-          return _ErrorView(
-            message: state.message,
-            onRetry: () =>
-                context.read<CustomersBloc>().add(const GetCustomersEvent()),
-          );
-        }
-
-        if (state is CustomersLoaded) {
-          final filtered =
-              filter(state.customers.map((e) => e.toJson()).toList());
-
-          if (filtered.isEmpty) {
-            return _EmptyView(isSearching: false);
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async =>
-                context.read<CustomersBloc>().add(const GetCustomersEvent()),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: filtered.length,
-              itemBuilder: (_, i) => CustomersCard(customer: filtered[i]),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl2),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFB45309), Color(0xFFF59E0B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                l10n.totalDebt.toUpperCase(),
+                style: AppTextStyles.caption().copyWith(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  letterSpacing: 1.2,
+                ),
+              ),
+              Text(
+                '${customers.length} ${l10n.customer.toLowerCase()}',
+                style: AppTextStyles.bodySmall().copyWith(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          FittedBox(
+            child: Text(
+              '${NumberFormatter.format(totalDebt)} ${l10n.currencySom}',
+              style: AppTextStyles.displayLarge().copyWith(
+                color: Colors.white,
+                letterSpacing: -0.5,
+              ),
             ),
-          );
-        }
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              _HeroStat(value: '$debtors', label: l10n.debtor.toLowerCase()),
+              const SizedBox(width: AppSpacing.xl),
+              _HeroStat(value: '$clean', label: l10n.noDebt.toLowerCase()),
+              const SizedBox(width: AppSpacing.xl),
+              _HeroStat(
+                  value: '${customers.length}',
+                  label: l10n.total.toLowerCase()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-        return const Center(child: CircularProgressIndicator());
-      },
+class _HeroStat extends StatelessWidget {
+  const _HeroStat({required this.value, required this.label});
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.titleMedium().copyWith(
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall().copyWith(
+            color: Colors.white.withValues(alpha: 0.85),
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FilterChips extends StatelessWidget {
+  const _FilterChips({required this.active, required this.onChanged});
+  final _CustomerFilter active;
+  final ValueChanged<_CustomerFilter> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _Chip(
+            label: l10n.all,
+            isActive: active == _CustomerFilter.all,
+            onTap: () => onChanged(_CustomerFilter.all),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          _Chip(
+            label: l10n.debtors,
+            isActive: active == _CustomerFilter.debtors,
+            onTap: () => onChanged(_CustomerFilter.debtors),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          _Chip(
+            label: l10n.noDebt,
+            isActive: active == _CustomerFilter.clean,
+            onTap: () => onChanged(_CustomerFilter.clean),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip(
+      {required this.label, required this.isActive, required this.onTap});
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.brand : AppColors.inputFill,
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          border: Border.all(
+            color: isActive ? AppColors.brand : AppColors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.bodyMedium().copyWith(
+            color: isActive ? Colors.white : AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -198,18 +419,47 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(message,
-              style: const TextStyle(color: Colors.red),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          ElevatedButton(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl4),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.xl2),
+              decoration: const BoxDecoration(
+                color: AppColors.dangerLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cloud_off_rounded,
+                  color: AppColors.danger, size: 40),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              message,
+              style: AppTextStyles.bodyMedium()
+                  .copyWith(color: AppColors.danger),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            ElevatedButton.icon(
               onPressed: onRetry,
-              child: Text(AppLocalizations.of(context)!.retry)),
-        ],
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              label: Text(l10n.retry,
+                  style: const TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.brand,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl3,
+                    vertical: AppSpacing.lg),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -222,15 +472,25 @@ class _EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.xl3),
+            decoration: const BoxDecoration(
+              color: AppColors.inputFill,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.people_outline,
+                size: 56, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: AppSpacing.xl),
           Text(
             isSearching ? l10n.customerNotFound : l10n.noCustomers,
-            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            style: AppTextStyles.titleMedium()
+                .copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

@@ -1,5 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/reports/widgets/date_picker_row.dart';
 import 'package:market_system_client/features/reports/widgets/empty_report.dart';
 import 'package:market_system_client/features/reports/widgets/export_button.dart';
@@ -8,6 +10,11 @@ import 'package:market_system_client/features/reports/widgets/section_title.dart
 import 'package:market_system_client/features/reports/widgets/stat_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Ombor (warehouse) tab inside the Reports screen.
+///
+/// Layout: date selector, 2x2 KPI grid (count, incoming, sale value,
+/// potential profit), then the per-product inventory list capped at 50
+/// rows with an "and more" footer when the warehouse is larger.
 class InventoryReportTab extends StatelessWidget {
   final Map<String, dynamic>? report;
   final DateTime selectedDate;
@@ -16,6 +23,7 @@ class InventoryReportTab extends StatelessWidget {
   final bool canViewCostPrice;
 
   const InventoryReportTab({
+    super.key,
     required this.report,
     required this.selectedDate,
     required this.onDateChanged,
@@ -42,10 +50,11 @@ class InventoryReportTab extends StatelessWidget {
         (inventory.first as Map<String, dynamic>)['potentialProfit'] != null;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xl4),
       children: [
         DatePickerRow(selectedDate: selectedDate, onChanged: onDateChanged),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.xl),
         Row(
           children: [
             Expanded(
@@ -53,22 +62,22 @@ class InventoryReportTab extends StatelessWidget {
                 title: l10n.productCount,
                 value: '${inventory.length} ${l10n.piece}',
                 icon: Icons.inventory_2_outlined,
-                color: Colors.blue,
+                color: AppColors.brand,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: StatCard(
                 title: l10n.incomingPrice,
                 value:
                     '${NumberFormatter.formatDecimal(totalCost)} ${l10n.currencySom}',
                 icon: Icons.shopping_bag_outlined,
-                color: Colors.orange,
+                color: AppColors.warning,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
             Expanded(
@@ -77,49 +86,50 @@ class InventoryReportTab extends StatelessWidget {
                 value:
                     '${NumberFormatter.formatDecimal(totalSaleVal)} ${l10n.currencySom}',
                 icon: Icons.sell_outlined,
-                color: Colors.green,
+                color: AppColors.success,
               ),
             ),
             if (isOwner) ...[
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: StatCard(
                   title: l10n.potentialProfit,
                   value:
                       '${NumberFormatter.formatDecimal(potentialProfit)} ${l10n.currencySom}',
                   icon: Icons.trending_up_rounded,
-                  color: Colors.purple,
+                  color: const Color(0xFF8B5CF6),
                 ),
               ),
             ],
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.xl2),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             SectionTitle(title: l10n.productList),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md + 2, vertical: AppSpacing.xs),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.brandLight,
+                borderRadius: BorderRadius.circular(AppRadius.md - 2),
               ),
               child: Text(
                 '${l10n.total}: ${inventory.length} ${l10n.piece}',
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.blue,
-                    fontWeight: FontWeight.w600),
+                style: AppTextStyles.labelSmall().copyWith(
+                  fontSize: 12,
+                  color: AppColors.brand,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.md + 2),
         ...List.generate(
           inventory.length > 50 ? 50 : inventory.length,
           (i) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: InventoryItemCard(
               item: inventory[i] as Map<String, dynamic>,
               isOwner: isOwner,
@@ -129,15 +139,15 @@ class InventoryReportTab extends StatelessWidget {
         ),
         if (inventory.length > 50)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
             child: Center(
               child: Text(
                 l10n.andMoreProducts(inventory.length - 50),
-                style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                style: AppTextStyles.bodySmall().copyWith(fontSize: 13),
               ),
             ),
           ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.md),
         ExportButton(onTap: onExport),
       ],
     );

@@ -1,5 +1,11 @@
+// Reject-request dialog — migrated to the new design system. Operator
+// supplies a reason; the parent screen handles the actual reject API call.
+
 import 'package:flutter/material.dart';
 
+import '../../../../design/tokens/app_tokens.dart';
+import '../../../../design/tokens/app_typography.dart';
+import '../../../../design/widgets/app_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/models/registration_request.dart';
 
@@ -30,70 +36,146 @@ class _RejectRequestDialogState extends State<RejectRequestDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(l10n.superAdminRejectTitle),
-      content: SizedBox(
-        width: 400,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 460),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl2),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    Text(widget.request.fullName,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(widget.request.phone,
-                        style: const TextStyle(
-                            color: Color(0xFF64748B), fontSize: 13)),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerLight,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.danger,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: Text(
+                        l10n.superAdminRejectTitle,
+                        style: AppTextStyles.titleMedium(),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      color: AppColors.textSecondary,
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _reasonController,
-                maxLines: 3,
-                minLines: 2,
-                maxLength: 500,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: l10n.superAdminRejectReason,
-                  hintText: l10n.superAdminRejectReasonHint,
-                  border: const OutlineInputBorder(),
+                const SizedBox(height: AppSpacing.xl),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: AppColors.inputFill,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.request.fullName,
+                        style: AppTextStyles.labelLarge(),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.request.phone,
+                        style: AppTextStyles.bodySmall(),
+                      ),
+                    ],
+                  ),
                 ),
-                validator: (v) {
-                  final t = v?.trim() ?? '';
-                  if (t.isEmpty) return l10n.superAdminRejectReasonRequired;
-                  return null;
-                },
-              ),
-            ],
+                const SizedBox(height: AppSpacing.xl),
+                Text(
+                  l10n.superAdminRejectReason.toUpperCase(),
+                  style: AppTextStyles.caption().copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextFormField(
+                  controller: _reasonController,
+                  maxLines: 3,
+                  minLines: 2,
+                  maxLength: 500,
+                  autofocus: true,
+                  style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                  decoration: InputDecoration(
+                    hintText: l10n.superAdminRejectReasonHint,
+                    hintStyle: AppTextStyles.bodyMedium().copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 15,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.inputFill,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl,
+                      vertical: AppSpacing.lg + 2,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.md + 2),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.md + 2),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.md + 2),
+                      borderSide: const BorderSide(
+                          color: AppColors.brand, width: 1.5),
+                    ),
+                  ),
+                  validator: (v) {
+                    final t = v?.trim() ?? '';
+                    if (t.isEmpty) return l10n.superAdminRejectReasonRequired;
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppSecondaryButton(
+                        label: l10n.cancel,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: AppDangerButton(
+                        label: l10n.superAdminReject,
+                        icon: Icons.close,
+                        onPressed: _submit,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        ElevatedButton.icon(
-          onPressed: _submit,
-          icon: const Icon(Icons.close),
-          label: Text(l10n.superAdminReject),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.redAccent,
-            foregroundColor: Colors.white,
-          ),
-        ),
-      ],
     );
   }
 }

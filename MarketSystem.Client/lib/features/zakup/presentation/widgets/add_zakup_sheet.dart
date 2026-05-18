@@ -1,11 +1,22 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
+import 'package:market_system_client/design/widgets/app_text_input.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import '../bloc/zakup_bloc.dart';
 import '../bloc/events/zakup_event.dart';
 
+/// "Add zakup" (stock receive) modal bottom sheet — 2-step flow.
+///
+/// Step 0: pick a product from a searchable list.
+/// Step 1: enter quantity + cost price, see live total, submit.
+///
+/// Demo reference: `id="page-prod-receive"` (7.3 Stok kiritish). Step 1 in
+/// particular mirrors the per-product `.receive-item` card with its
+/// SONI / TANNARX / JAMI grid and dark-navy total summary card.
 class AddZakupSheet extends StatefulWidget {
   final List<dynamic> products;
 
@@ -43,6 +54,8 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
     super.initState();
     _filtered = widget.products;
     _searchController.addListener(_filter);
+    _qtyController.addListener(_recomputeTotal);
+    _priceController.addListener(_recomputeTotal);
   }
 
   @override
@@ -64,6 +77,11 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
     });
   }
 
+  void _recomputeTotal() {
+    // Trigger a rebuild so the JAMI / total card recalculates live.
+    setState(() {});
+  }
+
   void _selectProduct(dynamic product) {
     setState(() {
       _selectedProduct = product;
@@ -71,16 +89,27 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
     });
   }
 
+  double get _liveTotal {
+    final qty = double.tryParse(_qtyController.text.replaceAll(',', '.')) ?? 0;
+    final price = double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0;
+    return qty * price;
+  }
+
   void _submit() {
     final qty = int.tryParse(_qtyController.text.trim());
-    final price = double.tryParse(_priceController.text.trim());
+    final price = double.tryParse(_priceController.text.trim().replaceAll(',', '.'));
     final l10n = AppLocalizations.of(context)!;
 
     if (qty == null || qty <= 0 || price == null || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.fillAmountAndPrice),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          margin: const EdgeInsets.all(AppSpacing.xl),
         ),
       );
       return;
@@ -96,28 +125,29 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.72,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF151515) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        height: MediaQuery.of(context).size.height * 0.82,
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl2),
+          ),
         ),
-        child: _step == 0 ? _buildProductStep(isDark) : _buildPriceStep(isDark),
+        child: _step == 0 ? _buildProductStep() : _buildPriceStep(),
       ),
     );
   }
 
-  Widget _buildProductStep(bool isDark) {
+  // ── Step 0: product picker ──────────────────────────────────────────────
+  Widget _buildProductStep() {
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
-        _Handle(),
+        const _Handle(),
         _SheetHeader(
           title: l10n.selectProduct,
           onClose: () => Navigator.pop(context),
@@ -125,26 +155,16 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
 
         // Search
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: TextField(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl2,
+            0,
+            AppSpacing.xl2,
+            AppSpacing.lg,
+          ),
+          child: AppTextInput(
+            hint: l10n.searchProduct,
             controller: _searchController,
-            decoration: InputDecoration(
-              hintText: l10n.searchProduct,
-              hintStyle: TextStyle(
-                  color: isDark ? Colors.white30 : Colors.grey.shade400,
-                  fontSize: 14),
-              prefixIcon: Icon(Icons.search_rounded,
-                  color: isDark ? Colors.white38 : Colors.grey.shade400,
-                  size: 20),
-              filled: true,
-              fillColor:
-                  isDark ? Colors.white.withValues(alpha: 0.06) : Colors.grey.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            ),
+            prefixIcon: Icons.search_rounded,
           ),
         ),
 
@@ -152,13 +172,17 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
         Expanded(
           child: _filtered.isEmpty
               ? Center(
-                  child: Text(l10n.productNotFound,
-                      style: TextStyle(
-                          color:
-                              isDark ? Colors.white38 : Colors.grey.shade400)),
+                  child: Text(
+                    l10n.productNotFound,
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl2,
+                  ),
                   itemCount: _filtered.length,
                   itemBuilder: (_, i) {
                     final p = _filtered[i];
@@ -170,19 +194,15 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                     return GestureDetector(
                       onTap: () => _selectProduct(p),
                       child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
+                        margin: const EdgeInsets.only(bottom: AppSpacing.md),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                          horizontal: AppSpacing.xl,
+                          vertical: AppSpacing.lg,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.04)
-                              : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.06)
-                                : Colors.grey.shade100,
-                          ),
+                          color: AppColors.inputFill,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: Row(
                           children: [
@@ -190,44 +210,41 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                               width: 38,
                               height: 38,
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10),
+                                color: AppColors.brandLight,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
                               ),
-                              child: Icon(Icons.inventory_2_rounded,
-                                  color: AppColors.primary, size: 18),
+                              child: const Icon(
+                                Icons.inventory_2_rounded,
+                                color: AppColors.brand,
+                                size: 18,
+                              ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.lg),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     p['name'] ?? l10n.unknown,
-                                    style: TextStyle(
+                                    style: AppTextStyles.bodyMedium().copyWith(
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: isDark
-                                          ? Colors.white
-                                          : const Color(0xFF111111),
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     '$qtyStr ${l10n.piece}  •  ${NumberFormatter.format(p['salePrice'] ?? 0)} ${l10n.currencySom}',
-                                    style: TextStyle(
+                                    style: AppTextStyles.bodySmall().copyWith(
                                       fontSize: 12,
-                                      color: isDark
-                                          ? Colors.white38
-                                          : Colors.grey.shade500,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded,
-                                color: isDark
-                                    ? Colors.white24
-                                    : Colors.grey.shade300),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppColors.textMuted,
+                            ),
                           ],
                         ),
                       ),
@@ -235,19 +252,19 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                   },
                 ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.lg),
       ],
     );
   }
 
-  Widget _buildPriceStep(bool isDark) {
+  // ── Step 1: qty + cost price → live total, submit ───────────────────────
+  Widget _buildPriceStep() {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Handle(),
+        const _Handle(),
         _SheetHeader(
           title: l10n.zakup,
           onClose: () => Navigator.pop(context),
@@ -256,110 +273,133 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
 
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl2,
+              AppSpacing.xs,
+              AppSpacing.xl2,
+              0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Selected product chip
+                Text(
+                  l10n.zakup.toUpperCase(),
+                  style: AppTextStyles.caption().copyWith(letterSpacing: 0.8),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Per-product "receive-item" card: emoji tile + product name,
+                // then SONI / TANNARX / JAMI grid below.
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.all(AppSpacing.xl),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.border),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: const Icon(Icons.shopping_bag_rounded,
-                            color: Colors.white, size: 16),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _selectedProduct['name'] ?? '',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color:
-                                isDark ? Colors.white : const Color(0xFF111111),
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.brandLight,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.md),
+                            ),
+                            child: const Icon(
+                              Icons.shopping_bag_rounded,
+                              color: AppColors.brand,
+                              size: 20,
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: AppSpacing.lg),
+                          Expanded(
+                            child: Text(
+                              _selectedProduct['name'] ?? '',
+                              style: AppTextStyles.bodyLarge().copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      // Grid: SONI + TANNARX + JAMI
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: AppTextInput(
+                              label: l10n.number,
+                              hint: '0',
+                              controller: _qtyController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: AppTextInput(
+                              label: l10n.costPriceField,
+                              hint: '0',
+                              controller: _priceController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(child: _JamiTile(total: _liveTotal)),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
 
-                // Qty + Price fields
-                Row(
-                  children: [
-                    Expanded(
-                      child: _InputField(
-                        controller: _qtyController,
-                        label: l10n.number,
-                        icon: Icons.layers_rounded,
-                        isNum: true,
-                        isDark: isDark,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _InputField(
-                        controller: _priceController,
-                        label: l10n.costPriceField,
-                        icon: Icons.payments_rounded,
-                        isNum: true,
-                        isDark: isDark,
-                        suffix: l10n.currencySom,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: AppSpacing.xl2),
+
+                // Dark navy total card
+                _TotalCard(
+                  itemsLabel: '1 ${l10n.piece}',
+                  total: _liveTotal,
+                  currency: l10n.currencySom,
                 ),
               ],
             ),
           ),
         ),
 
-        // Buttons
+        // Footer buttons
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl2,
+            AppSpacing.lg,
+            AppSpacing.xl2,
+            AppSpacing.xl3 + AppSpacing.xs,
+          ),
           child: Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    side: BorderSide(color: theme.dividerColor),
-                  ),
+                child: AppSecondaryButton(
+                  label: l10n.cancel,
                   onPressed: () => Navigator.pop(context),
-                  child: Text(l10n.cancel,
-                      style: TextStyle(color: theme.hintColor)),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 flex: 2,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
+                child: AppPrimaryButton(
+                  label: l10n.add,
+                  icon: Icons.download_rounded,
                   onPressed: _submit,
-                  child: Text(l10n.add,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
               ),
             ],
@@ -371,16 +411,18 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
 }
 
 class _Handle extends StatelessWidget {
+  const _Handle();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 4),
+      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.xs),
       child: Center(
         child: Container(
           width: 40,
           height: 4,
           decoration: BoxDecoration(
-            color: Colors.grey.shade300,
+            color: AppColors.border,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -402,34 +444,37 @@ class _SheetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 8, 16),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl2,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xl,
+      ),
       child: Row(
         children: [
           if (onBack != null) ...[
             GestureDetector(
               onTap: onBack,
-              child: Icon(Icons.arrow_back_ios_new_rounded,
-                  size: 18,
-                  color: isDark ? Colors.white60 : Colors.grey.shade600),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.md + 2),
           ],
           Text(
             title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF111111),
-            ),
+            style: AppTextStyles.titleMedium(),
           ),
           const Spacer(),
           IconButton(
             onPressed: onClose,
-            icon: Icon(Icons.close_rounded,
-                color: isDark ? Colors.white38 : Colors.grey.shade400),
+            icon: const Icon(
+              Icons.close_rounded,
+              color: AppColors.textMuted,
+            ),
           ),
         ],
       ),
@@ -437,63 +482,118 @@ class _SheetHeader extends StatelessWidget {
   }
 }
 
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final IconData icon;
-  final bool isNum;
-  final bool isDark;
-  final String? suffix;
+class _JamiTile extends StatelessWidget {
+  final double total;
 
-  const _InputField({
-    required this.controller,
-    required this.label,
-    required this.icon,
-    required this.isNum,
-    required this.isDark,
-    this.suffix,
-  });
+  const _JamiTile({required this.total});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 2, bottom: 6),
-          child: Text(label,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white54 : Colors.grey.shade500)),
+        Text(
+          'JAMI',
+          style: AppTextStyles.caption().copyWith(
+            color: AppColors.textSecondary,
+            letterSpacing: 0.8,
+          ),
         ),
-        TextField(
-          controller: controller,
-          keyboardType: isNum
-              ? const TextInputType.numberWithOptions(decimal: true)
-              : TextInputType.text,
-          style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF111111)),
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 18, color: AppColors.primary),
-            suffixText: suffix,
-            filled: true,
-            fillColor:
-                isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
+        const SizedBox(height: AppSpacing.sm),
+        Container(
+          height: 46,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.brandLight,
+            borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              NumberFormatter.format(total),
+              style: AppTextStyles.bodyLarge().copyWith(
+                color: AppColors.brandDark,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: AppColors.primary, width: 1.5),
-            ),
-            contentPadding: const EdgeInsets.all(14),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Dark navy summary card at the bottom of the demo's stock-receive screen.
+/// Shows a small inventory readout and a big "Jami summa" line.
+class _TotalCard extends StatelessWidget {
+  final String itemsLabel;
+  final double total;
+  final String currency;
+
+  const _TotalCard({
+    required this.itemsLabel,
+    required this.total,
+    required this.currency,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111827),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Mahsulotlar',
+                style: AppTextStyles.bodyMedium().copyWith(
+                  color: Colors.white.withValues(alpha: 0.70),
+                ),
+              ),
+              Text(
+                itemsLabel,
+                style: AppTextStyles.bodyMedium().copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.10)),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Jami summa',
+                style: AppTextStyles.bodyLarge().copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                '${NumberFormatter.format(total)} $currency',
+                style: AppTextStyles.titleLarge().copyWith(
+                  color: AppColors.brand,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

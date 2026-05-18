@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/utils/file_helper.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/daily_sales/widgets/daily_summary_card.dart';
 import 'package:market_system_client/features/daily_sales/widgets/hourly_chart.dart';
 import 'package:market_system_client/features/daily_sales/widgets/sale_detail_sheet.dart';
@@ -93,7 +94,7 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: Theme.of(context).primaryColor,
+                  primary: AppColors.brand,
                 ),
           ),
           child: child!,
@@ -110,42 +111,37 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
   // ───────────────────────── Export ─────────────────────────
 
   Future<void> _showExportSheet() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) => SafeArea(
         child: Container(
-          margin: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+          margin: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xl),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border: Border.all(color: AppColors.border),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Eksport qilish',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
+                style: AppTextStyles.titleMedium().copyWith(fontSize: 16),
               ),
               const SizedBox(height: 4),
               Text(
                 DateFormat('dd MMMM, yyyy').format(_selectedDate),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.white60 : Colors.grey[600],
-                ),
+                style: AppTextStyles.bodySmall(),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xl),
               _ExportOption(
                 icon: Icons.picture_as_pdf_outlined,
-                color: const Color(0xFFEF4444),
+                color: AppColors.danger,
                 label: 'PDF formatda',
                 description: 'Sotuvlar ro\'yxati + jami',
                 onTap: () {
@@ -153,10 +149,10 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                   _exportPdf();
                 },
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.md),
               _ExportOption(
                 icon: Icons.table_chart_outlined,
-                color: const Color(0xFF10B981),
+                color: AppColors.success,
                 label: 'Excel formatda',
                 description: 'To\'liq hisobot (sotuvlar + mahsulotlar)',
                 onTap: () {
@@ -239,7 +235,7 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: success ? Colors.green : Colors.red,
+        backgroundColor: success ? AppColors.success : AppColors.danger,
       ),
     );
   }
@@ -255,7 +251,10 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => const SizedBox(
         height: 200,
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(
+            child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+        )),
       ),
     );
 
@@ -277,7 +276,9 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Xatolik: $e'),
+              backgroundColor: AppColors.danger),
         );
       }
     }
@@ -286,13 +287,11 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return NetworkWrapper(
       onRetry: _loadDailySales,
       child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
+        backgroundColor: AppColors.bg,
         appBar: CommonAppBar(
           title: l10n.dailySales,
           extraActions: [
@@ -302,23 +301,25 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
             IconButton(
               tooltip: 'Eksport',
               icon: _isExporting
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: theme.primaryColor,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppColors.brand),
                       ),
                     )
-                  : Icon(Icons.ios_share_rounded, color: theme.primaryColor),
+                  : const Icon(Icons.ios_share_rounded,
+                      color: AppColors.brand),
               onPressed: (_isExporting || _dailySales == null)
                   ? null
                   : _showExportSheet,
             ),
             IconButton(
               tooltip: 'Kalendar',
-              icon:
-                  Icon(Icons.calendar_month_rounded, color: theme.primaryColor),
+              icon: const Icon(Icons.calendar_month_rounded,
+                  color: AppColors.brand),
               onPressed: _selectDate,
             ),
           ],
@@ -328,8 +329,8 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
             constraints: const BoxConstraints(maxWidth: 800),
             child: Column(
               children: [
-                _buildDateBadge(theme, isDark),
-                Expanded(child: _buildBody(l10n, theme, isDark)),
+                _buildDateBadge(),
+                Expanded(child: _buildBody(l10n)),
               ],
             ),
           ),
@@ -338,43 +339,55 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     );
   }
 
-  Widget _buildDateBadge(ThemeData theme, bool isDark) {
+  Widget _buildDateBadge() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+      padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.lg, horizontal: AppSpacing.xl),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
         border: Border(
-            bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+          bottom: BorderSide(color: AppColors.borderSoft),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.event_available, size: 18, color: theme.primaryColor),
-          const SizedBox(width: 8),
+          const Icon(Icons.event_available,
+              size: 18, color: AppColors.brand),
+          const SizedBox(width: AppSpacing.md),
           Text(
             DateFormat('dd MMMM, yyyy').format(_selectedDate),
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBody(AppLocalizations l10n, ThemeData theme, bool isDark) {
-    final primary = Theme.of(context).primaryColor;
-
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+  Widget _buildBody(AppLocalizations l10n) {
+    if (_isLoading) {
+      return const Center(
+          child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand)));
+    }
 
     if (_error != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.cloud_off_rounded, size: 60, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(_error!, textAlign: TextAlign.center),
-            TextButton(onPressed: _loadDailySales, child: Text(l10n.loading)),
+            const Icon(Icons.cloud_off_rounded,
+                size: 60, color: AppColors.textMuted),
+            const SizedBox(height: AppSpacing.xl),
+            Text(_error!,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium()),
+            TextButton(
+                onPressed: _loadDailySales,
+                child: Text(l10n.loading,
+                    style: AppTextStyles.labelLarge()
+                        .copyWith(color: AppColors.brand))),
           ],
         ),
       );
@@ -386,9 +399,11 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.receipt_long_outlined,
-                size: 80, color: theme.disabledColor.withOpacity(0.2)),
-            const SizedBox(height: 16),
-            Text(l10n.noData, style: TextStyle(color: theme.disabledColor)),
+                size: 80, color: AppColors.textMuted.withValues(alpha: 0.4)),
+            const SizedBox(height: AppSpacing.xl),
+            Text(l10n.noData,
+                style: AppTextStyles.bodyMedium()
+                    .copyWith(color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -398,18 +413,19 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     final hasFilter = _filter != DailySaleFilter.all;
 
     return RefreshIndicator(
+      color: AppColors.brand,
       onRefresh: _loadDailySales,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
           DailySummaryCard(
             data: _dailySales!,
             selectedFilter: _filter,
             onFilterChanged: (f) => setState(() => _filter = f),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           HourlyChart(sales: _dailySales!.sales),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.xl),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -417,30 +433,29 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                 children: [
                   Text(
                     l10n.sales,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w800),
+                    style: AppTextStyles.labelLarge().copyWith(fontSize: 15),
                   ),
                   if (hasFilter) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.md),
                     GestureDetector(
                       onTap: () =>
                           setState(() => _filter = DailySaleFilter.all),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                            horizontal: AppSpacing.md, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _filterColor(_filter).withOpacity(0.14),
-                          borderRadius: BorderRadius.circular(999),
+                          color: _filterColor(_filter).withValues(alpha: 0.14),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.full),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               _filterLabel(_filter, l10n),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                              style: AppTextStyles.caption().copyWith(
                                 color: _filterColor(_filter),
+                                fontSize: 10,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -454,34 +469,31 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: 4),
                 decoration: BoxDecoration(
-                  color: theme.primaryColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(999),
+                  color: AppColors.brandLight,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
                 child: Text(
                   '${visible.length} ${l10n.piece}',
-                  style: TextStyle(
-                    color: isDark ? Colors.white : primary,
-                    fontWeight: FontWeight.w700,
+                  style: AppTextStyles.caption().copyWith(
+                    color: AppColors.brandDark,
                     fontSize: 11,
+                    letterSpacing: 0,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md),
           if (visible.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl3),
               child: Center(
                 child: Text(
                   l10n.noData,
-                  style: TextStyle(
-                    color: theme.disabledColor,
-                    fontSize: 13,
-                  ),
+                  style: AppTextStyles.bodySmall(),
                 ),
               ),
             )
@@ -501,11 +513,11 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
   Color _filterColor(DailySaleFilter f) {
     switch (f) {
       case DailySaleFilter.paid:
-        return const Color(0xFF4ADE80);
+        return AppColors.success;
       case DailySaleFilter.debt:
-        return const Color(0xFFFCD34D);
+        return AppColors.warning;
       case DailySaleFilter.all:
-        return Colors.grey;
+        return AppColors.textMuted;
     }
   }
 
@@ -538,18 +550,18 @@ class _ExportOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.04) : color.withOpacity(0.06),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withOpacity(0.3)),
+            color: color.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -557,12 +569,12 @@ class _ExportOption extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(10),
+                  color: color.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Icon(icon, color: color, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,26 +582,20 @@ class _ExportOption extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
+                      style:
+                          AppTextStyles.labelLarge().copyWith(fontSize: 14),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       description,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.white60 : Colors.grey[600],
-                      ),
+                      style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
                     ),
                   ],
                 ),
               ),
-              Icon(
+              const Icon(
                 Icons.chevron_right_rounded,
-                color: isDark ? Colors.white38 : Colors.grey,
+                color: AppColors.textMuted,
                 size: 22,
               ),
             ],

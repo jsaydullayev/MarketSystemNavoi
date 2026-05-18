@@ -1,5 +1,5 @@
-/// Auth Bloc Provider
-/// Provides AuthBloc to widget tree
+// Auth Bloc Provider
+// Provides AuthBloc to widget tree
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/features/reports/widgets/daily_report_tab.dart';
 import 'package:market_system_client/features/reports/widgets/inventory_reporttab.dart';
 import 'package:market_system_client/features/reports/widgets/monthly_report_tab.dart';
@@ -150,24 +150,24 @@ class _ReportsScreenState extends State<ReportsScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: isError ? Colors.red : Colors.green,
+      backgroundColor: isError ? AppColors.danger : AppColors.success,
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg)),
+      margin: const EdgeInsets.all(AppSpacing.xl),
     ));
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final canViewCostPrice = authProvider.user?['role'] != 'Seller';
 
     return NetworkWrapper(
       onRetry: _loadReports,
       child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
+        backgroundColor: AppColors.bg,
         appBar: CommonAppBar(
           title: l10n.reports,
           extraActions: [
@@ -178,7 +178,9 @@ class _ReportsScreenState extends State<ReportsScreen>
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2,
+                        color: AppColors.brand,
+                      ),
                     ),
                   )
                 : IconButton(
@@ -193,8 +195,11 @@ class _ReportsScreenState extends State<ReportsScreen>
           ),
         ),
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.brand),
+              )
             : RefreshIndicator(
+                color: AppColors.brand,
                 onRefresh: _loadReports,
                 child: TabBarView(
                   controller: _tabController,

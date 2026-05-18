@@ -13,6 +13,9 @@ appsettings.Local.json
 **/appsettings.Development.json
 **/appsettings.Local.json
 
+# Claude Code workspace artifacts
+.claude/
+
 
 # User-specific files
 *.rsuser

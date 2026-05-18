@@ -1,5 +1,5 @@
-/// Product Model
-/// Data transfer object for products
+// Product Model
+// Data transfer object for products
 
 import '../../domain/entities/product_entity.dart';
 

@@ -1,5 +1,5 @@
-/// Customers BLoC
-/// Customers state management
+// Customers BLoC
+// Customers state management
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/create_customer_usecase.dart';

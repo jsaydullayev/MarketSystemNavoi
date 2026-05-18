@@ -1,5 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/custom_text_field.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/phone_validator.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -34,8 +37,10 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
-    final initialDebt =
-        _hasDebt ? double.tryParse(_debtAmountController.text.trim().replaceAll(',', '.')) : null;
+    final initialDebt = _hasDebt
+        ? double.tryParse(
+            _debtAmountController.text.trim().replaceAll(',', '.'))
+        : null;
 
     context.read<CustomersBloc>().add(
           CreateCustomerEvent(
@@ -54,20 +59,18 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).primaryColor;
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        top: 24,
-        left: 20,
-        right: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl3,
+        top: AppSpacing.xl3,
+        left: AppSpacing.xl2,
+        right: AppSpacing.xl2,
       ),
       child: SingleChildScrollView(
         child: Form(
@@ -81,72 +84,61 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: AppColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Header
+              const SizedBox(height: AppSpacing.xl2),
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(AppSpacing.md + 2),
                     decoration: BoxDecoration(
-                      color: primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.brandLight,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
-                    child: Icon(Icons.person_add_rounded,
-                        color: primary, size: 22),
+                    child: const Icon(Icons.person_add_rounded,
+                        color: AppColors.brand, size: 22),
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    l10n.addNewCustomer,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Text(l10n.addNewCustomer,
+                      style: AppTextStyles.titleMedium()),
                 ],
               ),
-              const SizedBox(height: 24),
-
+              const SizedBox(height: AppSpacing.xl2),
+              CustomTextField(
+                controller: _fullNameController,
+                label: l10n.fullName,
+                icon: Icons.person_rounded,
+                helperText: "Mijoz uchun chiroyli ko'rinadigan nom",
+              ),
+              const SizedBox(height: AppSpacing.lg),
               CustomTextField(
                 controller: _phoneController,
                 label: l10n.phoneNumber,
                 icon: Icons.phone_rounded,
                 keyboardType: TextInputType.phone,
+                helperText: 'SMS eslatma yuborish uchun kerak',
                 validator: (value) =>
                     PhoneValidator.validate(value, l10n: l10n),
               ),
-              const SizedBox(height: 14),
-
-              CustomTextField(
-                controller: _fullNameController,
-                label: l10n.fullNameOptional,
-                icon: Icons.person_rounded,
-              ),
-              const SizedBox(height: 14),
-
+              const SizedBox(height: AppSpacing.lg),
               CustomTextField(
                 controller: _commentController,
                 label: l10n.commentOptional,
                 icon: Icons.comment_rounded,
                 maxLines: 2,
               ),
-              const SizedBox(height: 20),
-
+              const SizedBox(height: AppSpacing.xl),
               Text(
-                l10n.debtStatus,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white70 : Colors.black54,
-                  fontSize: 13,
+                l10n.debtStatus.toUpperCase(),
+                style: AppTextStyles.caption().copyWith(
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.8,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
               DebtToggle(
                 hasDebt: _hasDebt,
                 onChanged: (value) => setState(() {
@@ -154,9 +146,8 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                   if (!value) _debtAmountController.clear();
                 }),
               ),
-
               if (_hasDebt) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: AppSpacing.lg),
                 CustomTextField(
                   controller: _debtAmountController,
                   label: l10n.debtAmountSom,
@@ -173,67 +164,68 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.md),
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.orange.shade200),
+                    color: AppColors.warningLight,
+                    borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                    border: Border.all(
+                        color: AppColors.warning.withValues(alpha: 0.4)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline,
-                          size: 16, color: Colors.orange.shade700),
-                      const SizedBox(width: 8),
+                      const Icon(Icons.info_outline,
+                          size: 16, color: AppColors.warning),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           l10n.debtRecordWillBeCreated,
-                          style: TextStyle(
-                              fontSize: 12, color: Colors.orange.shade700),
+                          style: AppTextStyles.bodySmall().copyWith(
+                            color: AppColors.warning,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
-
-              const SizedBox(height: 28),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: Text(l10n.cancel),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
-                      ),
+              const SizedBox(height: AppSpacing.xl),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: AppColors.brandLight,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.lightbulb_outline,
+                        color: AppColors.brandDark, size: 18),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
                       child: Text(
-                        l10n.add,
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15),
+                        "Yangi mijozni qo'shgach, har sotuvda uni tanlash mumkin va qarz tarixi avtomatik yuritiladi.",
+                        style: AppTextStyles.bodySmall().copyWith(
+                          color: AppColors.brandDark,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl2),
+              AppPrimaryButton(
+                label: l10n.add,
+                onPressed: _submit,
+                icon: Icons.check_rounded,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppSecondaryButton(
+                label: l10n.cancel,
+                onPressed: () => Navigator.pop(context),
               ),
             ],
           ),

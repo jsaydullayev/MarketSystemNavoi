@@ -1,4 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class ReturnQuantityDialog extends StatefulWidget {
@@ -42,14 +45,14 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl2)),
+      backgroundColor: AppColors.surface,
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xl3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,25 +63,25 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(11),
+                    color: AppColors.dangerLight,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: Icon(Icons.assignment_return_rounded,
-                      color: Colors.orange.shade700, size: 20),
+                  child: const Icon(Icons.assignment_return_rounded,
+                      color: AppColors.danger, size: 20),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         l10n.returnProduct,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w800),
+                        style: AppTextStyles.titleMedium()
+                            .copyWith(fontSize: 16),
                       ),
                       Text(
                         widget.productName,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: AppTextStyles.bodySmall(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -87,32 +90,30 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
 
             // Mavjud miqdor
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.grey.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(l10n.availableQuantity,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                      style: AppTextStyles.bodySmall()),
                   Text(
                     '${widget.maxQuantity % 1 == 0 ? widget.maxQuantity.toInt() : widget.maxQuantity}',
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+                    style: AppTextStyles.labelLarge().copyWith(fontSize: 15),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
 
             // Input
             TextField(
@@ -120,66 +121,50 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: AppTextStyles.bodyLarge(),
               decoration: InputDecoration(
                 labelText: l10n.returnQuantity,
+                labelStyle:
+                    AppTextStyles.bodyMedium().copyWith(color: AppColors.textSecondary),
                 errorText: _isValid ? null : l10n.invalidQuantity,
                 filled: true,
-                fillColor: isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.grey.withValues(alpha: 0.06),
+                fillColor: AppColors.inputFill,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   borderSide:
-                      BorderSide(color: Colors.orange.shade400, width: 1.5),
+                      const BorderSide(color: AppColors.brand, width: 1.5),
                 ),
                 errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderSide: const BorderSide(
+                      color: AppColors.danger, width: 1.5),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
               ),
               onChanged: _onChanged,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
 
             // Tugmalar
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: AppSecondaryButton(
+                    label: l10n.cancel,
                     onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(l10n.cancel,
-                        style: TextStyle(color: Colors.grey[600])),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isValid
-                        ? () => Navigator.pop(context, _returnQty)
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(l10n.returnAction,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                  child: AppDangerButton(
+                    label: l10n.returnAction,
+                    onPressed:
+                        _isValid ? () => Navigator.pop(context, _returnQty) : null,
                   ),
                 ),
               ],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/providers/auth_provider.dart';
@@ -31,37 +33,36 @@ class DailySummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final isOwner = auth.user?['role'] == 'Owner';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
-        if (isOwner) _buildProfitHero(context, isDark, l10n),
-        if (isOwner) const SizedBox(height: 12),
-        _buildMiniStatsRow(context, isDark, l10n),
+        if (isOwner) _buildProfitHero(context, l10n),
+        if (isOwner) const SizedBox(height: AppSpacing.lg),
+        _buildMiniStatsRow(context, l10n),
       ],
     );
   }
 
-  Widget _buildProfitHero(
-      BuildContext context, bool isDark, AppLocalizations l10n) {
+  Widget _buildProfitHero(BuildContext context, AppLocalizations l10n) {
     final profit = data.summaryProfit ?? 0;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+      padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.xl2, horizontal: AppSpacing.xl2),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1E3A8A), Color(0xFF1843B8)],
+          colors: [AppColors.brand, AppColors.brandDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1843B8).withOpacity(0.25),
+            color: AppColors.brand.withValues(alpha: 0.25),
             blurRadius: 18,
             offset: const Offset(0, 8),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -69,67 +70,60 @@ class DailySummaryCard extends StatelessWidget {
         children: [
           Text(
             l10n.netProfit.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 11,
+            style: AppTextStyles.caption().copyWith(
+              color: Colors.white.withValues(alpha: 0.85),
               letterSpacing: 1.2,
-              color: Colors.white70,
-              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 6),
           FittedBox(
             child: Text(
               '${profit >= 0 ? '+' : ''}${_fmt(profit)} ${l10n.currencySom}',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w900,
+              style: AppTextStyles.displayLarge().copyWith(
+                color: Colors.white,
                 letterSpacing: -0.5,
-                color: profit >= 0 ? const Color(0xFF4ADE80) : Colors.redAccent,
               ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             DateFormat('dd MMMM, yyyy').format(data.date),
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.white60,
-            ),
+            style: AppTextStyles.bodySmall()
+                .copyWith(color: Colors.white.withValues(alpha: 0.85)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMiniStatsRow(
-      BuildContext context, bool isDark, AppLocalizations l10n) {
+  Widget _buildMiniStatsRow(BuildContext context, AppLocalizations l10n) {
     return Row(
       children: [
         Expanded(
           child: _MiniStat(
             label: l10n.totalSale,
             value: data.totalSales,
-            color: isDark ? Colors.white : Colors.black87,
+            color: AppColors.text,
             isSelected: selectedFilter == DailySaleFilter.all,
             onTap: () => onFilterChanged(DailySaleFilter.all),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _MiniStat(
             label: l10n.paid,
             value: data.totalPaidSales,
-            color: const Color(0xFF4ADE80),
+            color: AppColors.success,
             isSelected: selectedFilter == DailySaleFilter.paid,
             onTap: () => onFilterChanged(DailySaleFilter.paid),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _MiniStat(
             label: l10n.debt,
             value: data.totalDebtSales,
-            color: const Color(0xFFFCD34D),
+            color: AppColors.warning,
             isSelected: selectedFilter == DailySaleFilter.debt,
             onTap: () => onFilterChanged(DailySaleFilter.debt),
           ),
@@ -164,26 +158,24 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.lg, horizontal: AppSpacing.md),
           decoration: BoxDecoration(
             color: isSelected
-                ? color.withOpacity(0.10)
-                : (isDark ? const Color(0xFF1E293B) : Colors.white),
-            borderRadius: BorderRadius.circular(14),
+                ? color.withValues(alpha: 0.10)
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
               color: isSelected
-                  ? color.withOpacity(0.55)
-                  : (isDark
-                      ? Colors.white12
-                      : Colors.black.withOpacity(0.06)),
+                  ? color.withValues(alpha: 0.55)
+                  : AppColors.border,
               width: isSelected ? 1.5 : 1,
             ),
           ),
@@ -193,11 +185,9 @@ class _MiniStat extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
+                style: AppTextStyles.caption().copyWith(
                   fontSize: 10,
                   letterSpacing: 0.4,
-                  color: isDark ? Colors.white60 : Colors.grey[600],
-                  fontWeight: FontWeight.w600,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -206,9 +196,8 @@ class _MiniStat extends StatelessWidget {
               FittedBox(
                 child: Text(
                   _short(value),
-                  style: TextStyle(
+                  style: AppTextStyles.titleMedium().copyWith(
                     fontSize: 16,
-                    fontWeight: FontWeight.w800,
                     color: color,
                     letterSpacing: -0.3,
                   ),

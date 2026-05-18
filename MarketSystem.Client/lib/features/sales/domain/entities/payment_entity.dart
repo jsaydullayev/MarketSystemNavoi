@@ -1,5 +1,5 @@
-/// Payment Entity
-/// To'lov obyekti
+// Payment Entity
+// To'lov obyekti
 
 import 'package:equatable/equatable.dart';
 

@@ -1,5 +1,5 @@
-/// Delete Customer Use Case
-/// Mijozni o'chirish biznes mantig'i
+// Delete Customer Use Case
+// Mijozni o'chirish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../repositories/customer_repository_interface.dart';

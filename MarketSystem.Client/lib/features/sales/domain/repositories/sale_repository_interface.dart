@@ -1,5 +1,5 @@
-/// Sale Repository Interface
-/// Sotuv repository interfeysi - data layer uchun kontrakt
+// Sale Repository Interface
+// Sotuv repository interfeysi - data layer uchun kontrakt
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/sale_entity.dart';

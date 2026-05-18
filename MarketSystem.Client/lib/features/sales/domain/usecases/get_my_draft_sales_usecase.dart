@@ -1,5 +1,5 @@
-/// Get My Draft Sales Use Case
-/// Mening draft sotuvlarimni olish biznes mantig'i
+// Get My Draft Sales Use Case
+// Mening draft sotuvlarimni olish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/sale_entity.dart';

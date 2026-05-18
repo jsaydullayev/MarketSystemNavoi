@@ -1,12 +1,23 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Row card for one product sold within the daily details list.
+///
+/// Demo reference: top-products list in `id="page-rpt-top"` — neutral
+/// surface card, product name on the left, revenue in success green on
+/// the right, a brand-tinted qty pill below, and a profit footer (green
+/// when positive, danger when negative).
+///
+/// `isDark` stays on the constructor for source compatibility but is
+/// ignored — the migrated design is light-only.
 class SaleItemCard extends StatelessWidget {
   final Map<String, dynamic> item;
   final bool isDark;
 
-  const SaleItemCard({required this.item, required this.isDark});
+  const SaleItemCard({super.key, required this.item, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -22,23 +33,11 @@ class SaleItemCard extends StatelessWidget {
         : '${qty.toStringAsFixed(1)} ${l10n.piece}';
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.07)
-              : Colors.grey.withValues(alpha: 0.12),
-        ),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-        ],
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,46 +48,44 @@ class SaleItemCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   name,
-                  style: TextStyle(
+                  style: AppTextStyles.bodyLarge().copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.md),
               Text(
                 '${NumberFormatter.formatDecimal(revenue)} ${l10n.currencySom}',
-                style: const TextStyle(
+                style: AppTextStyles.bodyLarge().copyWith(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF10B981),
+                  color: AppColors.success,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md + 2),
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg - 2, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.brandLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md - 2),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.inventory_2_outlined,
-                        size: 13, color: Color(0xFF3B82F6)),
+                        size: 13, color: AppColors.brand),
                     const SizedBox(width: 5),
                     Text(
                       qtyStr,
-                      style: const TextStyle(
+                      style: AppTextStyles.labelSmall().copyWith(
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF3B82F6),
+                        color: AppColors.brand,
                       ),
                     ),
                   ],
@@ -97,19 +94,19 @@ class SaleItemCard extends StatelessWidget {
             ],
           ),
           if (profit != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.md + 2),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.md + 2),
               decoration: BoxDecoration(
                 color: profit >= 0
-                    ? Colors.green.withValues(alpha: 0.08)
-                    : Colors.red.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
+                    ? AppColors.successLight
+                    : AppColors.dangerLight,
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
-                  color: profit >= 0
-                      ? Colors.green.withValues(alpha: 0.2)
-                      : Colors.red.withValues(alpha: 0.2),
+                  color: (profit >= 0 ? AppColors.success : AppColors.danger)
+                      .withValues(alpha: 0.25),
                 ),
               ),
               child: Row(
@@ -122,25 +119,27 @@ class SaleItemCard extends StatelessWidget {
                             ? Icons.trending_up_rounded
                             : Icons.trending_down_rounded,
                         size: 16,
-                        color: profit >= 0 ? Colors.green : Colors.red,
+                        color:
+                            profit >= 0 ? AppColors.success : AppColors.danger,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         l10n.netProfit,
-                        style: TextStyle(
-                          fontSize: 13,
+                        style: AppTextStyles.bodySmall().copyWith(
                           fontWeight: FontWeight.w600,
-                          color: profit >= 0 ? Colors.green : Colors.red,
+                          color: profit >= 0
+                              ? AppColors.success
+                              : AppColors.danger,
                         ),
                       ),
                     ],
                   ),
                   Text(
                     '${NumberFormatter.formatDecimal(profit)} ${l10n.currencySom}',
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: AppTextStyles.bodyMedium().copyWith(
                       fontWeight: FontWeight.w700,
-                      color: profit >= 0 ? Colors.green : Colors.red,
+                      color:
+                          profit >= 0 ? AppColors.success : AppColors.danger,
                     ),
                   ),
                 ],

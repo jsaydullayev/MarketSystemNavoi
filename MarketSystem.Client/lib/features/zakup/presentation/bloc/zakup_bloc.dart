@@ -1,5 +1,5 @@
-/// Zakup BLoC
-/// Zakup state management
+// Zakup BLoC
+// Zakup state management
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/create_zakup_usecase.dart';

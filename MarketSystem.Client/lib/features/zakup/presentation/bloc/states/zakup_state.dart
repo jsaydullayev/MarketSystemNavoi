@@ -1,5 +1,5 @@
-/// Zakup States
-/// Zakup BLoC uchun holatlar
+// Zakup States
+// Zakup BLoC uchun holatlar
 
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/zakup_entity.dart';

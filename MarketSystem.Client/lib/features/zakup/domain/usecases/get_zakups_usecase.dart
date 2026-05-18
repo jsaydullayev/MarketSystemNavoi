@@ -1,5 +1,5 @@
-/// Get Zakups Use Case
-/// Barcha xaridlarni olish biznes mantig'i
+// Get Zakups Use Case
+// Barcha xaridlarni olish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/zakup_entity.dart';

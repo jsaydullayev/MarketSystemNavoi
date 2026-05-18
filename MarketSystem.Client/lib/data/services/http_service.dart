@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -46,9 +47,9 @@ class HttpService {
 
   // Tokenlarni saqlash
   Future<void> saveTokens(String accessToken, String refreshToken) async {
-    print('=== SAVING TOKENS ===');
-    print('Access Token: ${accessToken.substring(0, 20)}...');
-    print('Refresh Token: ${refreshToken.substring(0, 20)}...');
+    debugPrint('=== SAVING TOKENS ===');
+    debugPrint('Access Token: ${accessToken.substring(0, 20)}...');
+    debugPrint('Refresh Token: ${refreshToken.substring(0, 20)}...');
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
@@ -57,8 +58,8 @@ class HttpService {
 
     // Tekshirish: saqlanganni o'qib ko'ramiz
     final saved = prefs.getString('access_token');
-    print('Token saved: ${saved != null ? "YES" : "NO"}');
-    print('====================');
+    debugPrint('Token saved: ${saved != null ? "YES" : "NO"}');
+    debugPrint('====================');
   }
 
   Future<String?> getAccessToken() async {
@@ -66,10 +67,10 @@ class HttpService {
     _accessToken = prefs.getString('access_token');
 
     if (_accessToken != null) {
-      print(
+      debugPrint(
           '✅ Token from SharedPreferences: ${_accessToken!.substring(0, 20)}...');
     } else {
-      print('❌ NO TOKEN FOUND!');
+      debugPrint('❌ NO TOKEN FOUND!');
     }
     return _accessToken;
   }
@@ -122,7 +123,7 @@ class HttpService {
     if (response.statusCode == 401 && !_isRefreshing) {
       _isRefreshing = true;
 
-      print('Access token expired, attempting refresh...');
+      debugPrint('Access token expired, attempting refresh...');
 
       // Tokenni refresh qilish
       final refreshed = await _authService?.refreshToken();
@@ -130,12 +131,12 @@ class HttpService {
       _isRefreshing = false;
 
       if (refreshed != null) {
-        print('Token refreshed successfully, retrying request...');
+        debugPrint('Token refreshed successfully, retrying request...');
 
         // So'rovni yangi token bilan qayta yuborish
         return _retryRequest(method, endpoint, body);
       } else {
-        print('Token refresh failed - user must login again');
+        debugPrint('Token refresh failed - user must login again');
         return response; // 401 qaytarish
       }
     }
@@ -209,11 +210,11 @@ class HttpService {
   Future<http.Response> _performGet(String endpoint) async {
     final token = await getAccessToken();
 
-    print('=== HTTP GET ===');
-    print('URL: $baseUrl$endpoint');
-    print(
+    debugPrint('=== HTTP GET ===');
+    debugPrint('URL: $baseUrl$endpoint');
+    debugPrint(
         'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}');
-    print('================');
+    debugPrint('================');
 
     return http.get(
       Uri.parse('$baseUrl$endpoint'),
@@ -239,12 +240,12 @@ class HttpService {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
 
-    print('=== HTTP POST ===');
-    print('URL: $baseUrl$endpoint');
-    print(
+    debugPrint('=== HTTP POST ===');
+    debugPrint('URL: $baseUrl$endpoint');
+    debugPrint(
         'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}');
-    print('Body: $encodedBody');
-    print('================');
+    debugPrint('Body: $encodedBody');
+    debugPrint('================');
 
     return http.post(
       Uri.parse('$baseUrl$endpoint'),
@@ -271,17 +272,17 @@ class HttpService {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
 
-    print('=== HTTP PUT ===');
-    print('URL: $baseUrl$endpoint');
-    print('Has body: ${body != null}');
-    print('Has token: ${token != null}');
+    debugPrint('=== HTTP PUT ===');
+    debugPrint('URL: $baseUrl$endpoint');
+    debugPrint('Has body: ${body != null}');
+    debugPrint('Has token: ${token != null}');
     if (body != null && encodedBody != null && encodedBody.length < 500) {
-      print('Body: $encodedBody');
+      debugPrint('Body: $encodedBody');
     } else if (body != null) {
-      print(
+      debugPrint(
           'Body length: ${encodedBody?.length ?? 0} bytes (too large to display)');
     }
-    print('================');
+    debugPrint('================');
 
     // For large bodies, use a different approach to avoid encoding issues
     if (encodedBody != null && encodedBody.length > 100000) {
@@ -333,9 +334,9 @@ class HttpService {
     final token = await getAccessToken();
 
     final fullUrl = '$baseUrl$endpoint';
-    print('=== HTTP DELETE ===');
-    print('Full URL: $fullUrl');
-    print('==================');
+    debugPrint('=== HTTP DELETE ===');
+    debugPrint('Full URL: $fullUrl');
+    debugPrint('==================');
 
     // The http package's delete() convenience method doesn't accept a body, so
     // hand-roll the request when one is supplied. RFC 7231 permits a body on
@@ -368,12 +369,12 @@ class HttpService {
     final token = await getAccessToken();
     final encodedBody = body != null ? jsonEncode(body) : null;
 
-    print('=== HTTP PATCH ===');
-    print('URL: $baseUrl$endpoint');
+    debugPrint('=== HTTP PATCH ===');
+    debugPrint('URL: $baseUrl$endpoint');
     if (body != null && encodedBody != null && encodedBody.length < 500) {
-      print('Body: $encodedBody');
+      debugPrint('Body: $encodedBody');
     }
-    print('================');
+    debugPrint('================');
 
     return http.patch(
       Uri.parse('$baseUrl$endpoint'),
@@ -423,11 +424,11 @@ class HttpService {
       });
     }
 
-    print('=== HTTP MULTIPART UPLOAD ===');
-    print('URL: $baseUrl$endpoint');
-    print('File: $filePath');
-    print('File size: ${(length / 1024).toStringAsFixed(2)} KB');
-    print('================');
+    debugPrint('=== HTTP MULTIPART UPLOAD ===');
+    debugPrint('URL: $baseUrl$endpoint');
+    debugPrint('File: $filePath');
+    debugPrint('File size: ${(length / 1024).toStringAsFixed(2)} KB');
+    debugPrint('================');
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
@@ -441,9 +442,9 @@ class HttpService {
     try {
       final token = await getAccessToken();
 
-      print('=== HTTP DOWNLOAD BYTES ===');
-      print('URL: $baseUrl$endpoint');
-      print('================');
+      debugPrint('=== HTTP DOWNLOAD BYTES ===');
+      debugPrint('URL: $baseUrl$endpoint');
+      debugPrint('================');
 
       final response = await http.get(
         Uri.parse('$baseUrl$endpoint'),
@@ -458,10 +459,10 @@ class HttpService {
       if (handledResponse.statusCode == 200) {
         return handledResponse.bodyBytes;
       }
-      print('Download failed with status: ${handledResponse.statusCode}');
+      debugPrint('Download failed with status: ${handledResponse.statusCode}');
       return null;
     } catch (e) {
-      print('Download bytes error: $e');
+      debugPrint('Download bytes error: $e');
       return null;
     }
   }

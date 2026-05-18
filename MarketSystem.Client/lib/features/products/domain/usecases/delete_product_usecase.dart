@@ -1,5 +1,5 @@
-/// Delete Product Use Case
-/// Business logic for deleting a product
+// Delete Product Use Case
+// Business logic for deleting a product
 
 import 'package:equatable/equatable.dart';
 import '../repositories/product_repository.dart';

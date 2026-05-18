@@ -1,7 +1,19 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Hero banner shown above the daily sales detail list.
+///
+/// Demo reference: `id="page-rpt-hub"` — dark navy gradient hero
+/// (`#0F172A` → `#1E293B`) with the headline metric, then a translucent
+/// chip with the sales count. When profit is available it sits as a
+/// secondary metric tile on the right.
+///
+/// The legacy `isDark` parameter is preserved on the constructor so callers
+/// don't break, but the banner now always renders the demo-style dark
+/// gradient (light mode only — the gradient itself is dark by design).
 class DailySummaryBanner extends StatelessWidget {
   final double totalSales;
   final double? totalProfit;
@@ -9,34 +21,30 @@ class DailySummaryBanner extends StatelessWidget {
   final bool isDark;
 
   const DailySummaryBanner({
+    super.key,
     required this.totalSales,
     required this.totalProfit,
     required this.totalTx,
     required this.isDark,
   });
 
+  static const _heroStart = Color(0xFF0F172A);
+  static const _heroEnd = Color(0xFF1E293B);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl2, AppSpacing.xl, AppSpacing.xl2, AppSpacing.xl2),
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            const Color(0xFF3B82F6),
-            const Color(0xFF3B82F6).withValues(alpha: 0.75),
-          ],
+          colors: [_heroStart, _heroEnd],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -45,67 +53,78 @@ class DailySummaryBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  l10n.totalSale,
-                  style: TextStyle(
-                      fontSize: 12, color: Colors.white.withValues(alpha: 0.75)),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${NumberFormatter.formatDecimal(totalSales)} ${l10n.currencySom}',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
+                  l10n.totalSale.toUpperCase(),
+                  style: AppTextStyles.caption().copyWith(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${NumberFormatter.formatDecimal(totalSales)} ${l10n.currencySom}',
+                    style: AppTextStyles.displayMedium().copyWith(
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                      fontSize: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs + 2),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
                     l10n.salesCount(totalTx),
-                    style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600),
+                    style: AppTextStyles.labelSmall().copyWith(
+                      color: Colors.white,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          if (totalProfit != null)
+          if (totalProfit != null) ...[
+            const SizedBox(width: AppSpacing.lg),
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(AppSpacing.lg + 2),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border:
+                    Border.all(color: Colors.white.withValues(alpha: 0.18)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    l10n.netProfit,
-                    style: TextStyle(
-                        fontSize: 11, color: Colors.white.withValues(alpha: 0.75)),
+                    l10n.netProfit.toUpperCase(),
+                    style: AppTextStyles.caption().copyWith(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      letterSpacing: 1.0,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     '${NumberFormatter.formatDecimal(totalProfit!)} ${l10n.currencySom}',
-                    style: const TextStyle(
+                    style: AppTextStyles.titleMedium().copyWith(
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
+          ],
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/features/reports/widgets/date_range_picker.dart';
 import 'package:market_system_client/features/reports/widgets/empty_report.dart';
 import 'package:market_system_client/features/reports/widgets/export_button.dart';
@@ -8,6 +9,11 @@ import 'package:market_system_client/features/reports/widgets/section_title.dart
 import 'package:market_system_client/features/reports/widgets/stat_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Monthly (date-range) tab inside the Reports screen.
+///
+/// Layout matches the demo's profit/period view: range picker, then a
+/// stacked column of KPI cards (aylanma, soni, paid, debt, average,
+/// profit), then payment-method breakdown when present.
 class MonthlyReportTab extends StatelessWidget {
   final Map<String, dynamic>? report;
   final DateTime startDate;
@@ -16,6 +22,7 @@ class MonthlyReportTab extends StatelessWidget {
   final VoidCallback onExport;
 
   const MonthlyReportTab({
+    super.key,
     required this.report,
     required this.startDate,
     required this.endDate,
@@ -32,21 +39,23 @@ class MonthlyReportTab extends StatelessWidget {
     final totalPaid = (report!['totalPaidSales'] as num?)?.toDouble() ?? 0.0;
     final totalDebt = (report!['totalDebtSales'] as num?)?.toDouble() ?? 0.0;
     final avgSale = (report!['averageSale'] as num?)?.toDouble() ?? 0.0;
-    final profit =
-        report!['profit'] is num ? (report!['profit'] as num).toDouble() : null;
+    final profit = report!['profit'] is num
+        ? (report!['profit'] as num).toDouble()
+        : null;
     final payments = report!['paymentBreakdown'] is List
         ? report!['paymentBreakdown'] as List
         : [];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xl4),
       children: [
         DateRangeRow(
           startDate: startDate,
           endDate: endDate,
           onChanged: onRangeChanged,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.xl),
         Row(
           children: [
             Expanded(
@@ -55,21 +64,21 @@ class MonthlyReportTab extends StatelessWidget {
                 value:
                     '${NumberFormatter.formatDecimal(totalSales)} ${l10n.currencySom}',
                 icon: Icons.attach_money_rounded,
-                color: Colors.blue,
+                color: AppColors.brand,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: StatCard(
                 title: l10n.saleCount,
                 value: '$totalTx ${l10n.piece}',
                 icon: Icons.shopping_cart_outlined,
-                color: Colors.orange,
+                color: AppColors.warning,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
             Expanded(
@@ -78,48 +87,48 @@ class MonthlyReportTab extends StatelessWidget {
                 value:
                     '${NumberFormatter.formatDecimal(totalPaid)} ${l10n.currencySom}',
                 icon: Icons.check_circle_outline_rounded,
-                color: Colors.teal,
+                color: AppColors.success,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: StatCard(
                 title: l10n.onDebt,
                 value:
                     '${NumberFormatter.formatDecimal(totalDebt)} ${l10n.currencySom}',
                 icon: Icons.warning_amber_rounded,
-                color: Colors.red,
+                color: AppColors.danger,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.lg),
         StatCard(
           title: l10n.averageSale,
           value:
               '${NumberFormatter.formatDecimal(avgSale)} ${l10n.currencySom}',
           icon: Icons.calculate_outlined,
-          color: Colors.purple,
+          color: const Color(0xFF8B5CF6),
           subtitle: l10n.averageTransactionValue,
         ),
         if (profit != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.lg),
           StatCard(
             title: l10n.netProfit,
             value:
                 '${NumberFormatter.formatDecimal(profit)} ${l10n.currencySom}',
             icon: Icons.account_balance_wallet_outlined,
-            color: Colors.green,
+            color: AppColors.success,
           ),
         ],
         if (payments.isNotEmpty) ...[
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl2),
           SectionTitle(title: l10n.byPaymentType),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md + 2),
           ...payments.map((p) {
             if (p is! Map<String, dynamic>) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: ReportPaymentBreakdownCard(
                 paymentType: p['paymentType']?.toString() ?? '',
                 amount: (p['amount'] as num?)?.toDouble() ?? 0,
@@ -129,7 +138,7 @@ class MonthlyReportTab extends StatelessWidget {
             );
           }),
         ],
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.xl2),
         ExportButton(onTap: onExport),
       ],
     );

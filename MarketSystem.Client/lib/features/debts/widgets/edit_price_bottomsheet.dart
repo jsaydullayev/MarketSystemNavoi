@@ -1,7 +1,9 @@
-﻿import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
-import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class EditPriceBottomSheet extends StatefulWidget {
@@ -84,11 +86,13 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(l10n.confirm,
-            style: const TextStyle(fontWeight: FontWeight.w700)),
-        content: Text(l10n
-            .confirmPriceChangeDesc(NumberFormatter.formatDecimal(newPrice))),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.xl)),
+        title: Text(l10n.confirm, style: AppTextStyles.titleMedium()),
+        content: Text(
+          l10n.confirmPriceChangeDesc(NumberFormatter.formatDecimal(newPrice)),
+          style: AppTextStyles.bodyMedium(),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -97,9 +101,10 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(AppRadius.md)),
             ),
             child: Text(l10n.yesConfirm),
           ),
@@ -115,94 +120,84 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
     final productName = widget.saleItem['productName'] ?? l10n.product;
     final quantity = widget.saleItem['quantity'];
     final oldPrice = (widget.saleItem['salePrice'] as num).toDouble();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.getCard(isDark),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
-        24,
-        20,
-        24,
-        MediaQuery.of(context).viewInsets.bottom + 24,
+        AppSpacing.xl2,
+        AppSpacing.xl,
+        AppSpacing.xl2,
+        MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl3,
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
             Center(
               child: Container(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Title
+            const SizedBox(height: AppSpacing.xl2),
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.brandLight,
+                    borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   ),
                   child: const Icon(Icons.edit_rounded,
-                      color: Color(0xFF3B82F6), size: 20),
+                      color: AppColors.brand, size: 20),
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  l10n.editPriceTitle,
-                  style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.4),
-                ),
+                const SizedBox(width: AppSpacing.lg),
+                Text(l10n.editPriceTitle, style: AppTextStyles.titleMedium()),
               ],
             ),
-            const SizedBox(height: 16),
-
+            const SizedBox(height: AppSpacing.xl),
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(AppSpacing.lg + 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.12)),
+                color: AppColors.borderSoft,
+                borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.brandLight,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: const Icon(Icons.inventory_2_rounded,
-                        color: Color(0xFF3B82F6), size: 18),
+                        color: AppColors.brand, size: 18),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSpacing.md + 2),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(productName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 14)),
+                            style: AppTextStyles.bodyMedium()
+                                .copyWith(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
                         Text(
                           l10n.productQuantityAndOldPrice(quantity,
                               NumberFormatter.formatDecimal(oldPrice)),
-                          style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF9CA3AF)),
+                          style: AppTextStyles.bodySmall().copyWith(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -210,113 +205,132 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            Text(l10n.newPriceLabel,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              l10n.newPriceLabel.toUpperCase(),
+              style: AppTextStyles.caption().copyWith(
+                color: AppColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _priceController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
               onChanged: (_) => setState(() => _errorMessage = null),
               decoration: InputDecoration(
-                labelText: l10n.priceWithCurrency,
+                hintText: l10n.priceWithCurrency,
+                hintStyle: AppTextStyles.bodyMedium().copyWith(
+                  color: AppColors.textMuted,
+                  fontSize: 15,
+                ),
                 prefixIcon:
-                    const Icon(Icons.money_rounded, color: Color(0xFF3B82F6)),
+                    const Icon(Icons.money_rounded, color: AppColors.brand),
                 suffixText: l10n.currencySom,
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: AppColors.inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                  borderSide: BorderSide.none,
+                ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.25)),
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                  borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   borderSide:
-                      const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+                      const BorderSide(color: AppColors.brand, width: 1.5),
                 ),
               ),
             ),
-            const SizedBox(height: 14),
-
-            Text(l10n.commentRequiredLabel,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              l10n.commentRequiredLabel.toUpperCase(),
+              style: AppTextStyles.caption().copyWith(
+                color: AppColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _commentController,
               maxLines: 3,
+              style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
               onChanged: (_) => setState(() => _errorMessage = null),
               decoration: InputDecoration(
                 hintText: l10n.exampleComment,
-                hintStyle: const TextStyle(color: Color(0xFFD1D5DB)),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                hintStyle: AppTextStyles.bodyMedium().copyWith(
+                  color: AppColors.textMuted,
+                  fontSize: 14,
+                ),
+                filled: true,
+                fillColor: AppColors.inputFill,
+                contentPadding: const EdgeInsets.all(AppSpacing.lg),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                  borderSide: BorderSide.none,
+                ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.25)),
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                  borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   borderSide:
-                      const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+                      const BorderSide(color: AppColors.brand, width: 1.5),
                 ),
               ),
             ),
-
             if (isClosed) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: AppSpacing.lg),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF97316).withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.warningLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   border: Border.all(
-                      color: const Color(0xFFF97316).withValues(alpha: 0.2)),
+                      color: AppColors.warning.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.warning_amber_rounded,
-                        color: Color(0xFFF97316), size: 18),
-                    const SizedBox(width: 8),
+                        color: AppColors.warning, size: 18),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         l10n.closedDebtAudit,
-                        style: const TextStyle(
-                            fontSize: 12, color: Color(0xFFF97316)),
+                        style: AppTextStyles.bodySmall().copyWith(
+                          color: AppColors.warning,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-
             if (_errorMessage != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.lg),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
+                  color: AppColors.dangerLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(Icons.error_outline_rounded,
-                        color: Color(0xFFEF4444), size: 18),
-                    const SizedBox(width: 8),
+                        color: AppColors.danger, size: 18),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         _errorMessage!,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFFEF4444),
+                        style: AppTextStyles.bodySmall().copyWith(
+                          color: AppColors.danger,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -324,42 +338,23 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                     GestureDetector(
                       onTap: () => setState(() => _errorMessage = null),
                       child: const Icon(Icons.close_rounded,
-                          color: Color(0xFFEF4444), size: 16),
+                          color: AppColors.danger, size: 16),
                     ),
                   ],
                 ),
               ),
             ],
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.getPrimary(context),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2.5),
-                      )
-                    : Text(
-                        l10n.save,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            letterSpacing: 0.2),
-                      ),
-              ),
+            const SizedBox(height: AppSpacing.xl2),
+            AppPrimaryButton(
+              label: l10n.save,
+              onPressed: _isLoading ? null : _submit,
+              isLoading: _isLoading,
+              icon: Icons.check_rounded,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppSecondaryButton(
+              label: l10n.cancel,
+              onPressed: () => Navigator.pop(context),
             ),
           ],
         ),

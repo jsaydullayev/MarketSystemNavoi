@@ -2,11 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:universal_html/html.dart' as html;
 import 'package:intl/intl.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/debts/widgets/debt_summary_header.dart';
 import 'package:market_system_client/features/debts/widgets/edit_price_bottomsheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -14,9 +15,10 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
-import '../../../data/services/sales_service.dart';
+import 'package:universal_html/html.dart' as html;
+
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/utils/number_formatter.dart';
+import '../../../data/services/sales_service.dart';
 
 class DebtDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> debt;
@@ -52,18 +54,14 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
 
     final saleId = widget.debt['saleId']?.toString() ?? '';
 
-    // Loading dialog ko'rsatish
     if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
-      // PDFni serverdan yuklab olish
       final pdfData = await _salesService.downloadInvoice(saleId);
 
       if (pdfData == null || pdfData.isEmpty) {
@@ -71,16 +69,14 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(l10n.errorOccurred),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.danger,
           ));
         }
         return;
       }
 
-      // List<int> -> Uint8List ga o'tkazish
       final pdfBytes = Uint8List.fromList(pdfData);
 
-      // Fayl nomini generatsiya qilish
       final createdAt = widget.debt['createdAt'] != null
           ? (widget.debt['createdAt'] is DateTime
               ? widget.debt['createdAt'] as DateTime
@@ -89,9 +85,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
       final dateStr = DateFormat('dd.MM.yyyy').format(createdAt);
       final fileName = 'faktura_${saleId}_$dateStr.pdf';
 
-      // Platformga qarab saqlash
       if (kIsWeb) {
-        // Web platformada browser download API orqali yuklash
         final blob = html.Blob([pdfBytes], 'application/pdf');
         final url = html.Url.createObjectUrlFromBlob(blob);
         final anchor = html.AnchorElement()
@@ -103,13 +97,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
         anchor.remove();
         html.Url.revokeObjectUrl(url);
       } else if (Platform.isAndroid || Platform.isIOS) {
-        // Mobile platformlarda printing orqali yuklash
-        await Printing.sharePdf(
-          bytes: pdfBytes,
-          filename: fileName,
-        );
+        await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
       } else {
-        // Desktop platformlarda
         Directory? directory;
         if (Platform.isWindows) {
           final username = Platform.environment['USERNAME'] ?? 'User';
@@ -121,31 +110,28 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
         final path = '${directory?.path ?? '.'}/$fileName';
         final file = File(path);
 
-        // Directory mavjudligini tekshirish va yaratish
         if (directory != null && !directory.existsSync()) {
           await directory.create(recursive: true);
         }
 
         await file.writeAsBytes(pdfBytes);
 
-        // Dialogni yopish
         if (mounted) Navigator.pop(context);
 
-        // Desktop'da faylni ochish
         if (mounted) {
           final result = await OpenFilex.open(path);
           if (result.type != ResultType.done) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text('${l10n.errorOccurred}: ${result.message}'),
-                backgroundColor: Colors.orange,
+                backgroundColor: AppColors.warning,
               ));
             }
           } else {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(l10n.pdfDownloaded),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
               ));
             }
           }
@@ -153,23 +139,20 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
         return;
       }
 
-      // Dialogni yopish
       if (mounted) Navigator.pop(context);
 
-      // Muvaffaqiyat xabari
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(l10n.pdfDownloaded),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ));
       }
     } catch (e) {
-      // Xatolik bo'lsa
       if (mounted) Navigator.pop(context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('${l10n.errorOccurred}: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ));
       }
     }
@@ -190,7 +173,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(content: Text(message), backgroundColor: AppColors.danger),
     );
   }
 
@@ -236,7 +219,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.priceUpdatedSuccess),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: AppColors.success,
           ),
         );
         _loadSaleDetails();
@@ -253,12 +236,11 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     final userRole = authProvider.user?['role'];
     final debtStatus = widget.debt['status'];
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return NetworkWrapper(
       onRetry: _loadSaleDetails,
       child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
+        backgroundColor: AppColors.bg,
         appBar: CommonAppBar(
           title: l10n.debtDetails,
           extraActions: [
@@ -283,7 +265,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
                   : _saleItems.isEmpty
                       ? const _EmptySaleItemsView()
                       : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.xl,
+                              AppSpacing.xl, AppSpacing.xl, AppSpacing.xl3),
                           itemCount: _saleItems.length,
                           itemBuilder: (context, index) {
                             final item = _saleItems[index];
@@ -324,7 +307,6 @@ class _SaleItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final productName = item['productName'] ?? l10n.unknown;
     final isExternal = item['isExternal'] == true;
     final quantity = (item['quantity'] as num?)?.toDouble() ?? 0.0;
@@ -334,25 +316,19 @@ class _SaleItemCard extends StatelessWidget {
     // returns it as `comment`.
     final comment = (item['comment'] as String?)?.trim() ?? '';
 
-    final iconColor =
-        isExternal ? const Color(0xFFF28C33) : const Color(0xFF3B82F6);
+    final accent = isExternal ? AppColors.brand : AppColors.text;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md + 2),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.getCard(isDark),
-        borderRadius: BorderRadius.circular(16),
-        border: isExternal
-            ? Border.all(color: iconColor.withOpacity(0.35), width: 1)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: isExternal
+              ? AppColors.brand.withValues(alpha: 0.35)
+              : AppColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,20 +336,21 @@ class _SaleItemCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(AppSpacing.md + 2),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  color: (isExternal ? AppColors.brand : AppColors.text)
+                      .withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 ),
                 child: Icon(
                   isExternal
                       ? Icons.storefront_rounded
                       : Icons.inventory_2_rounded,
-                  color: iconColor,
+                  color: isExternal ? AppColors.brand : AppColors.text,
                   size: 22,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,30 +360,32 @@ class _SaleItemCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             productName,
-                            style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.3),
+                            style: AppTextStyles.bodyMedium().copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.3,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (isExternal) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: AppSpacing.sm),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                                horizontal: AppSpacing.sm, vertical: 2),
                             decoration: BoxDecoration(
-                              color: iconColor.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(999),
+                              color: AppColors.brand.withValues(alpha: 0.15),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.full),
                             ),
                             child: Text(
                               'tashqi',
-                              style: TextStyle(
+                              style: AppTextStyles.caption().copyWith(
+                                color: AppColors.brand,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.3,
-                                color: iconColor,
                               ),
                             ),
                           ),
@@ -416,48 +395,49 @@ class _SaleItemCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${quantity.toStringAsFixed(0)} ${l10n.piece} × ${NumberFormatter.format(salePrice)} ${l10n.currencySom}',
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF9CA3AF)),
+                      style: AppTextStyles.bodySmall()
+                          .copyWith(fontSize: 12, color: AppColors.textMuted),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.md),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     '${NumberFormatter.format(totalPrice)} ${l10n.currencySom}',
-                    style: const TextStyle(
+                    style: AppTextStyles.titleMedium().copyWith(
                       fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1D4ED8),
+                      color: accent,
                       letterSpacing: -0.5,
                     ),
                   ),
                   if (_canEdit) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.sm),
                     GestureDetector(
                       onTap: onEdit,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                            horizontal: AppSpacing.md + 2,
+                            vertical: AppSpacing.xs),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF3B82F6).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.brandLight,
+                          borderRadius: BorderRadius.circular(AppRadius.md - 2),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.edit_rounded,
-                                size: 12, color: Color(0xFF3B82F6)),
-                            const SizedBox(width: 4),
+                                size: 12, color: AppColors.brand),
+                            const SizedBox(width: AppSpacing.xs),
                             Text(
                               l10n.edit,
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF3B82F6)),
+                              style: AppTextStyles.bodySmall().copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.brand,
+                              ),
                             ),
                           ],
                         ),
@@ -469,26 +449,26 @@ class _SaleItemCard extends StatelessWidget {
             ],
           ),
           if (comment.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.md + 2),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md + 2, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.06),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.borderSoft,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.notes_rounded,
-                      size: 14, color: Color(0xFF3B82F6)),
-                  const SizedBox(width: 6),
+                      size: 14, color: AppColors.textSecondary),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       comment,
-                      style: TextStyle(
+                      style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 12,
-                        color: isDark ? Colors.white70 : Colors.grey[800],
+                        color: AppColors.textSecondary,
                         height: 1.3,
                       ),
                     ),
@@ -514,10 +494,11 @@ class _EmptySaleItemsView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.inventory_2_rounded,
-              size: 52, color: Color(0xFF9CA3AF)),
-          const SizedBox(height: 12),
+              size: 52, color: AppColors.textMuted),
+          const SizedBox(height: AppSpacing.lg),
           Text(l10n.noProducts,
-              style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280))),
+              style: AppTextStyles.titleMedium()
+                  .copyWith(color: AppColors.textSecondary)),
         ],
       ),
     );

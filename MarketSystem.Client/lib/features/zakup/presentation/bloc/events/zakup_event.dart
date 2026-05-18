@@ -1,5 +1,5 @@
-/// Zakup Events
-/// Zakup BLoC uchun hodisalar
+// Zakup Events
+// Zakup BLoC uchun hodisalar
 
 import 'package:equatable/equatable.dart';
 

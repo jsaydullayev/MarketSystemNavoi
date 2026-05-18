@@ -1,5 +1,5 @@
-/// Sale Entity
-/// Sotuv obyekti - biznes mantik uchun asosiy model
+// Sale Entity
+// Sotuv obyekti - biznes mantik uchun asosiy model
 
 import 'package:equatable/equatable.dart';
 
