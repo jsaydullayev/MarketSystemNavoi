@@ -21,7 +21,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       canPop: true,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Privacy Policy'),
+          title: Text(l10n?.privacyPolicyTitle ?? 'Privacy Policy'),
           centerTitle: true,
         ),
         body: SingleChildScrollView(
@@ -31,40 +31,40 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             children: [
               _buildSection(
                 context,
-                'Introduction',
+                l10n?.privacyIntroTitle ?? 'Introduction',
                 _getPrivacyIntro(),
                 theme,
               ),
               const SizedBox(height: 24),
               _buildSection(
                 context,
-                'Data Collection',
+                l10n?.privacyDataCollectionTitle ?? 'Data Collection',
                 _getDataCollection(),
                 theme,
               ),
               const SizedBox(height: 24),
               _buildSection(
                 context,
-                'Data Usage',
+                l10n?.privacyDataUsageTitle ?? 'Data Usage',
                 _getDataUsage(),
                 theme,
               ),
               const SizedBox(height: 24),
               _buildSection(
                 context,
-                'Data Security',
+                l10n?.privacyDataSecurityTitle ?? 'Data Security',
                 _getDataSecurity(),
                 theme,
               ),
               const SizedBox(height: 24),
               _buildSection(
                 context,
-                'Your Rights',
+                l10n?.privacyYourRightsTitle ?? 'Your Rights',
                 _getYourRights(),
                 theme,
               ),
               const SizedBox(height: 24),
-              _buildContactSection(context, theme),
+              _buildContactSection(context, theme, l10n),
               const SizedBox(height: 40),
               _buildFooter(context, theme, l10n),
             ],
@@ -139,25 +139,25 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         '• Export your data';
   }
 
-  Widget _buildContactSection(BuildContext context, ThemeData theme) {
+  Widget _buildContactSection(BuildContext context, ThemeData theme, AppLocalizations? l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Contact Information',
+          l10n?.privacyContactTitle ?? 'Contact Information',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.primaryColor,
           ),
         ),
         const SizedBox(height: 12),
-        const Text(
-          'If you have questions about this Privacy Policy or your data, please contact us at:',
+        Text(
+          l10n?.privacyContactPrompt ?? 'If you have questions about this Privacy Policy or your data, please contact us at:',
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Text('Email: ',
+            Text(l10n?.emailLabel ?? 'Email: ',
                 style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
             SelectableText(
               'saydullayev.jahongir7170@gmail.com',
@@ -191,7 +191,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             color: theme.colorScheme.secondary,
           ),
           children: [
-            const TextSpan(text: "Don't have an account? "),
+            TextSpan(text: l10n?.noAccount ?? "Don't have an account? "),
             TextSpan(
               text: l10n?.register ?? 'Register',
               style: TextStyle(

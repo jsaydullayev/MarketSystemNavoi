@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../design/widgets/app_card.dart';
+import '../../l10n/app_localizations.dart';
 
 // ---------------------------------------------------------------------------
 // GreetingCard — top-of-screen "Salom, <name>" + role chip + bell/settings.
@@ -22,7 +23,8 @@ class GreetingCard extends StatelessWidget {
     required this.fullName,
     required this.role,
     required this.dateLabel,
-    this.hasNotification = true,
+    this.hasNotification = false,
+    this.unreadNotifications = 0,
     this.onNotificationTap,
     this.onSettingsTap,
   });
@@ -30,7 +32,12 @@ class GreetingCard extends StatelessWidget {
   final String fullName;
   final String role; // 'Owner' | 'Admin' | 'Seller'
   final String dateLabel;
+  // Red-dot toggle. Either `hasNotification` (legacy, explicit bool) or
+  // `unreadNotifications > 0` produces the badge. Numeric value is kept so
+  // future iterations can render a count chip — current design just shows
+  // the dot.
   final bool hasNotification;
+  final int unreadNotifications;
   final VoidCallback? onNotificationTap;
   final VoidCallback? onSettingsTap;
 
@@ -89,7 +96,7 @@ class GreetingCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Salom, $fullName',
+                  '${AppLocalizations.of(context)!.greetingHello}, $fullName',
                   style: AppTextStyles.bodyLarge()
                       .copyWith(fontWeight: FontWeight.w700, fontSize: 16),
                   maxLines: 1,
@@ -129,7 +136,7 @@ class GreetingCard extends StatelessWidget {
           ),
           _IconCircle(
             icon: Icons.notifications_none_rounded,
-            badge: hasNotification,
+            badge: hasNotification || unreadNotifications > 0,
             onTap: onNotificationTap,
           ),
           const SizedBox(width: AppSpacing.md),

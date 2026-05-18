@@ -10,6 +10,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_button.dart';
+import '../../../l10n/app_localizations.dart';
 import '../data/superadmin_service.dart';
 import '../domain/models/owner_detail.dart';
 import 'widgets/block_market_dialog.dart';
@@ -62,7 +63,8 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
     );
     if (updated != null && mounted) {
       setState(() => _detail = updated);
-      _snack("Ma'lumotlar yangilandi", isError: false);
+      final l10n = AppLocalizations.of(context)!;
+      _snack(l10n.infoUpdated, isError: false);
     }
   }
 
@@ -100,6 +102,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
@@ -111,7 +114,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
           bottom: BorderSide(color: AppColors.border, width: 1),
         ),
         title: Text(
-          "Owner ma'lumotlari",
+          l10n.ownerInfoTitle,
           style: AppTextStyles.titleMedium(),
         ),
       ),
@@ -122,7 +125,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
               : _detail == null
                   ? Center(
                       child: Text(
-                        'Owner topilmadi',
+                        l10n.ownerNotFound,
                         style: AppTextStyles.bodyMedium(),
                       ),
                     )
@@ -181,6 +184,7 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final market = detail.market;
     final blocked = market?.isBlocked ?? false;
     final initial =
@@ -232,8 +236,8 @@ class _HeroCard extends StatelessWidget {
                         const SizedBox(width: AppSpacing.md),
                         _StatusChip(
                           label: blocked
-                              ? 'Bloklangan'
-                              : (detail.isActive ? 'Faol' : 'Faolsiz'),
+                              ? l10n.statusBlocked
+                              : (detail.isActive ? l10n.statusActive : l10n.statusInactive),
                           color: blocked
                               ? AppColors.danger
                               : (detail.isActive
@@ -249,7 +253,7 @@ class _HeroCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      '@${detail.username} · Owner · ${_formatDate(detail.createdAt, withTime: false)} dan beri',
+                      '@${detail.username} · Owner · ${l10n.registeredSince(_formatDate(detail.createdAt, withTime: false))}',
                       style: AppTextStyles.bodySmall(),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -326,23 +330,24 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         AppPrimaryButton(
-          label: 'Tahrirlash',
+          label: l10n.edit,
           icon: Icons.edit_outlined,
           onPressed: onEdit,
         ),
         const SizedBox(height: AppSpacing.md),
         AppSecondaryButton(
-          label: blocked ? 'Blokdan chiqarish' : 'Bloklash',
+          label: blocked ? l10n.unblock : l10n.block,
           icon: blocked ? Icons.lock_open_outlined : Icons.block_outlined,
           onPressed: onBlock,
         ),
         const SizedBox(height: AppSpacing.md),
         AppDangerButton(
-          label: "O'chirish",
+          label: l10n.delete,
           icon: Icons.delete_outline,
           onPressed: onDelete,
         ),
@@ -543,24 +548,25 @@ class _OwnerInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _SectionCard(
-      title: "OWNER MA'LUMOTLARI",
+      title: l10n.ownerSectionHeader,
       icon: Icons.person_outline,
       children: [
-        _InfoRow(label: "TO'LIQ ISM", value: detail.fullName),
-        _InfoRow(label: 'USERNAME', value: '@${detail.username}', mono: true),
-        _InfoRow(label: 'TELEFON', value: detail.phone ?? '—'),
+        _InfoRow(label: l10n.fullNameUpper, value: detail.fullName),
+        _InfoRow(label: l10n.usernameUpper, value: '@${detail.username}', mono: true),
+        _InfoRow(label: l10n.phoneUpper, value: detail.phone ?? '—'),
         _InfoRow(
-          label: 'TIL',
+          label: l10n.languageUpper,
           value: detail.language == 'russian' ? '🇷🇺 Русский' : "🇺🇿 O'zbek",
         ),
         _InfoRow(
-          label: "RO'YXATDAN O'TGAN",
+          label: l10n.registeredUpper,
           value: _formatDate(detail.createdAt),
         ),
         _InfoRow(
-          label: 'HOLAT',
-          value: detail.isActive ? 'Faol' : 'Faolsiz',
+          label: l10n.statusUpper,
+          value: detail.isActive ? l10n.statusActive : l10n.statusInactive,
           valueColor:
               detail.isActive ? AppColors.success : AppColors.textMuted,
         ),
@@ -575,45 +581,46 @@ class _MarketInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _SectionCard(
-      title: "DO'KON MA'LUMOTLARI",
+      title: l10n.shopSectionHeader,
       icon: Icons.storefront_outlined,
       children: [
-        _InfoRow(label: 'NOMI', value: market.name),
+        _InfoRow(label: l10n.nameUpper, value: market.name),
         _InfoRow(
-          label: 'SUBDOMAIN',
+          label: l10n.subdomainUpper,
           value: market.subdomain != null
               ? '${market.subdomain}.strotech.uz'
               : '—',
           mono: true,
         ),
-        _InfoRow(label: 'MARKET ID', value: '#${market.id}', mono: true),
+        _InfoRow(label: l10n.marketIdUpper, value: '#${market.id}', mono: true),
         _InfoRow(
-          label: 'HOLAT',
+          label: l10n.statusUpper,
           value: market.isBlocked
-              ? 'Bloklangan'
-              : (market.isActive ? 'Faol' : 'Faolsiz'),
+              ? l10n.statusBlocked
+              : (market.isActive ? l10n.statusActive : l10n.statusInactive),
           valueColor: market.isBlocked
               ? AppColors.danger
               : (market.isActive ? AppColors.success : AppColors.textMuted),
         ),
         if (market.isBlocked && market.blockedReason != null)
           _InfoRow(
-            label: 'BLOKLASH SABABI',
+            label: l10n.blockReasonUpper,
             value: market.blockedReason!,
             valueColor: AppColors.danger,
           ),
         if (market.isBlocked && market.blockedAt != null)
           _InfoRow(
-            label: 'BLOKLANGAN',
+            label: l10n.blockedAtUpper,
             value: _formatDate(market.blockedAt!),
           ),
         if (market.expiresAt != null)
           _InfoRow(
-            label: 'OBUNA TUGASHI',
+            label: l10n.subscriptionExpiresUpper,
             value: _formatDate(market.expiresAt!, withTime: false),
           ),
-        _InfoRow(label: 'YARATILGAN', value: _formatDate(market.createdAt)),
+        _InfoRow(label: l10n.createdUpper, value: _formatDate(market.createdAt)),
       ],
     );
   }
@@ -718,6 +725,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.xl3),
       child: Center(
@@ -739,7 +747,7 @@ class _ErrorState extends StatelessWidget {
             SizedBox(
               width: 200,
               child: AppPrimaryButton(
-                label: 'Qayta urinish',
+                label: l10n.retry,
                 icon: Icons.refresh,
                 onPressed: onRetry,
               ),

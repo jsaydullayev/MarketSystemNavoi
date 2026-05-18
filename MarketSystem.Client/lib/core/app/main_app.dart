@@ -48,9 +48,10 @@ class MainApp extends StatelessWidget {
       ],
       child: Consumer<LocaleProvider>(
         builder: (context, localeProvider, _) => AdaptiveTheme(
-          // New design system theme (light-only for now; dark theme will be designed later).
+          // Two themes: light = brand orange (#FF6B00), dark = legacy blue (#1E3A8A).
+          // Users can switch via the dashboard drawer or welcome-screen toggle.
           light: AppTheme.light,
-          dark: AppTheme.light,
+          dark: AppTheme.dark,
           initial: savedThemeMode ?? AdaptiveThemeMode.light,
           builder: (theme, darkTheme) => MaterialApp(
             title: AppStrings.appName,

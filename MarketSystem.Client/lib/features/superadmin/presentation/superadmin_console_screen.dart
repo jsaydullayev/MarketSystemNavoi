@@ -182,7 +182,8 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
       ),
     );
     if (!mounted) return;
-    _snack('Yangi owner yaratildi: ${created.username}', isError: false);
+    final l10n = AppLocalizations.of(context)!;
+    _snack(l10n.newOwnerCreated(created.username), isError: false);
   }
 
   Future<void> _onOwnerTap(OwnerSummary owner) async {
@@ -307,7 +308,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
           ? FloatingActionButton.extended(
               onPressed: _onCreateOwner,
               icon: const Icon(Icons.person_add_outlined),
-              label: const Text('Yangi Owner'),
+              label: Text(l10n.newOwner),
               backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
               elevation: 2,
@@ -347,7 +348,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
           ),
           const SizedBox(width: AppSpacing.md),
           Text(
-            'SuperAdmin Console',
+            l10n.superAdminConsoleTitleShort,
             style: AppTextStyles.titleMedium(),
           ),
         ],
@@ -499,22 +500,22 @@ class _RequestsTab extends StatelessWidget {
                 childAspectRatio: c.maxWidth < 600 ? 4 : 2.2,
                 children: [
                   _MiniStat(
-                    label: 'KUTILMOQDA',
+                    label: l10n.superAdminPending.toUpperCase(),
                     value: list.length.toString(),
                     color: AppColors.warning,
-                    subtitle: "Yangi so'rovlar",
+                    subtitle: l10n.superAdminNewRequests,
                   ),
-                  const _MiniStat(
-                    label: 'TASDIQLANGAN',
+                  _MiniStat(
+                    label: l10n.superAdminApproved,
                     value: '—',
                     color: AppColors.success,
-                    subtitle: 'Server stats kerak',
+                    subtitle: l10n.superAdminServerStatsNeeded,
                   ),
-                  const _MiniStat(
-                    label: 'RAD ETILGAN',
+                  _MiniStat(
+                    label: l10n.superAdminRejected,
                     value: '—',
                     color: AppColors.danger,
-                    subtitle: 'Server stats kerak',
+                    subtitle: l10n.superAdminServerStatsNeeded,
                   ),
                 ],
               ),
@@ -524,7 +525,7 @@ class _RequestsTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    "KUTILAYOTGAN SO'ROVLAR",
+                    l10n.superAdminPendingRequestsHeader,
                     style: AppTextStyles.caption().copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -609,10 +610,11 @@ class _RefreshChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return TextButton.icon(
       onPressed: onRefresh,
       icon: const Icon(Icons.refresh, size: 14),
-      label: const Text('Yangilash'),
+      label: Text(l10n.refresh),
       style: TextButton.styleFrom(
         foregroundColor: AppColors.textSecondary,
         textStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
@@ -757,7 +759,7 @@ class _RequestCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Kutilmoqda',
+                          l10n.superAdminPending,
                           style: AppTextStyles.bodySmall().copyWith(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -882,7 +884,7 @@ class _OwnersTab extends StatelessWidget {
                       controller: searchCtrl,
                       style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: "Ism, username yoki do'kon nomi…",
+                        hintText: l10n.ownerSearchHint,
                         hintStyle: AppTextStyles.bodyMedium().copyWith(
                           color: AppColors.textMuted,
                           fontSize: 14,
@@ -909,7 +911,7 @@ class _OwnersTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'FAOL EGALAR (${filtered.length})',
+                    l10n.superAdminActiveOwnersHeader(filtered.length),
                     style: AppTextStyles.caption().copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -922,7 +924,7 @@ class _OwnersTab extends StatelessWidget {
                   child: AppPrimaryButton(
                     onPressed: onCreate,
                     icon: Icons.add,
-                    label: "Yangi qo'shish",
+                    label: l10n.addNew,
                   ),
                 ),
               ],
@@ -932,7 +934,7 @@ class _OwnersTab extends StatelessWidget {
               _EmptyState(
                 icon: Icons.people_outline,
                 text: search.isNotEmpty
-                    ? 'Hech narsa topilmadi'
+                    ? l10n.nothingFound
                     : l10n.superAdminNoActiveOwners,
               )
             else
@@ -956,6 +958,7 @@ class _OwnerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final initial =
         owner.fullName.isNotEmpty ? owner.fullName[0].toUpperCase() : '?';
     final avatarColor = _avatarColor(owner.userId);
@@ -964,15 +967,15 @@ class _OwnerCard extends StatelessWidget {
     Color statusBg;
     String statusLabel;
     if (owner.isMarketBlocked) {
-      statusLabel = 'Bloklangan';
+      statusLabel = l10n.statusBlocked;
       statusColor = AppColors.danger;
       statusBg = AppColors.dangerLight;
     } else if (owner.isActive) {
-      statusLabel = 'Faol';
+      statusLabel = l10n.statusActive;
       statusColor = AppColors.success;
       statusBg = AppColors.successLight;
     } else {
-      statusLabel = 'Faolsiz';
+      statusLabel = l10n.statusInactive;
       statusColor = AppColors.textMuted;
       statusBg = AppColors.inputFill;
     }

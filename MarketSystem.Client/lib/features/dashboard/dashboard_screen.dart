@@ -4,6 +4,8 @@
 // previous implementation; only the body has been rebuilt to match the
 // HTML demo (#page-owner-dash and #page-staff-dash in design-demo).
 
+import 'dart:math' show max;
+
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +13,9 @@ import 'package:provider/provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/utils/number_formatter.dart';
+import '../../data/services/dashboard_service.dart';
+import '../../data/services/notification_service.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../l10n/app_localizations.dart';
@@ -29,6 +34,54 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  // Owner-only data load. We hold the [Future] in state so a pull-to-refresh
+  // can replace it and the [FutureBuilder] in [_OwnerBody] rebuilds cleanly.
+  // For non-Owner roles these stay null and we never touch the services.
+  Future<DashboardSummary>? _summaryFuture;
+  Future<int>? _unreadFuture;
+
+  bool _initialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initial fetch — runs once, after AuthProvider is available in context.
+    if (_initialised) return;
+    _initialised = true;
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final role = (auth.user?['role'] ?? 'Seller') as String;
+    if (role == 'Owner') {
+      _summaryFuture = DashboardService(authProvider: auth).loadOwnerSummary();
+    }
+    // Bell badge is useful for Owner + Admin (both manage low-stock / debts).
+    if (role == 'Owner' || role == 'Admin') {
+      _unreadFuture =
+          NotificationService(authProvider: auth).loadUnreadCount();
+    }
+  }
+
+  Future<void> _refresh() async {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final role = (auth.user?['role'] ?? 'Seller') as String;
+    setState(() {
+      if (role == 'Owner') {
+        _summaryFuture =
+            DashboardService(authProvider: auth).loadOwnerSummary();
+      }
+      if (role == 'Owner' || role == 'Admin') {
+        _unreadFuture =
+            NotificationService(authProvider: auth).loadUnreadCount();
+      }
+    });
+    // Await whichever futures we actually scheduled so RefreshIndicator's
+    // spinner stays visible until the data lands.
+    await Future.wait([
+      if (_summaryFuture != null) _summaryFuture!.catchError((_) =>
+          const DashboardSummary()),
+      if (_unreadFuture != null) _unreadFuture!.catchError((_) => 0),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -54,7 +107,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               .copyWith(letterSpacing: 2, color: AppColors.text),
         ),
       ),
-      body: _DashboardBody(user: user, role: role),
+      body: RefreshIndicator(
+        color: AppColors.brand,
+        onRefresh: _refresh,
+        child: _DashboardBody(
+          user: user,
+          role: role,
+          summaryFuture: _summaryFuture,
+          unreadFuture: _unreadFuture,
+        ),
+      ),
     );
   }
 }
@@ -65,15 +127,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 // ---------------------------------------------------------------------------
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody({required this.user, required this.role});
+  const _DashboardBody({
+    required this.user,
+    required this.role,
+    this.summaryFuture,
+    this.unreadFuture,
+  });
 
   final dynamic user;
   final String role;
+  final Future<DashboardSummary>? summaryFuture;
+  final Future<int>? unreadFuture;
 
-  String _fullName() {
+  String _fullName(BuildContext context) {
     final raw = user?['fullName'];
     if (raw is String && raw.trim().isNotEmpty) return raw;
-    return 'Foydalanuvchi';
+    return AppLocalizations.of(context)!.defaultUserName;
   }
 
   String _dateLabel() {
@@ -97,27 +166,39 @@ class _DashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = _fullName();
+    final name = _fullName(context);
     final date = _dateLabel();
 
+    // Greeting bell badge — true when there's at least one "thing to look at"
+    // (low-stock, today's debt, etc.). Reflects unreadFuture once it resolves;
+    // before then we fall back to false rather than guessing red.
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.xl),
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            GreetingCard(
-              fullName: name,
-              role: role,
-              dateLabel: date,
-              onSettingsTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              ),
+            FutureBuilder<int>(
+              future: unreadFuture,
+              builder: (context, snapshot) {
+                final unread = (snapshot.data ?? 0);
+                return GreetingCard(
+                  fullName: name,
+                  role: role,
+                  dateLabel: date,
+                  hasNotification: unread > 0,
+                  unreadNotifications: unread,
+                  onSettingsTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 14),
             if (role == 'Owner')
-              const _OwnerBody()
+              _OwnerBody(summaryFuture: summaryFuture)
             else
               _SellerBody(role: role),
           ],
@@ -132,93 +213,228 @@ class _DashboardBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _OwnerBody extends StatelessWidget {
-  const _OwnerBody();
+  const _OwnerBody({this.summaryFuture});
+
+  /// Future supplied by [_DashboardScreenState]. May be null briefly while
+  /// the state is initialising — in that case we render the loading skeleton
+  /// rather than crash.
+  final Future<DashboardSummary>? summaryFuture;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SalesHeroCard(
-          amount: '2 450 000',
-          deltaText: "15% kechagidan ko'p",
-          stats: [
-            SalesHeroStat(value: '28', label: 'Chek'),
-            SalesHeroStat(value: '15', label: 'Mijoz'),
-            SalesHeroStat(value: '450K', label: 'Foyda'),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xl),
-        SectionHeader(
-          title: 'Statistika',
-          actionLabel: "Hammasini ko'rish",
-          onAction: () => Navigator.pushNamed(context, AppRoutes.reports),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        const _KpiGrid(),
-        const SizedBox(height: AppSpacing.xl),
-        const SectionHeader(title: 'Ogohlantirish'),
-        const SizedBox(height: AppSpacing.md),
-        AlertCard(
-          emoji: '💸',
-          title: 'Bugun 3 ta qarzga sotildi',
-          description: 'Jami: 1 250 000 UZS',
-          tone: AlertTone.danger,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AlertCard(
-          emoji: '📦',
-          title: '5 ta mahsulot tugab qoldi',
-          description: 'Coca-Cola 1.5L, Pepsi 0.5L va boshqalar',
-          tone: AlertTone.warning,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ProductsScreen(isReadOnly: false),
+    final l10n = AppLocalizations.of(context)!;
+    return FutureBuilder<DashboardSummary>(
+      future: summaryFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting ||
+            summaryFuture == null) {
+          return const _OwnerBodySkeleton();
+        }
+        // Connection done. Use whatever we got; the service itself swallows
+        // per-source errors and fills zeros, so a hard error here is rare.
+        // If we do see one (network down before any source ran), show a
+        // small retry banner above an empty body.
+        final summary = snapshot.data ?? const DashboardSummary();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (snapshot.hasError)
+              const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.md),
+                child: _RetryBanner(),
+              ),
+            SalesHeroCard(
+              amount: NumberFormatter.format(summary.todayRevenue),
+              deltaText: l10n.todaysSale,
+              stats: [
+                SalesHeroStat(
+                  value: '${summary.todayCheckCount}',
+                  label: l10n.checkLabel,
+                ),
+                SalesHeroStat(
+                  value: '${summary.todayCustomerCount}',
+                  label: l10n.mijozLabel,
+                ),
+                SalesHeroStat(
+                  value: _compact(summary.todayProfit),
+                  label: l10n.profitLabel,
+                ),
+              ],
             ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xl),
-        SectionHeader(
-          title: 'Tahlil',
-          actionLabel: 'Hisobotlar',
-          onAction: () => Navigator.pushNamed(context, AppRoutes.reports),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        const ChartCard(
-          title: '7-kunlik sotuv',
-          period: 'Bu hafta',
-          bars: [0.40, 0.55, 0.35, 0.70, 0.60, 0.85, 1.00],
-          footerValue: '12.4M UZS',
-          footerDelta: "18% o'tgan haftadan",
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        const TopSellersCard(
-          title: "Eng ko'p sotilgan",
-          period: 'Bu oy',
-          entries: [
-            TopSellerEntry(
-                emoji: '🥤', name: 'Coca-Cola 0.5L', countLabel: '248 dona'),
-            TopSellerEntry(
-                emoji: '🍞', name: 'Non (oddiy)', countLabel: '187 dona'),
-            TopSellerEntry(
-                emoji: '🚬',
-                name: 'Sigaret Hollywood',
-                countLabel: '156 dona'),
+            const SizedBox(height: AppSpacing.xl),
+            SectionHeader(
+              title: l10n.statisticsSectionLabel,
+              actionLabel: l10n.viewAll,
+              onAction: () => Navigator.pushNamed(context, AppRoutes.reports),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _KpiGrid(summary: summary),
+            const SizedBox(height: AppSpacing.xl),
+            SectionHeader(title: l10n.alertsSectionLabel),
+            const SizedBox(height: AppSpacing.md),
+            if (summary.pendingDebtsCount > 0)
+              AlertCard(
+                emoji: '💸',
+                title:
+                    '${summary.pendingDebtsCount} ta faol qarz mavjud',
+                description:
+                    'Jami: ${NumberFormatter.format(summary.pendingDebtsTotal)} UZS',
+                tone: AlertTone.danger,
+                onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
+              ),
+            if (summary.pendingDebtsCount > 0 && summary.lowStockCount > 0)
+              const SizedBox(height: AppSpacing.md),
+            if (summary.lowStockCount > 0)
+              AlertCard(
+                emoji: '📦',
+                title:
+                    '${summary.lowStockCount} ta mahsulot tugab qoldi',
+                description: "Omborni to'ldirish kerak",
+                tone: AlertTone.warning,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProductsScreen(isReadOnly: false),
+                  ),
+                ),
+              ),
+            if (summary.pendingDebtsCount == 0 && summary.lowStockCount == 0)
+              const AlertCard(
+                emoji: '✅',
+                title: "Hech qanday ogohlantirish yo'q",
+                description: 'Hammasi joyida',
+                tone: AlertTone.warning,
+              ),
+            const SizedBox(height: AppSpacing.xl),
+            SectionHeader(
+              title: l10n.analysisSectionLabel,
+              actionLabel: l10n.reportsActionLabel,
+              onAction: () => Navigator.pushNamed(context, AppRoutes.reports),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            // ChartCard — bars come from /Reports/weekly-series (last 7 days,
+            // oldest → newest). Heights normalised to [0..1] against the
+            // window's max revenue so the tallest day reaches 100%.
+            _buildChartCard(context, summary, l10n),
+            const SizedBox(height: AppSpacing.lg),
+            // Top-sellers list — uses /Reports/top-products?period=today
+            // (preferred) and falls back to the legacy daily-items aggregate
+            // when the new endpoint returned nothing (e.g. older backend).
+            _buildTopSellersCard(context, summary, l10n),
+            const SizedBox(height: AppSpacing.xl2),
           ],
-        ),
-        const SizedBox(height: AppSpacing.xl2),
-      ],
+        );
+      },
+    );
+  }
+
+  /// Compact representation for the small "Foyda" stat (e.g. 450 000 → "450K",
+  /// 12 400 000 → "12.4M"). Falls back to plain space-separated digits for
+  /// small numbers so a 90 000 UZS profit doesn't render as "0.1M".
+  static String _compact(double value) {
+    if (value.abs() >= 1000000) {
+      final m = value / 1000000;
+      return '${m.toStringAsFixed(m >= 10 ? 0 : 1)}M';
+    }
+    if (value.abs() >= 1000) {
+      final k = value / 1000;
+      return '${k.toStringAsFixed(k >= 100 ? 0 : 1)}K';
+    }
+    return NumberFormatter.format(value);
+  }
+
+  /// Bar chart for the last 7 days, fed by [DashboardSummary.weeklySeries].
+  /// Bars are scaled to the window's max revenue (so the tallest day fills
+  /// the card) and the footer shows the running total. If the endpoint
+  /// returned an empty list we still render the card with a "—" footer
+  /// rather than hiding it — keeps the layout stable on retry.
+  static ChartCard _buildChartCard(
+    BuildContext context,
+    DashboardSummary summary,
+    AppLocalizations l10n,
+  ) {
+    final series = summary.weeklySeries;
+    final maxRev = series.fold<double>(0, (m, p) => max(m, p.revenue));
+    final bars = series.isEmpty
+        // Tiny placeholder bars so the empty card doesn't look broken.
+        ? const <double>[0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+        : series
+            .map((p) => maxRev == 0 ? 0.0 : p.revenue / maxRev)
+            .toList();
+    final totalWeek =
+        series.fold<double>(0, (sum, p) => sum + p.revenue);
+    final footerValue = totalWeek > 0
+        ? '${NumberFormatter.format(totalWeek)} UZS'
+        : '— UZS';
+    return ChartCard(
+      title: l10n.thisWeekLabel,
+      period: l10n.thisWeekLabel,
+      bars: bars,
+      footerValue: footerValue,
+      // Backend doesn't yet expose a previous-period comparison endpoint,
+      // so we leave the delta blank — the widget renders an empty arrow.
+      footerDelta: '',
+    );
+  }
+
+  /// Top-3 sellers card. Prefers the new /Reports/top-products endpoint
+  /// (period=today). Falls back to the legacy local aggregation when the
+  /// endpoint returned nothing, so an older backend still shows data.
+  static TopSellersCard _buildTopSellersCard(
+    BuildContext context,
+    DashboardSummary summary,
+    AppLocalizations l10n,
+  ) {
+    final rows = summary.topProductRows;
+    if (rows.isNotEmpty) {
+      return TopSellersCard(
+        title: l10n.bestSellersTitle,
+        period: l10n.todayLabel,
+        entries: [
+          for (final p in rows.take(3))
+            TopSellerEntry(
+              emoji: '🛒',
+              name: p.name,
+              countLabel:
+                  '${NumberFormatter.formatQuantity(p.quantity)} dona',
+            ),
+        ],
+      );
+    }
+    // Fallback to the legacy locally-aggregated list.
+    final legacy = summary.topProducts;
+    return TopSellersCard(
+      title: l10n.bestSellersTitle,
+      period: l10n.todayLabel,
+      entries: legacy.isEmpty
+          ? [
+              TopSellerEntry(
+                emoji: '🛒',
+                name: l10n.noProducts,
+                countLabel: '—',
+              ),
+            ]
+          : [
+              for (final p in legacy)
+                TopSellerEntry(
+                  emoji: '🛒',
+                  name: p.name,
+                  countLabel:
+                      '${NumberFormatter.formatQuantity(p.quantity)} dona',
+                ),
+            ],
     );
   }
 }
 
 class _KpiGrid extends StatelessWidget {
-  const _KpiGrid();
+  const _KpiGrid({required this.summary});
+
+  final DashboardSummary summary;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return LayoutBuilder(
       builder: (context, c) {
         final isWide = c.maxWidth > 700;
@@ -230,34 +446,124 @@ class _KpiGrid extends StatelessWidget {
           mainAxisSpacing: AppSpacing.md,
           crossAxisSpacing: AppSpacing.md,
           childAspectRatio: 1.3,
-          children: const [
+          children: [
             KpiCard(
               emoji: '💰',
-              value: '12.4M',
-              label: 'Bu hafta foyda',
+              value: _OwnerBody._compact(summary.weekProfit),
+              label: l10n.weekProfit,
               tone: KpiTone.green,
             ),
             KpiCard(
               emoji: '📊',
-              value: '68M',
-              label: 'Bu oy aylanma',
+              value: _OwnerBody._compact(summary.monthRevenue),
+              label: l10n.monthRevenue,
               tone: KpiTone.purple,
             ),
             KpiCard(
               emoji: '👥',
-              value: '86',
-              label: 'Mijozlar',
+              value: '${summary.customerCount}',
+              label: l10n.customers,
               tone: KpiTone.blue,
             ),
             KpiCard(
               emoji: '💎',
-              value: '32',
-              label: 'Top mahsulot',
+              value: '${summary.topProductCount}',
+              label: l10n.topProduct,
               tone: KpiTone.orange,
             ),
           ],
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Loading skeleton + retry banner — local to the Owner body.
+// ---------------------------------------------------------------------------
+
+class _OwnerBodySkeleton extends StatelessWidget {
+  const _OwnerBodySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _SkeletonBox(height: 160, radius: AppRadius.xl),
+        const SizedBox(height: AppSpacing.xl),
+        LayoutBuilder(
+          builder: (context, c) {
+            final isWide = c.maxWidth > 700;
+            final crossCount = isWide ? 4 : 2;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: crossCount,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
+              childAspectRatio: 1.3,
+              children: List.generate(
+                  4, (_) => const _SkeletonBox(height: 100)),
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        const _SkeletonBox(height: 64),
+        const SizedBox(height: AppSpacing.md),
+        const _SkeletonBox(height: 64),
+        const SizedBox(height: AppSpacing.xl2),
+      ],
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  const _SkeletonBox({this.height = 80, this.radius = AppRadius.lg});
+
+  final double height;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+    );
+  }
+}
+
+class _RetryBanner extends StatelessWidget {
+  const _RetryBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.dangerLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded,
+              size: 20, color: AppColors.danger),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              l10n.pullToRefresh,
+              style: AppTextStyles.bodySmall()
+                  .copyWith(color: AppColors.danger, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -273,40 +579,41 @@ class _SellerBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isAdmin = role == 'Admin';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SellerHeroCta(
           emoji: '🛒',
-          title: 'Yangi sotuv',
-          subtitle: 'Mahsulot tanlash uchun bosing',
+          title: l10n.newSale,
+          subtitle: l10n.tapToSelectProduct,
           onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
         ),
         const SizedBox(height: AppSpacing.lg),
         PendingSaleCard(
-          title: '1 ta sotuv davom etmoqda',
+          title: l10n.oneSaleInProgress,
           subtitle: 'Chek #1247 · 3 dona · 42 000 UZS',
           onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
         ),
         const SizedBox(height: AppSpacing.lg),
-        const SellerStatsRow(
+        SellerStatsRow(
           stats: [
-            SalesHeroStat(value: '12', label: 'Bugun'),
-            SalesHeroStat(value: '850K', label: 'Tushum'),
-            SalesHeroStat(value: '6 soat', label: 'Smena'),
+            SalesHeroStat(value: '12', label: l10n.todayLabel),
+            SalesHeroStat(value: '850K', label: l10n.revenueLabel),
+            SalesHeroStat(value: '6 ${l10n.hour}', label: l10n.shiftLabel),
           ],
         ),
         const SizedBox(height: AppSpacing.xl),
-        const SectionHeader(title: 'Tezkor amallar'),
+        SectionHeader(title: l10n.quickActions),
         const SizedBox(height: AppSpacing.md),
         Row(
           children: [
             Expanded(
               child: KpiCard(
                 emoji: '💸',
-                value: 'Qarz',
-                label: 'Qarz qabul qilish',
+                value: l10n.debt,
+                label: l10n.debtPayments,
                 tone: KpiTone.orange,
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.debts),
@@ -316,8 +623,8 @@ class _SellerBody extends StatelessWidget {
             Expanded(
               child: KpiCard(
                 emoji: '↩️',
-                value: 'Qaytarish',
-                label: 'Sotuvni qaytarish',
+                value: l10n.refundLabel,
+                label: l10n.refundLabel,
                 tone: KpiTone.blue,
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.sales),
@@ -327,15 +634,15 @@ class _SellerBody extends StatelessWidget {
         ),
         if (isAdmin) ...[
           const SizedBox(height: AppSpacing.xl),
-          const SectionHeader(title: 'Admin'),
+          SectionHeader(title: l10n.adminSectionLabel),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
                 child: KpiCard(
                   emoji: '🧾',
-                  value: 'Hisobot',
-                  label: 'Hisobotlar',
+                  value: l10n.reportLabel,
+                  label: l10n.reportsActionLabel,
                   tone: KpiTone.green,
                   onTap: () =>
                       Navigator.pushNamed(context, AppRoutes.reports),
@@ -345,8 +652,8 @@ class _SellerBody extends StatelessWidget {
               Expanded(
                 child: KpiCard(
                   emoji: '💼',
-                  value: 'Kassa',
-                  label: 'Kassa boshqaruvi',
+                  value: l10n.cashRegisterShort,
+                  label: l10n.cashRegister,
                   tone: KpiTone.purple,
                   onTap: () =>
                       Navigator.pushNamed(context, AppRoutes.cashRegister),

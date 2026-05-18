@@ -53,7 +53,9 @@ class ProductRepositoryImpl implements ProductRepository {
   @override
   Future<List<ProductEntity>> getLowStockProducts() async {
     try {
-      final response = await _networkHandler.get('/Products/GetLowStock');
+      // TODO: hoist into ApiConstants as `lowStockProducts` constant.
+      final response =
+          await _networkHandler.get('/Products/GetLowStockProducts/low-stock');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;

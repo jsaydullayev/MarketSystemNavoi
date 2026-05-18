@@ -104,7 +104,8 @@ class ProductService {
   }
 
   Future<List<int>?> downloadProductsExcel() async {
+    // TODO: hoist into ApiConstants as `productsExportExcel` constant.
     return await _httpService
-        .downloadBytes('${ApiConstants.products}/ExportProductsToExcel');
+        .downloadBytes('${ApiConstants.products}/ExportProductsToExcel/export');
   }
 }

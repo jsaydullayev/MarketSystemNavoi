@@ -10,6 +10,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/superadmin_service.dart';
 import '../../domain/models/owner_detail.dart';
 
@@ -61,8 +62,9 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
     if (res.status == SuperAdminOpStatus.success) {
       Navigator.of(context).pop(true);
     } else {
+      final l10n = AppLocalizations.of(context)!;
       setState(() =>
-          _errorMessage = res.message ?? "O'chirishda xatolik yuz berdi");
+          _errorMessage = res.message ?? l10n.deleteFailed);
     }
   }
 
@@ -109,6 +111,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Dialog(
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -143,7 +146,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                       const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: Text(
-                          "O'chirishni tasdiqlang",
+                          l10n.confirmDeleteTitle,
                           style: AppTextStyles.titleMedium(),
                         ),
                       ),
@@ -158,7 +161,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    "Bu amalni qaytarib bo'lmaydi",
+                    l10n.cannotUndoAction,
                     style: AppTextStyles.bodySmall(),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -187,28 +190,28 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                                 color: AppColors.text,
                               ),
                               children: [
-                                const TextSpan(
-                                  text: 'DIQQAT! ',
-                                  style: TextStyle(
+                                TextSpan(
+                                  text: '${l10n.warning} ',
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.danger,
                                   ),
                                 ),
-                                const TextSpan(text: 'Siz '),
+                                TextSpan(text: l10n.deleteOwnerPart1),
                                 TextSpan(
                                   text: widget.ownerName,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const TextSpan(text: " va uning do'koni "),
+                                TextSpan(text: l10n.deleteOwnerPart2),
                                 TextSpan(
                                   text: '"${widget.marketName}"',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const TextSpan(text: "'ni o'chirmoqchisiz."),
+                                TextSpan(text: l10n.deleteOwnerPart3),
                               ],
                             ),
                           ),
@@ -230,7 +233,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Quyidagi ma'lumotlar saqlanib qoladi (faqat owner+market deaktivatsiya):",
+                          l10n.dataWillBeKept,
                           style: AppTextStyles.bodySmall().copyWith(
                             color: AppColors.text,
                             fontWeight: FontWeight.w600,
@@ -241,22 +244,22 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                         _CascadeRow(
                           icon: Icons.inventory_2_outlined,
                           count: widget.stats.productsCount,
-                          label: 'ta mahsulot',
+                          label: l10n.countProducts,
                         ),
                         _CascadeRow(
                           icon: Icons.receipt_long_outlined,
                           count: widget.stats.salesCount,
-                          label: 'ta sotuv',
+                          label: l10n.countSales,
                         ),
                         _CascadeRow(
                           icon: Icons.people_outline,
                           count: widget.stats.customersCount,
-                          label: 'ta mijoz',
+                          label: l10n.countCustomers,
                         ),
                         _CascadeRow(
                           icon: Icons.badge_outlined,
                           count: widget.stats.cashiersCount,
-                          label: 'ta kassir akkaunti',
+                          label: l10n.countCashiers,
                         ),
                       ],
                     ),
@@ -279,7 +282,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                     const SizedBox(height: AppSpacing.lg),
                   ],
                   Text(
-                    "DO'KON NOMINI KIRITING *",
+                    l10n.enterShopNameUpper,
                     style: AppTextStyles.caption().copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -290,18 +293,18 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
                       hint: widget.marketName,
-                      helper: 'Aniq "${widget.marketName}" deb yozing',
+                      helper: l10n.typeShopNameExact(widget.marketName),
                     ),
                     validator: (v) {
                       if ((v ?? '').trim() != widget.marketName.trim()) {
-                        return "Do'kon nomi mos kelmadi";
+                        return l10n.shopNameMismatch;
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    "O'CHIRISH SABABI *",
+                    l10n.deleteReasonUpper,
                     style: AppTextStyles.caption().copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -312,10 +315,10 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                     maxLines: 2,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
-                      hint: "Masalan: To'lov muddati o'tdi va aloqaga chiqmadi",
+                      hint: l10n.deleteReasonHint,
                     ),
                     validator: (v) => (v ?? '').trim().length < 3
-                        ? 'Sababini batafsil yozing'
+                        ? l10n.reasonRequiredDetailed
                         : null,
                   ),
                   const SizedBox(height: AppSpacing.xl),
@@ -323,7 +326,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                     children: [
                       Expanded(
                         child: AppSecondaryButton(
-                          label: 'Bekor qilish',
+                          label: l10n.cancel,
                           onPressed: _submitting
                               ? null
                               : () => Navigator.pop(context),
@@ -332,7 +335,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                       const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: AppDangerButton(
-                          label: "O'chirish",
+                          label: l10n.delete,
                           icon: Icons.delete_outline,
                           isLoading: _submitting,
                           onPressed: _submitting ? null : _submit,
