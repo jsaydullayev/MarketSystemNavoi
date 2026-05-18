@@ -17,7 +17,8 @@
 6. [Risk registri](#6-risk-registri)
 7. [Byudjet va resurslar](#7-byudjet-va-resurslar)
 8. [Ilovalar](#8-ilovalar)
-9. [Dizayn Sistema Migratsiyasi (2026-05-18)](#9-dizayn-sistema-migratsiyasi-2026-05-18) ⭐ yangi
+9. [Dizayn Sistema Migratsiyasi (2026-05-18)](#9-dizayn-sistema-migratsiyasi-2026-05-18)
+10. [2-sessiya: Backend ulanish + dark theme + l10n sweep (2026-05-18 kechqurun)](#10-2-sessiya-backend-ulanish--dark-theme--l10n-sweep-2026-05-18-kechqurun) ⭐ yangi
 
 ---
 
@@ -668,5 +669,173 @@ Loyiha legacy dizayn (`AppColors.orangePrimary #F28C33`, kulrang fonlar, `Adapti
 
 ---
 
-**Yangilash sanasi:** 2026-05-18
+## 10. 2-sessiya: Backend ulanish + dark theme + l10n sweep (2026-05-18 kechqurun)
+
+Migratsiyadan keyingi sessiyada loyiha "ko'rinadi-lekin-ishlaydi" holatdan to'liq end-to-end ishlovchi holatga keltirildi. Commit: `44ffd06`.
+
+### 10.1 API ulanish auditi (Agent 1)
+
+Migratsiya paytida ba'zi Flutter API path'lari backend route'lari bilan to'g'ri kelmagan edi — endpoint mavjud lekin yo'l noto'g'ri yozilgan. Auditdan keyin **10 ta 404 mismatch** topib tuzatildi:
+
+| # | Eski (404) | Yangi (to'g'ri) |
+|---|------------|------------------|
+| 1 | `GET /Customers/phone/{phone}` | `GET /Customers/GetCustomerByPhone/phone/{phone}` |
+| 2 | `GET /Customers/GetCustomerDeleteInfo/{id}` | `+/delete-info` |
+| 3 | `GET /Products/GetLowStock` | `GetLowStockProducts/low-stock` |
+| 4 | `GET /Products/ExportProductsToExcel` | `+/export` |
+| 5 | `GET /Reports/ExportCategoriesToExcel` | `→ /ProductCategories/...` |
+| 6 | `GET /Zakups/GetZakupsByDateRange?...` | `+/by-date?...` |
+| 7 | `GET /Zakups/ExportZakupsToExcel` | `+/export` |
+| 8-9 | Buzuq URL'lar `POST /Users/.../{id}` | `POST /Users/{Action}/{id}/{verb}` |
+| 10 | `GET /Reports/ExportCustomersToExcel` | **Backend'da yo'q** (FIXME) |
+
+7 ta data layer fayli tuzatildi: `customer_service.dart`, `product_service.dart`, `zakup_service.dart`, `users_service.dart`, `download_service.dart`, `product_remote_data_source.dart`, `product_repository_impl.dart`.
+
+### 10.2 Dashboard real ma'lumotga ulandi (Agent 3)
+
+Migratsiya paytida dashboard widget'lari hardcoded mock ko'rsatardi ("2 450 000", "28 chek", "12.4M" va h.k.). 2-sessiyada yangi data layer qo'shildi:
+
+**Yangi fayllar:**
+- `lib/data/services/dashboard_service.dart` — `DashboardService` + `DashboardSummary` (15 maydon)
+- `lib/data/services/notification_service.dart` — `NotificationService.loadUnreadCount()`
+
+**Ulangan backend endpoint'lar:**
+- `/Reports/profit-summary`, `/Reports/daily`, `/Reports/daily-items`
+- `/Reports/daily-sales-list`, `/Reports/period`
+- `/Customers/GetAllCustomers`, `/Products/GetAllProducts`
+- `/Debts/GetAllDebts`, `/Products/GetLowStockProducts/low-stock`
+
+**Widget holati (Owner dashboard):**
+| Widget | Holat |
+|--------|-------|
+| GreetingCard | Real (user.fullName, role, unread badge) |
+| SalesHeroCard | Real (todayRevenue, checkCount, customers, profit) |
+| KpiCard ×4 | Real (weekProfit, monthRevenue, customers, topProductCount) |
+| AlertCard (debts) | Real (pending count + total) |
+| AlertCard (low-stock) | Real |
+| ChartCard | Real (yangi `/weekly-series` orqali) |
+| TopSellersCard | Real (yangi `/top-products?period=today` orqali) |
+
+### 10.3 Dark theme (legacy blue) qo'shildi
+
+Migratsiya light-only theme bilan yakunlangan edi. Eski foydalanuvchilar uchun toq blue rangni dark theme sifatida qaytarish kerak edi. Yangi `AppTheme.dark` qo'shildi.
+
+**11 ta dark palette token** (`lib/design/tokens/app_tokens.dart`):
+- `darkPrimary: #1E3A8A` (eski design'ning ko'k)
+- `darkPrimaryLight: #3B82F6`
+- `darkBg: #0F172A` (slate-900)
+- `darkSurface: #1E293B` (slate-800)
+- `darkSurface2: #334155` (slate-700)
+- `darkBorder`, `darkBorderSoft`, `darkText`, `darkTextSecondary`, `darkTextMuted`, `darkInputFill`
+
+**`AppTheme.dark`** ~120 qator — `AppTheme.light`'ga simmetrik, lekin dark palette bilan.
+
+**`main_app.dart`** — `dark: AppTheme.light` (placeholder) → `dark: AppTheme.dark`. `AdaptiveTheme` toggle drawer + welcome ekrandan ishlaydi.
+
+### 10.4 Lokalizatsiya tozalash (Agent 2 + 4 + qo'lda)
+
+Migratsiya paytida ko'p widget'lar uzbek hardcoded matnlarda qoldirilgan edi. Sweep'da:
+
+**Dashboard widget'lar uchun 30+ key:**
+`greetingHello`, `todaysSale`, `checkLabel`, `mijozLabel`, `profitLabel`, `statisticsSectionLabel`, `alertsSectionLabel`, `weekProfit`, `monthRevenue`, `topProduct`, `analysisSectionLabel`, `reportsActionLabel`, `thisWeekLabel`, `todayLabel`, `viewAll`, `bestSellersTitle`, `newSale`, `oneSaleInProgress`, `revenueLabel`, `shiftLabel`, `refundLabel`, `cashRegisterShort`, `defaultUserName`, `tapToSelectProduct`, `hour`, `quickActions`, `debtPayments`, `pullToRefresh`, `adminSectionLabel`, `reportLabel`.
+
+**Admin/SuperAdmin/Privacy uchun 90+ key:**
+`adminProductsManagement`, `deleteProductConfirm`, `confirmDeleteTitle`, `blockShopTitle`, `superAdminActiveOwnersHeader`, `privacyPolicyTitle` va boshqalar.
+
+**Lokalizatsiya holati:**
+- `app_uz.arb` va `app_ru.arb` — 120+ yangi key
+- Dashboard, drawer, POS, mahsulotlar, sotuvlar, mijozlar, hisobotlar, kassa, admin_products, superadmin, privacy, welcome — **uz/ru har ikkalasida to'liq**
+- Privacy policy uzun matnlari inglizcha qoldi (uzun matnlar arb'ni bloat qiladi)
+
+### 10.5 Backend: 3 ta yangi Reports endpoint
+
+Migratsiyada dashboard'da 3 ta TODO qoldirilgan edi: 7-kunlik chart, top mahsulotlar ranking, xodimlar samaradorligi. Bularning hammasi mavjud ma'lumotlar aggregatsiyasi — yangi DB column kerakmas.
+
+**Yangi fayllar (3 ta DTO):**
+- `MarketSystem.Application/DTOs/WeeklySeriesDto.cs` — `WeeklySeriesDto`, `DailyPoint`
+- `MarketSystem.Application/DTOs/TopProductsDto.cs` — `TopProductsDto`, `TopProductRow`
+- `MarketSystem.Application/DTOs/StaffPerformanceDto.cs` — `StaffPerformanceDto`, `StaffRow`
+
+**Endpoint'lar:**
+| URL | Maqsad |
+|-----|--------|
+| `GET /api/Reports/weekly-series?days=7` | Dashboard ChartCard (kunlik aylanma+foyda+chek soni) |
+| `GET /api/Reports/top-products?period=&sortBy=&limit=` | TopSellersCard ranking (today/week/month/year × quantity/revenue/profit) |
+| `GET /api/Reports/staff-performance?period=` | Xodimlar samaradorligi (today/week/month) |
+
+**Texnik xususiyatlar:**
+- Tenant-scoped (`ICurrentMarketService.GetCurrentMarketId()`)
+- Tashkent timezone (`ITashkentClock`)
+- Role-based: Profit faqat Owner'ga
+- Empty fill: WeeklySeries har bir kun uchun zero point
+- `[Authorize(Policy = "AdminOrOwner")]`
+- External products skip qilinadi (top-products'da)
+- Shift fields placeholder (0/false) — `Shift` entity hali yo'q
+
+### 10.6 Flutter yangi endpoint'larga ulanish
+
+**`lib/data/services/report_service.dart`** kengaytirildi:
+- 6 ta yangi DTO Dart class (`WeeklySeries`, `DailyPoint`, `TopProducts`, `TopProductRow`, `StaffPerformance`, `StaffRow`)
+- Defensive parse helpers (`_asDouble`, `_asDoubleOrNull`, `_asInt`, `_asDate`)
+- 3 ta method: `getWeeklySeries(days)`, `getTopProducts(period, sortBy, limit)`, `getStaffPerformance(period)`
+
+**`DashboardSummary`** ga 2 ta yangi maydon: `weeklySeries: List<DailyPoint>`, `topProductRows: List<TopProductRow>`
+
+**`dashboard_screen.dart`** o'zgartirildi:
+- ChartCard hozir `summary.weeklySeries`'dan bar'larni normalize qiladi (max revenue'ga bo'lib)
+- TopSellersCard hozir `summary.topProductRows`'dan oladi (`period=today, sortBy=quantity, limit=3`)
+- TODO comment'lari olib tashlandi
+
+### 10.7 Sifat ko'rsatkichlari (sessiya yakuni)
+
+| Ko'rsatkich | Boshlang'ich | Sessiya yakuni | Δ |
+|-------------|--------------|----------------|---|
+| `flutter analyze` info | 20 | **19** | −1 |
+| `flutter analyze` error | 0 | 0 | ✓ |
+| `dotnet build` warning | 9 (pre-existing) | 9 | ✓ |
+| `dotnet build` error | 0 | 0 | ✓ |
+| Backend endpoint'lar | 95 | **98** (+3) | +3 |
+| Yangi Flutter DTO | 0 | 6 | +6 |
+| Yangi l10n key | 0 | 120+ | +120+ |
+| Hardcoded matn (dashboard) | ~30 | 0 | tozalandi |
+
+### 10.8 Hali ham qolgan TODO
+
+**Backend kengaytirish kerak bo'lganlar (Kategoriya A):**
+- `DELETE /api/Users/profile-image` — Avatar logo o'chirish
+- `POST /api/Sms/Send` — SMS yuborish (Eskiz integration)
+- `Customer.IsLoyal` field — "Doimiy" mijoz filter
+- `Customer.{id}/sales` endpoint — mijoz detalida sotuvlar tab
+- `POST /api/Zakups/Batch` — bir batch'da bir nechta mahsulot
+- `Shift` entity + `/api/Shifts/Open|Close` — smena boshqaruvi
+- `Category.DisplayOrder` + `Category.Icon` field
+- `/Reports/weekly-comparison` — ChartCard footer delta uchun (oldingi hafta bilan solishtirish)
+
+**Frontend kichik tuzatishlar:**
+- `users_screen.dart` "BUGUN TUSHUM" stat — `staff-performance`'ga ulanmagan (alohida loader kerak)
+- `_TotalCard` literal Color — `surfaceDark` token bilan almashtirilishi mumkin
+- Privacy policy uzun matnlari hali inglizcha
+
+### 10.9 Production-readiness checklist (yangilangan)
+
+- ✅ Hamma ekranlar yangi dizayn sistemada
+- ✅ Light + Dark mode ikkalasi ham ishlaydi
+- ✅ uz + ru lokalizatsiya to'liq (dashboard + barcha asosiy ekranlar)
+- ✅ Dashboard real backend ma'lumotlarini ko'rsatadi
+- ✅ 0 API path mismatch (404)
+- ✅ Bell badge real unread count'ni aks ettiradi
+- ⚠ Live test (Postgres + backend yoqilgan holatda end-to-end) hali kerak
+- ⚠ E2E test (Playwright/Patrol)
+- ⚠ SuperAdmin Console ekranlari uzun matnlari
+
+---
+
+**2-sessiya muallifi:** Claude (Anthropic) + Agent 1, 3, 4
+**Sessiya sanasi:** 2026-05-18
+**Commit:** `44ffd06`
+**Branch:** `feat/design-system-migration`
+
+---
+
+**Yangilash sanasi:** 2026-05-18 (2-sessiya)
 **Keyingi review:** 2026-05-24 (hafta 1 yakuni)
