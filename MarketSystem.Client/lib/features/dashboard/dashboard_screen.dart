@@ -4,6 +4,7 @@
 // previous implementation; only the body has been rebuilt to match the
 // HTML demo (#page-owner-dash and #page-staff-dash in design-demo).
 
+import 'dart:convert' show base64Decode;
 import 'dart:math' show max;
 
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -160,29 +161,32 @@ class _DashboardBody extends StatelessWidget {
     return AppLocalizations.of(context)!.defaultUserName;
   }
 
-  String _dateLabel() {
-    const months = [
-      'yanvar',
-      'fevral',
-      'mart',
-      'aprel',
-      'may',
-      'iyun',
-      'iyul',
-      'avgust',
-      'sentabr',
-      'oktabr',
-      'noyabr',
-      'dekabr',
+  String _dateLabel(BuildContext context) {
+    // Localised month names. The greeting card previously hardcoded Uzbek
+    // month spellings ("yanvar", "fevral", ...) which leaked Uzbek date
+    // strings into the Russian UI ("19-may" instead of "19 мая"). Picks
+    // from the bundle based on the current locale code.
+    const monthsUz = [
+      'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
+      'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr',
     ];
+    const monthsRu = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+    ];
+    final code = Localizations.localeOf(context).languageCode;
+    final months = code == 'ru' ? monthsRu : monthsUz;
     final now = DateTime.now();
-    return '${now.day}-${months[now.month - 1]}';
+    // Uzbek style uses a hyphen ("19-may"); Russian style uses a space
+    // ("19 мая") — preserves the convention each language reads naturally.
+    final sep = code == 'ru' ? ' ' : '-';
+    return '${now.day}$sep${months[now.month - 1]}';
   }
 
   @override
   Widget build(BuildContext context) {
     final name = _fullName(context);
-    final date = _dateLabel();
+    final date = _dateLabel(context);
 
     // Greeting bell badge — true when there's at least one "thing to look at"
     // (low-stock, today's debt, etc.). Reflects unreadFuture once it resolves;
@@ -271,7 +275,15 @@ class _OwnerBody extends StatelessWidget {
               ),
             SalesHeroCard(
               amount: NumberFormatter.format(summary.todayRevenue),
-              deltaText: l10n.todaysSale,
+              // Header label (rendered uppercase by the card). Was
+              // hardcoded to 'Bugungi sotuv' on the widget side; now
+              // sourced from l10n so the Russian locale gets the
+              // localised header too.
+              label: l10n.todaysSale,
+              // No deltaText: we don't yet have a yesterday-comparison
+              // endpoint for daily revenue. Previously this was passed
+              // l10n.todaysSale, producing a misleading green "↑ Bugungi
+              // sotuv" row directly below the header that read the same.
               stats: [
                 SalesHeroStat(
                   value: '${summary.todayCheckCount}',
@@ -699,16 +711,21 @@ class _SellerBody extends StatelessWidget {
   final Future<SellerDashboardSummary>? summaryFuture;
 
   /// Compact UZS formatter for the stats row: "1 200 000" → "1.2M",
-  /// "42 000" → "42K", "950" → "950". Mirrors the Owner KPI compact helper.
+  /// "42 500" → "42.5K", "950" → "950". Mirrors the Owner KPI compact
+  /// helper — see _OwnerBody._compact.
   String _compactUzs(double v) {
     final n = v.abs();
     if (n >= 1000000) {
-      final m = (v / 1000000).toStringAsFixed(v % 1000000 == 0 ? 0 : 1);
-      return '${m}M';
+      final m = v / 1000000;
+      // 12.4M → "12M" (drop decimal once magnitude is ≥10 so cards don't
+      // get crowded), 1.5M → "1.5M".
+      return '${m.toStringAsFixed(m.abs() >= 10 ? 0 : 1)}M';
     }
     if (n >= 1000) {
-      final k = (v / 1000).toStringAsFixed(v % 1000 == 0 ? 0 : 0);
-      return '${k}K';
+      final k = v / 1000;
+      // Previously the K branch was `(v % 1000 == 0 ? 0 : 0)` — both
+      // arms were 0, so "1500" rendered as "2K" instead of "1.5K".
+      return '${k.toStringAsFixed(k.abs() >= 100 ? 0 : 1)}K';
     }
     return v.toStringAsFixed(0);
   }
@@ -806,8 +823,11 @@ class _SellerBody extends StatelessWidget {
             Expanded(
               child: KpiCard(
                 emoji: '↩️',
+                // Big text: short noun ("Qaytarish"). Subtitle: action
+                // description ("Sotuvni qaytarish"). Previously both were
+                // refundLabel, so the card rendered the same string twice.
                 value: l10n.refundLabel,
-                label: l10n.refundLabel,
+                label: l10n.refundActionDesc,
                 tone: KpiTone.blue,
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.sales),
@@ -1131,8 +1151,10 @@ class _DrawerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = AdaptiveTheme.of(context).mode.isDark;
-    final name = (user?['fullName'] as String?) ??
-        (l10n.localeName == 'uz' ? 'Foydalanuvchi' : 'Пользователь');
+    final rawName = user?['fullName'] as String?;
+    final name = (rawName != null && rawName.trim().isNotEmpty)
+        ? rawName
+        : l10n.defaultUserName;
     final initial = name.trim().isEmpty ? 'U' : name.trim()[0].toUpperCase();
 
     return InkWell(
@@ -1157,17 +1179,7 @@ class _DrawerHeader extends StatelessWidget {
         child: Row(
           children: [
             ClipOval(
-              child: user?['profileImage'] != null
-                  ? Image.network(
-                      user!['profileImage'],
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _fallback(initial),
-                      loadingBuilder: (_, child, progress) =>
-                          progress == null ? child : _fallback(initial),
-                    )
-                  : _fallback(initial),
+              child: _buildAvatar(user?['profileImage'] as String?, initial),
             ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
@@ -1201,6 +1213,42 @@ class _DrawerHeader extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Render the user's avatar: profile image when set + decodable,
+  /// otherwise the coloured first-letter circle. Mirrors GreetingCard's
+  /// rendering logic — profileImage may be a URL, a base64 data URI, or a
+  /// raw base64 blob; anything else falls back to the letter.
+  Widget _buildAvatar(String? img, String initial) {
+    final fallback = _fallback(initial);
+    if (img == null || img.isEmpty) return fallback;
+
+    Widget? imgWidget;
+    if (img.startsWith('http')) {
+      imgWidget = Image.network(
+        img,
+        width: 50,
+        height: 50,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => fallback,
+        loadingBuilder: (_, child, progress) =>
+            progress == null ? child : fallback,
+      );
+    } else if (img.startsWith('data:image') || img.length > 100) {
+      try {
+        final b64 = img.contains(',') ? img.split(',').last : img;
+        imgWidget = Image.memory(
+          base64Decode(b64),
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => fallback,
+        );
+      } catch (_) {
+        imgWidget = null;
+      }
+    }
+    return imgWidget ?? fallback;
   }
 
   Widget _fallback(String initial) => Container(

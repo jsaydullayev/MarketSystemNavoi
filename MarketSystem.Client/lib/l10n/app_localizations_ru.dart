@@ -1700,6 +1700,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get refundLabel => 'Возврат';
 
   @override
+  String get refundActionDesc => 'Возврат продажи';
+
+  @override
   String get cashRegisterShort => 'Касса';
 
   @override

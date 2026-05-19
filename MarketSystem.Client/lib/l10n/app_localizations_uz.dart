@@ -1696,6 +1696,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get refundLabel => 'Qaytarish';
 
   @override
+  String get refundActionDesc => 'Sotuvni qaytarish';
+
+  @override
   String get cashRegisterShort => 'Kassa';
 
   @override
