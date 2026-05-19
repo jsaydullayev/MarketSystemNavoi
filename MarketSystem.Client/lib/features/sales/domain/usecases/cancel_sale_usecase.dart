@@ -1,5 +1,5 @@
-/// Cancel Sale Use Case
-/// Sotuvni bekor qilish biznes mantig'i
+// Cancel Sale Use Case
+// Sotuvni bekor qilish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../repositories/sale_repository_interface.dart';

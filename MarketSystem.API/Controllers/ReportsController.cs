@@ -154,6 +154,49 @@ public class ReportsController : ControllerBase
     }
 
     /// <summary>
+    /// Get last N days of revenue/profit/check counts as a time series.
+    /// Backs the dashboard ChartCard. Defaults to 7 days; capped at 30 inside
+    /// the service so a misbehaving client can't trigger a month-long scan.
+    /// Profit values are zero unless the caller is Owner.
+    /// </summary>
+    [HttpGet("weekly-series")]
+    public async Task<ActionResult<WeeklySeriesDto>> GetWeeklySeries([FromQuery] int days = 7)
+    {
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var series = await _reportService.GetWeeklySeriesAsync(days, userRole);
+        return Ok(series);
+    }
+
+    /// <summary>
+    /// Get top-N products in the selected period, ranked by quantity, revenue,
+    /// or profit. Backs the dashboard TopSellersCard and the Reports → Top
+    /// page. Profit is hidden for non-Owner callers.
+    /// </summary>
+    [HttpGet("top-products")]
+    public async Task<ActionResult<TopProductsDto>> GetTopProducts(
+        [FromQuery] string period = "month",
+        [FromQuery] string sortBy = "quantity",
+        [FromQuery] int limit = 10)
+    {
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var products = await _reportService.GetTopProductsAsync(period, sortBy, limit, userRole);
+        return Ok(products);
+    }
+
+    /// <summary>
+    /// Get per-staff sales metrics for the period. Backs the Users list page
+    /// and the Reports → Staff page. Returns staff with zero sales too, so a
+    /// quiet seller doesn't silently disappear from the team list.
+    /// </summary>
+    [HttpGet("staff-performance")]
+    public async Task<ActionResult<StaffPerformanceDto>> GetStaffPerformance(
+        [FromQuery] string period = "week")
+    {
+        var staff = await _reportService.GetStaffPerformanceAsync(period);
+        return Ok(staff);
+    }
+
+    /// <summary>
     /// Get cash balance - Owner only
     /// </summary>
     [HttpGet("cash-balance")]

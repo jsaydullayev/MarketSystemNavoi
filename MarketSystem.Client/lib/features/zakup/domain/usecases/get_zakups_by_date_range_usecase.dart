@@ -1,5 +1,5 @@
-/// Get Zakups By Date Range Use Case
-/// Sana bo'yicha xaridlarni olish biznes mantig'i
+// Get Zakups By Date Range Use Case
+// Sana bo'yicha xaridlarni olish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/zakup_entity.dart';

@@ -1,5 +1,5 @@
-/// Customer Repository Implementation
-/// Customer Repository interfeysining amaliyoti
+// Customer Repository Implementation
+// Customer Repository interfeysining amaliyoti
 
 import '../../../../core/failure/api_result.dart';
 import '../../domain/entities/customer_entity.dart';

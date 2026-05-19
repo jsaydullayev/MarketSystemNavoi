@@ -1,5 +1,5 @@
-/// Get Customers Use Case
-/// Barcha mijozlarni olish biznes mantig'i
+// Get Customers Use Case
+// Barcha mijozlarni olish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/customer_entity.dart';

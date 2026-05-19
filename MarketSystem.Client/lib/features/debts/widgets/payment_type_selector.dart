@@ -1,70 +1,95 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/l10n/app_localizations.dart';
 
 class PaymentTypeSelector extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onChanged;
 
-  const PaymentTypeSelector({required this.selected, required this.onChanged});
-
-  static const _types = [
-    {'value': 'Cash', 'label': 'Naqd', 'icon': Icons.payments_rounded},
-    {
-      'value': 'Terminal',
-      'label': 'Plastik',
-      'icon': Icons.credit_card_rounded
-    },
-    {
-      'value': 'Transfer',
-      'label': 'Transfer',
-      'icon': Icons.swap_horiz_rounded
-    },
-  ];
+  const PaymentTypeSelector({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final types = <Map<String, dynamic>>[
+      {'value': 'Cash', 'label': l10n.cash, 'icon': Icons.payments_rounded},
+      {'value': 'Terminal', 'label': l10n.card, 'icon': Icons.credit_card_rounded},
+      {'value': 'Transfer', 'label': 'Transfer', 'icon': Icons.swap_horiz_rounded},
+    ];
+
     return Row(
-      children: _types.map((type) {
-        final isSelected = selected == type['value'];
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => onChanged(type['value'] as String),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFF3B82F6)
-                    : const Color(0xFF3B82F6).withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color:
-                      isSelected ? const Color(0xFF3B82F6) : Colors.transparent,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    type['icon'] as IconData,
-                    color: isSelected ? Colors.white : const Color(0xFF3B82F6),
-                    size: 20,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    type['label'] as String,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color:
-                          isSelected ? Colors.white : const Color(0xFF3B82F6),
-                    ),
-                  ),
-                ],
-              ),
+      children: [
+        for (var i = 0; i < types.length; i++) ...[
+          if (i > 0) const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: _PaymentTypeOption(
+              value: types[i]['value'] as String,
+              label: types[i]['label'] as String,
+              icon: types[i]['icon'] as IconData,
+              isSelected: selected == types[i]['value'],
+              onTap: () => onChanged(types[i]['value'] as String),
             ),
           ),
-        );
-      }).toList(),
+        ],
+      ],
+    );
+  }
+}
+
+class _PaymentTypeOption extends StatelessWidget {
+  const _PaymentTypeOption({
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String value;
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg + 2),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.brand : AppColors.brandLight,
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          border: Border.all(
+            color: isSelected ? AppColors.brand : Colors.transparent,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 22,
+              color: isSelected ? Colors.white : AppColors.brand,
+            ),
+            const SizedBox(height: AppSpacing.xs + 2),
+            Text(
+              label,
+              style: AppTextStyles.bodyMedium().copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : AppColors.brand,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

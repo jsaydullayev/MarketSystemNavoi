@@ -1,5 +1,5 @@
-/// Get Products Use Case
-/// Business logic for getting all products
+// Get Products Use Case
+// Business logic for getting all products
 
 import 'package:equatable/equatable.dart';
 import '../entities/product_entity.dart';

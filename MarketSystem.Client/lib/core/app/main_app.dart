@@ -6,7 +6,7 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:market_system_client/design/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../utils/di.dart';
@@ -48,8 +48,10 @@ class MainApp extends StatelessWidget {
       ],
       child: Consumer<LocaleProvider>(
         builder: (context, localeProvider, _) => AdaptiveTheme(
-          light: AppThemes.light,
-          dark: AppThemes.dark,
+          // Two themes: light = brand orange (#FF6B00), dark = legacy blue (#1E3A8A).
+          // Users can switch via the dashboard drawer or welcome-screen toggle.
+          light: AppTheme.light,
+          dark: AppTheme.dark,
           initial: savedThemeMode ?? AdaptiveThemeMode.light,
           builder: (theme, darkTheme) => MaterialApp(
             title: AppStrings.appName,

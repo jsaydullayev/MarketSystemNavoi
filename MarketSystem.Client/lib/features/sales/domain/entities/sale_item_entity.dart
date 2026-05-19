@@ -1,5 +1,5 @@
-/// Sale Item Entity
-/// Sotuvdagi mahsulot obyekti
+// Sale Item Entity
+// Sotuvdagi mahsulot obyekti
 
 import 'package:equatable/equatable.dart';
 

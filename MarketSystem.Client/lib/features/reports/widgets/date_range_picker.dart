@@ -1,7 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// "Boshlanish — Tugash" picker shown above the Monthly report tab.
+///
+/// Demo reference: same neutral surface card pattern as `DatePickerRow`,
+/// but with a date-range icon, "Boshi"/"Oxiri" chips, and a calendar
+/// edit-icon hint on the right.
 class DateRangeRow extends StatelessWidget {
   final DateTime startDate;
   final DateTime endDate;
@@ -16,7 +23,6 @@ class DateRangeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
     final l10n = AppLocalizations.of(context)!;
 
@@ -36,43 +42,40 @@ class DateRangeRow extends StatelessWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.07)
-                : Colors.grey.withValues(alpha: 0.15),
-          ),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: Colors.purple.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(9),
+                color: AppColors.brandLight,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: const Icon(Icons.date_range_rounded,
-                  color: Colors.purple, size: 18),
+                  color: AppColors.brand, size: 18),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Row(
                 children: [
                   _DateChip(label: l10n.from, date: startDate),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg - 2),
                     child: Icon(Icons.arrow_forward_rounded,
-                        size: 16, color: Colors.grey[400]),
+                        size: 16, color: AppColors.textMuted),
                   ),
                   _DateChip(label: l10n.to, date: endDate),
                 ],
               ),
             ),
-            Icon(Icons.edit_calendar_rounded,
-                size: 18, color: Colors.grey[400]),
+            const Icon(Icons.edit_calendar_rounded,
+                size: 18, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -91,10 +94,15 @@ class _DateChip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall().copyWith(fontSize: 10),
+        ),
         Text(
           DateFormat('dd.MM.yyyy').format(date),
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          style: AppTextStyles.bodyMedium().copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );

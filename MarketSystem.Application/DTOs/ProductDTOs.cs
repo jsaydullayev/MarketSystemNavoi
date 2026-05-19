@@ -6,28 +6,28 @@ namespace MarketSystem.Application.DTOs;
 
 public record CreateProductRequest(
     [property: JsonPropertyName("name")]
-    [property: Required(ErrorMessage = "Mahsulot nomi majburiy")]
-    [property: StringLength(200, MinimumLength = 1, ErrorMessage = "Nom 1-200 belgi bo'lishi kerak")]
+    [param: Required(ErrorMessage = "Mahsulot nomi majburiy")]
+    [param: StringLength(200, MinimumLength = 1, ErrorMessage = "Nom 1-200 belgi bo'lishi kerak")]
     string Name,
 
     [property: JsonPropertyName("costPrice")]
-    [property: Range(0, double.MaxValue, ErrorMessage = "Tannarx 0 dan katta bo'lishi kerak")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Tannarx 0 dan katta bo'lishi kerak")]
     decimal CostPrice,
 
     [property: JsonPropertyName("salePrice")]
-    [property: Range(0, double.MaxValue, ErrorMessage = "Sotuv narxi 0 dan katta bo'lishi kerak")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Sotuv narxi 0 dan katta bo'lishi kerak")]
     decimal SalePrice,
 
     [property: JsonPropertyName("minSalePrice")]
-    [property: Range(0, double.MaxValue, ErrorMessage = "Minimal narx 0 dan katta bo'lishi kerak")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Minimal narx 0 dan katta bo'lishi kerak")]
     decimal MinSalePrice,
 
     [property: JsonPropertyName("quantity")]
-    [property: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
     decimal Quantity,
 
     [property: JsonPropertyName("minThreshold")]
-    [property: Range(0, double.MaxValue, ErrorMessage = "Minimal chegara 0 dan katta bo'lishi kerak")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Minimal chegara 0 dan katta bo'lishi kerak")]
     decimal MinThreshold,
 
     [property: JsonPropertyName("unit")] int Unit,
@@ -39,28 +39,28 @@ public record UpdateProductRequest(
     [property: JsonPropertyName("id")] Guid Id,
 
     [property: JsonPropertyName("name")]
-    [property: Required(ErrorMessage = "Mahsulot nomi majburiy")]
-    [property: StringLength(200, MinimumLength = 1)]
+    [param: Required(ErrorMessage = "Mahsulot nomi majburiy")]
+    [param: StringLength(200, MinimumLength = 1)]
     string Name,
 
     [property: JsonPropertyName("costPrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal CostPrice,
 
     [property: JsonPropertyName("salePrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal SalePrice,
 
     [property: JsonPropertyName("minSalePrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal MinSalePrice,
 
     [property: JsonPropertyName("quantity")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal Quantity,
 
     [property: JsonPropertyName("minThreshold")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal MinThreshold,
 
     [property: JsonPropertyName("unit")] int Unit,
@@ -87,36 +87,43 @@ public record ProductDto(
 
 public record CreateZakupRequest(
     [property: JsonPropertyName("productId")]
-    [property: Required]
+    [param: Required]
     Guid ProductId,
 
     [property: JsonPropertyName("quantity")]
-    [property: Range(0.001, double.MaxValue, ErrorMessage = "Miqdor 0 dan katta bo'lishi kerak")]
+    [param: Range(0.001, double.MaxValue, ErrorMessage = "Miqdor 0 dan katta bo'lishi kerak")]
     decimal Quantity,
 
     [property: JsonPropertyName("costPrice")]
-    [property: Range(0, double.MaxValue, ErrorMessage = "Narx manfiy bo'lishi mumkin emas")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Narx manfiy bo'lishi mumkin emas")]
     decimal CostPrice
 );
 
+// .NET 9 records: validation attributes attached via `[property:]` only land
+// on the generated property — but ASP.NET Core's model binder validates the
+// PARAMETER (the constructor argument). That mismatch throws
+// "validation metadata defined on property X that will be ignored" at runtime.
+// Use `[param:]` for validators so they bind to the parameter; keep
+// `[property:]` for serialization-only attributes (JsonPropertyName) since
+// the JSON reflection target is the property.
 public record CreateProductDto(
     [property: JsonPropertyName("name")]
-    [property: Required(ErrorMessage = "Mahsulot nomi majburiy")]
-    [property: StringLength(200, MinimumLength = 1)]
+    [param: Required(ErrorMessage = "Mahsulot nomi majburiy")]
+    [param: StringLength(200, MinimumLength = 1)]
     string Name,
 
     [property: JsonPropertyName("isTemporary")] bool IsTemporary,
 
     [property: JsonPropertyName("salePrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal SalePrice,
 
     [property: JsonPropertyName("minSalePrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal MinSalePrice,
 
     [property: JsonPropertyName("minThreshold")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal MinThreshold,
 
     [property: JsonPropertyName("categoryId")] int? CategoryId,
@@ -127,20 +134,20 @@ public record UpdateProductDto(
     [property: JsonPropertyName("id")] Guid Id,
 
     [property: JsonPropertyName("name")]
-    [property: Required(ErrorMessage = "Mahsulot nomi majburiy")]
-    [property: StringLength(200, MinimumLength = 1)]
+    [param: Required(ErrorMessage = "Mahsulot nomi majburiy")]
+    [param: StringLength(200, MinimumLength = 1)]
     string Name,
 
     [property: JsonPropertyName("salePrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal SalePrice,
 
     [property: JsonPropertyName("minSalePrice")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal MinSalePrice,
 
     [property: JsonPropertyName("minThreshold")]
-    [property: Range(0, double.MaxValue)]
+    [param: Range(0, double.MaxValue)]
     decimal MinThreshold,
 
     [property: JsonPropertyName("categoryId")] int? CategoryId,

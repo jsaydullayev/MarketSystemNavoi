@@ -1,7 +1,9 @@
-﻿import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/debts/widgets/customer_debt_card.dart';
 import 'package:market_system_client/features/debts/widgets/pay_debt_bottomsheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -68,7 +70,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(ErrorParser.parse(e.toString())),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.danger,
         ),
       );
     }
@@ -87,15 +89,25 @@ class _DebtsScreenState extends State<DebtsScreen> {
     );
   }
 
+  double get _totalRemaining {
+    double sum = 0;
+    for (final debts in _debtsByCustomer.values) {
+      for (final d in debts) {
+        sum += ((d['remainingDebt'] as num?)?.toDouble() ?? 0);
+      }
+    }
+    return sum;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.getBg(isDark),
+      backgroundColor: AppColors.bg,
       appBar: CommonAppBar(
         title: l10n.debts,
+        onRefresh: _loadData,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -103,41 +115,117 @@ class _DebtsScreenState extends State<DebtsScreen> {
               ? _EmptyDebtsView(onRefresh: _loadData)
               : RefreshIndicator(
                   onRefresh: _loadData,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                    itemCount: _debtsByCustomer.keys.length,
-                    itemBuilder: (context, index) {
-                      final customerId = _debtsByCustomer.keys.elementAt(index);
-                      final customerDebts = _debtsByCustomer[customerId]!;
-                      final customerName =
-                          _customerNames[customerId] ?? l10n.unknown;
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xl, AppSpacing.md, AppSpacing.xl,
+                        AppSpacing.xl3),
+                    children: [
+                      _DebtsHero(
+                        totalRemaining: _totalRemaining,
+                        debtorCount: _debtsByCustomer.length,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      for (final customerId in _debtsByCustomer.keys) ...[
+                        Builder(
+                          builder: (context) {
+                            final customerDebts =
+                                _debtsByCustomer[customerId]!;
+                            final customerName =
+                                _customerNames[customerId] ?? l10n.unknown;
 
-                      double totalDebt = 0;
-                      double remainingDebt = 0;
-                      for (var d in customerDebts) {
-                        totalDebt += (d['totalDebt'] as num).toDouble();
-                        remainingDebt += (d['remainingDebt'] as num).toDouble();
-                      }
+                            double totalDebt = 0;
+                            double remainingDebt = 0;
+                            for (var d in customerDebts) {
+                              totalDebt +=
+                                  (d['totalDebt'] as num).toDouble();
+                              remainingDebt +=
+                                  (d['remainingDebt'] as num).toDouble();
+                            }
 
-                      return CustomerDebtCard(
-                        customerName: customerName,
-                        customerDebts: customerDebts,
-                        totalDebt: totalDebt,
-                        remainingDebt: remainingDebt,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DebtDetailsScreen(
-                              debt: customerDebts.first,
+                            return CustomerDebtCard(
                               customerName: customerName,
-                            ),
-                          ),
+                              customerDebts: customerDebts,
+                              totalDebt: totalDebt,
+                              remainingDebt: remainingDebt,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DebtDetailsScreen(
+                                    debt: customerDebts.first,
+                                    customerName: customerName,
+                                  ),
+                                ),
+                              ),
+                              onPay: () =>
+                                  _openPaySheet(customerDebts.first, l10n),
+                            );
+                          },
                         ),
-                        onPay: () => _openPaySheet(customerDebts.first, l10n),
-                      );
-                    },
+                      ],
+                    ],
                   ),
                 ),
+    );
+  }
+}
+
+/// Amber gradient hero showing the aggregate "JAMI QARZ" across all open debts.
+class _DebtsHero extends StatelessWidget {
+  const _DebtsHero(
+      {required this.totalRemaining, required this.debtorCount});
+  final double totalRemaining;
+  final int debtorCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.xl2),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFB45309), Color(0xFFF59E0B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.totalDebt.toUpperCase(),
+            style: AppTextStyles.caption().copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          FittedBox(
+            child: Text(
+              '${NumberFormatter.format(totalRemaining)} ${l10n.currencySom}',
+              style: AppTextStyles.displayLarge().copyWith(
+                color: Colors.white,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            '$debtorCount ${l10n.debtor.toLowerCase()}',
+            style: AppTextStyles.bodySmall().copyWith(
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -160,40 +248,33 @@ class _EmptyDebtsView extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  padding: const EdgeInsets.all(AppSpacing.xl3),
+                  decoration: const BoxDecoration(
+                    color: AppColors.successLight,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.account_balance_wallet_rounded,
                     size: 56,
-                    color: Color(0xFF10B981),
+                    color: AppColors.success,
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  l10n.noDebts,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSpacing.xl2),
+                Text(l10n.noDebts, style: AppTextStyles.titleMedium()),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   l10n.allDebtsPaid,
-                  style:
-                      const TextStyle(fontSize: 13, color: Color(0xFF9CA3AF)),
+                  style: AppTextStyles.bodySmall(),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xl3),
                 TextButton.icon(
                   onPressed: onRefresh,
                   icon: const Icon(Icons.refresh_rounded,
-                      color: Color(0xFF10B981)),
+                      color: AppColors.success),
                   label: Text(
                     l10n.retry,
-                    style: const TextStyle(color: Color(0xFF10B981)),
+                    style: AppTextStyles.bodyMedium()
+                        .copyWith(color: AppColors.success),
                   ),
                 ),
               ],

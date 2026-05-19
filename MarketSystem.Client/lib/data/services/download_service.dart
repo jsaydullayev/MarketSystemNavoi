@@ -24,10 +24,11 @@ class DownloadService {
   }
 
   /// Kategoriyalarni Excel formatida yuklab olish
+  // TODO: hoist into ApiConstants as `categoriesExportExcel` constant.
   Future<void> downloadCategories() async {
     try {
-      final response =
-          await _httpService.get('/Reports/ExportCategoriesToExcel');
+      final response = await _httpService
+          .get('/ProductCategories/ExportCategoriesToExcel');
 
       if (response.statusCode == 200) {
         final filename =
@@ -47,10 +48,11 @@ class DownloadService {
   }
 
   /// Mahsulotlarni Excel formatida yuklab olish
+  // TODO: hoist into ApiConstants as `productsExportExcel` constant.
   Future<void> downloadProducts() async {
     try {
       final response =
-          await _httpService.get('/Products/ExportProductsToExcel');
+          await _httpService.get('/Products/ExportProductsToExcel/export');
 
       if (response.statusCode == 200) {
         final filename =
@@ -135,6 +137,9 @@ class DownloadService {
   }
 
   /// Mijozlarni Excel formatida yuklab olish
+  // FIXME: backend exposes no customer Excel export today — this call will 404
+  // until ProductCategories/Customers controller adds an export endpoint.
+  // (Audited 2026-05-18 against swagger v1.)
   Future<void> downloadCustomers() async {
     try {
       final response =

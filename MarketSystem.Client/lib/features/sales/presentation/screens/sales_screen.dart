@@ -1,9 +1,10 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/number_formatter.dart';
@@ -54,20 +55,20 @@ class _SalesScreenState extends State<SalesScreen> {
     return filtered;
   }
 
-  Color _getStatusColor(String status, ThemeData theme) {
+  Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'draft':
         return const Color(0xFF3B82F6);
       case 'paid':
-        return Colors.green;
+        return AppColors.success;
       case 'closed':
-        return Colors.blue;
+        return const Color(0xFF6366F1);
       case 'debt':
-        return Colors.red;
+        return AppColors.danger;
       case 'cancelled':
-        return Colors.grey;
+        return AppColors.textMuted;
       default:
-        return theme.primaryColor;
+        return AppColors.brand;
     }
   }
 
@@ -104,16 +105,18 @@ class _SalesScreenState extends State<SalesScreen> {
                 content: Text(
                   kIsWeb && success
                       ? 'Excel fayli yuklanmoqda...'
-                      : (success ? 'Excel saqlandi va ochildi' : 'Error')
+                      : (success ? 'Excel saqlandi va ochildi' : 'Error'),
                 ),
-                backgroundColor: success ? Colors.green : Colors.red),
+                backgroundColor:
+                    success ? AppColors.success : AppColors.danger),
           );
         }
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Error: $e'), backgroundColor: AppColors.danger));
+      }
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
@@ -135,9 +138,12 @@ class _SalesScreenState extends State<SalesScreen> {
                 content: Text(
                   kIsWeb && success
                       ? 'PDF fayli yuklanmoqda...'
-                      : (success ? 'PDF saqlandi va ochildi' : 'PDF saqlashda xatolik')
+                      : (success
+                          ? 'PDF saqlandi va ochildi'
+                          : 'PDF saqlashda xatolik'),
                 ),
-                backgroundColor: success ? Colors.green : Colors.red),
+                backgroundColor:
+                    success ? AppColors.success : AppColors.danger),
           );
         }
       } else {
@@ -145,15 +151,16 @@ class _SalesScreenState extends State<SalesScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('PDF faylini yuklab olishda xatolik yuz berdi'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.danger,
             ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Xatolik: $e'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Xatolik: $e'),
+            backgroundColor: AppColors.danger));
       }
     } finally {
       if (mounted) {
@@ -164,21 +171,20 @@ class _SalesScreenState extends State<SalesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     return BlocListener<SalesBloc, SalesState>(
       listener: (context, state) {
         if (state is SalesError) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(state.message), backgroundColor: Colors.red));
+              content: Text(state.message),
+              backgroundColor: AppColors.danger));
         }
       },
       child: NetworkWrapper(
         onRetry: _loadSales,
         child: Scaffold(
-          backgroundColor: AppColors.getBg(isDark),
+          backgroundColor: AppColors.bg,
           appBar: CommonAppBar(
             title: l10n.sales,
             onRefresh: _loadSales,
@@ -186,20 +192,24 @@ class _SalesScreenState extends State<SalesScreen> {
                 ? [
                     const Center(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                         child: SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(AppColors.brand),
+                          ),
                         ),
                       ),
                     ),
                   ]
                 : [
                     PopupMenuButton<String>(
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.file_download_outlined,
-                        color: isDark ? Colors.white : Colors.black87,
+                        color: AppColors.text,
                       ),
                       tooltip: 'Export',
                       onSelected: (value) {
@@ -214,9 +224,11 @@ class _SalesScreenState extends State<SalesScreen> {
                           value: 'excel',
                           child: Row(
                             children: [
-                              const Icon(Icons.table_view, size: 20),
-                              const SizedBox(width: 12),
-                              Text('Excel export', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+                              const Icon(Icons.table_view,
+                                  size: 20, color: AppColors.success),
+                              const SizedBox(width: AppSpacing.lg),
+                              Text('Excel export',
+                                  style: AppTextStyles.bodyMedium()),
                             ],
                           ),
                         ),
@@ -224,9 +236,11 @@ class _SalesScreenState extends State<SalesScreen> {
                           value: 'pdf',
                           child: Row(
                             children: [
-                              const Icon(Icons.picture_as_pdf, size: 20),
-                              const SizedBox(width: 12),
-                              Text('PDF export', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+                              const Icon(Icons.picture_as_pdf,
+                                  size: 20, color: AppColors.danger),
+                              const SizedBox(width: AppSpacing.lg),
+                              Text('PDF export',
+                                  style: AppTextStyles.bodyMedium()),
                             ],
                           ),
                         ),
@@ -239,26 +253,32 @@ class _SalesScreenState extends State<SalesScreen> {
               constraints: const BoxConstraints(maxWidth: 800),
               child: BlocBuilder<SalesBloc, SalesState>(
                 builder: (context, state) {
-                  if (state is SalesLoading)
-                    return const Center(child: CircularProgressIndicator());
+                  if (state is SalesLoading) {
+                    return const Center(
+                        child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.brand)));
+                  }
 
                   if (state is SalesLoaded) {
                     final filteredSales = _filterSales(state.sales);
                     return Column(
                       children: [
-                        _buildStatusChips(state.sales, theme, isDark, l10n),
+                        _buildHeroSummary(state.sales, l10n),
+                        _buildStatusChips(state.sales, l10n),
                         Expanded(
                           child: RefreshIndicator(
+                            color: AppColors.brand,
                             onRefresh: () async => _loadSales(),
                             child: filteredSales.isEmpty
-                                ? _buildEmptyState(theme, l10n)
+                                ? _buildEmptyState(l10n)
                                 : ListView.builder(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
+                                        horizontal: AppSpacing.xl),
                                     itemCount: filteredSales.length,
                                     itemBuilder: (context, index) =>
-                                        _buildSaleItem(filteredSales[index],
-                                            theme, isDark, l10n),
+                                        _buildSaleItem(
+                                            filteredSales[index], l10n),
                                   ),
                           ),
                         ),
@@ -280,67 +300,144 @@ class _SalesScreenState extends State<SalesScreen> {
                           child: const NewSaleScreen())));
               if (result == true && mounted) _loadSales();
             },
+            backgroundColor: AppColors.brand,
             icon: const Icon(Icons.add_shopping_cart_rounded,
                 color: Colors.white),
             label: Text(l10n.newSale,
-                style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white)),
+                style: AppTextStyles.labelLarge()
+                    .copyWith(color: Colors.white)),
           ),
         ),
       ),
     );
   }
 
+  /// Orange gradient hero card — matches demo's "BUGUN JAMI" tile.
+  Widget _buildHeroSummary(List<SaleEntity> sales, AppLocalizations l10n) {
+    final today = DateTime.now();
+    final todaySales = sales.where((s) =>
+        s.createdAt.year == today.year &&
+        s.createdAt.month == today.month &&
+        s.createdAt.day == today.day);
 
-  Widget _buildStatusChips(List<SaleEntity> sales, ThemeData theme, bool isDark,
-      AppLocalizations l10n) {
+    final totalToday =
+        todaySales.fold<double>(0, (sum, s) => sum + s.totalAmount);
+    final countToday = todaySales.length;
+    final debtCount =
+        todaySales.where((s) => s.getStatusText().toLowerCase() == 'debt').length;
+    final ongoing = todaySales
+        .where((s) => s.getStatusText().toLowerCase() == 'draft')
+        .length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.md),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.brand, AppColors.brandDark],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.brand.withValues(alpha: 0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'BUGUN JAMI',
+                  style: AppTextStyles.caption()
+                      .copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                ),
+                Text(
+                  DateFormat('dd MMM').format(today),
+                  style: AppTextStyles.labelSmall()
+                      .copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${NumberFormatter.format(totalToday)} UZS',
+                style: AppTextStyles.displayMedium()
+                    .copyWith(color: Colors.white),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                _heroStat('$countToday', 'chek'),
+                _heroDivider(),
+                _heroStat('$ongoing', l10n.ongoing.toLowerCase()),
+                _heroDivider(),
+                _heroStat('$debtCount', l10n.debt.toLowerCase()),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _heroStat(String value, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(value,
+              style: AppTextStyles.titleMedium()
+                  .copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 2),
+          Text(label,
+              style: AppTextStyles.labelSmall()
+                  .copyWith(color: Colors.white.withValues(alpha: 0.85)),
+              textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroDivider() => Container(
+        width: 1,
+        height: 28,
+        color: Colors.white.withValues(alpha: 0.25),
+      );
+
+  Widget _buildStatusChips(List<SaleEntity> sales, AppLocalizations l10n) {
     final List<Map<String, dynamic>> statuses = [
-      {
-        'id': 'all',
-        'label': l10n.all,
-        'icon': Icons.grid_view_rounded,
-        'color': theme.primaryColor
-      },
-      {
-        // Status is still 'Draft' on the backend; only the user-facing
-        // label changes — "Davom etayotgan" / "В процессе" reads more
-        // accurately for a sale the seller is mid-way through.
-        'id': 'draft',
-        'label': l10n.ongoing,
-        'icon': Icons.pending_actions_rounded,
-        'color': const Color(0xFF3B82F6),
-      },
-      {
-        'id': 'paid',
-        'label': l10n.paid,
-        'icon': Icons.check_circle_outline_rounded,
-        'color': Colors.green
-      },
-      {
-        'id': 'closed',
-        'label': l10n.closed,
-        'icon': Icons.archive_outlined,
-        'color': Colors.blue
-      },
-      {
-        'id': 'debt',
-        'label': l10n.debt,
-        'icon': Icons.error_outline_rounded,
-        'color': Colors.red
-      },
+      {'id': 'all', 'label': l10n.all},
+      // Status is still 'Draft' on the backend; only the user-facing
+      // label changes — "Davom etayotgan" / "В процессе" reads more
+      // accurately for a sale the seller is mid-way through.
+      {'id': 'draft', 'label': l10n.ongoing},
+      {'id': 'paid', 'label': l10n.paid},
+      {'id': 'closed', 'label': l10n.closed},
+      {'id': 'debt', 'label': l10n.debt},
     ];
 
-    return Container(
-      height: 90,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+    return SizedBox(
+      height: 44,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
         itemCount: statuses.length,
         itemBuilder: (context, index) {
           final s = statuses[index];
           final bool isSelected = _selectedStatus == s['id'];
-          final Color color = s['color'] as Color;
           final int count = s['id'] == 'all'
               ? sales.length
               : sales
@@ -348,64 +445,59 @@ class _SalesScreenState extends State<SalesScreen> {
                       (item) => item.getStatusText().toLowerCase() == s['id'])
                   .length;
 
-          return GestureDetector(
-            onTap: () => setState(() => _selectedStatus = s['id']),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: 110,
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? color
-                    : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? color
-                      : (isDark ? Colors.white10 : Colors.grey[200]!),
-                  width: 1.5,
+          return Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.md),
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedStatus = s['id']),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                decoration: BoxDecoration(
+                  color:
+                      isSelected ? AppColors.text : AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  border: Border.all(
+                    color: isSelected ? AppColors.text : AppColors.border,
+                  ),
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                            color: color.withValues(alpha: 0.4),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4))
-                      ]
-                    : [],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    s['icon'] as IconData,
-                    color: isSelected ? Colors.white : color,
-                    size: 20,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    s['label'] as String,
-                    style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : (isDark ? Colors.white70 : Colors.black87),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      s['label'] as String,
+                      style: AppTextStyles.labelSmall().copyWith(
+                        color:
+                            isSelected ? Colors.white : AppColors.text,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0,
+                        fontSize: 13,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    "$count",
-                    style: TextStyle(
-                      color: isSelected ? Colors.white70 : theme.disabledColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.white.withValues(alpha: 0.18)
+                            : AppColors.inputFill,
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.full),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: AppTextStyles.caption().copyWith(
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                          fontSize: 10,
+                          letterSpacing: 0,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -414,72 +506,158 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _buildSaleItem(
-      SaleEntity sale, ThemeData theme, bool isDark, AppLocalizations l10n) {
-    final statusColor = _getStatusColor(sale.getStatusText(), theme);
-    final dateStr = DateFormat('dd MMM, HH:mm').format(sale.createdAt);
+  Widget _buildSaleItem(SaleEntity sale, AppLocalizations l10n) {
+    final statusText = sale.getStatusText().toLowerCase();
+    final statusColor = _getStatusColor(statusText);
+    final dateStr = DateFormat('HH:mm').format(sale.createdAt);
+    final dayStr = DateFormat('dd MMM').format(sale.createdAt);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.grey[200]!),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => SaleDetailScreen(saleId: sale.id))),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(15)),
-          child: Icon(Icons.receipt_long_rounded, color: statusColor),
-        ),
-        title: Text(sale.customerName ?? (l10n.noCustomer),
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(dateStr,
-            style: TextStyle(color: theme.disabledColor, fontSize: 12)),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(NumberFormatter.format(sale.totalAmount),
-                style:
-                    const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    // Pick a payment icon by status: paid=cash, closed=card, debt=notebook,
+    // draft=hourglass. Matches the demo's `.pay-ic.cash/.card/.debt` palette.
+    final (IconData icon, Color tone) = switch (statusText) {
+      'paid' => (Icons.payments_rounded, AppColors.success),
+      'closed' => (Icons.credit_card_rounded, const Color(0xFF6366F1)),
+      'debt' => (Icons.assignment_outlined, AppColors.warning),
+      'draft' => (Icons.hourglass_bottom_rounded, const Color(0xFF3B82F6)),
+      _ => (Icons.receipt_long_rounded, AppColors.textSecondary),
+    };
+
+    final isCancelled = statusText == 'cancelled';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                        value: context.read<SalesBloc>(),
+                        child: SaleDetailScreen(saleId: sale.id),
+                      ))),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Opacity(
+            opacity: isCancelled ? 0.65 : 1,
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8)),
-              child: Text(
-                  _getStatusName(sale.getStatusText(), l10n).toUpperCase(),
-                  style: TextStyle(
-                      color: statusColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800)),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: tone.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(icon, color: tone, size: 20),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                sale.customerName ?? l10n.noCustomer,
+                                style: AppTextStyles.labelLarge()
+                                    .copyWith(fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Text(
+                              dateStr,
+                              style: AppTextStyles.bodySmall(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '$dayStr · ${sale.sellerName ?? ''}',
+                                style: AppTextStyles.bodySmall().copyWith(
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              NumberFormatter.format(sale.totalAmount),
+                              style: AppTextStyles.labelLarge().copyWith(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                                decoration: isCancelled
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.12),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.full),
+                              ),
+                              child: Text(
+                                _getStatusName(sale.getStatusText(), l10n)
+                                    .toUpperCase(),
+                                style: AppTextStyles.caption().copyWith(
+                                  color: statusColor,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme, AppLocalizations l10n) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.receipt_long_outlined,
-              size: 70, color: theme.disabledColor.withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          Text(l10n.noData, style: TextStyle(color: theme.disabledColor)),
-        ],
-      ),
+  Widget _buildEmptyState(AppLocalizations l10n) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: 120),
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.receipt_long_outlined,
+                  size: 64, color: AppColors.textMuted.withValues(alpha: 0.5)),
+              const SizedBox(height: AppSpacing.xl),
+              Text(l10n.noData,
+                  style: AppTextStyles.bodyMedium()
+                      .copyWith(color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

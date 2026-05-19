@@ -1,5 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 // Chaqirish uchun helper
@@ -31,7 +33,6 @@ class PaymentHistorySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final initial =
         customerName.isNotEmpty ? customerName[0].toUpperCase() : '?';
     final l10n = AppLocalizations.of(context)!;
@@ -41,20 +42,21 @@ class PaymentHistorySheet extends StatelessWidget {
       minChildSize: 0.4,
       maxChildSize: 0.95,
       builder: (_, controller) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
         ),
         child: Column(
           children: [
             // Handle
             Center(
               child: Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 4),
+                margin: const EdgeInsets.only(top: AppSpacing.lg, bottom: 4),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -62,46 +64,41 @@ class PaymentHistorySheet extends StatelessWidget {
 
             // Header
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl2, AppSpacing.lg, AppSpacing.xl2, AppSpacing.xl),
               child: Row(
                 children: [
                   Container(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.shade400, Colors.blue.shade600],
+                      gradient: const LinearGradient(
+                        colors: [AppColors.brand, AppColors.brandDark],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Center(
                       child: Text(initial,
-                          style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white)),
+                          style: AppTextStyles.titleMedium()
+                              .copyWith(color: Colors.white, fontSize: 18)),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           customerName,
-                          style: TextStyle(
+                          style: AppTextStyles.titleMedium().copyWith(
                             fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color:
-                                isDark ? Colors.white : const Color(0xFF1F2937),
                           ),
                         ),
                         Text(
                           l10n.paymentHistory,
-                          style:
-                              TextStyle(fontSize: 12, color: Colors.grey[500]),
+                          style: AppTextStyles.bodySmall(),
                         ),
                       ],
                     ),
@@ -112,28 +109,29 @@ class PaymentHistorySheet extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.inputFill,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child:
-                          Icon(Icons.close, size: 16, color: Colors.grey[600]),
+                      child: const Icon(Icons.close,
+                          size: 16, color: AppColors.textSecondary),
                     ),
                   ),
                 ],
               ),
             ),
 
-            Divider(height: 1, color: Colors.grey.withValues(alpha: 0.1)),
+            Container(height: 1, color: AppColors.borderSoft),
 
             // List
             Expanded(
               child: ListView.builder(
                 controller: controller,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.lg,
+                    AppSpacing.xl, AppSpacing.xl3),
                 itemCount: debtorSales.length,
                 itemBuilder: (context, index) {
                   final sale = debtorSales[index];
-                  return _SaleHistoryCard(sale: sale, isDark: isDark);
+                  return _SaleHistoryCard(sale: sale);
                 },
               ),
             ),
@@ -146,9 +144,8 @@ class PaymentHistorySheet extends StatelessWidget {
 
 class _SaleHistoryCard extends StatelessWidget {
   final dynamic sale;
-  final bool isDark;
 
-  const _SaleHistoryCard({required this.sale, required this.isDark});
+  const _SaleHistoryCard({required this.sale});
 
   @override
   Widget build(BuildContext context) {
@@ -169,48 +166,42 @@ class _SaleHistoryCard extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.04)
-            : Colors.grey.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.07)
-              : Colors.grey.withValues(alpha: 0.12),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          tilePadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
           title: Row(
             children: [
               Text(
                 '#${saleId.length >= 8 ? saleId.substring(0, 8).toUpperCase() : saleId.toUpperCase()}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
-                ),
+                style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.md),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: saleRemaining > 0
-                      ? Colors.red.withValues(alpha: 0.1)
-                      : Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
+                      ? AppColors.dangerLight
+                      : AppColors.successLight,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
                   saleRemaining > 0 ? l10n.hasDebt : l10n.paid,
-                  style: TextStyle(
+                  style: AppTextStyles.caption().copyWith(
                     fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: saleRemaining > 0 ? Colors.red : Colors.green,
+                    color: saleRemaining > 0
+                        ? AppColors.danger
+                        : AppColors.success,
+                    letterSpacing: 0,
                   ),
                 ),
               ),
@@ -220,18 +211,16 @@ class _SaleHistoryCard extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2),
             child: Text(
               '$formattedDate  •  ${NumberFormatter.formatDecimal(saleTotal)} ${l10n.currencySom}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
             ),
           ),
           children: [
             // Summary
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.04)
-                    : Colors.grey.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Column(
                 children: [
@@ -240,44 +229,42 @@ class _SaleHistoryCard extends StatelessWidget {
                     value:
                         '${NumberFormatter.formatDecimal(saleTotal)} ${l10n.currencySom}',
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm),
                   _SummaryRow(
                     label: l10n.paid,
                     value:
                         '${NumberFormatter.formatDecimal(salePaid)} ${l10n.currencySom}',
-                    valueColor: Colors.green,
+                    valueColor: AppColors.success,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm),
                   _SummaryRow(
                     label: l10n.remainingDebt,
                     value:
                         '${NumberFormatter.formatDecimal(saleRemaining)} ${l10n.currencySom}',
-                    valueColor: saleRemaining > 0 ? Colors.red : Colors.green,
+                    valueColor: saleRemaining > 0
+                        ? AppColors.danger
+                        : AppColors.success,
                   ),
                 ],
               ),
             ),
             if (payments.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.lg),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "${l10n.payments} (${payments.length})",
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  '${l10n.payments} (${payments.length})',
+                  style: AppTextStyles.labelLarge().copyWith(fontSize: 13),
                 ),
               ),
-              const SizedBox(height: 8),
-              ...payments
-                  .map<Widget>((p) => _PaymentTile(payment: p, isDark: isDark)),
+              const SizedBox(height: AppSpacing.md),
+              ...payments.map<Widget>((p) => _PaymentTile(payment: p)),
             ] else
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.only(top: AppSpacing.lg),
                 child: Text(
                   l10n.noPayments,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                  style: AppTextStyles.bodySmall(),
                 ),
               ),
           ],
@@ -300,13 +287,14 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+        Text(label,
+            style: AppTextStyles.bodySmall().copyWith(fontSize: 13)),
         Text(
           value,
-          style: TextStyle(
+          style: AppTextStyles.bodyMedium().copyWith(
             fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: valueColor,
+            fontWeight: FontWeight.w700,
+            color: valueColor ?? AppColors.text,
           ),
         ),
       ],
@@ -316,9 +304,8 @@ class _SummaryRow extends StatelessWidget {
 
 class _PaymentTile extends StatelessWidget {
   final dynamic payment;
-  final bool isDark;
 
-  const _PaymentTile({required this.payment, required this.isDark});
+  const _PaymentTile({required this.payment});
 
   static IconData _icon(String type) {
     final t = type.toLowerCase();
@@ -361,41 +348,40 @@ class _PaymentTile extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: isDark ? 0.08 : 0.06),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.green.withValues(alpha: 0.15)),
+        color: AppColors.successLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          Icon(_icon(paymentType), size: 18, color: Colors.green),
-          const SizedBox(width: 10),
+          Icon(_icon(paymentType), size: 18, color: AppColors.success),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _label(paymentType, l10n),
-                  style: TextStyle(
+                  style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (formattedDate.isNotEmpty)
                   Text(formattedDate,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      style: AppTextStyles.bodySmall().copyWith(fontSize: 11)),
               ],
             ),
           ),
           Text(
             '${NumberFormatter.formatDecimal(amount)} ${l10n.currencySom}',
-            style: const TextStyle(
+            style: AppTextStyles.labelLarge().copyWith(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Colors.green,
+              color: AppColors.success,
             ),
           ),
         ],

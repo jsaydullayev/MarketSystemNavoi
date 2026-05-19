@@ -1,5 +1,5 @@
-/// Sale Repository Implementation
-/// Sale Repository interfeysining amaliyoti
+// Sale Repository Implementation
+// Sale Repository interfeysining amaliyoti
 
 import '../../../../core/failure/api_result.dart';
 import '../../domain/entities/sale_entity.dart';

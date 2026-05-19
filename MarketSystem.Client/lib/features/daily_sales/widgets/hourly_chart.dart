@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/data/models/profit_model.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 /// Soatlik savdo bar chart — bucketed in 2-hour windows (12 bars for 24h).
@@ -19,7 +21,6 @@ class HourlyChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
 
     final buckets = _bucketize(sales);
@@ -28,45 +29,45 @@ class HourlyChart extends StatelessWidget {
     final hasAnyData = maxValue > 0;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white10 : Colors.black.withOpacity(0.06),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.bar_chart_rounded,
                 size: 16,
-                color: isDark ? Colors.white60 : Colors.grey[600],
+                color: AppColors.textSecondary,
               ),
               const SizedBox(width: 6),
               Text(
                 l10n.hourlySales,
-                style: TextStyle(
+                style: AppTextStyles.labelSmall().copyWith(
+                  color: AppColors.textSecondary,
                   fontSize: 12,
-                  color: isDark ? Colors.white70 : Colors.grey[700],
-                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
                 ),
               ),
               const Spacer(),
               if (!hasAnyData)
                 Text(
                   l10n.noData,
-                  style: TextStyle(
+                  style: AppTextStyles.caption().copyWith(
                     fontSize: 10,
-                    color: isDark ? Colors.white38 : Colors.grey,
+                    color: AppColors.textMuted,
+                    letterSpacing: 0,
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md),
           SizedBox(
             height: 56,
             child: Row(
@@ -101,16 +102,14 @@ class HourlyChart extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF0F172A)
-                            : Colors.black87,
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.text,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                         border: Border.all(
-                          color: const Color(0xFFF28C33).withOpacity(0.4),
+                          color: AppColors.brand.withValues(alpha: 0.4),
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                          horizontal: AppSpacing.md, vertical: 6),
                       child: Align(
                         alignment: Alignment.bottomCenter,
                         child: FractionallySizedBox(
@@ -123,12 +122,10 @@ class HourlyChart extends StatelessWidget {
                           child: Container(
                             decoration: BoxDecoration(
                               color: isHighlighted
-                                  ? const Color(0xFFF28C33)
+                                  ? AppColors.brand
                                   : (hasAnyData && v > 0
-                                      ? const Color(0xFFF28C33).withOpacity(0.55)
-                                      : (isDark
-                                          ? Colors.white10
-                                          : Colors.black.withOpacity(0.06))),
+                                      ? AppColors.brand.withValues(alpha: 0.55)
+                                      : AppColors.inputFill),
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(3),
                               ),
@@ -152,9 +149,10 @@ class HourlyChart extends StatelessWidget {
                 child: Text(
                   showLabel ? '${startHour}h' : '',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: AppTextStyles.caption().copyWith(
                     fontSize: 9,
-                    color: isDark ? Colors.white38 : Colors.grey,
+                    color: AppColors.textMuted,
+                    letterSpacing: 0,
                   ),
                 ),
               );

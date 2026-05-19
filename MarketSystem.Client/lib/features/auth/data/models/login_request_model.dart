@@ -1,7 +1,7 @@
-/// Login Request Model
-/// Data transfer object for login requests
+// Login Request Model
+// Data transfer object for login requests
 
-/// Login request DTO
+// Login request DTO
 class LoginRequestModel {
   final String username;
   final String password;

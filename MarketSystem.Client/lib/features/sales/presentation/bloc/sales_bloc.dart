@@ -1,5 +1,5 @@
-/// Sales BLoC
-/// Sales state management
+// Sales BLoC
+// Sales state management
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/add_payment_usecase.dart';

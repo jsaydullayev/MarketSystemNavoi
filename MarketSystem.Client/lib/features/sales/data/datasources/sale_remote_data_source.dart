@@ -1,5 +1,5 @@
-/// Sale Remote Data Source
-/// Sales API dan ma'lumot olish
+// Sale Remote Data Source
+// Sales API dan ma'lumot olish
 
 import '../../../../data/services/sales_service.dart';
 

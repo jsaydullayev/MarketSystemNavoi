@@ -1,5 +1,11 @@
+// Shared AppBar used across feature screens. Uses the new design tokens
+// (AppColors, AppTextStyles) so consumers don't need to construct AppBar +
+// IconButton + back-navigation logic themselves.
+
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
+
+import '../../design/tokens/app_tokens.dart';
+import '../../design/tokens/app_typography.dart';
 
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -19,24 +25,39 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AppBar(
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      title: Text(
+        title,
+        style: AppTextStyles.titleMedium().copyWith(
+          fontWeight: FontWeight.w800,
+          color: AppColors.text,
+        ),
+      ),
       centerTitle: true,
-      backgroundColor: AppColors.getCard(isDark),
+      backgroundColor: AppColors.surface,
+      foregroundColor: AppColors.text,
+      surfaceTintColor: Colors.transparent,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+        icon: const Icon(
+          Icons.arrow_back_ios_new_rounded,
+          size: 20,
+          color: AppColors.text,
+        ),
         // maybePop respects any PopScope registered upstream (e.g. the
         // "save as draft?" prompt in Yangi sotuv). Navigator.pop bypasses
         // those guards and would silently lose in-progress work.
         onPressed: onBackPressed ?? () => Navigator.maybePop(context),
       ),
       elevation: 0,
+      scrolledUnderElevation: 0,
       bottom: bottom,
       actions: [
         if (extraActions != null) ...extraActions!,
         if (onRefresh != null)
-          IconButton(icon: const Icon(Icons.refresh), onPressed: onRefresh),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.text),
+            onPressed: onRefresh,
+          ),
       ],
     );
   }

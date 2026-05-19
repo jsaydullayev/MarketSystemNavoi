@@ -1,7 +1,15 @@
-﻿import 'package:flutter/material.dart';
-import 'package:market_system_client/core/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Withdrawal history list — a stack of cards each showing a single
+/// withdrawal: red icon tile, amount, optional comment, date, and user.
+///
+/// Demo reference: list-row styling consistent with the receive/log lists
+/// elsewhere in the design (white surface, soft border, neutral chrome).
 class WithdrawalHistoryList extends StatelessWidget {
   final List withdrawals;
   final AppLocalizations l10n;
@@ -17,19 +25,25 @@ class WithdrawalHistoryList extends StatelessWidget {
     if (withdrawals.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 40),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl4),
         decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.inputFill,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Column(
           children: [
-            Icon(Icons.receipt_long_outlined,
-                size: 52, color: Colors.grey[400]),
-            const SizedBox(height: 12),
+            const Icon(
+              Icons.receipt_long_outlined,
+              size: 52,
+              color: AppColors.textMuted,
+            ),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               l10n.noWithdrawals,
-              style: TextStyle(fontSize: 15, color: Colors.grey[500]),
+              style: AppTextStyles.bodyLarge().copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 15,
+              ),
             ),
           ],
         ),
@@ -40,7 +54,7 @@ class WithdrawalHistoryList extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: withdrawals.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md + 2),
       itemBuilder: (context, index) {
         final w = withdrawals[index];
         return _WithdrawalItem(withdrawal: w, l10n: l10n);
@@ -63,53 +77,34 @@ class _WithdrawalItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-        ],
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.07)
-              : Colors.grey.withValues(alpha: 0.12),
-        ),
-      ),
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppTheme.danger.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.dangerLight,
+              borderRadius: BorderRadius.circular(AppRadius.lg - 2),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.arrow_upward_rounded,
-              color: AppTheme.danger,
+              color: AppColors.danger,
               size: 20,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.lg + 2),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${withdrawal.amount.toStringAsFixed(0)} ${l10n.currencySom}',
-                  style: TextStyle(
+                  '${NumberFormatter.format(withdrawal.amount)} ${l10n.currencySom}',
+                  style: AppTextStyles.bodyLarge().copyWith(
                     fontWeight: FontWeight.w700,
+                    color: AppColors.danger,
                     fontSize: 15,
-                    color: AppTheme.danger,
                   ),
                 ),
                 if (withdrawal.comment != null &&
@@ -117,7 +112,7 @@ class _WithdrawalItem extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     withdrawal.comment,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    style: AppTextStyles.bodySmall(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -125,24 +120,31 @@ class _WithdrawalItem extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   _formatDate(withdrawal.withdrawalDate),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: AppTextStyles.bodySmall().copyWith(
+                    color: AppColors.textMuted,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
           ),
           if (withdrawal.userName != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md + 2,
+                vertical: AppSpacing.xs,
+              ),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(AppRadius.md - 2),
               ),
               child: Text(
                 withdrawal.userName!,
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[600]),
+                style: AppTextStyles.bodySmall().copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
         ],

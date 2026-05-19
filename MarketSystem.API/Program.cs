@@ -322,6 +322,24 @@ try
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
+
+        // /api/RegistrationRequests — public, anonymous sign-up submissions.
+        // Tighter than auth-register because there's no captcha gate; a bot
+        // farm could otherwise flood the SuperAdmin's pending-request queue.
+        // The application layer also enforces a partial unique index on
+        // (Phone) WHERE Status=Pending, so duplicate spam from one number
+        // gets dropped at the DB; this policy stops the burst before it
+        // reaches that index.
+        options.AddPolicy("registration-submit", ctx => System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            PartitionKey(ctx),
+            _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 3,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
     });
     // CORS origins — accepts:
     //   appsettings.json: "Cors:AllowedOrigins": ["https://a", "https://b"]

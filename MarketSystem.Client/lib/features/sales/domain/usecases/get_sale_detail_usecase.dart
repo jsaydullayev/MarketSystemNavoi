@@ -1,5 +1,5 @@
-/// Get Sale Detail Use Case
-/// Sotuv tafsilotlarini olish biznes mantig'i
+// Get Sale Detail Use Case
+// Sotuv tafsilotlarini olish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../repositories/sale_repository_interface.dart';

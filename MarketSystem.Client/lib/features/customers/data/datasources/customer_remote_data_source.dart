@@ -1,5 +1,5 @@
-/// Customer Remote Data Source
-/// Customers API dan ma'lumot olish
+// Customer Remote Data Source
+// Customers API dan ma'lumot olish
 
 import '../../../../data/services/customer_service.dart';
 

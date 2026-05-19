@@ -1,9 +1,17 @@
+// Hidden SuperAdmin console — migrated to the new design system.
+// Two tabs: pending sign-up requests and Owners roster (with per-card
+// Detail / Edit / Block / Delete actions). All business logic (refresh,
+// approve, reject, create, block, delete via SuperAdminService) and role
+// gating are preserved from the original implementation.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../design/tokens/app_tokens.dart';
+import '../../../design/tokens/app_typography.dart';
+import '../../../design/widgets/app_button.dart';
 import '../../../l10n/app_localizations.dart';
 import '../data/superadmin_service.dart';
 import '../domain/models/owner_summary.dart';
@@ -14,9 +22,6 @@ import 'widgets/create_owner_dialog.dart';
 import 'widgets/credentials_handoff_dialog.dart';
 import 'widgets/reject_request_dialog.dart';
 
-/// Hidden SuperAdmin console — design parity with the Figma prototype.
-/// Two tabs: pending sign-up requests and Owners roster (with per-card
-/// 3-dots menu → Detail/Edit/Block/Delete).
 class SuperAdminConsoleScreen extends StatefulWidget {
   const SuperAdminConsoleScreen({super.key});
 
@@ -177,7 +182,8 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
       ),
     );
     if (!mounted) return;
-    _snack("Yangi owner yaratildi: ${created.username}", isError: false);
+    final l10n = AppLocalizations.of(context)!;
+    _snack(l10n.newOwnerCreated(created.username), isError: false);
   }
 
   Future<void> _onOwnerTap(OwnerSummary owner) async {
@@ -206,13 +212,13 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
               color: Colors.white,
               size: 20,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.md),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: isError ? Colors.redAccent : Colors.green,
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.all(AppSpacing.xl),
       ),
     );
   }
@@ -223,34 +229,39 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
 
     if (!AppConfig.hasSuperAdminConsole) {
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.superAdminConsoleTitle)),
+        backgroundColor: AppColors.bg,
+        appBar: _buildAppBar(l10n, withTabs: false),
         body: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl3),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.report_outlined,
-                    size: 56, color: Colors.redAccent),
-                const SizedBox(height: 16),
+                const Icon(
+                  Icons.report_outlined,
+                  size: 56,
+                  color: AppColors.danger,
+                ),
+                const SizedBox(height: AppSpacing.xl),
                 Text(
                   l10n.superAdminConsoleNotConfigured,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600),
+                  style: AppTextStyles.titleMedium(),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   l10n.superAdminRebuildWithDartDefine,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 13, color: AppTheme.textSecondary),
+                  style: AppTextStyles.bodySmall(),
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _forceLogout,
-                  icon: const Icon(Icons.logout),
-                  label: Text(l10n.logout),
+                const SizedBox(height: AppSpacing.xl3),
+                SizedBox(
+                  width: 220,
+                  child: AppSecondaryButton(
+                    onPressed: _forceLogout,
+                    icon: Icons.logout,
+                    label: l10n.logout,
+                  ),
                 ),
               ],
             ),
@@ -263,81 +274,12 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
     final ownersCount = _owners?.length ?? 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F9),
-      appBar: AppBar(
-        elevation: 1,
-        backgroundColor: Colors.white,
-        foregroundColor: AppTheme.textPrimary,
-        title: Row(
-          children: [
-            const Icon(Icons.shield_outlined,
-                color: Color(0xFF1A73E8), size: 22),
-            const SizedBox(width: 8),
-            const Text('SuperAdmin Console',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F0FE),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Text(
-                'v1.0',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A73E8),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          OutlinedButton.icon(
-            onPressed: _forceLogout,
-            icon: const Icon(Icons.logout, size: 15),
-            label: Text(l10n.logout),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFD93025),
-              side: const BorderSide(color: Color(0xFFDADCE0)),
-              shape: const StadiumBorder(),
-            ),
-          ),
-          const SizedBox(width: 12),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabs,
-              labelColor: const Color(0xFF1A73E8),
-              unselectedLabelColor: AppTheme.textSecondary,
-              indicatorColor: const Color(0xFF1A73E8),
-              indicatorWeight: 2.5,
-              tabs: [
-                Tab(
-                  child: _TabLabel(
-                    icon: Icons.assignment_outlined,
-                    label: l10n.superAdminTabRequests,
-                    count: pendingCount,
-                    selected: _tabs.index == 0,
-                  ),
-                ),
-                Tab(
-                  child: _TabLabel(
-                    icon: Icons.people_outline,
-                    label: l10n.superAdminTabOwners,
-                    count: ownersCount,
-                    selected: _tabs.index == 1,
-                  ),
-                ),
-              ],
-              onTap: (_) => setState(() {}),
-            ),
-          ),
-        ),
+      backgroundColor: AppColors.bg,
+      appBar: _buildAppBar(
+        l10n,
+        withTabs: true,
+        pendingCount: pendingCount,
+        ownersCount: ownersCount,
       ),
       body: TabBarView(
         controller: _tabs,
@@ -366,9 +308,102 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
           ? FloatingActionButton.extended(
               onPressed: _onCreateOwner,
               icon: const Icon(Icons.person_add_outlined),
-              label: const Text('Yangi Owner'),
-              backgroundColor: const Color(0xFF1A73E8),
+              label: Text(l10n.newOwner),
+              backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
+              elevation: 2,
+            )
+          : null,
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(
+    AppLocalizations l10n, {
+    required bool withTabs,
+    int pendingCount = 0,
+    int ownersCount = 0,
+  }) {
+    return AppBar(
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: AppColors.surface,
+      foregroundColor: AppColors.text,
+      shape: const Border(
+        bottom: BorderSide(color: AppColors.border, width: 1),
+      ),
+      title: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: AppColors.brandLight,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: const Icon(
+              Icons.shield_outlined,
+              color: AppColors.brand,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Text(
+            l10n.superAdminConsoleTitleShort,
+            style: AppTextStyles.titleMedium(),
+          ),
+        ],
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.md,
+          ),
+          child: SizedBox(
+            width: 130,
+            child: AppSecondaryButton(
+              onPressed: _forceLogout,
+              icon: Icons.logout,
+              label: l10n.logout,
+            ),
+          ),
+        ),
+      ],
+      bottom: withTabs
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(48),
+              child: ColoredBox(
+                color: AppColors.surface,
+                child: TabBar(
+                  controller: _tabs,
+                  labelColor: AppColors.brand,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.brand,
+                  indicatorWeight: 2.5,
+                  labelStyle: AppTextStyles.labelLarge(),
+                  unselectedLabelStyle: AppTextStyles.labelLarge()
+                      .copyWith(color: AppColors.textSecondary),
+                  tabs: [
+                    Tab(
+                      child: _TabLabel(
+                        icon: Icons.assignment_outlined,
+                        label: l10n.superAdminTabRequests,
+                        count: pendingCount,
+                        selected: _tabs.index == 0,
+                      ),
+                    ),
+                    Tab(
+                      child: _TabLabel(
+                        icon: Icons.people_outline,
+                        label: l10n.superAdminTabOwners,
+                        count: ownersCount,
+                        selected: _tabs.index == 1,
+                      ),
+                    ),
+                  ],
+                  onTap: (_) => setState(() {}),
+                ),
+              ),
             )
           : null,
     );
@@ -389,30 +424,26 @@ class _TabLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected
-        ? const Color(0xFF1A73E8)
-        : const Color(0xFF5F6368);
+    final color = selected ? AppColors.brand : AppColors.textSecondary;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(icon, size: 16, color: color),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.md),
         Text(label),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.md),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
           decoration: BoxDecoration(
-            color: selected
-                ? const Color(0xFF1A73E8)
-                : const Color(0xFFE8F0FE),
-            borderRadius: BorderRadius.circular(10),
+            color: selected ? AppColors.brand : AppColors.brandLight,
+            borderRadius: BorderRadius.circular(AppRadius.full),
           ),
           child: Text(
             count.toString(),
-            style: TextStyle(
+            style: AppTextStyles.bodySmall().copyWith(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: selected ? Colors.white : const Color(0xFF1A73E8),
+              color: selected ? Colors.white : AppColors.brand,
             ),
           ),
         ),
@@ -440,15 +471,20 @@ class _RequestsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    if (loading) return const Center(child: CircularProgressIndicator());
+    if (loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.brand),
+      );
+    }
     if (error != null) return _ErrorState(error: error!, onRetry: onRefresh);
     final list = items ?? const <RegistrationRequest>[];
 
     return RefreshIndicator(
+      color: AppColors.brand,
       onRefresh: onRefresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -459,79 +495,63 @@ class _RequestsTab extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: c.maxWidth < 600 ? 1 : 3,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
+                mainAxisSpacing: AppSpacing.lg,
+                crossAxisSpacing: AppSpacing.lg,
                 childAspectRatio: c.maxWidth < 600 ? 4 : 2.2,
                 children: [
                   _MiniStat(
-                    label: 'KUTILMOQDA',
+                    label: l10n.superAdminPending.toUpperCase(),
                     value: list.length.toString(),
-                    color: const Color(0xFF856404),
-                    subtitle: "Yangi so'rovlar",
+                    color: AppColors.warning,
+                    subtitle: l10n.superAdminNewRequests,
                   ),
-                  const _MiniStat(
-                    label: 'TASDIQLANGAN',
+                  _MiniStat(
+                    label: l10n.superAdminApproved,
                     value: '—',
-                    color: Color(0xFF137333),
-                    subtitle: 'Server stats kerak',
+                    color: AppColors.success,
+                    subtitle: l10n.superAdminServerStatsNeeded,
                   ),
-                  const _MiniStat(
-                    label: 'RAD ETILGAN',
+                  _MiniStat(
+                    label: l10n.superAdminRejected,
                     value: '—',
-                    color: Color(0xFFD93025),
-                    subtitle: 'Server stats kerak',
+                    color: AppColors.danger,
+                    subtitle: l10n.superAdminServerStatsNeeded,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    "KUTILAYOTGAN SO'ROVLAR",
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textSecondary,
-                      letterSpacing: 0.3,
+                    l10n.superAdminPendingRequestsHeader,
+                    style: AppTextStyles.caption().copyWith(
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),
                 _RefreshChip(onRefresh: onRefresh),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.lg),
             if (list.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 60),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('📋', style: TextStyle(fontSize: 40)),
-                      const SizedBox(height: 12),
-                      Text(
-                        l10n.superAdminNoPendingRequests,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _EmptyState(
+                icon: Icons.assignment_outlined,
+                text: l10n.superAdminNoPendingRequests,
               )
             else
-              ...list.map((req) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _RequestCard(
-                      request: req,
-                      onApprove: () => onApprove(req),
-                      onReject: () => onReject(req),
-                    ),
-                  )),
-            const SizedBox(height: 24),
+              ...list.map(
+                (req) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: _RequestCard(
+                    request: req,
+                    onApprove: () => onApprove(req),
+                    onReject: () => onReject(req),
+                  ),
+                ),
+              ),
+            const SizedBox(height: AppSpacing.xl3),
           ],
         ),
       ),
@@ -554,11 +574,11 @@ class _MiniStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDADCE0)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -566,28 +586,18 @@ class _MiniStat extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondary,
-              letterSpacing: 0.5,
-            ),
+            style: AppTextStyles.caption()
+                .copyWith(color: AppColors.textSecondary),
           ),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
+            style: AppTextStyles.titleLarge().copyWith(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
               color: color,
             ),
           ),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-            ),
-          ),
+          Text(subtitle, style: AppTextStyles.bodySmall()),
         ],
       ),
     );
@@ -600,15 +610,53 @@ class _RefreshChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
+    final l10n = AppLocalizations.of(context)!;
+    return TextButton.icon(
       onPressed: onRefresh,
       icon: const Icon(Icons.refresh, size: 14),
-      label: const Text('Yangilash'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppTheme.textSecondary,
-        shape: const StadiumBorder(),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        side: const BorderSide(color: Color(0xFFDADCE0)),
+      label: Text(l10n.refresh),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.textSecondary,
+        textStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          side: const BorderSide(color: AppColors.border),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+              ),
+              child: Icon(icon, size: 32, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(text, style: AppTextStyles.bodyMedium()),
+          ],
+        ),
       ),
     );
   }
@@ -632,53 +680,57 @@ class _RequestCard extends StatelessWidget {
         : '?';
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFDADCE0)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg + 2,
+        AppSpacing.xl,
+        AppSpacing.lg + 2,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 21,
-                backgroundColor: const Color(0xFF1A73E8),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                alignment: Alignment.center,
                 child: Text(
                   initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  style: AppTextStyles.labelLarge()
+                      .copyWith(color: Colors.white, fontSize: 16),
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       request.fullName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.labelLarge().copyWith(fontSize: 15),
                     ),
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        const Icon(Icons.phone_outlined,
-                            size: 13, color: AppTheme.textSecondary),
+                        const Icon(
+                          Icons.phone_outlined,
+                          size: 13,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 5),
                         Text(
                           request.phone,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textSecondary,
-                          ),
+                          style: AppTextStyles.bodySmall(),
                         ),
                       ],
                     ),
@@ -690,55 +742,60 @@ class _RequestCard extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF7E0),
-                      borderRadius: BorderRadius.circular(12),
+                      horizontal: AppSpacing.md + 2,
+                      vertical: 3,
                     ),
-                    child: const Text(
-                      '⏳ Kutilmoqda',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF856404),
-                      ),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningLight,
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.schedule,
+                          size: 11,
+                          color: AppColors.warning,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          l10n.superAdminPending,
+                          style: AppTextStyles.bodySmall().copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.warning,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     _formatDate(request.createdAt),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textSecondary,
-                    ),
+                    style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          const Divider(height: 1, color: Color(0xFFDADCE0)),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.lg),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: AppSpacing.lg),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              OutlinedButton.icon(
-                onPressed: onReject,
-                icon: const Icon(Icons.close, size: 16),
-                label: Text(l10n.superAdminReject),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFD93025),
-                  side: const BorderSide(color: Color(0xFFD93025)),
+              Expanded(
+                child: AppDangerButton(
+                  label: l10n.superAdminReject,
+                  icon: Icons.close,
+                  onPressed: onReject,
                 ),
               ),
-              const SizedBox(width: 10),
-              ElevatedButton.icon(
-                onPressed: onApprove,
-                icon: const Icon(Icons.check, size: 16),
-                label: Text(l10n.superAdminApprove),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF137333),
-                  foregroundColor: Colors.white,
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: AppPrimaryButton(
+                  label: l10n.superAdminApprove,
+                  icon: Icons.check,
+                  onPressed: onApprove,
                 ),
               ),
             ],
@@ -772,7 +829,11 @@ class _OwnersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    if (loading) return const Center(child: CircularProgressIndicator());
+    if (loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.brand),
+      );
+    }
     if (error != null) return _ErrorState(error: error!, onRetry: onRefresh);
     final all = items ?? const <OwnerSummary>[];
     final filtered = search.isEmpty
@@ -786,103 +847,101 @@ class _OwnersTab extends StatelessWidget {
           }).toList();
 
     return RefreshIndicator(
+      color: AppColors.brand,
       onRefresh: onRefresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96), // FAB clearance
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.xl,
+          AppSpacing.xl,
+          96, // FAB clearance
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Search bar
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFDADCE0)),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.full),
+                border: Border.all(color: AppColors.border, width: 1),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl,
+                vertical: 2,
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.search,
-                      color: AppTheme.textSecondary, size: 18),
-                  const SizedBox(width: 10),
+                  const Icon(
+                    Icons.search,
+                    color: AppColors.textSecondary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: TextField(
                       controller: searchCtrl,
-                      decoration: const InputDecoration(
-                        hintText: "Ism, username yoki do'kon nomi…",
+                      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: l10n.ownerSearchHint,
+                        hintStyle: AppTextStyles.bodyMedium().copyWith(
+                          color: AppColors.textMuted,
+                          fontSize: 14,
+                        ),
                         border: InputBorder.none,
                         isCollapsed: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.lg,
+                        ),
                       ),
                     ),
                   ),
                   if (searchCtrl.text.isNotEmpty)
                     IconButton(
                       icon: const Icon(Icons.close, size: 18),
+                      color: AppColors.textSecondary,
                       onPressed: () => searchCtrl.clear(),
                     ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    'FAOL EGALAR (${filtered.length})',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textSecondary,
-                      letterSpacing: 0.3,
+                    l10n.superAdminActiveOwnersHeader(filtered.length),
+                    style: AppTextStyles.caption().copyWith(
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),
                 _RefreshChip(onRefresh: onRefresh),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: onCreate,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text("Yangi qo'shish"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A73E8),
-                    foregroundColor: Colors.white,
+                const SizedBox(width: AppSpacing.md),
+                SizedBox(
+                  width: 160,
+                  child: AppPrimaryButton(
+                    onPressed: onCreate,
+                    icon: Icons.add,
+                    label: l10n.addNew,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.lg),
             if (filtered.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 60),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('👥', style: TextStyle(fontSize: 40)),
-                      const SizedBox(height: 12),
-                      Text(
-                        search.isNotEmpty
-                            ? 'Hech narsa topilmadi'
-                            : l10n.superAdminNoActiveOwners,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _EmptyState(
+                icon: Icons.people_outline,
+                text: search.isNotEmpty
+                    ? l10n.nothingFound
+                    : l10n.superAdminNoActiveOwners,
               )
             else
               ...filtered.map(
                 (o) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _OwnerCard(
-                    owner: o,
-                    onTap: () => onTap(o),
-                  ),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md + 2),
+                  child: _OwnerCard(owner: o, onTap: () => onTap(o)),
                 ),
               ),
           ],
@@ -899,82 +958,90 @@ class _OwnerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = owner.fullName.isNotEmpty
-        ? owner.fullName[0].toUpperCase()
-        : '?';
-    final colors = _avatarColors(owner.userId);
+    final l10n = AppLocalizations.of(context)!;
+    final initial =
+        owner.fullName.isNotEmpty ? owner.fullName[0].toUpperCase() : '?';
+    final avatarColor = _avatarColor(owner.userId);
 
-    String statusLabel;
     Color statusColor;
+    Color statusBg;
+    String statusLabel;
     if (owner.isMarketBlocked) {
-      statusLabel = 'Bloklangan';
-      statusColor = const Color(0xFFD93025);
+      statusLabel = l10n.statusBlocked;
+      statusColor = AppColors.danger;
+      statusBg = AppColors.dangerLight;
     } else if (owner.isActive) {
-      statusLabel = 'Faol';
-      statusColor = const Color(0xFF137333);
+      statusLabel = l10n.statusActive;
+      statusColor = AppColors.success;
+      statusBg = AppColors.successLight;
     } else {
-      statusLabel = 'Faolsiz';
-      statusColor = const Color(0xFF9AA0A6);
+      statusLabel = l10n.statusInactive;
+      statusColor = AppColors.textMuted;
+      statusBg = AppColors.inputFill;
     }
 
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFDADCE0)),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border, width: 1),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.lg + 2,
+          ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 23,
-                backgroundColor: colors,
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: avatarColor,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                alignment: Alignment.center,
                 child: Text(
                   initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 17,
-                  ),
+                  style: AppTextStyles.labelLarge()
+                      .copyWith(color: Colors.white, fontSize: 17),
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       owner.fullName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.labelLarge().copyWith(fontSize: 15),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '@${owner.username}',
-                      style: const TextStyle(
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: AppColors.brand,
                         fontSize: 13,
-                        color: Color(0xFF1A73E8),
                       ),
                     ),
                     if (owner.phone != null) ...[
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Icon(Icons.phone_outlined,
-                              size: 12, color: AppTheme.textSecondary),
+                          const Icon(
+                            Icons.phone_outlined,
+                            size: 12,
+                            color: AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             owner.phone!,
-                            style: const TextStyle(
+                            style: AppTextStyles.bodySmall().copyWith(
                               fontSize: 12,
-                              color: AppTheme.textSecondary,
                             ),
                           ),
                         ],
@@ -983,7 +1050,7 @@ class _OwnerCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -991,46 +1058,66 @@ class _OwnerCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('🏪',
-                            style: TextStyle(fontSize: 13)),
+                        const Icon(
+                          Icons.storefront_outlined,
+                          size: 13,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 5),
-                        Text(
-                          owner.marketName!,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 140),
+                          child: Text(
+                            owner.marketName!,
+                            style: AppTextStyles.bodySmall().copyWith(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.text,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          shape: BoxShape.circle,
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBg,
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        statusLabel,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: statusColor,
-                          fontWeight: FontWeight.w500,
+                        const SizedBox(width: 5),
+                        Text(
+                          statusLabel,
+                          style: AppTextStyles.bodySmall().copyWith(
+                            fontSize: 11,
+                            color: statusColor,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+              const SizedBox(width: AppSpacing.md),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textSecondary,
+              ),
             ],
           ),
         ),
@@ -1040,14 +1127,14 @@ class _OwnerCard extends StatelessWidget {
 
   /// Deterministic per-owner colour so the same owner always gets the same
   /// avatar tint between sessions.
-  Color _avatarColors(String userId) {
+  Color _avatarColor(String userId) {
     final palette = [
-      const Color(0xFF1A73E8),
-      const Color(0xFF137333),
-      const Color(0xFF7B1FA2),
-      const Color(0xFFE65100),
-      const Color(0xFF00695C),
-      const Color(0xFFC5221F),
+      AppColors.brand,
+      AppColors.success,
+      const Color(0xFF7C3AED), // purple
+      const Color(0xFF0EA5E9), // sky
+      const Color(0xFFEC4899), // pink
+      AppColors.warning,
     ];
     final hash = userId.codeUnits.fold<int>(0, (acc, c) => acc + c);
     return palette[hash % palette.length];
@@ -1066,19 +1153,30 @@ class _ErrorState extends StatelessWidget {
         ? l10n.superAdminConsoleNotConfigured
         : l10n.superAdminLoadFailed;
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xl3),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
-            const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: Text(l10n.retry),
+            const Icon(
+              Icons.error_outline,
+              color: AppColors.danger,
+              size: 48,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium(),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            SizedBox(
+              width: 220,
+              child: AppPrimaryButton(
+                onPressed: onRetry,
+                icon: Icons.refresh,
+                label: l10n.retry,
+              ),
             ),
           ],
         ),

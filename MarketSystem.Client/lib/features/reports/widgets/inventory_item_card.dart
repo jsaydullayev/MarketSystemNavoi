@@ -1,21 +1,30 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Row card in the inventory list (Reports → Ombor tab).
+///
+/// Demo reference: list rows in `id="page-rpt-top"` — neutral surface
+/// card, product name + a colored stock chip on the right (success >10,
+/// warning >0, danger when out), then a 2-column info grid below and an
+/// optional potential-profit footer when the viewer is the owner.
 class InventoryItemCard extends StatelessWidget {
   final Map<String, dynamic> item;
   final bool isOwner;
   final bool canViewCostPrice;
 
-  const InventoryItemCard(
-      {required this.item,
-      required this.isOwner,
-      this.canViewCostPrice = true});
+  const InventoryItemCard({
+    super.key,
+    required this.item,
+    required this.isOwner,
+    this.canViewCostPrice = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final name = item['productName'] as String? ?? l10n.unknown;
     final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final costPrice = (item['costPrice'] as num?)?.toDouble() ?? 0.0;
@@ -27,25 +36,21 @@ class InventoryItemCard extends StatelessWidget {
         : null;
 
     final stockColor = qty > 10
-        ? Colors.green
+        ? AppColors.success
         : qty > 0
-            ? Colors.orange
-            : Colors.red;
+            ? AppColors.warning
+            : AppColors.danger;
 
     final qtyStr = qty % 1 == 0
         ? '${qty.toInt()} ${l10n.piece}'
         : '${qty.toStringAsFixed(1)} ${l10n.piece}';
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg + 2),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.grey.withValues(alpha: 0.12),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,18 +60,17 @@ class InventoryItemCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   name,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppTextStyles.bodyMedium().copyWith(
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
                   ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 9, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: stockColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.md - 2),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -80,9 +84,8 @@ class InventoryItemCard extends StatelessWidget {
                     const SizedBox(width: 5),
                     Text(
                       qtyStr,
-                      style: TextStyle(
+                      style: AppTextStyles.labelSmall().copyWith(
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
                         color: stockColor,
                       ),
                     ),
@@ -91,7 +94,7 @@ class InventoryItemCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.md + 2),
           Row(
             children: [
               if (canViewCostPrice)
@@ -108,12 +111,14 @@ class InventoryItemCard extends StatelessWidget {
                   label: l10n.sellingPrice,
                   value:
                       '${NumberFormatter.formatDecimal(salePrice)} ${l10n.currencySom}',
-                  align: canViewCostPrice ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  align: canViewCostPrice
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               if (canViewCostPrice)
@@ -130,21 +135,24 @@ class InventoryItemCard extends StatelessWidget {
                   label: l10n.totalValue,
                   value:
                       '${NumberFormatter.formatDecimal(totalSale)} ${l10n.currencySom}',
-                  align: canViewCostPrice ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  align: canViewCostPrice
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                 ),
               ),
             ],
           ),
           if (isOwner && potentialProfit != null && potentialProfit != 0) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.md + 2),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
               decoration: BoxDecoration(
                 color: potentialProfit > 0
-                    ? Colors.green.withValues(alpha: 0.08)
-                    : Colors.red.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(9),
+                    ? AppColors.successLight
+                    : AppColors.dangerLight,
+                borderRadius: BorderRadius.circular(AppRadius.md - 1),
               ),
               child: Row(
                 children: [
@@ -153,15 +161,21 @@ class InventoryItemCard extends StatelessWidget {
                         ? Icons.trending_up_rounded
                         : Icons.trending_down_rounded,
                     size: 16,
-                    color: potentialProfit > 0 ? Colors.green : Colors.red,
+                    color: potentialProfit > 0
+                        ? AppColors.success
+                        : AppColors.danger,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    '${l10n.potentialProfit}: ${NumberFormatter.formatDecimal(potentialProfit)} ${l10n.currencySom}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: potentialProfit > 0 ? Colors.green : Colors.red,
+                  Expanded(
+                    child: Text(
+                      '${l10n.potentialProfit}: ${NumberFormatter.formatDecimal(potentialProfit)} ${l10n.currencySom}',
+                      style: AppTextStyles.bodySmall().copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: potentialProfit > 0
+                            ? AppColors.success
+                            : AppColors.danger,
+                      ),
                     ),
                   ),
                 ],
@@ -190,9 +204,18 @@ class _InfoTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: align,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-        Text(value,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
+        ),
+        Text(
+          value,
+          style: AppTextStyles.bodySmall().copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.text,
+          ),
+        ),
       ],
     );
   }

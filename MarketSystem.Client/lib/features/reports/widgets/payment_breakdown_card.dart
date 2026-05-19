@@ -1,7 +1,19 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Single row in the "byPaymentType" breakdown list.
+///
+/// Demo reference: payment-method rows in `id="page-rpt-profit"` and
+/// `id="page-rpt-hub"` — neutral white surface card with a colored icon
+/// tile on the left, label + transaction count + a thin progress bar in
+/// the middle, and the formatted amount on the right.
+///
+/// The `color` per payment method is still a strong cue but the card
+/// chrome is neutral so a column of rows reads as a single list, not a
+/// pile of competing tinted blocks.
 class ReportPaymentBreakdownCard extends StatelessWidget {
   final String paymentType;
   final double amount;
@@ -20,46 +32,45 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
     'Cash': {
       'name': 'Naqd',
       'icon': Icons.payments_outlined,
-      'color': Colors.green
+      'color': AppColors.success,
     },
     'Terminal': {
       'name': 'Terminal',
       'icon': Icons.credit_card_outlined,
-      'color': Colors.orange
+      'color': AppColors.brand,
     },
     'Transfer': {
       'name': 'Hisob raqam',
       'icon': Icons.account_balance_outlined,
-      'color': Colors.purple
+      'color': Color(0xFF8B5CF6),
     },
     'Click': {
       'name': 'Click',
       'icon': Icons.phone_android_outlined,
-      'color': Colors.blue
+      'color': Color(0xFF3B82F6),
     },
     'Qaytarilgan': {
       'name': 'Qaytarilgan',
       'icon': Icons.assignment_return_outlined,
-      'color': Colors.red
+      'color': AppColors.danger,
     },
     'Refund': {
       'name': 'Qaytarilgan',
       'icon': Icons.assignment_return_outlined,
-      'color': Colors.red
+      'color': AppColors.danger,
     },
   };
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isRefund = paymentType == 'Qaytarilgan' || paymentType == 'Refund';
 
     final cfg = _config[paymentType] ??
         {
           'name': paymentType,
           'icon': Icons.payment_outlined,
-          'color': Colors.grey
+          'color': AppColors.textMuted,
         };
     final color = cfg['color'] as Color;
     final icon = cfg['icon'] as IconData;
@@ -67,18 +78,16 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
 
     // For refunds, show absolute value but keep track of negative
     final displayAmount = amount.abs();
-    final pct = totalSales > 0 ? (displayAmount / totalSales * 100).toStringAsFixed(1) : '0.0';
+    final pct = totalSales > 0
+        ? (displayAmount / totalSales * 100).toStringAsFixed(1)
+        : '0.0';
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg + 2),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.grey.withValues(alpha: 0.12),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -86,60 +95,54 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(11),
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.md + 1),
             ),
             child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name,
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w700)),
+                Text(
+                  name,
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 if (!isRefund)
                   Text(
                     l10n.transactionStats(count, pct),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
                   )
                 else
                   Text(
                     count > 0 ? l10n.transactionStats(count, pct) : '',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
                   ),
                 const SizedBox(height: 6),
-                if (!isRefund)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: totalSales > 0 ? amount / totalSales : 0,
-                      backgroundColor: color.withValues(alpha: 0.1),
-                      valueColor: AlwaysStoppedAnimation(color),
-                      minHeight: 4,
-                    ),
-                  )
-                else
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: totalSales > 0 ? displayAmount / totalSales : 0,
-                      backgroundColor: color.withValues(alpha: 0.1),
-                      valueColor: const AlwaysStoppedAnimation(Colors.red),
-                      minHeight: 4,
-                    ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: totalSales > 0
+                        ? (isRefund ? displayAmount : amount) / totalSales
+                        : 0,
+                    backgroundColor: color.withValues(alpha: 0.1),
+                    valueColor: AlwaysStoppedAnimation(
+                        isRefund ? AppColors.danger : color),
+                    minHeight: 4,
                   ),
+                ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.lg),
           Text(
             '${isRefund ? '-' : ''}${NumberFormatter.formatDecimal(displayAmount)} ${l10n.currencySom}',
-            style: TextStyle(
-              fontSize: 14,
+            style: AppTextStyles.bodyMedium().copyWith(
               fontWeight: FontWeight.w700,
-              color: isRefund ? Colors.red : color,
+              color: isRefund ? AppColors.danger : color,
             ),
           ),
         ],

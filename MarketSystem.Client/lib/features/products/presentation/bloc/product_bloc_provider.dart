@@ -1,5 +1,5 @@
-/// Product Bloc Provider
-/// Provides ProductBloc to widget tree
+// Product Bloc Provider
+// Provides ProductBloc to widget tree
 
 import 'package:flutter/material.dart';
 

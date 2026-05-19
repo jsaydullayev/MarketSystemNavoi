@@ -1,5 +1,5 @@
-/// Get Customer By Phone Use Case
-/// Telefon bo'yicha mijoz topish biznes mantig'i
+// Get Customer By Phone Use Case
+// Telefon bo'yicha mijoz topish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/customer_entity.dart';

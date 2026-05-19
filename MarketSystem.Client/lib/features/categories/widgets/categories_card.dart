@@ -1,10 +1,30 @@
-﻿import 'package:flutter/material.dart';
+// lib/features/categories/widgets/categories_card.dart
+//
+// Category row card matching demo `id="page-prod-cats"` (.cat-row):
+// - Drag handle (`⋮⋮`) on the left for reorder UX
+// - 40x40 emoji tile (gray-50 bg, 10px radius) with category initial / emoji
+// - Info column: name (13px / 700) + "X ta mahsulot" count (11px muted)
+// - Trailing `⋯` menu button (32x32) — opens a popup with Edit / Delete
+//
+// Business logic preserved:
+// - `onEdit(category)` / `onDelete(category)` callbacks unchanged
+// - Delete confirmation dialog unchanged
+// - Swipe-to-edit / swipe-to-delete still wired via Dismissible
+// - Status (active / inactive) still surfaced as a small text chip
+//
+// Light-mode only — dark-mode branches dropped per migration brief.
+
+import 'package:flutter/material.dart';
 import 'package:market_system_client/data/models/product_category_model.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class CategoryCard extends StatelessWidget {
   final ProductCategoryModel category;
   final AppLocalizations l10n;
+  // Preserved for backwards compatibility with the screen call-site.
+  // Migrated UI is light-only and ignores this flag.
   final bool isDark;
   final Function(ProductCategoryModel) onEdit;
   final Function(ProductCategoryModel) onDelete;
@@ -18,152 +38,143 @@ class CategoryCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  Color _cardColor() {
-    const colors = [
-      Color(0xFF3B82F6), // blue
-      Color(0xFF8B5CF6), // purple
-      Color(0xFF10B981), // teal
-      Color(0xFFF59E0B), // amber
-      Color(0xFFEF4444), // red
-      Color(0xFF06B6D4), // cyan
-      Color(0xFFF97316), // orange
-      Color(0xFF6366F1), // indigo
-    ];
-    final code = category.name.codeUnits.fold(0, (a, b) => a + b);
-    return colors[code % colors.length];
+  // Lightweight emoji picker based on the category name initial.
+  // Matches the demo's tile look (emoji in 40x40 gray square).
+  String _emojiFor(String name) {
+    if (name.isEmpty) return '📦';
+    final lower = name.toLowerCase();
+    if (lower.contains('suv') || lower.contains('ichim')) return '🥤';
+    if (lower.contains('oziq') || lower.contains('non')) return '🥖';
+    if (lower.contains('tamak') || lower.contains('sigaret')) return '🚬';
+    if (lower.contains('kimyo') || lower.contains('maishiy')) return '🧴';
+    if (lower.contains('meva') || lower.contains('sabzavot')) return '🍎';
+    if (lower.contains('go\'sht') || lower.contains('gosht')) return '🥩';
+    if (lower.contains('sut') || lower.contains('tvorog')) return '🥛';
+    if (lower.contains('shirin') || lower.contains('konfet')) return '🍬';
+    return '📦';
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = _cardColor();
     final isActive = category.isActive;
-    final initial =
-        category.name.isNotEmpty ? category.name[0].toUpperCase() : '?';
+    final emoji = _emojiFor(category.name);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Dismissible(
         key: Key('cat_${category.id}'),
-        background: _SwipeBg(
-          color: Colors.blue,
+        background: const _SwipeBg(
+          color: AppColors.brand,
           icon: Icons.edit_rounded,
-          label: l10n.edit,
           align: Alignment.centerLeft,
         ),
-        secondaryBackground: _SwipeBg(
-          color: Colors.red,
+        secondaryBackground: const _SwipeBg(
+          color: AppColors.danger,
           icon: Icons.delete_rounded,
-          label: l10n.delete,
           align: Alignment.centerRight,
         ),
         confirmDismiss: (direction) async {
           if (direction == DismissDirection.startToEnd) {
             onEdit(category);
             return false;
-          } else {
-            final ok = await _showDeleteDialog(context);
-            if (ok) onDelete(category);
-            return false;
           }
+          final ok = await _showDeleteDialog(context);
+          if (ok) onDelete(category);
+          return false;
         },
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.07)
-                  : color.withValues(alpha: 0.12),
-            ),
-            boxShadow: [
-              if (!isDark)
-                BoxShadow(
-                  color: color.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-            ],
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg - 2),
+            border: Border.all(color: AppColors.border, width: 1),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                // Avatar — renkli initial
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: color,
-                      ),
-                    ),
-                  ),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              // Drag handle (⋮⋮) — informational; actual reorder hook is TBD.
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                child: Icon(
+                  Icons.drag_indicator_rounded,
+                  size: 20,
+                  color: AppColors.textMuted,
                 ),
-                const SizedBox(width: 14),
+              ),
+              const SizedBox(width: AppSpacing.md),
 
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        category.name,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color:
-                              isDark ? Colors.white : const Color(0xFF1F2937),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          // Mahsulotlar soni
-                          _Badge(
-                            label: '${category.productCount} ${l10n.products}',
-                            color: color,
-                          ),
-                          const SizedBox(width: 6),
-                          // Status
-                          _StatusBadge(isActive: isActive, l10n: l10n),
-                        ],
-                      ),
-                    ],
-                  ),
+              // 40x40 emoji tile (gray bg, 10px radius)
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
+                alignment: Alignment.center,
+                child: Text(
+                  emoji,
+                  style: const TextStyle(fontSize: 22),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.lg),
 
-                // Tugmalar
-                Row(
+              // Info column: name + product count + (optional) status
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _IconBtn(
-                      icon: Icons.edit_rounded,
-                      color: Colors.blue,
-                      onTap: () => onEdit(category),
+                    Text(
+                      category.name,
+                      style: AppTextStyles.bodySmall().copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.text,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 8),
-                    _IconBtn(
-                      icon: Icons.delete_outline_rounded,
-                      color: Colors.red,
-                      onTap: () async {
-                        final ok = await _showDeleteDialog(context);
-                        if (ok) onDelete(category);
-                      },
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text(
+                          '${category.productCount} ${l10n.products.toLowerCase()}',
+                          style: AppTextStyles.caption().copyWith(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                        if (!isActive) ...[
+                          const SizedBox(width: AppSpacing.md),
+                          Text(
+                            '• ${l10n.inactive}',
+                            style: AppTextStyles.caption().copyWith(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+
+              // 32x32 ⋯ menu button (kulrang)
+              _MenuButton(
+                onSelected: (value) async {
+                  if (value == 'edit') {
+                    onEdit(category);
+                  } else if (value == 'delete') {
+                    final ok = await _showDeleteDialog(context);
+                    if (ok) onDelete(category);
+                  }
+                },
+                l10n: l10n,
+              ),
+            ],
           ),
         ),
       ),
@@ -182,138 +193,79 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-// ─── Swipe Background ───
 class _SwipeBg extends StatelessWidget {
   final Color color;
   final IconData icon;
-  final String label;
   final Alignment align;
 
   const _SwipeBg({
     required this.color,
     required this.icon,
-    required this.label,
     required this.align,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl2),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg - 2),
       ),
       alignment: align,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 22),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+      child: Icon(icon, color: Colors.white, size: 22),
     );
   }
 }
 
-// ─── Icon Button ───
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _IconBtn({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, size: 17, color: color),
-      ),
-    );
-  }
-}
-
-// ─── Badge ───
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Status Badge ───
-class _StatusBadge extends StatelessWidget {
-  final bool isActive;
+class _MenuButton extends StatelessWidget {
+  final ValueChanged<String> onSelected;
   final AppLocalizations l10n;
 
-  const _StatusBadge({required this.isActive, required this.l10n});
+  const _MenuButton({required this.onSelected, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? Colors.green : Colors.grey;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: PopupMenuButton<String>(
+        tooltip: '',
+        padding: EdgeInsets.zero,
+        icon: const Icon(
+          Icons.more_horiz_rounded,
+          size: 18,
+          color: AppColors.textMuted,
+        ),
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        onSelected: onSelected,
+        itemBuilder: (_) => [
+          PopupMenuItem<String>(
+            value: 'edit',
+            child: Row(children: [
+              const Icon(Icons.edit_rounded,
+                  size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: AppSpacing.md),
+              Text(l10n.edit, style: AppTextStyles.bodyMedium()),
+            ]),
           ),
-          const SizedBox(width: 4),
-          Text(
-            isActive ? l10n.active : l10n.inactive,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+          PopupMenuItem<String>(
+            value: 'delete',
+            child: Row(children: [
+              const Icon(Icons.delete_outline_rounded,
+                  size: 16, color: AppColors.danger),
+              const SizedBox(width: AppSpacing.md),
+              Text(
+                l10n.delete,
+                style:
+                    AppTextStyles.bodyMedium().copyWith(color: AppColors.danger),
+              ),
+            ]),
           ),
         ],
       ),
@@ -321,7 +273,6 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-// ─── Delete Dialog ───
 class _DeleteDialog extends StatelessWidget {
   final String name;
   final AppLocalizations l10n;
@@ -330,74 +281,87 @@ class _DeleteDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
+      ),
+      backgroundColor: AppColors.surface,
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xl3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
+              padding: const EdgeInsets.all(AppSpacing.xl2 - 2),
+              decoration: const BoxDecoration(
+                color: AppColors.dangerLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.delete_outline_rounded,
-                  color: Colors.red, size: 30),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.danger,
+                size: 30,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xl),
             Text(
               l10n.confirmDelete,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              style: AppTextStyles.titleMedium(),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.md),
             Text(
               '"$name"',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: AppColors.textSecondary,
                 fontStyle: FontStyle.italic,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl3),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context, false),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.lg + 1,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.md + 2),
+                      ),
+                      side: const BorderSide(color: AppColors.border),
                     ),
                     child: Text(
                       l10n.no,
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: AppTextStyles.labelLarge().copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                      backgroundColor: AppColors.danger,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.lg + 1,
+                      ),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.md + 2),
+                      ),
                     ),
                     child: Text(
                       l10n.delete,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: AppTextStyles.labelLarge()
+                          .copyWith(color: Colors.white),
                     ),
                   ),
                 ),

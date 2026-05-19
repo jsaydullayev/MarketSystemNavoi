@@ -1,7 +1,7 @@
-/// Platform Handler Interface
-/// Abstract interface for all platform-specific operations
+// Platform Handler Interface
+// Abstract interface for all platform-specific operations
 
-/// Platform Handler Interface
+// Platform Handler Interface
 abstract class PlatformHandlerInterface {
   /// Show notification on this platform
   Future<void> showNotification({

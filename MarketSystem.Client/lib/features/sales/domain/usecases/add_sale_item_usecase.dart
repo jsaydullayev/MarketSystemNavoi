@@ -1,5 +1,5 @@
-/// Add Sale Item Use Case
-/// Sotuvga mahsulot qo'shish biznes mantig'i
+// Add Sale Item Use Case
+// Sotuvga mahsulot qo'shish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../repositories/sale_repository_interface.dart';

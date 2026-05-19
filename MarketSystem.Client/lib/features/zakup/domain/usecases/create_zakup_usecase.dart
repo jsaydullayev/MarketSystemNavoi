@@ -1,5 +1,5 @@
-/// Create Zakup Use Case
-/// Yangi xarid yaratish biznes mantig'i
+// Create Zakup Use Case
+// Yangi xarid yaratish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/zakup_entity.dart';

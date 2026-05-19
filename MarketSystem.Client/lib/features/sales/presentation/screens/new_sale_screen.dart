@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
-import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/payment_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/price_input_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/sale_body.dart';
@@ -24,7 +25,7 @@ class NewSaleScreen extends StatefulWidget {
 class _NewSaleScreenState extends State<NewSaleScreen> {
   List<dynamic> _products = [];
   List<dynamic> _customers = [];
-  List<Map<String, dynamic>> _cartItems = [];
+  final List<Map<String, dynamic>> _cartItems = [];
   Map<String, dynamic>? _selectedCustomer;
 
   bool _isLoading = false;
@@ -99,19 +100,18 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isLoading = false;
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.error}: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: $e'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
     }
   }
 
@@ -148,9 +148,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       onConfirm: (name, costPrice, qty, salePrice, comment) {
         setState(() {
           _cartItems.add({
-            'isExternal': true,  // ✅ Tashqi mahsulot flag
-            'externalCostPrice': costPrice,  // ✅ Tashqi tannarxni saqlash
-            'productId': null,  // ✅ Tashqi mahsulot uchun null
+            'isExternal': true, // External product flag
+            'externalCostPrice': costPrice, // Cost price for external products
+            'productId': null, // External products don't have an id
             'productName': name,
             'salePrice': salePrice,
             'quantity': qty,
@@ -160,8 +160,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("$name ${l10n.returnSuccess}"),
-            backgroundColor: Colors.orange,  // Orange for external products
+            content: Text('$name ${l10n.returnSuccess}'),
+            backgroundColor: AppColors.brand,
           ),
         );
       },
@@ -201,8 +201,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     }, onConfirm: (newPrice, newQuantity, comment) {
       setState(() {
         _cartItems[index]['salePrice'] = newPrice;
-        _cartItems[index]['quantity'] =
-            newQuantity; // ✅ Miqdorni ham yangilaymiz
+        _cartItems[index]['quantity'] = newQuantity;
         if (comment != null && comment.isNotEmpty) {
           _cartItems[index]['comment'] = comment;
         }
@@ -211,9 +210,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '✅ ${item['productName']} ${l10n.itemUpdated}!',
+              '${item['productName']} ${l10n.itemUpdated}',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             duration: const Duration(seconds: 1),
           ),
         );
@@ -223,7 +222,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _showCustomerDialog() {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -231,9 +229,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: AppColors.getCard(isDark),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
@@ -242,35 +240,43 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.3),
+                color: AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl2),
               child: Row(
                 children: [
                   Text(
                     l10n.selectCustomerTitle,
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.titleMedium(),
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close,
+                        color: AppColors.textSecondary),
                   ),
                 ],
               ),
             ),
             Expanded(
               child: _customers.isEmpty
-                  ? Center(child: Text(l10n.noCustomersFound))
+                  ? Center(
+                      child: Text(
+                        l10n.noCustomersFound,
+                        style: AppTextStyles.bodyMedium().copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    )
                   : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xl),
                       itemCount: _customers.length,
                       separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSpacing.md),
                       itemBuilder: (context, index) {
                         final customer = _customers[index];
                         final name = customer['fullName'] ?? l10n.unknown;
@@ -285,17 +291,18 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                             });
                             Navigator.pop(context);
                           },
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
                           child: Container(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(AppSpacing.xl),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? AppColors.primary.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(16),
+                                  ? AppColors.brandLight
+                                  : AppColors.inputFill,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.lg),
                               border: Border.all(
                                 color: isSelected
-                                    ? AppColors.primary
+                                    ? AppColors.brand
                                     : Colors.transparent,
                                 width: 1.5,
                               ),
@@ -304,14 +311,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                               children: [
                                 CircleAvatar(
                                   backgroundColor: isSelected
-                                      ? AppColors.primary
-                                      : Colors.grey.shade300,
+                                      ? AppColors.brand
+                                      : AppColors.textMuted,
                                   child: Text(
-                                    name[0].toUpperCase(),
-                                    style: const TextStyle(color: Colors.white),
+                                    name.toString().isNotEmpty
+                                        ? name.toString()[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: AppSpacing.xl),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -319,23 +331,22 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                     children: [
                                       Text(
                                         name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16),
+                                        style: AppTextStyles.labelLarge(),
                                       ),
                                       if (phone.isNotEmpty)
                                         Text(
                                           phone,
-                                          style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 13),
+                                          style:
+                                              AppTextStyles.bodySmall().copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
                                         ),
                                     ],
                                   ),
                                 ),
                                 if (isSelected)
                                   const Icon(Icons.check_circle,
-                                      color: AppColors.primary),
+                                      color: AppColors.brand),
                               ],
                             ),
                           ),
@@ -343,7 +354,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                       },
                     ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
           ],
         ),
       ),
@@ -366,11 +377,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         onConfirm: (payments, useDebt) async {
           final scaffoldMessenger = ScaffoldMessenger.of(context);
           final navigator = Navigator.of(context);
-          print(
-              "================================================================");
-          print('cartSnapshot: $cartSnapshot');
-          print(
-              "================================================================");
 
           try {
             final authProvider =
@@ -383,30 +389,20 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             final finalSaleId = sale['id'];
 
             for (var item in cartSnapshot) {
-              print('=== ADDING ITEM ===');
-              print('isExternal: ${item['isExternal'] ?? false}');  // ✅ Debug log
-              print('productId: ${item['productId']}');
-              print('quantity: ${item['quantity']}');
-              print('salePrice: ${item['salePrice']}');
-              print('minSalePrice: ${item['minSalePrice']}');
-              print('comment: ${item['comment'] ?? "(empty string)"}');
-              print('==========================');
-
               if (item['isExternal'] == true) {
-                // ✅ Tashqi mahsulot qo'shish
+                // External product - add through external endpoint
                 await salesService.addSaleItem(
                   saleId: finalSaleId,
                   isExternal: true,
                   externalProductName: item['productName'],
-                  externalCostPrice: item['externalCostPrice'] ?? 0.0,  // ✅ Tashqi mahsulot uchun tannarx
+                  externalCostPrice: item['externalCostPrice'] ?? 0.0,
                   quantity: item['quantity'],
                   salePrice: item['salePrice'],
-                  minSalePrice: 0.0,  // ✅ Tashqi mahsulot uchun minPrice bo'sh bo'ladi
+                  minSalePrice: 0.0,
                   comment: item['comment'],
                 );
-                print('=== EXTERNAL ITEM ADDED OK ===');
               } else {
-                // ✅ Oddiy mahsulot qo'shish
+                // Regular product
                 await salesService.addSaleItem(
                   saleId: finalSaleId,
                   productId: item['productId'],
@@ -415,7 +411,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   minSalePrice: item['minSalePrice'] ?? 0.0,
                   comment: item['comment'],
                 );
-                print('=== ITEM ADDED OK ===');
               }
             }
 
@@ -441,7 +436,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             navigator.pop();
             scaffoldMessenger.showSnackBar(SnackBar(
               content: Text(useDebt ? l10n.saleAsDebt : l10n.saleSuccess),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ));
             navigator.pop(true);
           } catch (e) {
@@ -449,7 +444,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             navigator.pop();
             scaffoldMessenger.showSnackBar(SnackBar(
               content: Text('${l10n.error}: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.danger,
             ));
           }
         },
@@ -463,7 +458,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.cartEmptyWarning),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -488,19 +483,19 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
       for (var item in _cartItems) {
         if (item['isExternal'] == true) {
-          // ✅ Tashqi mahsulot qo'shish (draft uchun ham shunday)
+          // External product draft
           await salesService.addSaleItem(
             saleId: sale['id'],
             isExternal: true,
             externalProductName: item['productName'],
-            externalCostPrice: item['externalCostPrice'] ?? 0.0,  // ✅ Tashqi mahsulot uchun tannarx
+            externalCostPrice: item['externalCostPrice'] ?? 0.0,
             quantity: item['quantity'],
             salePrice: item['salePrice'],
             minSalePrice: 0.0,
             comment: item['comment'],
           );
         } else {
-          // ✅ Oddiy mahsulot qo'shish
+          // Regular product draft
           await salesService.addSaleItem(
             saleId: sale['id'],
             productId: item['productId'],
@@ -515,8 +510,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ ${l10n.draftSaved}'),
-            backgroundColor: Colors.orange,
+            content: Text(l10n.draftSaved),
+            backgroundColor: AppColors.brand,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -526,7 +521,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${l10n.draftSaveError}: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.danger,
           ),
         );
       }
@@ -544,7 +539,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       return true;
     }
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // `null` = dismissed (tap-outside / back), `'save'` / `'discard'` = explicit.
     final action = await showDialog<String>(
@@ -553,9 +547,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       barrierDismissible: true,
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadius.xl2),
         ),
-        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        backgroundColor: AppColors.surface,
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
         contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
         actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -565,32 +559,28 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.14),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.brandLight,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: const Icon(
                 Icons.shopping_cart_checkout_rounded,
-                color: Color(0xFF3B82F6),
+                color: AppColors.brand,
                 size: 20,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Text(
                 l10n.saveSaleTitle,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: AppTextStyles.labelLarge(),
               ),
             ),
           ],
         ),
         content: Text(
           l10n.draftSavePrompt(_cartItems.length),
-          style: TextStyle(
-            fontSize: 13,
-            color: isDark ? Colors.white70 : Colors.grey[700],
+          style: AppTextStyles.bodySmall().copyWith(
+            color: AppColors.textSecondary,
             height: 1.4,
           ),
         ),
@@ -598,11 +588,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           TextButton.icon(
             onPressed: () => Navigator.pop(dialogCtx, 'discard'),
             icon: const Icon(Icons.delete_outline_rounded,
-                size: 18, color: Color(0xFFEF4444)),
+                size: 18, color: AppColors.danger),
             label: Text(
               l10n.discardSale,
-              style: const TextStyle(
-                color: Color(0xFFEF4444),
+              style: AppTextStyles.bodySmall().copyWith(
+                color: AppColors.danger,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -613,18 +603,20 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             icon: const Icon(Icons.bookmark_add_rounded, size: 18),
             label: Text(
               l10n.saveDraft,
-              style: const TextStyle(
+              style: AppTextStyles.bodySmall().copyWith(
+                color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF28C33),
+              backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
             ),
           ),
@@ -646,8 +638,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return PopScope(
       canPop: _cartItems.isEmpty,
@@ -660,10 +650,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
-        appBar: CommonAppBar(
-          title: l10n.newSale,
-        ),
+        backgroundColor: AppColors.bg,
+        appBar: _buildAppBar(l10n),
         body: SaleBody(
           isLoading: _isLoading,
           filteredProducts: _filteredProducts,
@@ -681,116 +669,138 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           selectedCategoryName: _selectedCategoryName,
           onCategorySelected: _onCategorySelected,
         ),
-        bottomNavigationBar: _buildBottomAction(isDark, l10n),
+        bottomNavigationBar: _buildCartBar(l10n),
       ),
     );
   }
 
-  Widget _buildBottomAction(bool isDark, AppLocalizations l10n) {
-    final theme = Theme.of(context);
-    final hasItems = _cartItems.isNotEmpty;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.getCard(isDark),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
+  /// Sticky POS header — back button, title with meta-line, customer chip.
+  /// White surface, bottom soft border, matches the demo's `.pos-header`.
+  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(64),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(
+            bottom: BorderSide(color: AppColors.borderSoft, width: 1),
           ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (hasItems)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _buildCartPreviewChip(isDark, theme, l10n),
-              ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 52),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
-              ),
-              onPressed: hasItems ? _completeSale : null,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle_outline),
-                  10.width,
-                  Text(
-                    l10n.processReturn
-                        .replaceAll(l10n.returnText, l10n.saleText),
-                    style: const TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.bold),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+            child: Row(
+              children: [
+                _PosBackButton(
+                  onTap: () => Navigator.maybePop(context),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l10n.newSale,
+                        style: AppTextStyles.labelLarge().copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _headerMeta(),
+                        style: AppTextStyles.caption().copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0,
+                          color: AppColors.textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                _CustomerChip(
+                  customer: _selectedCustomer,
+                  fallbackLabel: l10n.customer,
+                  onTap: _showCustomerDialog,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCartPreviewChip(
-      bool isDark, ThemeData theme, AppLocalizations l10n) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _showCartSheet,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6).withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: const Color(0xFF3B82F6).withOpacity(0.25)),
+  /// Meta line under the title — receipt number + current time.
+  /// Mirrors the demo's "Chek #1247 · 14:25" hint without inventing a seller
+  /// chip (the demo's seller badge is hardcoded; we omit it rather than fake).
+  String _headerMeta() {
+    final now = DateTime.now();
+    final hh = now.hour.toString().padLeft(2, '0');
+    final mm = now.minute.toString().padLeft(2, '0');
+    // Receipt number isn't known until the sale is created; use a time-based
+    // placeholder so the meta line still reads naturally.
+    return 'Chek · $hh:$mm';
+  }
+
+  /// Pinned bottom cart bar. Empty cart → primary button disabled but still
+  /// visible (lets the user know it's there). Items present → summary row +
+  /// orange checkout button driven by `AppPrimaryButton`.
+  Widget _buildCartBar(AppLocalizations l10n) {
+    final hasItems = _cartItems.isNotEmpty;
+    final itemNames = _cartItems
+        .take(3)
+        .map((e) => (e['productName'] ?? '').toString())
+        .where((s) => s.isNotEmpty)
+        .join(', ');
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border, width: 2)),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0F000000),
+            blurRadius: 12,
+            offset: Offset(0, -4),
           ),
-          child: Row(
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
+              if (hasItems) ...[
+                _CartSummaryRow(
+                  itemCount: _cartItems.length,
+                  itemNames: itemNames,
+                  total: _totalAmount,
+                  onTap: _showCartSheet,
+                  productsSuffix: l10n.productsInCartSuffix,
                 ),
-                child: const Icon(Icons.shopping_cart_rounded,
-                    color: Color(0xFF3B82F6), size: 18),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+              AppPrimaryButton(
+                label: hasItems
+                    ? '${l10n.processReturn.replaceAll(l10n.returnText, l10n.saleText)} · ${NumberFormatter.format(_totalAmount)}'
+                    : l10n.processReturn
+                        .replaceAll(l10n.returnText, l10n.saleText),
+                icon: Icons.credit_card_rounded,
+                onPressed: hasItems ? _completeSale : null,
               ),
-              10.width,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${_cartItems.length} ${l10n.productsInCartSuffix}',
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w700),
-                    ),
-                    2.height,
-                    Text(
-                      l10n.viewEditCart,
-                      style: TextStyle(
-                          fontSize: 11, color: Colors.grey.shade500),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.keyboard_arrow_up_rounded,
-                  color: Color(0xFF3B82F6)),
             ],
           ),
         ),
@@ -800,8 +810,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
 
   void _showCartSheet() {
     final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -817,10 +825,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               expand: false,
               builder: (ctx, scrollController) {
                 return Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.getCard(isDark),
+                  decoration: const BoxDecoration(
+                    color: AppColors.surface,
                     borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(24)),
+                        BorderRadius.vertical(top: Radius.circular(24)),
                   ),
                   child: Column(
                     children: [
@@ -829,39 +837,42 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.3),
+                          color: AppColors.border,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                        padding:
+                            const EdgeInsets.fromLTRB(20, 16, 12, 8),
                         child: Row(
                           children: [
                             Text(
                               l10n.cartTitle,
-                              style: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
+                              style: AppTextStyles.titleMedium(),
                             ),
-                            8.width,
+                            const SizedBox(width: AppSpacing.md),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF3B82F6).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppColors.brandLight,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.lg),
                               ),
                               child: Text(
                                 '${_cartItems.length}',
-                                style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF3B82F6)),
+                                style: AppTextStyles.labelSmall().copyWith(
+                                  color: AppColors.brand,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                             const Spacer(),
                             IconButton(
                               onPressed: () => Navigator.pop(ctx),
-                              icon: const Icon(Icons.close),
+                              icon: const Icon(Icons.close,
+                                  color: AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -871,9 +882,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                             ? Center(
                                 child: Text(
                                   l10n.cartEmptyWarning,
-                                  style: TextStyle(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 13),
+                                  style:
+                                      AppTextStyles.bodySmall().copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
                                 ),
                               )
                             : ListView.separated(
@@ -882,21 +894,17 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                                     16, 4, 16, 16),
                                 itemCount: _cartItems.length,
                                 separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: AppSpacing.md),
                                 itemBuilder: (context, index) =>
                                     _buildCartSheetItem(
                                   index,
                                   _cartItems[index],
-                                  isDark,
-                                  theme,
                                   l10n,
                                   () => setSheet(() {}),
                                 ),
                               ),
                       ),
                       _buildCartSheetFooter(
-                        isDark,
-                        theme,
                         l10n,
                         () {
                           Navigator.pop(ctx);
@@ -917,8 +925,6 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   Widget _buildCartSheetItem(
     int index,
     Map<String, dynamic> item,
-    bool isDark,
-    ThemeData theme,
     AppLocalizations l10n,
     VoidCallback refreshSheet,
   ) {
@@ -928,16 +934,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     final subtotal = qty * price;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isExternal
-            ? Colors.orange.withOpacity(0.06)
-            : AppColors.getBg(isDark),
-        borderRadius: BorderRadius.circular(14),
+        color: isExternal ? AppColors.brandLight : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: isExternal
-              ? Colors.orange.withOpacity(0.3)
-              : theme.primaryColor.withOpacity(0.2),
+          color: isExternal ? AppColors.brandTint : AppColors.border,
         ),
       ),
       child: Column(
@@ -949,15 +951,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 height: 38,
                 decoration: BoxDecoration(
                   color: isExternal
-                      ? Colors.orange.withOpacity(0.15)
-                      : theme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                      ? AppColors.brandTint
+                      : AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Icon(
                   isExternal
                       ? Icons.add_business_rounded
                       : Icons.inventory_2_rounded,
-                  color: isExternal ? Colors.orange : theme.primaryColor,
+                  color:
+                      isExternal ? AppColors.brand : AppColors.textSecondary,
                   size: 18,
                 ),
               ),
@@ -968,10 +971,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   children: [
                     Text(
                       item['productName'] ?? '',
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: isExternal
+                            ? AppColors.brandDark
+                            : AppColors.text,
                         fontWeight: FontWeight.w700,
-                        color: isExternal ? Colors.orange.shade700 : null,
+                        fontSize: 13,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -979,25 +984,28 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                     2.height,
                     Text(
                       '${qty % 1 == 0 ? qty.toInt() : qty} × ${NumberFormatter.format(price)}',
-                      style: TextStyle(
-                          fontSize: 11, color: Colors.grey.shade500),
+                      style: AppTextStyles.caption().copyWith(
+                        letterSpacing: 0,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ],
                 ),
               ),
               Text(
                 NumberFormatter.format(subtotal),
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF10B981)),
+                style: AppTextStyles.bodySmall().copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  color: AppColors.brand,
+                ),
               ),
             ],
           ),
           10.height,
           Row(
             children: [
-              _sheetQtyBtn(
+              _SheetQtyBtn(
                 icon: Icons.remove_rounded,
                 onTap: () {
                   _updateQuantity(index, qty - 1);
@@ -1008,11 +1016,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   qty % 1 == 0 ? qty.toInt().toString() : qty.toString(),
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w700),
+                  style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
                 ),
               ),
-              _sheetQtyBtn(
+              _SheetQtyBtn(
                 icon: Icons.add_rounded,
                 onTap: () {
                   _updateQuantity(index, qty + 1);
@@ -1020,18 +1027,18 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 },
               ),
               const Spacer(),
-              _sheetActionBtn(
+              _SheetActionBtn(
                 icon: Icons.edit_rounded,
-                color: const Color(0xFF3B82F6),
+                color: AppColors.brand,
                 onTap: () {
                   Navigator.pop(context);
                   _editItemPrice(index, item);
                 },
               ),
               8.width,
-              _sheetActionBtn(
+              _SheetActionBtn(
                 icon: Icons.delete_outline_rounded,
-                color: const Color(0xFFEF4444),
+                color: AppColors.danger,
                 onTap: () {
                   _removeFromCart(index);
                   refreshSheet();
@@ -1044,56 +1051,15 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
   }
 
-  Widget _sheetQtyBtn(
-      {required IconData icon, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: const Color(0xFF3B82F6).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 16, color: const Color(0xFF3B82F6)),
-      ),
-    );
-  }
-
-  Widget _sheetActionBtn(
-      {required IconData icon,
-      required Color color,
-      required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 16, color: color),
-      ),
-    );
-  }
-
   Widget _buildCartSheetFooter(
-    bool isDark,
-    ThemeData theme,
     AppLocalizations l10n,
     VoidCallback onCheckout,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.getCard(isDark),
-        border: Border(
-          top: BorderSide(
-              color: isDark ? Colors.white10 : Colors.black12),
-        ),
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.borderSoft)),
       ),
       child: SafeArea(
         top: false,
@@ -1101,53 +1067,238 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(AppSpacing.lg + 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: const Color(0xFF10B981).withOpacity(0.2)),
+                color: AppColors.brandLight,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.brandTint),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(l10n.totalSum,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text(
+                    l10n.totalSum,
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   Text(
                     NumberFormatter.format(_totalAmount),
-                    style: const TextStyle(
+                    style: AppTextStyles.titleLarge().copyWith(
+                      color: AppColors.brand,
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF10B981),
                     ),
                   ),
                 ],
               ),
             ),
             12.height,
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
+            AppPrimaryButton(
+              label: l10n.processReturn
+                  .replaceAll(l10n.returnText, l10n.saleText),
+              icon: Icons.check_circle_outline,
               onPressed: _cartItems.isEmpty ? null : onCheckout,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle_outline),
-                  10.width,
-                  Text(
-                    l10n.processReturn
-                        .replaceAll(l10n.returnText, l10n.saleText),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Round back button for the POS header — 36×36, grey-fill, matches
+/// the demo's `.pos-back` element.
+class _PosBackButton extends StatelessWidget {
+  const _PosBackButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.bg,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 16,
+            color: AppColors.text,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Customer chip — pill button shown in the POS header. When no customer is
+/// selected, shows the fallback "Mijoz" label with a person glyph. When
+/// selected, shows an orange-initial avatar followed by the customer name.
+class _CustomerChip extends StatelessWidget {
+  const _CustomerChip({
+    required this.customer,
+    required this.fallbackLabel,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic>? customer;
+  final String fallbackLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCustomer = customer != null;
+    final name = hasCustomer
+        ? (customer!['fullName']?.toString() ?? fallbackLabel)
+        : fallbackLabel;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 140),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: 6),
+            decoration: BoxDecoration(
+              color: hasCustomer ? AppColors.brandLight : AppColors.inputFill,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasCustomer)
+                  _InitialAvatar(name: name)
+                else
+                  const Icon(
+                    Icons.person_outline_rounded,
+                    size: 14,
+                    color: AppColors.textSecondary,
                   ),
-                ],
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.labelSmall().copyWith(
+                      fontSize: 12,
+                      letterSpacing: 0,
+                      fontWeight: FontWeight.w600,
+                      color: hasCustomer
+                          ? AppColors.brand
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 18×18 orange-tinted circle showing the customer's first initial. Used by
+/// the header customer chip when a customer is selected.
+class _InitialAvatar extends StatelessWidget {
+  const _InitialAvatar({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return Container(
+      width: 18,
+      height: 18,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: AppColors.brand,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        letter,
+        style: AppTextStyles.caption().copyWith(
+          fontSize: 10,
+          color: Colors.white,
+          letterSpacing: 0,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+/// Tappable summary row above the pay button — "3 ta mahsulot · Coca-Cola,
+/// Non, Pepsi" on the left and the running total on the right. Tapping it
+/// opens the editable cart sheet.
+class _CartSummaryRow extends StatelessWidget {
+  const _CartSummaryRow({
+    required this.itemCount,
+    required this.itemNames,
+    required this.total,
+    required this.onTap,
+    required this.productsSuffix,
+  });
+
+  final int itemCount;
+  final String itemNames;
+  final double total;
+  final VoidCallback onTap;
+  final String productsSuffix;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Row(
+          children: [
+            Expanded(
+              child: RichText(
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                text: TextSpan(
+                  style: AppTextStyles.bodySmall().copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '$itemCount $productsSuffix',
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (itemNames.isNotEmpty)
+                      TextSpan(text: ' · $itemNames'),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              NumberFormatter.format(total),
+              style: AppTextStyles.titleLarge().copyWith(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppColors.text,
+                letterSpacing: -0.5,
               ),
             ),
           ],
@@ -1157,3 +1308,59 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   }
 }
 
+/// 32×32 minus/plus quantity button used inside the cart sheet rows. Orange
+/// tint matches the brand accent.
+class _SheetQtyBtn extends StatelessWidget {
+  const _SheetQtyBtn({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: AppColors.brandLight,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Icon(icon, size: 16, color: AppColors.brand),
+      ),
+    );
+  }
+}
+
+/// 32×32 action button (edit / delete) for cart sheet rows. Color comes from
+/// the caller so we can flex it between brand-orange and danger-red.
+class _SheetActionBtn extends StatelessWidget {
+  const _SheetActionBtn({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Icon(icon, size: 16, color: color),
+      ),
+    );
+  }
+}

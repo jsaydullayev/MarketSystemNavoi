@@ -1,5 +1,5 @@
-/// Update Customer Use Case
-/// Mijoz ma'lumotlarini yangilash biznes mantig'i
+// Update Customer Use Case
+// Mijoz ma'lumotlarini yangilash biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/customer_entity.dart';

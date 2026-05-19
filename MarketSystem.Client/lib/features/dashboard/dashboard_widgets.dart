@@ -1,176 +1,888 @@
-import 'package:flutter/material.dart';
-import 'package:adaptive_theme/adaptive_theme.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_styles.dart';
-import '../../../core/extensions/app_extensions.dart';
-import '../../../core/providers/locale_provider.dart';
-import '../profile/screens/profile_screen.dart';
+// Dashboard widgets aligned to the new design system (lib/design/*).
+//
+// These widgets render the Owner / Admin / Seller dashboard surfaces
+// described in design-demo/index.html (#page-owner-dash and #page-staff-dash):
+// greeting card, sales hero card, KPI grid, alert strip, mini chart, and
+// top-sellers list. They are presentation-only StatelessWidgets — caller
+// supplies the data and tap handlers.
 
-Widget buildCustomThemeSwitch(BuildContext context, bool isDark) {
-  return GestureDetector(
-    onTap: () {
-      isDark
-          ? AdaptiveTheme.of(context).setLight()
-          : AdaptiveTheme.of(context).setDark();
-    },
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: 32,
-      width: 55,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+import 'package:flutter/material.dart';
+
+import '../../design/tokens/app_tokens.dart';
+import '../../design/tokens/app_typography.dart';
+import '../../design/widgets/app_card.dart';
+import '../../l10n/app_localizations.dart';
+
+// ---------------------------------------------------------------------------
+// GreetingCard — top-of-screen "Salom, <name>" + role chip + bell/settings.
+// ---------------------------------------------------------------------------
+
+class GreetingCard extends StatelessWidget {
+  const GreetingCard({
+    super.key,
+    required this.fullName,
+    required this.role,
+    required this.dateLabel,
+    this.hasNotification = false,
+    this.unreadNotifications = 0,
+    this.onNotificationTap,
+    this.onSettingsTap,
+  });
+
+  final String fullName;
+  final String role; // 'Owner' | 'Admin' | 'Seller'
+  final String dateLabel;
+  // Red-dot toggle. Either `hasNotification` (legacy, explicit bool) or
+  // `unreadNotifications > 0` produces the badge. Numeric value is kept so
+  // future iterations can render a count chip — current design just shows
+  // the dot.
+  final bool hasNotification;
+  final int unreadNotifications;
+  final VoidCallback? onNotificationTap;
+  final VoidCallback? onSettingsTap;
+
+  String get _initial =>
+      fullName.trim().isEmpty ? 'U' : fullName.trim()[0].toUpperCase();
+
+  ({Color bg, Color fg, String emoji}) _roleStyle() {
+    switch (role) {
+      case 'Owner':
+        return (
+          bg: const Color(0xFFEDE9FE),
+          fg: const Color(0xFF6D28D9),
+          emoji: '\u{1F451}', // crown
+        );
+      case 'Admin':
+        return (
+          bg: const Color(0xFFDBEAFE),
+          fg: const Color(0xFF1E40AF),
+          emoji: '\u{1F465}', // busts
+        );
+      case 'Seller':
+      default:
+        return (
+          bg: const Color(0xFFD1FAE5),
+          fg: const Color(0xFF047857),
+          emoji: '\u{1F6D2}', // cart
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rs = _roleStyle();
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.brandLight,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              _initial,
+              style: AppTextStyles.titleMedium()
+                  .copyWith(color: AppColors.brand, fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${AppLocalizations.of(context)!.greetingHello}, $fullName',
+                  style: AppTextStyles.bodyLarge()
+                      .copyWith(fontWeight: FontWeight.w700, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      dateLabel,
+                      style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
+                    ),
+                    Text(
+                      ' · ',
+                      style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: rs.bg,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Text(
+                        '${rs.emoji} $role',
+                        style: AppTextStyles.caption().copyWith(
+                          color: rs.fg,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          _IconCircle(
+            icon: Icons.notifications_none_rounded,
+            badge: hasNotification || unreadNotifications > 0,
+            onTap: onNotificationTap,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          _IconCircle(
+            icon: Icons.settings_outlined,
+            onTap: onSettingsTap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IconCircle extends StatelessWidget {
+  const _IconCircle({
+    required this.icon,
+    this.badge = false,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final bool badge;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
+      onTap: onTap,
+      radius: 26,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.inputFill,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.text),
+          ),
+          if (badge)
+            Positioned(
+              right: 4,
+              top: 4,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: AppColors.danger,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SalesHeroCard — dark gradient "Bugungi sotuv" card with 3-stat footer.
+// ---------------------------------------------------------------------------
+
+class SalesHeroStat {
+  const SalesHeroStat({required this.value, required this.label});
+  final String value;
+  final String label;
+}
+
+class SalesHeroCard extends StatelessWidget {
+  const SalesHeroCard({
+    super.key,
+    required this.amount,
+    required this.deltaText,
+    required this.stats,
+    this.label = 'Bugungi sotuv',
+  });
+
+  final String amount;
+  final String deltaText; // e.g. "15% kechagidan ko'p"
+  final String label;
+  final List<SalesHeroStat> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color:
-            isDark ? const Color(0xFF334155) : Colors.orange.withOpacity(0.2),
-        border: Border.all(
-          color: isDark ? Colors.blueAccent.withOpacity(0.5) : Colors.orange,
-          width: 1.5,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: AppTextStyles.caption().copyWith(
+              color: Colors.white.withValues(alpha: 0.7),
+              letterSpacing: 1,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            amount,
+            style: AppTextStyles.displayLarge().copyWith(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '↑ $deltaText',
+            style: AppTextStyles.bodySmall().copyWith(
+              color: AppColors.success,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+          if (stats.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              height: 1,
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                for (final s in stats)
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          s.value,
+                          style: AppTextStyles.titleMedium().copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          s.label,
+                          style: AppTextStyles.caption().copyWith(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// KpiCard — small mini-stat card: colored icon tile, big value, small label.
+// ---------------------------------------------------------------------------
+
+enum KpiTone { green, purple, blue, orange }
+
+class KpiCard extends StatelessWidget {
+  const KpiCard({
+    super.key,
+    required this.emoji,
+    required this.value,
+    required this.label,
+    this.tone = KpiTone.orange,
+    this.onTap,
+  });
+
+  final String emoji;
+  final String value;
+  final String label;
+  final KpiTone tone;
+  final VoidCallback? onTap;
+
+  ({Color bg, Color fg}) _toneColors() {
+    switch (tone) {
+      case KpiTone.green:
+        return (bg: AppColors.successLight, fg: AppColors.success);
+      case KpiTone.purple:
+        return (bg: const Color(0xFFEDE9FE), fg: const Color(0xFF7C3AED));
+      case KpiTone.blue:
+        return (bg: const Color(0xFFDBEAFE), fg: const Color(0xFF1E40AF));
+      case KpiTone.orange:
+        return (bg: AppColors.brandLight, fg: AppColors.brand);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = _toneColors();
+    final card = AppCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: t.bg,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            alignment: Alignment.center,
+            child: Text(emoji, style: const TextStyle(fontSize: 18)),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            value,
+            style: AppTextStyles.titleLarge().copyWith(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: t.fg,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTextStyles.caption().copyWith(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.3,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+    if (onTap == null) return card;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: card,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AlertCard — colored info strip (danger / warning) with title + desc + chevron.
+// ---------------------------------------------------------------------------
+
+enum AlertTone { danger, warning }
+
+class AlertCard extends StatelessWidget {
+  const AlertCard({
+    super.key,
+    required this.emoji,
+    required this.title,
+    required this.description,
+    this.tone = AlertTone.warning,
+    this.onTap,
+  });
+
+  final String emoji;
+  final String title;
+  final String description;
+  final AlertTone tone;
+  final VoidCallback? onTap;
+
+  ({Color bg, Color border, Color title, Color desc}) _colors() {
+    switch (tone) {
+      case AlertTone.danger:
+        return (
+          bg: AppColors.dangerLight,
+          border: AppColors.danger,
+          title: const Color(0xFF991B1B),
+          desc: const Color(0xFFB91C1C),
+        );
+      case AlertTone.warning:
+        return (
+          bg: AppColors.warningLight,
+          border: AppColors.warning,
+          title: const Color(0xFF92400E),
+          desc: const Color(0xFFB45309),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _colors();
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: c.bg,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: c.border.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 22)),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.labelLarge().copyWith(
+                      color: c.title,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: AppTextStyles.bodySmall()
+                        .copyWith(color: c.desc, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: c.title, size: 22),
+          ],
         ),
       ),
-      child: AnimatedAlign(
-        duration: const Duration(milliseconds: 300),
-        alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isDark ? Colors.blueAccent : Colors.orange,
-            boxShadow: [
-              BoxShadow(
-                color: (isDark ? Colors.blueAccent : Colors.orange)
-                    .withOpacity(0.4),
-                blurRadius: 8,
-                spreadRadius: 1,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ChartCard — 7-day vertical bar chart with title, period chip, footer.
+// ---------------------------------------------------------------------------
+
+class ChartCard extends StatelessWidget {
+  const ChartCard({
+    super.key,
+    required this.title,
+    required this.period,
+    required this.bars, // values 0..1 — last bar highlighted
+    required this.footerValue,
+    required this.footerDelta,
+  });
+
+  final String title;
+  final String period;
+  final List<double> bars;
+  final String footerValue;
+  final String footerDelta;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  period,
+                  style: AppTextStyles.caption()
+                      .copyWith(fontSize: 10, letterSpacing: 0.4),
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    ),
-  );
-}
-
-Widget buildMobileProfileHeader(
-    BuildContext context, dynamic user, String role, Color primary, var l10n) {
-  return Column(
-    children: [
-      Stack(
-        alignment: Alignment.topRight,
-        children: [
-          Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: primary, width: 2)),
-            child: ClipOval(
-              child: user?['profileImage'] != null
-                  ? Image.network(user?['profileImage'], fit: BoxFit.cover)
-                  : Icon(Icons.person_rounded, size: 45, color: primary),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            height: 100,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var i = 0; i < bars.length; i++) ...[
+                  Expanded(
+                    child: FractionallySizedBox(
+                      heightFactor: bars[i].clamp(0.05, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: i == bars.length - 1
+                              ? AppColors.brandDark
+                              : AppColors.brand,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(6),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (i != bars.length - 1) const SizedBox(width: 6),
+                ],
+              ],
             ),
           ),
-          GestureDetector(
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen())),
-            child: Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
-              child: const Icon(Icons.edit, size: 12, color: Colors.white),
-            ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                footerValue,
+                style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
+              ),
+              Text(
+                '↑ $footerDelta',
+                style: AppTextStyles.bodySmall().copyWith(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      10.height,
-      Text(user?['fullName'] ?? l10n.user, style: AppStyles.cardTitle),
-      Text(role, style: AppStyles.subtitle.copyWith(color: primary)),
-    ],
-  );
+    );
+  }
 }
 
-void showLanguageDialog(BuildContext context, LocaleProvider provider) {
-  final isDark = AdaptiveTheme.of(context).mode.isDark;
-  final primaryColor = AppColors.getPrimary(context);
+// ---------------------------------------------------------------------------
+// TopSellersCard — "Eng ko'p sotilgan" ranked list with emoji + count.
+// ---------------------------------------------------------------------------
 
-  showDialog(
-    context: context,
-    builder: (ctx) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+class TopSellerEntry {
+  const TopSellerEntry({
+    required this.emoji,
+    required this.name,
+    required this.countLabel,
+  });
+
+  final String emoji;
+  final String name;
+  final String countLabel; // e.g. "248 dona"
+}
+
+class TopSellersCard extends StatelessWidget {
+  const TopSellersCard({
+    super.key,
+    required this.title,
+    required this.period,
+    required this.entries,
+  });
+
+  final String title;
+  final String period;
+  final List<TopSellerEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  period,
+                  style: AppTextStyles.caption()
+                      .copyWith(fontSize: 10, letterSpacing: 0.4),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          for (var i = 0; i < entries.length; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 22,
+                    child: Text(
+                      '${i + 1}.',
+                      style: AppTextStyles.bodyMedium().copyWith(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(entries[i].emoji,
+                      style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      entries[i].name,
+                      style: AppTextStyles.bodyMedium().copyWith(
+                        fontSize: 13,
+                        color: AppColors.text,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    entries[i].countLabel,
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      fontSize: 13,
+                      color: AppColors.text,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SectionHeader — "STATISTIKA" label + optional trailing action link.
+// ---------------------------------------------------------------------------
+
+class SectionHeader extends StatelessWidget {
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: AppTextStyles.caption().copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+              letterSpacing: 1,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (actionLabel != null)
+            InkWell(
+              onTap: onAction,
+              child: Text(
+                '$actionLabel →',
+                style: AppTextStyles.bodySmall().copyWith(
+                  color: AppColors.brand,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SellerHeroCta — big "Yangi sotuv" call-to-action card for Seller/Admin role.
+// ---------------------------------------------------------------------------
+
+class SellerHeroCta extends StatelessWidget {
+  const SellerHeroCta({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.emoji,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final String emoji;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.xl),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.xl3),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-              color:
-                  isDark ? primaryColor.withOpacity(0.3) : Colors.transparent,
-              width: 1.5),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.brand, AppColors.brandDark],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10))
+              color: AppColors.brand.withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Tilni tanlang / Выберите язык",
-                textAlign: TextAlign.center,
-                style: AppStyles.cardTitle.copyWith(
-                    fontSize: 18,
-                    color: isDark ? Colors.white : Colors.black87)),
-            25.height,
-            _langOption(ctx, "O'zbekcha", "🇺🇿",
-                provider.locale.languageCode == 'uz', primaryColor, isDark, () {
-              provider.setLocale('uz');
-              Navigator.pop(ctx);
-            }),
-            12.height,
-            _langOption(ctx, "Русский", "🇷🇺",
-                provider.locale.languageCode == 'ru', primaryColor, isDark, () {
-              provider.setLocale('ru');
-              Navigator.pop(ctx);
-            }),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+              alignment: Alignment.center,
+              child: Text(emoji, style: const TextStyle(fontSize: 28)),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              title,
+              style: AppTextStyles.titleLarge().copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 13,
+              ),
+            ),
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-Widget _langOption(BuildContext context, String title, String flag,
-    bool isSelected, Color primary, bool isDark, VoidCallback onTap) {
-  return InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(16),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? primary.withOpacity(0.1)
-            : (isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.grey.withOpacity(0.05)),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: isSelected ? primary : Colors.transparent, width: 1.5),
+// ---------------------------------------------------------------------------
+// PendingSaleCard — amber strip showing an open / suspended sale.
+// ---------------------------------------------------------------------------
+
+class PendingSaleCard extends StatelessWidget {
+  const PendingSaleCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertCard(
+      emoji: '⏳',
+      title: title,
+      description: subtitle,
+      tone: AlertTone.warning,
+      onTap: onTap,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SellerStatsRow — three compact stat tiles for the Seller dashboard.
+// ---------------------------------------------------------------------------
+
+class SellerStatsRow extends StatelessWidget {
+  const SellerStatsRow({super.key, required this.stats});
+
+  final List<SalesHeroStat> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.md,
       ),
       child: Row(
         children: [
-          Text(flag, style: const TextStyle(fontSize: 22)),
-          15.width,
-          Text(title,
-              style: AppStyles.cardTitle.copyWith(
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isDark ? Colors.white : Colors.black87)),
-          const Spacer(),
-          if (isSelected)
-            Icon(Icons.check_circle_rounded, color: primary, size: 20),
+          for (var i = 0; i < stats.length; i++) ...[
+            Expanded(
+              child: Column(
+                children: [
+                  Text(
+                    stats[i].value,
+                    style: AppTextStyles.titleMedium()
+                        .copyWith(fontWeight: FontWeight.w800, fontSize: 18),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    stats[i].label.toUpperCase(),
+                    style: AppTextStyles.caption().copyWith(
+                      fontSize: 10,
+                      letterSpacing: 0.3,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (i != stats.length - 1)
+              Container(
+                width: 1,
+                height: 30,
+                color: AppColors.border,
+              ),
+          ],
         ],
       ),
-    ),
-  );
+    );
+  }
 }

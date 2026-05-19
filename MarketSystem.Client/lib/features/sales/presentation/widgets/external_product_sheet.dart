@@ -1,11 +1,19 @@
-﻿import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
-/// External Product Sheet - Tashqi mahsulot kiritish dialogi
-/// PriceInputSheet ga o'xshash dizaynda, lekin tashqi mahsulot uchun mo'ljallangan
+/// External Product Sheet - Tashqi mahsulot kiritish dialogi.
+/// PriceInputSheet ga o'xshash dizaynda, tashqi mahsulot uchun.
 class ExternalProductSheet extends StatefulWidget {
-  final Function(String name, double costPrice, double qty, double salePrice, String? comment) onConfirm;
+  final Function(
+    String name,
+    double costPrice,
+    double qty,
+    double salePrice,
+    String? comment,
+  ) onConfirm;
 
   const ExternalProductSheet({
     super.key,
@@ -14,7 +22,13 @@ class ExternalProductSheet extends StatefulWidget {
 
   static void show(
     BuildContext context, {
-    required Function(String name, double costPrice, double qty, double salePrice, String? comment) onConfirm,
+    required Function(
+      String name,
+      double costPrice,
+      double qty,
+      double salePrice,
+      String? comment,
+    ) onConfirm,
   }) {
     showModalBottomSheet(
       context: context,
@@ -62,11 +76,13 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
   void _validateAndSubmit() {
     final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
-    final costPrice = double.tryParse(_costPriceController.text.replaceAll(',', '.')) ?? 0;
-    final qty = double.tryParse(_qtyController.text.replaceAll(',', '.')) ?? 0;
-    final salePrice = double.tryParse(_salePriceController.text.replaceAll(',', '.')) ?? 0;
+    final costPrice =
+        double.tryParse(_costPriceController.text.replaceAll(',', '.')) ?? 0;
+    final qty =
+        double.tryParse(_qtyController.text.replaceAll(',', '.')) ?? 0;
+    final salePrice =
+        double.tryParse(_salePriceController.text.replaceAll(',', '.')) ?? 0;
 
-    // Validatsiyalar
     if (name.isEmpty) {
       setState(() {
         _showValidationError = true;
@@ -99,13 +115,14 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
       return;
     }
 
-    // Validatsiya o'tdi - submit
     widget.onConfirm(
       name,
       costPrice,
       qty,
       salePrice,
-      _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
+      _commentController.text.trim().isEmpty
+          ? null
+          : _commentController.text.trim(),
     );
     Navigator.pop(context);
   }
@@ -113,19 +130,23 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final orangeColor = AppColors.orangePrimary;
 
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.getCard(theme.brightness == Brightness.dark),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
         ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl2,
+          AppSpacing.lg,
+          AppSpacing.xl2,
+          AppSpacing.xl3,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,27 +157,27 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
 
             // Header
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: orangeColor.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
+                color: AppColors.brandLight,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: orangeColor,
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.brand,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: const Icon(
                       Icons.add_business_rounded,
@@ -164,34 +185,30 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Text(
                       l10n.addExternalProduct,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.titleMedium(),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl2),
 
-            // Product Name
+            // Product name
             _buildField(
               controller: _nameController,
               label: l10n.externalProductName,
               icon: Icons.description_rounded,
               isNum: false,
               hintText: 'Masalan: Xizmat',
-              orangeColor: orangeColor,
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.lg),
 
-            // Cost Price + Quantity (horizontal)
+            // Cost price + qty
             Row(
               children: [
                 Expanded(
@@ -202,10 +219,9 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
                     icon: Icons.inventory_2_rounded,
                     suffix: l10n.currencySom,
                     isNum: true,
-                    orangeColor: orangeColor,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   flex: 2,
                   child: _buildField(
@@ -213,42 +229,45 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
                     label: l10n.amount,
                     icon: Icons.add_box_outlined,
                     isNum: true,
-                    orangeColor: orangeColor,
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.lg),
 
-            // Sale Price
+            // Sale price
             _buildField(
               controller: _salePriceController,
               label: l10n.salePrice,
               icon: Icons.payments_outlined,
               suffix: l10n.currencySom,
               isNum: true,
-              orangeColor: orangeColor,
             ),
 
-            // Validation error message
+            // Validation error
             AnimatedSize(
               duration: const Duration(milliseconds: 200),
               child: _showValidationError
                   ? Padding(
-                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      padding: const EdgeInsets.only(
+                        top: AppSpacing.md,
+                        left: AppSpacing.xs,
+                      ),
                       child: Row(
                         children: [
-                          Icon(Icons.warning_amber_rounded,
-                              size: 14, color: orangeColor),
-                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            size: 14,
+                            color: AppColors.danger,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
                           Expanded(
                             child: Text(
                               _validationError,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: orangeColor,
-                                fontWeight: FontWeight.w500,
+                              style: AppTextStyles.bodySmall().copyWith(
+                                color: AppColors.danger,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
@@ -258,7 +277,7 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
                   : const SizedBox.shrink(),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.lg),
 
             // Comment
             _buildField(
@@ -267,49 +286,25 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
               icon: Icons.edit_note,
               isNum: false,
               maxLines: 2,
-              orangeColor: orangeColor,
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl3),
 
             // Buttons
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      side: BorderSide(color: theme.dividerColor),
-                    ),
+                  child: AppSecondaryButton(
+                    label: l10n.cancel,
                     onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      l10n.cancel,
-                      style: TextStyle(color: theme.hintColor),
-                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   flex: 2,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: orangeColor,
-                      foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                    ),
+                  child: AppPrimaryButton(
+                    label: "Qo'shish",
                     onPressed: _validateAndSubmit,
-                    child: Text(
-                      "Qo'shish",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -328,19 +323,20 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
     bool isNum = false,
     String? hintText,
     int? maxLines = 1,
-    required Color orangeColor,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          padding: const EdgeInsets.only(
+            left: AppSpacing.xs,
+            bottom: AppSpacing.sm,
+          ),
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 13,
+            style: AppTextStyles.bodySmall().copyWith(
               fontWeight: FontWeight.w600,
-              color: Colors.grey,
+              color: AppColors.textSecondary,
             ),
           ),
         ),
@@ -350,26 +346,35 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
               ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.text,
           maxLines: maxLines,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: AppTextStyles.bodyLarge().copyWith(
+            fontWeight: FontWeight.w700,
+          ),
           decoration: InputDecoration(
             hintText: hintText,
-            prefixIcon: Icon(icon, size: 20, color: orangeColor),
+            hintStyle: AppTextStyles.bodyMedium().copyWith(
+              color: AppColors.textMuted,
+            ),
+            prefixIcon: Icon(icon, size: 20, color: AppColors.brand),
             suffixText: suffix,
+            suffixStyle: AppTextStyles.bodySmall(),
             filled: true,
-            fillColor: Colors.grey.withValues(alpha: 0.05),
+            fillColor: AppColors.inputFill,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: orangeColor, width: 1.5),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              borderSide: const BorderSide(
+                color: AppColors.brand,
+                width: 1.5,
+              ),
             ),
-            contentPadding: const EdgeInsets.all(16),
+            contentPadding: const EdgeInsets.all(AppSpacing.xl),
           ),
         ),
       ],

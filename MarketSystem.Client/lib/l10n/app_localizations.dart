@@ -3169,6 +3169,1056 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'ta mahsulot savatda'**
   String get productsInCartSuffix;
+
+  /// No description provided for @greetingHello.
+  ///
+  /// In uz, this message translates to:
+  /// **'Salom'**
+  String get greetingHello;
+
+  /// No description provided for @todaysSale.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugungi sotuv'**
+  String get todaysSale;
+
+  /// No description provided for @checkLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Chek'**
+  String get checkLabel;
+
+  /// No description provided for @mijozLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz'**
+  String get mijozLabel;
+
+  /// No description provided for @profitLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Foyda'**
+  String get profitLabel;
+
+  /// No description provided for @statisticsSectionLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Statistika'**
+  String get statisticsSectionLabel;
+
+  /// No description provided for @alertsSectionLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ogohlantirish'**
+  String get alertsSectionLabel;
+
+  /// No description provided for @weekProfit.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu hafta foyda'**
+  String get weekProfit;
+
+  /// No description provided for @monthRevenue.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu oy aylanma'**
+  String get monthRevenue;
+
+  /// No description provided for @topProduct.
+  ///
+  /// In uz, this message translates to:
+  /// **'Top mahsulot'**
+  String get topProduct;
+
+  /// No description provided for @analysisSectionLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tahlil'**
+  String get analysisSectionLabel;
+
+  /// No description provided for @reportsActionLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hisobotlar'**
+  String get reportsActionLabel;
+
+  /// No description provided for @thisWeekLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu hafta'**
+  String get thisWeekLabel;
+
+  /// No description provided for @thisMonthLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu oy'**
+  String get thisMonthLabel;
+
+  /// No description provided for @todayLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun'**
+  String get todayLabel;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasini ko\'rish'**
+  String get viewAll;
+
+  /// No description provided for @bestSellersTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Eng ko\'p sotilgan'**
+  String get bestSellersTitle;
+
+  /// No description provided for @oneSaleInProgress.
+  ///
+  /// In uz, this message translates to:
+  /// **'1 ta sotuv davom etmoqda'**
+  String get oneSaleInProgress;
+
+  /// No description provided for @revenueLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tushum'**
+  String get revenueLabel;
+
+  /// No description provided for @shiftLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena'**
+  String get shiftLabel;
+
+  /// No description provided for @refundLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish'**
+  String get refundLabel;
+
+  /// No description provided for @cashRegisterShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kassa'**
+  String get cashRegisterShort;
+
+  /// No description provided for @defaultUserName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Foydalanuvchi'**
+  String get defaultUserName;
+
+  /// No description provided for @adminSectionLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Admin'**
+  String get adminSectionLabel;
+
+  /// No description provided for @reportLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hisobot'**
+  String get reportLabel;
+
+  /// No description provided for @tapToSelectProduct.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot tanlash uchun bosing'**
+  String get tapToSelectProduct;
+
+  /// No description provided for @hour.
+  ///
+  /// In uz, this message translates to:
+  /// **'soat'**
+  String get hour;
+
+  /// No description provided for @quickActions.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tezkor amallar'**
+  String get quickActions;
+
+  /// No description provided for @debtPayments.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz qabul qilish'**
+  String get debtPayments;
+
+  /// No description provided for @pullToRefresh.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotni yuklab bo\'lmadi. Pastga torting va qayta urinib ko\'ring.'**
+  String get pullToRefresh;
+
+  /// No description provided for @adminProductsManagement.
+  ///
+  /// In uz, this message translates to:
+  /// **'Admin: Mahsulotlar boshqaruvi'**
+  String get adminProductsManagement;
+
+  /// No description provided for @adminPriceTemporaryThresholdInfo.
+  ///
+  /// In uz, this message translates to:
+  /// **'Admin faqat narxlarni, vaqtinchaliklik va minimal chegara yangilay oladi. Mahsulot nomi va sonini o\'zgartira olmaydi.'**
+  String get adminPriceTemporaryThresholdInfo;
+
+  /// No description provided for @deleteProductTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotni o\'chirish'**
+  String get deleteProductTitle;
+
+  /// No description provided for @deleteProductConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'{name} mahsulotini rostdan ham o\'chirmoqchimisiz?'**
+  String deleteProductConfirm(String name);
+
+  /// No description provided for @productDeletedSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot muvaffaqiyatli o\'chirildi'**
+  String get productDeletedSuccess;
+
+  /// No description provided for @salePriceLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotish narxi: {price} so\'m'**
+  String salePriceLabel(Object price);
+
+  /// No description provided for @costPriceLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Olingan narxi: {price} so\'m'**
+  String costPriceLabel(Object price);
+
+  /// No description provided for @quantityImmutable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Soni: {quantity} {unit} (o\'zgarmas)'**
+  String quantityImmutable(Object quantity, String unit);
+
+  /// No description provided for @lowStockWarning.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kam! Min: {min}'**
+  String lowStockWarning(Object min);
+
+  /// No description provided for @adminEditProductTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Admin: Mahsulotni tahrirlash'**
+  String get adminEditProductTitle;
+
+  /// No description provided for @adminNewProductTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Admin: Yangi mahsulot'**
+  String get adminNewProductTitle;
+
+  /// No description provided for @adminCanEditPriceAndSettings.
+  ///
+  /// In uz, this message translates to:
+  /// **'Admin faqat narxlarni va sozlamalarni o\'zgartira oladi'**
+  String get adminCanEditPriceAndSettings;
+
+  /// No description provided for @selectCategory.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kategoriyani tanlang'**
+  String get selectCategory;
+
+  /// No description provided for @categoryNotSelected.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kategoriya tanlanmagan'**
+  String get categoryNotSelected;
+
+  /// No description provided for @measureUnit.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'lchov birligi'**
+  String get measureUnit;
+
+  /// No description provided for @selectUnit.
+  ///
+  /// In uz, this message translates to:
+  /// **'Birligni tanlang'**
+  String get selectUnit;
+
+  /// No description provided for @temporaryProductTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Vaqtinchalik mahsulot'**
+  String get temporaryProductTitle;
+
+  /// No description provided for @temporaryProductDescription.
+  ///
+  /// In uz, this message translates to:
+  /// **'Omborda vaqtincha saqlanadigan mahsulot'**
+  String get temporaryProductDescription;
+
+  /// No description provided for @salePriceField.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotish narxi (so\'m)'**
+  String get salePriceField;
+
+  /// No description provided for @enterSalePrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotish narxini kiriting'**
+  String get enterSalePrice;
+
+  /// No description provided for @enterValidPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'g\'ri narx kiriting'**
+  String get enterValidPrice;
+
+  /// No description provided for @pricePositive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narx musbat bo\'lishi kerak'**
+  String get pricePositive;
+
+  /// No description provided for @minSalePriceField.
+  ///
+  /// In uz, this message translates to:
+  /// **'Minimum sotish narxi (so\'m)'**
+  String get minSalePriceField;
+
+  /// No description provided for @enterMinSalePrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Minimum sotish narxini kiriting'**
+  String get enterMinSalePrice;
+
+  /// No description provided for @priceNonNegative.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narx manfiy bo\'lmasligi kerak'**
+  String get priceNonNegative;
+
+  /// No description provided for @minThresholdField.
+  ///
+  /// In uz, this message translates to:
+  /// **'Minimum chegara (ogohlantirish uchun)'**
+  String get minThresholdField;
+
+  /// No description provided for @enterMinThreshold.
+  ///
+  /// In uz, this message translates to:
+  /// **'Minimum chegara kiriting'**
+  String get enterMinThreshold;
+
+  /// No description provided for @enterValidNumber.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'g\'ri son kiriting'**
+  String get enterValidNumber;
+
+  /// No description provided for @numberNonNegative.
+  ///
+  /// In uz, this message translates to:
+  /// **'Son manfiy bo\'lmasligi kerak'**
+  String get numberNonNegative;
+
+  /// No description provided for @productQuantityImmutable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot soni: {quantity} (o\'zgarmas)'**
+  String productQuantityImmutable(Object quantity);
+
+  /// No description provided for @productCreatedWithZeroInfo.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot soni 0 bilan yaratiladi, keyin Zakup orqali oshiriladi'**
+  String get productCreatedWithZeroInfo;
+
+  /// No description provided for @errorWithMessage.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xatolik: {message}'**
+  String errorWithMessage(String message);
+
+  /// No description provided for @superAdminConsoleTitleShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'SuperAdmin Console'**
+  String get superAdminConsoleTitleShort;
+
+  /// No description provided for @superAdminPending.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kutilmoqda'**
+  String get superAdminPending;
+
+  /// No description provided for @superAdminNewRequests.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi so\'rovlar'**
+  String get superAdminNewRequests;
+
+  /// No description provided for @superAdminApproved.
+  ///
+  /// In uz, this message translates to:
+  /// **'TASDIQLANGAN'**
+  String get superAdminApproved;
+
+  /// No description provided for @superAdminRejected.
+  ///
+  /// In uz, this message translates to:
+  /// **'RAD ETILGAN'**
+  String get superAdminRejected;
+
+  /// No description provided for @superAdminServerStatsNeeded.
+  ///
+  /// In uz, this message translates to:
+  /// **'Server stats kerak'**
+  String get superAdminServerStatsNeeded;
+
+  /// No description provided for @superAdminPendingRequestsHeader.
+  ///
+  /// In uz, this message translates to:
+  /// **'KUTILAYOTGAN SO\'ROVLAR'**
+  String get superAdminPendingRequestsHeader;
+
+  /// No description provided for @refresh.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangilash'**
+  String get refresh;
+
+  /// No description provided for @superAdminActiveOwnersHeader.
+  ///
+  /// In uz, this message translates to:
+  /// **'FAOL EGALAR ({count})'**
+  String superAdminActiveOwnersHeader(Object count);
+
+  /// No description provided for @addNew.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi qo\'shish'**
+  String get addNew;
+
+  /// No description provided for @nothingFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hech narsa topilmadi'**
+  String get nothingFound;
+
+  /// No description provided for @newOwner.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi Owner'**
+  String get newOwner;
+
+  /// No description provided for @newOwnerCreated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi owner yaratildi: {username}'**
+  String newOwnerCreated(String username);
+
+  /// No description provided for @ownerSearchHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ism, username yoki do\'kon nomi…'**
+  String get ownerSearchHint;
+
+  /// No description provided for @statusBlocked.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklangan'**
+  String get statusBlocked;
+
+  /// No description provided for @statusActive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faol'**
+  String get statusActive;
+
+  /// No description provided for @statusInactive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faolsiz'**
+  String get statusInactive;
+
+  /// No description provided for @ownerInfoTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Owner ma\'lumotlari'**
+  String get ownerInfoTitle;
+
+  /// No description provided for @ownerNotFound.
+  ///
+  /// In uz, this message translates to:
+  /// **'Owner topilmadi'**
+  String get ownerNotFound;
+
+  /// No description provided for @block.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklash'**
+  String get block;
+
+  /// No description provided for @unblock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Blokdan chiqarish'**
+  String get unblock;
+
+  /// No description provided for @infoUpdated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotlar yangilandi'**
+  String get infoUpdated;
+
+  /// No description provided for @ownerSectionHeader.
+  ///
+  /// In uz, this message translates to:
+  /// **'OWNER MA\'LUMOTLARI'**
+  String get ownerSectionHeader;
+
+  /// No description provided for @shopSectionHeader.
+  ///
+  /// In uz, this message translates to:
+  /// **'DO\'KON MA\'LUMOTLARI'**
+  String get shopSectionHeader;
+
+  /// No description provided for @fullNameUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'TO\'LIQ ISM'**
+  String get fullNameUpper;
+
+  /// No description provided for @usernameUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'USERNAME'**
+  String get usernameUpper;
+
+  /// No description provided for @phoneUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'TELEFON'**
+  String get phoneUpper;
+
+  /// No description provided for @languageUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'TIL'**
+  String get languageUpper;
+
+  /// No description provided for @registeredUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'RO\'YXATDAN O\'TGAN'**
+  String get registeredUpper;
+
+  /// No description provided for @statusUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'HOLAT'**
+  String get statusUpper;
+
+  /// No description provided for @nameUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'NOMI'**
+  String get nameUpper;
+
+  /// No description provided for @subdomainUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'SUBDOMAIN'**
+  String get subdomainUpper;
+
+  /// No description provided for @marketIdUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'MARKET ID'**
+  String get marketIdUpper;
+
+  /// No description provided for @blockReasonUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'BLOKLASH SABABI'**
+  String get blockReasonUpper;
+
+  /// No description provided for @blockedAtUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'BLOKLANGAN'**
+  String get blockedAtUpper;
+
+  /// No description provided for @subscriptionExpiresUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'OBUNA TUGASHI'**
+  String get subscriptionExpiresUpper;
+
+  /// No description provided for @createdUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'YARATILGAN'**
+  String get createdUpper;
+
+  /// No description provided for @registeredSince.
+  ///
+  /// In uz, this message translates to:
+  /// **'{date} dan beri'**
+  String registeredSince(String date);
+
+  /// No description provided for @updateInfoTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotlarni yangilash'**
+  String get updateInfoTitle;
+
+  /// No description provided for @ownerSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Owner'**
+  String get ownerSection;
+
+  /// No description provided for @shopSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do\'kon'**
+  String get shopSection;
+
+  /// No description provided for @fullNameLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'liq ism'**
+  String get fullNameLabel;
+
+  /// No description provided for @nameRequiredShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ism kerak'**
+  String get nameRequiredShort;
+
+  /// No description provided for @phoneLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telefon'**
+  String get phoneLabel;
+
+  /// No description provided for @ownerActive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Owner faol'**
+  String get ownerActive;
+
+  /// No description provided for @shopName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do\'kon nomi'**
+  String get shopName;
+
+  /// No description provided for @minCharsShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Min. 3 belgi'**
+  String get minCharsShort;
+
+  /// No description provided for @subdomainLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Subdomain'**
+  String get subdomainLabel;
+
+  /// No description provided for @subdomainHintExample.
+  ///
+  /// In uz, this message translates to:
+  /// **'subdomain.strotech.uz'**
+  String get subdomainHintExample;
+
+  /// No description provided for @descriptionLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tavsif'**
+  String get descriptionLabel;
+
+  /// No description provided for @shopActive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do\'kon faol'**
+  String get shopActive;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangilashda xatolik'**
+  String get updateFailed;
+
+  /// No description provided for @addNewOwner.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi Owner qo\'shish'**
+  String get addNewOwner;
+
+  /// No description provided for @createOwnerSubtitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu form ro\'yxatdan o\'tish so\'rovini chetlab o\'tadi. Faqat alohida hollar uchun (telefon orqali kelgan murojaatlar) ishlatiladi.'**
+  String get createOwnerSubtitle;
+
+  /// No description provided for @fullNameRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'liq ism *'**
+  String get fullNameRequired;
+
+  /// No description provided for @phoneRequiredShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telefon kerak'**
+  String get phoneRequiredShort;
+
+  /// No description provided for @phoneFormatInvalid.
+  ///
+  /// In uz, this message translates to:
+  /// **'Format noto\'g\'ri'**
+  String get phoneFormatInvalid;
+
+  /// No description provided for @phoneHintExample.
+  ///
+  /// In uz, this message translates to:
+  /// **'+998 90 ...'**
+  String get phoneHintExample;
+
+  /// No description provided for @usernameRequiredShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'username *'**
+  String get usernameRequiredShort;
+
+  /// No description provided for @passwordRequiredShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Parol *'**
+  String get passwordRequiredShort;
+
+  /// No description provided for @minThreeCharsShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Min. 3'**
+  String get minThreeCharsShort;
+
+  /// No description provided for @minEightChars.
+  ///
+  /// In uz, this message translates to:
+  /// **'Min. 8'**
+  String get minEightChars;
+
+  /// No description provided for @minEightCharsHelper.
+  ///
+  /// In uz, this message translates to:
+  /// **'Min. 8 belgi'**
+  String get minEightCharsHelper;
+
+  /// No description provided for @show.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ko\'rsatish'**
+  String get show;
+
+  /// No description provided for @generatePassword.
+  ///
+  /// In uz, this message translates to:
+  /// **'Generate'**
+  String get generatePassword;
+
+  /// No description provided for @shopNameRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do\'kon nomi *'**
+  String get shopNameRequired;
+
+  /// No description provided for @subdomainOptionalShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'subdomain (ixtiyoriy)'**
+  String get subdomainOptionalShort;
+
+  /// No description provided for @autoLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Avto: '**
+  String get autoLabel;
+
+  /// No description provided for @urlLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'URL: '**
+  String get urlLabel;
+
+  /// No description provided for @create.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yaratish'**
+  String get create;
+
+  /// No description provided for @createOwnerFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yaratishda xatolik yuz berdi'**
+  String get createOwnerFailed;
+
+  /// No description provided for @usernameTaken.
+  ///
+  /// In uz, this message translates to:
+  /// **'\'{username}\' band'**
+  String usernameTaken(String username);
+
+  /// No description provided for @marketNameTaken.
+  ///
+  /// In uz, this message translates to:
+  /// **'\'{name}\' band'**
+  String marketNameTaken(String name);
+
+  /// No description provided for @subdomainTaken.
+  ///
+  /// In uz, this message translates to:
+  /// **'\'{subdomain}\' band'**
+  String subdomainTaken(String subdomain);
+
+  /// No description provided for @confirmDeleteTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'chirishni tasdiqlang'**
+  String get confirmDeleteTitle;
+
+  /// No description provided for @cannotUndoAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu amalni qaytarib bo\'lmaydi'**
+  String get cannotUndoAction;
+
+  /// No description provided for @warning.
+  ///
+  /// In uz, this message translates to:
+  /// **'DIQQAT!'**
+  String get warning;
+
+  /// No description provided for @deleteOwnerPart1.
+  ///
+  /// In uz, this message translates to:
+  /// **'Siz '**
+  String get deleteOwnerPart1;
+
+  /// No description provided for @deleteOwnerPart2.
+  ///
+  /// In uz, this message translates to:
+  /// **' va uning do\'koni '**
+  String get deleteOwnerPart2;
+
+  /// No description provided for @deleteOwnerPart3.
+  ///
+  /// In uz, this message translates to:
+  /// **'\'ni o\'chirmoqchisiz.'**
+  String get deleteOwnerPart3;
+
+  /// No description provided for @dataWillBeKept.
+  ///
+  /// In uz, this message translates to:
+  /// **'Quyidagi ma\'lumotlar saqlanib qoladi (faqat owner+market deaktivatsiya):'**
+  String get dataWillBeKept;
+
+  /// No description provided for @countProducts.
+  ///
+  /// In uz, this message translates to:
+  /// **'ta mahsulot'**
+  String get countProducts;
+
+  /// No description provided for @countSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'ta sotuv'**
+  String get countSales;
+
+  /// No description provided for @countCustomers.
+  ///
+  /// In uz, this message translates to:
+  /// **'ta mijoz'**
+  String get countCustomers;
+
+  /// No description provided for @countCashiers.
+  ///
+  /// In uz, this message translates to:
+  /// **'ta kassir akkaunti'**
+  String get countCashiers;
+
+  /// No description provided for @enterShopNameUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'DO\'KON NOMINI KIRITING *'**
+  String get enterShopNameUpper;
+
+  /// No description provided for @typeShopNameExact.
+  ///
+  /// In uz, this message translates to:
+  /// **'Aniq \"{name}\" deb yozing'**
+  String typeShopNameExact(String name);
+
+  /// No description provided for @shopNameMismatch.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do\'kon nomi mos kelmadi'**
+  String get shopNameMismatch;
+
+  /// No description provided for @deleteReasonUpper.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'CHIRISH SABABI *'**
+  String get deleteReasonUpper;
+
+  /// No description provided for @deleteReasonHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Masalan: To\'lov muddati o\'tdi va aloqaga chiqmadi'**
+  String get deleteReasonHint;
+
+  /// No description provided for @reasonRequiredDetailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sababini batafsil yozing'**
+  String get reasonRequiredDetailed;
+
+  /// No description provided for @deleteFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'chirishda xatolik yuz berdi'**
+  String get deleteFailed;
+
+  /// No description provided for @blockShopTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do\'konni bloklash'**
+  String get blockShopTitle;
+
+  /// No description provided for @blocking.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklanadi: '**
+  String get blocking;
+
+  /// No description provided for @unblocking.
+  ///
+  /// In uz, this message translates to:
+  /// **'Blokdan chiqariladi: '**
+  String get unblocking;
+
+  /// No description provided for @blockImmediateInfo.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklash darhol kuchga kiradi: Owner va do\'kondagi barcha xodimlar (Admin/Seller) tizimga kira olmaydi. Eski JWT tokenlar ham 423 qaytaradi.'**
+  String get blockImmediateInfo;
+
+  /// No description provided for @blockReasonRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'BLOKLASH SABABI *'**
+  String get blockReasonRequired;
+
+  /// No description provided for @blockReasonHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Masalan: Obuna to\'lovi 30 kun kechiktirilgan'**
+  String get blockReasonHint;
+
+  /// No description provided for @unblockInfo.
+  ///
+  /// In uz, this message translates to:
+  /// **'Blokdan chiqarilgach Owner va xodimlar yana login qila olishadi.'**
+  String get unblockInfo;
+
+  /// No description provided for @previousBlockReason.
+  ///
+  /// In uz, this message translates to:
+  /// **'BLOKLASH SABABI (AVVAL):'**
+  String get previousBlockReason;
+
+  /// No description provided for @blockFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklashda xatolik yuz berdi'**
+  String get blockFailed;
+
+  /// No description provided for @unblockFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Blokdan chiqarishda xatolik yuz berdi'**
+  String get unblockFailed;
+
+  /// No description provided for @ok.
+  ///
+  /// In uz, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @privacyPolicyTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Maxfiylik siyosati'**
+  String get privacyPolicyTitle;
+
+  /// No description provided for @privacyIntroTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kirish'**
+  String get privacyIntroTitle;
+
+  /// No description provided for @privacyDataCollectionTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotlarni yig\'ish'**
+  String get privacyDataCollectionTitle;
+
+  /// No description provided for @privacyDataUsageTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotlardan foydalanish'**
+  String get privacyDataUsageTitle;
+
+  /// No description provided for @privacyDataSecurityTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotlar xavfsizligi'**
+  String get privacyDataSecurityTitle;
+
+  /// No description provided for @privacyYourRightsTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sizning huquqlaringiz'**
+  String get privacyYourRightsTitle;
+
+  /// No description provided for @privacyContactTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Aloqa ma\'lumotlari'**
+  String get privacyContactTitle;
+
+  /// No description provided for @privacyContactPrompt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ushbu Maxfiylik Siyosati yoki ma\'lumotlaringiz haqida savollaringiz bo\'lsa, biz bilan bog\'laning:'**
+  String get privacyContactPrompt;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Email: '**
+  String get emailLabel;
+
+  /// No description provided for @noAccount.
+  ///
+  /// In uz, this message translates to:
+  /// **'Akkauntingiz yo\'qmi? '**
+  String get noAccount;
 }
 
 class _AppLocalizationsDelegate

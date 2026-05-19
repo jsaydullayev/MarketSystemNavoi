@@ -21,17 +21,30 @@ class AuthProvider extends ChangeNotifier {
   HttpService get httpService => _authService.httpService;
 
   // Login
+  // Surfaces the structured reason a login attempt failed (market blocked,
+  // invalid creds, network down, etc.) so the screen can render the right UI.
+  // Login screen reads this AFTER `login()` returns false.
+  LoginOutcome? _loginOutcome;
+  String? _loginBlockReason;
+  DateTime? _loginBlockedAt;
+  LoginOutcome? get loginOutcome => _loginOutcome;
+  String? get loginBlockReason => _loginBlockReason;
+  DateTime? get loginBlockedAt => _loginBlockedAt;
+
   Future<bool> login(String username, String password) async {
     _isLoading = true;
     _errorCode = null;
+    _loginOutcome = null;
+    _loginBlockReason = null;
+    _loginBlockedAt = null;
     notifyListeners();
 
     try {
       final result = await _authService.login(username, password);
+      _loginOutcome = result.outcome;
 
-      if (result != null) {
-        _user = result;
-        // Save language preference from server
+      if (result.outcome == LoginOutcome.success && result.user != null) {
+        _user = result.user;
         if (_user?['language'] != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('app_locale', _user!['language']);
@@ -39,15 +52,36 @@ class AuthProvider extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
         return true;
-      } else {
-        _errorCode = 'login_failed';
-        _isLoading = false;
-        notifyListeners();
-        return false;
       }
+
+      // Non-success branches — preserve structured info for the UI.
+      switch (result.outcome) {
+        case LoginOutcome.marketBlocked:
+          _loginBlockReason = result.blockReason;
+          _loginBlockedAt = result.blockedAt;
+          _errorCode = 'market_blocked';
+          break;
+        case LoginOutcome.invalidCredentials:
+          _errorCode = 'login_failed';
+          break;
+        case LoginOutcome.rateLimited:
+          _errorCode = 'rate_limited';
+          break;
+        case LoginOutcome.networkError:
+          _errorCode = 'network_error';
+          break;
+        case LoginOutcome.unknown:
+        case LoginOutcome.success:
+          _errorCode = 'login_failed';
+          break;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return false;
     } catch (e, st) {
       debugPrint('AuthProvider.login error: $e\n$st');
       _errorCode = 'network_error';
+      _loginOutcome = LoginOutcome.networkError;
       _isLoading = false;
       notifyListeners();
       return false;

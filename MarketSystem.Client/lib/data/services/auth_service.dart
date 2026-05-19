@@ -4,13 +4,44 @@ import 'package:http/http.dart' as http;
 import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
 
+/// Outcome of a login attempt. Lets the UI branch on WHY it failed instead
+/// of collapsing every non-200 into a generic "kirish xatosi".
+enum LoginOutcome {
+  /// 200 — credentials valid, tokens saved, [user] populated.
+  success,
+
+  /// 401 — username or password didn't match.
+  invalidCredentials,
+
+  /// 423 — SuperAdmin has blocked the market. [blockReason] / [blockedAt]
+  /// carry the audit info to show on the login screen.
+  marketBlocked,
+
+  /// 429 — rate-limited (login brute-force protection).
+  rateLimited,
+
+  /// Transport-level failure (offline, DNS, TLS, server unreachable).
+  networkError,
+
+  /// Anything else we didn't anticipate.
+  unknown,
+}
+
+class LoginResult {
+  LoginResult(this.outcome, {this.user, this.blockReason, this.blockedAt});
+  final LoginOutcome outcome;
+  final Map<String, dynamic>? user;
+  final String? blockReason;
+  final DateTime? blockedAt;
+}
+
 class AuthService {
   final HttpService _httpService;
 
   AuthService({required HttpService httpService}) : _httpService = httpService;
 
   // Login
-  Future<Map<String, dynamic>?> login(String username, String password) async {
+  Future<LoginResult> login(String username, String password) async {
     try {
       final response = await _httpService.post(
         ApiConstants.login,
@@ -18,14 +49,37 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        await _httpService.saveTokens(data['accessToken'], data['refreshToken']);
-        return data;
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        await _httpService.saveTokens(
+            data['accessToken'] as String, data['refreshToken'] as String);
+        return LoginResult(LoginOutcome.success, user: data);
       }
-      return null;
+
+      if (response.statusCode == 423) {
+        // Market blocked — pull the SuperAdmin's reason out of the body so the
+        // user sees WHY they can't log in instead of a generic credentials error.
+        String? reason;
+        DateTime? blockedAt;
+        try {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          reason = body['reason'] as String?;
+          if (body['blockedAt'] is String) {
+            blockedAt = DateTime.tryParse(body['blockedAt'] as String);
+          }
+        } catch (_) {/* malformed body — fall through with nulls */}
+        return LoginResult(
+          LoginOutcome.marketBlocked,
+          blockReason: reason,
+          blockedAt: blockedAt,
+        );
+      }
+
+      if (response.statusCode == 429) return LoginResult(LoginOutcome.rateLimited);
+      if (response.statusCode == 401) return LoginResult(LoginOutcome.invalidCredentials);
+      return LoginResult(LoginOutcome.unknown);
     } catch (e, st) {
       debugPrint('AuthService.login error: $e\n$st');
-      return null;
+      return LoginResult(LoginOutcome.networkError);
     }
   }
 
@@ -129,7 +183,7 @@ class AuthService {
       // because AccessToken=null can't be validated.
       final accessToken = await _httpService.getAccessToken();
       if (accessToken == null) {
-        print('No access token to pair with refresh — user must login');
+        debugPrint('No access token to pair with refresh — user must login');
         return null;
       }
 

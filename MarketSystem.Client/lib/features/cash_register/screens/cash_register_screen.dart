@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/app_colors.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/cash_register/widgets/balance_card.dart';
 import 'package:market_system_client/features/cash_register/widgets/payment_breakdown_card.dart';
 import 'package:market_system_client/features/cash_register/widgets/today_sales_card.dart';
@@ -10,7 +11,6 @@ import 'package:market_system_client/features/cash_register/widgets/withdraw_but
 import 'package:market_system_client/features/cash_register/widgets/withdrawal_history_list.dart';
 import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../data/models/cash_register_model.dart';
 import '../../../data/services/cash_register_service.dart';
 import '../../../data/services/http_service.dart';
@@ -134,10 +134,12 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppTheme.danger : AppTheme.success,
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
       ),
     );
   }
@@ -146,14 +148,13 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final role = authProvider.user?['role'];
     final isAdmin = role == 'Admin' || role == 'Owner';
 
     return NetworkWrapper(
       onRetry: _loadCashRegister,
       child: Scaffold(
-        backgroundColor: AppColors.getBg(isDark),
+        backgroundColor: AppColors.bg,
         appBar: CommonAppBar(
           title: l10n.cashRegister,
           onRefresh: _isLoading ? null : _loadCashRegister,
@@ -163,11 +164,17 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.lock_outline, size: 64, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 64,
+                      color: AppColors.textMuted,
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
                     Text(
                       l10n.accessDenied,
-                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                      style: AppTextStyles.titleMedium().copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -176,9 +183,15 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : RefreshIndicator(
                     onRefresh: _loadCashRegister,
+                    color: AppColors.brand,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xl,
+                        AppSpacing.md,
+                        AppSpacing.xl,
+                        AppSpacing.xl4,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -187,33 +200,31 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                             clickBalance: _todaySales?.clickPaid ?? 0,
                             lastUpdated: _cashRegister?.lastUpdated,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.xl),
                           if (_todaySales != null) ...[
                             TodaySalesCard(todaySales: _todaySales!),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.xl),
                           ],
                           if (_todaySales != null &&
                               (_todaySales!.cashPaid > 0 ||
                                   _todaySales!.cardPaid > 0 ||
                                   _todaySales!.clickPaid > 0)) ...[
                             PaymentBreakdownCard(todaySales: _todaySales!),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: AppSpacing.xl2),
                           ],
                           WithdrawButton(
                             isWithdrawing: _isWithdrawing,
                             onTap: _showWithdrawDialog,
                             label: l10n.withdrawCash,
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: AppSpacing.xl3 + AppSpacing.xs),
                           Text(
-                            l10n.withdrawalHistory,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.3,
+                            l10n.withdrawalHistory.toUpperCase(),
+                            style: AppTextStyles.labelSmall().copyWith(
+                              letterSpacing: 0.8,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.lg),
                           WithdrawalHistoryList(
                             withdrawals: _cashRegister?.withdrawals ?? [],
                             l10n: l10n,

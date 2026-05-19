@@ -1,5 +1,5 @@
-/// Customers Events
-/// Customers BLoC uchun hodisalar
+// Customers Events
+// Customers BLoC uchun hodisalar
 
 import 'package:equatable/equatable.dart';
 

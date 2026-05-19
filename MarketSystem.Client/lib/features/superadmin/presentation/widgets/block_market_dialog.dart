@@ -1,12 +1,17 @@
+// Block / unblock a market — migrated to the new design system. Block
+// requires a reason (subscription expired, ToS violation, etc.); the reason
+// is shown to staff on their next login attempt and goes into the audit log.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_tokens.dart';
+import '../../../../design/tokens/app_typography.dart';
+import '../../../../design/widgets/app_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/superadmin_service.dart';
 
-/// Block / unblock a market. Block requires a reason (subscription expired,
-/// ToS violation, etc.) — the reason is shown to staff on their next login
-/// attempt and goes into the audit log.
 class BlockMarketDialog extends StatefulWidget {
   const BlockMarketDialog({
     super.key,
@@ -60,8 +65,9 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
     if (res.status == SuperAdminOpStatus.success) {
       Navigator.of(context).pop(true);
     } else {
+      final l10n = AppLocalizations.of(context)!;
       setState(() =>
-          _errorMessage = res.message ?? "Bloklashda xatolik yuz berdi");
+          _errorMessage = res.message ?? l10n.blockFailed);
     }
   }
 
@@ -77,183 +83,254 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
     if (res.status == SuperAdminOpStatus.success) {
       Navigator.of(context).pop(true);
     } else {
+      final l10n = AppLocalizations.of(context)!;
       setState(() => _errorMessage =
-          res.message ?? "Blokdan chiqarishda xatolik yuz berdi");
+          res.message ?? l10n.unblockFailed);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final blocking = !widget.currentlyBlocked;
-    final color = blocking ? const Color(0xFFF57C00) : const Color(0xFF137333);
+    final accent = blocking ? AppColors.warning : AppColors.success;
+    final accentBg = blocking ? AppColors.warningLight : AppColors.successLight;
     final icon = blocking ? Icons.block_outlined : Icons.lock_open_outlined;
-    final title = blocking ? "Do'konni bloklash" : 'Blokdan chiqarish';
+    final title = blocking ? l10n.blockShopTitle : l10n.unblock;
 
-    return AlertDialog(
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(title)),
-        ],
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      content: SizedBox(
-        width: 440,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF5F6368),
-                  ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl2),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    TextSpan(text: blocking ? 'Bloklanadi: ' : 'Blokdan chiqariladi: '),
-                    TextSpan(
-                      text: widget.marketName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF202124),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: accentBg,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
+                      child: Icon(icon, color: accent, size: 20),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: AppTextStyles.titleMedium(),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      color: AppColors.textSecondary,
+                      onPressed: _submitting
+                          ? null
+                          : () => Navigator.pop(context),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              if (blocking) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF7E0),
-                    border: Border.all(color: const Color(0xFFF9AB00)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: AppSpacing.lg),
+                RichText(
+                  text: TextSpan(
+                    style: AppTextStyles.bodySmall(),
                     children: [
-                      Text('⚠️ ', style: TextStyle(fontSize: 14)),
-                      Expanded(
-                        child: Text(
-                          "Bloklash darhol kuchga kiradi: Owner va do'kondagi barcha xodimlar (Admin/Seller) tizimga kira olmaydi. Eski JWT tokenlar ham 423 qaytaradi.",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF5C3D02),
-                          ),
-                        ),
+                      TextSpan(
+                        text: blocking
+                            ? l10n.blocking
+                            : l10n.unblocking,
+                      ),
+                      TextSpan(
+                        text: widget.marketName,
+                        style: AppTextStyles.labelLarge(),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: _reason,
-                  maxLines: 3,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Bloklash sababi *',
-                    border: OutlineInputBorder(),
-                    hintText: "Masalan: Obuna to'lovi 30 kun kechiktirilgan",
-                  ),
-                  validator: (v) => (v ?? '').trim().length < 3
-                      ? 'Sababini batafsil yozing'
-                      : null,
-                ),
-              ] else ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE6F4EA),
-                    border: Border.all(color: const Color(0xFF137333)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('✅ ', style: TextStyle(fontSize: 14)),
-                      Expanded(
-                        child: Text(
-                          "Blokdan chiqarilgach Owner va xodimlar yana login qila olishadi.",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF0D5C29),
+                const SizedBox(height: AppSpacing.xl),
+                if (blocking) ...[
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningLight,
+                      border: Border.all(
+                        color: AppColors.warning.withValues(alpha: 0.5),
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          size: 18,
+                          color: AppColors.warning,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            l10n.blockImmediateInfo,
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: AppColors.text,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (widget.currentReason != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Bloklash sababi (avval):',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF5F6368),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.lg),
                   Text(
-                    widget.currentReason!,
-                    style: const TextStyle(fontSize: 13),
+                    l10n.blockReasonRequired,
+                    style: AppTextStyles.caption().copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _reason,
+                    maxLines: 3,
+                    autofocus: true,
+                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                    decoration: InputDecoration(
+                      hintText: l10n.blockReasonHint,
+                      hintStyle: AppTextStyles.bodyMedium().copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 15,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.inputFill,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xl,
+                        vertical: AppSpacing.lg + 2,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.md + 2),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.md + 2),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.md + 2),
+                        borderSide: const BorderSide(
+                            color: AppColors.brand, width: 1.5),
+                      ),
+                    ),
+                    validator: (v) => (v ?? '').trim().length < 3
+                        ? l10n.reasonRequiredDetailed
+                        : null,
+                  ),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.successLight,
+                      border: Border.all(
+                        color: AppColors.success.withValues(alpha: 0.5),
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline,
+                          size: 18,
+                          color: AppColors.success,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            l10n.unblockInfo,
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: AppColors.text,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (widget.currentReason != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      l10n.previousBlockReason,
+                      style: AppTextStyles.caption().copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.currentReason!,
+                      style: AppTextStyles.bodyMedium(),
+                    ),
+                  ],
+                ],
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md + 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.dangerLight,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: AppColors.danger,
+                      ),
+                    ),
                   ),
                 ],
-              ],
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFCE8E6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFFD93025),
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppSecondaryButton(
+                        label: l10n.cancel,
+                        onPressed: _submitting
+                            ? null
+                            : () => Navigator.pop(context),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: blocking
+                          ? AppDangerButton(
+                              label: l10n.block,
+                              icon: Icons.block_outlined,
+                              isLoading: _submitting,
+                              onPressed: _submitting ? null : _doBlock,
+                            )
+                          : AppPrimaryButton(
+                              label: l10n.unblock,
+                              icon: Icons.lock_open_outlined,
+                              isLoading: _submitting,
+                              onPressed: _submitting ? null : _doUnblock,
+                            ),
+                    ),
+                  ],
                 ),
               ],
-            ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _submitting ? null : () => Navigator.pop(context),
-          child: const Text('Bekor qilish'),
-        ),
-        ElevatedButton.icon(
-          onPressed: _submitting ? null : (blocking ? _doBlock : _doUnblock),
-          icon: _submitting
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : Icon(icon, size: 18),
-          label: Text(blocking ? 'Bloklash' : 'Blokdan chiqarish'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: Colors.white,
-          ),
-        ),
-      ],
     );
   }
 }

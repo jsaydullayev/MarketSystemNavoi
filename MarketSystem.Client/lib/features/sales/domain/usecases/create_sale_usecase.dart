@@ -1,5 +1,5 @@
-/// Create Sale Use Case
-/// Yangi sotuv yaratish biznes mantig'i
+// Create Sale Use Case
+// Yangi sotuv yaratish biznes mantig'i
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/sale_entity.dart';

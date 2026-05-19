@@ -1,5 +1,5 @@
-/// Create Product Use Case
-/// Business logic for creating a product
+// Create Product Use Case
+// Business logic for creating a product
 
 import 'package:equatable/equatable.dart';
 import '../entities/product_entity.dart';

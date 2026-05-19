@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../data/services/product_service.dart';
 import '../../../data/services/category_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../l10n/app_localizations.dart';
 
 class AdminProductFormScreen extends StatefulWidget {
   final dynamic product;
@@ -134,9 +135,10 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       });
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Xatolik: $e'),
+            content: Text(l10n.errorWithMessage(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -147,12 +149,13 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.product != null;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing
-            ? 'Admin: Mahsulotni tahrirlash'
-            : 'Admin: Yangi mahsulot'),
+            ? l10n.adminEditProductTitle
+            : l10n.adminNewProductTitle),
         centerTitle: true,
       ),
       body: Form(
@@ -169,14 +172,14 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.blue.shade200),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Admin faqat narxlarni va sozlamalarni o\'zgartira oladi',
-                      style: TextStyle(color: Colors.blue, fontSize: 12),
+                      l10n.adminCanEditPriceAndSettings,
+                      style: const TextStyle(color: Colors.blue, fontSize: 12),
                     ),
                   ),
                 ],
@@ -188,14 +191,14 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
             if (!isEditing)
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Mahsulot nomi',
-                  prefixIcon: Icon(Icons.inventory_2_outlined),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.productName,
+                  prefixIcon: const Icon(Icons.inventory_2_outlined),
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Mahsulot nomini kiriting';
+                    return l10n.enterName;
                   }
                   return null;
                 },
@@ -204,11 +207,11 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
               TextFormField(
                 controller: _nameController,
                 enabled: false,
-                decoration: const InputDecoration(
-                  labelText: 'Mahsulot nomi',
-                  prefixIcon: Icon(Icons.inventory_2_outlined),
-                  border: OutlineInputBorder(),
-                  disabledBorder: OutlineInputBorder(
+                decoration: InputDecoration(
+                  labelText: l10n.productName,
+                  prefixIcon: const Icon(Icons.inventory_2_outlined),
+                  border: const OutlineInputBorder(),
+                  disabledBorder: const OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey),
                   ),
                 ),
@@ -220,16 +223,16 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : DropdownButtonFormField<dynamic>(
                     value: _selectedCategory,
-                    decoration: const InputDecoration(
-                      labelText: 'Kategoriya',
-                      prefixIcon: Icon(Icons.category_outlined),
-                      border: OutlineInputBorder(),
-                      hintText: 'Kategoriyani tanlang',
+                    decoration: InputDecoration(
+                      labelText: l10n.category,
+                      prefixIcon: const Icon(Icons.category_outlined),
+                      border: const OutlineInputBorder(),
+                      hintText: l10n.selectCategory,
                     ),
                     items: [
-                      const DropdownMenuItem(
+                      DropdownMenuItem(
                         value: null,
-                        child: Text('Kategoriya tanlanmagan'),
+                        child: Text(l10n.categoryNotSelected),
                       ),
                       ..._categories.map<DropdownMenuItem<dynamic>>((category) {
                         return DropdownMenuItem<dynamic>(
@@ -249,11 +252,11 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
             // ✅ UNIT DROPDOWN - NEW
             DropdownButtonFormField<int>(
               value: _selectedUnit,
-              decoration: const InputDecoration(
-                labelText: 'O\'lchov birligi',
-                prefixIcon: Icon(Icons.straighten),
-                border: OutlineInputBorder(),
-                hintText: 'Birligni tanlang',
+              decoration: InputDecoration(
+                labelText: l10n.measureUnit,
+                prefixIcon: const Icon(Icons.straighten),
+                border: const OutlineInputBorder(),
+                hintText: l10n.selectUnit,
               ),
               items: _units.map<DropdownMenuItem<int>>((unit) {
                 return DropdownMenuItem<int>(
@@ -288,8 +291,8 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
             // IsTemporary checkbox
             CheckboxListTile(
-              title: const Text('Vaqtinchalik mahsulot'),
-              subtitle: const Text('Omborda vaqtincha saqlanadigan mahsulot'),
+              title: Text(l10n.temporaryProductTitle),
+              subtitle: Text(l10n.temporaryProductDescription),
               value: _isTemporary,
               onChanged: (value) {
                 setState(() {
@@ -303,20 +306,20 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
             TextFormField(
               controller: _salePriceController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Sotish narxi (so\'m)',
-                prefixIcon: Icon(Icons.attach_money),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.salePriceField,
+                prefixIcon: const Icon(Icons.attach_money),
+                border: const OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Sotish narxini kiriting';
+                  return l10n.enterSalePrice;
                 }
                 if (double.tryParse(value) == null) {
-                  return 'To\'g\'ri narx kiriting';
+                  return l10n.enterValidPrice;
                 }
                 if (double.parse(value) <= 0) {
-                  return 'Narx musbat bo\'lishi kerak';
+                  return l10n.pricePositive;
                 }
                 return null;
               },
@@ -327,20 +330,20 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
             TextFormField(
               controller: _minSalePriceController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Minimum sotish narxi (so\'m)',
-                prefixIcon: Icon(Icons.trending_down),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.minSalePriceField,
+                prefixIcon: const Icon(Icons.trending_down),
+                border: const OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Minimum sotish narxini kiriting';
+                  return l10n.enterMinSalePrice;
                 }
                 if (double.tryParse(value) == null) {
-                  return 'To\'g\'ri narx kiriting';
+                  return l10n.enterValidPrice;
                 }
                 if (double.parse(value) < 0) {
-                  return 'Narx manfiy bo\'lmasligi kerak';
+                  return l10n.priceNonNegative;
                 }
                 return null;
               },
@@ -351,20 +354,20 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
             TextFormField(
               controller: _minThresholdController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Minimum chegara (ogohlantirish uchun)',
-                prefixIcon: Icon(Icons.warning),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.minThresholdField,
+                prefixIcon: const Icon(Icons.warning),
+                border: const OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Minimum chegara kiriting';
+                  return l10n.enterMinThreshold;
                 }
                 if (int.tryParse(value) == null) {
-                  return 'To\'g\'ri son kiriting';
+                  return l10n.enterValidNumber;
                 }
                 if (int.parse(value) < 0) {
-                  return 'Son manfiy bo\'lmasligi kerak';
+                  return l10n.numberNonNegative;
                 }
                 return null;
               },
@@ -388,8 +391,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                   Expanded(
                     child: Text(
                       isEditing
-                          ? 'Mahsulot soni: ${(widget.product['quantity'] as num?)?.toDouble() ?? 0.0} (o\'zgarmas)'
-                          : 'Mahsulot soni 0 bilan yaratiladi, keyin Zakup orqali oshiriladi',
+                          ? l10n.productQuantityImmutable(
+                              (widget.product['quantity'] as num?)?.toDouble() ?? 0.0)
+                          : l10n.productCreatedWithZeroInfo,
                       style: TextStyle(
                           color: Colors.orange.shade700, fontSize: 12),
                     ),
@@ -407,7 +411,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : Text(
-                        isEditing ? 'Saqlash' : 'Qo\'shish',
+                        isEditing ? l10n.save : l10n.add,
                         style: const TextStyle(fontSize: 18),
                       ),
               ),

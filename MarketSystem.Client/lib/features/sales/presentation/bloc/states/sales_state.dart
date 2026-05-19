@@ -1,5 +1,5 @@
-/// Sales States
-/// Sales BLoC uchun holatlar
+// Sales States
+// Sales BLoC uchun holatlar
 
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/sale_entity.dart';

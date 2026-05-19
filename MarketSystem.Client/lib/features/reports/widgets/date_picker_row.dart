@@ -1,17 +1,27 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+/// Date selector strip above the Daily / Ombor report tabs.
+///
+/// Demo reference: the period control + selected-date row at the top of
+/// `id="page-rpt-profit"` — neutral surface card with the brand-tinted
+/// calendar icon, the formatted date, prev/next chevrons, and a "tanlash"
+/// chip that opens the system picker.
 class DatePickerRow extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onChanged;
 
-  const DatePickerRow(
-      {super.key, required this.selectedDate, required this.onChanged});
+  const DatePickerRow({
+    super.key,
+    required this.selectedDate,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
     final isToday = selectedDate.year == now.year &&
         selectedDate.month == now.month &&
@@ -19,40 +29,38 @@ class DatePickerRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.07)
-              : Colors.grey.withValues(alpha: 0.15),
-        ),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(9),
+              color: AppColors.brandLight,
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: const Icon(Icons.calendar_today_rounded,
-                color: Color(0xFF3B82F6), size: 18),
+                color: AppColors.brand, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.date,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                Text(
+                  l10n.date,
+                  style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
+                ),
                 Text(
                   DateFormat('dd MMMM yyyy', 'uz').format(selectedDate),
-                  style: TextStyle(
+                  style: AppTextStyles.bodyLarge().copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1F2937),
                   ),
                 ),
               ],
@@ -63,14 +71,14 @@ class DatePickerRow extends StatelessWidget {
             onTap: () =>
                 onChanged(selectedDate.subtract(const Duration(days: 1))),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.xs),
           _NavBtn(
             icon: Icons.chevron_right_rounded,
             onTap: isToday
                 ? null
                 : () => onChanged(selectedDate.add(const Duration(days: 1))),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.xs),
           GestureDetector(
             onTap: () async {
               final picked = await showDatePicker(
@@ -82,17 +90,18 @@ class DatePickerRow extends StatelessWidget {
               if (picked != null) onChanged(picked);
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg - 2, vertical: AppSpacing.sm),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.brandLight,
+                borderRadius: BorderRadius.circular(AppRadius.md - 2),
               ),
               child: Text(
                 l10n.select,
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF3B82F6),
-                    fontWeight: FontWeight.w600),
+                style: AppTextStyles.labelSmall().copyWith(
+                  fontSize: 12,
+                  color: AppColors.brand,
+                ),
               ),
             ),
           ),
@@ -110,21 +119,20 @@ class _NavBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: onTap != null
-              ? const Color(0xFF3B82F6).withValues(alpha: 0.08)
-              : Colors.grey.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
+          color: enabled ? AppColors.brandLight : AppColors.inputFill,
+          borderRadius: BorderRadius.circular(AppRadius.md - 2),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: onTap != null ? const Color(0xFF3B82F6) : Colors.grey[300],
+          color: enabled ? AppColors.brand : AppColors.textMuted,
         ),
       ),
     );
