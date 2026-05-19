@@ -38,4 +38,10 @@ public interface IReportService
     Task<WeeklySeriesDto> GetWeeklySeriesAsync(int days, bool compare = false, string? userRole = null, CancellationToken cancellationToken = default);
     Task<TopProductsDto> GetTopProductsAsync(string period, string sortBy, int limit, string? userRole = null, CancellationToken cancellationToken = default);
     Task<StaffPerformanceDto> GetStaffPerformanceAsync(string period, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One seller's own metrics for the Seller dashboard. Backs the SellerStatsRow
+    /// (sale count, revenue, shift duration) and the SellerHeroCta header.
+    /// </summary>
+    Task<MyPerformanceDto> GetMyPerformanceAsync(Guid userId, string period, CancellationToken cancellationToken = default);
 }

@@ -3332,6 +3332,24 @@ abstract class AppLocalizations {
   /// **'soat'**
   String get hour;
 
+  /// No description provided for @unitPiece.
+  ///
+  /// In uz, this message translates to:
+  /// **'dona'**
+  String get unitPiece;
+
+  /// No description provided for @thisWeek.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu hafta'**
+  String get thisWeek;
+
+  /// No description provided for @topSellersFallbackHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun savdo bo\'lmadi — oxirgi hafta:'**
+  String get topSellersFallbackHint;
+
   /// No description provided for @quickActions.
   ///
   /// In uz, this message translates to:

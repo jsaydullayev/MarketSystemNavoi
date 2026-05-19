@@ -279,6 +279,26 @@ class ReportService {
           'Failed to load staff performance: ${response.statusCode}');
     }
   }
+
+  /// Current user's own sales metrics for the period. Backs the Seller
+  /// dashboard's SellerStatsRow + PendingSaleCard. Available to all
+  /// authenticated roles — each user sees only their own row.
+  Future<MyPerformance> getMyPerformance({String period = 'today'}) async {
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/my-performance?period=$period',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return MyPerformance.empty(period);
+      }
+      return MyPerformance.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      throw Exception(
+          'Failed to load my performance: ${response.statusCode}');
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -496,4 +516,62 @@ class StaffRow {
         shiftCount: _asInt(json['shiftCount']),
         isActiveShift: json['isActiveShift'] == true,
       );
+}
+
+/// Mirrors `MyPerformanceDto { string Period, string UserId, string FullName,
+/// int SaleCount, decimal Revenue, decimal AverageCheck, DateTime? FirstSaleAtUtc,
+/// int ShiftDurationMinutes }`. Returned by /Reports/my-performance.
+class MyPerformance {
+  const MyPerformance({
+    required this.period,
+    required this.userId,
+    required this.fullName,
+    required this.saleCount,
+    required this.revenue,
+    required this.averageCheck,
+    required this.firstSaleAt,
+    required this.shiftDurationMinutes,
+  });
+
+  factory MyPerformance.empty(String period) => MyPerformance(
+        period: period,
+        userId: '',
+        fullName: '',
+        saleCount: 0,
+        revenue: 0,
+        averageCheck: 0,
+        firstSaleAt: null,
+        shiftDurationMinutes: 0,
+      );
+
+  final String period;
+  final String userId;
+  final String fullName;
+  final int saleCount;
+  final double revenue;
+  final double averageCheck;
+  final DateTime? firstSaleAt;
+  final int shiftDurationMinutes;
+
+  /// Convenience getter: shift duration in hours, rounded down. Returns 0
+  /// when there's no sale today.
+  int get shiftDurationHours => shiftDurationMinutes ~/ 60;
+
+  factory MyPerformance.fromJson(Map<String, dynamic> json) {
+    final firstSaleRaw = json['firstSaleAtUtc'];
+    DateTime? firstSale;
+    if (firstSaleRaw is String && firstSaleRaw.isNotEmpty) {
+      firstSale = DateTime.tryParse(firstSaleRaw);
+    }
+    return MyPerformance(
+      period: (json['period'] ?? '').toString(),
+      userId: (json['userId'] ?? '').toString(),
+      fullName: (json['fullName'] ?? '').toString(),
+      saleCount: _asInt(json['saleCount']),
+      revenue: _asDouble(json['revenue']),
+      averageCheck: _asDouble(json['averageCheck']),
+      firstSaleAt: firstSale,
+      shiftDurationMinutes: _asInt(json['shiftDurationMinutes']),
+    );
+  }
 }
