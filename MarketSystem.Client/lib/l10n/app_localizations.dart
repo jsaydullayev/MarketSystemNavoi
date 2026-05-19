@@ -1811,7 +1811,7 @@ abstract class AppLocalizations {
   /// No description provided for @addNewCustomer.
   ///
   /// In uz, this message translates to:
-  /// **'Yangi mijoz'**
+  /// **'Yangi mijoz qo\'shish'**
   String get addNewCustomer;
 
   /// No description provided for @searchCustomer.
@@ -3451,6 +3451,108 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Yorug\''**
   String get themeLight;
+
+  /// No description provided for @lowStockShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'KAM STOK'**
+  String get lowStockShort;
+
+  /// No description provided for @outOfStockShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'TUGADI'**
+  String get outOfStockShort;
+
+  /// No description provided for @totalShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'JAMI'**
+  String get totalShort;
+
+  /// No description provided for @stockShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Stok'**
+  String get stockShort;
+
+  /// No description provided for @popularChip.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mashhur'**
+  String get popularChip;
+
+  /// No description provided for @editAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tahrirlash'**
+  String get editAction;
+
+  /// No description provided for @filterLowStock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kam stok'**
+  String get filterLowStock;
+
+  /// No description provided for @filterOutOfStock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tugadi'**
+  String get filterOutOfStock;
+
+  /// No description provided for @serverUnreachable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Serverga ulanib bo\'lmadi'**
+  String get serverUnreachable;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sessiya tugadi, qayta kiring'**
+  String get sessionExpired;
+
+  /// No description provided for @noPermission.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sizga ruxsat yo\'q'**
+  String get noPermission;
+
+  /// No description provided for @customEmojiHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'zingiz emoji yozing'**
+  String get customEmojiHint;
+
+  /// No description provided for @filterOldDebt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Eski qarz'**
+  String get filterOldDebt;
+
+  /// No description provided for @filterRecent.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi'**
+  String get filterRecent;
+
+  /// No description provided for @pricesSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narxlar'**
+  String get pricesSection;
+
+  /// No description provided for @shortCostPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tannarx'**
+  String get shortCostPrice;
+
+  /// No description provided for @temporaryProductDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Vaqtinchalik mahsulot'**
+  String get temporaryProductDesc;
 
   /// No description provided for @alertPreviewActiveDebts.
   ///

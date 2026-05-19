@@ -83,12 +83,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
         if (errorMsg.contains('SocketException') ||
             errorMsg.contains('Connection refused') ||
             errorMsg.contains('Failed to fetch')) {
-          _errorMessage = "Serverga ulanib bo'lmadi";
+          _errorMessage = l10n.serverUnreachable;
         } else if (errorMsg.contains('401') ||
             errorMsg.contains('Unauthorized')) {
-          _errorMessage = 'Sessiya tugadi, qayta kiring';
+          _errorMessage = l10n.sessionExpired;
         } else if (errorMsg.contains('403') || errorMsg.contains('Forbidden')) {
-          _errorMessage = "Sizga ruxsat yo'q";
+          _errorMessage = l10n.noPermission;
         } else {
           _errorMessage = l10n.errorOccurred;
         }
@@ -289,11 +289,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      // Pass the active locale to the backend so the workbook column
+      // headers ("Nomi" vs "Название") match the language the user sees
+      // in the app.
+      final lang = Localizations.localeOf(context).languageCode;
       final bytes = await ProductService(authProvider: authProvider)
-          .downloadProductsExcel();
+          .downloadProductsExcel(lang: lang);
       if (bytes != null && bytes.isNotEmpty) {
-        await core_file_helper.FileHelper.saveAndOpenExcel(
-            bytes, 'Mahsulotlar.xlsx');
+        final fileName = lang == 'ru' ? 'Tovary.xlsx' : 'Mahsulotlar.xlsx';
+        await core_file_helper.FileHelper.saveAndOpenExcel(bytes, fileName);
       }
     } catch (e) {
       _showSnackBar(e.toString(), AppColors.danger);

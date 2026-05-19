@@ -877,7 +877,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get customerAdded => 'Mijoz muvaffaqiyatli qo\'shildi';
 
   @override
-  String get addNewCustomer => 'Yangi mijoz';
+  String get addNewCustomer => 'Yangi mijoz qo\'shish';
 
   @override
   String get searchCustomer => 'Mijoz qidirish...';
@@ -1781,6 +1781,57 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get themeLight => 'Yorug\'';
+
+  @override
+  String get lowStockShort => 'KAM STOK';
+
+  @override
+  String get outOfStockShort => 'TUGADI';
+
+  @override
+  String get totalShort => 'JAMI';
+
+  @override
+  String get stockShort => 'Stok';
+
+  @override
+  String get popularChip => 'Mashhur';
+
+  @override
+  String get editAction => 'Tahrirlash';
+
+  @override
+  String get filterLowStock => 'Kam stok';
+
+  @override
+  String get filterOutOfStock => 'Tugadi';
+
+  @override
+  String get serverUnreachable => 'Serverga ulanib bo\'lmadi';
+
+  @override
+  String get sessionExpired => 'Sessiya tugadi, qayta kiring';
+
+  @override
+  String get noPermission => 'Sizga ruxsat yo\'q';
+
+  @override
+  String get customEmojiHint => 'O\'zingiz emoji yozing';
+
+  @override
+  String get filterOldDebt => 'Eski qarz';
+
+  @override
+  String get filterRecent => 'Yangi';
+
+  @override
+  String get pricesSection => 'Narxlar';
+
+  @override
+  String get shortCostPrice => 'Tannarx';
+
+  @override
+  String get temporaryProductDesc => 'Vaqtinchalik mahsulot';
 
   @override
   String alertPreviewActiveDebts(int count) {
