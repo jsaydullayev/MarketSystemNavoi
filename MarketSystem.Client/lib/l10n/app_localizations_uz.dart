@@ -880,6 +880,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get addNewCustomer => 'Yangi mijoz qo\'shish';
 
   @override
+  String get addCustomerForDebtHint => 'Yangi mijoz qo\'shish';
+
+  @override
   String get searchCustomer => 'Mijoz qidirish...';
 
   @override

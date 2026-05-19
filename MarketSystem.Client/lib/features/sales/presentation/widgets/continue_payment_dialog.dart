@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/data/services/sales_service.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
+
+import 'quick_add_customer_sheet.dart';
 
 /// Modal bottom sheet for capturing payment on a "continue sale" flow.
 ///
@@ -46,6 +52,49 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
   bool _useDebt = false;
   bool _isProcessing = false;
 
+  /// Local, mutable customer. Starts as widget.selectedCustomer but can be
+  /// replaced when the cashier creates one inline from the debt toggle.
+  Map<String, dynamic>? _customer;
+
+  @override
+  void initState() {
+    super.initState();
+    _customer = widget.selectedCustomer;
+  }
+
+  /// Create a customer inline, then attach it to this (already-existing)
+  /// sale on the server so the debt the backend creates from the unpaid
+  /// remainder lands on the right customer.
+  Future<void> _addCustomerInline() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final created = await showQuickAddCustomerSheet(context);
+    if (created == null || !mounted) return;
+
+    final id = created['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      await SalesService(authProvider: auth).updateSaleCustomer(
+        saleId: widget.saleId,
+        customerId: id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _customer = created;
+        _useDebt = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: $e'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _cashCtrl.dispose();
@@ -71,7 +120,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
   bool get _hasDebt => _useDebt && _remaining > 0.01;
 
   bool get _canConfirm {
-    if (_hasDebt) return widget.selectedCustomer != null;
+    if (_hasDebt) return _customer != null;
     return _remaining <= 0.01 || _totalPaid > 0;
   }
 
@@ -229,18 +278,14 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
 
             const SizedBox(height: AppSpacing.xs),
 
-            // Debt toggle. Requires a selected customer — otherwise we
-            // surface a warning snack instead of toggling.
+            // Debt toggle. With a customer attached this just flips the
+            // toggle. Without one, instead of dead-ending with a warning
+            // snack, tapping opens the inline "create customer" sheet so
+            // the debt sale can be completed without leaving this sheet.
             GestureDetector(
               onTap: () {
-                if (widget.selectedCustomer == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(l10n.selectCustomerForDebtWarning),
-                      backgroundColor: AppColors.warning,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                if (_customer == null) {
+                  _addCustomerInline();
                   return;
                 }
                 setState(() => _useDebt = !_useDebt);
@@ -263,37 +308,69 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.money_off_rounded,
+                      _customer == null
+                          ? Icons.person_add_alt_1_rounded
+                          : Icons.money_off_rounded,
                       size: 20,
                       color: _useDebt ? AppColors.brand : AppColors.textMuted,
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
-                      child: Text(
-                        l10n.takeAsDebt,
-                        style: AppTextStyles.bodyMedium().copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: _useDebt
-                              ? AppColors.brand
-                              : AppColors.textSecondary,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.takeAsDebt,
+                            style: AppTextStyles.bodyMedium().copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: _useDebt
+                                  ? AppColors.brand
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _customer == null
+                                ? l10n.addCustomerForDebtHint
+                                : (_customer!['fullName']
+                                            ?.toString()
+                                            .isNotEmpty ==
+                                        true
+                                    ? _customer!['fullName'].toString()
+                                    : _customer!['phone']?.toString() ?? ''),
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: _customer == null
+                                  ? AppColors.brand
+                                  : AppColors.textSecondary,
+                              fontWeight: _customer == null
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_customer == null)
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.brand,
+                      )
+                    else
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: _useDebt ? AppColors.brand : AppColors.border,
+                          shape: BoxShape.circle,
                         ),
+                        child: _useDebt
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 13,
+                                color: Colors.white,
+                              )
+                            : null,
                       ),
-                    ),
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: _useDebt ? AppColors.brand : AppColors.border,
-                        shape: BoxShape.circle,
-                      ),
-                      child: _useDebt
-                          ? const Icon(
-                              Icons.check_rounded,
-                              size: 13,
-                              color: Colors.white,
-                            )
-                          : null,
-                    ),
                   ],
                 ),
               ),
