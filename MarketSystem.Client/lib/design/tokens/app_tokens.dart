@@ -12,10 +12,21 @@ class AppColors {
   // Semantic
   static const Color success = Color(0xFF10B981);
   static const Color successLight = Color(0xFFD1FAE5);
+  static const Color successDeep = Color(0xFF047857); // hsla emerald-700
   static const Color warning = Color(0xFFF59E0B);
   static const Color warningLight = Color(0xFFFEF3C7);
+  static const Color warningDark = Color(0xFFB45309); // amber-700 (debt hero)
+  static const Color warningDeep = Color(0xFF92400E); // amber-800 (alert title)
   static const Color danger = Color(0xFFEF4444);
   static const Color dangerLight = Color(0xFFFEE2E2);
+  static const Color dangerDeep = Color(0xFF991B1B); // red-900 (alert title)
+  static const Color dangerStrong = Color(0xFFB91C1C); // red-800 (alert desc)
+  static const Color info = Color(0xFF3B82F6); // blue-500
+  static const Color infoLight = Color(0xFFDBEAFE); // blue-100
+  static const Color infoDeep = Color(0xFF1E40AF); // blue-800
+  static const Color accentPurple = Color(0xFF7C3AED); // violet-600
+  static const Color accentPurpleDeep = Color(0xFF6D28D9); // violet-700
+  static const Color accentPurpleLight = Color(0xFFEDE9FE); // violet-100
 
   // Surface & borders
   static const Color surface = Color(0xFFFFFFFF);

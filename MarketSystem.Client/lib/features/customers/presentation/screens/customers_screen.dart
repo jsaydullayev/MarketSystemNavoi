@@ -248,15 +248,18 @@ class _CustomersHero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl2),
       decoration: BoxDecoration(
+        // Amber "JAMI QARZ" gradient identical to the demo's `.debt-hero`
+        // — sourced from the warning token family so the gradient stays
+        // in step with the rest of the palette.
         gradient: const LinearGradient(
-          colors: [Color(0xFFB45309), Color(0xFFF59E0B)],
+          colors: [AppColors.warningDark, AppColors.warning],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+            color: AppColors.warning.withValues(alpha: 0.25),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),

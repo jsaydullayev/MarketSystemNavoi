@@ -13,6 +13,12 @@ import '../../../data/services/debt_service.dart';
 import '../../../core/providers/auth_provider.dart';
 import 'debt_details_screen.dart';
 
+/// Client-side ordering for the debt-list view. The backend already filters
+/// to status='Open' so the chips just re-shuffle the same list — keeps the
+/// surface aligned with the demo's "Hammasi / Qarzdorlar / …" filter row
+/// without inventing new endpoints.
+enum _DebtSort { all, largest, recent }
+
 class DebtsScreen extends StatefulWidget {
   const DebtsScreen({super.key});
 
@@ -25,6 +31,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
   Map<String, String> _customerNames = {};
   bool _isLoading = false;
   bool _initialized = false;
+  _DebtSort _sort = _DebtSort.all;
 
   @override
   void didChangeDependencies() {
@@ -99,6 +106,48 @@ class _DebtsScreenState extends State<DebtsScreen> {
     return sum;
   }
 
+  /// Sum of remaining debt per customer-id, used by the chip sort.
+  double _customerTotal(String customerId) {
+    double sum = 0;
+    for (final d in _debtsByCustomer[customerId] ?? const []) {
+      sum += ((d['remainingDebt'] as num?)?.toDouble() ?? 0);
+    }
+    return sum;
+  }
+
+  /// Most recent `createdAt` on any debt row for a customer — used to sort
+  /// the "Yangi" filter chip without touching the backend.
+  DateTime _customerMostRecent(String customerId) {
+    DateTime latest = DateTime.fromMillisecondsSinceEpoch(0);
+    for (final d in _debtsByCustomer[customerId] ?? const []) {
+      final raw = d['createdAt'];
+      if (raw == null) continue;
+      try {
+        final dt = raw is DateTime ? raw : DateTime.parse(raw.toString());
+        if (dt.isAfter(latest)) latest = dt;
+      } catch (_) {
+        // Ignore rows with un-parseable timestamps; they sort to the bottom.
+      }
+    }
+    return latest;
+  }
+
+  /// Customer-id order under the currently selected chip.
+  List<String> _sortedCustomerIds() {
+    final ids = _debtsByCustomer.keys.toList();
+    switch (_sort) {
+      case _DebtSort.all:
+        return ids;
+      case _DebtSort.largest:
+        ids.sort((a, b) => _customerTotal(b).compareTo(_customerTotal(a)));
+        return ids;
+      case _DebtSort.recent:
+        ids.sort(
+            (a, b) => _customerMostRecent(b).compareTo(_customerMostRecent(a)));
+        return ids;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -125,7 +174,12 @@ class _DebtsScreenState extends State<DebtsScreen> {
                         debtorCount: _debtsByCustomer.length,
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      for (final customerId in _debtsByCustomer.keys) ...[
+                      _DebtSortChips(
+                        active: _sort,
+                        onChanged: (s) => setState(() => _sort = s),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      for (final customerId in _sortedCustomerIds()) ...[
                         Builder(
                           builder: (context) {
                             final customerDebts =
@@ -169,6 +223,84 @@ class _DebtsScreenState extends State<DebtsScreen> {
   }
 }
 
+/// Horizontal chip row that re-orders the debt list. Labels reuse existing
+/// l10n keys (`all`, `debtor`, `today`) so we don't have to extend the .arb
+/// for this view alone.
+class _DebtSortChips extends StatelessWidget {
+  const _DebtSortChips({required this.active, required this.onChanged});
+
+  final _DebtSort active;
+  final ValueChanged<_DebtSort> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _ChipPill(
+            label: l10n.all,
+            isActive: active == _DebtSort.all,
+            onTap: () => onChanged(_DebtSort.all),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          _ChipPill(
+            label: '${l10n.debtor} ↑',
+            isActive: active == _DebtSort.largest,
+            onTap: () => onChanged(_DebtSort.largest),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          _ChipPill(
+            label: l10n.today,
+            isActive: active == _DebtSort.recent,
+            onTap: () => onChanged(_DebtSort.recent),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChipPill extends StatelessWidget {
+  const _ChipPill({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.brand : AppColors.inputFill,
+          borderRadius: BorderRadius.circular(AppRadius.full),
+          border: Border.all(
+            color: isActive ? AppColors.brand : AppColors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.bodyMedium().copyWith(
+            color: isActive ? Colors.white : AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Amber gradient hero showing the aggregate "JAMI QARZ" across all open debts.
 class _DebtsHero extends StatelessWidget {
   const _DebtsHero(
@@ -183,15 +315,17 @@ class _DebtsHero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl2),
       decoration: BoxDecoration(
+        // Same amber "JAMI QARZ" gradient as the customers list hero —
+        // tokenised so a future palette tweak only happens in one place.
         gradient: const LinearGradient(
-          colors: [Color(0xFFB45309), Color(0xFFF59E0B)],
+          colors: [AppColors.warningDark, AppColors.warning],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+            color: AppColors.warning.withValues(alpha: 0.25),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
