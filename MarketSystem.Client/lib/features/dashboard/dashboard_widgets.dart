@@ -262,14 +262,25 @@ class SalesHeroCard extends StatelessWidget {
   const SalesHeroCard({
     super.key,
     required this.amount,
-    required this.deltaText,
+    required this.label,
     required this.stats,
-    this.label = 'Bugungi sotuv',
+    this.deltaText,
+    this.deltaIsPositive = true,
   });
 
   final String amount;
-  final String deltaText; // e.g. "15% kechagidan ko'p"
   final String label;
+
+  /// Optional comparison line ("15% kechagidan ko'p"). When null/empty, the
+  /// row is hidden entirely. Previously this was required and callers
+  /// passed a plain label string ("Bugungi sotuv") here, which combined
+  /// with the hardcoded "↑" arrow rendered "↑ Bugungi sotuv" — a green
+  /// up-arrow next to text that wasn't actually a growth indicator.
+  final String? deltaText;
+
+  /// Controls the arrow + colour for the optional delta line. Ignored when
+  /// deltaText is null/empty.
+  final bool deltaIsPositive;
   final List<SalesHeroStat> stats;
 
   @override
@@ -308,15 +319,21 @@ class SalesHeroCard extends StatelessWidget {
               letterSpacing: -1,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '↑ $deltaText',
-            style: AppTextStyles.bodySmall().copyWith(
-              color: AppColors.success,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
+          // Optional delta line. Hidden when deltaText is null/empty so
+          // the card doesn't render an orphan green up-arrow on its own.
+          if (deltaText != null && deltaText!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              '${deltaIsPositive ? '↑' : '↓'} $deltaText',
+              style: AppTextStyles.bodySmall().copyWith(
+                color: deltaIsPositive
+                    ? AppColors.success
+                    : AppColors.danger,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
             ),
-          ),
+          ],
           if (stats.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(

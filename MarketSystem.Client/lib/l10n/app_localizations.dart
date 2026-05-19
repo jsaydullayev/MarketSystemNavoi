@@ -3296,6 +3296,12 @@ abstract class AppLocalizations {
   /// **'Qaytarish'**
   String get refundLabel;
 
+  /// No description provided for @refundActionDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuvni qaytarish'**
+  String get refundActionDesc;
+
   /// No description provided for @cashRegisterShort.
   ///
   /// In uz, this message translates to:
