@@ -24,6 +24,7 @@ import '../../features/users/screens/users_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 import '../../features/debts/screens/debts_screen.dart';
+import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/privacy/screens/privacy_screen.dart';
 import '../../features/superadmin/presentation/superadmin_console_screen.dart';
 
@@ -127,6 +128,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case AppRoutes.cashRegister:
       return MaterialPageRoute(builder: (_) => const CashRegisterScreen());
+
+    case AppRoutes.notifications:
+      return MaterialPageRoute(builder: (_) => const NotificationsScreen());
 
     default:
       return MaterialPageRoute(

@@ -6,6 +6,8 @@
 // top-sellers list. They are presentation-only StatelessWidgets — caller
 // supplies the data and tap handlers.
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../design/tokens/app_tokens.dart';
@@ -27,6 +29,7 @@ class GreetingCard extends StatelessWidget {
     this.unreadNotifications = 0,
     this.onNotificationTap,
     this.onSettingsTap,
+    this.profileImage,
   });
 
   final String fullName;
@@ -41,8 +44,69 @@ class GreetingCard extends StatelessWidget {
   final VoidCallback? onNotificationTap;
   final VoidCallback? onSettingsTap;
 
+  /// Optional user-uploaded profile image. Accepted forms (same convention as
+  /// ProfileImagePicker, so they stay in sync):
+  ///   - "http..."         → loaded with [Image.network]
+  ///   - "data:image/...,<b64>" or raw base64 longer than 100 chars
+  ///       → decoded as bytes and shown with [Image.memory]
+  ///   - null / empty / unrecognised → falls back to the first-letter circle.
+  final String? profileImage;
+
   String get _initial =>
       fullName.trim().isEmpty ? 'U' : fullName.trim()[0].toUpperCase();
+
+  /// Render the user's profile image as a 44×44 rounded tile, or a coloured
+  /// first-letter tile if no image is available. Kept identical in size to
+  /// the original letter tile so the rest of the row layout doesn't shift.
+  Widget _buildAvatar() {
+    final img = profileImage;
+    final hasImage = img != null && img.isNotEmpty;
+    final letterTile = Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.brandLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        _initial,
+        style: AppTextStyles.titleMedium()
+            .copyWith(color: AppColors.brand, fontWeight: FontWeight.w800),
+      ),
+    );
+    if (!hasImage) return letterTile;
+
+    Widget? imgWidget;
+    if (img.startsWith('http')) {
+      imgWidget = Image.network(
+        img,
+        width: 44,
+        height: 44,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => letterTile,
+      );
+    } else if (img.startsWith('data:image') || img.length > 100) {
+      try {
+        final b64 = img.contains(',') ? img.split(',').last : img;
+        imgWidget = Image.memory(
+          base64Decode(b64),
+          width: 44,
+          height: 44,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => letterTile,
+        );
+      } catch (_) {
+        imgWidget = null;
+      }
+    }
+    if (imgWidget == null) return letterTile;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: imgWidget,
+    );
+  }
 
   ({Color bg, Color fg, String emoji}) _roleStyle() {
     switch (role) {
@@ -75,20 +139,7 @@ class GreetingCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.brandLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              _initial,
-              style: AppTextStyles.titleMedium()
-                  .copyWith(color: AppColors.brand, fontWeight: FontWeight.w800),
-            ),
-          ),
+          _buildAvatar(),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
