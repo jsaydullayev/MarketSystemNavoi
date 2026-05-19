@@ -141,6 +141,7 @@ class _ProductsBodyState extends State<ProductsBody> {
             total: _total,
             lowStock: _lowStock,
             outOfStock: _outOfStock,
+            l10n: l10n,
           ),
           const SizedBox(height: AppSpacing.lg),
           _FilterChipsRow(
@@ -231,11 +232,13 @@ class _SummaryCard extends StatelessWidget {
   final int total;
   final int lowStock;
   final int outOfStock;
+  final AppLocalizations l10n;
 
   const _SummaryCard({
     required this.total,
     required this.lowStock,
     required this.outOfStock,
+    required this.l10n,
   });
 
   @override
@@ -251,7 +254,7 @@ class _SummaryCard extends StatelessWidget {
           Expanded(
             child: _SummaryCell(
               value: total.toString(),
-              label: 'JAMI',
+              label: l10n.totalShort,
               valueColor: AppColors.text,
             ),
           ),
@@ -259,7 +262,7 @@ class _SummaryCard extends StatelessWidget {
           Expanded(
             child: _SummaryCell(
               value: lowStock.toString(),
-              label: 'KAM STOK',
+              label: l10n.lowStockShort,
               valueColor: AppColors.warning,
             ),
           ),
@@ -267,7 +270,7 @@ class _SummaryCard extends StatelessWidget {
           Expanded(
             child: _SummaryCell(
               value: outOfStock.toString(),
-              label: 'TUGADI',
+              label: l10n.outOfStockShort,
               valueColor: AppColors.danger,
             ),
           ),
@@ -351,13 +354,13 @@ class _FilterChipsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final chips = <_FilterChipData>[
       _FilterChipData(label: l10n.all, value: null),
-      const _FilterChipData(
-        label: 'Kam stok',
+      _FilterChipData(
+        label: l10n.filterLowStock,
         value: _ProductsBodyState._filterLow,
         leadingIcon: Icons.warning_amber_rounded,
       ),
-      const _FilterChipData(
-        label: 'Tugadi',
+      _FilterChipData(
+        label: l10n.filterOutOfStock,
         value: _ProductsBodyState._filterOut,
         leadingIcon: Icons.block_rounded,
       ),
@@ -581,6 +584,7 @@ class _ProductRow extends StatelessWidget {
                 unitName: product['unitName']?.toString() ?? l10n.piece,
                 isLow: isLow,
                 isOut: isOut,
+                l10n: l10n,
               ),
             ],
           ),
@@ -617,7 +621,7 @@ class _ProductRow extends StatelessWidget {
       background: _buildSwipeBg(
         color: AppColors.brand,
         icon: Icons.edit_rounded,
-        label: 'Edit',
+        label: l10n.editAction,
         align: Alignment.centerLeft,
       ),
       secondaryBackground: _buildSwipeBg(
@@ -737,12 +741,14 @@ class _StockLabel extends StatelessWidget {
   final String unitName;
   final bool isLow;
   final bool isOut;
+  final AppLocalizations l10n;
 
   const _StockLabel({
     required this.qty,
     required this.unitName,
     required this.isLow,
     required this.isOut,
+    required this.l10n,
   });
 
   @override
@@ -751,13 +757,13 @@ class _StockLabel extends StatelessWidget {
     final String text;
     if (isOut) {
       color = AppColors.danger;
-      text = 'Tugadi';
+      text = l10n.outOfStockShort;
     } else if (isLow) {
       color = AppColors.warning;
-      text = 'Stok: ${NumberFormatter.formatQuantity(qty)}';
+      text = '${l10n.stockShort}: ${NumberFormatter.formatQuantity(qty)}';
     } else {
       color = AppColors.textMuted;
-      text = 'Stok: ${NumberFormatter.formatQuantity(qty)}';
+      text = '${l10n.stockShort}: ${NumberFormatter.formatQuantity(qty)}';
     }
     return Text(
       text,
@@ -778,6 +784,7 @@ class _PopularChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
@@ -785,7 +792,7 @@ class _PopularChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
-        'Mashhur',
+        l10n.popularChip,
         style: AppTextStyles.caption().copyWith(
           fontSize: 9,
           fontWeight: FontWeight.w700,

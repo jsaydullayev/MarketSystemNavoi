@@ -103,9 +103,12 @@ class ProductService {
     }
   }
 
-  Future<List<int>?> downloadProductsExcel() async {
+  /// Downloads the products workbook. Pass `lang: 'ru'` to get
+  /// Russian column headers; defaults to Uzbek when omitted.
+  Future<List<int>?> downloadProductsExcel({String lang = 'uz'}) async {
     // TODO: hoist into ApiConstants as `productsExportExcel` constant.
-    return await _httpService
-        .downloadBytes('${ApiConstants.products}/ExportProductsToExcel/export');
+    return await _httpService.downloadBytes(
+      '${ApiConstants.products}/ExportProductsToExcel/export?lang=$lang',
+    );
   }
 }

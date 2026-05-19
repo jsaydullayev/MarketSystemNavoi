@@ -261,13 +261,13 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
                   // === Narxlar (brand-light card) ===
                   _PriceCard(
-                    title: 'Narxlar',
+                    title: l10n.pricesSection,
                     children: [
                       Row(
                         children: [
                           Expanded(
                             child: _LabeledField(
-                              label: 'Tannarx',
+                              label: l10n.shortCostPrice,
                               required: true,
                               compact: true,
                               child: _buildSuffixField(
@@ -725,6 +725,7 @@ class _TempToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg, vertical: AppSpacing.md - 2),
@@ -743,7 +744,7 @@ class _TempToggle extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Vaqtinchalik mahsulot',
+              l10n.temporaryProductDesc,
               style: AppTextStyles.bodySmall().copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,

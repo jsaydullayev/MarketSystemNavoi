@@ -19,6 +19,7 @@
 // - Selected emoji is purely visual (not persisted) until the model gains
 //   an icon field server-side.
 
+import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
@@ -41,7 +42,10 @@ class CategoryBottomSheet extends StatefulWidget {
 }
 
 class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
-  static const List<String> _emojiOptions = [
+  // Default suggestion grid — common Uzbek-market categories. The user can
+  // type any other emoji (or any unicode glyph) in the custom-emoji input
+  // below the grid; that value becomes the 17th slot and is auto-selected.
+  static const List<String> _defaultEmojis = [
     '📦', '🥤', '🥖', '🚬', '🧴', '🍎', '🥩', '🥛',
     '🍬', '🍞', '🧃', '🍫', '🥚', '🧀', '🧂', '🛒',
   ];
@@ -49,7 +53,14 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
+  final _customEmojiCtrl = TextEditingController();
   String _selectedEmoji = '📦';
+
+  /// User-typed emoji that's not in the [_defaultEmojis] grid. When set, it
+  /// is rendered as an extra tile in the picker so the user can confirm
+  /// their custom choice visually.
+  String? _customEmoji;
+
   bool _isActive = true;
   bool _isLoading = false;
 
@@ -69,7 +80,33 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
   void dispose() {
     _nameCtrl.dispose();
     _descCtrl.dispose();
+    _customEmojiCtrl.dispose();
     super.dispose();
+  }
+
+  /// Apply the user's custom-emoji input. Strips whitespace and only keeps
+  /// the first user-perceived character so a long paste collapses to a
+  /// single glyph. Empty input clears the custom slot.
+  void _applyCustomEmoji() {
+    final raw = _customEmojiCtrl.text.trim();
+    if (raw.isEmpty) {
+      setState(() {
+        _customEmoji = null;
+        // Fall back to the default if we were on the custom slot.
+        if (!_defaultEmojis.contains(_selectedEmoji)) {
+          _selectedEmoji = '📦';
+        }
+      });
+      return;
+    }
+    // Take the first run of code units that doesn't fragment a surrogate
+    // pair — typical emoji are 2 UTF-16 code units; flags/ZWJ sequences
+    // can be longer but we accept whatever the user pasted as-is.
+    final glyph = raw.characters.isNotEmpty ? raw.characters.first : raw;
+    setState(() {
+      _customEmoji = glyph;
+      _selectedEmoji = glyph;
+    });
   }
 
   Future<void> _save() async {
@@ -208,9 +245,24 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
               ),
               const SizedBox(height: AppSpacing.md),
               _EmojiPicker(
-                options: _emojiOptions,
+                // Default grid + the user-typed custom slot (when set).
+                // The custom slot lives at the end so the default order is
+                // preserved.
+                options: [
+                  ..._defaultEmojis,
+                  if (_customEmoji != null) _customEmoji!,
+                ],
                 selected: _selectedEmoji,
                 onSelect: (e) => setState(() => _selectedEmoji = e),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              // Custom-emoji input — paste / type any glyph and tap "Add" to
+              // promote it to a 17th tile in the grid above. Useful when
+              // the user wants something outside the curated default list.
+              _CustomEmojiField(
+                controller: _customEmojiCtrl,
+                onApply: _applyCustomEmoji,
+                hint: l10n.customEmojiHint,
               ),
               const SizedBox(height: AppSpacing.xl),
 
@@ -253,6 +305,87 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Inline "type your own emoji" field. Hands off to [onApply] when the user
+/// taps the Add button or submits — the parent collapses whatever glyph
+/// they typed into one tile and selects it.
+class _CustomEmojiField extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onApply;
+  final String hint;
+
+  const _CustomEmojiField({
+    required this.controller,
+    required this.onApply,
+    required this.hint,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: controller,
+            textAlign: TextAlign.center,
+            // No keyboardType override — on mobile this lets the OS emoji
+            // keyboard or the long-press emoji input naturally surface.
+            style: const TextStyle(fontSize: 22),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: AppTextStyles.bodySmall().copyWith(
+                color: AppColors.textMuted,
+                fontSize: 13,
+              ),
+              filled: true,
+              fillColor: AppColors.inputFill,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md + 2,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                borderSide: const BorderSide(
+                  color: AppColors.brand,
+                  width: 1.5,
+                ),
+              ),
+            ),
+            onSubmitted: (_) => onApply(),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        SizedBox(
+          height: 42,
+          child: ElevatedButton(
+            onPressed: onApply,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.brand,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md + 2),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+              ),
+            ),
+            child: const Icon(Icons.add_rounded, size: 20),
+          ),
+        ),
+      ],
     );
   }
 }

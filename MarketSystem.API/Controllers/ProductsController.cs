@@ -118,30 +118,58 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Exports all products as an .xlsx workbook. Column headers (and the
+    /// "Ha"/"Yo'q" boolean labels) come back in the caller's language —
+    /// pass `lang=ru` for Russian, anything else (or omit) yields Uzbek.
+    /// Returns every product the caller can see — same paging-disabled
+    /// fetch used by the in-app list. No filtering server-side; the user
+    /// can sort / filter in Excel if needed.
+    /// </summary>
     [HttpGet("export")]
-    public async Task<IActionResult> ExportProductsToExcel(CancellationToken ct = default)
+    public async Task<IActionResult> ExportProductsToExcel(
+        [FromQuery] string lang = "uz",
+        CancellationToken ct = default)
     {
         var products = await _productService.GetAllProductsAsync();
+        var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
 
-        var exportData = products.Select(p => new
-        {
-            ID = p.Id.ToString(),
-            Nomi = p.Name,
-            Kategoriya = p.CategoryName ?? "",
-            Xarid_narxi = p.CostPrice,
-            Sotuv_narxi = p.SalePrice,
-            Minimal_narx = p.MinSalePrice,
-            Miqdor = p.Quantity,
-            Minimal_chegara = p.MinThreshold,
-            Vaqtinchalik = p.IsTemporary ? "Ha" : "Yo'q"
-        });
+        // Anonymous types pick up the field names as Excel column headers.
+        // We need two separate shapes for uz vs ru because anonymous-type
+        // member names are compile-time fixed.
+        object exportData = isRu
+            ? products.Select(p => new
+            {
+                ID = p.Id.ToString(),
+                Название = p.Name,
+                Категория = p.CategoryName ?? "",
+                Цена_закупки = p.CostPrice,
+                Цена_продажи = p.SalePrice,
+                Минимальная_цена = p.MinSalePrice,
+                Количество = p.Quantity,
+                Минимальный_остаток = p.MinThreshold,
+                Временный = p.IsTemporary ? "Да" : "Нет"
+            }).Cast<object>()
+            : products.Select(p => new
+            {
+                ID = p.Id.ToString(),
+                Nomi = p.Name,
+                Kategoriya = p.CategoryName ?? "",
+                Xarid_narxi = p.CostPrice,
+                Sotuv_narxi = p.SalePrice,
+                Minimal_narx = p.MinSalePrice,
+                Miqdor = p.Quantity,
+                Minimal_chegara = p.MinThreshold,
+                Vaqtinchalik = p.IsTemporary ? "Ha" : "Yo'q"
+            }).Cast<object>();
 
-        var fileContent = _excelService.GenerateExcel(exportData, "Mahsulotlar");
+        var sheetName = isRu ? "Товары" : "Mahsulotlar";
+        var fileContent = _excelService.GenerateExcel((dynamic)exportData, sheetName);
 
         return File(
             fileContent,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"Mahsulotlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
         );
     }
 

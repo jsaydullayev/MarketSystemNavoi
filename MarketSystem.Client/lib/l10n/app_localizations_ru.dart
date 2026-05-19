@@ -878,7 +878,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get customerAdded => 'Клиент успешно добавлен';
 
   @override
-  String get addNewCustomer => 'Новый клиент';
+  String get addNewCustomer => 'Добавить клиента';
 
   @override
   String get searchCustomer => 'Поиск клиента...';
@@ -1785,6 +1785,57 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get themeLight => 'Светлая';
+
+  @override
+  String get lowStockShort => 'МАЛО';
+
+  @override
+  String get outOfStockShort => 'НЕТ';
+
+  @override
+  String get totalShort => 'ВСЕГО';
+
+  @override
+  String get stockShort => 'Остаток';
+
+  @override
+  String get popularChip => 'Популярный';
+
+  @override
+  String get editAction => 'Изменить';
+
+  @override
+  String get filterLowStock => 'Мало';
+
+  @override
+  String get filterOutOfStock => 'Нет в наличии';
+
+  @override
+  String get serverUnreachable => 'Не удалось подключиться к серверу';
+
+  @override
+  String get sessionExpired => 'Сессия истекла, войдите снова';
+
+  @override
+  String get noPermission => 'У вас нет прав';
+
+  @override
+  String get customEmojiHint => 'Введите свой эмодзи';
+
+  @override
+  String get filterOldDebt => 'Старый долг';
+
+  @override
+  String get filterRecent => 'Новые';
+
+  @override
+  String get pricesSection => 'Цены';
+
+  @override
+  String get shortCostPrice => 'Себестоимость';
+
+  @override
+  String get temporaryProductDesc => 'Временный товар';
 
   @override
   String alertPreviewActiveDebts(int count) {

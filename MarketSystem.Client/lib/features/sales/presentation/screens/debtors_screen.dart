@@ -353,11 +353,12 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const chips = <_FilterChipData>[
-      _FilterChipData(_DebtorFilter.all, 'Hammasi', null),
-      _FilterChipData(_DebtorFilter.debtors, 'Qarzdorlar', '📋'),
-      _FilterChipData(_DebtorFilter.old, 'Eski qarz', '⏳'),
-      _FilterChipData(_DebtorFilter.recent, 'Yangi', '⭐'),
+    final l10n = AppLocalizations.of(context)!;
+    final chips = <_FilterChipData>[
+      _FilterChipData(_DebtorFilter.all, l10n.all, null),
+      _FilterChipData(_DebtorFilter.debtors, l10n.debtors, '📋'),
+      _FilterChipData(_DebtorFilter.old, l10n.filterOldDebt, '⏳'),
+      _FilterChipData(_DebtorFilter.recent, l10n.filterRecent, '⭐'),
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
