@@ -23,6 +23,7 @@ import 'customer_service.dart';
 import 'debt_service.dart';
 import 'product_service.dart';
 import 'report_service.dart';
+import 'sales_service.dart';
 
 /// Snapshot of dashboard numbers for the Owner view. All fields default to
 /// safe zero / empty values; per-field fetches are isolated so a single
@@ -44,6 +45,7 @@ class DashboardSummary {
     this.weeklySeries = const [],
     this.weeklyDeltaPercent,
     this.topProductRows = const [],
+    this.topProductsPeriod = 'today',
   });
 
   final double todayRevenue;
@@ -76,6 +78,13 @@ class DashboardSummary {
   /// Top-N products of today, ranked by quantity (descending). Comes from
   /// the /Reports/top-products?period=today endpoint. Empty on failure.
   final List<TopProductRow> topProductRows;
+
+  /// Resolved period for [topProductRows]. We always ask for "today" but the
+  /// backend transparently widens to "week" when today has no sales — the UI
+  /// reads this echo to label the panel accordingly (e.g. "Bu hafta" instead
+  /// of "Bugun") so users aren't confused by week-old products under a
+  /// "Bugun" header.
+  final String topProductsPeriod;
 }
 
 /// One row of the "Eng ko'p sotilgan" panel. [quantity] is the unit-agnostic
@@ -87,18 +96,99 @@ class TopProductEntry {
   final double quantity;
 }
 
+/// Snapshot of dashboard numbers for the Seller view. Only fields the seller
+/// is allowed to see — no shop-wide revenue / profit totals. All fields
+/// default to safe zero / empty so a partial fetch failure still renders.
+class SellerDashboardSummary {
+  const SellerDashboardSummary({
+    this.mySaleCount = 0,
+    this.myRevenue = 0,
+    this.myAverageCheck = 0,
+    this.myShiftDurationMinutes = 0,
+    this.pendingDraft,
+  });
+
+  /// Count of non-draft, non-cancelled sales attributed to me today.
+  final int mySaleCount;
+
+  /// Sum of my sale totals today.
+  final double myRevenue;
+
+  /// Revenue / saleCount.
+  final double myAverageCheck;
+
+  /// Minutes elapsed since my first sale today — approximation of shift length.
+  final int myShiftDurationMinutes;
+
+  /// Most-recent draft sale I started but haven't finalised. Null when there
+  /// isn't one — UI shows the empty-state CTA instead of the "continue sale"
+  /// card.
+  final PendingDraftSale? pendingDraft;
+
+  int get myShiftDurationHours => myShiftDurationMinutes ~/ 60;
+}
+
+/// Lightweight projection of one draft sale for the PendingSaleCard. We only
+/// surface the fields the card actually renders (id, line count, running
+/// total) so the rest of the SaleDto JSON doesn't propagate into the UI layer.
+class PendingDraftSale {
+  const PendingDraftSale({
+    required this.id,
+    required this.itemCount,
+    required this.totalAmount,
+  });
+
+  final String id;
+  final int itemCount;
+  final double totalAmount;
+
+  /// Best-effort parse from the SaleDto JSON returned by `/Sales/my-drafts`.
+  /// Falls back to safe defaults for any missing field.
+  static PendingDraftSale? fromJson(dynamic json) {
+    if (json is! Map) return null;
+    final id = (json['id'] ?? '').toString();
+    if (id.isEmpty) return null;
+
+    // saleItems may be a list of maps or a number (some envelopes vary). Treat
+    // a list as authoritative; otherwise fall back to itemCount / 0.
+    int itemCount = 0;
+    final items = json['saleItems'];
+    if (items is List) {
+      itemCount = items.length;
+    } else if (json['itemCount'] is num) {
+      itemCount = (json['itemCount'] as num).toInt();
+    }
+
+    double total = 0;
+    final t = json['totalAmount'];
+    if (t is num) {
+      total = t.toDouble();
+    } else if (t is String) {
+      total = double.tryParse(t) ?? 0;
+    }
+
+    return PendingDraftSale(
+      id: id,
+      itemCount: itemCount,
+      totalAmount: total,
+    );
+  }
+}
+
 class DashboardService {
   DashboardService({required this.authProvider})
       : _reports = ReportService(authProvider: authProvider),
         _customers = CustomerService(authProvider: authProvider),
         _products = ProductService(authProvider: authProvider),
-        _debts = DebtService(authProvider: authProvider);
+        _debts = DebtService(authProvider: authProvider),
+        _sales = SalesService(authProvider: authProvider);
 
   final AuthProvider authProvider;
   final ReportService _reports;
   final CustomerService _customers;
   final ProductService _products;
   final DebtService _debts;
+  final SalesService _sales;
 
   /// Aggregator: fans out to Reports/Customers/Products/Debts and folds
   /// the results into a [DashboardSummary]. Each upstream call is wrapped
@@ -114,8 +204,9 @@ class DashboardService {
     final dailyFuture = _safe(() => _reports.getDailyReport(now));
 
     // Daily sale items — needed to derive customers/check count and top products.
-    final dailyItemsFuture = _safe(() => _reports.getDailyReport(now)
-        .then((_) => _reports.getDailySaleItems(now)));
+    // Direct call; we already have dailyFuture in flight in parallel, so
+    // chaining a duplicate getDailyReport here only wasted a round-trip.
+    final dailyItemsFuture = _safe(() => _reports.getDailySaleItems(now));
 
     // Daily sales list — used for unique customer count for today.
     final salesListFuture = _safe(() => _reports.getDailySalesList(now));
@@ -225,6 +316,42 @@ class DashboardService {
       weeklySeries: weeklySeries?.points ?? const [],
       weeklyDeltaPercent: weeklySeries?.deltaPercent,
       topProductRows: topProductsToday?.items ?? const [],
+      topProductsPeriod: topProductsToday?.period ?? 'today',
+    );
+  }
+
+  /// Aggregator for the Seller dashboard. Pulls only the seller-allowed
+  /// endpoints (my-performance, my-drafts) — no shop-wide totals — so the
+  /// resulting summary contains exclusively the current user's own numbers.
+  /// Errors are isolated per-source; partial failure still renders.
+  Future<SellerDashboardSummary> loadSellerSummary() async {
+    final myPerformanceFuture =
+        _safe(() => _reports.getMyPerformance(period: 'today'));
+    final myDraftsFuture = _safe(() => _sales.getMyDraftSales());
+
+    final results = await Future.wait([
+      myPerformanceFuture,
+      myDraftsFuture,
+    ]);
+
+    final perf = results[0] as MyPerformance?;
+    final drafts = results[1] as List<dynamic>?;
+
+    // Pick the most recent draft as the "currently in progress" sale.
+    // Backend returns them in DB order; we don't have a server-side sort flag,
+    // so we trust the response order and just take the first one. There's
+    // typically only one or two drafts per seller, so this is fine in practice.
+    PendingDraftSale? pending;
+    if (drafts != null && drafts.isNotEmpty) {
+      pending = PendingDraftSale.fromJson(drafts.first);
+    }
+
+    return SellerDashboardSummary(
+      mySaleCount: perf?.saleCount ?? 0,
+      myRevenue: perf?.revenue ?? 0,
+      myAverageCheck: perf?.averageCheck ?? 0,
+      myShiftDurationMinutes: perf?.shiftDurationMinutes ?? 0,
+      pendingDraft: pending,
     );
   }
 
@@ -263,20 +390,31 @@ class DashboardService {
     return 0;
   }
 
+  /// Today's distinct-customer count for the "Mijozlar" KPI.
+  ///
+  /// Counts each named customer once + adds 1 for the *presence* of any
+  /// anonymous walk-ins. Previously we skipped null/empty customerName rows
+  /// entirely, which under-counted shops where most sales are cash walk-ins
+  /// (the most common case) — a shop with 30 walk-ins would have shown "0"
+  /// customers. Walk-ins collapse to a single "+1" because we have no stable
+  /// way to count individual anonymous shoppers from sale rows alone.
   int _countUniqueCustomersToday(dynamic salesList) {
     if (salesList is! Map<String, dynamic>) return 0;
     final sales = salesList['sales'];
     if (sales is! List) return 0;
     final names = <String>{};
+    bool hasWalkIn = false;
     for (final s in sales) {
       if (s is Map) {
         final name = s['customerName'];
         if (name is String && name.trim().isNotEmpty) {
           names.add(name.trim());
+        } else {
+          hasWalkIn = true;
         }
       }
     }
-    return names.length;
+    return names.length + (hasWalkIn ? 1 : 0);
   }
 
   List<dynamic> _filterLowStock(List<dynamic>? products) {

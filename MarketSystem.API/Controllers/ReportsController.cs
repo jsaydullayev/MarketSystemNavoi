@@ -199,6 +199,24 @@ public class ReportsController : ControllerBase
     }
 
     /// <summary>
+    /// Get the current user's own sales metrics for the period (default: today).
+    /// Backs the Seller dashboard's SellerStatsRow (sale count, revenue,
+    /// shift duration). Open to all authenticated roles — each user only
+    /// ever sees their own row.
+    /// </summary>
+    [HttpGet("my-performance")]
+    public async Task<ActionResult<MyPerformanceDto>> GetMyPerformance(
+        [FromQuery] string period = "today")
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        var result = await _reportService.GetMyPerformanceAsync(userId, period);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Get cash balance - Owner only
     /// </summary>
     [HttpGet("cash-balance")]

@@ -1718,6 +1718,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get hour => 'час';
 
   @override
+  String get unitPiece => 'шт';
+
+  @override
+  String get thisWeek => 'Эта неделя';
+
+  @override
+  String get topSellersFallbackHint => 'Сегодня продаж не было — за неделю:';
+
+  @override
   String get quickActions => 'Быстрые действия';
 
   @override

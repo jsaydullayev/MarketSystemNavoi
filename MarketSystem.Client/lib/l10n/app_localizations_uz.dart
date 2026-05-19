@@ -1714,6 +1714,15 @@ class AppLocalizationsUz extends AppLocalizations {
   String get hour => 'soat';
 
   @override
+  String get unitPiece => 'dona';
+
+  @override
+  String get thisWeek => 'Bu hafta';
+
+  @override
+  String get topSellersFallbackHint => 'Bugun savdo bo\'lmadi — oxirgi hafta:';
+
+  @override
   String get quickActions => 'Tezkor amallar';
 
   @override
