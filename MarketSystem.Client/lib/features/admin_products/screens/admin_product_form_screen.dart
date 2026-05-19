@@ -1,4 +1,24 @@
+// Admin Product form — migrated to the new design system.
+//
+// Layout follows HTML demo page 7.5 (`#page-addproduct`):
+// - Hero icon tile + title strip
+// - "Asosiy ma'lumotlar" AppCard (name + category + unit)
+// - Brand-light "💰 Narxlar" card (sotish narxi + min. sotish narxi)
+// - "Stok" AppCard (min. threshold + temporary toggle)
+// - Sticky AppPrimaryButton "Saqlash" at the bottom
+//
+// Business rules preserved:
+// - When editing, name and quantity are not changed (admin can only adjust
+//   prices, threshold, category, temporary flag).
+// - When creating, only sale/min-sale prices and min-threshold are sent (no
+//   cost price / quantity — those come from Zakup).
+
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
+import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
+import 'package:market_system_client/design/widgets/app_card.dart';
+import 'package:market_system_client/design/widgets/app_text_input.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/product_service.dart';
@@ -28,9 +48,8 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   dynamic _selectedCategory;
   bool _isLoadingCategories = true;
 
-  // ✅ UNIT DROPDOWN
-  int _selectedUnit = 1; // Default: dona (Piece)
-  final List<Map<String, dynamic>> _units = [
+  int _selectedUnit = 1;
+  final List<Map<String, dynamic>> _units = const [
     {'value': 1, 'name': 'dona', 'icon': Icons.inventory_2_outlined},
     {'value': 2, 'name': 'kg', 'icon': Icons.scale},
     {'value': 3, 'name': 'm', 'icon': Icons.straighten},
@@ -39,7 +58,11 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   @override
   void initState() {
     super.initState();
+    _loadInitialValues();
     _loadCategories();
+  }
+
+  void _loadInitialValues() {
     if (widget.product != null) {
       _nameController.text = widget.product['name'] ?? '';
       _salePriceController.text = (widget.product['salePrice'] ?? 0).toString();
@@ -49,7 +72,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           (widget.product['minThreshold'] ?? 0).toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
       _selectedCategory = widget.product['categoryId'];
-      _selectedUnit = widget.product['unit'] ?? 1; // ✅ LOAD UNIT
+      _selectedUnit = widget.product['unit'] ?? 1;
     }
   }
 
@@ -81,47 +104,45 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     super.dispose();
   }
 
-  Future<void> _saveProduct() async {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final productService = ProductService(authProvider: authProvider);
 
-      final salePrice = double.parse(_salePriceController.text);
-      final minSalePrice = double.parse(_minSalePriceController.text);
+      final salePrice =
+          double.parse(_salePriceController.text.replaceAll(',', '.'));
+      final minSalePrice =
+          double.parse(_minSalePriceController.text.replaceAll(',', '.'));
       final minThreshold = int.parse(_minThresholdController.text);
 
       if (widget.product == null) {
-        // Create new product (Admin cannot set costPrice or quantity)
-        final name = _nameController.text.trim();
+        // Create new product — Admin cannot set costPrice or quantity.
         await productService.createProduct(
-          name: name,
+          name: _nameController.text.trim(),
           isTemporary: _isTemporary,
           salePrice: salePrice,
           minSalePrice: minSalePrice,
           minThreshold: minThreshold,
           categoryId: _selectedCategory,
-          unit: _selectedUnit, // ✅ NEW: UNIT
+          unit: _selectedUnit,
         );
       } else {
-        // Update existing product - Admin can only update prices and minThreshold
-        // Cannot update name, costPrice, or quantity
+        // Update existing product — Admin can update prices, threshold,
+        // category, temporary flag. Name & unit remain fixed.
         await productService.updateProduct(
           id: widget.product['id'],
-          name: widget.product['name'], // Keep original name
+          name: widget.product['name'],
           salePrice: salePrice,
           minSalePrice: minSalePrice,
           minThreshold: minThreshold,
           categoryId: _selectedCategory,
-          unit: widget.product['unit'] ??
-              _selectedUnit, // ✅ NEW: Keep original unit
+          unit: widget.product['unit'] ?? _selectedUnit,
           isTemporary: _isTemporary,
         );
       }
@@ -130,16 +151,19 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         Navigator.pop(context, true);
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
 
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.errorWithMessage(e.toString())),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            margin: const EdgeInsets.all(AppSpacing.xl),
           ),
         );
       }
@@ -152,272 +176,639 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: Text(isEditing
-            ? l10n.adminEditProductTitle
-            : l10n.adminNewProductTitle),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.text,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+            color: AppColors.text,
+          ),
+          onPressed: () => Navigator.maybePop(context),
+        ),
+        title: Text(
+          isEditing ? l10n.adminEditProductTitle : l10n.adminNewProductTitle,
+          style: AppTextStyles.titleMedium().copyWith(
+            fontWeight: FontWeight.w800,
+            color: AppColors.text,
+          ),
+        ),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.xl4,
+          ),
           children: [
-            // Info banner
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
+            // Hero strip
+            _HeroStrip(isEditing: isEditing, l10n: l10n),
+            const SizedBox(height: AppSpacing.xl),
+
+            // === Asosiy ma'lumotlar ===
+            const _SectionLabel(text: "Asosiy ma'lumotlar"),
+            const SizedBox(height: AppSpacing.md),
+            AppCard(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l10n.adminCanEditPriceAndSettings,
-                      style: const TextStyle(color: Colors.blue, fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Name field (read-only when editing)
-            if (!isEditing)
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: l10n.productName,
-                  prefixIcon: const Icon(Icons.inventory_2_outlined),
-                  border: const OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l10n.enterName;
-                  }
-                  return null;
-                },
-              )
-            else
-              TextFormField(
-                controller: _nameController,
-                enabled: false,
-                decoration: InputDecoration(
-                  labelText: l10n.productName,
-                  prefixIcon: const Icon(Icons.inventory_2_outlined),
-                  border: const OutlineInputBorder(),
-                  disabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 16),
-
-            // Category dropdown
-            _isLoadingCategories
-                ? const Center(child: CircularProgressIndicator())
-                : DropdownButtonFormField<dynamic>(
-                    value: _selectedCategory,
-                    decoration: InputDecoration(
-                      labelText: l10n.category,
-                      prefixIcon: const Icon(Icons.category_outlined),
-                      border: const OutlineInputBorder(),
-                      hintText: l10n.selectCategory,
-                    ),
-                    items: [
-                      DropdownMenuItem(
-                        value: null,
-                        child: Text(l10n.categoryNotSelected),
-                      ),
-                      ..._categories.map<DropdownMenuItem<dynamic>>((category) {
-                        return DropdownMenuItem<dynamic>(
-                          value: category['id'],
-                          child: Text(category['name'] ?? ''),
-                        );
-                      }).toList(),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCategory = value;
-                      });
+                  AppTextInput(
+                    label: l10n.productName,
+                    controller: _nameController,
+                    enabled: !isEditing,
+                    hint: 'Masalan: Coca-Cola 1.5L',
+                    validator: (value) {
+                      if (isEditing) return null;
+                      if (value == null || value.trim().isEmpty) {
+                        return l10n.enterName;
+                      }
+                      return null;
                     },
                   ),
-            const SizedBox(height: 16),
-
-            // ✅ UNIT DROPDOWN - NEW
-            DropdownButtonFormField<int>(
-              value: _selectedUnit,
-              decoration: InputDecoration(
-                labelText: l10n.measureUnit,
-                prefixIcon: const Icon(Icons.straighten),
-                border: const OutlineInputBorder(),
-                hintText: l10n.selectUnit,
-              ),
-              items: _units.map<DropdownMenuItem<int>>((unit) {
-                return DropdownMenuItem<int>(
-                  value: unit['value'] as int,
-                  child: Row(
-                    children: [
-                      Icon(unit['icon'] as IconData),
-                      const SizedBox(width: 12),
-                      Text(unit['name'] as String),
-                      const SizedBox(width: 8),
-                      Text(
-                        unit['value'] == 1
-                            ? '(dona)'
-                            : unit['value'] == 2
-                                ? '(kilogram)'
-                                : '(metr)',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _selectedUnit = value;
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // IsTemporary checkbox
-            CheckboxListTile(
-              title: Text(l10n.temporaryProductTitle),
-              subtitle: Text(l10n.temporaryProductDescription),
-              value: _isTemporary,
-              onChanged: (value) {
-                setState(() {
-                  _isTemporary = value ?? false;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Sale Price field
-            TextFormField(
-              controller: _salePriceController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: l10n.salePriceField,
-                prefixIcon: const Icon(Icons.attach_money),
-                border: const OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return l10n.enterSalePrice;
-                }
-                if (double.tryParse(value) == null) {
-                  return l10n.enterValidPrice;
-                }
-                if (double.parse(value) <= 0) {
-                  return l10n.pricePositive;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Min Sale Price field
-            TextFormField(
-              controller: _minSalePriceController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: l10n.minSalePriceField,
-                prefixIcon: const Icon(Icons.trending_down),
-                border: const OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return l10n.enterMinSalePrice;
-                }
-                if (double.tryParse(value) == null) {
-                  return l10n.enterValidPrice;
-                }
-                if (double.parse(value) < 0) {
-                  return l10n.priceNonNegative;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Min Threshold field
-            TextFormField(
-              controller: _minThresholdController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.minThresholdField,
-                prefixIcon: const Icon(Icons.warning),
-                border: const OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return l10n.enterMinThreshold;
-                }
-                if (int.tryParse(value) == null) {
-                  return l10n.enterValidNumber;
-                }
-                if (int.parse(value) < 0) {
-                  return l10n.numberNonNegative;
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Info about quantity
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline,
-                      color: Colors.orange.shade700, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      isEditing
-                          ? l10n.productQuantityImmutable(
-                              (widget.product['quantity'] as num?)?.toDouble() ?? 0.0)
-                          : l10n.productCreatedWithZeroInfo,
-                      style: TextStyle(
-                          color: Colors.orange.shade700, fontSize: 12),
-                    ),
+                  const SizedBox(height: AppSpacing.xl),
+                  _Label(text: l10n.category),
+                  const SizedBox(height: AppSpacing.sm),
+                  _isLoadingCategories
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.brand,
+                            ),
+                          ),
+                        )
+                      : _CategoryDropdown(
+                          value: _selectedCategory,
+                          categories: _categories,
+                          l10n: l10n,
+                          onChanged: (v) =>
+                              setState(() => _selectedCategory = v),
+                        ),
+                  const SizedBox(height: AppSpacing.xl),
+                  _Label(text: l10n.measureUnit),
+                  const SizedBox(height: AppSpacing.sm),
+                  _UnitDropdown(
+                    value: _selectedUnit,
+                    units: _units,
+                    enabled: !isEditing,
+                    onChanged: (v) {
+                      if (v != null) setState(() => _selectedUnit = v);
+                    },
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
 
-            // Save button
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveProduct,
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        isEditing ? l10n.save : l10n.add,
-                        style: const TextStyle(fontSize: 18),
-                      ),
+            // === 💰 Narxlar (brand-light) ===
+            _PriceCard(
+              title: l10n.priceManagement,
+              children: [
+                AppTextInput(
+                  label: l10n.salePriceField,
+                  controller: _salePriceController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.enterSalePrice;
+                    }
+                    final parsed = double.tryParse(value.replaceAll(',', '.'));
+                    if (parsed == null) {
+                      return l10n.enterValidPrice;
+                    }
+                    if (parsed <= 0) {
+                      return l10n.pricePositive;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextInput(
+                  label: l10n.minSalePriceField,
+                  controller: _minSalePriceController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.enterMinSalePrice;
+                    }
+                    final parsed = double.tryParse(value.replaceAll(',', '.'));
+                    if (parsed == null) {
+                      return l10n.enterValidPrice;
+                    }
+                    if (parsed < 0) {
+                      return l10n.priceNonNegative;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _PriceTip(
+                  text:
+                      "Sotuvchi mijozga ${_minSalePriceController.text.isEmpty ? "X" : _minSalePriceController.text} UZS gacha tushira oladi.",
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            // === Stok ===
+            const _SectionLabel(text: 'Stok'),
+            const SizedBox(height: AppSpacing.md),
+            AppCard(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppTextInput(
+                    label: l10n.minThresholdField,
+                    controller: _minThresholdController,
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return l10n.enterMinThreshold;
+                      }
+                      if (int.tryParse(value) == null) {
+                        return l10n.enterValidNumber;
+                      }
+                      if (int.parse(value) < 0) {
+                        return l10n.numberNonNegative;
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _QuantityNotice(
+                    isEditing: isEditing,
+                    product: widget.product,
+                    l10n: l10n,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _TempToggle(
+                    value: _isTemporary,
+                    title: l10n.temporaryProductTitle,
+                    subtitle: l10n.temporaryProductDescription,
+                    onChanged: (v) => setState(() => _isTemporary = v),
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(height: AppSpacing.xl2),
+
+            // Save CTA
+            AppPrimaryButton(
+              label: isEditing ? l10n.save : "Mahsulotni qo'shish",
+              icon: isEditing ? Icons.check_rounded : Icons.add_rounded,
+              onPressed: _isLoading ? null : _save,
+              isLoading: _isLoading,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Top-of-form hero with the brand icon tile + helper sub-label.
+class _HeroStrip extends StatelessWidget {
+  final bool isEditing;
+  final AppLocalizations l10n;
+  const _HeroStrip({required this.isEditing, required this.l10n});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.brandLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.brandTint, width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.brand,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: const Icon(
+              Icons.inventory_2_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEditing
+                      ? l10n.adminEditProductTitle
+                      : l10n.adminNewProductTitle,
+                  style: AppTextStyles.bodyLarge().copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.brandDark,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.adminCanEditPriceAndSettings,
+                  style: AppTextStyles.bodySmall().copyWith(
+                    color: AppColors.brandDark,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.caption().copyWith(
+        fontSize: 11,
+        letterSpacing: 0.8,
+        color: AppColors.textSecondary,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+/// Small label rendered above each non-AppTextInput control.
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.caption().copyWith(
+        fontSize: 11,
+        letterSpacing: 0.8,
+        color: AppColors.textSecondary,
+      ),
+    );
+  }
+}
+
+class _CategoryDropdown extends StatelessWidget {
+  final dynamic value;
+  final List<dynamic> categories;
+  final AppLocalizations l10n;
+  final ValueChanged<dynamic> onChanged;
+
+  const _CategoryDropdown({
+    required this.value,
+    required this.categories,
+    required this.l10n,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<dynamic>(
+      initialValue: value,
+      isExpanded: true,
+      icon: const Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: AppColors.textSecondary,
+      ),
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      decoration: _dropdownDecoration(hint: l10n.selectCategory),
+      items: [
+        DropdownMenuItem(
+          value: null,
+          child: Text(
+            l10n.categoryNotSelected,
+            style: AppTextStyles.bodyMedium().copyWith(
+              color: AppColors.textMuted,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        ...categories.map<DropdownMenuItem<dynamic>>((category) {
+          return DropdownMenuItem<dynamic>(
+            value: category['id'],
+            child: Text(
+              category['name'] ?? '',
+              style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+            ),
+          );
+        }),
+      ],
+      onChanged: onChanged,
+    );
+  }
+}
+
+class _UnitDropdown extends StatelessWidget {
+  final int value;
+  final List<Map<String, dynamic>> units;
+  final bool enabled;
+  final ValueChanged<int?> onChanged;
+  const _UnitDropdown({
+    required this.value,
+    required this.units,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<int>(
+      initialValue: value,
+      isExpanded: true,
+      icon: const Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: AppColors.textSecondary,
+      ),
+      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      decoration: _dropdownDecoration(),
+      items: units.map<DropdownMenuItem<int>>((unit) {
+        return DropdownMenuItem<int>(
+          value: unit['value'] as int,
+          child: Row(
+            children: [
+              Icon(
+                unit['icon'] as IconData,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Text(
+                unit['name'] as String,
+                style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+      onChanged: enabled ? onChanged : null,
+    );
+  }
+}
+
+InputDecoration _dropdownDecoration({String? hint}) {
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: AppTextStyles.bodyMedium().copyWith(
+      color: AppColors.textMuted,
+      fontSize: 14,
+    ),
+    filled: true,
+    fillColor: AppColors.inputFill,
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.xl,
+      vertical: AppSpacing.lg + 2,
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.md + 2),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.md + 2),
+      borderSide: BorderSide.none,
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.md + 2),
+      borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+    ),
+  );
+}
+
+/// Brand-light card grouping price inputs. Demo's `.price-grid`.
+class _PriceCard extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+  const _PriceCard({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: AppColors.brandLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.brandTint, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.payments_rounded,
+                size: 16,
+                color: AppColors.brandDark,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                title.toUpperCase(),
+                style: AppTextStyles.caption().copyWith(
+                  fontSize: 11,
+                  letterSpacing: 0.8,
+                  color: AppColors.brandDark,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+/// Soft yellow hint shown under the "minimum sotish narxi" input.
+class _PriceTip extends StatelessWidget {
+  final String text;
+  const _PriceTip({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + 2,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.warningLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.lightbulb_rounded,
+            size: 14,
+            color: AppColors.warning,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.caption().copyWith(
+                fontSize: 11,
+                letterSpacing: 0,
+                color: AppColors.text,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuantityNotice extends StatelessWidget {
+  final bool isEditing;
+  final dynamic product;
+  final AppLocalizations l10n;
+  const _QuantityNotice({
+    required this.isEditing,
+    required this.product,
+    required this.l10n,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + 2,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.warningLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 14,
+            color: AppColors.warning,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              isEditing
+                  ? l10n.productQuantityImmutable(
+                      (product['quantity'] as num?)?.toDouble() ?? 0.0,
+                    )
+                  : l10n.productCreatedWithZeroInfo,
+              style: AppTextStyles.caption().copyWith(
+                fontSize: 11,
+                letterSpacing: 0,
+                color: AppColors.warning,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TempToggle extends StatelessWidget {
+  final bool value;
+  final String title;
+  final String subtitle;
+  final ValueChanged<bool> onChanged;
+
+  const _TempToggle({
+    required this.value,
+    required this.title,
+    required this.subtitle,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.borderSoft, width: 1),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.timer_outlined,
+            size: 18,
+            color: AppColors.textSecondary,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.bodySmall().copyWith(
+                    color: AppColors.textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Transform.scale(
+            scale: 0.85,
+            child: Switch(
+              value: value,
+              activeThumbColor: AppColors.brand,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
       ),
     );
   }

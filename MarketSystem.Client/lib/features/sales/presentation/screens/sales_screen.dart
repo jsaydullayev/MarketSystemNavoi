@@ -5,6 +5,7 @@ import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_card.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/number_formatter.dart';
@@ -58,11 +59,11 @@ class _SalesScreenState extends State<SalesScreen> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'draft':
-        return const Color(0xFF3B82F6);
+        return AppColors.darkPrimaryLight; // blue from token palette
       case 'paid':
         return AppColors.success;
       case 'closed':
-        return const Color(0xFF6366F1);
+        return AppColors.darkPrimary; // indigo-ish from token palette
       case 'debt':
         return AppColors.danger;
       case 'cancelled':
@@ -514,11 +515,12 @@ class _SalesScreenState extends State<SalesScreen> {
 
     // Pick a payment icon by status: paid=cash, closed=card, debt=notebook,
     // draft=hourglass. Matches the demo's `.pay-ic.cash/.card/.debt` palette.
+    // Colours come from the design tokens — no raw hex.
     final (IconData icon, Color tone) = switch (statusText) {
       'paid' => (Icons.payments_rounded, AppColors.success),
-      'closed' => (Icons.credit_card_rounded, const Color(0xFF6366F1)),
+      'closed' => (Icons.credit_card_rounded, AppColors.darkPrimary),
       'debt' => (Icons.assignment_outlined, AppColors.warning),
-      'draft' => (Icons.hourglass_bottom_rounded, const Color(0xFF3B82F6)),
+      'draft' => (Icons.hourglass_bottom_rounded, AppColors.darkPrimaryLight),
       _ => (Icons.receipt_long_rounded, AppColors.textSecondary),
     };
 
@@ -539,13 +541,10 @@ class _SalesScreenState extends State<SalesScreen> {
           borderRadius: BorderRadius.circular(AppRadius.lg),
           child: Opacity(
             opacity: isCancelled ? 0.65 : 1,
-            child: Container(
+            // AppCard gives us the demo's 1px border + 14-radius + white
+            // surface, matching `.sale-row` in design-demo/index.html.
+            child: AppCard(
               padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: AppColors.border),
-              ),
               child: Row(
                 children: [
                   Container(
@@ -573,6 +572,27 @@ class _SalesScreenState extends State<SalesScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            if (isCancelled) ...[
+                              const SizedBox(width: AppSpacing.md),
+                              // "Qaytarildi" badge mirrors `.badge-refund`
+                              // in the demo's refunded sale rows.
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.dangerLight,
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.sm),
+                                ),
+                                child: Text(
+                                  l10n.returnAction.toUpperCase(),
+                                  style: AppTextStyles.caption().copyWith(
+                                    color: AppColors.danger,
+                                    fontSize: 9,
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(width: AppSpacing.md),
                             Text(
                               dateStr,
@@ -598,6 +618,12 @@ class _SalesScreenState extends State<SalesScreen> {
                               style: AppTextStyles.labelLarge().copyWith(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14,
+                                // Refunded / cancelled rows: strike-through
+                                // amount and recolour to danger, like
+                                // `.sale-row.refunded .total` in the demo.
+                                color: isCancelled
+                                    ? AppColors.danger
+                                    : AppColors.text,
                                 decoration: isCancelled
                                     ? TextDecoration.lineThrough
                                     : null,

@@ -48,21 +48,21 @@ class GreetingCard extends StatelessWidget {
     switch (role) {
       case 'Owner':
         return (
-          bg: const Color(0xFFEDE9FE),
-          fg: const Color(0xFF6D28D9),
+          bg: AppColors.accentPurpleLight,
+          fg: AppColors.accentPurpleDeep,
           emoji: '\u{1F451}', // crown
         );
       case 'Admin':
         return (
-          bg: const Color(0xFFDBEAFE),
-          fg: const Color(0xFF1E40AF),
+          bg: AppColors.infoLight,
+          fg: AppColors.infoDeep,
           emoji: '\u{1F465}', // busts
         );
       case 'Seller':
       default:
         return (
-          bg: const Color(0xFFD1FAE5),
-          fg: const Color(0xFF047857),
+          bg: AppColors.successLight,
+          fg: AppColors.successDeep,
           emoji: '\u{1F6D2}', // cart
         );
     }
@@ -229,7 +229,10 @@ class SalesHeroCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          // Same dark-blue gradient as the demo's `.today-card`, sourced
+          // from the dark-theme token family so the dashboard hero
+          // stays in step with the rest of the palette.
+          colors: [AppColors.darkBg, AppColors.darkSurface],
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
@@ -330,9 +333,9 @@ class KpiCard extends StatelessWidget {
       case KpiTone.green:
         return (bg: AppColors.successLight, fg: AppColors.success);
       case KpiTone.purple:
-        return (bg: const Color(0xFFEDE9FE), fg: const Color(0xFF7C3AED));
+        return (bg: AppColors.accentPurpleLight, fg: AppColors.accentPurple);
       case KpiTone.blue:
-        return (bg: const Color(0xFFDBEAFE), fg: const Color(0xFF1E40AF));
+        return (bg: AppColors.infoLight, fg: AppColors.infoDeep);
       case KpiTone.orange:
         return (bg: AppColors.brandLight, fg: AppColors.brand);
     }
@@ -416,15 +419,15 @@ class AlertCard extends StatelessWidget {
         return (
           bg: AppColors.dangerLight,
           border: AppColors.danger,
-          title: const Color(0xFF991B1B),
-          desc: const Color(0xFFB91C1C),
+          title: AppColors.dangerDeep,
+          desc: AppColors.dangerStrong,
         );
       case AlertTone.warning:
         return (
           bg: AppColors.warningLight,
           border: AppColors.warning,
-          title: const Color(0xFF92400E),
-          desc: const Color(0xFFB45309),
+          title: AppColors.warningDeep,
+          desc: AppColors.warningDark,
         );
     }
   }
