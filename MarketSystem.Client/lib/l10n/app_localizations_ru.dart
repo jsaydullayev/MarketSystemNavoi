@@ -1746,6 +1746,38 @@ class AppLocalizationsRu extends AppLocalizations {
   String get alertsRecentDebtTitle => 'Новые долговые продажи';
 
   @override
+  String alertPreviewActiveDebts(int count) {
+    return '$count активных долгов';
+  }
+
+  @override
+  String alertPreviewActiveDebtsDesc(String amount) {
+    return 'Всего: $amount UZS';
+  }
+
+  @override
+  String alertPreviewOverdueDebts(int count) {
+    return '$count просроченных платежей';
+  }
+
+  @override
+  String get alertPreviewOverdueDebtsDesc => 'Свяжитесь с клиентом';
+
+  @override
+  String alertPreviewLowStock(int count) {
+    return '$count товаров на исходе';
+  }
+
+  @override
+  String get alertPreviewLowStockDesc => 'Нужно пополнить склад';
+
+  @override
+  String get alertPreviewEmpty => 'Уведомлений нет';
+
+  @override
+  String get alertPreviewEmptyDesc => 'Всё в порядке';
+
+  @override
   String get quickActions => 'Быстрые действия';
 
   @override

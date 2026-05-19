@@ -1905,7 +1905,10 @@ public class ReportService : IReportService
                 Profit: includeProfit ? agg.profit : null));
         }
 
-        return new TopProductsDto(period ?? "month", sortKey, rows);
+        // Echo the *resolved* period, not the requested one — that way when
+        // today→week fallback kicked in above the UI knows to re-label the
+        // panel as "Bu hafta" instead of misleadingly "Bugun".
+        return new TopProductsDto(effectivePeriod ?? "month", sortKey, rows);
     }
 
     /// <summary>
