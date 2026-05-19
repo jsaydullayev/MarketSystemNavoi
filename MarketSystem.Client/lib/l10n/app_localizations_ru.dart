@@ -1838,6 +1838,27 @@ class AppLocalizationsRu extends AppLocalizations {
   String get temporaryProductDesc => 'Временный товар';
 
   @override
+  String get usersOnShiftShort => 'В СМЕНЕ';
+
+  @override
+  String get usersTodayRevenueShort => 'ВЫРУЧКА';
+
+  @override
+  String get shiftOpenLabel => 'Смена открыта';
+
+  @override
+  String get shiftClosedLabel => 'Смена закрыта';
+
+  @override
+  String get roleOwnerDesc => 'Полный доступ';
+
+  @override
+  String get roleAdminDesc => 'Продажи + товары';
+
+  @override
+  String get roleSellerDesc => 'Только продажи';
+
+  @override
   String alertPreviewActiveDebts(int count) {
     return '$count активных долгов';
   }
