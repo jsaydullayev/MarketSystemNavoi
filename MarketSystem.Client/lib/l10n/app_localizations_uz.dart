@@ -1742,6 +1742,38 @@ class AppLocalizationsUz extends AppLocalizations {
   String get alertsRecentDebtTitle => 'Yangi qarz savdolar';
 
   @override
+  String alertPreviewActiveDebts(int count) {
+    return '$count ta faol qarz mavjud';
+  }
+
+  @override
+  String alertPreviewActiveDebtsDesc(String amount) {
+    return 'Jami: $amount UZS';
+  }
+
+  @override
+  String alertPreviewOverdueDebts(int count) {
+    return '$count ta to\'lov muddati o\'tgan';
+  }
+
+  @override
+  String get alertPreviewOverdueDebtsDesc => 'Mijoz bilan bog\'laning';
+
+  @override
+  String alertPreviewLowStock(int count) {
+    return '$count ta mahsulot tugab qoldi';
+  }
+
+  @override
+  String get alertPreviewLowStockDesc => 'Omborni to\'ldirish kerak';
+
+  @override
+  String get alertPreviewEmpty => 'Hech qanday ogohlantirish yo\'q';
+
+  @override
+  String get alertPreviewEmptyDesc => 'Hammasi joyida';
+
+  @override
   String get quickActions => 'Tezkor amallar';
 
   @override

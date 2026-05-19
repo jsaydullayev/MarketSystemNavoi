@@ -3386,6 +3386,54 @@ abstract class AppLocalizations {
   /// **'Yangi qarz savdolar'**
   String get alertsRecentDebtTitle;
 
+  /// No description provided for @alertPreviewActiveDebts.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta faol qarz mavjud'**
+  String alertPreviewActiveDebts(int count);
+
+  /// No description provided for @alertPreviewActiveDebtsDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Jami: {amount} UZS'**
+  String alertPreviewActiveDebtsDesc(String amount);
+
+  /// No description provided for @alertPreviewOverdueDebts.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta to\'lov muddati o\'tgan'**
+  String alertPreviewOverdueDebts(int count);
+
+  /// No description provided for @alertPreviewOverdueDebtsDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz bilan bog\'laning'**
+  String get alertPreviewOverdueDebtsDesc;
+
+  /// No description provided for @alertPreviewLowStock.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta mahsulot tugab qoldi'**
+  String alertPreviewLowStock(int count);
+
+  /// No description provided for @alertPreviewLowStockDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Omborni to\'ldirish kerak'**
+  String get alertPreviewLowStockDesc;
+
+  /// No description provided for @alertPreviewEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hech qanday ogohlantirish yo\'q'**
+  String get alertPreviewEmpty;
+
+  /// No description provided for @alertPreviewEmptyDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasi joyida'**
+  String get alertPreviewEmptyDesc;
+
   /// No description provided for @quickActions.
   ///
   /// In uz, this message translates to:

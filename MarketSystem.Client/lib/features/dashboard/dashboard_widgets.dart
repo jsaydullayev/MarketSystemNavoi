@@ -418,6 +418,11 @@ class KpiCard extends StatelessWidget {
               fontWeight: FontWeight.w800,
               color: t.fg,
             ),
+            // Some KPI values are now strings (e.g. top-product name) instead
+            // of numbers — long product names need to truncate rather than
+            // overflow the card.
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
@@ -446,7 +451,7 @@ class KpiCard extends StatelessWidget {
 // AlertCard — colored info strip (danger / warning) with title + desc + chevron.
 // ---------------------------------------------------------------------------
 
-enum AlertTone { danger, warning }
+enum AlertTone { danger, warning, success }
 
 class AlertCard extends StatelessWidget {
   const AlertCard({
@@ -479,6 +484,13 @@ class AlertCard extends StatelessWidget {
           border: AppColors.warning,
           title: AppColors.warningDeep,
           desc: AppColors.warningDark,
+        );
+      case AlertTone.success:
+        return (
+          bg: AppColors.successLight,
+          border: AppColors.success,
+          title: AppColors.successDeep,
+          desc: AppColors.successDeep,
         );
     }
   }
@@ -542,13 +554,27 @@ class ChartCard extends StatelessWidget {
     required this.bars, // values 0..1 — last bar highlighted
     required this.footerValue,
     required this.footerDelta,
+    this.deltaIsPositive = true,
+    this.isEmpty = false,
   });
 
   final String title;
   final String period;
   final List<double> bars;
   final String footerValue;
+  /// Already-formatted delta string (e.g. "5%"). The card adds the sign
+  /// arrow ("↑" or "↓") based on [deltaIsPositive]; do NOT include an arrow
+  /// in [footerDelta] yourself or you'll get a double arrow.
   final String footerDelta;
+
+  /// Tints the delta arrow green (true) or red (false). Ignored when
+  /// footerDelta is empty.
+  final bool deltaIsPositive;
+
+  /// When true, the bars are dimmed (placeholder mode) so the card doesn't
+  /// look like it shows real data of value zero. Use for the "no data yet"
+  /// state without hiding the chart entirely.
+  final bool isEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -588,12 +614,20 @@ class ChartCard extends StatelessWidget {
                 for (var i = 0; i < bars.length; i++) ...[
                   Expanded(
                     child: FractionallySizedBox(
-                      heightFactor: bars[i].clamp(0.05, 1.0),
+                      // Empty-state placeholder bars are short (just enough
+                      // to hint at the axis) so the card isn't visually
+                      // dominated by full-height orange columns when there's
+                      // no real data behind them.
+                      heightFactor: isEmpty
+                          ? 0.08
+                          : bars[i].clamp(0.05, 1.0),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: i == bars.length - 1
-                              ? AppColors.brandDark
-                              : AppColors.brand,
+                          color: isEmpty
+                              ? AppColors.borderSoft
+                              : (i == bars.length - 1
+                                  ? AppColors.brandDark
+                                  : AppColors.brand),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(6),
                           ),
@@ -614,14 +648,21 @@ class ChartCard extends StatelessWidget {
                 footerValue,
                 style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
               ),
-              Text(
-                '↑ $footerDelta',
-                style: AppTextStyles.bodySmall().copyWith(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+              // Only render the arrow + percent when we actually have one.
+              // Previously this always showed "↑" even with an empty delta,
+              // producing an orphan green up-arrow next to "— UZS" — see the
+              // empty-state screenshots from 2026-05-19.
+              if (footerDelta.isNotEmpty)
+                Text(
+                  '${deltaIsPositive ? '↑' : '↓'} $footerDelta',
+                  style: AppTextStyles.bodySmall().copyWith(
+                    color: deltaIsPositive
+                        ? AppColors.success
+                        : AppColors.danger,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
             ],
           ),
         ],

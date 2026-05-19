@@ -298,39 +298,15 @@ class _OwnerBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(title: l10n.alertsSectionLabel),
             const SizedBox(height: AppSpacing.md),
-            if (summary.pendingDebtsCount > 0)
-              AlertCard(
-                emoji: '💸',
-                title:
-                    '${summary.pendingDebtsCount} ta faol qarz mavjud',
-                description:
-                    'Jami: ${NumberFormatter.format(summary.pendingDebtsTotal)} UZS',
-                tone: AlertTone.danger,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
-              ),
-            if (summary.pendingDebtsCount > 0 && summary.lowStockCount > 0)
-              const SizedBox(height: AppSpacing.md),
-            if (summary.lowStockCount > 0)
-              AlertCard(
-                emoji: '📦',
-                title:
-                    '${summary.lowStockCount} ta mahsulot tugab qoldi',
-                description: "Omborni to'ldirish kerak",
-                tone: AlertTone.warning,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ProductsScreen(isReadOnly: false),
-                  ),
-                ),
-              ),
-            if (summary.pendingDebtsCount == 0 && summary.lowStockCount == 0)
-              const AlertCard(
-                emoji: '✅',
-                title: "Hech qanday ogohlantirish yo'q",
-                description: 'Hammasi joyida',
-                tone: AlertTone.warning,
-              ),
+            // Alert preview — at most 2–3 cards rendered, ordered by urgency:
+            //   1. Overdue debts (danger)   — to'lov muddati o'tgan
+            //   2. Active debts that aren't overdue yet (warning)
+            //   3. Low-stock products (warning)
+            // When all three buckets are empty we show a single success
+            // card (green tick) so the slot doesn't disappear and shrink
+            // the layout. Tapping any card lands on the relevant feature
+            // screen so the owner can act immediately.
+            ..._buildAlertPreviewCards(context, summary, l10n),
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(
               title: l10n.analysisSectionLabel,
@@ -369,6 +345,84 @@ class _OwnerBody extends StatelessWidget {
     return NumberFormatter.format(value);
   }
 
+  /// Dashboard alert-preview row builder. Returns an ordered list of widgets
+  /// (cards interleaved with spacers) so the caller can splat them with `...`
+  /// into the surrounding Column. Empty buckets are skipped entirely, and
+  /// when every bucket is empty we fall through to a single success card —
+  /// the slot never collapses, the section header always has something
+  /// under it.
+  static List<Widget> _buildAlertPreviewCards(
+    BuildContext context,
+    DashboardSummary summary,
+    AppLocalizations l10n,
+  ) {
+    final cards = <Widget>[];
+
+    // 1) Overdue payments — most urgent. Heuristic for "due today" until
+    //    the Debt entity gains a real DueDate field.
+    if (summary.overdueDebtsCount > 0) {
+      cards.add(AlertCard(
+        emoji: '⚠️',
+        title: l10n.alertPreviewOverdueDebts(summary.overdueDebtsCount),
+        description: l10n.alertPreviewOverdueDebtsDesc,
+        tone: AlertTone.danger,
+        onTap: () => Navigator.pushNamed(context, AppRoutes.notifications),
+      ));
+    }
+
+    // 2) Active-but-not-yet-overdue debts. Subtract the overdue count so
+    //    we don't double-report the same debt in two cards.
+    final nonOverdueActive = summary.pendingDebtsCount - summary.overdueDebtsCount;
+    if (nonOverdueActive > 0) {
+      cards.add(AlertCard(
+        emoji: '💸',
+        title: l10n.alertPreviewActiveDebts(nonOverdueActive),
+        description: l10n.alertPreviewActiveDebtsDesc(
+          NumberFormatter.format(summary.pendingDebtsTotal),
+        ),
+        tone: AlertTone.warning,
+        onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
+      ));
+    }
+
+    // 3) Low-stock — least urgent of the three.
+    if (summary.lowStockCount > 0) {
+      cards.add(AlertCard(
+        emoji: '📦',
+        title: l10n.alertPreviewLowStock(summary.lowStockCount),
+        description: l10n.alertPreviewLowStockDesc,
+        tone: AlertTone.warning,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ProductsScreen(isReadOnly: false),
+          ),
+        ),
+      ));
+    }
+
+    if (cards.isEmpty) {
+      return [
+        AlertCard(
+          emoji: '✅',
+          title: l10n.alertPreviewEmpty,
+          description: l10n.alertPreviewEmptyDesc,
+          tone: AlertTone.success,
+        ),
+      ];
+    }
+
+    // Interleave spacers between cards (but not after the last one).
+    final out = <Widget>[];
+    for (var i = 0; i < cards.length; i++) {
+      out.add(cards[i]);
+      if (i != cards.length - 1) {
+        out.add(const SizedBox(height: AppSpacing.md));
+      }
+    }
+    return out;
+  }
+
   /// Bar chart for the last 7 days, fed by [DashboardSummary.weeklySeries].
   /// Bars are scaled to the window's max revenue (so the tallest day fills
   /// the card) and the footer shows the running total. If the endpoint
@@ -394,16 +448,19 @@ class _OwnerBody extends StatelessWidget {
         : '— UZS';
 
     // Week-over-week delta — sourced from /weekly-series?compare=true. We
-    // render the sign + integer percent + a localized "vs last week" hint.
-    // Falls back to blank when the previous week was empty (division-by-zero
-    // would otherwise yield infinity) or the comparison wasn't requested.
+    // pass the magnitude as a plain "5%" string and let the card add the
+    // sign arrow + colour itself. Previously we baked the arrow into the
+    // string which (combined with the card hardcoding its own "↑") rendered
+    // a double-arrow ("↑ ↑ 5%") in the up case and an always-green arrow
+    // in the down case. Falls back to blank when the previous week was
+    // empty (division-by-zero would yield infinity) or the comparison
+    // wasn't requested.
     final delta = summary.weeklyDeltaPercent;
-    String footerDelta;
-    if (delta == null || delta.isNaN || delta.isInfinite) {
-      footerDelta = '';
-    } else {
-      final sign = delta >= 0 ? '↑' : '↓';
-      footerDelta = '$sign ${delta.abs().toStringAsFixed(0)}%';
+    String footerDelta = '';
+    bool deltaIsPositive = true;
+    if (delta != null && !delta.isNaN && !delta.isInfinite) {
+      deltaIsPositive = delta >= 0;
+      footerDelta = '${delta.abs().toStringAsFixed(0)}%';
     }
 
     return ChartCard(
@@ -412,6 +469,11 @@ class _OwnerBody extends StatelessWidget {
       bars: bars,
       footerValue: footerValue,
       footerDelta: footerDelta,
+      deltaIsPositive: deltaIsPositive,
+      // When neither the current nor previous week have any data, dim the
+      // bars so the card reads as "no data yet" rather than "everything is
+      // a flat tiny bar above 0".
+      isEmpty: series.isEmpty || maxRev == 0,
     );
   }
 
@@ -511,9 +573,17 @@ class _KpiGrid extends StatelessWidget {
               label: l10n.customers,
               tone: KpiTone.blue,
             ),
+            // Top product KPI — shows the *name* of the bestselling product
+            // today (or the period the backend fell back to), not a count.
+            // The previous "{distinct-product-count}" rendering was confusing:
+            // a user looking at "5 · Top mahsulot" can't tell whether 5 is
+            // a rank, a count, or a quantity. Pulling the name from
+            // topProductRows.first makes the card immediately readable.
             KpiCard(
               emoji: '💎',
-              value: '${summary.topProductCount}',
+              value: summary.topProductRows.isNotEmpty
+                  ? summary.topProductRows.first.name
+                  : '—',
               label: l10n.topProduct,
               tone: KpiTone.orange,
             ),

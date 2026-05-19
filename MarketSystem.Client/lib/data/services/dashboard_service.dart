@@ -41,6 +41,7 @@ class DashboardSummary {
     this.lowStockCount = 0,
     this.pendingDebtsTotal = 0,
     this.pendingDebtsCount = 0,
+    this.overdueDebtsCount = 0,
     this.topProducts = const [],
     this.weeklySeries = const [],
     this.weeklyDeltaPercent,
@@ -59,6 +60,12 @@ class DashboardSummary {
   final int lowStockCount;
   final double pendingDebtsTotal;
   final int pendingDebtsCount;
+
+  /// Of [pendingDebtsCount], how many are older than 14 days — the heuristic
+  /// for "to'lov vaqti keldi". Renders the danger-tone alert preview on the
+  /// dashboard. When this is > 0 the bell badge also picks them up via the
+  /// notifications screen.
+  final int overdueDebtsCount;
   /// Legacy top-3 list derived from daily-items aggregation. Kept for
   /// backwards-compat with any other consumer of [DashboardSummary]. The
   /// dashboard screen itself now prefers [topProductRows] which comes from
@@ -290,6 +297,17 @@ class DashboardService {
     );
     final int pendingDebtsCount = pendingDebts.length;
 
+    // Of those pending debts, how many are older than 14 days. Matches the
+    // overdue heuristic in NotificationService so the dashboard preview
+    // and the bell badge / notifications screen stay in agreement.
+    final overdueCutoff = now.subtract(const Duration(days: 14));
+    final int overdueDebtsCount = pendingDebts.where((d) {
+      if (d is! Map) return false;
+      final created = _parseDate(d['createdAt']);
+      if (created == null) return false;
+      return created.isBefore(overdueCutoff);
+    }).length;
+
     // Top products of the day — derived from daily-items (no dedicated
     // endpoint exists). We sum quantity per product name and take top 3.
     final topProducts = _buildTopProducts(dailyItems);
@@ -312,6 +330,7 @@ class DashboardService {
       lowStockCount: lowStockCount,
       pendingDebtsTotal: pendingDebtsTotal,
       pendingDebtsCount: pendingDebtsCount,
+      overdueDebtsCount: overdueDebtsCount,
       topProducts: topProducts,
       weeklySeries: weeklySeries?.points ?? const [],
       weeklyDeltaPercent: weeklySeries?.deltaPercent,
@@ -388,6 +407,15 @@ class DashboardService {
       if (v is String) return num.tryParse(v) ?? 0;
     }
     return 0;
+  }
+
+  /// Parse an ISO-8601 string (or pass-through DateTime) into a DateTime.
+  /// Returns null on null / empty / unparseable input.
+  DateTime? _parseDate(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return v;
+    if (v is String && v.isNotEmpty) return DateTime.tryParse(v);
+    return null;
   }
 
   /// Today's distinct-customer count for the "Mijozlar" KPI.
