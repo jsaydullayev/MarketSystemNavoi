@@ -3350,6 +3350,42 @@ abstract class AppLocalizations {
   /// **'Bugun savdo bo\'lmadi — oxirgi hafta:'**
   String get topSellersFallbackHint;
 
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ogohlantirishlar'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsEmptyTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi ogohlantirish yo\'q'**
+  String get notificationsEmptyTitle;
+
+  /// No description provided for @notificationsEmptyDescription.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasi joyida. Kam qolgan tovar, yangi qarz savdo yoki muddati o\'tgan qarzdor topilmadi.'**
+  String get notificationsEmptyDescription;
+
+  /// No description provided for @alertsOverdueTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov vaqti keldi'**
+  String get alertsOverdueTitle;
+
+  /// No description provided for @alertsLowStockTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kam qolgan tovarlar'**
+  String get alertsLowStockTitle;
+
+  /// No description provided for @alertsRecentDebtTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi qarz savdolar'**
+  String get alertsRecentDebtTitle;
+
   /// No description provided for @quickActions.
   ///
   /// In uz, this message translates to:

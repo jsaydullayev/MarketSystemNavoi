@@ -204,6 +204,17 @@ class _DashboardBody extends StatelessWidget {
                   dateLabel: date,
                   hasNotification: unread > 0,
                   unreadNotifications: unread,
+                  // Profile image is stored on the user map as a base64 data
+                  // URI (see ProfileImagePicker upload). GreetingCard handles
+                  // both URL and base64 forms and falls back to the letter
+                  // tile when null/empty.
+                  profileImage: user?['profileImage'] as String?,
+                  onNotificationTap: (role == 'Owner' || role == 'Admin')
+                      ? () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.notifications,
+                          )
+                      : null,
                   onSettingsTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const ProfileScreen()),
