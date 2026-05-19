@@ -1749,6 +1749,44 @@ class AppLocalizationsRu extends AppLocalizations {
   String get alertsRecentDebtTitle => 'Новые долговые продажи';
 
   @override
+  String alertDescOverdue(int days, String amount) {
+    return 'Долг $days дн. · $amount UZS';
+  }
+
+  @override
+  String alertDescRecent(String amount) {
+    return 'Сегодня · $amount UZS';
+  }
+
+  @override
+  String alertDescLowStock(String qty, String unit, String threshold) {
+    return 'Остаток: $qty $unit · мин $threshold $unit';
+  }
+
+  @override
+  String alertDescLowStockNoMin(String qty, String unit) {
+    return 'Остаток: $qty $unit';
+  }
+
+  @override
+  String get fallbackCustomerName => 'Клиент';
+
+  @override
+  String get settingsSection => 'НАСТРОЙКИ';
+
+  @override
+  String get languageLabel => 'Язык';
+
+  @override
+  String get themeLabel => 'Тема';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
   String alertPreviewActiveDebts(int count) {
     return '$count активных долгов';
   }

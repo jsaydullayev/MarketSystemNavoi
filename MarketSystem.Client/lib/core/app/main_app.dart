@@ -58,7 +58,12 @@ class MainApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: theme,
             darkTheme: darkTheme,
-            themeMode: ThemeMode.system,
+            // No themeMode here: AdaptiveTheme already decides which of the
+            // two ThemeData objects to feed into MaterialApp's `theme` slot.
+            // Previously we passed `ThemeMode.system`, which forced Flutter
+            // to ignore AdaptiveTheme's manual setLight()/setDark()/toggle
+            // and follow the OS preference instead — so the in-app theme
+            // toggle (profile + drawer) silently did nothing.
             navigatorKey: NavigationHandler.navigatorKey,
             onGenerateRoute: generateRoute,
             // Add navigator observer to track and warn about unwanted redirects

@@ -3392,6 +3392,66 @@ abstract class AppLocalizations {
   /// **'Yangi qarz savdolar'**
   String get alertsRecentDebtTitle;
 
+  /// No description provided for @alertDescOverdue.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz {days} kunda · {amount} UZS'**
+  String alertDescOverdue(int days, String amount);
+
+  /// No description provided for @alertDescRecent.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun · {amount} UZS'**
+  String alertDescRecent(String amount);
+
+  /// No description provided for @alertDescLowStock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qoldiq: {qty} {unit} · min {threshold} {unit}'**
+  String alertDescLowStock(String qty, String unit, String threshold);
+
+  /// No description provided for @alertDescLowStockNoMin.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qoldiq: {qty} {unit}'**
+  String alertDescLowStockNoMin(String qty, String unit);
+
+  /// No description provided for @fallbackCustomerName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz'**
+  String get fallbackCustomerName;
+
+  /// No description provided for @settingsSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'SOZLASH'**
+  String get settingsSection;
+
+  /// No description provided for @languageLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Til'**
+  String get languageLabel;
+
+  /// No description provided for @themeLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mavzu'**
+  String get themeLabel;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tungi'**
+  String get themeDark;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yorug\''**
+  String get themeLight;
+
   /// No description provided for @alertPreviewActiveDebts.
   ///
   /// In uz, this message translates to:
