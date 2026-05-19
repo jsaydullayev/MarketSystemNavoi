@@ -881,6 +881,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get addNewCustomer => 'Добавить клиента';
 
   @override
+  String get addCustomerForDebtHint => 'Добавить клиента';
+
+  @override
   String get searchCustomer => 'Поиск клиента...';
 
   @override

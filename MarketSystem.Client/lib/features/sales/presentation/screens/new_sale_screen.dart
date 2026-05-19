@@ -374,7 +374,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         saleId: saleId ?? '',
         totalAmount: _totalAmount,
         selectedCustomer: customerSnapshot,
-        onConfirm: (payments, useDebt) async {
+        onConfirm: (payments, useDebt, customer) async {
           final scaffoldMessenger = ScaffoldMessenger.of(context);
           final navigator = Navigator.of(context);
 
@@ -383,8 +383,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 Provider.of<AuthProvider>(context, listen: false);
             final salesService = SalesService(authProvider: authProvider);
 
+            // Use the customer the dialog returns — it may be one the
+            // cashier created inline from the debt row, which the
+            // pre-dialog snapshot wouldn't have.
             final sale = await salesService.createSale(
-              customerId: customerSnapshot?['id'],
+              customerId: customer?['id'],
             );
             final finalSaleId = sale['id'];
 

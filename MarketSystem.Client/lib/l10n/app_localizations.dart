@@ -1814,6 +1814,12 @@ abstract class AppLocalizations {
   /// **'Yangi mijoz qo\'shish'**
   String get addNewCustomer;
 
+  /// No description provided for @addCustomerForDebtHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi mijoz qo\'shish'**
+  String get addCustomerForDebtHint;
+
   /// No description provided for @searchCustomer.
   ///
   /// In uz, this message translates to:
