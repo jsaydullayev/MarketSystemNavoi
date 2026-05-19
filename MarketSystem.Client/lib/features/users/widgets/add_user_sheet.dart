@@ -102,6 +102,12 @@ class _AddUserSheetState extends State<AddUserSheet> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      // Required so the sheet can grow past 50% of the screen — without this
+      // the success card's 3 info rows + warning panel + button overflow
+      // the default half-screen height, producing the yellow-striped
+      // "BOTTOM OVERFLOWED BY 56 PIXELS" indicator we saw on the Users
+      // page in 2026-05-19.
+      isScrollControlled: true,
       builder: (_) => _SuccessSheet(user: user),
     );
   }
@@ -307,78 +313,95 @@ class _SuccessSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl2,
-        AppSpacing.lg,
-        AppSpacing.xl2,
-        AppSpacing.xl4,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const _Handle(),
-          const SizedBox(height: AppSpacing.xl2),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: const BoxDecoration(
-              color: AppColors.successLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: AppColors.success,
-              size: 32,
-            ),
+    // On wide screens (tablet / web) clamp the sheet to a comfortable card
+    // width so the rows don't sprawl across the entire window. On phones
+    // the maxWidth is wider than the viewport so the layout is unchanged.
+    final mediaQ = MediaQuery.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: mediaQ.viewInsets.bottom),
+      child: Container(
+        constraints: BoxConstraints(
+          // Cap the sheet height to ~90% of the screen and let the body
+          // scroll. Combined with `isScrollControlled: true` on the
+          // showModalBottomSheet call, this stops the success card from
+          // overflowing on shorter viewports.
+          maxHeight: mediaQ.size.height * 0.9,
+          maxWidth: 520,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl2,
+            AppSpacing.lg,
+            AppSpacing.xl2,
+            AppSpacing.xl4,
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            l10n.userCreatedSuccess,
-            style: AppTextStyles.titleMedium(),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xl2),
-          _row(l10n.fullName, user['fullName'] ?? ''),
-          _row(l10n.username, '@${user['username'] ?? ''}'),
-          _row(l10n.role, user['role'] ?? ''),
-          const SizedBox(height: AppSpacing.lg),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: AppColors.warningLight,
-              borderRadius: BorderRadius.circular(AppRadius.md + 2),
-              border: Border.all(
-                color: AppColors.warning.withValues(alpha: 0.4),
-              ),
-            ),
-            child: Row(children: [
-              const Icon(
-                Icons.info_outline_rounded,
-                color: AppColors.warning,
-                size: 16,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  l10n.giveCredentialsToUser,
-                  style: AppTextStyles.bodySmall().copyWith(
-                    color: AppColors.warning,
-                    fontSize: 12,
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _Handle(),
+              const SizedBox(height: AppSpacing.xl2),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                decoration: const BoxDecoration(
+                  color: AppColors.successLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: AppColors.success,
+                  size: 32,
                 ),
               ),
-            ]),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                l10n.userCreatedSuccess,
+                style: AppTextStyles.titleMedium(),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xl2),
+              _row(l10n.fullName, user['fullName'] ?? ''),
+              _row(l10n.username, '@${user['username'] ?? ''}'),
+              _row(l10n.role, user['role'] ?? ''),
+              const SizedBox(height: AppSpacing.lg),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: AppColors.warningLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.warning,
+                    size: 16,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      l10n.giveCredentialsToUser,
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: AppColors.warning,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              AppPrimaryButton(
+                label: l10n.understand,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.xl),
-          AppPrimaryButton(
-            label: l10n.understand,
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -558,14 +581,14 @@ class _RoleSelector extends StatelessWidget {
           bg: AppColors.brandLight,
           fg: AppColors.brandDark,
           icon: Icons.workspace_premium_rounded,
-          desc: 'To\'liq nazorat',
+          desc: l10n.roleOwnerDesc,
         );
       case 'admin':
         return (
           bg: _adminBg,
           fg: _adminFg,
           icon: Icons.admin_panel_settings_rounded,
-          desc: 'Sotuv + mahsulot',
+          desc: l10n.roleAdminDesc,
         );
       case 'seller':
       default:
@@ -573,7 +596,7 @@ class _RoleSelector extends StatelessWidget {
           bg: _sellerBg,
           fg: _sellerFg,
           icon: Icons.storefront_rounded,
-          desc: 'Faqat sotuv',
+          desc: l10n.roleSellerDesc,
         );
     }
   }

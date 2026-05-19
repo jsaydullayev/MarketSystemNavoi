@@ -3554,6 +3554,48 @@ abstract class AppLocalizations {
   /// **'Vaqtinchalik mahsulot'**
   String get temporaryProductDesc;
 
+  /// No description provided for @usersOnShiftShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'SMENADA'**
+  String get usersOnShiftShort;
+
+  /// No description provided for @usersTodayRevenueShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'BUGUN TUSHUM'**
+  String get usersTodayRevenueShort;
+
+  /// No description provided for @shiftOpenLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena ochiq'**
+  String get shiftOpenLabel;
+
+  /// No description provided for @shiftClosedLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena yopiq'**
+  String get shiftClosedLabel;
+
+  /// No description provided for @roleOwnerDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'liq nazorat'**
+  String get roleOwnerDesc;
+
+  /// No description provided for @roleAdminDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuv + mahsulot'**
+  String get roleAdminDesc;
+
+  /// No description provided for @roleSellerDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faqat sotuv'**
+  String get roleSellerDesc;
+
   /// No description provided for @alertPreviewActiveDebts.
   ///
   /// In uz, this message translates to:

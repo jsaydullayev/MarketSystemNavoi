@@ -1834,6 +1834,27 @@ class AppLocalizationsUz extends AppLocalizations {
   String get temporaryProductDesc => 'Vaqtinchalik mahsulot';
 
   @override
+  String get usersOnShiftShort => 'SMENADA';
+
+  @override
+  String get usersTodayRevenueShort => 'BUGUN TUSHUM';
+
+  @override
+  String get shiftOpenLabel => 'Smena ochiq';
+
+  @override
+  String get shiftClosedLabel => 'Smena yopiq';
+
+  @override
+  String get roleOwnerDesc => 'To\'liq nazorat';
+
+  @override
+  String get roleAdminDesc => 'Sotuv + mahsulot';
+
+  @override
+  String get roleSellerDesc => 'Faqat sotuv';
+
+  @override
   String alertPreviewActiveDebts(int count) {
     return '$count ta faol qarz mavjud';
   }

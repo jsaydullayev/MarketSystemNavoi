@@ -250,36 +250,46 @@ class _UsersScreenState extends State<UsersScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadUsers,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl,
-          AppSpacing.xl,
-          AppSpacing.xl,
-          96,
-        ),
-        children: [
-          _SearchBar(controller: _searchCtrl),
-          const SizedBox(height: AppSpacing.lg),
-          _StaffSummary(users: _users, todayRevenue: _todayRevenue),
-          const SizedBox(height: AppSpacing.lg),
-          _FilterChips(
-            active: _filter,
-            onChanged: (f) => setState(() => _filter = f),
+      // Centered + max-width container so the layout adapts cleanly to any
+      // device width — phone (full width), tablet, and web (800px cap).
+      // Previously the list spanned the entire window on desktop, which
+      // made each card stretch to ~1400px and broke the card-density feel
+      // designed for mobile.
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.xl,
+              AppSpacing.xl,
+              96,
+            ),
+            children: [
+              _SearchBar(controller: _searchCtrl),
+              const SizedBox(height: AppSpacing.lg),
+              _StaffSummary(users: _users, todayRevenue: _todayRevenue),
+              const SizedBox(height: AppSpacing.lg),
+              _FilterChips(
+                active: _filter,
+                onChanged: (f) => setState(() => _filter = f),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (filtered.isEmpty)
+                _EmptyView(
+                  isSearching: _searchCtrl.text.isNotEmpty ||
+                      _filter != _UsersFilter.all,
+                )
+              else
+                ...filtered.map((u) => UserCard(
+                      user: u,
+                      onTap: () => UserInfoSheet.show(context, user: u),
+                      onToggleStatus: () => _toggleStatus(u),
+                      onDelete: () => _deleteUser(u),
+                    )),
+            ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          if (filtered.isEmpty)
-            _EmptyView(
-              isSearching: _searchCtrl.text.isNotEmpty ||
-                  _filter != _UsersFilter.all,
-            )
-          else
-            ...filtered.map((u) => UserCard(
-                  user: u,
-                  onTap: () => UserInfoSheet.show(context, user: u),
-                  onToggleStatus: () => _toggleStatus(u),
-                  onDelete: () => _deleteUser(u),
-                )),
-        ],
+        ),
       ),
     );
   }
@@ -332,8 +342,10 @@ class _SearchBar extends StatelessWidget {
 }
 
 /// 3-stat summary card matching the demo's `.prod-summary` block:
-/// JAMI (total users) / SMENADA (active users) / BUGUN TUSHUM (today's
-/// combined sales from /Reports/staff-performance, summed across staff).
+/// "Jami" (total users) / "Smenada" (active users) / "Bugun tushum"
+/// (today's combined sales from /Reports/staff-performance, summed across
+/// staff). All three labels are localised — they previously hardcoded
+/// uppercase Uzbek which leaked into the Russian UI.
 class _StaffSummary extends StatelessWidget {
   const _StaffSummary({required this.users, this.todayRevenue});
   final List<dynamic> users;
@@ -345,6 +357,7 @@ class _StaffSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final total = users.length;
     final onShift =
         users.where((u) => (u['isActive'] ?? false) == true).length;
@@ -383,7 +396,7 @@ class _StaffSummary extends StatelessWidget {
           Expanded(
             child: _SummaryStat(
               value: '$total',
-              label: 'JAMI',
+              label: l10n.totalShort,
               valueColor: AppColors.text,
             ),
           ),
@@ -391,7 +404,7 @@ class _StaffSummary extends StatelessWidget {
           Expanded(
             child: _SummaryStat(
               value: '$onShift',
-              label: 'SMENADA',
+              label: l10n.usersOnShiftShort,
               valueColor: AppColors.success,
             ),
           ),
@@ -399,7 +412,7 @@ class _StaffSummary extends StatelessWidget {
           Expanded(
             child: _SummaryStat(
               value: revenueLabel,
-              label: 'BUGUN TUSHUM',
+              label: l10n.usersTodayRevenueShort,
               valueColor: AppColors.brand,
             ),
           ),
@@ -474,14 +487,14 @@ class _FilterChips extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           _Chip(
-            label: 'Smena ochiq',
+            label: l10n.shiftOpenLabel,
             leadingDot: AppColors.success,
             isActive: active == _UsersFilter.shiftOpen,
             onTap: () => onChanged(_UsersFilter.shiftOpen),
           ),
           const SizedBox(width: AppSpacing.md),
           _Chip(
-            label: 'Smena yopiq',
+            label: l10n.shiftClosedLabel,
             isActive: active == _UsersFilter.shiftClosed,
             onTap: () => onChanged(_UsersFilter.shiftClosed),
           ),
