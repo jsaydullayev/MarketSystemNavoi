@@ -144,18 +144,66 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     required String emoji,
     required void Function(AlertItem item) onTap,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return [
       for (final item in items) ...[
         AlertCard(
           emoji: emoji,
-          title: item.title,
-          description: item.description,
+          title: item.title.isEmpty ? l10n.fallbackCustomerName : item.title,
+          description: _buildDescription(l10n, item),
           tone: tone,
           onTap: () => onTap(item),
         ),
         const SizedBox(height: AppSpacing.md),
       ],
     ];
+  }
+
+  /// Builds the localised one-line description for an alert item from its
+  /// raw fields. The service intentionally stores raw numbers + days so
+  /// this can re-format with the active locale (previously the service
+  /// hardcoded Uzbek phrases like "Bugun · …" which leaked into the
+  /// Russian UI as in screenshot 2026-05-19).
+  String _buildDescription(AppLocalizations l10n, AlertItem item) {
+    switch (item.category) {
+      case AlertCategory.lowStock:
+        final qty = _fmtNum(item.quantity ?? 0);
+        final unit = (item.unit ?? '').trim();
+        final threshold = item.threshold ?? 0;
+        if (threshold > 0) {
+          return l10n.alertDescLowStock(
+            qty,
+            unit,
+            _fmtNum(threshold),
+          );
+        }
+        return l10n.alertDescLowStockNoMin(qty, unit);
+      case AlertCategory.recentDebt:
+        return l10n.alertDescRecent(_fmtUzs(item.amount ?? 0));
+      case AlertCategory.overduePayment:
+        return l10n.alertDescOverdue(
+          item.ageDays ?? 0,
+          _fmtUzs(item.amount ?? 0),
+        );
+    }
+  }
+
+  /// "1500" → "1500" (whole) or "1.5" (fractional). Locale-neutral.
+  String _fmtNum(num v) {
+    if (v == v.toInt()) return v.toInt().toString();
+    return v.toStringAsFixed(2);
+  }
+
+  /// Group thousands with a space ("115500" → "115 500"). UZS rendering
+  /// — same convention used elsewhere in the app (e.g. NumberFormatter).
+  String _fmtUzs(num v) {
+    final n = v.toInt().toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < n.length; i++) {
+      if (i > 0 && (n.length - i) % 3 == 0) buf.write(' ');
+      buf.write(n[i]);
+    }
+    return buf.toString();
   }
 }
 

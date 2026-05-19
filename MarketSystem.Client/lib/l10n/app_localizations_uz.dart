@@ -1745,6 +1745,44 @@ class AppLocalizationsUz extends AppLocalizations {
   String get alertsRecentDebtTitle => 'Yangi qarz savdolar';
 
   @override
+  String alertDescOverdue(int days, String amount) {
+    return 'Qarz $days kunda · $amount UZS';
+  }
+
+  @override
+  String alertDescRecent(String amount) {
+    return 'Bugun · $amount UZS';
+  }
+
+  @override
+  String alertDescLowStock(String qty, String unit, String threshold) {
+    return 'Qoldiq: $qty $unit · min $threshold $unit';
+  }
+
+  @override
+  String alertDescLowStockNoMin(String qty, String unit) {
+    return 'Qoldiq: $qty $unit';
+  }
+
+  @override
+  String get fallbackCustomerName => 'Mijoz';
+
+  @override
+  String get settingsSection => 'SOZLASH';
+
+  @override
+  String get languageLabel => 'Til';
+
+  @override
+  String get themeLabel => 'Mavzu';
+
+  @override
+  String get themeDark => 'Tungi';
+
+  @override
+  String get themeLight => 'Yorug\'';
+
+  @override
   String alertPreviewActiveDebts(int count) {
     return '$count ta faol qarz mavjud';
   }

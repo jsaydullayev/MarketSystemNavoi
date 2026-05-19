@@ -153,10 +153,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
-                      // SOZLASH — language + theme.
+                      // SOZLASH / НАСТРОЙКИ — language + theme.
                       ProfileSettingsCard(
-                        header:
-                            const ProfileSectionTitle(title: 'SOZLASH'),
+                        header: ProfileSectionTitle(title: l10n.settingsSection),
                         children: [
                           _buildLanguageRow(context),
                           _buildThemeRow(context),
@@ -206,12 +205,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildLanguageRow(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final localeProvider = Provider.of<LocaleProvider>(context);
     final code = localeProvider.locale.languageCode;
     return ProfileSettingsRow(
       icon: Icons.language_rounded,
       tone: ProfileRowIconTone.green,
-      title: 'Til',
+      title: l10n.languageLabel,
       value: _languageLabel(code),
       onTap: () => _showLanguageSheet(context),
     );
@@ -248,7 +248,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text('Til', style: AppTextStyles.titleMedium()),
+              Text(
+                AppLocalizations.of(context)!.languageLabel,
+                style: AppTextStyles.titleMedium(),
+              ),
               const SizedBox(height: AppSpacing.lg),
               for (final entry in const [
                 ('uz', "O'zbekcha"),
@@ -273,12 +276,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildThemeRow(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final mode = AdaptiveTheme.of(context).mode;
     return ProfileSettingsRow(
       icon: Icons.palette_outlined,
       tone: ProfileRowIconTone.gray,
-      title: 'Mavzu',
-      value: mode.isDark ? 'Tungi' : "Yorug'",
+      title: l10n.themeLabel,
+      value: mode.isDark ? l10n.themeDark : l10n.themeLight,
       onTap: () {
         AdaptiveTheme.of(context).toggleThemeMode();
       },

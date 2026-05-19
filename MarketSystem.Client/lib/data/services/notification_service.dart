@@ -46,15 +46,19 @@ class AlertItem {
   const AlertItem({
     required this.category,
     required this.title,
-    required this.description,
     this.subjectId,
     this.amount,
     this.createdAt,
+    this.ageDays,
+    this.quantity,
+    this.threshold,
+    this.unit,
   });
 
   final AlertCategory category;
+
+  /// Headline — usually the customer name (debts) or product name (low stock).
   final String title;
-  final String description;
 
   /// Backing entity id (productId / debtId / customerId) — opens to the
   /// detail screen when the row is tapped. Optional so cards that don't
@@ -66,6 +70,25 @@ class AlertItem {
 
   /// Source row's createdAt — used for sub-grouping / "X days ago" labels.
   final DateTime? createdAt;
+
+  // Raw values for the description line. Stored unformatted so the UI layer
+  // can build a properly localised string at render time — previously the
+  // service hardcoded Uzbek phrases ("Bugun · …", "Qarz X kunda · …") which
+  // bled Uzbek into the Russian-locale UI.
+
+  /// For overdue debts: days since createdAt (set when category is
+  /// [AlertCategory.overduePayment]).
+  final int? ageDays;
+
+  /// For low-stock products: current on-hand quantity.
+  final double? quantity;
+
+  /// For low-stock products: configured minimum threshold.
+  final double? threshold;
+
+  /// For low-stock products: unit label ("dona", "kg", ...) as configured
+  /// on the product. May be empty.
+  final String? unit;
 }
 
 /// Full notification feed snapshot. Grouped because the UI renders each
@@ -172,13 +195,16 @@ class NotificationService {
       final qty = _asNum(p['quantity']);
       final threshold = _asNum(p['minThreshold']);
       final unit = (p['unit'] ?? '').toString();
+      // Raw values stored on AlertItem — the screen formats them with the
+      // current AppLocalizations so the description respects the active
+      // locale.
       return AlertItem(
         category: AlertCategory.lowStock,
         title: name.isEmpty ? '—' : name,
-        description: threshold > 0
-            ? 'Qoldiq: ${_compactNum(qty)} $unit · min ${_compactNum(threshold)} $unit'
-            : 'Qoldiq: ${_compactNum(qty)} $unit',
         subjectId: (p['id'] ?? '').toString(),
+        quantity: qty.toDouble(),
+        threshold: threshold.toDouble(),
+        unit: unit,
       );
     }).toList();
   }
@@ -213,13 +239,17 @@ class NotificationService {
         category: isOverdue
             ? AlertCategory.overduePayment
             : AlertCategory.recentDebt,
-        title: customerName.isEmpty ? 'Mijoz' : customerName,
-        description: isOverdue
-            ? 'Qarz $ageDays kunda · ${_formatUzs(remaining)} UZS'
-            : 'Bugun · ${_formatUzs(remaining)} UZS',
+        // Customer fallback ("Mijoz" / "Клиент") will be filled by the UI
+        // layer when title is empty — keeping it untranslated here.
+        title: customerName.isEmpty ? '' : customerName,
         subjectId: (d['id'] ?? '').toString(),
         amount: remaining.toDouble(),
         createdAt: created,
+        // Age in days — the UI uses it for both the recent ("Bugun · …" /
+        // "Сегодня · …" when fresh) and the overdue ("Qarz N kunda" /
+        // "Долг N дней назад") description lines, picking the right
+        // wording in the active locale.
+        ageDays: ageDays,
       ));
     }
     // Newest first for recent, oldest first for overdue.
