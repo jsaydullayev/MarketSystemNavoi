@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_card.dart';
@@ -27,21 +28,21 @@ class WithdrawalHistoryList extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl4),
         decoration: BoxDecoration(
-          color: AppColors.inputFill,
+          color: context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Column(
           children: [
-            const Icon(
+            Icon(
               Icons.receipt_long_outlined,
               size: 52,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
               l10n.noWithdrawals,
               style: AppTextStyles.bodyLarge().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 fontSize: 15,
               ),
             ),
@@ -121,7 +122,7 @@ class _WithdrawalItem extends StatelessWidget {
                 Text(
                   _formatDate(withdrawal.withdrawalDate),
                   style: AppTextStyles.bodySmall().copyWith(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontSize: 12,
                   ),
                 ),
@@ -135,7 +136,7 @@ class _WithdrawalItem extends StatelessWidget {
                 vertical: AppSpacing.xs,
               ),
               decoration: BoxDecoration(
-                color: AppColors.inputFill,
+                color: context.colors.inputFill,
                 borderRadius: BorderRadius.circular(AppRadius.md - 2),
               ),
               child: Text(
@@ -143,7 +144,7 @@ class _WithdrawalItem extends StatelessWidget {
                 style: AppTextStyles.bodySmall().copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ),

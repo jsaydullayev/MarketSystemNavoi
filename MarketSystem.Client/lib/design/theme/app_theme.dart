@@ -20,16 +20,21 @@ class AppTheme {
       onError: Colors.white,
     );
 
+    // AppTextStyles no longer carry a colour — apply the light-theme text
+    // colours here so the textTheme is the single source of truth.
     final textTheme = TextTheme(
-      displayLarge: AppTextStyles.displayLarge(),
-      displayMedium: AppTextStyles.displayMedium(),
-      titleLarge: AppTextStyles.titleLarge(),
-      titleMedium: AppTextStyles.titleMedium(),
-      bodyLarge: AppTextStyles.bodyLarge(),
-      bodyMedium: AppTextStyles.bodyMedium(),
-      bodySmall: AppTextStyles.bodySmall(),
-      labelLarge: AppTextStyles.labelLarge(),
-      labelSmall: AppTextStyles.labelSmall(),
+      displayLarge: AppTextStyles.displayLarge().copyWith(color: AppColors.text),
+      displayMedium:
+          AppTextStyles.displayMedium().copyWith(color: AppColors.text),
+      titleLarge: AppTextStyles.titleLarge().copyWith(color: AppColors.text),
+      titleMedium: AppTextStyles.titleMedium().copyWith(color: AppColors.text),
+      bodyLarge: AppTextStyles.bodyLarge().copyWith(color: AppColors.text),
+      bodyMedium: AppTextStyles.bodyMedium().copyWith(color: AppColors.text),
+      bodySmall:
+          AppTextStyles.bodySmall().copyWith(color: AppColors.textSecondary),
+      labelLarge: AppTextStyles.labelLarge().copyWith(color: AppColors.text),
+      labelSmall:
+          AppTextStyles.labelSmall().copyWith(color: AppColors.textSecondary),
     );
 
     return ThemeData(

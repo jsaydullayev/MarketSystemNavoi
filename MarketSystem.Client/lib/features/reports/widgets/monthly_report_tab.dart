@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/features/reports/widgets/date_range_picker.dart';
 import 'package:market_system_client/features/reports/widgets/empty_report.dart';
@@ -64,7 +65,7 @@ class MonthlyReportTab extends StatelessWidget {
                 value:
                     '${NumberFormatter.formatDecimal(totalSales)} ${l10n.currencySom}',
                 icon: Icons.attach_money_rounded,
-                color: AppColors.brand,
+                color: context.colors.brand,
               ),
             ),
             const SizedBox(width: AppSpacing.lg),

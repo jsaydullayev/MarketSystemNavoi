@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -121,9 +122,10 @@ class PaymentDialogState extends State<PaymentDialog> {
           right: AppSpacing.xl2,
           top: AppSpacing.lg,
         ),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl2)),
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -133,7 +135,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -151,13 +153,13 @@ class PaymentDialogState extends State<PaymentDialog> {
                       vertical: AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.brandLight,
+                      color: context.colors.brandLight,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Text(
                       NumberFormatter.formatDecimal(widget.totalAmount),
                       style: AppTextStyles.labelLarge().copyWith(
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                       ),
                     ),
                   ),
@@ -165,6 +167,7 @@ class PaymentDialogState extends State<PaymentDialog> {
               ),
               const SizedBox(height: AppSpacing.lg),
               _buildPaymentRow(
+                context,
                 l10n.cash,
                 _useCash,
                 (v) => setState(() => _useCash = v!),
@@ -173,14 +176,16 @@ class PaymentDialogState extends State<PaymentDialog> {
                 AppColors.success,
               ),
               _buildPaymentRow(
+                context,
                 l10n.bankCard,
                 _useTerminal,
                 (v) => setState(() => _useTerminal = v!),
                 _terminalController,
                 Icons.credit_card,
-                AppColors.brand,
+                context.colors.brand,
               ),
               _buildPaymentRow(
+                context,
                 l10n.transfer,
                 _useTransfer,
                 (v) => setState(() => _useTransfer = v!),
@@ -189,15 +194,16 @@ class PaymentDialogState extends State<PaymentDialog> {
                 AppColors.warning,
               ),
               _buildPaymentRow(
+                context,
                 l10n.click,
                 _useClick,
                 (v) => setState(() => _useClick = v!),
                 _clickController,
                 Icons.phone_android,
-                AppColors.brand,
+                context.colors.brand,
               ),
-              const Divider(height: 30, color: AppColors.border),
-              _buildSummary(l10n),
+              Divider(height: 30, color: context.colors.border),
+              _buildSummary(context, l10n),
               const SizedBox(height: AppSpacing.xl2),
               Row(
                 children: [
@@ -227,6 +233,7 @@ class PaymentDialogState extends State<PaymentDialog> {
   }
 
   Widget _buildPaymentRow(
+    BuildContext context,
     String title,
     bool value,
     Function(bool?) onChanged,
@@ -248,7 +255,7 @@ class PaymentDialogState extends State<PaymentDialog> {
           onChanged: onChanged,
           secondary: Icon(icon, color: color),
           contentPadding: EdgeInsets.zero,
-          activeColor: AppColors.brand,
+          activeColor: context.colors.brand,
         ),
         if (value)
           Padding(
@@ -265,12 +272,12 @@ class PaymentDialogState extends State<PaymentDialog> {
               decoration: InputDecoration(
                 hintText: l10n.enterAmount,
                 hintStyle: AppTextStyles.bodyMedium().copyWith(
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                 ),
                 suffixText: l10n.currencySom,
                 suffixStyle: AppTextStyles.bodySmall(),
                 filled: true,
-                fillColor: AppColors.inputFill,
+                fillColor: context.colors.inputFill,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   borderSide: BorderSide.none,
@@ -281,8 +288,8 @@ class PaymentDialogState extends State<PaymentDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: const BorderSide(
-                    color: AppColors.brand,
+                  borderSide: BorderSide(
+                    color: context.colors.brand,
                     width: 1.5,
                   ),
                 ),
@@ -297,13 +304,13 @@ class PaymentDialogState extends State<PaymentDialog> {
     );
   }
 
-  Widget _buildSummary(AppLocalizations l10n) {
+  Widget _buildSummary(BuildContext context, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.bg,
+        color: context.colors.bg,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.colors.borderSoft),
       ),
       child: Column(
         children: [
@@ -318,7 +325,7 @@ class PaymentDialogState extends State<PaymentDialog> {
             NumberFormatter.formatDecimal(_remainingAmount),
             _remainingAmount > 0 ? AppColors.danger : AppColors.success,
           ),
-          const Divider(color: AppColors.border),
+          Divider(color: context.colors.border),
           // Debt toggle. When a customer is attached this is a normal
           // checkbox. When there isn't one, instead of greying the row out
           // (which used to dead-end the cashier), the subtitle becomes a
@@ -340,7 +347,7 @@ class PaymentDialogState extends State<PaymentDialog> {
               value: _useDebt,
               onChanged: (v) => setState(() => _useDebt = v!),
               contentPadding: EdgeInsets.zero,
-              activeColor: AppColors.brand,
+              activeColor: context.colors.brand,
             )
           else
             InkWell(
@@ -350,9 +357,9 @@ class PaymentDialogState extends State<PaymentDialog> {
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.person_add_alt_1_rounded,
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                       size: 20,
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -368,16 +375,16 @@ class PaymentDialogState extends State<PaymentDialog> {
                           Text(
                             l10n.addCustomerForDebtHint,
                             style: AppTextStyles.bodySmall().copyWith(
-                              color: AppColors.brand,
+                              color: context.colors.brand,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                     ),
                   ],
                 ),

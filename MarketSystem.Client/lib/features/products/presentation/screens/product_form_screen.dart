@@ -15,6 +15,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../data/models/product_category_model.dart';
 import '../../../../data/services/category_service.dart';
 import '../../../../data/services/product_service.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -173,10 +174,10 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
             maxWidth: isWeb ? 500 : double.infinity,
             maxHeight: MediaQuery.of(context).size.height * 0.9,
           ),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl2)),
           ),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -198,7 +199,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.border,
+                        color: context.colors.border,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -217,7 +218,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                     child: Text(
                       "Barcha maydonlarni to'ldiring. * — majburiy",
                       style: AppTextStyles.bodySmall().copyWith(
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                         fontSize: 12,
                       ),
                     ),
@@ -354,7 +355,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                     style: AppTextStyles.caption().copyWith(
                       fontSize: 11,
                       letterSpacing: 0,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -426,7 +427,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
         suffixStyle: AppTextStyles.caption().copyWith(
           fontSize: 11,
           letterSpacing: 0.5,
-          color: AppColors.textSecondary,
+          color: context.colors.textSecondary,
         ),
       ),
     );
@@ -436,11 +437,11 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
     return InputDecoration(
       hintText: hint,
       hintStyle: AppTextStyles.bodyMedium().copyWith(
-        color: AppColors.textMuted,
+        color: context.colors.textMuted,
         fontSize: 14,
       ),
       filled: true,
-      fillColor: AppColors.inputFill,
+      fillColor: context.colors.inputFill,
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -456,7 +457,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
-        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        borderSide: BorderSide(color: context.colors.brand, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -489,15 +490,15 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       isExpanded: true,
       decoration: _inputDecoration(),
       style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
-      icon: const Icon(Icons.keyboard_arrow_down_rounded,
-          color: AppColors.textSecondary),
+      icon: Icon(Icons.keyboard_arrow_down_rounded,
+          color: context.colors.textSecondary),
       items: [
         DropdownMenuItem(
           value: null,
           child: Text(
             l10n.no,
             style: AppTextStyles.bodyMedium()
-                .copyWith(fontSize: 14, color: AppColors.textMuted),
+                .copyWith(fontSize: 14, color: context.colors.textMuted),
           ),
         ),
         ...uniqueCategories.map(
@@ -524,8 +525,8 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       isExpanded: true,
       decoration: _inputDecoration(),
       style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
-      icon: const Icon(Icons.keyboard_arrow_down_rounded,
-          color: AppColors.textSecondary),
+      icon: Icon(Icons.keyboard_arrow_down_rounded,
+          color: context.colors.textSecondary),
       items: _units
           .map(
             (u) => DropdownMenuItem(
@@ -554,7 +555,7 @@ class _SectionLabel extends StatelessWidget {
       style: AppTextStyles.caption().copyWith(
         fontSize: 11,
         letterSpacing: 0.8,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
         fontWeight: FontWeight.w700,
       ),
     );
@@ -591,7 +592,7 @@ class _LabeledField extends StatelessWidget {
                 style: AppTextStyles.caption().copyWith(
                   fontSize: compact ? 10 : 11,
                   letterSpacing: 0.5,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -616,7 +617,7 @@ class _LabeledField extends StatelessWidget {
                   style: AppTextStyles.caption().copyWith(
                     fontSize: compact ? 10 : 11,
                     letterSpacing: 0,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -641,7 +642,7 @@ class _PriceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg + 2),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.brandTint, width: 1),
       ),
@@ -650,10 +651,10 @@ class _PriceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.payments_rounded,
                 size: 14,
-                color: AppColors.brandDark,
+                color: context.colors.brandDark,
               ),
               const SizedBox(width: 6),
               Text(
@@ -661,7 +662,7 @@ class _PriceCard extends StatelessWidget {
                 style: AppTextStyles.caption().copyWith(
                   fontSize: 11,
                   letterSpacing: 0.8,
-                  color: AppColors.brandDark,
+                  color: context.colors.brandDark,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -704,7 +705,7 @@ class _PriceTip extends StatelessWidget {
               style: AppTextStyles.caption().copyWith(
                 fontSize: 10,
                 letterSpacing: 0,
-                color: AppColors.text,
+                color: context.colors.text,
                 fontWeight: FontWeight.w400,
                 height: 1.4,
               ),
@@ -730,16 +731,16 @@ class _TempToggle extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg, vertical: AppSpacing.md - 2),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderSoft, width: 1),
+        border: Border.all(color: context.colors.borderSoft, width: 1),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.timer_outlined,
             size: 18,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -748,7 +749,7 @@ class _TempToggle extends StatelessWidget {
               style: AppTextStyles.bodySmall().copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: AppColors.text,
+                color: context.colors.text,
               ),
             ),
           ),
@@ -756,7 +757,7 @@ class _TempToggle extends StatelessWidget {
             scale: 0.85,
             child: Switch(
               value: value,
-              activeThumbColor: AppColors.brand,
+              activeThumbColor: context.colors.brand,
               onChanged: onChanged,
             ),
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -32,20 +33,20 @@ class DatePickerRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.brandLight,
+              color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: const Icon(Icons.calendar_today_rounded,
-                color: AppColors.brand, size: 18),
+            child: Icon(Icons.calendar_today_rounded,
+                color: context.colors.brand, size: 18),
           ),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
@@ -93,14 +94,14 @@ class DatePickerRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg - 2, vertical: AppSpacing.sm),
               decoration: BoxDecoration(
-                color: AppColors.brandLight,
+                color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.md - 2),
               ),
               child: Text(
                 l10n.select,
                 style: AppTextStyles.labelSmall().copyWith(
                   fontSize: 12,
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                 ),
               ),
             ),
@@ -126,13 +127,13 @@ class _NavBtn extends StatelessWidget {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: enabled ? AppColors.brandLight : AppColors.inputFill,
+          color: enabled ? context.colors.brandLight : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.md - 2),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: enabled ? AppColors.brand : AppColors.textMuted,
+          color: enabled ? context.colors.brand : context.colors.textMuted,
         ),
       ),
     );

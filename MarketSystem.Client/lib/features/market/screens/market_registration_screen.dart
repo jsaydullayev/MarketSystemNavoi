@@ -12,6 +12,7 @@
 // here — they'd require backend changes.
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -130,7 +131,7 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
             Text(
               l10n.nowYouCanAddUsers,
               style: AppTextStyles.bodySmall().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -143,12 +144,12 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
               Navigator.of(context).pop(); // back to caller (dashboard)
             },
             style: TextButton.styleFrom(
-              foregroundColor: AppColors.brand,
+              foregroundColor: context.colors.brand,
             ),
             child: Text(
               l10n.ok,
               style: AppTextStyles.labelLarge().copyWith(
-                color: AppColors.brand,
+                color: context.colors.brand,
               ),
             ),
           ),
@@ -162,28 +163,28 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       // Bare AppBar — no title, just a back button so the hero header
       // below it carries the visual weight (matches demo's auth screens).
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.text,
+        foregroundColor: context.colors.text,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 20,
-            color: AppColors.text,
+            color: context.colors.text,
           ),
           onPressed: () => Navigator.maybePop(context),
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.surface, AppColors.brandLight],
+            colors: [context.colors.surface, context.colors.brandLight],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -210,15 +211,19 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.brand, AppColors.brandDark],
+                          gradient: LinearGradient(
+                            colors: [
+                              context.colors.brand,
+                              context.colors.brandDark
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.brand.withValues(alpha: 0.30),
+                              color:
+                                  context.colors.brand.withValues(alpha: 0.30),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -253,7 +258,7 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                             Text(
                               l10n.enterMarketDetails,
                               style: AppTextStyles.bodySmall().copyWith(
-                                color: AppColors.textSecondary,
+                                color: context.colors.textSecondary,
                                 fontSize: 12,
                               ),
                             ),
@@ -312,7 +317,7 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                             style: AppTextStyles.caption().copyWith(
                               fontSize: 10,
                               letterSpacing: 0,
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -333,16 +338,16 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: AppColors.brandLight,
+                      color: context.colors.brandLight,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                       border:
                           Border.all(color: AppColors.brandTint, width: 1),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.info_outline_rounded,
-                          color: AppColors.brandDark,
+                          color: context.colors.brandDark,
                           size: 18,
                         ),
                         const SizedBox(width: AppSpacing.md),
@@ -351,7 +356,7 @@ class _MarketRegistrationScreenState extends State<MarketRegistrationScreen> {
                             l10n.afterMarketRegisterInfo,
                             style: AppTextStyles.bodySmall().copyWith(
                               fontSize: 12,
-                              color: AppColors.brandDark,
+                              color: context.colors.brandDark,
                             ),
                           ),
                         ),

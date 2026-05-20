@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -163,7 +164,7 @@ class _UsersScreenState extends State<UsersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
@@ -178,7 +179,7 @@ class _UsersScreenState extends State<UsersScreen> {
             child: Text(
               l10n.no,
               style: AppTextStyles.labelLarge()
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: context.colors.textSecondary),
             ),
           ),
           TextButton(
@@ -221,12 +222,12 @@ class _UsersScreenState extends State<UsersScreen> {
     return NetworkWrapper(
       onRetry: _loadUsers,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: CommonAppBar(title: l10n.users, onRefresh: _loadUsers),
         body: _buildBody(l10n),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => AddUserSheet.show(context),
-          backgroundColor: AppColors.brand,
+          backgroundColor: context.colors.brand,
           foregroundColor: Colors.white,
           icon: const Icon(Icons.person_add_rounded),
           label: Text(
@@ -308,18 +309,18 @@ class _SearchBar extends StatelessWidget {
       decoration: InputDecoration(
         hintText: l10n.searchUser,
         hintStyle: AppTextStyles.bodyMedium().copyWith(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: 15,
         ),
-        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+        prefixIcon: Icon(Icons.search, color: context.colors.textSecondary),
         suffixIcon: controller.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.clear, color: AppColors.textMuted),
+                icon: Icon(Icons.clear, color: context.colors.textMuted),
                 onPressed: controller.clear,
               )
             : null,
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: context.colors.inputFill,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
           vertical: AppSpacing.lg + 2,
@@ -334,7 +335,7 @@ class _SearchBar extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: BorderSide(color: context.colors.brand, width: 1.5),
         ),
       ),
     );
@@ -387,9 +388,9 @@ class _StaffSummary extends StatelessWidget {
         vertical: AppSpacing.xl,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Row(
         children: [
@@ -397,7 +398,7 @@ class _StaffSummary extends StatelessWidget {
             child: _SummaryStat(
               value: '$total',
               label: l10n.totalShort,
-              valueColor: AppColors.text,
+              valueColor: context.colors.text,
             ),
           ),
           const _Divider(),
@@ -413,7 +414,7 @@ class _StaffSummary extends StatelessWidget {
             child: _SummaryStat(
               value: revenueLabel,
               label: l10n.usersTodayRevenueShort,
-              valueColor: AppColors.brand,
+              valueColor: context.colors.brand,
             ),
           ),
         ],
@@ -429,7 +430,7 @@ class _Divider extends StatelessWidget {
     return Container(
       width: 1,
       height: 32,
-      color: AppColors.borderSoft,
+      color: context.colors.borderSoft,
     );
   }
 }
@@ -459,7 +460,7 @@ class _SummaryStat extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             fontSize: 10,
           ),
         ),
@@ -543,10 +544,10 @@ class _Chip extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.brand : AppColors.inputFill,
+          color: isActive ? context.colors.brand : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: isActive ? AppColors.brand : AppColors.border,
+            color: isActive ? context.colors.brand : context.colors.border,
           ),
         ),
         child: Row(
@@ -567,14 +568,14 @@ class _Chip extends StatelessWidget {
               Icon(
                 leadingIcon,
                 size: 14,
-                color: isActive ? Colors.white : AppColors.textSecondary,
+                color: isActive ? Colors.white : context.colors.textSecondary,
               ),
               const SizedBox(width: 4),
             ],
             Text(
               label,
               style: AppTextStyles.bodyMedium().copyWith(
-                color: isActive ? Colors.white : AppColors.textSecondary,
+                color: isActive ? Colors.white : context.colors.textSecondary,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -600,21 +601,21 @@ class _EmptyView extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl3),
-            decoration: const BoxDecoration(
-              color: AppColors.inputFill,
+            decoration: BoxDecoration(
+              color: context.colors.inputFill,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.people_outline,
               size: 56,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
             isSearching ? l10n.userNotFound : l10n.noUsersFound,
             style: AppTextStyles.titleMedium()
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: context.colors.textSecondary),
           ),
         ],
       ),
@@ -664,7 +665,7 @@ class _ErrorView extends StatelessWidget {
                 style: const TextStyle(color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
+                backgroundColor: context.colors.brand,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl3,
                   vertical: AppSpacing.lg,

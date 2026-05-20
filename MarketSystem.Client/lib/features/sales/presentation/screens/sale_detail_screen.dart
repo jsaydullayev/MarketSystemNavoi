@@ -10,6 +10,7 @@ import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -60,9 +61,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
+      builder: (context) => Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+          valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand),
         ),
       ),
     );
@@ -191,7 +192,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       case 'closed':
         return const Color(0xFF6366F1);
       default:
-        return AppColors.textMuted;
+        return context.colors.textMuted;
     }
   }
 
@@ -235,7 +236,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           if (state is SaleDetailLoaded) {
             extraActions = [
               IconButton(
-                icon: const Icon(Icons.download, color: AppColors.text),
+                icon: Icon(Icons.download, color: context.colors.text),
                 onPressed: () => _downloadPdf(state.sale),
                 tooltip: l10n.downloadPdf,
               ),
@@ -251,7 +252,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           return NetworkWrapper(
             onRetry: _loadSaleDetails,
             child: Scaffold(
-              backgroundColor: AppColors.bg,
+              backgroundColor: context.colors.bg,
               appBar: CommonAppBar(
                 title: l10n.sales,
                 onRefresh: _loadSaleDetails,
@@ -293,9 +294,10 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
   Widget _buildBody(SalesState state, AppLocalizations l10n) {
     if (state is SaleDetailLoading) {
-      return const Center(
+      return Center(
           child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand)));
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(context.colors.brand)));
     }
     if (state is SaleDetailLoaded) {
       final sale = state.sale;
@@ -362,14 +364,14 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.bg,
+        color: context.colors.bg,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.colors.borderSoft),
       ),
       child: Column(
         children: [
           _metaRow(l10n.seller, sale['sellerName']?.toString() ?? l10n.unknown,
-              AppColors.text),
+              context.colors.text),
           _metaDivider(),
           _metaRow(
             'Sana / vaqt',
@@ -378,20 +380,20 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   ? sale['createdAt'] as DateTime
                   : DateTime.parse(sale['createdAt'].toString()),
             ),
-            AppColors.text,
+            context.colors.text,
           ),
           if (paymentType != null && paymentType.isNotEmpty) ...[
             _metaDivider(),
             _metaRow(
               l10n.paymentType,
               _paymentLabel(paymentType, l10n),
-              AppColors.text,
+              context.colors.text,
             ),
           ],
           if (sale['customerName'] != null) ...[
             _metaDivider(),
             _metaRow(l10n.customer, sale['customerName'].toString(),
-                AppColors.text),
+                context.colors.text),
           ],
           _metaDivider(),
           _metaRow(
@@ -414,7 +416,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           Expanded(
             child: Text(label,
                 style: AppTextStyles.bodySmall()
-                    .copyWith(color: AppColors.textSecondary)),
+                    .copyWith(color: context.colors.textSecondary)),
           ),
           Flexible(
             child: Text(
@@ -433,7 +435,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
   Widget _metaDivider() => Container(
         height: 1,
-        color: AppColors.border.withValues(alpha: 0.6),
+        color: context.colors.border.withValues(alpha: 0.6),
       );
 
   String _paymentLabel(String type, AppLocalizations l10n) {
@@ -459,13 +461,13 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       child: CustomPaint(
         painter: _DashedBorderPainter(
-          color: AppColors.border,
+          color: context.colors.border,
           radius: AppRadius.lg,
         ),
         child: Padding(
@@ -475,8 +477,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.inventory_2_outlined,
-                      size: 18, color: AppColors.textSecondary),
+                  Icon(Icons.inventory_2_outlined,
+                      size: 18, color: context.colors.textSecondary),
                   8.width,
                   Text(l10n.products,
                       style: AppTextStyles.labelLarge().copyWith(fontSize: 14)),
@@ -490,7 +492,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               const SizedBox(height: AppSpacing.md),
               Container(
                 height: 1,
-                color: AppColors.border,
+                color: context.colors.border,
               ),
               const SizedBox(height: AppSpacing.lg),
               _totalsRow(l10n.totalSum, NumberFormatter.format(total),
@@ -557,7 +559,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                             ),
                             child: Text('tashqi',
                                 style: AppTextStyles.caption().copyWith(
-                                  color: AppColors.brandDark,
+                                  color: context.colors.brandDark,
                                   fontSize: 9,
                                 )),
                           ),
@@ -584,20 +586,20 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.brandLight,
+                color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.notes_rounded,
-                      size: 13, color: AppColors.brandDark),
+                  Icon(Icons.notes_rounded,
+                      size: 13, color: context.colors.brandDark),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(comment,
                         style: AppTextStyles.bodySmall().copyWith(
                           fontSize: 12,
-                          color: AppColors.text,
+                          color: context.colors.text,
                         )),
                   ),
                 ],
@@ -613,14 +615,15 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       {required bool emphasize, Color? valueColor}) {
     final labelStyle = emphasize
         ? AppTextStyles.labelLarge()
-        : AppTextStyles.bodyMedium().copyWith(color: AppColors.textSecondary);
+        : AppTextStyles.bodyMedium()
+            .copyWith(color: context.colors.textSecondary);
     final valueStyle = emphasize
         ? AppTextStyles.titleMedium().copyWith(
-            color: valueColor ?? AppColors.text,
+            color: valueColor ?? context.colors.text,
             fontSize: 16,
           )
         : AppTextStyles.bodyMedium().copyWith(
-            color: valueColor ?? AppColors.text,
+            color: valueColor ?? context.colors.text,
             fontWeight: FontWeight.w700,
           );
     return Row(
@@ -677,7 +680,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               vertical: AppSpacing.xl, horizontal: AppSpacing.lg),
           child: Column(
             children: [
-              Icon(icon, color: AppColors.brand, size: 22),
+              Icon(icon, color: context.colors.brand, size: 22),
               const SizedBox(height: 6),
               Text(label,
                   style:
@@ -701,9 +704,10 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl)),
         ),
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xl2),
@@ -717,7 +721,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: AppSpacing.xl),
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -767,9 +771,9 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(AppSpacing.lg),
                       decoration: BoxDecoration(
-                        color: AppColors.bg,
+                        color: context.colors.bg,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.colors.border),
                       ),
                       child: Row(
                         children: [
@@ -791,8 +795,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                               ],
                             ),
                           ),
-                          const Icon(Icons.chevron_right_rounded,
-                              color: AppColors.textMuted),
+                          Icon(Icons.chevron_right_rounded,
+                              color: context.colors.textMuted),
                         ],
                       ),
                     ),
@@ -837,10 +841,10 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               left: AppSpacing.xl,
               right: AppSpacing.xl,
             ),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+            decoration: BoxDecoration(
+              color: context.colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppRadius.xl)),
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -852,7 +856,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.border,
+                        color: context.colors.border,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -940,15 +944,18 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                               horizontal: AppSpacing.lg,
                               vertical: AppSpacing.md),
                           decoration: BoxDecoration(
-                            color: sel ? AppColors.text : AppColors.inputFill,
+                            color: sel
+                                ? context.colors.text
+                                : context.colors.inputFill,
                             borderRadius:
                                 BorderRadius.circular(AppRadius.full),
                           ),
                           child: Text(
                             reason,
                             style: AppTextStyles.labelSmall().copyWith(
-                              color:
-                                  sel ? Colors.white : AppColors.text,
+                              color: sel
+                                  ? Colors.white
+                                  : context.colors.text,
                               fontSize: 12,
                               letterSpacing: 0,
                             ),
@@ -1070,18 +1077,20 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color:
-              selected ? AppColors.brandLight : AppColors.surface,
+          color: selected
+              ? context.colors.brandLight
+              : context.colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
-            color: selected ? AppColors.brand : AppColors.border,
+            color:
+                selected ? context.colors.brand : context.colors.border,
             width: selected ? 1.5 : 1,
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AppColors.brand, size: 22),
+            Icon(icon, color: context.colors.brand, size: 22),
             const SizedBox(height: AppSpacing.md),
             Text(title,
                 style: AppTextStyles.labelLarge().copyWith(fontSize: 13)),
@@ -1107,11 +1116,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   InputDecoration _inputStyle(String hint, {String? suffix}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: AppTextStyles.bodyMedium().copyWith(color: AppColors.textMuted),
+      hintStyle: AppTextStyles.bodyMedium()
+          .copyWith(color: context.colors.textMuted),
       suffixText: suffix,
       suffixStyle: AppTextStyles.bodySmall(),
       filled: true,
-      fillColor: AppColors.inputFill,
+      fillColor: context.colors.inputFill,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
         borderSide: BorderSide.none,

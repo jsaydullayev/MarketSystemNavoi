@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -153,9 +154,10 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl2)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl3,
@@ -178,7 +180,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -193,12 +195,12 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: AppColors.brandLight,
+                        color: context.colors.brandLight,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.payments_outlined,
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                         size: 20,
                       ),
                     ),
@@ -215,13 +217,13 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                     vertical: AppSpacing.sm,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.brandLight,
+                    color: context.colors.brandLight,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Text(
                     '${NumberFormatter.formatDecimal(widget.totalAmount)} ${l10n.currencySom}',
                     style: AppTextStyles.labelLarge().copyWith(
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                       fontSize: 13,
                     ),
                   ),
@@ -297,11 +299,14 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                   vertical: AppSpacing.lg,
                 ),
                 decoration: BoxDecoration(
-                  color: _useDebt ? AppColors.brandLight : AppColors.inputFill,
+                  color: _useDebt
+                      ? context.colors.brandLight
+                      : context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   border: Border.all(
-                    color:
-                        _useDebt ? AppColors.brand : Colors.transparent,
+                    color: _useDebt
+                        ? context.colors.brand
+                        : Colors.transparent,
                     width: 1,
                   ),
                 ),
@@ -312,7 +317,9 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                           ? Icons.person_add_alt_1_rounded
                           : Icons.money_off_rounded,
                       size: 20,
-                      color: _useDebt ? AppColors.brand : AppColors.textMuted,
+                      color: _useDebt
+                          ? context.colors.brand
+                          : context.colors.textMuted,
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
@@ -324,8 +331,8 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                             style: AppTextStyles.bodyMedium().copyWith(
                               fontWeight: FontWeight.w700,
                               color: _useDebt
-                                  ? AppColors.brand
-                                  : AppColors.textSecondary,
+                                  ? context.colors.brand
+                                  : context.colors.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -340,8 +347,8 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                                     : _customer!['phone']?.toString() ?? ''),
                             style: AppTextStyles.bodySmall().copyWith(
                               color: _customer == null
-                                  ? AppColors.brand
-                                  : AppColors.textSecondary,
+                                  ? context.colors.brand
+                                  : context.colors.textSecondary,
                               fontWeight: _customer == null
                                   ? FontWeight.w600
                                   : FontWeight.w400,
@@ -351,16 +358,18 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                       ),
                     ),
                     if (_customer == null)
-                      const Icon(
+                      Icon(
                         Icons.chevron_right_rounded,
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                       )
                     else
                       Container(
                         width: 22,
                         height: 22,
                         decoration: BoxDecoration(
-                          color: _useDebt ? AppColors.brand : AppColors.border,
+                          color: _useDebt
+                              ? context.colors.brand
+                              : context.colors.border,
                           shape: BoxShape.circle,
                         ),
                         child: _useDebt
@@ -381,9 +390,9 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: context.colors.bg,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: AppColors.borderSoft),
+                border: Border.all(color: context.colors.borderSoft),
               ),
               child: Column(
                 children: [
@@ -399,17 +408,18 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                         '${NumberFormatter.formatDecimal(_totalPaid)} ${l10n.currencySom}',
                     valueColor: AppColors.success,
                   ),
-                  const Padding(
-                    padding:
-                        EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    child: Divider(height: 1, color: AppColors.border),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.md),
+                    child: Divider(
+                        height: 1, color: context.colors.border),
                   ),
                   _SummaryRow(
                     label: _hasDebt ? l10n.onDebt : l10n.remaining,
                     value:
                         '${NumberFormatter.formatDecimal(_remaining)} ${l10n.currencySom}',
                     valueColor: _hasDebt
-                        ? AppColors.brand
+                        ? context.colors.brand
                         : (_remaining <= 0
                             ? AppColors.success
                             : AppColors.danger),
@@ -485,10 +495,13 @@ class _PaymentMethodRow extends StatelessWidget {
                 vertical: AppSpacing.lg,
               ),
               decoration: BoxDecoration(
-                color: isActive ? AppColors.brandLight : AppColors.inputFill,
+                color: isActive
+                    ? context.colors.brandLight
+                    : context.colors.inputFill,
                 borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 border: Border.all(
-                  color: isActive ? AppColors.brand : Colors.transparent,
+                  color:
+                      isActive ? context.colors.brand : Colors.transparent,
                   width: 1,
                 ),
               ),
@@ -497,7 +510,9 @@ class _PaymentMethodRow extends StatelessWidget {
                   Icon(
                     icon,
                     size: 20,
-                    color: isActive ? AppColors.brand : AppColors.textMuted,
+                    color: isActive
+                        ? context.colors.brand
+                        : context.colors.textMuted,
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -506,8 +521,8 @@ class _PaymentMethodRow extends StatelessWidget {
                       style: AppTextStyles.bodyMedium().copyWith(
                         fontWeight: FontWeight.w700,
                         color: isActive
-                            ? AppColors.brand
-                            : AppColors.textSecondary,
+                            ? context.colors.brand
+                            : context.colors.textSecondary,
                       ),
                     ),
                   ),
@@ -515,7 +530,9 @@ class _PaymentMethodRow extends StatelessWidget {
                     width: 22,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.brand : AppColors.border,
+                      color: isActive
+                          ? context.colors.brand
+                          : context.colors.border,
                       shape: BoxShape.circle,
                     ),
                     child: isActive
@@ -543,12 +560,12 @@ class _PaymentMethodRow extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: l10n.enterAmount,
                   hintStyle: AppTextStyles.bodyMedium().copyWith(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                   ),
                   suffixText: l10n.currencySom,
                   suffixStyle: AppTextStyles.bodySmall(),
                   filled: true,
-                  fillColor: AppColors.inputFill,
+                  fillColor: context.colors.inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.md + 2),
                     borderSide: BorderSide.none,
@@ -559,8 +576,8 @@ class _PaymentMethodRow extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                    borderSide: const BorderSide(
-                      color: AppColors.brand,
+                    borderSide: BorderSide(
+                      color: context.colors.brand,
                       width: 1.5,
                     ),
                   ),
@@ -599,7 +616,7 @@ class _SummaryRow extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.bodySmall().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             fontSize: 13,
           ),
         ),
@@ -608,12 +625,12 @@ class _SummaryRow extends StatelessWidget {
           style: bold
               ? AppTextStyles.labelLarge().copyWith(
                   fontSize: 15,
-                  color: valueColor ?? AppColors.text,
+                  color: valueColor ?? context.colors.text,
                 )
               : AppTextStyles.bodySmall().copyWith(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: valueColor ?? AppColors.text,
+                  color: valueColor ?? context.colors.text,
                 ),
         ),
       ],

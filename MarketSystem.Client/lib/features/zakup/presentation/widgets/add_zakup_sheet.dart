@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -130,9 +131,9 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.82,
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(
             top: Radius.circular(AppRadius.xl2),
           ),
         ),
@@ -175,7 +176,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                   child: Text(
                     l10n.productNotFound,
                     style: AppTextStyles.bodyMedium().copyWith(
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                   ),
                 )
@@ -200,9 +201,9 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                           vertical: AppSpacing.lg,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.inputFill,
+                          color: context.colors.inputFill,
                           borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: context.colors.border),
                         ),
                         child: Row(
                           children: [
@@ -210,13 +211,13 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                               width: 38,
                               height: 38,
                               decoration: BoxDecoration(
-                                color: AppColors.brandLight,
+                                color: context.colors.brandLight,
                                 borderRadius:
                                     BorderRadius.circular(AppRadius.md),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.inventory_2_rounded,
-                                color: AppColors.brand,
+                                color: context.colors.brand,
                                 size: 18,
                               ),
                             ),
@@ -241,9 +242,9 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                                 ],
                               ),
                             ),
-                            const Icon(
+                            Icon(
                               Icons.chevron_right_rounded,
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                             ),
                           ],
                         ),
@@ -293,9 +294,9 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.xl),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.colors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.colors.border),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,13 +307,13 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: AppColors.brandLight,
+                              color: context.colors.brandLight,
                               borderRadius:
                                   BorderRadius.circular(AppRadius.md),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.shopping_bag_rounded,
-                              color: AppColors.brand,
+                              color: context.colors.brand,
                               size: 20,
                             ),
                           ),
@@ -422,7 +423,7 @@ class _Handle extends StatelessWidget {
           width: 40,
           height: 4,
           decoration: BoxDecoration(
-            color: AppColors.border,
+            color: context.colors.border,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -456,10 +457,10 @@ class _SheetHeader extends StatelessWidget {
           if (onBack != null) ...[
             GestureDetector(
               onTap: onBack,
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 18,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             const SizedBox(width: AppSpacing.md + 2),
@@ -471,9 +472,9 @@ class _SheetHeader extends StatelessWidget {
           const Spacer(),
           IconButton(
             onPressed: onClose,
-            icon: const Icon(
+            icon: Icon(
               Icons.close_rounded,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
         ],
@@ -495,7 +496,7 @@ class _JamiTile extends StatelessWidget {
         Text(
           'JAMI',
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             letterSpacing: 0.8,
           ),
         ),
@@ -505,7 +506,7 @@ class _JamiTile extends StatelessWidget {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.brandLight,
+            color: context.colors.brandLight,
             borderRadius: BorderRadius.circular(AppRadius.md + 2),
           ),
           child: FittedBox(
@@ -513,7 +514,7 @@ class _JamiTile extends StatelessWidget {
             child: Text(
               NumberFormatter.format(total),
               style: AppTextStyles.bodyLarge().copyWith(
-                color: AppColors.brandDark,
+                color: context.colors.brandDark,
                 fontWeight: FontWeight.w800,
                 fontSize: 15,
               ),
@@ -585,7 +586,7 @@ class _TotalCard extends StatelessWidget {
               Text(
                 '${NumberFormatter.format(total)} $currency',
                 style: AppTextStyles.titleLarge().copyWith(
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   fontWeight: FontWeight.w800,
                   fontSize: 22,
                 ),

@@ -10,6 +10,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../design/widgets/app_card.dart';
@@ -58,21 +59,21 @@ class GreetingCard extends StatelessWidget {
   /// Render the user's profile image as a 44×44 rounded tile, or a coloured
   /// first-letter tile if no image is available. Kept identical in size to
   /// the original letter tile so the rest of the row layout doesn't shift.
-  Widget _buildAvatar() {
+  Widget _buildAvatar(BuildContext context) {
     final img = profileImage;
     final hasImage = img != null && img.isNotEmpty;
     final letterTile = Container(
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       alignment: Alignment.center,
       child: Text(
         _initial,
-        style: AppTextStyles.titleMedium()
-            .copyWith(color: AppColors.brand, fontWeight: FontWeight.w800),
+        style: AppTextStyles.titleMedium().copyWith(
+            color: context.colors.brand, fontWeight: FontWeight.w800),
       ),
     );
     if (!hasImage) return letterTile;
@@ -139,7 +140,7 @@ class GreetingCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Row(
         children: [
-          _buildAvatar(),
+          _buildAvatar(context),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
@@ -224,10 +225,10 @@ class _IconCircle extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.inputFill,
+              color: context.colors.inputFill,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(icon, size: 18, color: AppColors.text),
+            child: Icon(icon, size: 18, color: context.colors.text),
           ),
           if (badge)
             Positioned(
@@ -396,7 +397,7 @@ class KpiCard extends StatelessWidget {
   final KpiTone tone;
   final VoidCallback? onTap;
 
-  ({Color bg, Color fg}) _toneColors() {
+  ({Color bg, Color fg}) _toneColors(BuildContext context) {
     switch (tone) {
       case KpiTone.green:
         return (bg: AppColors.successLight, fg: AppColors.success);
@@ -405,13 +406,13 @@ class KpiCard extends StatelessWidget {
       case KpiTone.blue:
         return (bg: AppColors.infoLight, fg: AppColors.infoDeep);
       case KpiTone.orange:
-        return (bg: AppColors.brandLight, fg: AppColors.brand);
+        return (bg: context.colors.brandLight, fg: context.colors.brand);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final t = _toneColors();
+    final t = _toneColors(context);
     final card = AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -446,7 +447,7 @@ class KpiCard extends StatelessWidget {
             label,
             style: AppTextStyles.caption().copyWith(
               fontSize: 11,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               letterSpacing: 0.3,
             ),
             maxLines: 2,
@@ -611,7 +612,7 @@ class ChartCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
@@ -641,10 +642,10 @@ class ChartCard extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           color: isEmpty
-                              ? AppColors.borderSoft
+                              ? context.colors.borderSoft
                               : (i == bars.length - 1
-                                  ? AppColors.brandDark
-                                  : AppColors.brand),
+                                  ? context.colors.brandDark
+                                  : context.colors.brand),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(6),
                           ),
@@ -734,7 +735,7 @@ class TopSellersCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
@@ -757,7 +758,7 @@ class TopSellersCard extends StatelessWidget {
                       '${i + 1}.',
                       style: AppTextStyles.bodyMedium().copyWith(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -770,7 +771,7 @@ class TopSellersCard extends StatelessWidget {
                       entries[i].name,
                       style: AppTextStyles.bodyMedium().copyWith(
                         fontSize: 13,
-                        color: AppColors.text,
+                        color: context.colors.text,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -780,7 +781,7 @@ class TopSellersCard extends StatelessWidget {
                     entries[i].countLabel,
                     style: AppTextStyles.bodyMedium().copyWith(
                       fontSize: 13,
-                      color: AppColors.text,
+                      color: context.colors.text,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -819,7 +820,7 @@ class SectionHeader extends StatelessWidget {
           Text(
             title.toUpperCase(),
             style: AppTextStyles.caption().copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               fontSize: 11,
               letterSpacing: 1,
               fontWeight: FontWeight.w700,
@@ -831,7 +832,7 @@ class SectionHeader extends StatelessWidget {
               child: Text(
                 '$actionLabel →',
                 style: AppTextStyles.bodySmall().copyWith(
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -870,15 +871,15 @@ class SellerHeroCta extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.xl3),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.brand, AppColors.brandDark],
+            colors: [context.colors.brand, context.colors.brandDark],
           ),
           borderRadius: BorderRadius.circular(AppRadius.xl),
           boxShadow: [
             BoxShadow(
-              color: AppColors.brand.withValues(alpha: 0.35),
+              color: context.colors.brand.withValues(alpha: 0.35),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -980,7 +981,7 @@ class SellerStatsRow extends StatelessWidget {
                     style: AppTextStyles.caption().copyWith(
                       fontSize: 10,
                       letterSpacing: 0.3,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -990,7 +991,7 @@ class SellerStatsRow extends StatelessWidget {
               Container(
                 width: 1,
                 height: 30,
-                color: AppColors.border,
+                color: context.colors.border,
               ),
           ],
         ],

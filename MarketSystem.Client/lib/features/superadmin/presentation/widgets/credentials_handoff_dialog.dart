@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -37,7 +38,7 @@ class _CredentialsHandoffDialogState extends State<CredentialsHandoffDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
@@ -114,7 +115,7 @@ class _CredentialsHandoffDialogState extends State<CredentialsHandoffDialog> {
                       child: Text(
                         l10n.superAdminCredentialsWarning,
                         style: AppTextStyles.bodySmall().copyWith(
-                          color: AppColors.text,
+                          color: context.colors.text,
                           fontSize: 12,
                         ),
                       ),
@@ -184,7 +185,7 @@ class _CredentialRow extends StatelessWidget {
         vertical: AppSpacing.md + 2,
       ),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
@@ -197,7 +198,7 @@ class _CredentialRow extends StatelessWidget {
                 Text(
                   label.toUpperCase(),
                   style: AppTextStyles.caption().copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -218,16 +219,16 @@ class _CredentialRow extends StatelessWidget {
                 obscure
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 size: 20,
               ),
               onPressed: onToggleObscure,
             ),
           IconButton(
             tooltip: 'Nusxalash',
-            icon: const Icon(
+            icon: Icon(
               Icons.copy_outlined,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               size: 20,
             ),
             onPressed: () async {

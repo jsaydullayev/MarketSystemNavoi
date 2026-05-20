@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/data/services/customer_service.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -106,10 +107,10 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl2)),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -126,7 +127,7 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -137,12 +138,12 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: AppColors.brandLight,
+                    color: context.colors.brandLight,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.person_add_alt_1_rounded,
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                     size: 20,
                   ),
                 ),
@@ -154,7 +155,7 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                  icon: Icon(Icons.close, color: context.colors.textSecondary),
                   onPressed:
                       _isCreating ? null : () => Navigator.pop(context, null),
                 ),

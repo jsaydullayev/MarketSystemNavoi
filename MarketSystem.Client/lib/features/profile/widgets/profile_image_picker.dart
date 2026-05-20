@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/services/user_service.dart';
+import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 
@@ -52,11 +53,11 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
               height: 120,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.brandLight,
-                border: Border.all(color: AppColors.surface, width: 4),
+                color: context.colors.brandLight,
+                border: Border.all(color: context.colors.surface, width: 4),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.brand.withValues(alpha: 0.12),
+                    color: context.colors.brand.withValues(alpha: 0.12),
                     blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
@@ -86,26 +87,26 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
             imageStr.contains(',') ? imageStr.split(',').last : imageStr;
         return Image.memory(base64Decode(base64Str), fit: BoxFit.cover);
       } catch (_) {
-        return const Icon(
+        return Icon(
           Icons.broken_image_outlined,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         );
       }
     }
-    return const Icon(Icons.person_outline, color: AppColors.textMuted);
+    return Icon(Icons.person_outline, color: context.colors.textMuted);
   }
 
   Widget _buildDefaultPlaceholder(dynamic user) {
     final initial = (user?['fullName'] ?? 'U')[0].toUpperCase();
     return Container(
-      color: AppColors.brandLight,
+      color: context.colors.brandLight,
       alignment: Alignment.center,
       child: Text(
         initial,
         style: AppTextStyles.displayLarge().copyWith(
           fontSize: 44,
           fontWeight: FontWeight.w800,
-          color: AppColors.brand,
+          color: context.colors.brand,
         ),
       ),
     );
@@ -115,12 +116,12 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.brand,
+        color: context.colors.brand,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.surface, width: 3),
+        border: Border.all(color: context.colors.surface, width: 3),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brand.withValues(alpha: 0.25),
+            color: context.colors.brand.withValues(alpha: 0.25),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -136,14 +137,14 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
 
   Widget _buildLoadingOverlay() {
     return Container(
-      color: AppColors.brandLight,
-      child: const Center(
+      color: context.colors.brandLight,
+      child: Center(
         child: SizedBox(
           width: 28,
           height: 28,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+            valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand),
           ),
         ),
       ),
@@ -157,9 +158,10 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl,
@@ -174,7 +176,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: context.colors.border,
                 borderRadius: BorderRadius.circular(AppRadius.full),
               ),
             ),
@@ -258,7 +260,7 @@ class _SourceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.brandLight,
+      color: context.colors.brandLight,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onTap,
@@ -273,11 +275,11 @@ class _SourceTile extends StatelessWidget {
               Container(
                 width: 36,
                 height: 36,
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
+                decoration: BoxDecoration(
+                  color: context.colors.surface,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: AppColors.brand, size: 20),
+                child: Icon(icon, color: context.colors.brand, size: 20),
               ),
               const SizedBox(width: AppSpacing.lg),
               Text(
@@ -285,7 +287,7 @@ class _SourceTile extends StatelessWidget {
                 style: AppTextStyles.bodyMedium().copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.brandDark,
+                  color: context.colors.brandDark,
                 ),
               ),
             ],

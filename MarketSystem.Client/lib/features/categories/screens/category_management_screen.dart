@@ -16,6 +16,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/categories/screens/category_bottom_sheet.dart';
@@ -114,7 +115,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     return NetworkWrapper(
       onRetry: _loadCategories,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: CommonAppBar(
           title: l10n.categories,
           onRefresh: _loadCategories,
@@ -123,12 +124,12 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
             const SizedBox(width: AppSpacing.md),
           ],
         ),
-        body: _buildBody(l10n),
+        body: _buildBody(context, l10n),
       ),
     );
   }
 
-  Widget _buildBody(AppLocalizations l10n) {
+  Widget _buildBody(BuildContext context, AppLocalizations l10n) {
     if (_isLoading && _categories.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -146,7 +147,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadCategories,
-      color: AppColors.brand,
+      color: context.colors.brand,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl,
@@ -169,7 +170,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
             Text(
               l10n.inactive.toUpperCase(),
               style: AppTextStyles.caption().copyWith(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -207,13 +208,13 @@ class _CountBadge extends StatelessWidget {
           vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
-          color: AppColors.brandLight,
+          color: context.colors.brandLight,
           borderRadius: BorderRadius.circular(AppRadius.full),
         ),
         child: Text(
           '$count ta',
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.brandDark,
+            color: context.colors.brandDark,
             letterSpacing: 0,
             fontSize: 11,
           ),
@@ -231,17 +232,17 @@ class _ReorderHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(
+        Icon(
           Icons.info_outline_rounded,
           size: 14,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         ),
         const SizedBox(width: AppSpacing.xs + 2),
         Expanded(
           child: Text(
             "Tartibni o'zgartirish uchun ⋮⋮ tugmasidan ushlab torting.",
             style: AppTextStyles.caption().copyWith(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: 12,
               letterSpacing: 0,
             ),
@@ -265,21 +266,21 @@ class _AddCategoryButton extends StatelessWidget {
       onTap: onTap,
       child: CustomPaint(
         painter: _DashedBorderPainter(
-          color: AppColors.brand,
+          color: context.colors.brand,
           radius: AppRadius.lg - 2,
         ),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.brandLight,
+            color: context.colors.brandLight,
             borderRadius: BorderRadius.circular(AppRadius.lg - 2),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: AppTextStyles.labelLarge().copyWith(
-              color: AppColors.brand,
+              color: context.colors.brand,
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -344,27 +345,27 @@ class _EmptyView extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(AppSpacing.xl3),
-              decoration: const BoxDecoration(
-                color: AppColors.inputFill,
+              decoration: BoxDecoration(
+                color: context.colors.inputFill,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.category_outlined,
                 size: 52,
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
               ),
             ),
             const SizedBox(height: AppSpacing.xl2),
             Text(
               l10n.noData,
               style: AppTextStyles.titleMedium()
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: context.colors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               l10n.addFirstCategory,
               style: AppTextStyles.bodySmall()
-                  .copyWith(color: AppColors.textMuted),
+                  .copyWith(color: context.colors.textMuted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl3),
@@ -373,7 +374,7 @@ class _EmptyView extends StatelessWidget {
               icon: const Icon(Icons.add_rounded, size: 18),
               label: Text(l10n.addCategory),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
+                backgroundColor: context.colors.brand,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl3,
@@ -427,7 +428,7 @@ class _ErrorView extends StatelessWidget {
             Text(
               error,
               style: AppTextStyles.bodySmall().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -437,7 +438,7 @@ class _ErrorView extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: Text(l10n.loading),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
+                backgroundColor: context.colors.brand,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl3,

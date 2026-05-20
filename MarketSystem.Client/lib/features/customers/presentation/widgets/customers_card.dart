@@ -3,6 +3,7 @@ import 'package:market_system_client/core/providers/auth_provider.dart'
     as core_auth;
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/data/services/customer_service.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/bloc/customers_bloc.dart';
@@ -64,9 +65,9 @@ class CustomersCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.lg),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.colors.border),
         ),
         child: Material(
           color: Colors.transparent,
@@ -112,7 +113,7 @@ class CustomersCard extends StatelessWidget {
                           phone,
                           style: AppTextStyles.bodySmall().copyWith(
                             fontSize: 12,
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -123,7 +124,7 @@ class CustomersCard extends StatelessWidget {
                             comment,
                             style: AppTextStyles.bodySmall().copyWith(
                               fontSize: 11,
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                               fontStyle: FontStyle.italic,
                             ),
                             maxLines: 1,
@@ -142,12 +143,12 @@ class CustomersCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.inputFill,
+                            color: context.colors.inputFill,
                             borderRadius:
                                 BorderRadius.circular(AppRadius.md - 2),
                           ),
-                          child: const Icon(Icons.info_outline_rounded,
-                              size: 18, color: AppColors.textMuted),
+                          child: Icon(Icons.info_outline_rounded,
+                              size: 18, color: context.colors.textMuted),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -273,9 +274,9 @@ class CustomersCard extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         padding: const EdgeInsets.all(AppSpacing.xl3),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -284,7 +285,7 @@ class CustomersCard extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: context.colors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -387,17 +388,17 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md + 2),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppColors.textMuted),
+          Icon(icon, size: 20, color: context.colors.textMuted),
           const SizedBox(width: AppSpacing.lg),
           Text(label,
               style: AppTextStyles.bodyMedium()
-                  .copyWith(color: AppColors.textSecondary)),
+                  .copyWith(color: context.colors.textSecondary)),
           const Spacer(),
           Text(
             value,
             style: AppTextStyles.bodyMedium().copyWith(
               fontWeight: FontWeight.w700,
-              color: valueColor ?? AppColors.text,
+              color: valueColor ?? context.colors.text,
             ),
           ),
         ],

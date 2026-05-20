@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -26,7 +27,7 @@ class DebtCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: accent.withValues(alpha: 0.25),
@@ -43,7 +44,7 @@ class DebtCard extends StatelessWidget {
               Text(
                 formattedDate,
                 style: AppTextStyles.bodySmall()
-                    .copyWith(color: AppColors.textSecondary, fontSize: 13),
+                    .copyWith(color: context.colors.textSecondary, fontSize: 13),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -81,7 +82,7 @@ class DebtCard extends StatelessWidget {
                 child: _BuildAmountColumn(
                   label: l10n.totalSum,
                   amount: totalDebt,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
               const SizedBox(width: AppSpacing.lg),
@@ -97,12 +98,12 @@ class DebtCard extends StatelessWidget {
           ),
           if (hasProducts) ...[
             const SizedBox(height: AppSpacing.lg),
-            const Divider(color: AppColors.borderSoft, height: 1),
+            Divider(color: context.colors.borderSoft, height: 1),
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                const Icon(Icons.shopping_cart,
-                    size: 16, color: AppColors.textSecondary),
+                Icon(Icons.shopping_cart,
+                    size: 16, color: context.colors.textSecondary),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   '${l10n.products} (${saleItems.length})',
@@ -112,14 +113,14 @@ class DebtCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.access_time,
-                    size: 14, color: AppColors.textMuted),
+                Icon(Icons.access_time,
+                    size: 14, color: context.colors.textMuted),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   NumberFormatter.formatTime(createdAt),
                   style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                   ),
                 ),
               ],
@@ -168,13 +169,13 @@ class _BuildSaleItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppColors.brandLight,
+              color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md - 2),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.shopping_bag_outlined,
               size: 16,
-              color: AppColors.brand,
+              color: context.colors.brand,
             ),
           ),
           const SizedBox(width: AppSpacing.lg),
@@ -213,7 +214,7 @@ class _BuildSaleItem extends StatelessWidget {
                       '× ${NumberFormatter.format(salePrice)}',
                       style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -224,7 +225,7 @@ class _BuildSaleItem extends StatelessWidget {
                     comment,
                     style: AppTextStyles.bodySmall().copyWith(
                       fontSize: 11,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -274,7 +275,7 @@ class _BuildAmountColumn extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             fontSize: 12,
             letterSpacing: 0.4,
           ),

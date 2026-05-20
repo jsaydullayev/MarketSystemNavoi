@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_card.dart';
@@ -51,12 +52,12 @@ class ZakupCard extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: AppColors.brandLight,
+                color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.lg - 1),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.shopping_bag_rounded,
-                color: AppColors.brand,
+                color: context.colors.brand,
                 size: 22,
               ),
             ),
@@ -106,23 +107,23 @@ class ZakupCard extends StatelessWidget {
                     _formatDate(createdAt),
                     style: AppTextStyles.bodySmall().copyWith(
                       fontSize: 11,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                   ),
                 const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.person_outline_rounded,
                       size: 12,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                     const SizedBox(width: 3),
                     Text(
                       zakup['createdBy'] ?? l10n.unknown,
                       style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 11,
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                       ),
                     ),
                   ],
@@ -149,7 +150,8 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isAccent ? AppColors.brand : AppColors.textSecondary;
+    final color =
+        isAccent ? context.colors.brand : context.colors.textSecondary;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -157,7 +159,7 @@ class _Chip extends StatelessWidget {
         vertical: 3,
       ),
       decoration: BoxDecoration(
-        color: isAccent ? AppColors.brandLight : AppColors.inputFill,
+        color: isAccent ? context.colors.brandLight : context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.md - 2),
       ),
       child: Row(

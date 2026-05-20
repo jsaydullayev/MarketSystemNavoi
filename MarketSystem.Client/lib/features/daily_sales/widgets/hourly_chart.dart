@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/data/models/profit_model.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -32,25 +33,25 @@ class HourlyChart extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.bar_chart_rounded,
                 size: 16,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               const SizedBox(width: 6),
               Text(
                 l10n.hourlySales,
                 style: AppTextStyles.labelSmall().copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   fontSize: 12,
                   letterSpacing: 0,
                 ),
@@ -61,7 +62,7 @@ class HourlyChart extends StatelessWidget {
                   l10n.noData,
                   style: AppTextStyles.caption().copyWith(
                     fontSize: 10,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     letterSpacing: 0,
                   ),
                 ),
@@ -102,10 +103,10 @@ class HourlyChart extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.text,
+                        color: context.colors.text,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                         border: Border.all(
-                          color: AppColors.brand.withValues(alpha: 0.4),
+                          color: context.colors.brand.withValues(alpha: 0.4),
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(
@@ -122,10 +123,11 @@ class HourlyChart extends StatelessWidget {
                           child: Container(
                             decoration: BoxDecoration(
                               color: isHighlighted
-                                  ? AppColors.brand
+                                  ? context.colors.brand
                                   : (hasAnyData && v > 0
-                                      ? AppColors.brand.withValues(alpha: 0.55)
-                                      : AppColors.inputFill),
+                                      ? context.colors.brand
+                                          .withValues(alpha: 0.55)
+                                      : context.colors.inputFill),
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(3),
                               ),
@@ -151,7 +153,7 @@ class HourlyChart extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: AppTextStyles.caption().copyWith(
                     fontSize: 9,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     letterSpacing: 0,
                   ),
                 ),

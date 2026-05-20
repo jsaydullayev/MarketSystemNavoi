@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/extensions/app_extensions.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/number_formatter.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -110,9 +111,9 @@ class _ProductsBodyState extends State<ProductsBody> {
             _SearchBar(controller: widget.searchController, l10n: l10n),
             Expanded(
               child: widget.isLoading && widget.products.isEmpty
-                  ? const Center(
-                      child:
-                          CircularProgressIndicator(color: AppColors.brand))
+                  ? Center(
+                      child: CircularProgressIndicator(
+                          color: context.colors.brand))
                   : widget.errorMessage != null
                       ? _ErrorView(
                           message: widget.errorMessage!,
@@ -131,7 +132,7 @@ class _ProductsBodyState extends State<ProductsBody> {
     final list = _displayed;
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
-      color: AppColors.brand,
+      color: context.colors.brand,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl4),
@@ -185,7 +186,7 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.surface,
+      color: context.colors.surface,
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg),
       child: TextField(
@@ -194,16 +195,16 @@ class _SearchBar extends StatelessWidget {
         decoration: InputDecoration(
           hintText: l10n.search,
           hintStyle: AppTextStyles.bodyMedium().copyWith(
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             fontSize: 14,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             size: 20,
           ),
           filled: true,
-          fillColor: AppColors.inputFill,
+          fillColor: context.colors.inputFill,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md, vertical: AppSpacing.lg + 2),
@@ -217,7 +218,7 @@ class _SearchBar extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+            borderSide: BorderSide(color: context.colors.brand, width: 1.5),
           ),
         ),
       ),
@@ -245,9 +246,9 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg - 2),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       child: Row(
         children: [
@@ -255,7 +256,7 @@ class _SummaryCard extends StatelessWidget {
             child: _SummaryCell(
               value: total.toString(),
               label: l10n.totalShort,
-              valueColor: AppColors.text,
+              valueColor: context.colors.text,
             ),
           ),
           const _SummaryDivider(),
@@ -312,7 +313,7 @@ class _SummaryCell extends StatelessWidget {
             style: AppTextStyles.caption().copyWith(
               fontSize: 10,
               letterSpacing: 0.8,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
         ],
@@ -329,7 +330,7 @@ class _SummaryDivider extends StatelessWidget {
     return Container(
       width: 1,
       height: 32,
-      color: AppColors.border,
+      color: context.colors.border,
     );
   }
 }
@@ -428,7 +429,8 @@ class _FilterChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg + 2, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.text : AppColors.inputFill,
+            color:
+                isSelected ? context.colors.text : context.colors.inputFill,
             borderRadius: BorderRadius.circular(AppRadius.full),
           ),
           child: Row(
@@ -438,8 +440,9 @@ class _FilterChip extends StatelessWidget {
                 Icon(
                   leadingIcon,
                   size: 14,
-                  color:
-                      isSelected ? Colors.white : AppColors.textSecondary,
+                  color: isSelected
+                      ? Colors.white
+                      : context.colors.textSecondary,
                 ),
                 4.width,
               ],
@@ -449,7 +452,9 @@ class _FilterChip extends StatelessWidget {
                   fontSize: 12,
                   letterSpacing: 0,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                  color: isSelected
+                      ? Colors.white
+                      : context.colors.textSecondary,
                 ),
               ),
             ],
@@ -501,9 +506,9 @@ class _ProductRow extends StatelessWidget {
     Widget row = Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg - 2),
-        border: Border.all(color: AppColors.borderSoft, width: 1),
+        border: Border.all(color: context.colors.borderSoft, width: 1),
       ),
       child: Row(
         children: [
@@ -523,7 +528,7 @@ class _ProductRow extends StatelessWidget {
                         style: AppTextStyles.bodySmall().copyWith(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.text,
+                          color: context.colors.text,
                           height: 1.2,
                         ),
                         maxLines: 1,
@@ -544,7 +549,7 @@ class _ProductRow extends StatelessWidget {
                       fontSize: 11,
                       letterSpacing: 0,
                       fontWeight: FontWeight.w400,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -558,7 +563,7 @@ class _ProductRow extends StatelessWidget {
                       fontSize: 10,
                       letterSpacing: 0,
                       fontWeight: FontWeight.w400,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                   ),
                 ],
@@ -575,7 +580,7 @@ class _ProductRow extends StatelessWidget {
                 style: AppTextStyles.bodyMedium().copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                 ),
               ),
               const SizedBox(height: 2),
@@ -594,10 +599,10 @@ class _ProductRow extends StatelessWidget {
               onPressed: () => onZakup(product),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              icon: const Icon(
+              icon: Icon(
                 Icons.add_shopping_cart_rounded,
                 size: 20,
-                color: AppColors.brand,
+                color: context.colors.brand,
               ),
               tooltip: l10n.zakup,
             ),
@@ -619,7 +624,7 @@ class _ProductRow extends StatelessWidget {
     return Dismissible(
       key: Key('product_${product['id']}'),
       background: _buildSwipeBg(
-        color: AppColors.brand,
+        color: context.colors.brand,
         icon: Icons.edit_rounded,
         label: l10n.editAction,
         align: Alignment.centerLeft,
@@ -689,7 +694,7 @@ class _ProductRow extends StatelessWidget {
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
                   l10n.no,
-                  style: const TextStyle(color: AppColors.textSecondary),
+                  style: TextStyle(color: context.colors.textSecondary),
                 ),
               ),
               TextButton(
@@ -722,12 +727,12 @@ class _EmojiTile extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.md + 1),
       ),
-      child: const Icon(
+      child: Icon(
         Icons.inventory_2_rounded,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
         size: 24,
       ),
     );
@@ -762,7 +767,7 @@ class _StockLabel extends StatelessWidget {
       color = AppColors.warning;
       text = '${l10n.stockShort}: ${NumberFormatter.formatQuantity(qty)}';
     } else {
-      color = AppColors.textMuted;
+      color = context.colors.textMuted;
       text = '${l10n.stockShort}: ${NumberFormatter.formatQuantity(qty)}';
     }
     return Text(
@@ -788,7 +793,7 @@ class _PopularChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
@@ -796,7 +801,7 @@ class _PopularChip extends StatelessWidget {
         style: AppTextStyles.caption().copyWith(
           fontSize: 9,
           fontWeight: FontWeight.w700,
-          color: AppColors.brand,
+          color: context.colors.brand,
           letterSpacing: 0,
         ),
       ),
@@ -815,16 +820,16 @@ class _EmptyView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.shopping_basket_outlined,
             size: 80,
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
           ),
           16.height,
           Text(
             l10n.noProducts,
             style: AppTextStyles.bodyMedium().copyWith(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
         ],

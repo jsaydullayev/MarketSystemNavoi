@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/data/models/cash_register_model.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_card.dart';
@@ -107,7 +108,7 @@ class _KpiTile extends StatelessWidget {
         vertical: AppSpacing.lg,
       ),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
@@ -116,7 +117,7 @@ class _KpiTile extends StatelessWidget {
           Text(
             value,
             style: AppTextStyles.titleMedium().copyWith(
-              color: AppColors.brandDark,
+              color: context.colors.brandDark,
               fontWeight: FontWeight.w800,
               fontSize: 18,
             ),
@@ -128,7 +129,7 @@ class _KpiTile extends StatelessWidget {
             label.toUpperCase(),
             textAlign: TextAlign.center,
             style: AppTextStyles.caption().copyWith(
-              color: AppColors.brandDark,
+              color: context.colors.brandDark,
               fontSize: 10,
             ),
           ),

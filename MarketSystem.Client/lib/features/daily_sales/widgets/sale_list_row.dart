@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/data/models/profit_model.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 
@@ -15,7 +16,7 @@ class SaleListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _statusColor(sale.status);
+    final statusColor = _statusColor(context, sale.status);
     final customerName = (sale.customerName ?? '').trim();
     final hasCustomer = customerName.isNotEmpty;
 
@@ -34,9 +35,9 @@ class SaleListRow extends StatelessWidget {
             opacity: isCancelled ? 0.65 : 1,
             child: Ink(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.colors.surface,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.colors.border),
               ),
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg, vertical: AppSpacing.md),
@@ -61,7 +62,7 @@ class SaleListRow extends StatelessWidget {
                                 style: AppTextStyles.bodySmall().copyWith(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.text,
+                                  color: context.colors.text,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -93,7 +94,7 @@ class SaleListRow extends StatelessWidget {
     );
   }
 
-  Color _statusColor(String status) {
+  Color _statusColor(BuildContext context, String status) {
     switch (status.toLowerCase()) {
       case 'paid':
         return AppColors.success;
@@ -104,7 +105,7 @@ class SaleListRow extends StatelessWidget {
       case 'cancelled':
         return AppColors.danger;
       default:
-        return AppColors.textMuted;
+        return context.colors.textMuted;
     }
   }
 
@@ -123,7 +124,7 @@ class _TimeBadge extends StatelessWidget {
       width: 50,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
@@ -155,14 +156,14 @@ class _CustomerAvatar extends StatelessWidget {
       height: 18,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: hasName ? AppColors.brandTint : AppColors.inputFill,
+        color: hasName ? AppColors.brandTint : context.colors.inputFill,
         shape: BoxShape.circle,
       ),
       child: Text(
         initial,
         style: AppTextStyles.caption().copyWith(
           fontSize: 10,
-          color: hasName ? AppColors.brandDark : AppColors.textMuted,
+          color: hasName ? context.colors.brandDark : context.colors.textMuted,
           letterSpacing: 0,
         ),
       ),

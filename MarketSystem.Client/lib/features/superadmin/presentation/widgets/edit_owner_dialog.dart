@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -93,7 +94,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
@@ -114,12 +115,12 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: AppColors.brandLight,
+                          color: context.colors.brandLight,
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.edit_outlined,
-                          color: AppColors.brand,
+                          color: context.colors.brand,
                           size: 20,
                         ),
                       ),
@@ -132,7 +133,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         onPressed: _submitting
                             ? null
                             : () => Navigator.pop(context),
@@ -273,7 +274,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
         Text(
           l10n.languageUpper,
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -282,7 +283,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
           style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
           decoration: InputDecoration(
             filled: true,
-            fillColor: AppColors.inputFill,
+            fillColor: context.colors.inputFill,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.xl,
               vertical: AppSpacing.lg + 2,
@@ -298,7 +299,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
               borderSide:
-                  const BorderSide(color: AppColors.brand, width: 1.5),
+                  BorderSide(color: context.colors.brand, width: 1.5),
             ),
           ),
           items: const [
@@ -323,7 +324,7 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: AppTextStyles.caption().copyWith(
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
     );
   }
@@ -347,7 +348,7 @@ class _SwitchTile extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
       ),
       child: Row(
@@ -361,7 +362,7 @@ class _SwitchTile extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: AppColors.brand,
+            activeThumbColor: context.colors.brand,
           ),
         ],
       ),

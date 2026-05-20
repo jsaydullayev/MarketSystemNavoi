@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/reports/widgets/date_picker_row.dart';
@@ -62,7 +63,7 @@ class InventoryReportTab extends StatelessWidget {
                 title: l10n.productCount,
                 value: '${inventory.length} ${l10n.piece}',
                 icon: Icons.inventory_2_outlined,
-                color: AppColors.brand,
+                color: context.colors.brand,
               ),
             ),
             const SizedBox(width: AppSpacing.lg),
@@ -112,14 +113,14 @@ class InventoryReportTab extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md + 2, vertical: AppSpacing.xs),
               decoration: BoxDecoration(
-                color: AppColors.brandLight,
+                color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.md - 2),
               ),
               child: Text(
                 '${l10n.total}: ${inventory.length} ${l10n.piece}',
                 style: AppTextStyles.labelSmall().copyWith(
                   fontSize: 12,
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                 ),
               ),
             ),

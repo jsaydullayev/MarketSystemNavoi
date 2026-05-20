@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/reports/widgets/daily_report_tab.dart';
@@ -225,19 +226,19 @@ class _ReportsScreenState extends State<ReportsScreen>
     return NetworkWrapper(
       onRetry: _loadReports,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: CommonAppBar(
           title: l10n.reports,
           extraActions: [
             _isDownloading
-                ? const Padding(
-                    padding: EdgeInsets.all(14),
+                ? Padding(
+                    padding: const EdgeInsets.all(14),
                     child: SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                       ),
                     ),
                   )
@@ -253,11 +254,12 @@ class _ReportsScreenState extends State<ReportsScreen>
           ),
         ),
         body: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.brand),
+            ? Center(
+                child:
+                    CircularProgressIndicator(color: context.colors.brand),
               )
             : RefreshIndicator(
-                color: AppColors.brand,
+                color: context.colors.brand,
                 onRefresh: _loadReports,
                 child: NestedScrollView(
                   headerSliverBuilder: (context, _) => [
@@ -403,10 +405,10 @@ class _PeriodChip extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          color: active ? AppColors.brand : AppColors.inputFill,
+          color: active ? context.colors.brand : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: active ? AppColors.brand : AppColors.border,
+            color: active ? context.colors.brand : context.colors.border,
             width: 1,
           ),
         ),
@@ -415,7 +417,7 @@ class _PeriodChip extends StatelessWidget {
           style: AppTextStyles.bodySmall().copyWith(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: active ? Colors.white : AppColors.textSecondary,
+            color: active ? Colors.white : context.colors.textSecondary,
           ),
         ),
       ),
@@ -535,8 +537,8 @@ class _KpiGrid extends StatelessWidget {
         Expanded(
           child: _KpiTile(
             icon: Icons.receipt_long_rounded,
-            iconBg: AppColors.brandLight,
-            iconColor: AppColors.brand,
+            iconBg: context.colors.brandLight,
+            iconColor: context.colors.brand,
             label: l10n.saleCount,
             value: receipts.toString(),
           ),
@@ -586,9 +588,9 @@ class _KpiTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -611,7 +613,7 @@ class _KpiTile extends StatelessWidget {
             style: AppTextStyles.caption().copyWith(
               fontSize: 9,
               letterSpacing: 0.6,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const SizedBox(height: 2),
@@ -622,7 +624,7 @@ class _KpiTile extends StatelessWidget {
             style: AppTextStyles.bodyLarge().copyWith(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: AppColors.text,
+              color: context.colors.text,
             ),
           ),
         ],

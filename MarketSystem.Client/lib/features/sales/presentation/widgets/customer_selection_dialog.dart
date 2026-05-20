@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -132,7 +133,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
     final l10n = AppLocalizations.of(context)!;
 
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.xl2),
       ),
@@ -147,11 +148,12 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
               future: customerService.getAllCustomers(),
               builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(
+            return SizedBox(
               width: 400,
               height: 200,
               child: Center(
-                child: CircularProgressIndicator(color: AppColors.brand),
+                child:
+                    CircularProgressIndicator(color: context.colors.brand),
               ),
             );
           }
@@ -168,7 +170,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                   Text(
                     '${snapshot.error}',
                     style: AppTextStyles.bodyMedium().copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl2),
@@ -195,12 +197,12 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: AppColors.brandLight,
+                        color: context.colors.brandLight,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.person_search_rounded,
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                         size: 20,
                       ),
                     ),
@@ -212,9 +214,9 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       onPressed: () => Navigator.pop(context),
                     ),
@@ -237,16 +239,16 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.person_outline,
                                 size: 64,
-                                color: AppColors.textMuted,
+                                color: context.colors.textMuted,
                               ),
                               const SizedBox(height: AppSpacing.xl),
                               Text(
                                 l10n.noCustomersFound,
                                 style: AppTextStyles.bodyMedium().copyWith(
-                                  color: AppColors.textSecondary,
+                                  color: context.colors.textSecondary,
                                 ),
                               ),
                             ],
@@ -269,7 +271,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                                 .toString();
 
                             return Material(
-                              color: AppColors.surface,
+                              color: context.colors.surface,
                               borderRadius:
                                   BorderRadius.circular(AppRadius.lg),
                               child: InkWell(
@@ -307,11 +309,11 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                                   padding:
                                       const EdgeInsets.all(AppSpacing.lg),
                                   decoration: BoxDecoration(
-                                    color: AppColors.bg,
+                                    color: context.colors.bg,
                                     borderRadius: BorderRadius.circular(
                                         AppRadius.lg),
                                     border: Border.all(
-                                      color: AppColors.borderSoft,
+                                      color: context.colors.borderSoft,
                                     ),
                                   ),
                                   child: Row(
@@ -319,8 +321,8 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                                       Container(
                                         width: 40,
                                         height: 40,
-                                        decoration: const BoxDecoration(
-                                          color: AppColors.inputFill,
+                                        decoration: BoxDecoration(
+                                          color: context.colors.inputFill,
                                           shape: BoxShape.circle,
                                         ),
                                         alignment: Alignment.center,
@@ -328,7 +330,8 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                                           _initials(customerName),
                                           style: AppTextStyles.labelLarge()
                                               .copyWith(
-                                            color: AppColors.textSecondary,
+                                            color:
+                                                context.colors.textSecondary,
                                           ),
                                         ),
                                       ),
@@ -365,7 +368,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                                           debt,
                                           style: AppTextStyles.labelLarge()
                                               .copyWith(
-                                            color: AppColors.brand,
+                                            color: context.colors.brand,
                                           ),
                                         ),
                                     ],
@@ -443,12 +446,12 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.brandLight,
+                  color: context.colors.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person_add_alt_1_rounded,
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   size: 20,
                 ),
               ),
@@ -460,9 +463,9 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                 ),
               ),
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.close,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
                 onPressed: () => setState(() => _isAddMode = false),
               ),
@@ -536,10 +539,10 @@ class _AddCustomerTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.brandLight,
+            color: context.colors.brandLight,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
-              color: AppColors.brand.withValues(alpha: 0.3),
+              color: context.colors.brand.withValues(alpha: 0.3),
               style: BorderStyle.solid,
             ),
           ),
@@ -548,8 +551,8 @@ class _AddCustomerTile extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(
-                  color: AppColors.brand,
+                decoration: BoxDecoration(
+                  color: context.colors.brand,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -565,7 +568,7 @@ class _AddCustomerTile extends StatelessWidget {
                   label,
                   style: AppTextStyles.bodyLarge().copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                   ),
                 ),
               ),

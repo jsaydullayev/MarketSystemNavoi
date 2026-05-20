@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -26,16 +27,16 @@ class UserInfoSheet extends StatelessWidget {
   static const _sellerBg = Color(0xFFECFDF5);
   static const _sellerFg = Color(0xFF047857);
 
-  ({Color bg, Color fg}) _roleColors(String role) {
+  ({Color bg, Color fg}) _roleColors(BuildContext context, String role) {
     switch (role.toLowerCase()) {
       case 'owner':
-        return (bg: AppColors.brandLight, fg: AppColors.brandDark);
+        return (bg: context.colors.brandLight, fg: context.colors.brandDark);
       case 'admin':
         return (bg: _adminBg, fg: _adminFg);
       case 'seller':
         return (bg: _sellerBg, fg: _sellerFg);
       default:
-        return (bg: AppColors.inputFill, fg: AppColors.textSecondary);
+        return (bg: context.colors.inputFill, fg: context.colors.textSecondary);
     }
   }
 
@@ -46,7 +47,7 @@ class UserInfoSheet extends StatelessWidget {
     final role = user['role'] ?? '';
     final fullName = user['fullName'] ?? l10n.unknown;
     final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : '?';
-    final colors = _roleColors(role);
+    final colors = _roleColors(context, role);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
@@ -55,9 +56,9 @@ class UserInfoSheet extends StatelessWidget {
         AppSpacing.xl2,
         AppSpacing.xl4,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppRadius.xl2 + 10),
         ),
       ),
@@ -70,7 +71,7 @@ class UserInfoSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: context.colors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -110,7 +111,7 @@ class UserInfoSheet extends StatelessWidget {
             '@${user['username'] ?? ''}',
             style: AppTextStyles.bodySmall().copyWith(
               fontSize: 13,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
           const SizedBox(height: AppSpacing.xl2),
@@ -162,18 +163,18 @@ class _InfoTile extends StatelessWidget {
         vertical: AppSpacing.lg,
       ),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.textMuted),
+          Icon(icon, size: 16, color: context.colors.textMuted),
           const SizedBox(width: AppSpacing.md + 2),
           Text(
             label,
             style: AppTextStyles.bodySmall().copyWith(
               fontSize: 13,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const Spacer(),
@@ -182,7 +183,7 @@ class _InfoTile extends StatelessWidget {
             style: AppTextStyles.bodyMedium().copyWith(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: valueColor ?? AppColors.text,
+              color: valueColor ?? context.colors.text,
             ),
           ),
         ],

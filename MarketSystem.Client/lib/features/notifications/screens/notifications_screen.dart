@@ -19,6 +19,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/common_app_bar.dart';
 import '../../../data/services/notification_service.dart';
+import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_card.dart';
@@ -60,17 +61,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: CommonAppBar(title: l10n.notificationsTitle),
       body: RefreshIndicator(
-        color: AppColors.brand,
+        color: context.colors.brand,
         onRefresh: _refresh,
         child: FutureBuilder<AlertFeed>(
           future: _feedFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.brand),
+              return Center(
+                child: CircularProgressIndicator(color: context.colors.brand),
               );
             }
             final feed = snapshot.data ?? const AlertFeed();
@@ -239,7 +240,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             l10n.notificationsEmptyDescription,
             style: AppTextStyles.bodySmall()
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: context.colors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],

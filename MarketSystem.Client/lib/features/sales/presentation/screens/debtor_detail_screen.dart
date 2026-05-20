@@ -23,6 +23,7 @@ import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -71,7 +72,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
           return AlertDialog(
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.xl)),
-            backgroundColor: AppColors.surface,
+            backgroundColor: context.colors.surface,
             title: Text(
               '${l10n.changePrice}: $productName',
               style: AppTextStyles.titleMedium(),
@@ -84,7 +85,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: AppColors.inputFill,
+                      color: context.colors.inputFill,
                       borderRadius: BorderRadius.circular(AppRadius.md + 2),
                     ),
                     child: Row(
@@ -106,10 +107,10 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                     style: AppTextStyles.bodyMedium(),
                     decoration: InputDecoration(
                       labelText: l10n.newPriceLabel,
-                      prefixIcon: const Icon(Icons.attach_money_rounded,
-                          color: AppColors.textSecondary),
+                      prefixIcon: Icon(Icons.attach_money_rounded,
+                          color: context.colors.textSecondary),
                       filled: true,
-                      fillColor: AppColors.inputFill,
+                      fillColor: context.colors.inputFill,
                       border: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(AppRadius.md + 2),
@@ -118,8 +119,8 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(AppRadius.md + 2),
-                        borderSide: const BorderSide(
-                            color: AppColors.brand, width: 1.5),
+                        borderSide: BorderSide(
+                            color: context.colors.brand, width: 1.5),
                       ),
                     ),
                     onChanged: (value) {
@@ -164,7 +165,8 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                         Text(
                           l10n.quantityCount(quantity),
                           style: AppTextStyles.bodySmall().copyWith(
-                              color: AppColors.textSecondary, fontSize: 12),
+                              color: context.colors.textSecondary,
+                              fontSize: 12),
                         ),
                       ],
                     ),
@@ -176,10 +178,10 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                     style: AppTextStyles.bodyMedium(),
                     decoration: InputDecoration(
                       labelText: l10n.commentOptional,
-                      prefixIcon: const Icon(Icons.comment_outlined,
-                          color: AppColors.textSecondary),
+                      prefixIcon: Icon(Icons.comment_outlined,
+                          color: context.colors.textSecondary),
                       filled: true,
-                      fillColor: AppColors.inputFill,
+                      fillColor: context.colors.inputFill,
                       border: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(AppRadius.md + 2),
@@ -188,8 +190,8 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(AppRadius.md + 2),
-                        borderSide: const BorderSide(
-                            color: AppColors.brand, width: 1.5),
+                        borderSide: BorderSide(
+                            color: context.colors.brand, width: 1.5),
                       ),
                     ),
                   ),
@@ -201,7 +203,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                 onPressed: () => Navigator.pop(dialogContext),
                 child: Text(l10n.cancel,
                     style: AppTextStyles.bodyMedium()
-                        .copyWith(color: AppColors.textSecondary)),
+                        .copyWith(color: context.colors.textSecondary)),
               ),
               TextButton(
                 onPressed: _isLoading
@@ -260,7 +262,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                         }
                       },
                 style: TextButton.styleFrom(
-                    foregroundColor: AppColors.brand),
+                    foregroundColor: context.colors.brand),
                 child: Text(l10n.save),
               ),
             ],
@@ -304,7 +306,7 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
     final lastActivity = _resolveLastActivity(sales);
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: CommonAppBar(title: widget.customerName),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -353,14 +355,14 @@ class _DebtorDetailScreenState extends State<DebtorDetailScreen> {
                           horizontal: AppSpacing.md + 2,
                           vertical: AppSpacing.xs + 1),
                       decoration: BoxDecoration(
-                        color: AppColors.brandLight,
+                        color: context.colors.brandLight,
                         borderRadius:
                             BorderRadius.circular(AppRadius.md),
                       ),
                       child: Text(
                         '${sales.length} ta',
                         style: AppTextStyles.caption().copyWith(
-                          color: AppColors.brand,
+                          color: context.colors.brand,
                           fontSize: 12,
                         ),
                       ),
@@ -429,9 +431,9 @@ class _CustomerHero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl2),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         children: [
@@ -460,13 +462,13 @@ class _CustomerHero extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.phone_outlined,
-                    size: 14, color: AppColors.textMuted),
+                Icon(Icons.phone_outlined,
+                    size: 14, color: context.colors.textMuted),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   phone,
                   style: AppTextStyles.bodySmall()
-                      .copyWith(color: AppColors.textMuted),
+                      .copyWith(color: context.colors.textMuted),
                 ),
               ],
             ),
@@ -519,7 +521,7 @@ class _HeroStat extends StatelessWidget {
           child: Text(
             value,
             style: AppTextStyles.titleMedium().copyWith(
-              color: highlight ?? AppColors.text,
+              color: highlight ?? context.colors.text,
               fontSize: 16,
             ),
           ),
@@ -541,7 +543,7 @@ class _Divider extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: 1,
         height: 28,
-        color: AppColors.border,
+        color: context.colors.border,
       );
 }
 
@@ -566,9 +568,9 @@ class _SaleLedgerCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,7 +617,7 @@ class _SaleLedgerCard extends StatelessWidget {
                       Text(
                         formattedDate,
                         style: AppTextStyles.caption().copyWith(
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                           letterSpacing: 0,
                           fontSize: 11,
                         ),
@@ -646,7 +648,7 @@ class _SaleLedgerCard extends StatelessWidget {
               ),
             ),
             if (i != items.length - 1)
-              Container(height: 1, color: AppColors.borderSoft),
+              Container(height: 1, color: context.colors.borderSoft),
           ],
           const SizedBox(height: AppSpacing.sm),
         ],
@@ -690,7 +692,7 @@ class _ItemRow extends StatelessWidget {
               Text(
                 '$qty × ${NumberFormatter.format(price)}',
                 style: AppTextStyles.bodySmall().copyWith(
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                   fontSize: 12,
                 ),
               ),
@@ -711,19 +713,19 @@ class _ItemRow extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.brandLight,
+                  color: context.colors.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.edit_outlined,
-                        size: 12, color: AppColors.brand),
+                    Icon(Icons.edit_outlined,
+                        size: 12, color: context.colors.brand),
                     const SizedBox(width: 4),
                     Text(
                       changePriceLabel,
                       style: AppTextStyles.caption().copyWith(
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                         fontSize: 10,
                         letterSpacing: 0.2,
                       ),
@@ -749,14 +751,14 @@ class _EmptySales extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl2),
-            decoration: const BoxDecoration(
-              color: AppColors.borderSoft,
+            decoration: BoxDecoration(
+              color: context.colors.borderSoft,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.receipt_long_outlined,
               size: 40,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
