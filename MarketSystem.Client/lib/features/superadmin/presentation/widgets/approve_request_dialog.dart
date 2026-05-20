@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -235,7 +236,8 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
     }
   }
 
-  InputDecoration _decoration({
+  InputDecoration _decoration(
+    BuildContext context, {
     required IconData prefix,
     required String hint,
     Widget? suffixIcon,
@@ -245,17 +247,17 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
     return InputDecoration(
       hintText: hint,
       hintStyle: AppTextStyles.bodyMedium().copyWith(
-        color: AppColors.textMuted,
+        color: context.colors.textMuted,
         fontSize: 15,
       ),
       prefixIcon:
-          Icon(prefix, size: 20, color: AppColors.textSecondary),
+          Icon(prefix, size: 20, color: context.colors.textSecondary),
       suffixIcon: suffixIcon,
       errorText: errorText,
       helperText: helper,
       helperStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
       filled: true,
-      fillColor: AppColors.inputFill,
+      fillColor: context.colors.inputFill,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.xl,
         vertical: AppSpacing.lg + 2,
@@ -270,7 +272,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
-        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        borderSide: BorderSide(color: context.colors.brand, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -302,7 +304,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
         _subdomainState == _CheckState.taken;
 
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
@@ -341,7 +343,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -350,7 +352,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: AppColors.inputFill,
+                      color: context.colors.inputFill,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Column(
@@ -377,6 +379,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                     autofillHints: const [AutofillHints.newUsername],
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       prefix: Icons.person_outline,
                       hint: 'username',
                       suffixIcon: _suffixForState(_usernameState),
@@ -402,6 +405,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                     autofillHints: const [AutofillHints.newPassword],
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       prefix: Icons.lock_outline,
                       hint: 'Min. 8 belgi',
                       suffixIcon: IconButton(
@@ -409,7 +413,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                           _obscurePassword
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                           size: 20,
                         ),
                         onPressed: () => setState(
@@ -433,6 +437,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                     textCapitalization: TextCapitalization.words,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       prefix: Icons.storefront_outlined,
                       hint: "Do'kon nomi",
                       suffixIcon: _suffixForState(_marketState),
@@ -456,6 +461,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                     textInputAction: TextInputAction.done,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       prefix: Icons.language_outlined,
                       hint: 'subdomain (ixtiyoriy)',
                       suffixIcon: _suffixForState(_subdomainState),
@@ -475,10 +481,10 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                       padding: const EdgeInsets.only(top: 8, left: 4),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.public,
                             size: 14,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
@@ -496,7 +502,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                                   TextSpan(
                                     text: '$previewSubdomain.strotech.uz',
                                     style: AppTextStyles.bodySmall().copyWith(
-                                      color: AppColors.brand,
+                                      color: context.colors.brand,
                                       fontFamily: 'monospace',
                                       fontWeight: FontWeight.w600,
                                       fontSize: 12,
@@ -547,7 +553,7 @@ class _Label extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: AppTextStyles.caption().copyWith(
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
     );
   }

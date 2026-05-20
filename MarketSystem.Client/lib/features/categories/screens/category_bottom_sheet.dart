@@ -22,6 +22,7 @@
 // `Characters` (grapheme-aware string handling) is re-exported by
 // flutter/material, so no separate `package:characters` import is needed.
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -155,9 +156,9 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl3,
@@ -182,7 +183,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: context.colors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -194,12 +195,12 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md + 2),
                     decoration: BoxDecoration(
-                      color: AppColors.brandLight,
+                      color: context.colors.brandLight,
                       borderRadius: BorderRadius.circular(AppRadius.md + 2),
                     ),
                     child: Icon(
                       _isEditing ? Icons.edit_rounded : Icons.add_rounded,
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                       size: 20,
                     ),
                   ),
@@ -217,7 +218,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                               ? widget.category!.name
                               : l10n.newCategory,
                           style: AppTextStyles.bodySmall().copyWith(
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                             fontSize: 12,
                           ),
                           maxLines: 1,
@@ -228,9 +229,9 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close_rounded,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                   ),
                 ],
@@ -241,7 +242,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
               Text(
                 'EMOJI',
                 style: AppTextStyles.caption().copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -338,11 +339,11 @@ class _CustomEmojiField extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: AppTextStyles.bodySmall().copyWith(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
                 fontSize: 13,
               ),
               filled: true,
-              fillColor: AppColors.inputFill,
+              fillColor: context.colors.inputFill,
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
@@ -358,8 +359,8 @@ class _CustomEmojiField extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                borderSide: const BorderSide(
-                  color: AppColors.brand,
+                borderSide: BorderSide(
+                  color: context.colors.brand,
                   width: 1.5,
                 ),
               ),
@@ -373,7 +374,7 @@ class _CustomEmojiField extends StatelessWidget {
           child: ElevatedButton(
             onPressed: onApply,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brand,
+              backgroundColor: context.colors.brand,
               foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -417,11 +418,12 @@ class _EmojiPicker extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color:
-                  isSelected ? AppColors.brandLight : AppColors.inputFill,
+              color: isSelected
+                  ? context.colors.brandLight
+                  : context.colors.inputFill,
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
               border: Border.all(
-                color: isSelected ? AppColors.brand : Colors.transparent,
+                color: isSelected ? context.colors.brand : Colors.transparent,
                 width: 1.5,
               ),
             ),
@@ -458,7 +460,7 @@ class _ActiveToggle extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color:
-              isActive ? AppColors.successLight : AppColors.inputFill,
+              isActive ? AppColors.successLight : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
             color: isActive
@@ -472,7 +474,7 @@ class _ActiveToggle extends StatelessWidget {
               isActive
                   ? Icons.check_circle_rounded
                   : Icons.pause_circle_outline_rounded,
-              color: isActive ? AppColors.success : AppColors.textMuted,
+              color: isActive ? AppColors.success : context.colors.textMuted,
               size: 20,
             ),
             const SizedBox(width: AppSpacing.md + 2),
@@ -481,8 +483,9 @@ class _ActiveToggle extends StatelessWidget {
                 label,
                 style: AppTextStyles.bodyMedium().copyWith(
                   fontWeight: FontWeight.w600,
-                  color:
-                      isActive ? AppColors.success : AppColors.textSecondary,
+                  color: isActive
+                      ? AppColors.success
+                      : context.colors.textSecondary,
                 ),
               ),
             ),
@@ -493,7 +496,7 @@ class _ActiveToggle extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 color:
-                    isActive ? AppColors.success : AppColors.border,
+                    isActive ? AppColors.success : context.colors.border,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
               ),
               child: AnimatedAlign(

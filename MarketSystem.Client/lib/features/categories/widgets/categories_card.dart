@@ -16,6 +16,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:market_system_client/data/models/product_category_model.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -63,8 +64,8 @@ class CategoryCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Dismissible(
         key: Key('cat_${category.id}'),
-        background: const _SwipeBg(
-          color: AppColors.brand,
+        background: _SwipeBg(
+          color: context.colors.brand,
           icon: Icons.edit_rounded,
           align: Alignment.centerLeft,
         ),
@@ -84,20 +85,20 @@ class CategoryCard extends StatelessWidget {
         },
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(AppRadius.lg - 2),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: Border.all(color: context.colors.border, width: 1),
           ),
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
               // Drag handle (⋮⋮) — informational; actual reorder hook is TBD.
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                 child: Icon(
                   Icons.drag_indicator_rounded,
                   size: 20,
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -107,7 +108,7 @@ class CategoryCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 alignment: Alignment.center,
@@ -129,7 +130,7 @@ class CategoryCard extends StatelessWidget {
                       style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.text,
+                        color: context.colors.text,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -141,7 +142,7 @@ class CategoryCard extends StatelessWidget {
                           '${category.productCount} ${l10n.products.toLowerCase()}',
                           style: AppTextStyles.caption().copyWith(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                             letterSpacing: 0,
                           ),
                         ),
@@ -151,7 +152,7 @@ class CategoryCard extends StatelessWidget {
                             '• ${l10n.inactive}',
                             style: AppTextStyles.caption().copyWith(
                               fontSize: 11,
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                               letterSpacing: 0,
                             ),
                           ),
@@ -233,23 +234,23 @@ class _MenuButton extends StatelessWidget {
       child: PopupMenuButton<String>(
         tooltip: '',
         padding: EdgeInsets.zero,
-        icon: const Icon(
+        icon: Icon(
           Icons.more_horiz_rounded,
           size: 18,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         ),
-        color: AppColors.surface,
+        color: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: context.colors.border),
         ),
         onSelected: onSelected,
         itemBuilder: (_) => [
           PopupMenuItem<String>(
             value: 'edit',
             child: Row(children: [
-              const Icon(Icons.edit_rounded,
-                  size: 16, color: AppColors.textSecondary),
+              Icon(Icons.edit_rounded,
+                  size: 16, color: context.colors.textSecondary),
               const SizedBox(width: AppSpacing.md),
               Text(l10n.edit, style: AppTextStyles.bodyMedium()),
             ]),
@@ -285,7 +286,7 @@ class _DeleteDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.xl2),
       ),
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl3),
         child: Column(
@@ -313,7 +314,7 @@ class _DeleteDialog extends StatelessWidget {
             Text(
               '"$name"',
               style: AppTextStyles.bodyMedium().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 fontStyle: FontStyle.italic,
               ),
               textAlign: TextAlign.center,
@@ -332,12 +333,12 @@ class _DeleteDialog extends StatelessWidget {
                         borderRadius:
                             BorderRadius.circular(AppRadius.md + 2),
                       ),
-                      side: const BorderSide(color: AppColors.border),
+                      side: BorderSide(color: context.colors.border),
                     ),
                     child: Text(
                       l10n.no,
                       style: AppTextStyles.labelLarge().copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ),

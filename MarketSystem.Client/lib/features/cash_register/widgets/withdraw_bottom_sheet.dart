@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -43,9 +44,10 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl2)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl3,
@@ -66,7 +68,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: context.colors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -203,10 +205,10 @@ class _TypeChip extends StatelessWidget {
             horizontal: AppSpacing.lg,
           ),
           decoration: BoxDecoration(
-            color: selected ? AppColors.brandLight : AppColors.inputFill,
+            color: selected ? context.colors.brandLight : context.colors.inputFill,
             borderRadius: BorderRadius.circular(AppRadius.lg - 2),
             border: Border.all(
-              color: selected ? AppColors.brand : Colors.transparent,
+              color: selected ? context.colors.brand : Colors.transparent,
               width: 1.5,
             ),
           ),
@@ -215,7 +217,7 @@ class _TypeChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: selected ? AppColors.brand : AppColors.textMuted,
+                color: selected ? context.colors.brand : context.colors.textMuted,
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
@@ -223,14 +225,14 @@ class _TypeChip extends StatelessWidget {
                 style: AppTextStyles.bodyMedium().copyWith(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: selected ? AppColors.brand : AppColors.textSecondary,
+                  color: selected ? context.colors.brand : context.colors.textSecondary,
                 ),
               ),
               Text(
                 '${NumberFormatter.format(balance)} ${l10n.currencySom}',
                 style: AppTextStyles.bodySmall().copyWith(
                   fontSize: 11,
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

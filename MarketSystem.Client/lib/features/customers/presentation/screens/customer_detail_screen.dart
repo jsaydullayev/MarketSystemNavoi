@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -48,7 +49,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
           .read<CustomersBloc>()
           .add(GetCustomerDebtsEvent(widget.customerId)),
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: CommonAppBar(
           title: _displayLabel,
           onRefresh: () => context
@@ -151,13 +152,13 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     horizontal: AppSpacing.md + 2,
                     vertical: AppSpacing.xs + 1),
                 decoration: BoxDecoration(
-                  color: AppColors.brandLight,
+                  color: context.colors.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Text(
                   '${debts.length} ta',
                   style: AppTextStyles.caption().copyWith(
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                     fontSize: 12,
                   ),
                 ),
@@ -200,7 +201,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(l10n.payDebt),
-        backgroundColor: AppColors.brand,
+        backgroundColor: context.colors.brand,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -246,9 +247,9 @@ class _CustomerHero extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl2),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         children: [
@@ -277,13 +278,13 @@ class _CustomerHero extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.phone_outlined,
-                  size: 14, color: AppColors.textMuted),
+              Icon(Icons.phone_outlined,
+                  size: 14, color: context.colors.textMuted),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 phone,
                 style: AppTextStyles.bodySmall()
-                    .copyWith(color: AppColors.textMuted),
+                    .copyWith(color: context.colors.textMuted),
               ),
             ],
           ),
@@ -333,7 +334,7 @@ class _HeroStat extends StatelessWidget {
           child: Text(
             value,
             style: AppTextStyles.titleMedium().copyWith(
-              color: highlight ?? AppColors.text,
+              color: highlight ?? context.colors.text,
               fontSize: 16,
             ),
           ),
@@ -351,7 +352,7 @@ class _HeroStat extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      Container(width: 1, height: 28, color: AppColors.border);
+      Container(width: 1, height: 28, color: context.colors.border);
 }
 
 class _QuickActions extends StatelessWidget {

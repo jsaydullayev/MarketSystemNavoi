@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -122,9 +123,9 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
     final oldPrice = (widget.saleItem['salePrice'] as num).toDouble();
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl2,
@@ -142,7 +143,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -153,11 +154,11 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: AppColors.brandLight,
+                    color: context.colors.brandLight,
                     borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   ),
-                  child: const Icon(Icons.edit_rounded,
-                      color: AppColors.brand, size: 20),
+                  child: Icon(Icons.edit_rounded,
+                      color: context.colors.brand, size: 20),
                 ),
                 const SizedBox(width: AppSpacing.lg),
                 Text(l10n.editPriceTitle, style: AppTextStyles.titleMedium()),
@@ -167,20 +168,20 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg + 2),
               decoration: BoxDecoration(
-                color: AppColors.borderSoft,
+                color: context.colors.borderSoft,
                 borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.colors.border),
               ),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.brandLight,
+                      color: context.colors.brandLight,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: const Icon(Icons.inventory_2_rounded,
-                        color: AppColors.brand, size: 18),
+                    child: Icon(Icons.inventory_2_rounded,
+                        color: context.colors.brand, size: 18),
                   ),
                   const SizedBox(width: AppSpacing.md + 2),
                   Expanded(
@@ -196,7 +197,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                               NumberFormatter.formatDecimal(oldPrice)),
                           style: AppTextStyles.bodySmall().copyWith(
                             fontSize: 12,
-                            color: AppColors.textMuted,
+                            color: context.colors.textMuted,
                           ),
                         ),
                       ],
@@ -209,7 +210,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
             Text(
               l10n.newPriceLabel.toUpperCase(),
               style: AppTextStyles.caption().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 letterSpacing: 0.8,
               ),
             ),
@@ -222,14 +223,14 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
               decoration: InputDecoration(
                 hintText: l10n.priceWithCurrency,
                 hintStyle: AppTextStyles.bodyMedium().copyWith(
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                   fontSize: 15,
                 ),
                 prefixIcon:
-                    const Icon(Icons.money_rounded, color: AppColors.brand),
+                    Icon(Icons.money_rounded, color: context.colors.brand),
                 suffixText: l10n.currencySom,
                 filled: true,
-                fillColor: AppColors.inputFill,
+                fillColor: context.colors.inputFill,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   borderSide: BorderSide.none,
@@ -241,7 +242,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   borderSide:
-                      const BorderSide(color: AppColors.brand, width: 1.5),
+                      BorderSide(color: context.colors.brand, width: 1.5),
                 ),
               ),
             ),
@@ -249,7 +250,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
             Text(
               l10n.commentRequiredLabel.toUpperCase(),
               style: AppTextStyles.caption().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 letterSpacing: 0.8,
               ),
             ),
@@ -262,11 +263,11 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
               decoration: InputDecoration(
                 hintText: l10n.exampleComment,
                 hintStyle: AppTextStyles.bodyMedium().copyWith(
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                   fontSize: 14,
                 ),
                 filled: true,
-                fillColor: AppColors.inputFill,
+                fillColor: context.colors.inputFill,
                 contentPadding: const EdgeInsets.all(AppSpacing.lg),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -279,7 +280,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   borderSide:
-                      const BorderSide(color: AppColors.brand, width: 1.5),
+                      BorderSide(color: context.colors.brand, width: 1.5),
                 ),
               ),
             ),

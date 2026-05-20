@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/add_customer_sheet.dart';
@@ -111,7 +112,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
         onRetry: () =>
             context.read<CustomersBloc>().add(const GetCustomersEvent()),
         child: Scaffold(
-          backgroundColor: AppColors.bg,
+          backgroundColor: context.colors.bg,
           appBar: CommonAppBar(
             title: l10n.customers,
             onRefresh: () =>
@@ -172,7 +173,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: _openAddSheet,
-            backgroundColor: AppColors.brand,
+            backgroundColor: context.colors.brand,
             foregroundColor: Colors.white,
             elevation: 4,
             child: const Icon(Icons.add, size: 28),
@@ -196,18 +197,18 @@ class _SearchBar extends StatelessWidget {
       decoration: InputDecoration(
         hintText: l10n.searchCustomer,
         hintStyle: AppTextStyles.bodyMedium().copyWith(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: 15,
         ),
-        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+        prefixIcon: Icon(Icons.search, color: context.colors.textSecondary),
         suffixIcon: controller.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.clear, color: AppColors.textMuted),
+                icon: Icon(Icons.clear, color: context.colors.textMuted),
                 onPressed: controller.clear,
               )
             : null,
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: context.colors.inputFill,
         contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl, vertical: AppSpacing.lg + 2),
         border: OutlineInputBorder(
@@ -220,7 +221,7 @@ class _SearchBar extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: BorderSide(color: context.colors.brand, width: 1.5),
         ),
       ),
     );
@@ -396,16 +397,16 @@ class _Chip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl, vertical: AppSpacing.md),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.brand : AppColors.inputFill,
+          color: isActive ? context.colors.brand : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: isActive ? AppColors.brand : AppColors.border,
+            color: isActive ? context.colors.brand : context.colors.border,
           ),
         ),
         child: Text(
           label,
           style: AppTextStyles.bodyMedium().copyWith(
-            color: isActive ? Colors.white : AppColors.textSecondary,
+            color: isActive ? Colors.white : context.colors.textSecondary,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -452,7 +453,7 @@ class _ErrorView extends StatelessWidget {
               label: Text(l10n.retry,
                   style: const TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
+                backgroundColor: context.colors.brand,
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.xl3,
                     vertical: AppSpacing.lg),
@@ -482,18 +483,18 @@ class _EmptyView extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl3),
-            decoration: const BoxDecoration(
-              color: AppColors.inputFill,
+            decoration: BoxDecoration(
+              color: context.colors.inputFill,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.people_outline,
-                size: 56, color: AppColors.textMuted),
+            child: Icon(Icons.people_outline,
+                size: 56, color: context.colors.textMuted),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
             isSearching ? l10n.customerNotFound : l10n.noCustomers,
             style: AppTextStyles.titleMedium()
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: context.colors.textSecondary),
           ),
         ],
       ),

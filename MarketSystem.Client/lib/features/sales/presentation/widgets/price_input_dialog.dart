@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -116,10 +117,10 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl2)),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -137,7 +138,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -148,7 +149,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.brandLight,
+                color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.xl),
               ),
               child: Row(
@@ -156,7 +157,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: const Icon(
@@ -183,6 +184,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                 Expanded(
                   flex: 2,
                   child: _buildField(
+                    context: context,
                     controller: _qtyController,
                     label: l10n.amount,
                     icon: Icons.add_box_outlined,
@@ -194,6 +196,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                 Expanded(
                   flex: 3,
                   child: _buildField(
+                    context: context,
                     controller: _priceController,
                     label: l10n.price,
                     icon: Icons.payments_outlined,
@@ -238,6 +241,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
 
             // Comment
             _buildField(
+              context: context,
               controller: _commentController,
               label: l10n.reasonOptional,
               icon: Icons.edit_note,
@@ -272,6 +276,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
   }
 
   Widget _buildField({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -290,7 +295,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
             label,
             style: AppTextStyles.bodySmall().copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ),
@@ -303,11 +308,11 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
             fontWeight: FontWeight.w700,
           ),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20, color: AppColors.brand),
+            prefixIcon: Icon(icon, size: 20, color: context.colors.brand),
             suffixText: suffix,
             suffixStyle: AppTextStyles.bodySmall(),
             filled: true,
-            fillColor: AppColors.inputFill,
+            fillColor: context.colors.inputFill,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.lg),
               borderSide: BorderSide.none,
@@ -318,8 +323,8 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              borderSide: const BorderSide(
-                color: AppColors.brand,
+              borderSide: BorderSide(
+                color: context.colors.brand,
                 width: 1.5,
               ),
             ),

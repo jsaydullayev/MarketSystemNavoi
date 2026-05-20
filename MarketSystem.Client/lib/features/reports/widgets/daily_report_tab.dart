@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/features/reports/widgets/date_picker_row.dart';
 import 'package:market_system_client/features/reports/widgets/empty_report.dart';
@@ -79,7 +80,7 @@ class DailyReportTab extends StatelessWidget {
                   value:
                       '${NumberFormatter.formatDecimal(profit)} ${l10n.currencySom}',
                   icon: Icons.account_balance_wallet_outlined,
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                 ),
               ),
             ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -36,8 +37,10 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
     },
     'Terminal': {
       'name': 'Terminal',
+      // Fixed category marker colour (not the theme accent) — orange reads
+      // fine on both light and dark, like the literal purple/blue below.
       'icon': Icons.credit_card_outlined,
-      'color': AppColors.brand,
+      'color': Color(0xFFFF6B00),
     },
     'Transfer': {
       'name': 'Hisob raqam',
@@ -70,7 +73,7 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
         {
           'name': paymentType,
           'icon': Icons.payment_outlined,
-          'color': AppColors.textMuted,
+          'color': context.colors.textMuted,
         };
     final color = cfg['color'] as Color;
     final icon = cfg['icon'] as IconData;
@@ -85,9 +88,9 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg + 2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Row(
         children: [

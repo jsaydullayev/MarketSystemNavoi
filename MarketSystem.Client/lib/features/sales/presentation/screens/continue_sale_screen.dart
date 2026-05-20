@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_payment_dialog.dart';
@@ -495,10 +496,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       return NetworkWrapper(
         onRetry: _loadData,
         child: Scaffold(
-          backgroundColor: AppColors.bg,
-          appBar: _buildAppBar(l10n),
-          body: const Center(
-            child: CircularProgressIndicator(color: AppColors.brand),
+          backgroundColor: context.colors.bg,
+          appBar: _buildAppBar(context, l10n),
+          body: Center(
+            child: CircularProgressIndicator(color: context.colors.brand),
           ),
         ),
       );
@@ -509,8 +510,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     return NetworkWrapper(
       onRetry: _loadData,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
-        appBar: _buildAppBar(l10n),
+        backgroundColor: context.colors.bg,
+        appBar: _buildAppBar(context, l10n),
         body: Column(
           children: [
             if (_cartItems.isNotEmpty)
@@ -558,7 +559,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                     ),
                     child: Row(
                       children: [
-                        Expanded(child: _buildSearchInput(l10n)),
+                        Expanded(child: _buildSearchInput(context, l10n)),
                         if (!isClosed) ...[
                           const SizedBox(width: AppSpacing.md),
                           _ExternalProductButton(
@@ -571,7 +572,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                   ),
                   Expanded(
                     child: _filteredProducts.isEmpty
-                        ? _buildEmptyState(l10n)
+                        ? _buildEmptyState(context, l10n)
                         : GridView.builder(
                             padding: const EdgeInsets.fromLTRB(
                               AppSpacing.xl,
@@ -613,14 +614,15 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
   /// Custom POS-style header — back button + title with chek# meta on the
   /// left, customer chip on the right. Mirrors `NewSaleScreen` so the
   /// "continue" experience visually picks up where "new" left off.
-  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
+  PreferredSizeWidget _buildAppBar(
+      BuildContext context, AppLocalizations l10n) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(64),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
+        decoration: BoxDecoration(
+          color: context.colors.surface,
           border: Border(
-            bottom: BorderSide(color: AppColors.borderSoft, width: 1),
+            bottom: BorderSide(color: context.colors.borderSoft, width: 1),
           ),
         ),
         child: SafeArea(
@@ -657,7 +659,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0,
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -697,25 +699,25 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
   /// Gray-fill search input with brand-orange focus. Replaces the inline
   /// dark-mode-aware TextField from the legacy implementation.
-  Widget _buildSearchInput(AppLocalizations l10n) {
+  Widget _buildSearchInput(BuildContext context, AppLocalizations l10n) {
     return TextField(
       controller: _searchController,
       style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
       decoration: InputDecoration(
         hintText: l10n.searchProduct,
         hintStyle: AppTextStyles.bodyMedium().copyWith(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: 14,
         ),
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.search_rounded,
           size: 18,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         ),
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear_rounded, size: 16),
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 onPressed: () {
                   _searchController.clear();
                   _filterProducts();
@@ -723,7 +725,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
               )
             : null,
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: context.colors.inputFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
           borderSide: BorderSide.none,
@@ -734,7 +736,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide:
+              BorderSide(color: context.colors.brand, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
@@ -744,21 +747,21 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations l10n) {
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.search_off_rounded,
             size: 48,
-            color: AppColors.border,
+            color: context.colors.border,
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
             l10n.productsNotFound,
             style: AppTextStyles.bodySmall().copyWith(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: 14,
             ),
           ),
@@ -785,13 +788,13 @@ class _PosBackButton extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.bg,
+            color: context.colors.bg,
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 16,
-            color: AppColors.text,
+            color: context.colors.text,
           ),
         ),
       ),
@@ -835,7 +838,9 @@ class _CustomerChip extends StatelessWidget {
               vertical: 6,
             ),
             decoration: BoxDecoration(
-              color: hasCustomer ? AppColors.brandLight : AppColors.inputFill,
+              color: hasCustomer
+                  ? context.colors.brandLight
+                  : context.colors.inputFill,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Row(
@@ -844,10 +849,10 @@ class _CustomerChip extends StatelessWidget {
                 if (hasCustomer)
                   _InitialAvatar(name: name)
                 else
-                  const Icon(
+                  Icon(
                     Icons.person_outline_rounded,
                     size: 14,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 const SizedBox(width: 6),
                 Flexible(
@@ -860,8 +865,8 @@ class _CustomerChip extends StatelessWidget {
                       letterSpacing: 0,
                       fontWeight: FontWeight.w700,
                       color: hasCustomer
-                          ? AppColors.brand
-                          : AppColors.textSecondary,
+                          ? context.colors.brand
+                          : context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -888,8 +893,8 @@ class _InitialAvatar extends StatelessWidget {
       width: 18,
       height: 18,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: AppColors.brand,
+      decoration: BoxDecoration(
+        color: context.colors.brand,
         shape: BoxShape.circle,
       ),
       child: Text(
@@ -929,11 +934,11 @@ class _ExternalProductButton extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.brand,
+              color: context.colors.brand,
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.brand.withValues(alpha: 0.3),
+                  color: context.colors.brand.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),

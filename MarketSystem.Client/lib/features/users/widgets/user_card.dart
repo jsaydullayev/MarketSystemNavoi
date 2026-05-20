@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -30,16 +31,16 @@ class UserCard extends StatelessWidget {
   static const _sellerBg = Color(0xFFECFDF5);
   static const _sellerFg = Color(0xFF047857);
 
-  ({Color bg, Color fg}) _roleColors(String role) {
+  ({Color bg, Color fg}) _roleColors(BuildContext context, String role) {
     switch (role.toLowerCase()) {
       case 'owner':
-        return (bg: AppColors.brandLight, fg: AppColors.brandDark);
+        return (bg: context.colors.brandLight, fg: context.colors.brandDark);
       case 'admin':
         return (bg: _adminBg, fg: _adminFg);
       case 'seller':
         return (bg: _sellerBg, fg: _sellerFg);
       default:
-        return (bg: AppColors.inputFill, fg: AppColors.textSecondary);
+        return (bg: context.colors.inputFill, fg: context.colors.textSecondary);
     }
   }
 
@@ -64,16 +65,16 @@ class UserCard extends StatelessWidget {
     final fullName = user['fullName'] ?? l10n.unknown;
     final username = user['username'] ?? '';
     final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : '?';
-    final colors = _roleColors(role);
+    final colors = _roleColors(context, role);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.md + 2),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.xl2),
-          border: Border.all(color: AppColors.border, width: 1),
+          border: Border.all(color: context.colors.border, width: 1),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -110,10 +111,12 @@ class UserCard extends StatelessWidget {
                       width: 12,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: isActive ? AppColors.success : AppColors.textMuted,
+                        color: isActive
+                            ? AppColors.success
+                            : context.colors.textMuted,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppColors.surface,
+                          color: context.colors.surface,
                           width: 2,
                         ),
                       ),
@@ -140,7 +143,7 @@ class UserCard extends StatelessWidget {
                       '@$username',
                       style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -22,17 +23,17 @@ class ReportTabBar extends StatelessWidget {
           AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.md + 2),
       height: 42,
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: TabBar(
         controller: controller,
         indicator: BoxDecoration(
-          color: AppColors.brand,
+          color: context.colors.brand,
           borderRadius: BorderRadius.circular(AppRadius.md),
           boxShadow: [
             BoxShadow(
-              color: AppColors.brand.withValues(alpha: 0.25),
+              color: context.colors.brand.withValues(alpha: 0.25),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -41,7 +42,7 @@ class ReportTabBar extends StatelessWidget {
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
         labelColor: Colors.white,
-        unselectedLabelColor: AppColors.textSecondary,
+        unselectedLabelColor: context.colors.textSecondary,
         labelStyle: AppTextStyles.labelSmall()
             .copyWith(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle: AppTextStyles.labelSmall()

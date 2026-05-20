@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -99,7 +100,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
     final title = blocking ? l10n.blockShopTitle : l10n.unblock;
 
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
@@ -133,7 +134,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, size: 20),
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       onPressed: _submitting
                           ? null
                           : () => Navigator.pop(context),
@@ -181,7 +182,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                           child: Text(
                             l10n.blockImmediateInfo,
                             style: AppTextStyles.bodySmall().copyWith(
-                              color: AppColors.text,
+                              color: context.colors.text,
                               fontSize: 12,
                             ),
                           ),
@@ -193,7 +194,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                   Text(
                     l10n.blockReasonRequired,
                     style: AppTextStyles.caption().copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -205,11 +206,11 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     decoration: InputDecoration(
                       hintText: l10n.blockReasonHint,
                       hintStyle: AppTextStyles.bodyMedium().copyWith(
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                         fontSize: 15,
                       ),
                       filled: true,
-                      fillColor: AppColors.inputFill,
+                      fillColor: context.colors.inputFill,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.xl,
                         vertical: AppSpacing.lg + 2,
@@ -227,8 +228,8 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(AppRadius.md + 2),
-                        borderSide: const BorderSide(
-                            color: AppColors.brand, width: 1.5),
+                        borderSide: BorderSide(
+                            color: context.colors.brand, width: 1.5),
                       ),
                     ),
                     validator: (v) => (v ?? '').trim().length < 3
@@ -258,7 +259,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                           child: Text(
                             l10n.unblockInfo,
                             style: AppTextStyles.bodySmall().copyWith(
-                              color: AppColors.text,
+                              color: context.colors.text,
                               fontSize: 12,
                             ),
                           ),
@@ -271,7 +272,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     Text(
                       l10n.previousBlockReason,
                       style: AppTextStyles.caption().copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),

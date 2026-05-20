@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/features/reports/widgets/empty_items.dart';
 import 'package:market_system_client/features/reports/widgets/sale_item_card.dart';
@@ -35,7 +36,7 @@ class DailySalesDetailsScreen extends StatelessWidget {
     final totalTx = (dailyReport['totalTransactions'] as num?)?.toInt() ?? 0;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: CommonAppBar(
         title: '${l10n.dailySales} — ${DateFormat('dd.MM.yyyy').format(date)}',
       ),

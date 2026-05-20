@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -42,10 +43,10 @@ class PaymentHistorySheet extends StatelessWidget {
       minChildSize: 0.4,
       maxChildSize: 0.95,
       builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl2)),
         ),
         child: Column(
           children: [
@@ -56,7 +57,7 @@ class PaymentHistorySheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -72,8 +73,11 @@ class PaymentHistorySheet extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.brand, AppColors.brandDark],
+                      gradient: LinearGradient(
+                        colors: [
+                          context.colors.brand,
+                          context.colors.brandDark,
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -109,18 +113,18 @@ class PaymentHistorySheet extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: AppColors.inputFill,
+                        color: context.colors.inputFill,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: const Icon(Icons.close,
-                          size: 16, color: AppColors.textSecondary),
+                      child: Icon(Icons.close,
+                          size: 16, color: context.colors.textSecondary),
                     ),
                   ),
                 ],
               ),
             ),
 
-            Container(height: 1, color: AppColors.borderSoft),
+            Container(height: 1, color: context.colors.borderSoft),
 
             // List
             Expanded(
@@ -168,9 +172,9 @@ class _SaleHistoryCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -219,7 +223,7 @@ class _SaleHistoryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: context.colors.bg,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Column(
@@ -294,7 +298,7 @@ class _SummaryRow extends StatelessWidget {
           style: AppTextStyles.bodyMedium().copyWith(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: valueColor ?? AppColors.text,
+            color: valueColor ?? context.colors.text,
           ),
         ),
       ],

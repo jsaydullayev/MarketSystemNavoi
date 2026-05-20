@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -65,7 +66,7 @@ class _DebtOption extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? activeColor.withValues(alpha: 0.12)
-                : AppColors.inputFill,
+                : context.colors.inputFill,
             borderRadius: BorderRadius.circular(AppRadius.md + 2),
             border: Border.all(
               color: isSelected ? activeColor : Colors.transparent,
@@ -76,13 +77,13 @@ class _DebtOption extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon,
-                  color: isSelected ? activeColor : AppColors.textMuted,
+                  color: isSelected ? activeColor : context.colors.textMuted,
                   size: 18),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 label,
                 style: AppTextStyles.bodyMedium().copyWith(
-                  color: isSelected ? activeColor : AppColors.textMuted,
+                  color: isSelected ? activeColor : context.colors.textMuted,
                   fontWeight: FontWeight.w600,
                 ),
               ),

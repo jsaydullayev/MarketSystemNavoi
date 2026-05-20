@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/extensions/app_extensions.dart';
 import '../../../../core/utils/number_formatter.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -48,16 +49,16 @@ class SaleBody extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.brand),
+      return Center(
+        child: CircularProgressIndicator(color: context.colors.brand),
       );
     }
 
     return Column(
       children: [
-        _buildSearchRow(l10n),
-        if (categories.isNotEmpty) _buildCategoryChips(l10n),
-        Expanded(child: _buildProductGrid(l10n)),
+        _buildSearchRow(context, l10n),
+        if (categories.isNotEmpty) _buildCategoryChips(context, l10n),
+        Expanded(child: _buildProductGrid(context, l10n)),
       ],
     );
   }
@@ -66,9 +67,9 @@ class SaleBody extends StatelessWidget {
   /// stripe under the POS header — matches the demo's `.pos-search` area
   /// (we lay it directly inside the page body since the screen's AppBar
   /// already carries the title/customer chip).
-  Widget _buildSearchRow(AppLocalizations l10n) {
+  Widget _buildSearchRow(BuildContext context, AppLocalizations l10n) {
     return Container(
-      color: AppColors.surface,
+      color: context.colors.surface,
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.lg),
       child: Row(
@@ -80,16 +81,16 @@ class SaleBody extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: l10n.searchProduct,
                 hintStyle: AppTextStyles.bodyMedium().copyWith(
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                   fontSize: 14,
                 ),
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search_rounded,
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   size: 20,
                 ),
                 filled: true,
-                fillColor: AppColors.inputFill,
+                fillColor: context.colors.inputFill,
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md, vertical: AppSpacing.lg + 2),
@@ -104,13 +105,13 @@ class SaleBody extends StatelessWidget {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   borderSide:
-                      const BorderSide(color: AppColors.brand, width: 1.5),
+                      BorderSide(color: context.colors.brand, width: 1.5),
                 ),
               ),
             ),
           ),
           10.width,
-          _buildExternalProductButton(l10n),
+          _buildExternalProductButton(context, l10n),
         ],
       ),
     );
@@ -118,14 +119,15 @@ class SaleBody extends StatelessWidget {
 
   /// Orange add-external-product button — the same affordance as before
   /// but with the new brand color.
-  Widget _buildExternalProductButton(AppLocalizations l10n) {
+  Widget _buildExternalProductButton(
+      BuildContext context, AppLocalizations l10n) {
     return Tooltip(
       message: l10n.addExternalProduct,
       child: Material(
         color: Colors.transparent,
         child: Ink(
           decoration: BoxDecoration(
-            color: AppColors.brand,
+            color: context.colors.brand,
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: InkWell(
@@ -157,9 +159,9 @@ class SaleBody extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryChips(AppLocalizations l10n) {
+  Widget _buildCategoryChips(BuildContext context, AppLocalizations l10n) {
     return Container(
-      color: AppColors.surface,
+      color: context.colors.surface,
       padding: const EdgeInsets.fromLTRB(0, 0, 0, AppSpacing.lg),
       child: SizedBox(
         height: 36,
@@ -185,8 +187,9 @@ class SaleBody extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg + 2, vertical: 6),
                   decoration: BoxDecoration(
-                    color:
-                        isSelected ? AppColors.brand : AppColors.inputFill,
+                    color: isSelected
+                        ? context.colors.brand
+                        : context.colors.inputFill,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                   ),
                   child: Center(
@@ -198,7 +201,7 @@ class SaleBody extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: isSelected
                             ? Colors.white
-                            : AppColors.textSecondary,
+                            : context.colors.textSecondary,
                       ),
                     ),
                   ),
@@ -211,22 +214,22 @@ class SaleBody extends StatelessWidget {
     );
   }
 
-  Widget _buildProductGrid(AppLocalizations l10n) {
+  Widget _buildProductGrid(BuildContext context, AppLocalizations l10n) {
     if (filteredProducts.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.inventory_2_outlined,
               size: 56,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
             12.height,
             Text(
               l10n.noProductsFound,
               style: AppTextStyles.bodySmall().copyWith(
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
               ),
             ),
           ],
@@ -300,10 +303,10 @@ class _ProductTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.lg - 2),
           child: Ink(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.colors.surface,
               borderRadius: BorderRadius.circular(AppRadius.lg - 2),
               border: Border.all(
-                color: AppColors.borderSoft,
+                color: context.colors.borderSoft,
                 width: 1,
               ),
             ),
@@ -319,7 +322,7 @@ class _ProductTile extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     height: 1.2,
-                    color: AppColors.text,
+                    color: context.colors.text,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -328,7 +331,9 @@ class _ProductTile extends StatelessWidget {
                   style: AppTextStyles.bodyMedium().copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: isInStock ? AppColors.brand : AppColors.textMuted,
+                    color: isInStock
+                        ? context.colors.brand
+                        : context.colors.textMuted,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -339,7 +344,7 @@ class _ProductTile extends StatelessWidget {
                     letterSpacing: 0,
                     color: isLow
                         ? AppColors.warning
-                        : AppColors.textMuted,
+                        : context.colors.textMuted,
                     fontWeight:
                         isLow ? FontWeight.w600 : FontWeight.w400,
                   ),
@@ -371,7 +376,7 @@ class _PopularChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(
@@ -379,7 +384,7 @@ class _PopularChip extends StatelessWidget {
         style: AppTextStyles.caption().copyWith(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: AppColors.brand,
+          color: context.colors.brand,
           letterSpacing: 0,
         ),
       ),
@@ -408,9 +413,9 @@ class _PlusBadge extends StatelessWidget {
           ),
         ],
       ),
-      child: const Icon(
+      child: Icon(
         Icons.add_rounded,
-        color: AppColors.brand,
+        color: context.colors.brand,
         size: 11,
       ),
     );

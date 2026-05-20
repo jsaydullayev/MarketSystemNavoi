@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -37,7 +38,7 @@ class _RejectRequestDialogState extends State<RejectRequestDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
@@ -75,7 +76,7 @@ class _RejectRequestDialogState extends State<RejectRequestDialog> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, size: 20),
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -84,7 +85,7 @@ class _RejectRequestDialogState extends State<RejectRequestDialog> {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: AppColors.inputFill,
+                    color: context.colors.inputFill,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Column(
@@ -106,7 +107,7 @@ class _RejectRequestDialogState extends State<RejectRequestDialog> {
                 Text(
                   l10n.superAdminRejectReason.toUpperCase(),
                   style: AppTextStyles.caption().copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -120,11 +121,11 @@ class _RejectRequestDialogState extends State<RejectRequestDialog> {
                   decoration: InputDecoration(
                     hintText: l10n.superAdminRejectReasonHint,
                     hintStyle: AppTextStyles.bodyMedium().copyWith(
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                       fontSize: 15,
                     ),
                     filled: true,
-                    fillColor: AppColors.inputFill,
+                    fillColor: context.colors.inputFill,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.xl,
                       vertical: AppSpacing.lg + 2,
@@ -142,8 +143,8 @@ class _RejectRequestDialogState extends State<RejectRequestDialog> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(AppRadius.md + 2),
-                      borderSide: const BorderSide(
-                          color: AppColors.brand, width: 1.5),
+                      borderSide: BorderSide(
+                          color: context.colors.brand, width: 1.5),
                     ),
                   ),
                   validator: (v) {

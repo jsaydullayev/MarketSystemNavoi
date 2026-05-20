@@ -14,6 +14,7 @@
 //   cost price / quantity — those come from Zakup).
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -176,19 +177,19 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.text,
+        backgroundColor: context.colors.surface,
+        foregroundColor: context.colors.text,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 20,
-            color: AppColors.text,
+            color: context.colors.text,
           ),
           onPressed: () => Navigator.maybePop(context),
         ),
@@ -196,7 +197,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           isEditing ? l10n.adminEditProductTitle : l10n.adminNewProductTitle,
           style: AppTextStyles.titleMedium().copyWith(
             fontWeight: FontWeight.w800,
-            color: AppColors.text,
+            color: context.colors.text,
           ),
         ),
       ),
@@ -239,14 +240,14 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                   _Label(text: l10n.category),
                   const SizedBox(height: AppSpacing.sm),
                   _isLoadingCategories
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           child: SizedBox(
                             height: 22,
                             width: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: AppColors.brand,
+                              color: context.colors.brand,
                             ),
                           ),
                         )
@@ -393,7 +394,7 @@ class _HeroStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.brandTint, width: 1),
       ),
@@ -403,7 +404,7 @@ class _HeroStrip extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.brand,
+              color: context.colors.brand,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: const Icon(
@@ -423,7 +424,7 @@ class _HeroStrip extends StatelessWidget {
                       : l10n.adminNewProductTitle,
                   style: AppTextStyles.bodyLarge().copyWith(
                     fontWeight: FontWeight.w800,
-                    color: AppColors.brandDark,
+                    color: context.colors.brandDark,
                     fontSize: 15,
                   ),
                 ),
@@ -431,7 +432,7 @@ class _HeroStrip extends StatelessWidget {
                 Text(
                   l10n.adminCanEditPriceAndSettings,
                   style: AppTextStyles.bodySmall().copyWith(
-                    color: AppColors.brandDark,
+                    color: context.colors.brandDark,
                     fontSize: 11,
                   ),
                 ),
@@ -455,7 +456,7 @@ class _SectionLabel extends StatelessWidget {
       style: AppTextStyles.caption().copyWith(
         fontSize: 11,
         letterSpacing: 0.8,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
         fontWeight: FontWeight.w700,
       ),
     );
@@ -474,7 +475,7 @@ class _Label extends StatelessWidget {
       style: AppTextStyles.caption().copyWith(
         fontSize: 11,
         letterSpacing: 0.8,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
     );
   }
@@ -498,19 +499,19 @@ class _CategoryDropdown extends StatelessWidget {
     return DropdownButtonFormField<dynamic>(
       initialValue: value,
       isExpanded: true,
-      icon: const Icon(
+      icon: Icon(
         Icons.keyboard_arrow_down_rounded,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
       style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
-      decoration: _dropdownDecoration(hint: l10n.selectCategory),
+      decoration: _dropdownDecoration(context, hint: l10n.selectCategory),
       items: [
         DropdownMenuItem(
           value: null,
           child: Text(
             l10n.categoryNotSelected,
             style: AppTextStyles.bodyMedium().copyWith(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: 14,
             ),
           ),
@@ -547,12 +548,12 @@ class _UnitDropdown extends StatelessWidget {
     return DropdownButtonFormField<int>(
       initialValue: value,
       isExpanded: true,
-      icon: const Icon(
+      icon: Icon(
         Icons.keyboard_arrow_down_rounded,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
       style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
-      decoration: _dropdownDecoration(),
+      decoration: _dropdownDecoration(context),
       items: units.map<DropdownMenuItem<int>>((unit) {
         return DropdownMenuItem<int>(
           value: unit['value'] as int,
@@ -561,7 +562,7 @@ class _UnitDropdown extends StatelessWidget {
               Icon(
                 unit['icon'] as IconData,
                 size: 16,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
               const SizedBox(width: AppSpacing.md),
               Text(
@@ -577,15 +578,15 @@ class _UnitDropdown extends StatelessWidget {
   }
 }
 
-InputDecoration _dropdownDecoration({String? hint}) {
+InputDecoration _dropdownDecoration(BuildContext context, {String? hint}) {
   return InputDecoration(
     hintText: hint,
     hintStyle: AppTextStyles.bodyMedium().copyWith(
-      color: AppColors.textMuted,
+      color: context.colors.textMuted,
       fontSize: 14,
     ),
     filled: true,
-    fillColor: AppColors.inputFill,
+    fillColor: context.colors.inputFill,
     isDense: true,
     contentPadding: const EdgeInsets.symmetric(
       horizontal: AppSpacing.xl,
@@ -601,7 +602,7 @@ InputDecoration _dropdownDecoration({String? hint}) {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadius.md + 2),
-      borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+      borderSide: BorderSide(color: context.colors.brand, width: 1.5),
     ),
   );
 }
@@ -617,7 +618,7 @@ class _PriceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.brandTint, width: 1),
       ),
@@ -626,10 +627,10 @@ class _PriceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.payments_rounded,
                 size: 16,
-                color: AppColors.brandDark,
+                color: context.colors.brandDark,
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
@@ -637,7 +638,7 @@ class _PriceCard extends StatelessWidget {
                 style: AppTextStyles.caption().copyWith(
                   fontSize: 11,
                   letterSpacing: 0.8,
-                  color: AppColors.brandDark,
+                  color: context.colors.brandDark,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -682,7 +683,7 @@ class _PriceTip extends StatelessWidget {
               style: AppTextStyles.caption().copyWith(
                 fontSize: 11,
                 letterSpacing: 0,
-                color: AppColors.text,
+                color: context.colors.text,
                 fontWeight: FontWeight.w400,
                 height: 1.4,
               ),
@@ -767,16 +768,16 @@ class _TempToggle extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderSoft, width: 1),
+        border: Border.all(color: context.colors.borderSoft, width: 1),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.timer_outlined,
             size: 18,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -793,7 +794,7 @@ class _TempToggle extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppTextStyles.bodySmall().copyWith(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontSize: 11,
                   ),
                 ),
@@ -804,7 +805,7 @@ class _TempToggle extends StatelessWidget {
             scale: 0.85,
             child: Switch(
               value: value,
-              activeThumbColor: AppColors.brand,
+              activeThumbColor: context.colors.brand,
               onChanged: onChanged,
             ),
           ),

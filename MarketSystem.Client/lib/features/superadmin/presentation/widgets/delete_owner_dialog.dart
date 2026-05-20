@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -68,20 +69,21 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
     }
   }
 
-  InputDecoration _decoration({
+  InputDecoration _decoration(
+    BuildContext context, {
     required String hint,
     String? helper,
   }) {
     return InputDecoration(
       hintText: hint,
       hintStyle: AppTextStyles.bodyMedium().copyWith(
-        color: AppColors.textMuted,
+        color: context.colors.textMuted,
         fontSize: 15,
       ),
       helperText: helper,
       helperStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
       filled: true,
-      fillColor: AppColors.inputFill,
+      fillColor: context.colors.inputFill,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.xl,
         vertical: AppSpacing.lg + 2,
@@ -96,7 +98,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
-        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        borderSide: BorderSide(color: context.colors.brand, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -113,7 +115,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
@@ -152,7 +154,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         onPressed: _submitting
                             ? null
                             : () => Navigator.pop(context),
@@ -187,7 +189,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                           child: RichText(
                             text: TextSpan(
                               style: AppTextStyles.bodySmall().copyWith(
-                                color: AppColors.text,
+                                color: context.colors.text,
                               ),
                               children: [
                                 TextSpan(
@@ -235,7 +237,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                         Text(
                           l10n.dataWillBeKept,
                           style: AppTextStyles.bodySmall().copyWith(
-                            color: AppColors.text,
+                            color: context.colors.text,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
@@ -284,7 +286,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                   Text(
                     l10n.enterShopNameUpper,
                     style: AppTextStyles.caption().copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -292,6 +294,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                     controller: _confirm,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       hint: widget.marketName,
                       helper: l10n.typeShopNameExact(widget.marketName),
                     ),
@@ -306,7 +309,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                   Text(
                     l10n.deleteReasonUpper,
                     style: AppTextStyles.caption().copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -315,6 +318,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                     maxLines: 2,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       hint: l10n.deleteReasonHint,
                     ),
                     validator: (v) => (v ?? '').trim().length < 3
@@ -374,13 +378,13 @@ class _CascadeRow extends StatelessWidget {
           Text(
             '$count ',
             style: AppTextStyles.bodySmall().copyWith(
-              color: AppColors.text,
+              color: context.colors.text,
               fontWeight: FontWeight.w700,
             ),
           ),
           Text(
             label,
-            style: AppTextStyles.bodySmall().copyWith(color: AppColors.text),
+            style: AppTextStyles.bodySmall().copyWith(color: context.colors.text),
           ),
         ],
       ),

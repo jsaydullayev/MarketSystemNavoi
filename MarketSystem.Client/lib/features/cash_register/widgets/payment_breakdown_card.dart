@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/data/models/cash_register_model.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_card.dart';
@@ -51,7 +52,7 @@ class PaymentBreakdownCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Container(
               height: 1,
-              color: AppColors.border,
+              color: context.colors.border,
             ),
             const SizedBox(height: AppSpacing.lg),
             Row(
@@ -66,7 +67,7 @@ class PaymentBreakdownCard extends StatelessWidget {
                 Text(
                   '${NumberFormatter.format(total)} ${l10n.currencySom}',
                   style: AppTextStyles.titleMedium().copyWith(
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -97,7 +98,7 @@ class _PaymentRow extends StatelessWidget {
           Text(
             label,
             style: AppTextStyles.bodyMedium().copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           Text(

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/file_helper.dart'
     as core_file_helper;
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -149,10 +150,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
             AppSpacing.xl3,
             AppSpacing.xl4,
           ),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl2)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -162,7 +163,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: context.colors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -172,12 +173,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md + 2),
                       decoration: BoxDecoration(
-                        color: AppColors.brandLight,
+                        color: context.colors.brandLight,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.inventory_2_rounded,
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                         size: 22,
                       ),
                     ),
@@ -191,7 +192,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             style: AppTextStyles.caption().copyWith(
                               fontSize: 12,
                               letterSpacing: 0,
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                             ),
                           ),
                           Text(
@@ -266,9 +267,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: AppTextStyles.bodySmall(),
-        prefixIcon: Icon(icon, size: 20, color: AppColors.brand),
+        prefixIcon: Icon(icon, size: 20, color: context.colors.brand),
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: context.colors.inputFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
           borderSide: BorderSide.none,
@@ -279,7 +280,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: BorderSide(color: context.colors.brand, width: 1.5),
         ),
       ),
     );
@@ -332,7 +333,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return NetworkWrapper(
       onRetry: _loadProducts,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: _buildAppBar(l10n),
         body: ProductsBody(
           isLoading: _isLoading,
@@ -359,10 +360,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
+        decoration: BoxDecoration(
+          color: context.colors.surface,
           border: Border(
-            bottom: BorderSide(color: AppColors.borderSoft, width: 1),
+            bottom: BorderSide(color: context.colors.borderSoft, width: 1),
           ),
         ),
         child: SafeArea(
@@ -372,10 +373,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.arrow_back_ios_new_rounded,
                     size: 20,
-                    color: AppColors.text,
+                    color: context.colors.text,
                   ),
                   onPressed: () => Navigator.maybePop(context),
                 ),
@@ -391,18 +392,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.file_download_outlined,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     size: 22,
                   ),
                   onPressed: _exportExcel,
                   tooltip: 'Excel',
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.refresh_rounded,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     size: 22,
                   ),
                   onPressed: _loadProducts,
@@ -431,11 +432,11 @@ class _ProductsFab extends StatelessWidget {
         color: Colors.transparent,
         child: Ink(
           decoration: BoxDecoration(
-            color: AppColors.brand,
+            color: context.colors.brand,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppColors.brand.withValues(alpha: 0.35),
+                color: context.colors.brand.withValues(alpha: 0.35),
                 blurRadius: 14,
                 offset: const Offset(0, 6),
               ),

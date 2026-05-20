@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/cash_register/widgets/balance_card.dart';
@@ -153,22 +154,22 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
     return NetworkWrapper(
       onRetry: _loadCashRegister,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         // Bare AppBar (no CommonAppBar dependency) so the surface stays
         // crisp white and the title sits on the demo's brand-tinted hero
         // immediately below it.
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          foregroundColor: AppColors.text,
+          backgroundColor: context.colors.surface,
+          foregroundColor: context.colors.text,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: true,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 20,
-              color: AppColors.text,
+              color: context.colors.text,
             ),
             onPressed: () => Navigator.maybePop(context),
           ),
@@ -176,12 +177,12 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
             l10n.cashRegister,
             style: AppTextStyles.titleMedium().copyWith(
               fontWeight: FontWeight.w800,
-              color: AppColors.text,
+              color: context.colors.text,
             ),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: AppColors.text),
+              icon: Icon(Icons.refresh_rounded, color: context.colors.text),
               onPressed: _isLoading ? null : _loadCashRegister,
             ),
           ],
@@ -191,16 +192,16 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.lock_outline,
                       size: 64,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     Text(
                       l10n.accessDenied,
                       style: AppTextStyles.titleMedium().copyWith(
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -210,7 +211,7 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : RefreshIndicator(
                     onRefresh: _loadCashRegister,
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(

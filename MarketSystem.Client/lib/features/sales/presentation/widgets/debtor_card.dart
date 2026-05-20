@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
@@ -41,9 +42,9 @@ class DebtorCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md + 2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -85,7 +86,7 @@ class DebtorCard extends StatelessWidget {
                     Text(
                       customerPhone,
                       style: AppTextStyles.bodySmall().copyWith(
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -120,15 +121,15 @@ class DebtorCard extends StatelessWidget {
                 _ActionButton(
                   icon: Icons.history_rounded,
                   onTap: onHistoryTap,
-                  background: AppColors.inputFill,
-                  iconColor: AppColors.textSecondary,
+                  background: context.colors.inputFill,
+                  iconColor: context.colors.textSecondary,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _ActionButton(
                   icon: Icons.payments_outlined,
                   onTap: onPaymentTap,
-                  background: AppColors.brandLight,
-                  iconColor: AppColors.brand,
+                  background: context.colors.brandLight,
+                  iconColor: context.colors.brand,
                 ),
               ],
             ),

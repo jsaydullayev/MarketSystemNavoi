@@ -17,6 +17,7 @@ import '../../core/routes/app_routes.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../data/services/dashboard_service.dart';
 import '../../data/services/notification_service.dart';
+import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../l10n/app_localizations.dart';
@@ -103,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       drawer: _DashboardDrawer(user: user, role: role, l10n: l10n),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -111,17 +112,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         leading: Builder(
           builder: (context) => IconButton(
             onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: const Icon(Icons.menu_rounded, color: AppColors.text),
+            icon: Icon(Icons.menu_rounded, color: context.colors.text),
           ),
         ),
         title: Text(
           'STROTECH',
           style: AppTextStyles.titleMedium()
-              .copyWith(letterSpacing: 2, color: AppColors.text),
+              .copyWith(letterSpacing: 2, color: context.colors.text),
         ),
       ),
       body: RefreshIndicator(
-        color: AppColors.brand,
+        color: context.colors.brand,
         onRefresh: _refresh,
         child: _DashboardBody(
           user: user,
@@ -657,9 +658,9 @@ class _SkeletonBox extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
     );
   }
@@ -893,7 +894,7 @@ class _DashboardDrawer extends StatelessWidget {
     final isDark = AdaptiveTheme.of(context).mode.isDark;
     return Drawer(
       width: width,
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.surface,
+      backgroundColor: isDark ? AppColors.darkBg : context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(20)),
       ),
@@ -910,7 +911,7 @@ class _DashboardDrawer extends StatelessWidget {
                 children: [
                   ..._menuTiles(context, role),
                   const SizedBox(height: AppSpacing.lg),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: context.colors.border, height: 1),
                   const SizedBox(height: AppSpacing.md),
                   _SettingsTile(
                     icon: isDark
@@ -919,7 +920,7 @@ class _DashboardDrawer extends StatelessWidget {
                     label: isDark ? l10n.lightMode : l10n.darkMode,
                     trailing: Switch.adaptive(
                       value: isDark,
-                      activeThumbColor: AppColors.brand,
+                      activeThumbColor: context.colors.brand,
                       onChanged: (_) {
                         if (isDark) {
                           AdaptiveTheme.of(context).setLight();
@@ -948,8 +949,8 @@ class _DashboardDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(
-                color: AppColors.border,
+            Divider(
+                color: context.colors.border,
                 indent: AppSpacing.xl,
                 endIndent: AppSpacing.xl,
                 height: 1),
@@ -1057,14 +1058,14 @@ class _DashboardDrawer extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         title: Row(
           children: [
-            const Icon(Icons.translate_rounded, color: AppColors.brand),
+            Icon(Icons.translate_rounded, color: context.colors.brand),
             const SizedBox(width: AppSpacing.lg),
             Text(
               AppLocalizations.of(context)!.selectLanguage,
@@ -1110,7 +1111,7 @@ class _DashboardDrawer extends StatelessWidget {
                   ? Icons.radio_button_checked_rounded
                   : Icons.radio_button_unchecked_rounded,
               color:
-                  isSelected ? AppColors.brand : AppColors.textSecondary,
+                  isSelected ? ctx.colors.brand : ctx.colors.textSecondary,
               size: 22,
             ),
             const SizedBox(width: AppSpacing.lg),
@@ -1170,16 +1171,17 @@ class _DrawerHeader extends StatelessWidget {
         margin: const EdgeInsets.all(AppSpacing.lg),
         padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.surface,
+          color: isDark ? AppColors.darkSurface : context.colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.xl),
           border: Border.all(
-            color: isDark ? Colors.white12 : AppColors.border,
+            color: isDark ? Colors.white12 : context.colors.border,
           ),
         ),
         child: Row(
           children: [
             ClipOval(
-              child: _buildAvatar(user?['profileImage'] as String?, initial),
+              child: _buildAvatar(
+                  context, user?['profileImage'] as String?, initial),
             ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
@@ -1191,7 +1193,7 @@ class _DrawerHeader extends StatelessWidget {
                     name,
                     style: AppTextStyles.labelLarge().copyWith(
                       fontSize: 14,
-                      color: isDark ? Colors.white : AppColors.text,
+                      color: isDark ? Colors.white : context.colors.text,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1199,7 +1201,7 @@ class _DrawerHeader extends StatelessWidget {
                   Text(
                     role,
                     style: AppTextStyles.bodySmall().copyWith(
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -1207,8 +1209,8 @@ class _DrawerHeader extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.edit_note_rounded,
-                color: AppColors.brand, size: 26),
+            Icon(Icons.edit_note_rounded,
+                color: context.colors.brand, size: 26),
           ],
         ),
       ),
@@ -1219,8 +1221,8 @@ class _DrawerHeader extends StatelessWidget {
   /// otherwise the coloured first-letter circle. Mirrors GreetingCard's
   /// rendering logic — profileImage may be a URL, a base64 data URI, or a
   /// raw base64 blob; anything else falls back to the letter.
-  Widget _buildAvatar(String? img, String initial) {
-    final fallback = _fallback(initial);
+  Widget _buildAvatar(BuildContext context, String? img, String initial) {
+    final fallback = _fallback(context, initial);
     if (img == null || img.isEmpty) return fallback;
 
     Widget? imgWidget;
@@ -1251,11 +1253,11 @@ class _DrawerHeader extends StatelessWidget {
     return imgWidget ?? fallback;
   }
 
-  Widget _fallback(String initial) => Container(
+  Widget _fallback(BuildContext context, String initial) => Container(
         width: 50,
         height: 50,
-        decoration: const BoxDecoration(
-          color: AppColors.brand,
+        decoration: BoxDecoration(
+          color: context.colors.brand,
           shape: BoxShape.circle,
         ),
         alignment: Alignment.center,
@@ -1285,7 +1287,7 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = AdaptiveTheme.of(context).mode.isDark;
-    final color = tint ?? (isDark ? Colors.white : AppColors.text);
+    final color = tint ?? (isDark ? Colors.white : context.colors.text);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(

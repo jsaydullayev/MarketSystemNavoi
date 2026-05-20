@@ -18,6 +18,7 @@ import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
@@ -150,7 +151,7 @@ class _DebtorsScreenState extends State<DebtorsScreen> {
     return NetworkWrapper(
       onRetry: _loadDebtors,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: CommonAppBar(title: l10n.debtors, onRefresh: _loadDebtors),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -216,7 +217,7 @@ class _SearchBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: TextField(
@@ -227,9 +228,9 @@ class _SearchBox extends StatelessWidget {
           border: InputBorder.none,
           hintText: 'Ism yoki telefon…',
           hintStyle: AppTextStyles.bodyMedium()
-              .copyWith(color: AppColors.textMuted),
-          icon: const Icon(Icons.search_rounded,
-              color: AppColors.textSecondary, size: 20),
+              .copyWith(color: context.colors.textMuted),
+          icon: Icon(Icons.search_rounded,
+              color: context.colors.textSecondary, size: 20),
         ),
       ),
     );
@@ -401,10 +402,10 @@ class _Chip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg + 2, vertical: AppSpacing.md - 1),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.brand : AppColors.surface,
+          color: isActive ? context.colors.brand : context.colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: isActive ? AppColors.brand : AppColors.border,
+            color: isActive ? context.colors.brand : context.colors.border,
           ),
         ),
         child: Row(
@@ -419,7 +420,7 @@ class _Chip extends StatelessWidget {
               style: AppTextStyles.bodyMedium().copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isActive ? Colors.white : AppColors.text,
+                color: isActive ? Colors.white : context.colors.text,
               ),
             ),
           ],
@@ -446,7 +447,7 @@ class _DebtorRow extends StatelessWidget {
     final lastActivity = _formatLastActivity(debtor['oldestDebtDate'], l10n);
 
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onTap,
@@ -455,7 +456,7 @@ class _DebtorRow extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.lg + 2),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.colors.border),
           ),
           child: Row(
             children: [
@@ -490,7 +491,7 @@ class _DebtorRow extends StatelessWidget {
                       Text(
                         phone,
                         style: AppTextStyles.bodySmall().copyWith(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontSize: 12,
                         ),
                       ),
@@ -517,7 +518,7 @@ class _DebtorRow extends StatelessWidget {
                     Text(
                       lastActivity,
                       style: AppTextStyles.caption().copyWith(
-                        color: AppColors.textMuted,
+                        color: context.colors.textMuted,
                         fontSize: 11,
                         letterSpacing: 0,
                       ),
@@ -566,14 +567,14 @@ class _EmptyState extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl2),
-            decoration: const BoxDecoration(
-              color: AppColors.brandLight,
+            decoration: BoxDecoration(
+              color: context.colors.brandLight,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.account_balance_wallet_outlined,
               size: 40,
-              color: AppColors.brand,
+              color: context.colors.brand,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -586,7 +587,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             l10n.debtorsWillBeShownHere,
             style: AppTextStyles.bodySmall()
-                .copyWith(color: AppColors.textMuted),
+                .copyWith(color: context.colors.textMuted),
             textAlign: TextAlign.center,
           ),
         ],
