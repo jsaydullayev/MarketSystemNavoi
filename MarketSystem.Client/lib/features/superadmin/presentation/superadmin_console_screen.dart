@@ -446,7 +446,9 @@ class _TabLabel extends StatelessWidget {
             style: AppTextStyles.bodySmall().copyWith(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: selected ? Colors.white : context.colors.brand,
+              color: selected
+                  ? context.colors.onBrand
+                  : context.colors.brand,
             ),
           ),
         ),

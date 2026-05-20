@@ -77,7 +77,8 @@ class _PaymentTypeOption extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: isSelected ? Colors.white : context.colors.brand,
+              color:
+                  isSelected ? context.colors.onBrand : context.colors.brand,
             ),
             const SizedBox(height: AppSpacing.xs + 2),
             Text(
@@ -85,7 +86,8 @@ class _PaymentTypeOption extends StatelessWidget {
               style: AppTextStyles.bodyMedium().copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : context.colors.brand,
+                color:
+                  isSelected ? context.colors.onBrand : context.colors.brand,
               ),
             ),
           ],

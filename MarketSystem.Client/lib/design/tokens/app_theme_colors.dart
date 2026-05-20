@@ -61,6 +61,11 @@ class AppThemeColors {
   /// is wrong, so it resolves to a subtle raised navy instead.
   Color get brandLight =>
       isDark ? AppColors.darkSurface2 : AppColors.brandLight;
+
+  /// Foreground for content (text / icons) sitting ON a [brand] fill.
+  /// White on the light-theme orange; dark navy on the dark-theme light
+  /// blue — white text fails the contrast check against #60A5FA.
+  Color get onBrand => isDark ? AppColors.darkBg : Colors.white;
 }
 
 extension AppThemeColorsX on BuildContext {

@@ -440,8 +440,13 @@ class _FilterChip extends StatelessWidget {
                 Icon(
                   leadingIcon,
                   size: 14,
+                  // Selected pill bg is `context.colors.text` (dark in
+                  // light theme, light in dark theme) — so the label must
+                  // be the INVERSE (`surface`) to stay readable in both,
+                  // not a fixed white that vanishes on the light dark-mode
+                  // pill.
                   color: isSelected
-                      ? Colors.white
+                      ? context.colors.surface
                       : context.colors.textSecondary,
                 ),
                 4.width,
@@ -452,8 +457,13 @@ class _FilterChip extends StatelessWidget {
                   fontSize: 12,
                   letterSpacing: 0,
                   fontWeight: FontWeight.w600,
+                  // Selected pill bg is `context.colors.text` (dark in
+                  // light theme, light in dark theme) — so the label must
+                  // be the INVERSE (`surface`) to stay readable in both,
+                  // not a fixed white that vanishes on the light dark-mode
+                  // pill.
                   color: isSelected
-                      ? Colors.white
+                      ? context.colors.surface
                       : context.colors.textSecondary,
                 ),
               ),
