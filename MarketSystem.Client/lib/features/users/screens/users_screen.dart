@@ -62,13 +62,15 @@ class _UsersScreenState extends State<UsersScreen> {
     final q = _searchCtrl.text.toLowerCase().trim();
     return users.where((u) {
       final role = (u['role'] ?? '').toString().toLowerCase();
-      final isActive = u['isActive'] ?? false;
+      // "Shift open/closed" reflects the real shift state, not the account
+      // active flag — Admin/Owner control it from the user detail sheet.
+      final onShift = u['isShiftActive'] ?? false;
       switch (_filter) {
         case _UsersFilter.shiftOpen:
-          if (!isActive) return false;
+          if (!onShift) return false;
           break;
         case _UsersFilter.shiftClosed:
-          if (isActive) return false;
+          if (onShift) return false;
           break;
         case _UsersFilter.admin:
           if (role != 'admin') return false;
@@ -284,7 +286,11 @@ class _UsersScreenState extends State<UsersScreen> {
               else
                 ...filtered.map((u) => UserCard(
                       user: u,
-                      onTap: () => UserInfoSheet.show(context, user: u),
+                      onTap: () => UserInfoSheet.show(
+                        context,
+                        user: u,
+                        onChanged: _loadUsers,
+                      ),
                       onToggleStatus: () => _toggleStatus(u),
                       onDelete: () => _deleteUser(u),
                     )),
@@ -361,7 +367,7 @@ class _StaffSummary extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final total = users.length;
     final onShift =
-        users.where((u) => (u['isActive'] ?? false) == true).length;
+        users.where((u) => (u['isShiftActive'] ?? false) == true).length;
 
     // Compact a big number (450 000 → 450K, 12.4M → 12.4M) for the stat
     // tile so it stays on one line even on narrow screens.

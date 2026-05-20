@@ -25,16 +25,26 @@ public class AuthController : ControllerBase
     [EnableRateLimiting("auth-login")]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
     {
-        var result = await _authService.LoginAsync(request);
-
-        if (result is null)
+        try
         {
-            _logger.LogWarning("Login FAILED for user: {Username}", request.Username);
-            return Unauthorized("Invalid credentials");
-        }
+            var result = await _authService.LoginAsync(request);
 
-        _logger.LogInformation("Login SUCCESS for user: {Username}", result.Username);
-        return Ok(result);
+            if (result is null)
+            {
+                _logger.LogWarning("Login FAILED for user: {Username}", request.Username);
+                return Unauthorized("Invalid credentials");
+            }
+
+            _logger.LogInformation("Login SUCCESS for user: {Username}", result.Username);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Shift-inactive (and similar) rejections carry a user-facing
+            // message; surface it as 400 so the login screen can show it.
+            _logger.LogWarning("Login rejected for {Username}: {Reason}", request.Username, ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost]

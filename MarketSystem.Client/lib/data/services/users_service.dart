@@ -125,4 +125,38 @@ class UsersService {
       throw Exception('Failed to activate: ${response.body}');
     }
   }
+
+  // Seller smenasini o'rnatish (Admin/Owner only).
+  // Backend route: PUT /api/Users/UpdateShift/{id}/shift
+  // [status] is 'Active' | 'Blocked' | 'Scheduled'; the window is required
+  // only for 'Scheduled' and is sent as UTC ISO-8601.
+  Future<dynamic> updateShift({
+    required String id,
+    required String status,
+    DateTime? startUtc,
+    DateTime? endUtc,
+  }) async {
+    final response = await _httpService.put(
+      '${ApiConstants.users}/UpdateShift/$id/shift',
+      body: {
+        'status': status,
+        if (startUtc != null) 'startUtc': startUtc.toUtc().toIso8601String(),
+        if (endUtc != null) 'endUtc': endUtc.toUtc().toIso8601String(),
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    // The backend returns { "message": "..." } on a 400 (bad window etc.).
+    String msg = 'Failed to update shift: ${response.statusCode}';
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map && body['message'] != null) {
+        msg = body['message'].toString();
+      }
+    } catch (_) {}
+    throw Exception(msg);
+  }
 }

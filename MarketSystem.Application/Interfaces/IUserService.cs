@@ -15,4 +15,5 @@ public interface IUserService
     Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> DeactivateUserAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ActivateUserAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<UserDto?> UpdateShiftAsync(Guid id, UpdateShiftDto request, CancellationToken cancellationToken = default);
 }

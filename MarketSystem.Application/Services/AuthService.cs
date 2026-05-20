@@ -102,6 +102,16 @@ public class AuthService : IAuthService
             }
         }
 
+        // Shift gate — a Seller whose shift is Blocked, or outside its
+        // scheduled window, may not log in. Owner/Admin/SuperAdmin have no
+        // shift so they are never gated here.
+        if (matched.Role == Role.Seller && !matched.IsShiftActiveNow())
+        {
+            _logger.LogWarning("Login blocked — shift inactive for seller {Username}", matched.Username);
+            throw new InvalidOperationException(
+                "Ish smenangiz hozir faol emas. Administrator bilan bog'laning.");
+        }
+
         _logger.LogInformation("Login successful for user: {Username}, ID: {UserId}", matched.Username, matched.Id);
         return await GenerateAuthResponseAsync(matched, cancellationToken);
     }
@@ -244,6 +254,14 @@ public class AuthService : IAuthService
                 throw new MarketSystem.Domain.Exceptions.MarketBlockedException(
                     user.MarketId.Value, block.BlockedReason, block.BlockedAt);
             }
+        }
+
+        // Shift gate — stop minting fresh tokens once a seller's shift ends
+        // (e.g. a scheduled window elapsed since they last refreshed).
+        if (user.Role == Role.Seller && !user.IsShiftActiveNow())
+        {
+            _logger.LogWarning("Refresh denied — shift inactive for seller {Username}", user.Username);
+            return null;
         }
 
         // Mark current refresh token as used (one-time use)

@@ -157,7 +157,11 @@ public class MarketService : IMarketService
             owner.Role.ToString(),
             owner.Language.ToString().ToLowerInvariant(),
             owner.IsActive,
-            owner.MarketId
+            owner.MarketId,
+            owner.ShiftStatus.ToString(),
+            owner.ShiftStartUtc,
+            owner.ShiftEndUtc,
+            owner.IsShiftActiveNow()
         );
 
         return new RegisterMarketResponse(marketDto, ownerDto);

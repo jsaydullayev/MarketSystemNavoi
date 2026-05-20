@@ -1323,6 +1323,43 @@ class AppLocalizationsRu extends AppLocalizations {
   String get periodYear => 'Год';
 
   @override
+  String get shiftSection => 'Рабочая смена';
+
+  @override
+  String get shiftStateActive => 'Смена активна';
+
+  @override
+  String get shiftStateBlocked => 'Заблокирована';
+
+  @override
+  String get shiftStateScheduled => 'По расписанию';
+
+  @override
+  String get shiftActivate => 'Активировать';
+
+  @override
+  String get shiftBlock => 'Заблокировать';
+
+  @override
+  String get shiftOpen24h => '24 часа';
+
+  @override
+  String get shiftSetWindow => 'Период';
+
+  @override
+  String get shiftUpdated => 'Смена обновлена';
+
+  @override
+  String get shiftActiveNow => 'Может работать';
+
+  @override
+  String get shiftInactiveNow => 'Не может работать';
+
+  @override
+  String get shiftInvalidWindow =>
+      'Время окончания должно быть позже времени начала';
+
+  @override
   String get yesterday => 'Вчера';
 
   @override

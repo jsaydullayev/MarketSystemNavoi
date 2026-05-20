@@ -264,4 +264,26 @@ public class UsersController : ControllerBase
 
         return Ok(new { message = "User activated" });
     }
+
+    /// <summary>
+    /// Set a seller's work shift — "Active", "Blocked" or "Scheduled" (with a
+    /// [startUtc, endUtc] window). Admin/Owner only.
+    /// </summary>
+    [HttpPut("{id}/shift")]
+    [Authorize(Policy = "AdminOrOwner")]
+    public async Task<ActionResult<UserDto>> UpdateShift(Guid id, [FromBody] UpdateShiftDto request)
+    {
+        try
+        {
+            var user = await _userService.UpdateShiftAsync(id, request);
+            if (user is null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
