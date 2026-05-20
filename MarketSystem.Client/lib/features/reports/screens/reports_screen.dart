@@ -39,12 +39,20 @@ class _ReportsScreenState extends State<ReportsScreen>
   late TabController _tabController;
 
   DateTime _selectedDate = DateTime.now();
+  // Monthly tab's range. Independent of the hero band's period chips so a
+  // chip tap never disturbs the tab the user set up.
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
+
+  // Hero band's own date window, driven by the period chips below the app
+  // bar. Computed by _rangeFor from _heroPeriod.
+  late DateTime _heroStart;
+  late DateTime _heroEnd;
 
   Map<String, dynamic>? _dailyReport;
   Map<String, dynamic>? _periodReport;
   Map<String, dynamic>? _comprehensiveReport;
+  Map<String, dynamic>? _heroReport;
 
   bool _isLoading = false;
   bool _isLoadingDetails = false;
@@ -59,6 +67,9 @@ class _ReportsScreenState extends State<ReportsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    final (heroStart, heroEnd) = _rangeFor(_heroPeriod);
+    _heroStart = heroStart;
+    _heroEnd = heroEnd;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     _reportsService = ReportService(authProvider: authProvider);
     _downloadService = DownloadService.getInstance(authProvider.httpService);
@@ -78,12 +89,14 @@ class _ReportsScreenState extends State<ReportsScreen>
         _reportsService.getDailyReport(_selectedDate),
         _reportsService.getPeriodReport(_startDate, _endDate),
         _reportsService.getComprehensiveReport(_selectedDate),
+        _reportsService.getPeriodReport(_heroStart, _heroEnd),
       ]);
       if (!mounted) return;
       setState(() {
         _dailyReport = results[0] as Map<String, dynamic>?;
         _periodReport = results[1] as Map<String, dynamic>?;
         _comprehensiveReport = results[2] as Map<String, dynamic>?;
+        _heroReport = results[3] as Map<String, dynamic>?;
         _isLoading = false;
       });
     } catch (e) {
@@ -92,6 +105,36 @@ class _ReportsScreenState extends State<ReportsScreen>
       setState(() => _isLoading = false);
       if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     }
+  }
+
+  /// Date window for a hero period. The end is always "now"; the start is
+  /// midnight, N days back (today → midnight today, year → Jan 1).
+  (DateTime, DateTime) _rangeFor(_HeroPeriod p) {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    switch (p) {
+      case _HeroPeriod.today:
+        return (todayStart, now);
+      case _HeroPeriod.sevenDays:
+        return (todayStart.subtract(const Duration(days: 6)), now);
+      case _HeroPeriod.thirtyDays:
+        return (todayStart.subtract(const Duration(days: 29)), now);
+      case _HeroPeriod.year:
+        return (DateTime(now.year, 1, 1), now);
+    }
+  }
+
+  /// A hero period chip was tapped — recompute the window and reload so the
+  /// band and KPIs reflect the picked period, not just the label.
+  void _onHeroPeriodChanged(_HeroPeriod p) {
+    if (p == _heroPeriod) return;
+    final (start, end) = _rangeFor(p);
+    setState(() {
+      _heroPeriod = p;
+      _heroStart = start;
+      _heroEnd = end;
+    });
+    _loadReports();
   }
 
   Future<void> _loadDailySaleItems() async {
@@ -172,50 +215,22 @@ class _ReportsScreenState extends State<ReportsScreen>
     ));
   }
 
-  /// Aggregate the period report into a "turnover" total for the hero band.
-  double get _heroTurnover {
-    final source = _periodReport ?? _dailyReport;
-    if (source == null) return 0;
-    final v = source['totalSales'] ?? source['totalAmount'] ?? 0;
-    return v is num ? v.toDouble() : 0;
-  }
+  // Hero band figures — all read from _heroReport, the period report for the
+  // window the period chips selected (see _rangeFor). DailyReportDto and
+  // PeriodReportDto share these keys, so no key fallbacks are needed.
 
-  double get _heroProfit {
-    final source = _periodReport ?? _dailyReport;
-    if (source == null) return 0;
-    final v = source['profit'] ?? source['totalProfit'] ?? 0;
-    return v is num ? v.toDouble() : 0;
-  }
+  /// num-or-null → double, defaulting to 0.
+  double _num(dynamic v) => v is num ? v.toDouble() : 0;
 
-  int get _heroReceipts {
-    final source = _periodReport ?? _dailyReport;
-    if (source == null) return 0;
-    final v = source['totalTransactions'] ??
-        source['receiptCount'] ??
-        source['salesCount'] ??
-        0;
-    return v is num ? v.toInt() : 0;
-  }
+  double get _heroTurnover => _num(_heroReport?['totalSales']);
 
-  int get _heroSold {
-    final source = _periodReport ?? _comprehensiveReport;
-    if (source == null) return 0;
-    final v = source['totalSoldItems'] ??
-        source['itemsSold'] ??
-        source['totalQuantity'] ??
-        0;
-    return v is num ? v.toInt() : 0;
-  }
+  double get _heroProfit => _num(_heroReport?['profit']);
 
-  int get _heroCustomers {
-    final source = _periodReport ?? _dailyReport;
-    if (source == null) return 0;
-    final v = source['totalCustomers'] ??
-        source['customersCount'] ??
-        source['uniqueCustomers'] ??
-        0;
-    return v is num ? v.toInt() : 0;
-  }
+  int get _heroReceipts => _num(_heroReport?['totalTransactions']).toInt();
+
+  double get _heroPaid => _num(_heroReport?['totalPaidSales']);
+
+  double get _heroDebt => _num(_heroReport?['totalDebtSales']);
 
   @override
   Widget build(BuildContext context) {
@@ -276,8 +291,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                           children: [
                             _PeriodChips(
                               selected: _heroPeriod,
-                              onChanged: (p) =>
-                                  setState(() => _heroPeriod = p),
+                              onChanged: _onHeroPeriodChanged,
                             ),
                             const SizedBox(height: AppSpacing.lg),
                             _ReportsHero(
@@ -289,8 +303,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                             _KpiGrid(
                               profit: _heroProfit,
                               receipts: _heroReceipts,
-                              sold: _heroSold,
-                              customers: _heroCustomers,
+                              paid: _heroPaid,
+                              debt: _heroDebt,
                               l10n: l10n,
                             ),
                           ],
@@ -358,9 +372,9 @@ class _PeriodChips extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final items = <(String, _HeroPeriod)>[
       (l10n.today, _HeroPeriod.today),
-      ('7 kun', _HeroPeriod.sevenDays),
-      ('30 kun', _HeroPeriod.thirtyDays),
-      ('Yil', _HeroPeriod.year),
+      (l10n.period7Days, _HeroPeriod.sevenDays),
+      (l10n.period30Days, _HeroPeriod.thirtyDays),
+      (l10n.periodYear, _HeroPeriod.year),
     ];
 
     return SingleChildScrollView(
@@ -447,11 +461,11 @@ class _ReportsHero extends StatelessWidget {
       case _HeroPeriod.today:
         return '${l10n.today.toUpperCase()} · $jami';
       case _HeroPeriod.sevenDays:
-        return '7-KUNLIK · $jami';
+        return '${l10n.period7Days.toUpperCase()} · $jami';
       case _HeroPeriod.thirtyDays:
-        return '30-KUNLIK · $jami';
+        return '${l10n.period30Days.toUpperCase()} · $jami';
       case _HeroPeriod.year:
-        return 'YILLIK · $jami';
+        return '${l10n.periodYear.toUpperCase()} · $jami';
     }
   }
 
@@ -510,15 +524,15 @@ class _ReportsHero extends StatelessWidget {
 class _KpiGrid extends StatelessWidget {
   final double profit;
   final int receipts;
-  final int sold;
-  final int customers;
+  final double paid;
+  final double debt;
   final AppLocalizations l10n;
 
   const _KpiGrid({
     required this.profit,
     required this.receipts,
-    required this.sold,
-    required this.customers,
+    required this.paid,
+    required this.debt,
     required this.l10n,
   });
 
@@ -548,21 +562,21 @@ class _KpiGrid extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _KpiTile(
-            icon: Icons.inventory_2_outlined,
-            iconBg: AppColors.warningLight,
-            iconColor: AppColors.warning,
-            label: l10n.quantity,
-            value: sold.toString(),
+            icon: Icons.check_circle_outline_rounded,
+            iconBg: AppColors.successLight,
+            iconColor: AppColors.success,
+            label: l10n.paid,
+            value: NumberFormatter.format(paid),
           ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _KpiTile(
-            icon: Icons.people_alt_outlined,
+            icon: Icons.warning_amber_rounded,
             iconBg: AppColors.dangerLight,
             iconColor: AppColors.danger,
-            label: l10n.customers,
-            value: customers.toString(),
+            label: l10n.onDebt,
+            value: NumberFormatter.format(debt),
           ),
         ),
       ],

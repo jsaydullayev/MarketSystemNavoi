@@ -159,6 +159,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get minThreshold => 'Мин. порог';
 
   @override
+  String get productBasicInfoSection => 'Основная информация';
+
+  @override
+  String get productNameHint => 'Например: Coca-Cola 1.5L';
+
+  @override
+  String get forDiscountHint => '(для скидки)';
+
+  @override
+  String get currentStockLabel => 'Текущий остаток';
+
+  @override
+  String get minStockLabel => 'Мин. остаток';
+
+  @override
+  String get forWarningHint => '(для предупр.)';
+
+  @override
+  String minSalePriceTip(String amount) {
+    return 'Продавец может снизить цену для клиента до $amount UZS. Для более низкой цены нужно разрешение владельца.';
+  }
+
+  @override
   String get temporary => 'Временный';
 
   @override
@@ -1291,6 +1314,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get today => 'Сегодня';
 
   @override
+  String get period7Days => '7 дней';
+
+  @override
+  String get period30Days => '30 дней';
+
+  @override
+  String get periodYear => 'Год';
+
+  @override
   String get yesterday => 'Вчера';
 
   @override
@@ -1731,6 +1763,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get topSellersFallbackHint => 'Сегодня продаж не было — за неделю:';
+
+  @override
+  String get chartVsLastWeek => 'к прошлой неделе';
 
   @override
   String get notificationsTitle => 'Уведомления';

@@ -398,6 +398,48 @@ abstract class AppLocalizations {
   /// **'Min. chegara'**
   String get minThreshold;
 
+  /// No description provided for @productBasicInfoSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Asosiy ma\'lumotlar'**
+  String get productBasicInfoSection;
+
+  /// No description provided for @productNameHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Masalan: Coca-Cola 1.5L'**
+  String get productNameHint;
+
+  /// No description provided for @forDiscountHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'(chegirma uchun)'**
+  String get forDiscountHint;
+
+  /// No description provided for @currentStockLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozirgi stok'**
+  String get currentStockLabel;
+
+  /// No description provided for @minStockLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Min. stok'**
+  String get minStockLabel;
+
+  /// No description provided for @forWarningHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'(ogoh.)'**
+  String get forWarningHint;
+
+  /// No description provided for @minSalePriceTip.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuvchi mijozga {amount} UZS gacha tushira oladi. Pastroq narx uchun Owner ruxsati kerak.'**
+  String minSalePriceTip(String amount);
+
   /// No description provided for @temporary.
   ///
   /// In uz, this message translates to:
@@ -2540,6 +2582,24 @@ abstract class AppLocalizations {
   /// **'Bugun'**
   String get today;
 
+  /// No description provided for @period7Days.
+  ///
+  /// In uz, this message translates to:
+  /// **'7 kun'**
+  String get period7Days;
+
+  /// No description provided for @period30Days.
+  ///
+  /// In uz, this message translates to:
+  /// **'30 kun'**
+  String get period30Days;
+
+  /// No description provided for @periodYear.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yil'**
+  String get periodYear;
+
   /// No description provided for @yesterday.
   ///
   /// In uz, this message translates to:
@@ -3361,6 +3421,12 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Bugun savdo bo\'lmadi — oxirgi hafta:'**
   String get topSellersFallbackHint;
+
+  /// No description provided for @chartVsLastWeek.
+  ///
+  /// In uz, this message translates to:
+  /// **'o\'tgan haftaga nisbatan'**
+  String get chartVsLastWeek;
 
   /// No description provided for @notificationsTitle.
   ///
