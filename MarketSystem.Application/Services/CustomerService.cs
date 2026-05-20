@@ -104,7 +104,12 @@ public class CustomerService : ICustomerService
             .Where(c => c.MarketId == marketId && !c.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(c => c.FullName.Contains(search) || c.Phone.Contains(search));
+            // FullName / Phone are nullable on the entity — null-guard each
+            // side so the query translates to safe SQL and the compiler is
+            // satisfied. EF turns the null check into `IS NOT NULL AND ...`.
+            query = query.Where(c =>
+                (c.FullName != null && c.FullName.Contains(search)) ||
+                (c.Phone != null && c.Phone.Contains(search)));
 
         var total = await query.CountAsync(cancellationToken);
 

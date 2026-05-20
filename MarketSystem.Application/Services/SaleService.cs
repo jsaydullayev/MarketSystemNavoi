@@ -1015,11 +1015,12 @@ public partial class SaleService : ISaleService
                 /// ✅ ISEXTERNAL SHARTI - STOKNI QAYTARISH
                 /// ============================================
                 /// </summary>
-                if (!item.IsExternal)
+                if (!item.IsExternal && item.ProductId.HasValue)
                 {
                     // ---- ORDINARY PRODUCT (Oddiy mahsulot) ----
+                    var productId = item.ProductId.Value;
                     var products = await _unitOfWork.Products.FindAsync(
-                        p => p.Id == item.ProductId.Value && p.MarketId == marketId,
+                        p => p.Id == productId && p.MarketId == marketId,
                         cancellationToken);
                     var product = products.FirstOrDefault();
 
@@ -1244,7 +1245,7 @@ public partial class SaleService : ISaleService
         // Batch fetch all ordinary products to avoid N+1 query (faqat oddiy mahsulotlar uchun)
         var ordinaryProductIds = saleItems
             .Where(si => !si.IsExternal && si.ProductId.HasValue)
-            .Select(si => si.ProductId.Value)
+            .Select(si => si.ProductId!.Value)
             .Distinct()
             .ToList();
 
@@ -1268,8 +1269,11 @@ public partial class SaleService : ISaleService
 
             if (!item.IsExternal)
             {
-                // Oddiy mahsulot - Product table'dan nomini olish
-                if (products.TryGetValue(item.ProductId.Value, out var product))
+                // Oddiy mahsulot - Product table'dan nomini olish.
+                // ProductId is nullable on the entity; guard before .Value
+                // so a corrupt row degrades to "Unknown" instead of throwing.
+                if (item.ProductId.HasValue &&
+                    products.TryGetValue(item.ProductId.Value, out var product))
                 {
                     productName = product.Name;
                     unit = product.GetUnitName();

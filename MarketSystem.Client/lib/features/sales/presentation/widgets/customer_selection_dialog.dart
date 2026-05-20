@@ -78,6 +78,9 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
     final customerService = CustomerService(authProvider: authProvider);
     final salesService = SalesService(authProvider: authProvider);
     final messenger = ScaffoldMessenger.of(context);
+    // Capture the navigator up-front so the post-await pop() doesn't read
+    // `context` synchronously after the async gap.
+    final navigator = Navigator.of(context);
     try {
       final created = await customerService.createCustomer(
         phone: phone,
@@ -100,7 +103,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
           ),
         );
         widget.onCustomerSelected();
-        if (mounted) Navigator.pop(context);
+        if (mounted) navigator.pop();
         return;
       }
       // No id came back — refresh the list so the user can pick manually.

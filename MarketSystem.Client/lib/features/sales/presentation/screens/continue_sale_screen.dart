@@ -364,6 +364,11 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     final currentQty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     if (currentQty <= 0) return;
 
+    // Resolve the provider BEFORE the await — reading it from `context`
+    // after the dialog closes is the use-build-context-synchronously lint
+    // (the widget may have been disposed while the dialog was open).
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     final returnQty = await showDialog<double>(
       context: context,
       builder: (_) => ReturnQuantityDialog(
@@ -375,7 +380,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     if (returnQty == null || returnQty <= 0) return;
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
       await salesService.returnSaleItem(
         saleId: widget.saleId,

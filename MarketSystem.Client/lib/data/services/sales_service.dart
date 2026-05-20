@@ -17,7 +17,7 @@ class SalesService {
   // The API returns a paginated wrapper `{ items: [...], page, size, total, totalPages }`.
   // We accept both shapes (bare list or wrapped) so older deployments don't break.
   Future<List<dynamic>> getAllSales() async {
-    final response = await _httpService.get('${ApiConstants.sales}');
+    final response = await _httpService.get(ApiConstants.sales);
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
@@ -90,7 +90,7 @@ class SalesService {
   // Yangi sotuv yaratish
   Future<dynamic> createSale({String? customerId}) async {
     final response = await _httpService.post(
-      '${ApiConstants.sales}',
+      ApiConstants.sales,
       body: {
         if (customerId != null) 'customerId': customerId,
       },
