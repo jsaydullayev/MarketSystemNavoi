@@ -145,7 +145,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Xatolik: $e'),
+            content: Text('${AppLocalizations.of(context)!.error}: $e'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -226,14 +226,14 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                   20.height,
 
                   // === Asosiy ma'lumotlar ===
-                  const _SectionLabel(text: "Asosiy ma'lumotlar"),
+                  _SectionLabel(text: l10n.productBasicInfoSection),
                   10.height,
                   _LabeledField(
                     label: l10n.productName,
                     required: true,
                     child: _buildTextField(
                       controller: _nameController,
-                      hint: 'Masalan: Coca-Cola 1.5L',
+                      hint: l10n.productNameHint,
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? l10n.fillIn : null,
                     ),
@@ -298,8 +298,8 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                       ),
                       12.height,
                       _LabeledField(
-                        label: 'Minimum sotish narxi',
-                        optional: '(chegirma uchun)',
+                        label: l10n.minSalePrice,
+                        optional: l10n.forDiscountHint,
                         compact: true,
                         child: _buildSuffixField(
                           controller: _minSalePriceController,
@@ -309,21 +309,24 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                       ),
                       8.height,
                       _PriceTip(
-                        text:
-                            'Sotuvchi mijozga ${_minSalePriceController.text.isEmpty ? "X" : _minSalePriceController.text} UZS gacha tushira oladi. Pastroq narx uchun Owner ruxsati kerak.',
+                        text: l10n.minSalePriceTip(
+                          _minSalePriceController.text.isEmpty
+                              ? 'X'
+                              : _minSalePriceController.text,
+                        ),
                       ),
                     ],
                   ),
                   18.height,
 
                   // === Stok ===
-                  const _SectionLabel(text: 'Stok'),
+                  _SectionLabel(text: l10n.stockShort),
                   10.height,
                   Row(
                     children: [
                       Expanded(
                         child: _LabeledField(
-                          label: 'Hozirgi stok',
+                          label: l10n.currentStockLabel,
                           required: !_isEditing,
                           child: _buildSuffixField(
                             controller: _stockController,
@@ -338,8 +341,8 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                       12.width,
                       Expanded(
                         child: _LabeledField(
-                          label: 'Min. stok',
-                          optional: '(ogoh.)',
+                          label: l10n.minStockLabel,
+                          optional: l10n.forWarningHint,
                           child: _buildSuffixField(
                             controller: _minThresholdController,
                             suffix: unitName,

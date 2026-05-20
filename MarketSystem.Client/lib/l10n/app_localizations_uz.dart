@@ -159,6 +159,29 @@ class AppLocalizationsUz extends AppLocalizations {
   String get minThreshold => 'Min. chegara';
 
   @override
+  String get productBasicInfoSection => 'Asosiy ma\'lumotlar';
+
+  @override
+  String get productNameHint => 'Masalan: Coca-Cola 1.5L';
+
+  @override
+  String get forDiscountHint => '(chegirma uchun)';
+
+  @override
+  String get currentStockLabel => 'Hozirgi stok';
+
+  @override
+  String get minStockLabel => 'Min. stok';
+
+  @override
+  String get forWarningHint => '(ogoh.)';
+
+  @override
+  String minSalePriceTip(String amount) {
+    return 'Sotuvchi mijozga $amount UZS gacha tushira oladi. Pastroq narx uchun Owner ruxsati kerak.';
+  }
+
+  @override
   String get temporary => 'Vaqtinchalik';
 
   @override
@@ -1287,6 +1310,15 @@ class AppLocalizationsUz extends AppLocalizations {
   String get today => 'Bugun';
 
   @override
+  String get period7Days => '7 kun';
+
+  @override
+  String get period30Days => '30 kun';
+
+  @override
+  String get periodYear => 'Yil';
+
+  @override
   String get yesterday => 'Kecha';
 
   @override
@@ -1727,6 +1759,9 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get topSellersFallbackHint => 'Bugun savdo bo\'lmadi — oxirgi hafta:';
+
+  @override
+  String get chartVsLastWeek => 'o\'tgan haftaga nisbatan';
 
   @override
   String get notificationsTitle => 'Ogohlantirishlar';

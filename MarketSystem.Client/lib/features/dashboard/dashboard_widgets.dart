@@ -572,6 +572,7 @@ class ChartCard extends StatelessWidget {
     required this.bars, // values 0..1 — last bar highlighted
     required this.footerValue,
     required this.footerDelta,
+    this.deltaCaption = '',
     this.deltaIsPositive = true,
     this.isEmpty = false,
   });
@@ -584,6 +585,10 @@ class ChartCard extends StatelessWidget {
   /// arrow ("↑" or "↓") based on [deltaIsPositive]; do NOT include an arrow
   /// in [footerDelta] yourself or you'll get a double arrow.
   final String footerDelta;
+
+  /// Tiny caption rendered under the delta % to say what the percent is
+  /// measured against (e.g. "vs last week"). Hidden when empty.
+  final String deltaCaption;
 
   /// Tints the delta arrow green (true) or red (false). Ignored when
   /// footerDelta is empty.
@@ -670,16 +675,34 @@ class ChartCard extends StatelessWidget {
               // Previously this always showed "↑" even with an empty delta,
               // producing an orphan green up-arrow next to "— UZS" — see the
               // empty-state screenshots from 2026-05-19.
+              // Delta % + a caption saying what it's measured against
+              // (week-over-week), so a figure like "↑ 1535%" isn't an
+              // unexplained number.
               if (footerDelta.isNotEmpty)
-                Text(
-                  '${deltaIsPositive ? '↑' : '↓'} $footerDelta',
-                  style: AppTextStyles.bodySmall().copyWith(
-                    color: deltaIsPositive
-                        ? AppColors.success
-                        : AppColors.danger,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${deltaIsPositive ? '↑' : '↓'} $footerDelta',
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: deltaIsPositive
+                            ? AppColors.success
+                            : AppColors.danger,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (deltaCaption.isNotEmpty)
+                      Text(
+                        deltaCaption,
+                        style: AppTextStyles.caption().copyWith(
+                          color: context.colors.textMuted,
+                          fontSize: 10,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                  ],
                 ),
             ],
           ),

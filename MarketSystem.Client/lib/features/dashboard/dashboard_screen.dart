@@ -482,6 +482,9 @@ class _OwnerBody extends StatelessWidget {
       bars: bars,
       footerValue: footerValue,
       footerDelta: footerDelta,
+      // Caption clarifies the delta % is week-over-week (this week's total
+      // vs the previous week's), so a figure like "↑ 1535%" is explained.
+      deltaCaption: footerDelta.isEmpty ? '' : l10n.chartVsLastWeek,
       deltaIsPositive: deltaIsPositive,
       // When neither the current nor previous week have any data, dim the
       // bars so the card reads as "no data yet" rather than "everything is
