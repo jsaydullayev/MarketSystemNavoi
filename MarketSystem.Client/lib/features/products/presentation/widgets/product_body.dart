@@ -354,18 +354,30 @@ class _FilterChipsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chips = <_FilterChipData>[
-      _FilterChipData(label: l10n.all, value: null),
+      _FilterChipData(
+        label: l10n.all,
+        value: null,
+        color: context.colors.textSecondary,
+      ),
       _FilterChipData(
         label: l10n.filterLowStock,
         value: _ProductsBodyState._filterLow,
         leadingIcon: Icons.warning_amber_rounded,
+        color: AppColors.warning,
       ),
       _FilterChipData(
         label: l10n.filterOutOfStock,
         value: _ProductsBodyState._filterOut,
         leadingIcon: Icons.block_rounded,
+        color: AppColors.danger,
       ),
-      ...categories.map((c) => _FilterChipData(label: c, value: c)),
+      ...categories.map(
+        (c) => _FilterChipData(
+          label: c,
+          value: c,
+          color: context.colors.brand,
+        ),
+      ),
     ];
 
     return SizedBox(
@@ -384,6 +396,7 @@ class _FilterChipsRow extends StatelessWidget {
             return _FilterChip(
               label: chip.label,
               leadingIcon: chip.leadingIcon,
+              color: chip.color,
               isSelected: isSelected,
               onTap: () => onSelected(isSelected ? null : chip.value),
             );
@@ -398,9 +411,14 @@ class _FilterChipData {
   final String label;
   final String? value;
   final IconData? leadingIcon;
+
+  /// Logical chip colour — amber for low-stock, red for out-of-stock,
+  /// brand for category chips, neutral grey for "Hammasi".
+  final Color color;
   const _FilterChipData({
     required this.label,
     required this.value,
+    required this.color,
     this.leadingIcon,
   });
 }
@@ -408,11 +426,13 @@ class _FilterChipData {
 class _FilterChip extends StatelessWidget {
   final String label;
   final IconData? leadingIcon;
+  final Color color;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _FilterChip({
     required this.label,
+    required this.color,
     required this.isSelected,
     required this.onTap,
     this.leadingIcon,
@@ -425,30 +445,25 @@ class _FilterChip extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.full),
         onTap: onTap,
-        child: Container(
+        // The chip wears its logical colour as a soft tint; the selected
+        // one deepens the fill and gains a matching ring.
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg + 2, vertical: 6),
           decoration: BoxDecoration(
-            color:
-                isSelected ? context.colors.text : context.colors.inputFill,
+            color: color.withValues(alpha: isSelected ? 0.22 : 0.12),
             borderRadius: BorderRadius.circular(AppRadius.full),
+            border: Border.all(
+              color: isSelected ? color : Colors.transparent,
+              width: 1.4,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (leadingIcon != null) ...[
-                Icon(
-                  leadingIcon,
-                  size: 14,
-                  // Selected pill bg is `context.colors.text` (dark in
-                  // light theme, light in dark theme) — so the label must
-                  // be the INVERSE (`surface`) to stay readable in both,
-                  // not a fixed white that vanishes on the light dark-mode
-                  // pill.
-                  color: isSelected
-                      ? context.colors.surface
-                      : context.colors.textSecondary,
-                ),
+                Icon(leadingIcon, size: 14, color: color),
                 4.width,
               ],
               Text(
@@ -456,15 +471,8 @@ class _FilterChip extends StatelessWidget {
                 style: AppTextStyles.labelSmall().copyWith(
                   fontSize: 12,
                   letterSpacing: 0,
-                  fontWeight: FontWeight.w600,
-                  // Selected pill bg is `context.colors.text` (dark in
-                  // light theme, light in dark theme) — so the label must
-                  // be the INVERSE (`surface`) to stay readable in both,
-                  // not a fixed white that vanishes on the light dark-mode
-                  // pill.
-                  color: isSelected
-                      ? context.colors.surface
-                      : context.colors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: color,
                 ),
               ),
             ],

@@ -5,7 +5,6 @@ import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/reports/widgets/date_picker_row.dart';
 import 'package:market_system_client/features/reports/widgets/empty_report.dart';
-import 'package:market_system_client/features/reports/widgets/export_button.dart';
 import 'package:market_system_client/features/reports/widgets/inventory_item_card.dart';
 import 'package:market_system_client/features/reports/widgets/section_title.dart';
 import 'package:market_system_client/features/reports/widgets/stat_card.dart';
@@ -20,7 +19,6 @@ class InventoryReportTab extends StatelessWidget {
   final Map<String, dynamic>? report;
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateChanged;
-  final VoidCallback onExport;
   final bool canViewCostPrice;
 
   const InventoryReportTab({
@@ -28,7 +26,6 @@ class InventoryReportTab extends StatelessWidget {
     required this.report,
     required this.selectedDate,
     required this.onDateChanged,
-    required this.onExport,
     this.canViewCostPrice = true,
   });
 
@@ -148,8 +145,6 @@ class InventoryReportTab extends StatelessWidget {
               ),
             ),
           ),
-        const SizedBox(height: AppSpacing.md),
-        ExportButton(onTap: onExport),
       ],
     );
   }

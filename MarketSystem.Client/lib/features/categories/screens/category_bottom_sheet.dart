@@ -16,8 +16,8 @@
 // - Validation: name required (trimmed-empty -> l10n.fillIn).
 // - Error snackbars unchanged.
 // - `_isActive` only mutable in edit-mode; defaults to true on create.
-// - Selected emoji is purely visual (not persisted) until the model gains
-//   an icon field server-side.
+// - Selected emoji is persisted via the category `icon` field — sent on
+//   create/update and rendered on the category card.
 
 // `Characters` (grapheme-aware string handling) is re-exported by
 // flutter/material, so no separate `package:characters` import is needed.
@@ -75,6 +75,15 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
       _nameCtrl.text = widget.category!.name;
       _descCtrl.text = widget.category!.description ?? '';
       _isActive = widget.category!.isActive;
+      final savedIcon = widget.category!.icon;
+      if (savedIcon != null && savedIcon.isNotEmpty) {
+        _selectedEmoji = savedIcon;
+        // A saved icon outside the default grid becomes the custom slot so
+        // the picker shows it pre-selected.
+        if (!_defaultEmojis.contains(savedIcon)) {
+          _customEmoji = savedIcon;
+        }
+      }
     }
   }
 
@@ -123,12 +132,14 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
         await service.createCategory(
           name: _nameCtrl.text.trim(),
           description: _descCtrl.text.trim(),
+          icon: _selectedEmoji,
         );
       } else {
         await service.updateCategory(
           id: widget.category!.id,
           name: _nameCtrl.text.trim(),
           description: _descCtrl.text.trim(),
+          icon: _selectedEmoji,
           isActive: _isActive,
         );
       }

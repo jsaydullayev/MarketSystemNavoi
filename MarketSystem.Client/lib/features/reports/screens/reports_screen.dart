@@ -179,30 +179,6 @@ class _ReportsScreenState extends State<ReportsScreen>
     }
   }
 
-  Future<void> _exportToExcel(String type) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    setState(() => _isLoading = true);
-    try {
-      switch (type) {
-        case 'daily':
-          await _reportsService.exportDailyReportToExcel(_selectedDate);
-          break;
-        case 'monthly':
-          await _reportsService.exportPeriodReportToExcel(_startDate, _endDate);
-          break;
-        case 'inventory':
-          await _reportsService.exportInventoryReportToExcel(_selectedDate);
-          break;
-      }
-      if (mounted) _showSnack('${l10n.reportDownloaded}!', isError: false);
-    } catch (e) {
-      if (mounted) _showSnack('${l10n.downloadError}!: $e', isError: true);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   void _showSnack(String msg, {required bool isError}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -324,7 +300,6 @@ class _ReportsScreenState extends State<ReportsScreen>
                           _loadReports();
                         },
                         onViewDetails: _loadDailySaleItems,
-                        onExport: () => _exportToExcel('daily'),
                       ),
                       MonthlyReportTab(
                         report: _periodReport,
@@ -337,7 +312,6 @@ class _ReportsScreenState extends State<ReportsScreen>
                           });
                           _loadReports();
                         },
-                        onExport: () => _exportToExcel('monthly'),
                       ),
                       InventoryReportTab(
                         report: _comprehensiveReport,
@@ -346,7 +320,6 @@ class _ReportsScreenState extends State<ReportsScreen>
                           setState(() => _selectedDate = d);
                           _loadReports();
                         },
-                        onExport: () => _exportToExcel('inventory'),
                         canViewCostPrice: canViewCostPrice,
                       ),
                     ],

@@ -57,19 +57,22 @@ class _SalesScreenState extends State<SalesScreen> {
     return filtered;
   }
 
+  /// Canonical status → colour. Used by the filter chips, the row status
+  /// badge and the row icon so each status reads the same colour everywhere:
+  /// in-progress = amber, paid = green, closed = indigo, debt = red.
   Color _getStatusColor(BuildContext context, String status) {
     switch (status.toLowerCase()) {
-      case 'draft':
-        return AppColors.darkPrimaryLight; // blue from token palette
+      case 'draft': // "Davom etayotgan" — sale still in progress
+        return AppColors.warning;
       case 'paid':
         return AppColors.success;
       case 'closed':
-        return AppColors.darkPrimary; // indigo-ish from token palette
+        return AppColors.darkPrimary;
       case 'debt':
         return AppColors.danger;
       case 'cancelled':
         return context.colors.textMuted;
-      default:
+      default: // 'all' and any unknown status
         return context.colors.brand;
     }
   }
@@ -442,31 +445,34 @@ class _SalesScreenState extends State<SalesScreen> {
         itemCount: statuses.length,
         itemBuilder: (context, index) {
           final s = statuses[index];
-          final bool isSelected = _selectedStatus == s['id'];
-          final int count = s['id'] == 'all'
+          final id = s['id'] as String;
+          final bool isSelected = _selectedStatus == id;
+          final int count = id == 'all'
               ? sales.length
               : sales
-                  .where(
-                      (item) => item.getStatusText().toLowerCase() == s['id'])
+                  .where((item) => item.getStatusText().toLowerCase() == id)
                   .length;
+          // Each status carries a logical colour (see _getStatusColor); the
+          // "all" chip stays a neutral grey. Chips wear the colour as a soft
+          // tint — the selected one deepens the fill and gains a ring.
+          final Color color = id == 'all'
+              ? context.colors.textSecondary
+              : _getStatusColor(context, id);
 
           return Padding(
             padding: const EdgeInsets.only(right: AppSpacing.md),
             child: GestureDetector(
-              onTap: () => setState(() => _selectedStatus = s['id']),
+              onTap: () => setState(() => _selectedStatus = id),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? context.colors.text
-                      : context.colors.surface,
+                  color: color.withValues(alpha: isSelected ? 0.22 : 0.12),
                   borderRadius: BorderRadius.circular(AppRadius.full),
                   border: Border.all(
-                    color: isSelected
-                        ? context.colors.text
-                        : context.colors.border,
+                    color: isSelected ? color : Colors.transparent,
+                    width: 1.6,
                   ),
                 ),
                 child: Row(
@@ -475,14 +481,9 @@ class _SalesScreenState extends State<SalesScreen> {
                     Text(
                       s['label'] as String,
                       style: AppTextStyles.labelSmall().copyWith(
-                        // Selected pill bg is `context.colors.text` (flips
-                        // with the theme) — the label must be its inverse
-                        // (`surface`), not a fixed white that disappears on
-                        // the light dark-mode pill.
-                        color: isSelected
-                            ? context.colors.surface
-                            : context.colors.text,
-                        fontWeight: FontWeight.w700,
+                        color: color,
+                        fontWeight:
+                            isSelected ? FontWeight.w800 : FontWeight.w700,
                         letterSpacing: 0,
                         fontSize: 13,
                       ),
@@ -492,20 +493,17 @@ class _SalesScreenState extends State<SalesScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? context.colors.surface.withValues(alpha: 0.18)
-                            : context.colors.inputFill,
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.full),
+                        color: color.withValues(
+                            alpha: isSelected ? 0.30 : 0.18),
+                        borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                       child: Text(
                         '$count',
                         style: AppTextStyles.caption().copyWith(
-                          color: isSelected
-                              ? context.colors.surface
-                              : context.colors.textSecondary,
+                          color: color,
                           fontSize: 10,
                           letterSpacing: 0,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -532,8 +530,8 @@ class _SalesScreenState extends State<SalesScreen> {
     final (IconData icon, Color tone) = switch (statusText) {
       'paid' => (Icons.payments_rounded, AppColors.success),
       'closed' => (Icons.credit_card_rounded, AppColors.darkPrimary),
-      'debt' => (Icons.assignment_outlined, AppColors.warning),
-      'draft' => (Icons.hourglass_bottom_rounded, AppColors.darkPrimaryLight),
+      'debt' => (Icons.assignment_outlined, AppColors.danger),
+      'draft' => (Icons.hourglass_bottom_rounded, AppColors.warning),
       _ => (Icons.receipt_long_rounded, context.colors.textSecondary),
     };
 
