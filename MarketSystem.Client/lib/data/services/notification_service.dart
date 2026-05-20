@@ -288,21 +288,6 @@ class NotificationService {
     return 0;
   }
 
-  String _compactNum(num v) {
-    if (v == v.toInt()) return v.toInt().toString();
-    return v.toStringAsFixed(2);
-  }
-
-  String _formatUzs(num v) {
-    final n = v.toInt().toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < n.length; i++) {
-      if (i > 0 && (n.length - i) % 3 == 0) buf.write(' ');
-      buf.write(n[i]);
-    }
-    return buf.toString();
-  }
-
   DateTime? _parseDate(dynamic v) {
     if (v == null) return null;
     if (v is DateTime) return v;

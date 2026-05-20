@@ -154,7 +154,11 @@ public class UsersController : ControllerBase
 
         try
         {
-            UpdateProfileImageDto request;
+            // Nullable: the JSON branch assigns from ReadFromJsonAsync which
+            // returns T?. Both branches below guarantee a non-null value
+            // before it's used (form branch via `new`, JSON branch via the
+            // explicit null check), so the later usage stays safe.
+            UpdateProfileImageDto? request;
 
             // Check if request contains file upload (multipart/form-data)
             if (Request.HasFormContentType && Request.Form != null && Request.Form.Files.Count > 0)

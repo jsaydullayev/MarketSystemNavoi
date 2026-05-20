@@ -42,19 +42,17 @@ class ValidationFailure extends Failure {
 
 /// Not found failure - Resource not found
 class NotFoundFailure extends Failure {
-  const NotFoundFailure([String message = 'Ma\'lumot topilmadi'])
-      : super(message);
+  const NotFoundFailure([super.message = 'Ma\'lumot topilmadi']);
 }
 
 /// Permission denied failure
 class PermissionDeniedFailure extends Failure {
   const PermissionDeniedFailure([
-    String message = 'Sizda bu amalni bajarish huquqi yo\'q',
-  ]) : super(message);
+    super.message = 'Sizda bu amalni bajarish huquqi yo\'q',
+  ]);
 }
 
 /// Unknown failure - Unexpected errors
 class UnknownFailure extends Failure {
-  const UnknownFailure([String message = 'Noma\'lum xatolik yuz berdi'])
-      : super(message);
+  const UnknownFailure([super.message = 'Noma\'lum xatolik yuz berdi']);
 }

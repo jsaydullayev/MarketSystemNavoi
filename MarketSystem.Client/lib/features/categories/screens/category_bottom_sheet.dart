@@ -19,7 +19,8 @@
 // - Selected emoji is purely visual (not persisted) until the model gains
 //   an icon field server-side.
 
-import 'package:characters/characters.dart';
+// `Characters` (grapheme-aware string handling) is re-exported by
+// flutter/material, so no separate `package:characters` import is needed.
 import 'package:flutter/material.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';

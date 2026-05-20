@@ -112,12 +112,12 @@ class ThemeProvider with ChangeNotifier {
       scaffoldBackgroundColor: const Color(0xFF0F172A),
 
       // App Bar - gradient dark
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: true,
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: Color(0xFF1E293B),
         foregroundColor: Colors.white,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
           color: Colors.white,

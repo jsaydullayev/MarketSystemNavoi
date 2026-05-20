@@ -61,7 +61,9 @@ public class ReportService : IReportService
         var ordinaryProductIds = sales
             .SelectMany(s => s.SaleItems)
             .Where(si => !si.IsExternal && si.ProductId.HasValue)
-            .Select(si => si.ProductId.Value)
+            // The Where above already guarantees HasValue; the null-forgiving
+            // `!` just tells the compiler what the filter cannot express.
+            .Select(si => si.ProductId!.Value)
             .Distinct()
             .ToList();
 
@@ -94,8 +96,11 @@ public class ReportService : IReportService
 
                 if (!item.IsExternal)
                 {
-                    // Oddiy mahsulot
-                    if (!products.TryGetValue(item.ProductId.Value, out var product))
+                    // Oddiy mahsulot. A non-external item should always carry
+                    // a ProductId, but the column is nullable — guard so a
+                    // bad row is skipped instead of throwing.
+                    if (!item.ProductId.HasValue ||
+                        !products.TryGetValue(item.ProductId.Value, out var product))
                         continue;
 
                     productName = product.Name;
@@ -1348,7 +1353,7 @@ public class ReportService : IReportService
         // ✅ Get all ordinary products for the sale items (faqat oddiy mahsulotlar uchun)
         var ordinaryProductIds = sale.SaleItems
             .Where(si => !si.IsExternal && si.ProductId.HasValue)
-            .Select(si => si.ProductId.Value)
+            .Select(si => si.ProductId!.Value)
             .Distinct()
             .ToList();
 
