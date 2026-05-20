@@ -209,14 +209,19 @@ class ReportService {
   /// 7-day (or N-day) revenue / profit / check-count series for the dashboard
   /// ChartCard. Days are returned oldest-to-newest with zero rows for empty
   /// days, so the bar chart can render without gap filling.
-  Future<WeeklySeries> getWeeklySeries({int days = 7}) async {
+  ///
+  /// When [compare] is true the response also includes <c>previousTotal</c> —
+  /// the equally-sized window immediately before the current one. The
+  /// ChartCard footer uses it to display a "↑/↓ X% vs last week" delta
+  /// without a second round-trip.
+  Future<WeeklySeries> getWeeklySeries({int days = 7, bool compare = false}) async {
     final response = await _httpService.get(
-      '${ApiConstants.reports}/weekly-series?days=$days',
+      '${ApiConstants.reports}/weekly-series?days=$days&compare=$compare',
     );
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
-        return const WeeklySeries(points: []);
+        return const WeeklySeries(points: [], currentTotal: 0);
       }
       return WeeklySeries.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>);
@@ -274,6 +279,26 @@ class ReportService {
           'Failed to load staff performance: ${response.statusCode}');
     }
   }
+
+  /// Current user's own sales metrics for the period. Backs the Seller
+  /// dashboard's SellerStatsRow + PendingSaleCard. Available to all
+  /// authenticated roles — each user sees only their own row.
+  Future<MyPerformance> getMyPerformance({String period = 'today'}) async {
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/my-performance?period=$period',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) {
+        return MyPerformance.empty(period);
+      }
+      return MyPerformance.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      throw Exception(
+          'Failed to load my performance: ${response.statusCode}');
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -316,11 +341,27 @@ DateTime _asDate(dynamic v) {
   return DateTime.fromMillisecondsSinceEpoch(0);
 }
 
-/// Mirrors `WeeklySeriesDto { List<DailyPoint> Points }`.
+/// Mirrors `WeeklySeriesDto { List<DailyPoint> Points, decimal CurrentTotal,
+/// decimal? PreviousTotal }`. [previousTotal] is null when the response was
+/// requested without `?compare=true`.
 class WeeklySeries {
-  const WeeklySeries({required this.points});
+  const WeeklySeries({
+    required this.points,
+    required this.currentTotal,
+    this.previousTotal,
+  });
 
   final List<DailyPoint> points;
+  final double currentTotal;
+  final double? previousTotal;
+
+  /// Percent change from previous → current (e.g. +18 means current is 18 %
+  /// higher). Returns null when there's no previous-period data, or when the
+  /// previous total is zero (division-by-zero would yield ±infinity).
+  double? get deltaPercent {
+    if (previousTotal == null || previousTotal == 0) return null;
+    return ((currentTotal - previousTotal!) / previousTotal!) * 100;
+  }
 
   factory WeeklySeries.fromJson(Map<String, dynamic> json) {
     final raw = json['points'];
@@ -330,6 +371,8 @@ class WeeklySeries {
           .whereType<Map<String, dynamic>>()
           .map(DailyPoint.fromJson)
           .toList(),
+      currentTotal: _asDouble(json['currentTotal']),
+      previousTotal: _asDoubleOrNull(json['previousTotal']),
     );
   }
 }
@@ -473,4 +516,62 @@ class StaffRow {
         shiftCount: _asInt(json['shiftCount']),
         isActiveShift: json['isActiveShift'] == true,
       );
+}
+
+/// Mirrors `MyPerformanceDto { string Period, string UserId, string FullName,
+/// int SaleCount, decimal Revenue, decimal AverageCheck, DateTime? FirstSaleAtUtc,
+/// int ShiftDurationMinutes }`. Returned by /Reports/my-performance.
+class MyPerformance {
+  const MyPerformance({
+    required this.period,
+    required this.userId,
+    required this.fullName,
+    required this.saleCount,
+    required this.revenue,
+    required this.averageCheck,
+    required this.firstSaleAt,
+    required this.shiftDurationMinutes,
+  });
+
+  factory MyPerformance.empty(String period) => MyPerformance(
+        period: period,
+        userId: '',
+        fullName: '',
+        saleCount: 0,
+        revenue: 0,
+        averageCheck: 0,
+        firstSaleAt: null,
+        shiftDurationMinutes: 0,
+      );
+
+  final String period;
+  final String userId;
+  final String fullName;
+  final int saleCount;
+  final double revenue;
+  final double averageCheck;
+  final DateTime? firstSaleAt;
+  final int shiftDurationMinutes;
+
+  /// Convenience getter: shift duration in hours, rounded down. Returns 0
+  /// when there's no sale today.
+  int get shiftDurationHours => shiftDurationMinutes ~/ 60;
+
+  factory MyPerformance.fromJson(Map<String, dynamic> json) {
+    final firstSaleRaw = json['firstSaleAtUtc'];
+    DateTime? firstSale;
+    if (firstSaleRaw is String && firstSaleRaw.isNotEmpty) {
+      firstSale = DateTime.tryParse(firstSaleRaw);
+    }
+    return MyPerformance(
+      period: (json['period'] ?? '').toString(),
+      userId: (json['userId'] ?? '').toString(),
+      fullName: (json['fullName'] ?? '').toString(),
+      saleCount: _asInt(json['saleCount']),
+      revenue: _asDouble(json['revenue']),
+      averageCheck: _asDouble(json['averageCheck']),
+      firstSaleAt: firstSale,
+      shiftDurationMinutes: _asInt(json['shiftDurationMinutes']),
+    );
+  }
 }

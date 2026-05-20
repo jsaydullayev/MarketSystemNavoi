@@ -40,6 +40,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String privacy = '/privacy';
   static const String cashRegister = '/cash-register';
+  static const String notifications = '/notifications';
 
   // Sub-routes
   static const String productDetail = '/products/:id';

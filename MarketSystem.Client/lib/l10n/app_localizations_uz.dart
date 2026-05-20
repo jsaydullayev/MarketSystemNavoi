@@ -1714,6 +1714,34 @@ class AppLocalizationsUz extends AppLocalizations {
   String get hour => 'soat';
 
   @override
+  String get unitPiece => 'dona';
+
+  @override
+  String get thisWeek => 'Bu hafta';
+
+  @override
+  String get topSellersFallbackHint => 'Bugun savdo bo\'lmadi — oxirgi hafta:';
+
+  @override
+  String get notificationsTitle => 'Ogohlantirishlar';
+
+  @override
+  String get notificationsEmptyTitle => 'Yangi ogohlantirish yo\'q';
+
+  @override
+  String get notificationsEmptyDescription =>
+      'Hammasi joyida. Kam qolgan tovar, yangi qarz savdo yoki muddati o\'tgan qarzdor topilmadi.';
+
+  @override
+  String get alertsOverdueTitle => 'To\'lov vaqti keldi';
+
+  @override
+  String get alertsLowStockTitle => 'Kam qolgan tovarlar';
+
+  @override
+  String get alertsRecentDebtTitle => 'Yangi qarz savdolar';
+
+  @override
   String get quickActions => 'Tezkor amallar';
 
   @override

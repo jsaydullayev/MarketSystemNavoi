@@ -34,10 +34,14 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Owner-only data load. We hold the [Future] in state so a pull-to-refresh
-  // can replace it and the [FutureBuilder] in [_OwnerBody] rebuilds cleanly.
-  // For non-Owner roles these stay null and we never touch the services.
+  // Owner data load. We hold the [Future] in state so a pull-to-refresh can
+  // replace it and the [FutureBuilder] in [_OwnerBody] rebuilds cleanly.
+  // For non-Owner roles this stays null and we never touch the Owner-only
+  // endpoints (profit-summary, etc.).
   Future<DashboardSummary>? _summaryFuture;
+  // Seller data load — own performance + own drafts. Held in state for the
+  // same pull-to-refresh pattern. Null for Owner/Admin.
+  Future<SellerDashboardSummary>? _sellerSummaryFuture;
   Future<int>? _unreadFuture;
 
   bool _initialised = false;
@@ -52,6 +56,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final role = (auth.user?['role'] ?? 'Seller') as String;
     if (role == 'Owner') {
       _summaryFuture = DashboardService(authProvider: auth).loadOwnerSummary();
+    } else if (role == 'Seller') {
+      _sellerSummaryFuture =
+          DashboardService(authProvider: auth).loadSellerSummary();
     }
     // Bell badge is useful for Owner + Admin (both manage low-stock / debts).
     if (role == 'Owner' || role == 'Admin') {
@@ -67,6 +74,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (role == 'Owner') {
         _summaryFuture =
             DashboardService(authProvider: auth).loadOwnerSummary();
+      } else if (role == 'Seller') {
+        _sellerSummaryFuture =
+            DashboardService(authProvider: auth).loadSellerSummary();
       }
       if (role == 'Owner' || role == 'Admin') {
         _unreadFuture =
@@ -78,6 +88,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await Future.wait([
       if (_summaryFuture != null) _summaryFuture!.catchError((_) =>
           const DashboardSummary()),
+      if (_sellerSummaryFuture != null)
+        _sellerSummaryFuture!.catchError((_) => const SellerDashboardSummary()),
       if (_unreadFuture != null) _unreadFuture!.catchError((_) => 0),
     ]);
   }
@@ -114,6 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           user: user,
           role: role,
           summaryFuture: _summaryFuture,
+          sellerSummaryFuture: _sellerSummaryFuture,
           unreadFuture: _unreadFuture,
         ),
       ),
@@ -131,12 +144,14 @@ class _DashboardBody extends StatelessWidget {
     required this.user,
     required this.role,
     this.summaryFuture,
+    this.sellerSummaryFuture,
     this.unreadFuture,
   });
 
   final dynamic user;
   final String role;
   final Future<DashboardSummary>? summaryFuture;
+  final Future<SellerDashboardSummary>? sellerSummaryFuture;
   final Future<int>? unreadFuture;
 
   String _fullName(BuildContext context) {
@@ -189,6 +204,17 @@ class _DashboardBody extends StatelessWidget {
                   dateLabel: date,
                   hasNotification: unread > 0,
                   unreadNotifications: unread,
+                  // Profile image is stored on the user map as a base64 data
+                  // URI (see ProfileImagePicker upload). GreetingCard handles
+                  // both URL and base64 forms and falls back to the letter
+                  // tile when null/empty.
+                  profileImage: user?['profileImage'] as String?,
+                  onNotificationTap: (role == 'Owner' || role == 'Admin')
+                      ? () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.notifications,
+                          )
+                      : null,
                   onSettingsTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const ProfileScreen()),
@@ -200,7 +226,7 @@ class _DashboardBody extends StatelessWidget {
             if (role == 'Owner')
               _OwnerBody(summaryFuture: summaryFuture)
             else
-              _SellerBody(role: role),
+              _SellerBody(role: role, summaryFuture: sellerSummaryFuture),
           ],
         ),
       ),
@@ -366,37 +392,57 @@ class _OwnerBody extends StatelessWidget {
     final footerValue = totalWeek > 0
         ? '${NumberFormatter.format(totalWeek)} UZS'
         : '— UZS';
+
+    // Week-over-week delta — sourced from /weekly-series?compare=true. We
+    // render the sign + integer percent + a localized "vs last week" hint.
+    // Falls back to blank when the previous week was empty (division-by-zero
+    // would otherwise yield infinity) or the comparison wasn't requested.
+    final delta = summary.weeklyDeltaPercent;
+    String footerDelta;
+    if (delta == null || delta.isNaN || delta.isInfinite) {
+      footerDelta = '';
+    } else {
+      final sign = delta >= 0 ? '↑' : '↓';
+      footerDelta = '$sign ${delta.abs().toStringAsFixed(0)}%';
+    }
+
     return ChartCard(
       title: l10n.thisWeekLabel,
       period: l10n.thisWeekLabel,
       bars: bars,
       footerValue: footerValue,
-      // Backend doesn't yet expose a previous-period comparison endpoint,
-      // so we leave the delta blank — the widget renders an empty arrow.
-      footerDelta: '',
+      footerDelta: footerDelta,
     );
   }
 
   /// Top-3 sellers card. Prefers the new /Reports/top-products endpoint
   /// (period=today). Falls back to the legacy local aggregation when the
   /// endpoint returned nothing, so an older backend still shows data.
+  ///
+  /// The new endpoint transparently widens "today" → "week" when today has
+  /// no sales (see ReportService.GetTopProductsAsync). We honour the echoed
+  /// period in the panel label so users aren't confused by week-old products
+  /// appearing under a "Bugun" header.
   static TopSellersCard _buildTopSellersCard(
     BuildContext context,
     DashboardSummary summary,
     AppLocalizations l10n,
   ) {
     final rows = summary.topProductRows;
+    final periodLabel = summary.topProductsPeriod == 'week'
+        ? l10n.thisWeek
+        : l10n.todayLabel;
     if (rows.isNotEmpty) {
       return TopSellersCard(
         title: l10n.bestSellersTitle,
-        period: l10n.todayLabel,
+        period: periodLabel,
         entries: [
           for (final p in rows.take(3))
             TopSellerEntry(
               emoji: '🛒',
               name: p.name,
               countLabel:
-                  '${NumberFormatter.formatQuantity(p.quantity)} dona',
+                  '${NumberFormatter.formatQuantity(p.quantity)} ${l10n.unitPiece}',
             ),
         ],
       );
@@ -405,7 +451,7 @@ class _OwnerBody extends StatelessWidget {
     final legacy = summary.topProducts;
     return TopSellersCard(
       title: l10n.bestSellersTitle,
-      period: l10n.todayLabel,
+      period: periodLabel,
       entries: legacy.isEmpty
           ? [
               TopSellerEntry(
@@ -420,7 +466,7 @@ class _OwnerBody extends StatelessWidget {
                   emoji: '🛒',
                   name: p.name,
                   countLabel:
-                      '${NumberFormatter.formatQuantity(p.quantity)} dona',
+                      '${NumberFormatter.formatQuantity(p.quantity)} ${l10n.unitPiece}',
                 ),
             ],
     );
@@ -573,9 +619,43 @@ class _RetryBanner extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _SellerBody extends StatelessWidget {
-  const _SellerBody({required this.role});
+  const _SellerBody({required this.role, this.summaryFuture});
 
   final String role;
+  // Seller summary future. Null for Admins — they don't get the personal
+  // stats / draft card (they're typically not the one ringing up sales). The
+  // Admin layout reuses this widget for the "Quick actions" + admin shortcuts
+  // grid below.
+  final Future<SellerDashboardSummary>? summaryFuture;
+
+  /// Compact UZS formatter for the stats row: "1 200 000" → "1.2M",
+  /// "42 000" → "42K", "950" → "950". Mirrors the Owner KPI compact helper.
+  String _compactUzs(double v) {
+    final n = v.abs();
+    if (n >= 1000000) {
+      final m = (v / 1000000).toStringAsFixed(v % 1000000 == 0 ? 0 : 1);
+      return '${m}M';
+    }
+    if (n >= 1000) {
+      final k = (v / 1000).toStringAsFixed(v % 1000 == 0 ? 0 : 0);
+      return '${k}K';
+    }
+    return v.toStringAsFixed(0);
+  }
+
+  /// Pretty thousands-grouped UZS for the draft subtitle. We use a thin space
+  /// (U+202F) so the rendering matches the rest of the app (e.g. "42 000").
+  String _grouped(double v) {
+    final n = v.toStringAsFixed(0);
+    final buf = StringBuffer();
+    final neg = n.startsWith('-');
+    final digits = neg ? n.substring(1) : n;
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buf.write(' ');
+      buf.write(digits[i]);
+    }
+    return neg ? '-${buf.toString()}' : buf.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -590,20 +670,53 @@ class _SellerBody extends StatelessWidget {
           subtitle: l10n.tapToSelectProduct,
           onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
         ),
-        const SizedBox(height: AppSpacing.lg),
-        PendingSaleCard(
-          title: l10n.oneSaleInProgress,
-          subtitle: 'Chek #1247 · 3 dona · 42 000 UZS',
-          onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        SellerStatsRow(
-          stats: [
-            SalesHeroStat(value: '12', label: l10n.todayLabel),
-            SalesHeroStat(value: '850K', label: l10n.revenueLabel),
-            SalesHeroStat(value: '6 ${l10n.hour}', label: l10n.shiftLabel),
-          ],
-        ),
+        // Seller-only: pending draft + personal stats row, wired to
+        // /Reports/my-performance + /Sales/my-drafts.
+        if (!isAdmin) ...[
+          const SizedBox(height: AppSpacing.lg),
+          FutureBuilder<SellerDashboardSummary>(
+            future: summaryFuture,
+            builder: (context, snapshot) {
+              final summary =
+                  snapshot.data ?? const SellerDashboardSummary();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (summary.pendingDraft != null)
+                    PendingSaleCard(
+                      title: l10n.oneSaleInProgress,
+                      subtitle: () {
+                        final d = summary.pendingDraft!;
+                        // "3 dona · 42 000 UZS"
+                        return '${d.itemCount} ${l10n.unitPiece} · '
+                            '${_grouped(d.totalAmount)} UZS';
+                      }(),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.sales),
+                    ),
+                  if (summary.pendingDraft != null)
+                    const SizedBox(height: AppSpacing.lg),
+                  SellerStatsRow(
+                    stats: [
+                      SalesHeroStat(
+                        value: '${summary.mySaleCount}',
+                        label: l10n.todayLabel,
+                      ),
+                      SalesHeroStat(
+                        value: _compactUzs(summary.myRevenue),
+                        label: l10n.revenueLabel,
+                      ),
+                      SalesHeroStat(
+                        value: '${summary.myShiftDurationHours} ${l10n.hour}',
+                        label: l10n.shiftLabel,
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
         const SizedBox(height: AppSpacing.xl),
         SectionHeader(title: l10n.quickActions),
         const SizedBox(height: AppSpacing.md),
@@ -690,7 +803,7 @@ class _DashboardDrawer extends StatelessWidget {
     final isDark = AdaptiveTheme.of(context).mode.isDark;
     return Drawer(
       width: width,
-      backgroundColor: isDark ? const Color(0xFF121212) : AppColors.surface,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(20)),
       ),
@@ -965,7 +1078,7 @@ class _DrawerHeader extends StatelessWidget {
         margin: const EdgeInsets.all(AppSpacing.lg),
         padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : AppColors.surface,
+          color: isDark ? AppColors.darkSurface : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.xl),
           border: Border.all(
             color: isDark ? Colors.white12 : AppColors.border,

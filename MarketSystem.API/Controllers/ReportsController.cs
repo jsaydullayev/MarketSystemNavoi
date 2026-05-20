@@ -160,10 +160,12 @@ public class ReportsController : ControllerBase
     /// Profit values are zero unless the caller is Owner.
     /// </summary>
     [HttpGet("weekly-series")]
-    public async Task<ActionResult<WeeklySeriesDto>> GetWeeklySeries([FromQuery] int days = 7)
+    public async Task<ActionResult<WeeklySeriesDto>> GetWeeklySeries(
+        [FromQuery] int days = 7,
+        [FromQuery] bool compare = false)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-        var series = await _reportService.GetWeeklySeriesAsync(days, userRole);
+        var series = await _reportService.GetWeeklySeriesAsync(days, compare, userRole);
         return Ok(series);
     }
 
@@ -194,6 +196,24 @@ public class ReportsController : ControllerBase
     {
         var staff = await _reportService.GetStaffPerformanceAsync(period);
         return Ok(staff);
+    }
+
+    /// <summary>
+    /// Get the current user's own sales metrics for the period (default: today).
+    /// Backs the Seller dashboard's SellerStatsRow (sale count, revenue,
+    /// shift duration). Open to all authenticated roles — each user only
+    /// ever sees their own row.
+    /// </summary>
+    [HttpGet("my-performance")]
+    public async Task<ActionResult<MyPerformanceDto>> GetMyPerformance(
+        [FromQuery] string period = "today")
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        var result = await _reportService.GetMyPerformanceAsync(userId, period);
+        return Ok(result);
     }
 
     /// <summary>

@@ -1718,6 +1718,34 @@ class AppLocalizationsRu extends AppLocalizations {
   String get hour => 'час';
 
   @override
+  String get unitPiece => 'шт';
+
+  @override
+  String get thisWeek => 'Эта неделя';
+
+  @override
+  String get topSellersFallbackHint => 'Сегодня продаж не было — за неделю:';
+
+  @override
+  String get notificationsTitle => 'Уведомления';
+
+  @override
+  String get notificationsEmptyTitle => 'Нет новых уведомлений';
+
+  @override
+  String get notificationsEmptyDescription =>
+      'Всё в порядке. Нет товаров на исходе, новых долговых продаж или просроченных должников.';
+
+  @override
+  String get alertsOverdueTitle => 'Время оплаты подошло';
+
+  @override
+  String get alertsLowStockTitle => 'Товары на исходе';
+
+  @override
+  String get alertsRecentDebtTitle => 'Новые долговые продажи';
+
+  @override
   String get quickActions => 'Быстрые действия';
 
   @override

@@ -6,6 +6,8 @@
 // top-sellers list. They are presentation-only StatelessWidgets — caller
 // supplies the data and tap handlers.
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../design/tokens/app_tokens.dart';
@@ -27,6 +29,7 @@ class GreetingCard extends StatelessWidget {
     this.unreadNotifications = 0,
     this.onNotificationTap,
     this.onSettingsTap,
+    this.profileImage,
   });
 
   final String fullName;
@@ -41,28 +44,89 @@ class GreetingCard extends StatelessWidget {
   final VoidCallback? onNotificationTap;
   final VoidCallback? onSettingsTap;
 
+  /// Optional user-uploaded profile image. Accepted forms (same convention as
+  /// ProfileImagePicker, so they stay in sync):
+  ///   - "http..."         → loaded with [Image.network]
+  ///   - "data:image/...,<b64>" or raw base64 longer than 100 chars
+  ///       → decoded as bytes and shown with [Image.memory]
+  ///   - null / empty / unrecognised → falls back to the first-letter circle.
+  final String? profileImage;
+
   String get _initial =>
       fullName.trim().isEmpty ? 'U' : fullName.trim()[0].toUpperCase();
+
+  /// Render the user's profile image as a 44×44 rounded tile, or a coloured
+  /// first-letter tile if no image is available. Kept identical in size to
+  /// the original letter tile so the rest of the row layout doesn't shift.
+  Widget _buildAvatar() {
+    final img = profileImage;
+    final hasImage = img != null && img.isNotEmpty;
+    final letterTile = Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.brandLight,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        _initial,
+        style: AppTextStyles.titleMedium()
+            .copyWith(color: AppColors.brand, fontWeight: FontWeight.w800),
+      ),
+    );
+    if (!hasImage) return letterTile;
+
+    Widget? imgWidget;
+    if (img.startsWith('http')) {
+      imgWidget = Image.network(
+        img,
+        width: 44,
+        height: 44,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => letterTile,
+      );
+    } else if (img.startsWith('data:image') || img.length > 100) {
+      try {
+        final b64 = img.contains(',') ? img.split(',').last : img;
+        imgWidget = Image.memory(
+          base64Decode(b64),
+          width: 44,
+          height: 44,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => letterTile,
+        );
+      } catch (_) {
+        imgWidget = null;
+      }
+    }
+    if (imgWidget == null) return letterTile;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: imgWidget,
+    );
+  }
 
   ({Color bg, Color fg, String emoji}) _roleStyle() {
     switch (role) {
       case 'Owner':
         return (
-          bg: const Color(0xFFEDE9FE),
-          fg: const Color(0xFF6D28D9),
+          bg: AppColors.accentPurpleLight,
+          fg: AppColors.accentPurpleDeep,
           emoji: '\u{1F451}', // crown
         );
       case 'Admin':
         return (
-          bg: const Color(0xFFDBEAFE),
-          fg: const Color(0xFF1E40AF),
+          bg: AppColors.infoLight,
+          fg: AppColors.infoDeep,
           emoji: '\u{1F465}', // busts
         );
       case 'Seller':
       default:
         return (
-          bg: const Color(0xFFD1FAE5),
-          fg: const Color(0xFF047857),
+          bg: AppColors.successLight,
+          fg: AppColors.successDeep,
           emoji: '\u{1F6D2}', // cart
         );
     }
@@ -75,20 +139,7 @@ class GreetingCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.brandLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              _initial,
-              style: AppTextStyles.titleMedium()
-                  .copyWith(color: AppColors.brand, fontWeight: FontWeight.w800),
-            ),
-          ),
+          _buildAvatar(),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
@@ -229,7 +280,10 @@ class SalesHeroCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          // Same dark-blue gradient as the demo's `.today-card`, sourced
+          // from the dark-theme token family so the dashboard hero
+          // stays in step with the rest of the palette.
+          colors: [AppColors.darkBg, AppColors.darkSurface],
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
@@ -330,9 +384,9 @@ class KpiCard extends StatelessWidget {
       case KpiTone.green:
         return (bg: AppColors.successLight, fg: AppColors.success);
       case KpiTone.purple:
-        return (bg: const Color(0xFFEDE9FE), fg: const Color(0xFF7C3AED));
+        return (bg: AppColors.accentPurpleLight, fg: AppColors.accentPurple);
       case KpiTone.blue:
-        return (bg: const Color(0xFFDBEAFE), fg: const Color(0xFF1E40AF));
+        return (bg: AppColors.infoLight, fg: AppColors.infoDeep);
       case KpiTone.orange:
         return (bg: AppColors.brandLight, fg: AppColors.brand);
     }
@@ -416,15 +470,15 @@ class AlertCard extends StatelessWidget {
         return (
           bg: AppColors.dangerLight,
           border: AppColors.danger,
-          title: const Color(0xFF991B1B),
-          desc: const Color(0xFFB91C1C),
+          title: AppColors.dangerDeep,
+          desc: AppColors.dangerStrong,
         );
       case AlertTone.warning:
         return (
           bg: AppColors.warningLight,
           border: AppColors.warning,
-          title: const Color(0xFF92400E),
-          desc: const Color(0xFFB45309),
+          title: AppColors.warningDeep,
+          desc: AppColors.warningDark,
         );
     }
   }

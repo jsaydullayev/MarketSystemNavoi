@@ -620,8 +620,13 @@ public class ReportService : IReportService
         // Today (Tashkent calendar day -> UTC range)
         var (todayStart, todayEnd) = GetUtcDateRange(todayLocal);
 
-        // Week (anchored to Tashkent local week)
-        var weekStart = ToUtcDate(todayLocal.AddDays(-(int)todayLocal.DayOfWeek));
+        // Week = rolling 7-day window (last 7 days including today), anchored to
+        // Tashkent local midnight. Previously this anchored to the most recent
+        // Sunday, which meant the "weekProfit" KPI would reset to ~0 every
+        // Sunday/Monday morning even if business had been steady — confusing
+        // for owners. Rolling-7d matches user intuition: "shu hafta = oxirgi
+        // 7 kun".
+        var weekStart = ToUtcDate(todayLocal.AddDays(-6));
 
         // Month (anchored to Tashkent local month)
         var monthStart = ToUtcDate(new DateTime(todayLocal.Year, todayLocal.Month, 1));
@@ -1708,9 +1713,13 @@ public class ReportService : IReportService
     /// revenue + profit + check count per day. Fills gaps with zero-points so
     /// the frontend can plot a continuous chart without gap-handling code.
     /// Profit is suppressed (returned as 0) for non-Owner callers.
+    /// When <paramref name="compare"/> is true, also returns the total revenue
+    /// for the equally-sized window immediately preceding [current window],
+    /// so the dashboard can show a week-over-week delta without a second
+    /// round-trip.
     /// </summary>
     public async Task<WeeklySeriesDto> GetWeeklySeriesAsync(
-        int days, string? userRole = null, CancellationToken cancellationToken = default)
+        int days, bool compare = false, string? userRole = null, CancellationToken cancellationToken = default)
     {
         // Clamp to [1, 30] — frontend asks for 7 by default; 30 is a hard cap
         // so a misbehaving client can't trigger a month-long full table scan.
@@ -1758,15 +1767,37 @@ public class ReportService : IReportService
         }
 
         var points = new List<DailyPoint>(days);
+        decimal currentTotal = 0;
         for (var i = 0; i < days; i++)
         {
             var localDay = rangeStartLocal.AddDays(i).Date;
             var utcStart = ToUtcDate(localDay);
             var bucket = byDay.TryGetValue(localDay, out var v) ? v : (0m, 0m, 0);
             points.Add(new DailyPoint(utcStart, bucket.Item1, bucket.Item2, bucket.Item3));
+            currentTotal += bucket.Item1;
         }
 
-        return new WeeklySeriesDto(points);
+        // Optional second pass for the previous equally-sized window so the
+        // frontend's ChartCard footer can render "↑/↓ X% vs last week".
+        // We deliberately query a separate batch (rather than widening the
+        // first one to 2× the range) to keep memory bounded when days=30.
+        decimal? previousTotal = null;
+        if (compare)
+        {
+            var prevStartLocal = rangeStartLocal.AddDays(-days);
+            var prevStartUtc = ToUtcDate(prevStartLocal);
+            var prevEndUtc = rangeStartUtc;
+
+            var prevSales = await _unitOfWork.Sales.FindAsync(
+                s => s.CreatedAt >= prevStartUtc && s.CreatedAt < prevEndUtc &&
+                     s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft &&
+                     s.MarketId == marketId,
+                cancellationToken);
+
+            previousTotal = prevSales.Sum(s => s.TotalAmount);
+        }
+
+        return new WeeklySeriesDto(points, currentTotal, previousTotal);
     }
 
     /// <summary>
@@ -1789,6 +1820,23 @@ public class ReportService : IReportService
                  s.MarketId == marketId,
             cancellationToken,
             includeProperties: "SaleItems");
+
+        // Fallback: if `today` returned nothing (typical for fresh shops at
+        // 9 AM, or shops with no sales yet today), widen to the rolling-week
+        // window so the dashboard isn't a blank box. We mutate `period` so the
+        // returned DTO advertises the actual range used.
+        var effectivePeriod = period;
+        if ((period?.ToLowerInvariant() == "today") && !sales.Any())
+        {
+            (rangeStartUtc, rangeEndUtc) = ResolvePeriodRange("week");
+            effectivePeriod = "week";
+            sales = await _unitOfWork.Sales.FindAsync(
+                s => s.CreatedAt >= rangeStartUtc && s.CreatedAt < rangeEndUtc &&
+                     s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft &&
+                     s.MarketId == marketId,
+                cancellationToken,
+                includeProperties: "SaleItems");
+        }
 
         var includeProfit = userRole == Role.Owner.ToString();
 
@@ -1912,6 +1960,60 @@ public class ReportService : IReportService
             .ToList();
 
         return new StaffPerformanceDto(period ?? "week", sorted);
+    }
+
+    /// <summary>
+    /// One seller's own metrics. Same shape as a single <see cref="StaffRow"/>
+    /// but scoped to a single user, plus a derived "first sale today" timestamp
+    /// for the Seller dashboard's shift-duration card.
+    /// </summary>
+    public async Task<MyPerformanceDto> GetMyPerformanceAsync(
+        Guid userId, string period, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        var (rangeStartUtc, rangeEndUtc) = ResolvePeriodRange(period);
+
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        var fullName = user?.FullName ?? string.Empty;
+
+        // Only this seller's non-draft, non-cancelled sales in the period.
+        var sales = await _unitOfWork.Sales.FindAsync(
+            s => s.CreatedAt >= rangeStartUtc && s.CreatedAt < rangeEndUtc &&
+                 s.SellerId == userId &&
+                 s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft &&
+                 s.MarketId == marketId,
+            cancellationToken);
+
+        var salesList = sales.ToList();
+        var saleCount = salesList.Count;
+        var revenue = salesList.Sum(s => s.TotalAmount);
+        var averageCheck = saleCount == 0 ? 0m : revenue / saleCount;
+
+        // "Shift duration" = minutes since the first sale. This is an
+        // approximation until we have a proper Shift entity — sellers
+        // typically take their first sale shortly after clocking in, so the
+        // signal is close enough for a dashboard hint.
+        DateTime? firstSaleAt = saleCount == 0
+            ? null
+            : salesList.Min(s => s.CreatedAt);
+        int shiftMinutes = 0;
+        if (firstSaleAt is { } first)
+        {
+            var elapsed = DateTime.UtcNow - first;
+            // Clamp to non-negative — clock-skew between server and DB can
+            // produce small negatives that would render as "-3 min".
+            shiftMinutes = elapsed.TotalMinutes > 0 ? (int)elapsed.TotalMinutes : 0;
+        }
+
+        return new MyPerformanceDto(
+            Period: period ?? "today",
+            UserId: userId.ToString(),
+            FullName: fullName,
+            SaleCount: saleCount,
+            Revenue: revenue,
+            AverageCheck: averageCheck,
+            FirstSaleAtUtc: firstSaleAt,
+            ShiftDurationMinutes: shiftMinutes);
     }
 
     /// <summary>
