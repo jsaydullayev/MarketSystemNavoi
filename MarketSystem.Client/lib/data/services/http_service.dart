@@ -101,6 +101,53 @@ class HttpService {
     _accessToken = null;
   }
 
+  /// True when the JWT's `exp` claim is in the past (with a 15-second
+  /// leeway so a token about to expire mid-request is renewed now). On any
+  /// decode failure returns false — we then proceed and let the reactive
+  /// 401 handler deal with it rather than blocking on an unreadable token.
+  bool _isAccessTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+      final payload = jsonDecode(
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+      final exp = payload is Map ? payload['exp'] : null;
+      if (exp is! int) return false;
+      final expiry =
+          DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
+      return DateTime.now()
+          .toUtc()
+          .isAfter(expiry.subtract(const Duration(seconds: 15)));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Returns a non-expired access token, refreshing PROACTIVELY (single-
+  /// flight) when the stored one has already expired.
+  ///
+  /// This is the key fix for the "dashboard intermittently shows no data"
+  /// bug: a screen like the dashboard fires ~12 requests in parallel. With
+  /// a stale token they would ALL 401 at once, and the reactive refresh +
+  /// retry path is racy — requests whose 401 lands after the shared refresh
+  /// future already settled would start a second refresh or fail to retry.
+  /// Checking expiry up-front means the dozen requests funnel through ONE
+  /// refresh BEFORE they're sent, so there's no 401-storm to recover from.
+  ///
+  /// `/Auth/` endpoints skip this — Login carries no token and RefreshToken
+  /// must not recurse.
+  Future<String?> _freshAccessToken(String endpoint) async {
+    final token = await getAccessToken();
+    if (token == null || token.isEmpty) return token;
+    if (endpoint.contains('/Auth/')) return token;
+    if (_isAccessTokenExpired(token)) {
+      debugPrint('Access token expired — proactive refresh before $endpoint');
+      final ok = await _refreshTokenOnce();
+      if (ok) return await getAccessToken();
+    }
+    return token;
+  }
+
   // ✅ 401 xatolikni qayta ishlash va token refresh
   Future<http.Response> _handleResponse(
       http.Response response, String method, String endpoint,
@@ -238,7 +285,7 @@ class HttpService {
   }
 
   Future<http.Response> _performGet(String endpoint) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
 
     debugPrint('=== HTTP GET ===');
     debugPrint('URL: $baseUrl$endpoint');
@@ -267,7 +314,7 @@ class HttpService {
   }
 
   Future<http.Response> _performPost(String endpoint, {Object? body}) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
     final encodedBody = body != null ? jsonEncode(body) : null;
 
     debugPrint('=== HTTP POST ===');
@@ -299,7 +346,7 @@ class HttpService {
   }
 
   Future<http.Response> _performPut(String endpoint, {Object? body}) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
     final encodedBody = body != null ? jsonEncode(body) : null;
 
     debugPrint('=== HTTP PUT ===');
@@ -361,7 +408,7 @@ class HttpService {
   }
 
   Future<http.Response> _performDelete(String endpoint, Object? body) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
 
     final fullUrl = '$baseUrl$endpoint';
     debugPrint('=== HTTP DELETE ===');
@@ -396,7 +443,7 @@ class HttpService {
   }
 
   Future<http.Response> _performPatch(String endpoint, {Object? body}) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
     final encodedBody = body != null ? jsonEncode(body) : null;
 
     debugPrint('=== HTTP PATCH ===');
@@ -423,7 +470,7 @@ class HttpService {
     String? fileFieldName,
     Map<String, String>? fields,
   }) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
     final file = File(filePath);
 
     final request = http.MultipartRequest(
@@ -470,7 +517,7 @@ class HttpService {
   // Fayl yuklab olish (byte array qaytaradi)
   Future<List<int>?> downloadBytes(String endpoint) async {
     try {
-      final token = await getAccessToken();
+      final token = await _freshAccessToken(endpoint);
 
       debugPrint('=== HTTP DOWNLOAD BYTES ===');
       debugPrint('URL: $baseUrl$endpoint');
