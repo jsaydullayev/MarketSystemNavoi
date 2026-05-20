@@ -292,7 +292,9 @@ class _ChipPill extends StatelessWidget {
         child: Text(
           label,
           style: AppTextStyles.bodyMedium().copyWith(
-            color: isActive ? Colors.white : context.colors.textSecondary,
+            color: isActive
+                ? context.colors.onBrand
+                : context.colors.textSecondary,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),

@@ -420,7 +420,9 @@ class _Chip extends StatelessWidget {
               style: AppTextStyles.bodyMedium().copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isActive ? Colors.white : context.colors.text,
+                color: isActive
+                    ? context.colors.onBrand
+                    : context.colors.text,
               ),
             ),
           ],

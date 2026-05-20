@@ -437,7 +437,9 @@ class _Chip extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: active ? Colors.white : context.colors.textSecondary,
+                color: active
+                    ? context.colors.onBrand
+                    : context.colors.textSecondary,
               ),
               const SizedBox(width: 6),
             ],
@@ -446,7 +448,9 @@ class _Chip extends StatelessWidget {
               style: AppTextStyles.bodySmall().copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: active ? Colors.white : context.colors.textSecondary,
+                color: active
+                    ? context.colors.onBrand
+                    : context.colors.textSecondary,
               ),
             ),
           ],

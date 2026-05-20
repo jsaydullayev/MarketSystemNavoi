@@ -475,8 +475,12 @@ class _SalesScreenState extends State<SalesScreen> {
                     Text(
                       s['label'] as String,
                       style: AppTextStyles.labelSmall().copyWith(
+                        // Selected pill bg is `context.colors.text` (flips
+                        // with the theme) — the label must be its inverse
+                        // (`surface`), not a fixed white that disappears on
+                        // the light dark-mode pill.
                         color: isSelected
-                            ? Colors.white
+                            ? context.colors.surface
                             : context.colors.text,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0,
@@ -489,7 +493,7 @@ class _SalesScreenState extends State<SalesScreen> {
                           horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.white.withValues(alpha: 0.18)
+                            ? context.colors.surface.withValues(alpha: 0.18)
                             : context.colors.inputFill,
                         borderRadius:
                             BorderRadius.circular(AppRadius.full),
@@ -498,7 +502,7 @@ class _SalesScreenState extends State<SalesScreen> {
                         '$count',
                         style: AppTextStyles.caption().copyWith(
                           color: isSelected
-                              ? Colors.white
+                              ? context.colors.surface
                               : context.colors.textSecondary,
                           fontSize: 10,
                           letterSpacing: 0,

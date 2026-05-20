@@ -417,7 +417,9 @@ class _PeriodChip extends StatelessWidget {
           style: AppTextStyles.bodySmall().copyWith(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: active ? Colors.white : context.colors.textSecondary,
+            color: active
+                ? context.colors.onBrand
+                : context.colors.textSecondary,
           ),
         ),
       ),
