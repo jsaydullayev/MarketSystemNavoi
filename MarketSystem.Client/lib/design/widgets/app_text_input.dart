@@ -33,6 +33,18 @@ class AppTextInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Resolve fill / text / focus colours against the active theme. The
+    // focus border follows the theme accent: brand orange in light, the
+    // light-blue dark-primary in dark.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final hintColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
+    final fillColor = isDark ? AppColors.darkInputFill : AppColors.inputFill;
+    final textColor = isDark ? AppColors.darkText : AppColors.text;
+    final focusColor =
+        isDark ? AppColors.darkPrimaryLight : AppColors.brand;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -41,7 +53,7 @@ class AppTextInput extends StatelessWidget {
           Text(
             label!.toUpperCase(),
             style: AppTextStyles.caption().copyWith(
-              color: AppColors.textSecondary,
+              color: labelColor,
               letterSpacing: 0.8,
             ),
           ),
@@ -54,19 +66,20 @@ class AppTextInput extends StatelessWidget {
           validator: validator,
           onChanged: onChanged,
           enabled: enabled,
-          style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+          style: AppTextStyles.bodyMedium()
+              .copyWith(fontSize: 15, color: textColor),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.bodyMedium().copyWith(
-              color: AppColors.textMuted,
+              color: hintColor,
               fontSize: 15,
             ),
             prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, size: 20, color: AppColors.textSecondary)
+                ? Icon(prefixIcon, size: 20, color: labelColor)
                 : null,
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: AppColors.inputFill,
+            fillColor: fillColor,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.xl,
               vertical: AppSpacing.lg + 2,
@@ -81,7 +94,7 @@ class AppTextInput extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
-              borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+              borderSide: BorderSide(color: focusColor, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
