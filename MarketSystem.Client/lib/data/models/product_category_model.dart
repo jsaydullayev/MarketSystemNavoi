@@ -5,6 +5,10 @@ class ProductCategoryModel {
   final int id;
   final String name;
   final String? description;
+
+  /// Emoji glyph chosen in the category form. Null for legacy rows created
+  /// before the icon field existed — the UI falls back to a name-based guess.
+  final String? icon;
   final bool isActive;
   final int productCount;
 
@@ -12,6 +16,7 @@ class ProductCategoryModel {
     required this.id,
     required this.name,
     this.description,
+    this.icon,
     required this.isActive,
     required this.productCount,
   });
@@ -22,6 +27,7 @@ class ProductCategoryModel {
       id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
       name: json['name'] ?? '',
       description: json['description'],
+      icon: json['icon'] as String?,
       isActive: json['isActive'] ?? false,
       productCount: json['productCount'] ?? 0,
     );
@@ -33,6 +39,7 @@ class ProductCategoryModel {
       'id': id,
       'name': name,
       'description': description,
+      'icon': icon,
       'isActive': isActive,
       'productCount': productCount,
     };
@@ -43,10 +50,12 @@ class ProductCategoryModel {
 class CreateCategoryRequestModel {
   final String name;
   final String? description;
+  final String? icon;
 
   CreateCategoryRequestModel({
     required this.name,
     this.description,
+    this.icon,
   });
 
   /// Convert to JSON
@@ -54,6 +63,7 @@ class CreateCategoryRequestModel {
     return {
       'name': name,
       if (description != null) 'description': description,
+      if (icon != null) 'icon': icon,
     };
   }
 }
@@ -63,12 +73,14 @@ class UpdateCategoryRequestModel {
   final int id;
   final String name;
   final String? description;
+  final String? icon;
   final bool isActive;
 
   UpdateCategoryRequestModel({
     required this.id,
     required this.name,
     this.description,
+    this.icon,
     required this.isActive,
   });
 
@@ -78,6 +90,7 @@ class UpdateCategoryRequestModel {
       'id': id,
       'name': name,
       if (description != null) 'description': description,
+      if (icon != null) 'icon': icon,
       'isActive': isActive,
     };
   }

@@ -39,8 +39,8 @@ class CategoryCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  // Lightweight emoji picker based on the category name initial.
-  // Matches the demo's tile look (emoji in 40x40 gray square).
+  // Fallback emoji guessed from the category name — used only for legacy
+  // rows that have no saved `icon`. Matches the demo's 40x40 gray tile.
   String _emojiFor(String name) {
     if (name.isEmpty) return '📦';
     final lower = name.toLowerCase();
@@ -58,7 +58,10 @@ class CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = category.isActive;
-    final emoji = _emojiFor(category.name);
+    // Prefer the user-picked icon; fall back to a name guess for legacy rows.
+    final emoji = (category.icon != null && category.icon!.isNotEmpty)
+        ? category.icon!
+        : _emojiFor(category.name);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),

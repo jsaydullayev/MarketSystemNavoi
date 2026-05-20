@@ -153,6 +153,7 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.Id).ValueGeneratedOnAdd();
             b.Property(x => x.Name).IsRequired().HasMaxLength(100);
             b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.Icon).HasMaxLength(32);  // Single emoji glyph (ZWJ sequences fit in 32)
             b.Property(x => x.MarketId).IsRequired();  // ✅ NOT NULL - required
             b.Property(x => x.IsActive).IsRequired();
             b.Property(x => x.CreatedAt).IsRequired();
