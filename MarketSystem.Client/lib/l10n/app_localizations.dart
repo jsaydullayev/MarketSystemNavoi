@@ -2600,6 +2600,78 @@ abstract class AppLocalizations {
   /// **'Yil'**
   String get periodYear;
 
+  /// No description provided for @shiftSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ish smenasi'**
+  String get shiftSection;
+
+  /// No description provided for @shiftStateActive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faol smena'**
+  String get shiftStateActive;
+
+  /// No description provided for @shiftStateBlocked.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklangan'**
+  String get shiftStateBlocked;
+
+  /// No description provided for @shiftStateScheduled.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rejalashtirilgan'**
+  String get shiftStateScheduled;
+
+  /// No description provided for @shiftActivate.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faollashtirish'**
+  String get shiftActivate;
+
+  /// No description provided for @shiftBlock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklash'**
+  String get shiftBlock;
+
+  /// No description provided for @shiftOpen24h.
+  ///
+  /// In uz, this message translates to:
+  /// **'24 soat'**
+  String get shiftOpen24h;
+
+  /// No description provided for @shiftSetWindow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muddat'**
+  String get shiftSetWindow;
+
+  /// No description provided for @shiftUpdated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena yangilandi'**
+  String get shiftUpdated;
+
+  /// No description provided for @shiftActiveNow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ishlay oladi'**
+  String get shiftActiveNow;
+
+  /// No description provided for @shiftInactiveNow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ishlay olmaydi'**
+  String get shiftInactiveNow;
+
+  /// No description provided for @shiftInvalidWindow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tugash vaqti boshlanish vaqtidan keyin bo\'lishi kerak'**
+  String get shiftInvalidWindow;
+
   /// No description provided for @yesterday.
   ///
   /// In uz, this message translates to:

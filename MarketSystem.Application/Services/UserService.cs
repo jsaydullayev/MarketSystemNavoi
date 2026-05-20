@@ -276,6 +276,46 @@ public class UserService : IUserService
         return true;
     }
 
+    public async Task<UserDto?> UpdateShiftAsync(Guid id, UpdateShiftDto request, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
+        if (user is null)
+            return null;
+
+        if (!Enum.TryParse<ShiftStatus>(request.Status, ignoreCase: true, out var status))
+            throw new InvalidOperationException($"Noto'g'ri smena holati: '{request.Status}'");
+
+        if (status == ShiftStatus.Scheduled)
+        {
+            if (request.StartUtc is null || request.EndUtc is null)
+                throw new InvalidOperationException("Rejalashtirilgan smena uchun boshlanish va tugash vaqti kerak.");
+            if (request.EndUtc <= request.StartUtc)
+                throw new InvalidOperationException("Smena tugash vaqti boshlanish vaqtidan keyin bo'lishi kerak.");
+
+            user.ShiftStatus = ShiftStatus.Scheduled;
+            user.ShiftStartUtc = DateTime.SpecifyKind(request.StartUtc.Value, DateTimeKind.Utc);
+            user.ShiftEndUtc = DateTime.SpecifyKind(request.EndUtc.Value, DateTimeKind.Utc);
+        }
+        else
+        {
+            // Active / Blocked clear the window so stale times never linger.
+            user.ShiftStatus = status;
+            user.ShiftStartUtc = null;
+            user.ShiftEndUtc = null;
+        }
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(user);
+    }
+
     private static UserDto MapToDto(User user)
     {
         return new UserDto(
@@ -286,7 +326,11 @@ public class UserService : IUserService
             user.Role.ToString(),
             user.Language.ToString().ToLowerInvariant(),
             user.IsActive,
-            user.MarketId
+            user.MarketId,
+            user.ShiftStatus.ToString(),
+            user.ShiftStartUtc,
+            user.ShiftEndUtc,
+            user.IsShiftActiveNow()
         );
     }
 }

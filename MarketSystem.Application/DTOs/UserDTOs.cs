@@ -11,7 +11,13 @@ public record UserDto(
     [property: JsonPropertyName("role")] string Role,
     [property: JsonPropertyName("language")] string Language,
     [property: JsonPropertyName("isActive")] bool IsActive,
-    [property: JsonPropertyName("marketId")] int? MarketId
+    [property: JsonPropertyName("marketId")] int? MarketId,
+    // Work shift — "Active" / "Blocked" / "Scheduled"; window times are only
+    // meaningful for "Scheduled". IsShiftActive is the computed effective state.
+    [property: JsonPropertyName("shiftStatus")] string ShiftStatus,
+    [property: JsonPropertyName("shiftStartUtc")] DateTime? ShiftStartUtc,
+    [property: JsonPropertyName("shiftEndUtc")] DateTime? ShiftEndUtc,
+    [property: JsonPropertyName("isShiftActive")] bool IsShiftActive
 );
 
 public record CreateUserDto(
@@ -54,6 +60,17 @@ public record UpdateUserDto(
     string Role,
 
     [property: JsonPropertyName("isActive")] bool IsActive
+);
+
+/// <summary>
+/// Admin/Owner request to set a seller's work shift. <see cref="Status"/> is
+/// "Active", "Blocked" or "Scheduled"; the window times are required only
+/// when scheduling.
+/// </summary>
+public record UpdateShiftDto(
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("startUtc")] DateTime? StartUtc,
+    [property: JsonPropertyName("endUtc")] DateTime? EndUtc
 );
 
 public record UpdateProfileDto(

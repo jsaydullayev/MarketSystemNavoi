@@ -1319,6 +1319,43 @@ class AppLocalizationsUz extends AppLocalizations {
   String get periodYear => 'Yil';
 
   @override
+  String get shiftSection => 'Ish smenasi';
+
+  @override
+  String get shiftStateActive => 'Faol smena';
+
+  @override
+  String get shiftStateBlocked => 'Bloklangan';
+
+  @override
+  String get shiftStateScheduled => 'Rejalashtirilgan';
+
+  @override
+  String get shiftActivate => 'Faollashtirish';
+
+  @override
+  String get shiftBlock => 'Bloklash';
+
+  @override
+  String get shiftOpen24h => '24 soat';
+
+  @override
+  String get shiftSetWindow => 'Muddat';
+
+  @override
+  String get shiftUpdated => 'Smena yangilandi';
+
+  @override
+  String get shiftActiveNow => 'Ishlay oladi';
+
+  @override
+  String get shiftInactiveNow => 'Ishlay olmaydi';
+
+  @override
+  String get shiftInvalidWindow =>
+      'Tugash vaqti boshlanish vaqtidan keyin bo\'lishi kerak';
+
+  @override
   String get yesterday => 'Kecha';
 
   @override

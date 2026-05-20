@@ -22,6 +22,27 @@ public class User : BaseEntity, ISoftDelete
     public bool IsActive { get; set; } = true;
     public bool IsDeleted { get; set; } = false;
 
+    // --- Work shift — set by Admin/Owner, enforced at login for Sellers ---
+    public ShiftStatus ShiftStatus { get; set; } = ShiftStatus.Active;
+    public DateTime? ShiftStartUtc { get; set; }
+    public DateTime? ShiftEndUtc { get; set; }
+
+    /// <summary>
+    /// True when the user may currently work: Active always, Scheduled only
+    /// inside its [start, end] window, Blocked never.
+    /// </summary>
+    public bool IsShiftActiveNow()
+        => ShiftStatus switch
+        {
+            ShiftStatus.Active => true,
+            ShiftStatus.Blocked => false,
+            ShiftStatus.Scheduled =>
+                ShiftStartUtc is not null && ShiftEndUtc is not null
+                && DateTime.UtcNow >= ShiftStartUtc.Value
+                && DateTime.UtcNow <= ShiftEndUtc.Value,
+            _ => true,
+        };
+
     // Multi-tenancy
     public int? MarketId { get; set; }
     public Market? Market { get; set; }
