@@ -52,7 +52,25 @@ class HttpService {
 
   String get baseUrl => ApiConstants.baseUrl;
 
-  HttpService();
+  // ── Singleton ───────────────────────────────────────────────
+  // HttpService MUST be a singleton. The DI wiring calls
+  // `setAuthService()` exactly once (di.dart) so the 401 / refresh path
+  // has an AuthService to call. But the data services
+  // (ReportService, CustomerService, DebtService, …) each did
+  // `_httpService = httpService ?? HttpService()` — creating their OWN
+  // fresh instance whose `_authService` was null. Those instances could
+  // never refresh a token: the dashboard's requests would 401 and fail,
+  // while NotificationService (which used the wired instance) succeeded.
+  // That's the "data only appears on the 2nd refresh" bug — the wired
+  // instance refreshed the token as a side effect, so the next load
+  // found a valid token already in storage.
+  //
+  // A factory-singleton means every `HttpService()` call — no matter
+  // which service makes it — returns the one wired instance, with a
+  // shared `_authService` and a shared single-flight `_refreshInFlight`.
+  static final HttpService _instance = HttpService._internal();
+  factory HttpService() => _instance;
+  HttpService._internal();
 
   void setAuthService(AuthService authService) {
     _authService = authService;
