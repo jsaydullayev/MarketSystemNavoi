@@ -27,7 +27,20 @@ class HttpService {
   String? _accessToken;
   AuthService? _authService;
 
-  bool _isRefreshing = false;
+  /// Single-flight token refresh. When the access token expires and a burst
+  /// of requests fire in parallel (e.g. the dashboard's ~12 concurrent
+  /// loads), every one of them gets a 401 at nearly the same instant. They
+  /// must all funnel through ONE refresh and then retry — never race.
+  ///
+  /// The previous implementation used a `bool _isRefreshing` flag: the first
+  /// 401 set it and refreshed, but every other concurrent 401 saw the flag
+  /// already true, skipped the refresh block entirely, and returned its raw
+  /// 401. That's why a parallel dashboard load rendered all-zeros after a
+  /// token expiry — only one request was ever retried.
+  ///
+  /// Holds the in-flight refresh Future; concurrent 401s await the same one.
+  /// Cleared when the refresh settles so a later expiry can refresh again.
+  Future<bool>? _refreshInFlight;
 
   // Broadcast so multiple listeners (auth provider, app shell, login screen)
   // can react. Late events do not need to be replayed — a fresh login attempt
@@ -119,29 +132,46 @@ class HttpService {
       return response;
     }
 
-    // Agar 401 bo'lsa va refresh qilinayotgan bo'lmasa
-    if (response.statusCode == 401 && !_isRefreshing) {
-      _isRefreshing = true;
+    // 401 — the access token expired. Refresh once (shared across every
+    // concurrent 401), then retry THIS request with the fresh token.
+    //
+    // Auth endpoints are excluded: a 401 from Login / RefreshToken / Logout
+    // is a genuine credential failure, not an expiry to transparently paper
+    // over — retrying it would just loop.
+    if (response.statusCode == 401 && !endpoint.contains('/Auth/')) {
+      debugPrint('Access token expired (401 on $endpoint) — refreshing...');
 
-      debugPrint('Access token expired, attempting refresh...');
+      final refreshed = await _refreshTokenOnce();
 
-      // Tokenni refresh qilish
-      final refreshed = await _authService?.refreshToken();
-
-      _isRefreshing = false;
-
-      if (refreshed != null) {
-        debugPrint('Token refreshed successfully, retrying request...');
-
-        // So'rovni yangi token bilan qayta yuborish
+      if (refreshed) {
+        debugPrint('Token refreshed — retrying $method $endpoint');
         return _retryRequest(method, endpoint, body);
-      } else {
-        debugPrint('Token refresh failed - user must login again');
-        return response; // 401 qaytarish
       }
+      debugPrint('Token refresh failed — user must login again');
+      return response; // surface the 401 so the app shell can route to login
     }
 
     return response;
+  }
+
+  /// Refresh the access token, shared single-flight across concurrent 401s.
+  /// The first caller starts the refresh; everyone else awaits the same
+  /// Future. Returns true when the token was renewed.
+  Future<bool> _refreshTokenOnce() {
+    return _refreshInFlight ??= _doRefresh();
+  }
+
+  Future<bool> _doRefresh() async {
+    try {
+      final refreshed = await _authService?.refreshToken();
+      return refreshed != null;
+    } catch (e) {
+      debugPrint('HttpService._doRefresh error: $e');
+      return false;
+    } finally {
+      // Clear so a later (post-batch) expiry can trigger a fresh refresh.
+      _refreshInFlight = null;
+    }
   }
 
   // So'rovni qayta yuborish
