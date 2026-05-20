@@ -136,11 +136,15 @@ class AppTheme {
   /// as an accent (e.g. for destructive secondary highlights).
   static ThemeData get dark {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.darkPrimary,
+      seedColor: AppColors.darkPrimaryLight,
       brightness: Brightness.dark,
     ).copyWith(
-      primary: AppColors.darkPrimary,
-      onPrimary: Colors.white,
+      // Primary = light "sky" blue. Buttons / accents in dark mode read as
+      // light blue on the deep-navy background. onPrimary is the dark navy
+      // so text on a light-blue button stays high-contrast (white would
+      // fail WCAG against #60A5FA).
+      primary: AppColors.darkPrimaryLight,
+      onPrimary: AppColors.darkBg,
       secondary: AppColors.darkPrimaryLight,
       surface: AppColors.darkSurface,
       onSurface: AppColors.darkText,
@@ -166,7 +170,7 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.darkBg,
       textTheme: textTheme,
-      primaryColor: AppColors.darkPrimary,
+      primaryColor: AppColors.darkPrimaryLight,
       dividerColor: AppColors.darkBorder,
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.darkSurface,
@@ -220,8 +224,10 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.darkPrimary,
-          foregroundColor: Colors.white,
+          // Light-blue button, dark-navy label — matches the AppPrimaryButton
+          // dark-mode styling and keeps text contrast above WCAG AA.
+          backgroundColor: AppColors.darkPrimaryLight,
+          foregroundColor: AppColors.darkBg,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl,
@@ -230,7 +236,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
-          textStyle: AppTextStyles.labelLarge().copyWith(color: Colors.white),
+          textStyle:
+              AppTextStyles.labelLarge().copyWith(color: AppColors.darkBg),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
