@@ -701,29 +701,29 @@ public class ReportsController : ControllerBase
         }
     }
 
-    private string GetPaymentTypeText(string? paymentType)
+    private string GetPaymentTypeText(string? paymentType, bool isRu = false)
     {
         return paymentType?.ToLower() switch
         {
-            "cash" => "Naqd",
+            "cash" => isRu ? "Наличные" : "Naqd",
             "terminal" => "Terminal",
             "click" => "Click",
-            "transfer" => "Transfer / Hisob",
-            "qaytarilgan" => "QAYTARILGAN",
-            "refund" => "QAYTARILGAN",
+            "transfer" => isRu ? "Перевод / Счёт" : "Transfer / Hisob",
+            "qaytarilgan" => isRu ? "ВОЗВРАТ" : "QAYTARILGAN",
+            "refund" => isRu ? "ВОЗВРАТ" : "QAYTARILGAN",
             _ => paymentType ?? ""
         };
     }
 
-    private string GetStatusText(string? status)
+    private string GetStatusText(string? status, bool isRu = false)
     {
         return status switch
         {
-            "Draft" => "Qoralama",
-            "Paid" => "To'langan",
-            "Debt" => "Qarzli",
-            "Closed" => "Yopilgan",
-            "Cancelled" => "Bekor qilingan",
+            "Draft" => isRu ? "Черновик" : "Qoralama",
+            "Paid" => isRu ? "Оплачено" : "To'langan",
+            "Debt" => isRu ? "В долг" : "Qarzli",
+            "Closed" => isRu ? "Закрыто" : "Yopilgan",
+            "Cancelled" => isRu ? "Отменено" : "Bekor qilingan",
             _ => status ?? ""
         };
     }
@@ -733,11 +733,14 @@ public class ReportsController : ControllerBase
     [Authorize(Policy = "AllRoles")]
     public async Task<IActionResult> ExportComprehensiveReportToExcel(
         [FromQuery] DateTime? date = null,
+        [FromQuery] string lang = "uz",
         CancellationToken cancellationToken = default)
     {
         try
         {
             _logger.LogInformation("Exporting comprehensive report to Excel. Date: {Date}", date);
+
+            var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
 
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -752,45 +755,45 @@ public class ReportsController : ControllerBase
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             using (var package = new ExcelPackage())
             {
-             var summarySheet = package.Workbook.Worksheets.Add("Kunlik Hisobot");
+             var summarySheet = package.Workbook.Worksheets.Add(isRu ? "Дневной отчёт" : "Kunlik Hisobot");
 
                 // Report title
-                summarySheet.Cells[1, 1].Value = "KUNLIK HISOBOT";
+                summarySheet.Cells[1, 1].Value = isRu ? "ДНЕВНОЙ ОТЧЁТ" : "KUNLIK HISOBOT";
                 summarySheet.Cells[1, 1, 1, 3].Merge = true;
                 summarySheet.Cells[1, 1].Style.Font.Bold = true;
                 summarySheet.Cells[1, 1].Style.Font.Size = 16;
                 summarySheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
 
                 // Report date
-                summarySheet.Cells[2, 1].Value = $"Sana: {reportDate:dd.MM.yyyy}";
+                summarySheet.Cells[2, 1].Value = (isRu ? "Дата: " : "Sana: ") + reportDate.ToString("dd.MM.yyyy");
                 summarySheet.Cells[2, 1, 2, 3].Merge = true;
                 summarySheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
 
                 // Summary statistics
                 int row = 4;
-                summarySheet.Cells[row, 1].Value = "KO'RSATGICH";
-                summarySheet.Cells[row, 2].Value = "QIYMATI";
+                summarySheet.Cells[row, 1].Value = isRu ? "ПОКАЗАТЕЛЬ" : "KO'RSATGICH";
+                summarySheet.Cells[row, 2].Value = isRu ? "ЗНАЧЕНИЕ" : "QIYMATI";
                 summarySheet.Cells[row, 1, row, 2].Style.Font.Bold = true;
                 summarySheet.Cells[row, 1, row, 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
                 summarySheet.Cells[row, 1, row, 2].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Sotuvlar soni";
+                summarySheet.Cells[row, 1].Value = isRu ? "Количество продаж" : "Sotuvlar soni";
                 summarySheet.Cells[row, 2].Value = salesList.Sales.Count;
                 summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Jami savdo (Total)";
+                summarySheet.Cells[row, 1].Value = isRu ? "Общая выручка (Total)" : "Jami savdo (Total)";
                 summarySheet.Cells[row, 2].Value = dailyReport.TotalSales;
                 summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "To'langan (Paid)";
+                summarySheet.Cells[row, 1].Value = isRu ? "Оплачено (Paid)" : "To'langan (Paid)";
                 summarySheet.Cells[row, 2].Value = dailyReport.TotalPaidSales;
                 summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Qarz (Debt)";
+                summarySheet.Cells[row, 1].Value = isRu ? "Долг (Debt)" : "Qarz (Debt)";
                 summarySheet.Cells[row, 2].Value = dailyReport.TotalDebtSales;
                 summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
 
@@ -798,7 +801,7 @@ public class ReportsController : ControllerBase
                 if (dailyReport.PaymentBreakdown != null && dailyReport.PaymentBreakdown.Any())
                 {
                     row += 2;
-                    summarySheet.Cells[row, 1].Value = "TO'LOV TURLARI";
+                    summarySheet.Cells[row, 1].Value = isRu ? "ТИПЫ ОПЛАТЫ" : "TO'LOV TURLARI";
                     summarySheet.Cells[row, 1, row, 2].Merge = true;
                     summarySheet.Cells[row, 1].Style.Font.Bold = true;
                     summarySheet.Cells[row, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
@@ -806,7 +809,7 @@ public class ReportsController : ControllerBase
                     foreach (var payment in dailyReport.PaymentBreakdown)
                     {
                         row++;
-                        summarySheet.Cells[row, 1].Value = GetPaymentTypeText(payment.PaymentType);
+                        summarySheet.Cells[row, 1].Value = GetPaymentTypeText(payment.PaymentType, isRu);
                         summarySheet.Cells[row, 2].Value = payment.Amount;
                         summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
 
@@ -821,14 +824,14 @@ public class ReportsController : ControllerBase
                 if (userRole == "Owner" && dailyReport.Profit.HasValue)
                 {
                     row += 2;
-                    summarySheet.Cells[row, 1].Value = "FOYDA (Profit)";
+                    summarySheet.Cells[row, 1].Value = isRu ? "ПРИБЫЛЬ (Profit)" : "FOYDA (Profit)";
                     summarySheet.Cells[row, 1, row, 2].Merge = true;
                     summarySheet.Cells[row, 1].Style.Font.Bold = true;
                     summarySheet.Cells[row, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
                     summarySheet.Cells[row, 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
 
                     row++;
-                    summarySheet.Cells[row, 1].Value = "Jami foyda";
+                    summarySheet.Cells[row, 1].Value = isRu ? "Общая прибыль" : "Jami foyda";
                     summarySheet.Cells[row, 2].Value = dailyReport.Profit.Value;
                     summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
                     summarySheet.Cells[row, 2].Style.Font.Bold = true;
@@ -838,19 +841,19 @@ public class ReportsController : ControllerBase
                 summarySheet.Column(1).Width = 30;
                 summarySheet.Column(2).Width = 20;
 
-                  var salesSheet = package.Workbook.Worksheets.Add("Sotuvlar Ro'yxati");
+                  var salesSheet = package.Workbook.Worksheets.Add(isRu ? "Список продаж" : "Sotuvlar Ro'yxati");
 
                 salesSheet.Cells[1, 1].Value = "№";
-                salesSheet.Cells[1, 2].Value = "Sana";
-                salesSheet.Cells[1, 3].Value = "Savdo ID";
-                salesSheet.Cells[1, 4].Value = "Sotuvchi";
-                salesSheet.Cells[1, 5].Value = "Mijoz";
-                salesSheet.Cells[1, 6].Value = "Summa";
-                salesSheet.Cells[1, 7].Value = "To'lov turi";
-                salesSheet.Cells[1, 8].Value = "Holat";
+                salesSheet.Cells[1, 2].Value = isRu ? "Дата" : "Sana";
+                salesSheet.Cells[1, 3].Value = isRu ? "ID продажи" : "Savdo ID";
+                salesSheet.Cells[1, 4].Value = isRu ? "Продавец" : "Sotuvchi";
+                salesSheet.Cells[1, 5].Value = isRu ? "Клиент" : "Mijoz";
+                salesSheet.Cells[1, 6].Value = isRu ? "Сумма" : "Summa";
+                salesSheet.Cells[1, 7].Value = isRu ? "Тип оплаты" : "To'lov turi";
+                salesSheet.Cells[1, 8].Value = isRu ? "Статус" : "Holat";
                 if (userRole == "Owner")
                 {
-                    salesSheet.Cells[1, 9].Value = "Foyda";
+                    salesSheet.Cells[1, 9].Value = isRu ? "Прибыль" : "Foyda";
                 }
 
                 // Header styling
@@ -874,11 +877,11 @@ public class ReportsController : ControllerBase
                     salesSheet.Cells[salesRow, 2].Value = FmtTashkent(sale.CreatedAt);
                     salesSheet.Cells[salesRow, 3].Value = sale.Id.ToString();
                     salesSheet.Cells[salesRow, 4].Value = sale.SellerName ?? "";
-                    salesSheet.Cells[salesRow, 5].Value = sale.CustomerName ?? "Mijoz yo'q";
+                    salesSheet.Cells[salesRow, 5].Value = sale.CustomerName ?? (isRu ? "Без клиента" : "Mijoz yo'q");
                     salesSheet.Cells[salesRow, 6].Value = sale.TotalAmount;
                     salesSheet.Cells[salesRow, 6].Style.Numberformat.Format = "#,##0.00";
-                    salesSheet.Cells[salesRow, 7].Value = GetPaymentTypeText(sale.PaymentType);
-                    salesSheet.Cells[salesRow, 8].Value = GetStatusText(sale.Status ?? "");
+                    salesSheet.Cells[salesRow, 7].Value = GetPaymentTypeText(sale.PaymentType, isRu);
+                    salesSheet.Cells[salesRow, 8].Value = GetStatusText(sale.Status ?? "", isRu);
 
                     if (userRole == "Owner")
                     {
@@ -919,7 +922,7 @@ public class ReportsController : ControllerBase
                     salesRow++;
                 }
 
-                salesSheet.Cells[salesRow, 1].Value = "JAMI:";
+                salesSheet.Cells[salesRow, 1].Value = isRu ? "ИТОГО:" : "JAMI:";
                 salesSheet.Cells[salesRow, 1, salesRow, 5].Merge = true;
                 salesSheet.Cells[salesRow, 1].Style.Font.Bold = true;
                 salesSheet.Cells[salesRow, 6].Value = sheetTotal;
@@ -953,22 +956,22 @@ public class ReportsController : ControllerBase
                 }
                 salesSheet.Cells[1, 1, 1, headerCols].AutoFilter = true;
 
-                var productsSheet = package.Workbook.Worksheets.Add("Mahsulotlar Bo'yicha");
-                productsSheet.Cells[1, 1].Value = "MAHSULOTLAR BO'YICHA HISOBOT";
+                var productsSheet = package.Workbook.Worksheets.Add(isRu ? "По товарам" : "Mahsulotlar Bo'yicha");
+                productsSheet.Cells[1, 1].Value = isRu ? "ОТЧЁТ ПО ТОВАРАМ" : "MAHSULOTLAR BO'YICHA HISOBOT";
                 productsSheet.Cells[1, 1, 1, 5].Merge = true;
                 productsSheet.Cells[1, 1].Style.Font.Bold = true;
                 productsSheet.Cells[1, 1].Style.Font.Size = 14;
                 productsSheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
 
-                productsSheet.Cells[2, 1].Value = $"Sana: {reportDate:dd.MM.yyyy}";
+                productsSheet.Cells[2, 1].Value = (isRu ? "Дата: " : "Sana: ") + reportDate.ToString("dd.MM.yyyy");
                 productsSheet.Cells[2, 1, 2, 5].Merge = true;
                 productsSheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
 
                 productsSheet.Cells[4, 1].Value = "№";
-                productsSheet.Cells[4, 2].Value = "Mahsulot nomi";
-                productsSheet.Cells[4, 3].Value = "Miqdor";
-                productsSheet.Cells[4, 4].Value = "Sotuv narxi";
-                productsSheet.Cells[4, 5].Value = "Jami summa";
+                productsSheet.Cells[4, 2].Value = isRu ? "Название товара" : "Mahsulot nomi";
+                productsSheet.Cells[4, 3].Value = isRu ? "Количество" : "Miqdor";
+                productsSheet.Cells[4, 4].Value = isRu ? "Цена продажи" : "Sotuv narxi";
+                productsSheet.Cells[4, 5].Value = isRu ? "Общая сумма" : "Jami summa";
 
                 using (var range = productsSheet.Cells[4, 1, 4, 5])
                 {
@@ -997,7 +1000,7 @@ public class ReportsController : ControllerBase
                     prodRow++;
                 }
 
-                productsSheet.Cells[prodRow, 1].Value = "JAMI:";
+                productsSheet.Cells[prodRow, 1].Value = isRu ? "ИТОГО:" : "JAMI:";
                 productsSheet.Cells[prodRow, 1, prodRow, 4].Merge = true;
                 productsSheet.Cells[prodRow, 1].Style.Font.Bold = true;
                 productsSheet.Cells[prodRow, 5].Value = prodTotal;
@@ -1021,7 +1024,7 @@ public class ReportsController : ControllerBase
 
                 var stream = new MemoryStream(package.GetAsByteArray());
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                var fileName = $"hisobotlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                var fileName = (isRu ? "otchet_" : "hisobot_") + $"{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 
                 _logger.LogInformation("Successfully exported comprehensive report to Excel");
                 return File(stream, contentType, fileName);
