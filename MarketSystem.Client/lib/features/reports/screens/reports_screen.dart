@@ -168,7 +168,10 @@ class _ReportsScreenState extends State<ReportsScreen>
 
     setState(() => _isDownloading = true);
     try {
-      await _downloadService.downloadComprehensiveReport(date: _selectedDate);
+      await _downloadService.downloadComprehensiveReport(
+        date: _selectedDate,
+        lang: Localizations.localeOf(context).languageCode,
+      );
       if (mounted) {
         _showSnack(l10n.reportDownloadSuccess, isError: false);
       }
