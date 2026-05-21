@@ -94,6 +94,11 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.Language).HasDefaultValue(Language.Uzbek).IsRequired();
             // ProfileImage stores base64 encoded image data - use TEXT type for unlimited size
             b.Property(x => x.ProfileImage).HasColumnType("text");
+            // Owner RBAC — explicit permission set as a PostgreSQL text[] array.
+            // Npgsql maps List<string> to text[] natively; default is an empty array.
+            b.Property(x => x.Permissions)
+                .HasColumnType("text[]")
+                .HasDefaultValueSql("'{}'::text[]");
             b.HasQueryFilter(x => !x.IsDeleted);
 
             // Multi-tenancy
