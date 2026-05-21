@@ -579,6 +579,15 @@ try
     app.UseMiddleware<RequestLoggingMiddleware>();
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
 
+    // Standard hardening headers for every response.
+    app.Use(async (ctx, next) =>
+    {
+        ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        ctx.Response.Headers["X-Frame-Options"] = "DENY";
+        ctx.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        await next();
+    });
+
     app.UseStaticFiles();
     // SuperAdmin URL gate — MUST run before UseAuthentication so an
     // unauthenticated probe to the wrong path returns 404 (not 401),
