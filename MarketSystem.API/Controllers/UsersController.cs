@@ -286,4 +286,43 @@ public class UsersController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Owner RBAC — read a user's permission configuration (effective set,
+    /// role defaults and the full catalogue). Owner-only, scoped to the
+    /// caller's own market.
+    /// </summary>
+    [HttpGet("{id}")]
+    [Authorize(Policy = "OwnerOnly")]
+    public async Task<ActionResult<UserPermissionsDto>> GetUserPermissions(Guid id)
+    {
+        var permissions = await _userService.GetUserPermissionsAsync(id);
+        if (permissions is null)
+            return NotFound();
+
+        return Ok(permissions);
+    }
+
+    /// <summary>
+    /// Owner RBAC — overwrite a user's explicit permission set. Send an empty
+    /// list to reset the user to its role default. Owner/SuperAdmin cannot be
+    /// edited. The change takes effect on the user's next login/token refresh.
+    /// </summary>
+    [HttpPut("{id}")]
+    [Authorize(Policy = "OwnerOnly")]
+    public async Task<ActionResult<UserPermissionsDto>> UpdateUserPermissions(Guid id, [FromBody] UpdatePermissionsDto request)
+    {
+        try
+        {
+            var permissions = await _userService.UpdateUserPermissionsAsync(id, request);
+            if (permissions is null)
+                return NotFound();
+
+            return Ok(permissions);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -17,7 +18,32 @@ public record UserDto(
     [property: JsonPropertyName("shiftStatus")] string ShiftStatus,
     [property: JsonPropertyName("shiftStartUtc")] DateTime? ShiftStartUtc,
     [property: JsonPropertyName("shiftEndUtc")] DateTime? ShiftEndUtc,
-    [property: JsonPropertyName("isShiftActive")] bool IsShiftActive
+    [property: JsonPropertyName("isShiftActive")] bool IsShiftActive,
+    // Owner RBAC — the user's effective permission set (full catalogue for
+    // Owner/SuperAdmin). Lets the client gate its UI without a second call.
+    [property: JsonPropertyName("permissions")] IReadOnlyList<string> Permissions
+);
+
+/// <summary>
+/// Owner-facing view of one user's permission configuration. Backs the
+/// permission-matrix screen: <see cref="Catalog"/> renders every toggle,
+/// <see cref="EffectivePermissions"/> marks the ones currently ON, and
+/// <see cref="RoleDefaults"/> powers a "reset to role default" action.
+/// </summary>
+public record UserPermissionsDto(
+    [property: JsonPropertyName("userId")] Guid UserId,
+    [property: JsonPropertyName("role")] string Role,
+    // True once the Owner has saved an explicit set; false while the user
+    // still runs on the role default.
+    [property: JsonPropertyName("isCustomized")] bool IsCustomized,
+    [property: JsonPropertyName("effectivePermissions")] IReadOnlyList<string> EffectivePermissions,
+    [property: JsonPropertyName("roleDefaults")] IReadOnlyList<string> RoleDefaults,
+    [property: JsonPropertyName("catalog")] IReadOnlyList<string> Catalog
+);
+
+/// <summary>Owner request to overwrite a user's explicit permission set.</summary>
+public record UpdatePermissionsDto(
+    [property: JsonPropertyName("permissions")] List<string> Permissions
 );
 
 public record CreateUserDto(

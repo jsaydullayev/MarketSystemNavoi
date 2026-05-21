@@ -347,7 +347,8 @@ public class AuthService : IAuthService
                 languageCode,
                 accessToken.AccessToken,
                 refreshToken,
-                DateTime.UtcNow.AddMinutes(_jwtSetting.AccessTokenExpireMinutes)
+                DateTime.UtcNow.AddMinutes(_jwtSetting.AccessTokenExpireMinutes),
+                user.GetEffectivePermissions()
             );
         }
         catch (Exception ex)
