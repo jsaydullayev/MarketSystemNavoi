@@ -297,12 +297,14 @@ class DashboardService {
     );
     final int pendingDebtsCount = pendingDebts.length;
 
-    // Of those pending debts, how many are older than 14 days. Matches the
-    // overdue heuristic in NotificationService so the dashboard preview
-    // and the bell badge / notifications screen stay in agreement.
+    // Of those pending debts, how many are overdue. Prefer the explicit
+    // dueDate from the backend (set once the AddDueDateToDebt migration ran);
+    // fall back to the 14-day heuristic for legacy rows that have no dueDate.
     final overdueCutoff = now.subtract(const Duration(days: 14));
     final int overdueDebtsCount = pendingDebts.where((d) {
       if (d is! Map) return false;
+      final dueDate = _parseDate(d['dueDate']);
+      if (dueDate != null) return now.isAfter(dueDate);
       final created = _parseDate(d['createdAt']);
       if (created == null) return false;
       return created.isBefore(overdueCutoff);

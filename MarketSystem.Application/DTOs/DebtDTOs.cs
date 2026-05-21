@@ -11,6 +11,7 @@ public record DebtDto(
     [property: JsonPropertyName("remainingDebt")] decimal RemainingDebt,
     [property: JsonPropertyName("status")] string Status,
     [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
+    [property: JsonPropertyName("dueDate")] DateTime? DueDate,
     [property: JsonPropertyName("saleItems")] List<SaleItemDto>? SaleItems
 );
 

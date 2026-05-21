@@ -227,6 +227,7 @@ public class DebtService : IDebtService
             debt.RemainingDebt,
             debt.Status.ToString(),
             debt.Sale?.CreatedAt ?? DateTime.MinValue,
+            debt.DueDate,
             saleItems
         );
     }

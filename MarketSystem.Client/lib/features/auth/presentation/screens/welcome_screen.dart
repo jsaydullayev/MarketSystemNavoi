@@ -328,7 +328,7 @@ class _LanguageChip extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text('Tilni tanlang', style: AppTextStyles.titleMedium()),
+              Text(AppLocalizations.of(context)!.selectLanguage, style: AppTextStyles.titleMedium()),
               const SizedBox(height: AppSpacing.lg),
               for (final option in _options)
                 ListTile(

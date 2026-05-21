@@ -9,10 +9,9 @@
 //   3. /api/sales/debtors                       — customers with open debts,
 //                                                 oldest-debt timestamp included
 //
-// "Overdue payments" don't have a server-side dueDate yet (the Debt entity
-// has CreatedAt + Status but no dueDate column). We approximate by treating
-// debts older than [_overdueAfterDays] as due. When a real DueDate field
-// lands, swap [_isOverdue] to read it.
+// "Overdue payments" use `dueDate` from the backend when present. When the
+// field is null (older debts created before the migration), the service falls
+// back to treating debts older than [_overdueAfterDays] days as overdue.
 //
 // [loadUnreadCount] returns just the total for the bell-badge red dot.
 // [loadAlerts] returns the full per-item feed for the notifications screen.
@@ -114,12 +113,9 @@ class NotificationService {
 
   final HttpService _http;
 
-  // Tuning knobs (kept local so they're easy to find).
-  //
-  // [_overdueAfterDays] — how old an open debt has to be before we promote
-  // it from "recent" to "overdue". 14 days = a fortnight, matches the
-  // typical informal credit term in Uzbek bazaars. Lower it to be more
-  // aggressive; raise it once the backend ships a per-debt DueDate.
+  // [_overdueAfterDays] — fallback heuristic used only for legacy debts that
+  // have no dueDate from the backend (created before the AddDueDateToDebt
+  // migration). New debts use dueDate directly.
   //
   // [_recentWindowDays] — recent-debt window. We don't want to show every
   // debt the shop has ever taken; just the freshest ones the owner might
@@ -230,11 +226,16 @@ class NotificationService {
       if (remaining <= 0) continue;
 
       final created = _parseDate(d['createdAt']);
+      final dueDate = _parseDate(d['dueDate']);
       final customerName = (d['customerName'] ?? '').toString().trim();
       final ageDays =
           created == null ? 0 : now.difference(created).inDays;
 
-      final isOverdue = ageDays >= _overdueAfterDays;
+      // Prefer the explicit dueDate from the backend; fall back to the
+      // 14-day heuristic for legacy debts that predate the migration.
+      final isOverdue = dueDate != null
+          ? now.isAfter(dueDate)
+          : ageDays >= _overdueAfterDays;
       items.add(AlertItem(
         category: isOverdue
             ? AlertCategory.overduePayment
