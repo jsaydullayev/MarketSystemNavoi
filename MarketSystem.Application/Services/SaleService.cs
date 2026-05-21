@@ -1462,7 +1462,7 @@ public partial class SaleService : ISaleService
                     si.IsExternal ? si.ExternalCostPrice : si.CostPrice,
                     si.SalePrice,
                     si.TotalPrice,
-                    si.Profit,
+                    (si.SalePrice - (si.IsExternal ? si.ExternalCostPrice : si.CostPrice)) * si.Quantity,
                     unit,
                     si.Comment,
                     si.IsExternal
@@ -1624,7 +1624,7 @@ public partial class SaleService : ISaleService
                 saleItem.IsExternal ? saleItem.ExternalCostPrice : saleItem.CostPrice,
                 saleItem.SalePrice,
                 saleItem.TotalPrice,
-                saleItem.Profit,
+                (saleItem.SalePrice - (saleItem.IsExternal ? saleItem.ExternalCostPrice : saleItem.CostPrice)) * saleItem.Quantity,
                 unit,
                 saleItem.Comment,
                 saleItem.IsExternal
@@ -1803,7 +1803,7 @@ public partial class SaleService : ISaleService
                     saleItem.IsExternal ? saleItem.ExternalCostPrice : saleItem.CostPrice,
                     saleItem.SalePrice,
                     saleItem.TotalPrice,
-                    saleItem.Profit,
+                    (saleItem.SalePrice - (saleItem.IsExternal ? saleItem.ExternalCostPrice : saleItem.CostPrice)) * saleItem.Quantity,
                     unit,
                     saleItem.Comment,
                     saleItem.IsExternal
