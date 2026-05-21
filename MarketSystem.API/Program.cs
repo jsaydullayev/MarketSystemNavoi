@@ -642,11 +642,14 @@ try
 
     app.MapHub<MarketSystem.API.Hubs.SalesHub>("/hubs/sales");
 
-    if (app.Environment.IsDevelopment())
+    // Seed endpoint: requires both IsDevelopment() AND SEED_ENABLED=true so it
+    // can never fire in production even if the environment var is misconfigured.
+    if (app.Environment.IsDevelopment() &&
+        Environment.GetEnvironmentVariable("SEED_ENABLED") == "true")
     {
         // Dev-only seeder. Reads credentials from env vars; refuses to run otherwise.
         // Required env:
-        //   SEED_SUPERADMIN_PASSWORD, SEED_OWNER_PASSWORD
+        //   SEED_ENABLED=true, SEED_SUPERADMIN_PASSWORD, SEED_OWNER_PASSWORD
         // Optional: SEED_ADMIN_PASSWORD, SEED_SELLER_PASSWORD
         app.MapGet("/seed", async (IConfiguration config, IServiceProvider services) =>
         {
