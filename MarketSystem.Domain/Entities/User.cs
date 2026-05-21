@@ -1,4 +1,5 @@
 using MarketSystem.Domain.Common;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Enums;
 
 namespace MarketSystem.Domain.Entities;
@@ -42,6 +43,37 @@ public class User : BaseEntity, ISoftDelete
                 && DateTime.UtcNow <= ShiftEndUtc.Value,
             _ => true,
         };
+
+    // --- Owner RBAC — fine-grained permissions ---
+    /// <summary>
+    /// Explicit per-user permission set, customised by the Owner. Stored as a
+    /// PostgreSQL <c>text[]</c>. An EMPTY list means "not customised" — the
+    /// user then falls back to <see cref="PermissionDefaults"/> for its role,
+    /// so existing rows need no data migration. Ignored for Owner/SuperAdmin.
+    /// </summary>
+    public List<string> Permissions { get; set; } = new();
+
+    /// <summary>
+    /// The permissions actually in force for this user: the full catalogue for
+    /// Owner/SuperAdmin, the explicit set when customised, otherwise the role
+    /// default.
+    /// </summary>
+    public IReadOnlyList<string> GetEffectivePermissions()
+    {
+        if (Role is Role.Owner or Role.SuperAdmin)
+            return PermissionKeys.All;
+        return Permissions.Count > 0 ? Permissions : PermissionDefaults.ForRole(Role);
+    }
+
+    /// <summary>True when the user is allowed the given permission key. Owner
+    /// and SuperAdmin always pass; everyone else is checked against their
+    /// effective set.</summary>
+    public bool HasPermission(string key)
+    {
+        if (Role is Role.Owner or Role.SuperAdmin)
+            return true;
+        return GetEffectivePermissions().Contains(key);
+    }
 
     // Multi-tenancy
     public int? MarketId { get; set; }
