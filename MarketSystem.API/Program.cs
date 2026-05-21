@@ -10,6 +10,7 @@ using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using MarketSystem.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -218,6 +219,12 @@ try
         options.AddPolicy("AllRoles", policy =>
             policy.RequireRole("Owner", "Admin", "Seller"));
     });
+
+    // Owner RBAC — dynamic "perm:<key>" policies behind [RequirePermission(...)].
+    // The custom provider synthesises a PermissionRequirement for those names
+    // and delegates every other policy name to the default provider.
+    builder.Services.AddSingleton<IAuthorizationPolicyProvider, MarketSystem.API.Authorization.PermissionPolicyProvider>();
+    builder.Services.AddScoped<IAuthorizationHandler, MarketSystem.API.Authorization.PermissionAuthorizationHandler>();
 
     // Rate limiting on authentication endpoints. We use a SLIDING window (6 segments
     // per minute) instead of fixed-window so a client cannot burst 2x the limit by

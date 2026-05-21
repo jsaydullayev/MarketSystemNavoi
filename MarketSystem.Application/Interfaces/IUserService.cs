@@ -16,4 +16,8 @@ public interface IUserService
     Task<bool> DeactivateUserAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ActivateUserAsync(Guid id, CancellationToken cancellationToken = default);
     Task<UserDto?> UpdateShiftAsync(Guid id, UpdateShiftDto request, CancellationToken cancellationToken = default);
+
+    // Owner RBAC — per-user permission configuration (Owner-only).
+    Task<UserPermissionsDto?> GetUserPermissionsAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<UserPermissionsDto?> UpdateUserPermissionsAsync(Guid id, UpdatePermissionsDto request, CancellationToken cancellationToken = default);
 }

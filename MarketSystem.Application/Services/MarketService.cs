@@ -161,7 +161,8 @@ public class MarketService : IMarketService
             owner.ShiftStatus.ToString(),
             owner.ShiftStartUtc,
             owner.ShiftEndUtc,
-            owner.IsShiftActiveNow()
+            owner.IsShiftActiveNow(),
+            owner.GetEffectivePermissions()
         );
 
         return new RegisterMarketResponse(marketDto, ownerDto);

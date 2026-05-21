@@ -1,5 +1,6 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
@@ -316,6 +317,69 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
+    /// <summary>
+    /// Owner-only: read a user's permission configuration for the
+    /// permission-matrix screen. Scoped to the caller's market.
+    /// </summary>
+    public async Task<UserPermissionsDto?> GetUserPermissionsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
+        return user is null ? null : BuildPermissionsDto(user);
+    }
+
+    /// <summary>
+    /// Owner-only: overwrite a user's explicit permission set. An empty list
+    /// resets the user to its role default. Owner/SuperAdmin are not editable.
+    /// The change takes effect on the user's next login or token refresh.
+    /// </summary>
+    public async Task<UserPermissionsDto?> UpdateUserPermissionsAsync(Guid id, UpdatePermissionsDto request, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
+        if (user is null)
+            return null;
+
+        // Owner/SuperAdmin always have full access — their set is not configurable.
+        if (user.Role is Role.Owner or Role.SuperAdmin)
+            throw new InvalidOperationException("Owner va SuperAdmin ruxsatlari sozlanmaydi.");
+
+        var requested = request.Permissions ?? new List<string>();
+
+        // Reject unknown keys so a typo or tampered payload can't persist junk.
+        var invalid = requested.Where(k => !PermissionKeys.IsValid(k)).Distinct().ToList();
+        if (invalid.Count > 0)
+            throw new InvalidOperationException($"Noma'lum ruxsat kaliti: {string.Join(", ", invalid)}");
+
+        // Persist a deduplicated, catalogue-ordered set. An empty result means
+        // "not customised" — the user then falls back to its role default.
+        user.Permissions = PermissionKeys.All.Where(requested.Contains).ToList();
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return BuildPermissionsDto(user);
+    }
+
+    private static UserPermissionsDto BuildPermissionsDto(User user) => new(
+        user.Id,
+        user.Role.ToString(),
+        user.Permissions.Count > 0,
+        user.GetEffectivePermissions(),
+        PermissionDefaults.ForRole(user.Role),
+        PermissionKeys.All
+    );
+
     private static UserDto MapToDto(User user)
     {
         return new UserDto(
@@ -330,7 +394,8 @@ public class UserService : IUserService
             user.ShiftStatus.ToString(),
             user.ShiftStartUtc,
             user.ShiftEndUtc,
-            user.IsShiftActiveNow()
+            user.IsShiftActiveNow(),
+            user.GetEffectivePermissions()
         );
     }
 }

@@ -2,6 +2,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Application.Settings;
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -32,6 +33,18 @@ public class JwtService(IConfiguration configuration, ILogger<JwtService> logger
         if (user.MarketId.HasValue)
         {
             claims.Add(new Claim("MarketId", user.MarketId.Value.ToString()));
+        }
+
+        // Owner RBAC — embed the effective permission set as "perm" claims so
+        // [RequirePermission] can authorize without a DB round-trip. Owner and
+        // SuperAdmin bypass permission checks entirely, so their (full) set is
+        // not embedded — this keeps their tokens small.
+        if (user.Role is not (Role.Owner or Role.SuperAdmin))
+        {
+            foreach (var permission in user.GetEffectivePermissions())
+            {
+                claims.Add(new Claim("perm", permission));
+            }
         }
 
         claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
