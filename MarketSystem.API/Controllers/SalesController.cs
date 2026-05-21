@@ -336,6 +336,8 @@ public class SalesController : ControllerBase
             var sales = await _saleService.GetAllSalesAsync();
             var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
             var orderedSales = sales.OrderByDescending(s => s.CreatedAt);
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var canSeeCost = role is "Owner" or "Admin";
 
             object exportData = isRu
                 ? orderedSales.SelectMany(sale => sale.Items.Select(item => new
@@ -347,10 +349,10 @@ public class SalesController : ControllerBase
                     Товар = item.ProductName,
                     Количество = FormatDecimal(item.Quantity),
                     Ед_изм = item.Unit,
-                    Цена_закупки = FormatDecimal(item.CostPrice),
+                    Цена_закупки = canSeeCost ? FormatDecimal(item.CostPrice) : "—",
                     Цена_продажи = FormatDecimal(item.SalePrice),
                     Сумма = FormatDecimal(item.TotalPrice),
-                    Прибыль = FormatDecimal(item.Profit)
+                    Прибыль = canSeeCost ? FormatDecimal(item.Profit) : "—"
                 })).Cast<object>()
                 : orderedSales.SelectMany(sale => sale.Items.Select(item => new
                 {
@@ -361,10 +363,10 @@ public class SalesController : ControllerBase
                     Tovar_nomi = item.ProductName,
                     Miqdor = FormatDecimal(item.Quantity),
                     Birlik = item.Unit,
-                    Harid_narxi = FormatDecimal(item.CostPrice),
+                    Harid_narxi = canSeeCost ? FormatDecimal(item.CostPrice) : "—",
                     Sotish_narxi = FormatDecimal(item.SalePrice),
                     Jami_summa = FormatDecimal(item.TotalPrice),
-                    Foyda = FormatDecimal(item.Profit)
+                    Foyda = canSeeCost ? FormatDecimal(item.Profit) : "—"
                 })).Cast<object>();
 
             var sheetName = isRu ? "Продажи" : "Sotuvlar";
