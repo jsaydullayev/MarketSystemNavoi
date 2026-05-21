@@ -831,5 +831,72 @@
   "privacyContactTitle": "Aloqa ma'lumotlari",
   "privacyContactPrompt": "Ushbu Maxfiylik Siyosati yoki ma'lumotlaringiz haqida savollaringiz bo'lsa, biz bilan bog'laning:",
   "emailLabel": "Email: ",
-  "noAccount": "Akkauntingiz yo'qmi? "
+  "noAccount": "Akkauntingiz yo'qmi? ",
+
+  "loginLabel": "Login",
+  "loginHint": "Loginni kiriting",
+  "passwordHint": "Parolni kiriting",
+  "loginButton": "Kirish",
+  "loginAction": "Tizimga kirish",
+  "loginFormSubtitle": "Login va parolingizni kiriting",
+  "appTagline": "Kichik do'konlar uchun savdo tizimi",
+  "welcomeSubtitle": "Kichik do'konlar uchun savdo va hisob tizimi",
+  "registerShop": "Yangi do'kon — ro'yxatdan o'tish",
+  "agreePrefix": "Davom etish orqali ",
+  "agreeSuffix": "ga rozisiz",
+  "rememberMe": "Eslab qol",
+  "forgotPassword": "Parolni unutdingizmi?",
+
+  "dateTimeLabel": "Sana / vaqt",
+  "statusLabel": "Status",
+  "externalTag": "tashqi",
+  "printAction": "Chop etish",
+  "sendSms": "SMS yuborish",
+  "comingSoon": "Tez orada...",
+  "returnWarning": "Qaytarish Owner'ga xabar yuboradi va stokga qaytariladi",
+  "whichProductReturning": "QAYSI MAHSULOT QAYTARILYAPTI?",
+  "soldQtyFormat": "Sotildi: {qty} × {price}",
+  "@soldQtyFormat": {
+    "placeholders": {
+      "qty": { "type": "Object" },
+      "price": { "type": "String" }
+    }
+  },
+  "reasonLabel": "SABAB",
+  "returnReasonBad": "Sifatsiz",
+  "returnReasonExpired": "Muddat o'tgan",
+  "returnReasonDisliked": "Yoqmadi",
+  "returnReasonOther": "Boshqa",
+  "additionalCommentHint": "Qo'shimcha izoh (ixtiyoriy)",
+  "returnMethodLabel": "QAYTARISH USULI",
+  "cashReturn": "Naqd qaytarish",
+  "toCustomerHere": "Mijozga shu yerda",
+  "toBalance": "Balansga",
+  "forNextSale": "Keyingi sotuvga",
+  "toReturnLabel": "QAYTARILADI",
+  "confirmAndReturn": "Tasdiqlash va qaytarish",
+  "orDivider": "YOKI",
+  "createNewShop": "Yangi do'kon yarating",
+  "statProducts": "Mahsulotlar",
+  "statSales": "Sotuvlar",
+  "statCustomers": "Mijozlar",
+  "statActiveTypes": "Faol turlari",
+  "statTotalReceipts": "Jami chek",
+  "statActiveCustomers": "Faol mijozlar",
+  "statTotalUZS": "UZS jami",
+  "paymentCash": "Naqd",
+  "paymentRefund": "Qaytarilgan",
+  "forgotPasswordContactAdmin": "Parolni tiklash uchun administrator bilan bog'laning.",
+  "loginFailed": "Login yoki parol noto'g'ri.",
+  "rateLimited": "Juda ko'p urinish. Iltimos, biroz kutib qayta urinib ko'ring.",
+  "loginGenericError": "Xatolik yuz berdi.",
+  "shopBlocked": "Do'kon bloklangan",
+  "shopBlockedBody": "Sizning do'koningiz administrator tomonidan bloklangan. Iltimos, administrator bilan bog'laning.",
+  "blockedAtLabel": "Bloklangan: {time}",
+  "@blockedAtLabel": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "dismiss": "Tushundim"
 }

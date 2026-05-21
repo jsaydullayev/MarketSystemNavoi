@@ -2447,4 +2447,175 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noAccount => 'Нет аккаунта? ';
+
+  @override
+  String get loginLabel => 'Логин';
+
+  @override
+  String get loginHint => 'Введите логин';
+
+  @override
+  String get passwordHint => 'Введите пароль';
+
+  @override
+  String get loginButton => 'Войти';
+
+  @override
+  String get loginAction => 'Войти в систему';
+
+  @override
+  String get loginFormSubtitle => 'Введите ваш логин и пароль';
+
+  @override
+  String get appTagline => 'Торговая система для малого бизнеса';
+
+  @override
+  String get welcomeSubtitle => 'Система продаж и учёта для малых магазинов';
+
+  @override
+  String get registerShop => 'Новый магазин — регистрация';
+
+  @override
+  String get agreePrefix => 'Продолжая, вы соглашаетесь с ';
+
+  @override
+  String get agreeSuffix => '';
+
+  @override
+  String get rememberMe => 'Запомнить';
+
+  @override
+  String get forgotPassword => 'Забыли пароль?';
+
+  @override
+  String get dateTimeLabel => 'Дата / время';
+
+  @override
+  String get statusLabel => 'Статус';
+
+  @override
+  String get externalTag => 'внешний';
+
+  @override
+  String get printAction => 'Распечатать';
+
+  @override
+  String get sendSms => 'Отправить SMS';
+
+  @override
+  String get comingSoon => 'Скоро...';
+
+  @override
+  String get returnWarning =>
+      'Возврат уведомит владельца и вернёт товар на склад';
+
+  @override
+  String get whichProductReturning => 'КАКОЙ ТОВАР ВОЗВРАЩАЕТСЯ?';
+
+  @override
+  String soldQtyFormat(Object qty, String price) {
+    return 'Продано: $qty × $price';
+  }
+
+  @override
+  String get reasonLabel => 'ПРИЧИНА';
+
+  @override
+  String get returnReasonBad => 'Бракованный';
+
+  @override
+  String get returnReasonExpired => 'Просроченный';
+
+  @override
+  String get returnReasonDisliked => 'Не понравился';
+
+  @override
+  String get returnReasonOther => 'Другое';
+
+  @override
+  String get additionalCommentHint =>
+      'Дополнительный комментарий (необязательно)';
+
+  @override
+  String get returnMethodLabel => 'МЕТОД ВОЗВРАТА';
+
+  @override
+  String get cashReturn => 'Возврат наличными';
+
+  @override
+  String get toCustomerHere => 'Клиенту на месте';
+
+  @override
+  String get toBalance => 'На баланс';
+
+  @override
+  String get forNextSale => 'В счёт следующей покупки';
+
+  @override
+  String get toReturnLabel => 'ВОЗВРАЩАЕТСЯ';
+
+  @override
+  String get confirmAndReturn => 'Подтвердить и вернуть';
+
+  @override
+  String get orDivider => 'ИЛИ';
+
+  @override
+  String get createNewShop => 'Создать новый магазин';
+
+  @override
+  String get statProducts => 'Товары';
+
+  @override
+  String get statSales => 'Продажи';
+
+  @override
+  String get statCustomers => 'Клиенты';
+
+  @override
+  String get statActiveTypes => 'Активных видов';
+
+  @override
+  String get statTotalReceipts => 'Всего чеков';
+
+  @override
+  String get statActiveCustomers => 'Активных клиентов';
+
+  @override
+  String get statTotalUZS => 'Итого UZS';
+
+  @override
+  String get paymentCash => 'Наличные';
+
+  @override
+  String get paymentRefund => 'Возврат';
+
+  @override
+  String get forgotPasswordContactAdmin =>
+      'Для восстановления пароля обратитесь к администратору.';
+
+  @override
+  String get loginFailed => 'Неверный логин или пароль.';
+
+  @override
+  String get rateLimited =>
+      'Слишком много попыток. Пожалуйста, подождите и попробуйте снова.';
+
+  @override
+  String get loginGenericError => 'Произошла ошибка.';
+
+  @override
+  String get shopBlocked => 'Магазин заблокирован';
+
+  @override
+  String get shopBlockedBody =>
+      'Ваш магазин заблокирован администратором. Пожалуйста, свяжитесь с администратором.';
+
+  @override
+  String blockedAtLabel(String time) {
+    return 'Заблокирован: $time';
+  }
+
+  @override
+  String get dismiss => 'Понятно';
 }

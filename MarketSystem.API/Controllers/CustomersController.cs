@@ -123,27 +123,38 @@ public class CustomersController : ControllerBase
     /// helper handles both files on the Flutter side.
     /// </summary>
     [HttpGet("export")]
-    public async Task<IActionResult> ExportCustomersToExcel(CancellationToken ct = default)
+    public async Task<IActionResult> ExportCustomersToExcel(
+        [FromQuery] string lang = "uz",
+        CancellationToken ct = default)
     {
         var customers = await _customerService.GetAllCustomersAsync(ct);
+        var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
 
-        // Headers are intentionally in Uzbek to match the Products export
-        // and the spreadsheet's audience (small-shop owners, not analysts).
-        var exportData = customers.Select(c => new
-        {
-            ID = c.Id.ToString(),
-            Ism = c.FullName ?? "",
-            Telefon = c.Phone,
-            Jami_qarz = c.TotalDebt,
-            Izoh = c.Comment ?? ""
-        });
+        object exportData = isRu
+            ? customers.Select(c => new
+            {
+                ID = c.Id.ToString(),
+                ФИО = c.FullName ?? "",
+                Телефон = c.Phone,
+                Общий_долг = c.TotalDebt,
+                Примечание = c.Comment ?? ""
+            }).Cast<object>()
+            : customers.Select(c => new
+            {
+                ID = c.Id.ToString(),
+                Ism = c.FullName ?? "",
+                Telefon = c.Phone,
+                Jami_qarz = c.TotalDebt,
+                Izoh = c.Comment ?? ""
+            }).Cast<object>();
 
-        var fileContent = _excelService.GenerateExcel(exportData, "Mijozlar");
+        var sheetName = isRu ? "Клиенты" : "Mijozlar";
+        var fileContent = _excelService.GenerateExcel((dynamic)exportData, sheetName);
 
         return File(
             fileContent,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"Mijozlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
         );
     }
 }

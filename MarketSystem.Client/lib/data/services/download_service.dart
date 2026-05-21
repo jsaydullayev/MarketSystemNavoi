@@ -72,20 +72,20 @@ class DownloadService {
   }
 
   /// Sotuvlarni Excel formatida yuklab olish
-  Future<void> downloadSales({DateTime? startDate, DateTime? endDate}) async {
+  Future<void> downloadSales({
+    DateTime? startDate,
+    DateTime? endDate,
+    String lang = 'uz',
+  }) async {
     try {
-      String url = '/Reports/sales/export';
+      String url = '/Reports/sales/export?lang=$lang';
 
       // Qo'shimcha parametrlarni qo'shish
-      if (startDate != null || endDate != null) {
-        url += '?';
-        if (startDate != null) {
-          url += 'startDate=${_formatDateForQuery(startDate)}';
-          if (endDate != null) url += '&';
-        }
-        if (endDate != null) {
-          url += 'endDate=${_formatDateForQuery(endDate)}';
-        }
+      if (startDate != null) {
+        url += '&startDate=${_formatDateForQuery(startDate)}';
+      }
+      if (endDate != null) {
+        url += '&endDate=${_formatDateForQuery(endDate)}';
       }
 
       final response = await _httpService.get(url);
@@ -140,10 +140,10 @@ class DownloadService {
   /// Backend endpoint: GET /api/Customers/ExportCustomersToExcel/export
   /// (added 2026-05-18 — mirrors /api/Products/.../export so the same
   /// download flow handles both files).
-  Future<void> downloadCustomers() async {
+  Future<void> downloadCustomers({String lang = 'uz'}) async {
     try {
-      final response =
-          await _httpService.get('/Customers/ExportCustomersToExcel/export');
+      final response = await _httpService
+          .get('/Customers/ExportCustomersToExcel/export?lang=$lang');
 
       if (response.statusCode == 200) {
         final filename =

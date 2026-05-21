@@ -4,6 +4,7 @@
 
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -75,6 +76,7 @@ class WelcomeScreen extends StatelessWidget {
 
   /// Brand: existing orangeLogo.png asset (120x120) + "Strotech" title + subtitle.
   Widget _buildBrandSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -96,7 +98,7 @@ class WelcomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         Text(
-          "Kichik do'konlar uchun savdo va hisob tizimi",
+          l10n.welcomeSubtitle,
           textAlign: TextAlign.center,
           style: AppTextStyles.bodyMedium().copyWith(
             color: context.colors.textSecondary,
@@ -106,17 +108,18 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  /// CTA buttons: "Tizimga kirish" (primary) + "Yangi do'kon" (secondary).
+  /// CTA buttons.
   Widget _buildActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         AppPrimaryButton(
-          label: 'Tizimga kirish',
+          label: l10n.loginAction,
           onPressed: () => _onLoginPressed(context),
         ),
         const SizedBox(height: AppSpacing.lg),
         AppSecondaryButton(
-          label: "Yangi do'kon — ro'yxatdan o'tish",
+          label: l10n.registerShop,
           onPressed: () => Navigator.of(context).pushNamed(AppRoutes.register),
         ),
       ],
@@ -125,6 +128,7 @@ class WelcomeScreen extends StatelessWidget {
 
   /// Footer caption with Privacy Policy link.
   Widget _buildPrivacyCaption(BuildContext context, bool isDark) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.lg),
       child: GestureDetector(
@@ -136,15 +140,15 @@ class WelcomeScreen extends StatelessWidget {
               color: context.colors.textMuted,
             ),
             children: [
-              const TextSpan(text: 'Davom etish orqali '),
+              TextSpan(text: l10n.agreePrefix),
               TextSpan(
-                text: 'Maxfiylik siyosati',
+                text: l10n.privacyPolicyTitle,
                 style: AppTextStyles.caption().copyWith(
                   color: context.colors.brand,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const TextSpan(text: 'ga rozisiz'),
+              TextSpan(text: l10n.agreeSuffix),
             ],
           ),
         ),
@@ -188,7 +192,7 @@ class WelcomeScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Maxfiylik siyosati',
+                      AppLocalizations.of(context)!.privacyPolicyTitle,
                       style: AppTextStyles.titleMedium().copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,

@@ -98,12 +98,14 @@ class _SalesScreenState extends State<SalesScreen> {
     setState(() => _isExporting = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final lang = Localizations.localeOf(context).languageCode;
       final salesService = SalesService(authProvider: authProvider);
-      final bytes = await salesService.downloadSalesExcel();
+      final bytes = await salesService.downloadSalesExcel(lang: lang);
 
       if (bytes != null && bytes.isNotEmpty) {
+        final fileName = lang == 'ru' ? 'Prodazhi.xlsx' : 'Sotuvlar.xlsx';
         final success = await core_file_helper.FileHelper.saveAndOpenExcel(
-            bytes, 'Sotuvlar.xlsx');
+            bytes, fileName);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

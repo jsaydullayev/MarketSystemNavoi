@@ -28,22 +28,6 @@ import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/privacy/screens/privacy_screen.dart';
 import '../../features/superadmin/presentation/superadmin_console_screen.dart';
 
-/// Public routes that should NOT trigger any auto-navigation or auth redirects
-/// These routes are accessible without authentication and should never redirect
-@Deprecated('Use PublicRoutes.isPublic() instead')
-const Set<String> publicRoutesExemptFromRedirect = {
-  AppRoutes.privacy,
-  AppRoutes.welcome,
-  AppRoutes.login,
-  AppRoutes.register,
-};
-
-/// Check if a route should be exempt from any auto-redirect logic
-@Deprecated('Use PublicRoutes.isPublic() instead')
-bool isRouteExemptFromRedirect(String routeName) {
-  return publicRoutesExemptFromRedirect.contains(routeName);
-}
-
 /// Generate route
 Route<dynamic> generateRoute(RouteSettings settings) {
   final routeName = settings.name ?? '';

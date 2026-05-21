@@ -188,7 +188,9 @@ class GreetingCard extends StatelessWidget {
           ),
           _IconCircle(
             icon: Icons.notifications_none_rounded,
-            badge: hasNotification || unreadNotifications > 0,
+            badgeCount: unreadNotifications > 0
+                ? unreadNotifications
+                : (hasNotification ? 1 : 0),
             onTap: onNotificationTap,
           ),
           const SizedBox(width: AppSpacing.md),
@@ -205,12 +207,12 @@ class GreetingCard extends StatelessWidget {
 class _IconCircle extends StatelessWidget {
   const _IconCircle({
     required this.icon,
-    this.badge = false,
+    this.badgeCount = 0,
     this.onTap,
   });
 
   final IconData icon;
-  final bool badge;
+  final int badgeCount;
   final VoidCallback? onTap;
 
   @override
@@ -230,16 +232,26 @@ class _IconCircle extends StatelessWidget {
             ),
             child: Icon(icon, size: 18, color: context.colors.text),
           ),
-          if (badge)
+          if (badgeCount > 0)
             Positioned(
-              right: 4,
-              top: 4,
+              right: -4,
+              top: -4,
               child: Container(
-                width: 8,
-                height: 8,
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: const BoxDecoration(
                   color: AppColors.danger,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                child: Text(
+                  badgeCount > 9 ? '9+' : '$badgeCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    height: 1.6,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
