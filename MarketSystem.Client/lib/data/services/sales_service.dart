@@ -421,9 +421,9 @@ class SalesService {
     }
   }
 
-  Future<List<int>?> downloadSalesExcel() async {
+  Future<List<int>?> downloadSalesExcel({String lang = 'uz'}) async {
     return await _httpService
-        .downloadBytes('${ApiConstants.sales}/export');
+        .downloadBytes('${ApiConstants.sales}/export?lang=$lang');
   }
 
   // Barcha sotuvlarni PDF formatda yuklab olish

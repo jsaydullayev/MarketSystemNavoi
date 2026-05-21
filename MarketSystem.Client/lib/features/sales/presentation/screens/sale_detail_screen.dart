@@ -374,7 +374,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               context.colors.text),
           _metaDivider(),
           _metaRow(
-            'Sana / vaqt',
+            l10n.dateTimeLabel,
             DateFormat('dd.MM.yyyy HH:mm').format(
               sale['createdAt'] is DateTime
                   ? sale['createdAt'] as DateTime
@@ -397,7 +397,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           ],
           _metaDivider(),
           _metaRow(
-            'Status',
+            l10n.statusLabel,
             _statusLabel(status, l10n),
             color,
             valueWeight: FontWeight.w800,
@@ -557,7 +557,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                               borderRadius:
                                   BorderRadius.circular(AppRadius.full),
                             ),
-                            child: Text('tashqi',
+                            child: Text(l10n.externalTag,
                                 style: AppTextStyles.caption().copyWith(
                                   color: context.colors.brandDark,
                                   fontSize: 9,
@@ -642,7 +642,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         Expanded(
           child: _actionTile(
             icon: Icons.print_outlined,
-            label: 'Chop etish',
+            label: l10n.printAction,
             onTap: () => _downloadPdf(sale),
           ),
         ),
@@ -650,11 +650,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         Expanded(
           child: _actionTile(
             icon: Icons.sms_outlined,
-            label: 'SMS yuborish',
+            label: l10n.sendSms,
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tez orada...'),
+                SnackBar(
+                  content: Text(l10n.comingSoon),
                   backgroundColor: AppColors.warning,
                 ),
               );
@@ -742,7 +742,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
-                      'Qaytarish Owner\'ga xabar yuboradi va stokga qaytariladi',
+                      l10n.returnWarning,
                       style:
                           AppTextStyles.bodySmall().copyWith(fontSize: 12),
                     ),
@@ -751,7 +751,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('QAYSI MAHSULOT QAYTARILYAPTI?',
+            Text(l10n.whichProductReturning,
                 style: AppTextStyles.caption()),
             const SizedBox(height: AppSpacing.md),
             Flexible(
@@ -789,7 +789,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Sotildi: ${item['quantity']} × ${NumberFormatter.format(item['salePrice'])}',
+                                  l10n.soldQtyFormat(item['quantity'], NumberFormatter.format(item['salePrice'])),
                                   style: AppTextStyles.bodySmall(),
                                 ),
                               ],
@@ -819,7 +819,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
     final quantityController = TextEditingController(text: '1');
     final commentController = TextEditingController();
-    String selectedReason = 'Sifatsiz';
+    final l10nOuter = AppLocalizations.of(context)!;
+    String selectedReason = l10nOuter.returnReasonBad;
     String selectedMethod = 'cash';
 
     showModalBottomSheet(
@@ -888,7 +889,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
-                            'Qaytarish Owner\'ga xabar yuboradi va stokga qaytariladi',
+                            l10n.returnWarning,
                             style: AppTextStyles.bodySmall()
                                 .copyWith(fontSize: 12),
                           ),
@@ -924,16 +925,16 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     ],
                   ),
                   16.height,
-                  Text('SABAB', style: AppTextStyles.caption()),
+                  Text(l10n.reasonLabel, style: AppTextStyles.caption()),
                   const SizedBox(height: AppSpacing.md),
                   Wrap(
                     spacing: AppSpacing.md,
                     runSpacing: AppSpacing.md,
                     children: [
-                      'Sifatsiz',
-                      'Muddat o\'tgan',
-                      'Yoqmadi',
-                      'Boshqa',
+                      l10n.returnReasonBad,
+                      l10n.returnReasonExpired,
+                      l10n.returnReasonDisliked,
+                      l10n.returnReasonOther,
                     ].map((reason) {
                       final sel = selectedReason == reason;
                       return GestureDetector(
@@ -969,18 +970,18 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     controller: commentController,
                     maxLines: 2,
                     decoration:
-                        _inputStyle('Qo\'shimcha izoh (ixtiyoriy)'),
+                        _inputStyle(l10n.additionalCommentHint),
                   ),
                   16.height,
-                  Text('QAYTARISH USULI', style: AppTextStyles.caption()),
+                  Text(l10n.returnMethodLabel, style: AppTextStyles.caption()),
                   const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
                       Expanded(
                         child: _methodTile(
                           icon: Icons.payments_outlined,
-                          title: 'Naqd qaytarish',
-                          subtitle: 'Mijozga shu yerda',
+                          title: l10n.cashReturn,
+                          subtitle: l10n.toCustomerHere,
                           selected: selectedMethod == 'cash',
                           onTap: () =>
                               setSheetState(() => selectedMethod = 'cash'),
@@ -990,8 +991,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                       Expanded(
                         child: _methodTile(
                           icon: Icons.assignment_outlined,
-                          title: 'Balansga',
-                          subtitle: 'Keyingi sotuvga',
+                          title: l10n.toBalance,
+                          subtitle: l10n.forNextSale,
                           selected: selectedMethod == 'balance',
                           onTap: () =>
                               setSheetState(() => selectedMethod = 'balance'),
@@ -1010,7 +1011,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     ),
                     child: Column(
                       children: [
-                        Text('QAYTARILADI',
+                        Text(l10n.toReturnLabel,
                             style: AppTextStyles.caption()
                                 .copyWith(color: AppColors.danger)),
                         const SizedBox(height: 4),
@@ -1024,7 +1025,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   ),
                   16.height,
                   AppDangerButton(
-                    label: 'Tasdiqlash va qaytarish',
+                    label: l10n.confirmAndReturn,
                     icon: Icons.keyboard_return_rounded,
                     onPressed: () {
                       final qtyText = quantityController.text

@@ -831,5 +831,72 @@
   "privacyContactTitle": "Контактная информация",
   "privacyContactPrompt": "Если у вас есть вопросы о настоящей Политике конфиденциальности или ваших данных, свяжитесь с нами:",
   "emailLabel": "Email: ",
-  "noAccount": "Нет аккаунта? "
+  "noAccount": "Нет аккаунта? ",
+
+  "loginLabel": "Логин",
+  "loginHint": "Введите логин",
+  "passwordHint": "Введите пароль",
+  "loginButton": "Войти",
+  "loginAction": "Войти в систему",
+  "loginFormSubtitle": "Введите ваш логин и пароль",
+  "appTagline": "Торговая система для малого бизнеса",
+  "welcomeSubtitle": "Система продаж и учёта для малых магазинов",
+  "registerShop": "Новый магазин — регистрация",
+  "agreePrefix": "Продолжая, вы соглашаетесь с ",
+  "agreeSuffix": "",
+  "rememberMe": "Запомнить",
+  "forgotPassword": "Забыли пароль?",
+
+  "dateTimeLabel": "Дата / время",
+  "statusLabel": "Статус",
+  "externalTag": "внешний",
+  "printAction": "Распечатать",
+  "sendSms": "Отправить SMS",
+  "comingSoon": "Скоро...",
+  "returnWarning": "Возврат уведомит владельца и вернёт товар на склад",
+  "whichProductReturning": "КАКОЙ ТОВАР ВОЗВРАЩАЕТСЯ?",
+  "soldQtyFormat": "Продано: {qty} × {price}",
+  "@soldQtyFormat": {
+    "placeholders": {
+      "qty": { "type": "Object" },
+      "price": { "type": "String" }
+    }
+  },
+  "reasonLabel": "ПРИЧИНА",
+  "returnReasonBad": "Бракованный",
+  "returnReasonExpired": "Просроченный",
+  "returnReasonDisliked": "Не понравился",
+  "returnReasonOther": "Другое",
+  "additionalCommentHint": "Дополнительный комментарий (необязательно)",
+  "returnMethodLabel": "МЕТОД ВОЗВРАТА",
+  "cashReturn": "Возврат наличными",
+  "toCustomerHere": "Клиенту на месте",
+  "toBalance": "На баланс",
+  "forNextSale": "В счёт следующей покупки",
+  "toReturnLabel": "ВОЗВРАЩАЕТСЯ",
+  "confirmAndReturn": "Подтвердить и вернуть",
+  "orDivider": "ИЛИ",
+  "createNewShop": "Создать новый магазин",
+  "statProducts": "Товары",
+  "statSales": "Продажи",
+  "statCustomers": "Клиенты",
+  "statActiveTypes": "Активных видов",
+  "statTotalReceipts": "Всего чеков",
+  "statActiveCustomers": "Активных клиентов",
+  "statTotalUZS": "Итого UZS",
+  "paymentCash": "Наличные",
+  "paymentRefund": "Возврат",
+  "forgotPasswordContactAdmin": "Для восстановления пароля обратитесь к администратору.",
+  "loginFailed": "Неверный логин или пароль.",
+  "rateLimited": "Слишком много попыток. Пожалуйста, подождите и попробуйте снова.",
+  "loginGenericError": "Произошла ошибка.",
+  "shopBlocked": "Магазин заблокирован",
+  "shopBlockedBody": "Ваш магазин заблокирован администратором. Пожалуйста, свяжитесь с администратором.",
+  "blockedAtLabel": "Заблокирован: {time}",
+  "@blockedAtLabel": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "dismiss": "Понятно"
 }

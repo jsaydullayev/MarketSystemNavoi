@@ -2443,4 +2443,174 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get noAccount => 'Akkauntingiz yo\'qmi? ';
+
+  @override
+  String get loginLabel => 'Login';
+
+  @override
+  String get loginHint => 'Loginni kiriting';
+
+  @override
+  String get passwordHint => 'Parolni kiriting';
+
+  @override
+  String get loginButton => 'Kirish';
+
+  @override
+  String get loginAction => 'Tizimga kirish';
+
+  @override
+  String get loginFormSubtitle => 'Login va parolingizni kiriting';
+
+  @override
+  String get appTagline => 'Kichik do\'konlar uchun savdo tizimi';
+
+  @override
+  String get welcomeSubtitle => 'Kichik do\'konlar uchun savdo va hisob tizimi';
+
+  @override
+  String get registerShop => 'Yangi do\'kon — ro\'yxatdan o\'tish';
+
+  @override
+  String get agreePrefix => 'Davom etish orqali ';
+
+  @override
+  String get agreeSuffix => 'ga rozisiz';
+
+  @override
+  String get rememberMe => 'Eslab qol';
+
+  @override
+  String get forgotPassword => 'Parolni unutdingizmi?';
+
+  @override
+  String get dateTimeLabel => 'Sana / vaqt';
+
+  @override
+  String get statusLabel => 'Status';
+
+  @override
+  String get externalTag => 'tashqi';
+
+  @override
+  String get printAction => 'Chop etish';
+
+  @override
+  String get sendSms => 'SMS yuborish';
+
+  @override
+  String get comingSoon => 'Tez orada...';
+
+  @override
+  String get returnWarning =>
+      'Qaytarish Owner\'ga xabar yuboradi va stokga qaytariladi';
+
+  @override
+  String get whichProductReturning => 'QAYSI MAHSULOT QAYTARILYAPTI?';
+
+  @override
+  String soldQtyFormat(Object qty, String price) {
+    return 'Sotildi: $qty × $price';
+  }
+
+  @override
+  String get reasonLabel => 'SABAB';
+
+  @override
+  String get returnReasonBad => 'Sifatsiz';
+
+  @override
+  String get returnReasonExpired => 'Muddat o\'tgan';
+
+  @override
+  String get returnReasonDisliked => 'Yoqmadi';
+
+  @override
+  String get returnReasonOther => 'Boshqa';
+
+  @override
+  String get additionalCommentHint => 'Qo\'shimcha izoh (ixtiyoriy)';
+
+  @override
+  String get returnMethodLabel => 'QAYTARISH USULI';
+
+  @override
+  String get cashReturn => 'Naqd qaytarish';
+
+  @override
+  String get toCustomerHere => 'Mijozga shu yerda';
+
+  @override
+  String get toBalance => 'Balansga';
+
+  @override
+  String get forNextSale => 'Keyingi sotuvga';
+
+  @override
+  String get toReturnLabel => 'QAYTARILADI';
+
+  @override
+  String get confirmAndReturn => 'Tasdiqlash va qaytarish';
+
+  @override
+  String get orDivider => 'YOKI';
+
+  @override
+  String get createNewShop => 'Yangi do\'kon yarating';
+
+  @override
+  String get statProducts => 'Mahsulotlar';
+
+  @override
+  String get statSales => 'Sotuvlar';
+
+  @override
+  String get statCustomers => 'Mijozlar';
+
+  @override
+  String get statActiveTypes => 'Faol turlari';
+
+  @override
+  String get statTotalReceipts => 'Jami chek';
+
+  @override
+  String get statActiveCustomers => 'Faol mijozlar';
+
+  @override
+  String get statTotalUZS => 'UZS jami';
+
+  @override
+  String get paymentCash => 'Naqd';
+
+  @override
+  String get paymentRefund => 'Qaytarilgan';
+
+  @override
+  String get forgotPasswordContactAdmin =>
+      'Parolni tiklash uchun administrator bilan bog\'laning.';
+
+  @override
+  String get loginFailed => 'Login yoki parol noto\'g\'ri.';
+
+  @override
+  String get rateLimited =>
+      'Juda ko\'p urinish. Iltimos, biroz kutib qayta urinib ko\'ring.';
+
+  @override
+  String get loginGenericError => 'Xatolik yuz berdi.';
+
+  @override
+  String get shopBlocked => 'Do\'kon bloklangan';
+
+  @override
+  String get shopBlockedBody =>
+      'Sizning do\'koningiz administrator tomonidan bloklangan. Iltimos, administrator bilan bog\'laning.';
+
+  @override
+  String blockedAtLabel(String time) {
+    return 'Bloklangan: $time';
+  }
+
+  @override
+  String get dismiss => 'Tushundim';
 }

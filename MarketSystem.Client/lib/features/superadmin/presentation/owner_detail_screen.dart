@@ -425,6 +425,7 @@ class _StatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return LayoutBuilder(
       builder: (ctx, c) {
         final cross = c.maxWidth < 600 ? 2 : 4;
@@ -437,30 +438,30 @@ class _StatsGrid extends StatelessWidget {
           childAspectRatio: cross == 2 ? 1.7 : 1.35,
           children: [
             _StatTile(
-              label: 'MAHSULOTLAR',
+              label: l10n.statProducts.toUpperCase(),
               value: _fmtNum(stats.productsCount),
-              subtitle: 'Faol turlari',
+              subtitle: l10n.statActiveTypes,
               color: context.colors.text,
               icon: Icons.inventory_2_outlined,
             ),
             _StatTile(
-              label: 'SOTUVLAR',
+              label: l10n.statSales.toUpperCase(),
               value: _fmtNum(stats.salesCount),
-              subtitle: 'Jami chek',
+              subtitle: l10n.statTotalReceipts,
               color: AppColors.success,
               icon: Icons.point_of_sale_outlined,
             ),
             _StatTile(
-              label: 'MIJOZLAR',
+              label: l10n.statCustomers.toUpperCase(),
               value: _fmtNum(stats.customersCount),
-              subtitle: 'Faol mijozlar',
+              subtitle: l10n.statActiveCustomers,
               color: context.colors.text,
               icon: Icons.people_outline,
             ),
             _StatTile(
-              label: 'QARZ',
+              label: l10n.debt.toUpperCase(),
               value: _fmtMoney(stats.outstandingDebt),
-              subtitle: 'UZS jami',
+              subtitle: l10n.statTotalUZS,
               color: stats.outstandingDebt > 0
                   ? AppColors.warning
                   : context.colors.text,

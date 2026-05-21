@@ -31,34 +31,28 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
 
   static const _config = {
     'Cash': {
-      'name': 'Naqd',
       'icon': Icons.payments_outlined,
       'color': AppColors.success,
     },
     'Terminal': {
-      'name': 'Terminal',
       // Fixed category marker colour (not the theme accent) — orange reads
       // fine on both light and dark, like the literal purple/blue below.
       'icon': Icons.credit_card_outlined,
       'color': Color(0xFFFF6B00),
     },
     'Transfer': {
-      'name': 'Hisob raqam',
       'icon': Icons.account_balance_outlined,
       'color': Color(0xFF8B5CF6),
     },
     'Click': {
-      'name': 'Click',
       'icon': Icons.phone_android_outlined,
       'color': Color(0xFF3B82F6),
     },
     'Qaytarilgan': {
-      'name': 'Qaytarilgan',
       'icon': Icons.assignment_return_outlined,
       'color': AppColors.danger,
     },
     'Refund': {
-      'name': 'Qaytarilgan',
       'icon': Icons.assignment_return_outlined,
       'color': AppColors.danger,
     },
@@ -71,13 +65,32 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
 
     final cfg = _config[paymentType] ??
         {
-          'name': paymentType,
           'icon': Icons.payment_outlined,
           'color': context.colors.textMuted,
         };
     final color = cfg['color'] as Color;
     final icon = cfg['icon'] as IconData;
-    final name = cfg['name'] as String;
+    final String name;
+    switch (paymentType) {
+      case 'Cash':
+        name = l10n.paymentCash;
+        break;
+      case 'Terminal':
+        name = l10n.terminal;
+        break;
+      case 'Transfer':
+        name = l10n.accountNumber;
+        break;
+      case 'Click':
+        name = l10n.click;
+        break;
+      case 'Qaytarilgan':
+      case 'Refund':
+        name = l10n.paymentRefund;
+        break;
+      default:
+        name = paymentType;
+    }
 
     // For refunds, show absolute value but keep track of negative
     final displayAmount = amount.abs();

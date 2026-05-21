@@ -97,7 +97,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
                       style: AppTextStyles.titleMedium(),
                     ),
                     Text(
-                      'Pul turini va miqdorini tanlang',
+                      l10n.selectPaymentTypeAndAmount,
                       style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
                     ),
                   ],
@@ -107,7 +107,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
           ),
           const SizedBox(height: AppSpacing.xl3),
           Text(
-            'PUL TURI',
+            l10n.paymentTypeLabel.toUpperCase(),
             style: AppTextStyles.caption().copyWith(letterSpacing: 0.8),
           ),
           const SizedBox(height: AppSpacing.md + 2),

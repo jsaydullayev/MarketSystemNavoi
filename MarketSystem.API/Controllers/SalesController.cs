@@ -327,34 +327,53 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export")]
-    public async Task<IActionResult> ExportSalesToExcel(CancellationToken ct = default)
+    public async Task<IActionResult> ExportSalesToExcel(
+        [FromQuery] string lang = "uz",
+        CancellationToken ct = default)
     {
         try
         {
             var sales = await _saleService.GetAllSalesAsync();
+            var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+            var orderedSales = sales.OrderByDescending(s => s.CreatedAt);
 
-            // Har bir sotuvning har bir tovari uchun alohida qator
-            var exportData = sales.SelectMany(sale => sale.Items.Select(item => new
-            {
-                Sana = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                Mijoz = sale.CustomerName ?? "Mijoz yo'q",
-                Sotuvchi = sale.SellerName,
-                Holat = sale.Status,
-                Tovar_nomi = item.ProductName,
-                Miqdor = FormatDecimal(item.Quantity),
-                Birlik = item.Unit,
-                Harid_narxi = FormatDecimal(item.CostPrice),
-                Sotish_narxi = FormatDecimal(item.SalePrice),
-                Jami_summa = FormatDecimal(item.TotalPrice),
-                Foyda = FormatDecimal(item.Profit)
-            })).OrderByDescending(x => x.Sana);
+            object exportData = isRu
+                ? orderedSales.SelectMany(sale => sale.Items.Select(item => new
+                {
+                    Дата = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    Клиент = sale.CustomerName ?? "—",
+                    Продавец = sale.SellerName,
+                    Статус = sale.Status,
+                    Товар = item.ProductName,
+                    Количество = FormatDecimal(item.Quantity),
+                    Ед_изм = item.Unit,
+                    Цена_закупки = FormatDecimal(item.CostPrice),
+                    Цена_продажи = FormatDecimal(item.SalePrice),
+                    Сумма = FormatDecimal(item.TotalPrice),
+                    Прибыль = FormatDecimal(item.Profit)
+                })).Cast<object>()
+                : orderedSales.SelectMany(sale => sale.Items.Select(item => new
+                {
+                    Sana = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    Mijoz = sale.CustomerName ?? "Mijoz yo'q",
+                    Sotuvchi = sale.SellerName,
+                    Holat = sale.Status,
+                    Tovar_nomi = item.ProductName,
+                    Miqdor = FormatDecimal(item.Quantity),
+                    Birlik = item.Unit,
+                    Harid_narxi = FormatDecimal(item.CostPrice),
+                    Sotish_narxi = FormatDecimal(item.SalePrice),
+                    Jami_summa = FormatDecimal(item.TotalPrice),
+                    Foyda = FormatDecimal(item.Profit)
+                })).Cast<object>();
 
-            var fileContent = _excelService.GenerateExcel(exportData, "Sotuvlar");
+            var sheetName = isRu ? "Продажи" : "Sotuvlar";
+            var fileContent = _excelService.GenerateExcel((dynamic)exportData, sheetName);
 
             return File(
                 fileContent,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"Sotuvlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
             );
         }
         catch (Exception ex)

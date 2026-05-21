@@ -1095,6 +1095,10 @@ public partial class SaleService : ISaleService
         if (!sales.Any())
             return false;
 
+        // External products have no MinSalePrice constraint — always valid.
+        if (saleItem.IsExternal)
+            return true;
+
         var products = await _unitOfWork.Products.FindAsync(
             p => p.Id == saleItem.ProductId && p.MarketId == marketId,
             cancellationToken);
