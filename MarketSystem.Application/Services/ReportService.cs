@@ -258,7 +258,12 @@ public class ReportService : IReportService
                 worksheet.Cells[row, 5].Value = item.SalePrice * item.Quantity;
                 var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
                 worksheet.Cells[row, 6].Value = costPrice * item.Quantity;
-                worksheet.Cells[row, 7].Value = item.Profit;
+                // Compute profit inline from the stored CostPrice column. The
+                // SaleItem.Profit computed property reads Product?.CostPrice,
+                // but Product isn't loaded here (includeProperties omits it),
+                // so for non-external items it would resolve cost to 0 and
+                // report the full sale price as profit.
+                worksheet.Cells[row, 7].Value = (item.SalePrice - costPrice) * item.Quantity;
                 row++;
             }
         }
