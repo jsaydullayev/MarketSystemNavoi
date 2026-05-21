@@ -133,6 +133,8 @@ public class ProductsController : ControllerBase
     {
         var products = await _productService.GetAllProductsAsync();
         var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        var canSeeCost = role is "Owner" or "Admin";
 
         // Anonymous types pick up the field names as Excel column headers.
         // We need two separate shapes for uz vs ru because anonymous-type
@@ -143,7 +145,7 @@ public class ProductsController : ControllerBase
                 ID = p.Id.ToString(),
                 Название = p.Name,
                 Категория = p.CategoryName ?? "",
-                Цена_закупки = p.CostPrice,
+                Цена_закупки = canSeeCost ? p.CostPrice.ToString("G29") : "—",
                 Цена_продажи = p.SalePrice,
                 Минимальная_цена = p.MinSalePrice,
                 Количество = p.Quantity,
@@ -155,7 +157,7 @@ public class ProductsController : ControllerBase
                 ID = p.Id.ToString(),
                 Nomi = p.Name,
                 Kategoriya = p.CategoryName ?? "",
-                Xarid_narxi = p.CostPrice,
+                Xarid_narxi = canSeeCost ? p.CostPrice.ToString("G29") : "—",
                 Sotuv_narxi = p.SalePrice,
                 Minimal_narx = p.MinSalePrice,
                 Miqdor = p.Quantity,
