@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
 using MarketSystem.API.Helpers;
+using MarketSystem.Domain.Constants;
 
 namespace MarketSystem.API.Controllers;
 
@@ -19,7 +21,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
+    [RequirePermission(PermissionKeys.CategoriesAccess)]
     public async Task<ActionResult<IEnumerable<ProductCategoryDto>>> GetAllCategories(CancellationToken cancellationToken)
     {
         var categories = await _categoryService.GetAllCategoriesAsync(cancellationToken);
@@ -27,7 +29,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize] // All authenticated users can view categories
+    [RequirePermission(PermissionKeys.CategoriesAccess)]
     public async Task<ActionResult<ProductCategoryDto>> GetCategoryById(int id, CancellationToken cancellationToken)
     {
         var category = await _categoryService.GetCategoryByIdAsync(id, cancellationToken);
@@ -38,7 +40,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOrOwner")] // Only Admin and Owner can create categories
+    [RequirePermission(PermissionKeys.CategoriesManage)]
     public async Task<ActionResult<ProductCategoryDto>> CreateCategory(
         [FromBody] CreateProductCategoryRequest request,
         CancellationToken cancellationToken)
@@ -55,7 +57,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Policy = "AdminOrOwner")] // Only Admin and Owner can update categories
+    [RequirePermission(PermissionKeys.CategoriesManage)]
     public async Task<ActionResult<ProductCategoryDto>> UpdateCategory(
         [FromBody] UpdateProductCategoryRequest request,
         CancellationToken cancellationToken)
@@ -75,7 +77,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOrOwner")] // Only Admin and Owner can delete categories
+    [RequirePermission(PermissionKeys.CategoriesManage)]
     public async Task<IActionResult> DeleteCategory(int id, CancellationToken cancellationToken)
     {
         var success = await _categoryService.DeleteCategoryAsync(id, cancellationToken);
@@ -86,7 +88,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize] // All authenticated users can export categories
+    [RequirePermission(PermissionKeys.CategoriesAccess)]
     public async Task<IActionResult> ExportCategoriesToExcel(CancellationToken cancellationToken)
     {
         var categories = await _categoryService.GetAllCategoriesAsync(cancellationToken);

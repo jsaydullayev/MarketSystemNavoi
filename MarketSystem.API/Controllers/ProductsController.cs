@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Constants;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
 using MarketSystem.API.Helpers;
+using MarketSystem.Domain.Constants;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +13,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(Policy = "AllRoles")]
+[Authorize]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
@@ -24,6 +26,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<ProductDto>> GetProduct(Guid id, CancellationToken ct = default)
     {
         var product = await _productService.GetProductByIdAsync(id);
@@ -34,6 +37,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts(CancellationToken ct = default)
     {
         var products = await _productService.GetAllProductsAsync();
@@ -41,6 +45,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<PagedResult<ProductDto>>> GetAllProductsPaged(
         [FromQuery] int page = 1,
         [FromQuery] int size = 50,
@@ -51,6 +56,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("low-stock")]
+    [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetLowStockProducts(CancellationToken ct = default)
     {
         var products = await _productService.GetLowStockProductsAsync();
@@ -68,7 +74,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.ProductsCreate)]
     public async Task<ActionResult<ProductDto>> CreateProduct([FromBody] CreateProductDto request, CancellationToken ct = default)
     {
         var sellerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -87,7 +93,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.ProductsEdit)]
     public async Task<ActionResult<ProductDto>> UpdateProduct(Guid id, [FromBody] UpdateProductDto request, CancellationToken ct = default)
     {
         if (id != request.Id)
@@ -108,7 +114,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.ProductsDelete)]
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken ct = default)
     {
         var result = await _productService.DeleteProductAsync(id);
@@ -127,6 +133,7 @@ public class ProductsController : ControllerBase
     /// can sort / filter in Excel if needed.
     /// </summary>
     [HttpGet("export")]
+    [RequirePermission(PermissionKeys.ProductsExport)]
     public async Task<IActionResult> ExportProductsToExcel(
         [FromQuery] string lang = "uz",
         CancellationToken ct = default)

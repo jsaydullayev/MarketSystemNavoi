@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 using System.Security.Claims;
 using MarketSystem.Domain.Enums;
 
@@ -9,7 +11,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(Policy = "AllRoles")]
+[Authorize]
 public class ZakupsController : ControllerBase
 {
     private readonly IZakupService _zakupService;
@@ -28,6 +30,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionKeys.ZakupAccess)]
     public async Task<IActionResult> GetZakup(Guid id)
     {
         var zakup = await _zakupService.GetZakupByIdAsync(id);
@@ -52,6 +55,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.ZakupAccess)]
     public async Task<IActionResult> GetAllZakups()
     {
         var zakups = await _zakupService.GetAllZakupsAsync();
@@ -67,6 +71,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.ZakupAccess)]
     public async Task<IActionResult> GetZakupsPaged(
         [FromQuery] int page = 1,
         [FromQuery] int size = 50)
@@ -84,6 +89,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpGet("by-date")]
+    [RequirePermission(PermissionKeys.ZakupAccess)]
     public async Task<IActionResult> GetZakupsByDateRange([FromQuery] DateTime start, [FromQuery] DateTime end)
     {
         var zakups = await _zakupService.GetZakupsByDateRangeAsync(start, end);
@@ -106,7 +112,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.ZakupCreate)]
     public async Task<ActionResult<ZakupDto>> CreateZakup([FromBody] CreateZakupDto request)
     {
         var adminIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -125,6 +131,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpGet("export")]
+    [RequirePermission(PermissionKeys.ZakupAccess)]
     public async Task<IActionResult> ExportZakupsToExcel()
     {
         var zakups = await _zakupService.GetAllZakupsAsync();

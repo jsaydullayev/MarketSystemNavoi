@@ -26,9 +26,12 @@ public static class PermissionDefaults
         .Where(k => k != PermissionKeys.DataProfit && k != PermissionKeys.DataCashBalance)
         .ToArray();
 
-    /// <summary>Seller = view access + create-sale + customer CRUD + debt
-    /// payment + exports that were open to all roles. No products/category/
-    /// user management, no cost/profit, no cash register.</summary>
+    /// <summary>Seller = view access + create-sale + customer create/edit +
+    /// debt payment + the exports that were open to all roles. No product /
+    /// category / user management, no customer delete, no cost/profit, no
+    /// cash register. Note: no <c>reports.access</c> — the Reports controller
+    /// was AdminOrOwner, so a Seller could only ever reach its export and
+    /// daily-list endpoints (gated below by reports.export / sales.access).</summary>
     public static readonly IReadOnlyList<string> Seller = new[]
     {
         PermissionKeys.DashboardAccess,
@@ -37,7 +40,7 @@ public static class PermissionDefaults
         PermissionKeys.SalesAccess, PermissionKeys.SalesCreate, PermissionKeys.SalesExport,
         PermissionKeys.CustomersAccess, PermissionKeys.CustomersManage, PermissionKeys.CustomersExport,
         PermissionKeys.ZakupAccess,
-        PermissionKeys.ReportsAccess, PermissionKeys.ReportsExport,
+        PermissionKeys.ReportsExport,
         PermissionKeys.UsersAccess,
         PermissionKeys.DebtsAccess, PermissionKeys.DebtsManage,
         PermissionKeys.DataAllSalesView,

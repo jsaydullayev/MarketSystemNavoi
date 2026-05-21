@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "AdminOrOwner")]
+[Authorize]
 public class CashRegisterController : ControllerBase
 {
     private readonly ICashRegisterService _cashRegisterService;
@@ -18,6 +20,7 @@ public class CashRegisterController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.CashRegisterAccess)]
     public async Task<ActionResult<CashRegisterDto>> GetCashRegister(CancellationToken cancellationToken)
     {
         var result = await _cashRegisterService.GetCashRegisterAsync(cancellationToken);
@@ -28,6 +31,7 @@ public class CashRegisterController : ControllerBase
     }
 
     [HttpGet("today-sales")]
+    [RequirePermission(PermissionKeys.CashRegisterAccess)]
     public async Task<ActionResult<TodaySalesSummaryDto>> GetTodaySales(CancellationToken cancellationToken)
     {
         var result = await _cashRegisterService.GetTodaySalesSummaryAsync(cancellationToken);
@@ -38,6 +42,7 @@ public class CashRegisterController : ControllerBase
     }
 
     [HttpPost("withdraw")]
+    [RequirePermission(PermissionKeys.CashRegisterManage)]
     public async Task<IActionResult> WithdrawCash([FromBody] WithdrawCashRequest request, CancellationToken cancellationToken)
     {
         // User ID ni JWT dan olamiz
@@ -55,6 +60,7 @@ public class CashRegisterController : ControllerBase
     }
 
     [HttpPost("add")]
+    [RequirePermission(PermissionKeys.CashRegisterManage)]
     public async Task<IActionResult> AddCash([FromBody] AddCashRequest request, CancellationToken cancellationToken)
     {
         var success = await _cashRegisterService.AddCashAsync(request.Amount, cancellationToken);

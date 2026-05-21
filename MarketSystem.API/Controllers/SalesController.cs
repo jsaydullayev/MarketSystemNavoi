@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 
@@ -9,7 +11,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "AllRoles")]
+[Authorize]
 public class SalesController : ControllerBase
 {
     private readonly ISaleService _saleService;
@@ -26,6 +28,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<SaleDto>> GetSale(Guid id, CancellationToken ct = default)
     {
         var sale = await _saleService.GetSaleByIdAsync(id);
@@ -36,6 +39,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<PagedResult<SaleDto>>> GetAllSales(
         [FromQuery] int page = 1,
         [FromQuery] int size = 50,
@@ -48,6 +52,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("by-date")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetSalesByDateRange([FromQuery] DateTime start, [FromQuery] DateTime end, CancellationToken ct = default)
     {
         if (start > end)
@@ -58,6 +63,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("my-drafts")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyDraftSales(CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -69,6 +75,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("my-unfinished")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyUnfinishedSales(CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -80,6 +87,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleDto>> CreateSale([FromBody] CreateSaleDto request, CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -98,6 +106,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPatch("{saleId}/customer")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleDto>> UpdateSaleCustomer(Guid saleId, [FromBody] UpdateSaleCustomerDto request, CancellationToken ct = default)
     {
         try
@@ -115,6 +124,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/items")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleItemDto>> AddSaleItem(Guid saleId, [FromBody] AddSaleItemDto request, CancellationToken ct = default)
     {
         try
@@ -132,6 +142,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/items/remove")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleItemDto>> RemoveSaleItem(Guid saleId, [FromBody] RemoveSaleItemDto request, CancellationToken ct = default)
     {
         _logger.LogInformation("RemoveSaleItem called - SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
@@ -152,6 +163,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/payments")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<PaymentDto>> AddPayment(Guid saleId, [FromBody] AddPaymentDto request, CancellationToken ct = default)
     {
         try
@@ -172,7 +184,7 @@ public class SalesController : ControllerBase
     /// Savdoni o'chirish (faqat Draft va Paid statusdagi savdolar uchun)
     /// </summary>
     [HttpDelete("{saleId}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesDelete)]
     public async Task<ActionResult<SaleDto>> DeleteSale(Guid saleId, CancellationToken ct = default)
     {
         _logger.LogInformation("DeleteSale called - Sale ID: {SaleId}", saleId);
@@ -198,7 +210,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/cancel")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesDelete)]
     public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request, CancellationToken ct = default)
     {
         try
@@ -218,7 +230,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/mark-debt")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesEdit)]
     public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId, CancellationToken ct = default)
     {
         try
@@ -243,7 +255,7 @@ public class SalesController : ControllerBase
     /// - Closed debts: Only Owner and Admin can edit
     /// </summary>
     [HttpPatch("items/price")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesEdit)]
     public async Task<ActionResult<SaleItemDto>> UpdateSaleItemPrice([FromBody] UpdateSaleItemPriceDto request, CancellationToken ct = default)
     {
         try
@@ -285,7 +297,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/return-item")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesEdit)]
     public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest? request, CancellationToken ct = default)
     {
         try
@@ -312,6 +324,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("debtors")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<IEnumerable<DebtorDto>>> GetDebtors(CancellationToken ct = default)
     {
         try
@@ -327,6 +340,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export")]
+    [RequirePermission(PermissionKeys.SalesExport)]
     public async Task<IActionResult> ExportSalesToExcel(
         [FromQuery] string lang = "uz",
         CancellationToken ct = default)
@@ -386,6 +400,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export-pdf")]
+    [RequirePermission(PermissionKeys.SalesExport)]
     public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, CancellationToken ct = default)
     {
         try
@@ -427,6 +442,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/apply-credit")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleDto>> ApplyCustomerCredit(Guid saleId, CancellationToken ct = default)
     {
         try
@@ -452,6 +468,7 @@ public class SalesController : ControllerBase
     /// Generate and download PDF invoice for a sale
     /// </summary>
     [HttpGet("{id}/invoice")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<IActionResult> GetInvoice(Guid id, CancellationToken ct = default)
     {
         try
