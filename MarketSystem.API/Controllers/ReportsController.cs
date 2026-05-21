@@ -128,15 +128,19 @@ public class ReportsController : ControllerBase
     /// Export comprehensive report to Excel
     /// </summary>
     [HttpGet("comprehensive/export")]
-    public async Task<IActionResult> ExportComprehensiveToExcel([FromQuery] DateTime date)
+    public async Task<IActionResult> ExportComprehensiveToExcel(
+        [FromQuery] DateTime date,
+        [FromQuery] string lang = "uz")
     {
-        // Service handles UTC conversion internally via GetUtcDateRange
-        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(date);
+        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(date, lang);
+        var fileName = lang.Equals("ru", StringComparison.OrdinalIgnoreCase)
+            ? $"Otchet_{date:yyyyMMdd}.xlsx"
+            : $"Hisobot_{date:yyyyMMdd}.xlsx";
 
         return File(
             excelBytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"comprehensive_report_{date:yyyyMMdd}.xlsx"
+            fileName
         );
     }
 

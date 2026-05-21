@@ -400,26 +400,27 @@ public class ReportService : IReportService
         );
     }
 
-    public async Task<byte[]> ExportComprehensiveToExcelAsync(DateTime date, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportComprehensiveToExcelAsync(DateTime date, string lang = "uz", CancellationToken cancellationToken = default)
     {
         // Export to Excel is Owner-only feature, so pass Role.Owner.ToString() as the role
         var report = await GetComprehensiveReportAsync(date, Role.Owner.ToString(), cancellationToken);
+        var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
 
         using var package = new ExcelPackage();
 
         // 1. Summary Sheet
-        var summarySheet = package.Workbook.Worksheets.Add("Summary");
-        summarySheet.Cells[1, 1].Value = "Hisobot sanasi:";
+        var summarySheet = package.Workbook.Worksheets.Add(isRu ? "Сводка" : "Summary");
+        summarySheet.Cells[1, 1].Value = isRu ? "Дата отчёта:" : "Hisobot sanasi:";
         summarySheet.Cells[1, 2].Value = date.ToString("yyyy-MM-dd");
-        summarySheet.Cells[2, 1].Value = "Jami savdo:";
+        summarySheet.Cells[2, 1].Value = isRu ? "Общая выручка:" : "Jami savdo:";
         summarySheet.Cells[2, 2].Value = report.DailyReport.TotalSales;
-        summarySheet.Cells[3, 1].Value = "Jami foyda:";
+        summarySheet.Cells[3, 1].Value = isRu ? "Общая прибыль:" : "Jami foyda:";
         summarySheet.Cells[3, 2].Value = report.DailyReport.Profit;
-        summarySheet.Cells[4, 1].Value = "Jami tranzaksiyalar:";
+        summarySheet.Cells[4, 1].Value = isRu ? "Число транзакций:" : "Jami tranzaksiyalar:";
         summarySheet.Cells[4, 2].Value = report.DailyReport.TotalTransactions;
-        summarySheet.Cells[5, 1].Value = "Skladdagi tovarlar qiymati (xarid narxi):";
+        summarySheet.Cells[5, 1].Value = isRu ? "Стоимость склада (закупка):" : "Skladdagi tovarlar qiymati (xarid narxi):";
         summarySheet.Cells[5, 2].Value = report.TotalInventoryCost;
-        summarySheet.Cells[6, 1].Value = "Skladdagi tovarlar qiymati (sotuv narxi):";
+        summarySheet.Cells[6, 1].Value = isRu ? "Стоимость склада (продажа):" : "Skladdagi tovarlar qiymati (sotuv narxi):";
         summarySheet.Cells[6, 2].Value = report.TotalInventorySaleValue;
 
         using (var range = summarySheet.Cells[1, 1, 6, 2])
@@ -428,11 +429,11 @@ public class ReportService : IReportService
         }
 
         // 2. Seller Reports Sheet
-        var sellerSheet = package.Workbook.Worksheets.Add("Sotuvchilar");
-        sellerSheet.Cells[1, 1].Value = "Sotuvchi";
-        sellerSheet.Cells[1, 2].Value = "Jami savdo";
-        sellerSheet.Cells[1, 3].Value = "Foyda";
-        sellerSheet.Cells[1, 4].Value = "Tranzaksiyalar soni";
+        var sellerSheet = package.Workbook.Worksheets.Add(isRu ? "Продавцы" : "Sotuvchilar");
+        sellerSheet.Cells[1, 1].Value = isRu ? "Продавец" : "Sotuvchi";
+        sellerSheet.Cells[1, 2].Value = isRu ? "Общие продажи" : "Jami savdo";
+        sellerSheet.Cells[1, 3].Value = isRu ? "Прибыль" : "Foyda";
+        sellerSheet.Cells[1, 4].Value = isRu ? "Число транзакций" : "Tranzaksiyalar soni";
 
         using (var headerRange = sellerSheet.Cells[1, 1, 1, 4])
         {
@@ -454,15 +455,15 @@ public class ReportService : IReportService
         sellerSheet.Cells.AutoFitColumns();
 
         // 3. Inventory Sheet
-        var inventorySheet = package.Workbook.Worksheets.Add("Sklad");
-        inventorySheet.Cells[1, 1].Value = "Mahsulot";
-        inventorySheet.Cells[1, 2].Value = "Miqdor";
-        inventorySheet.Cells[1, 3].Value = "Xarid narxi";
-        inventorySheet.Cells[1, 4].Value = "Sotuv narxi";
-        inventorySheet.Cells[1, 5].Value = "Minimal narx";
-        inventorySheet.Cells[1, 6].Value = "Jami xarid qiymati";
-        inventorySheet.Cells[1, 7].Value = "Jami sotuv qiymati";
-        inventorySheet.Cells[1, 8].Value = "Potensial foyda";
+        var inventorySheet = package.Workbook.Worksheets.Add(isRu ? "Склад" : "Sklad");
+        inventorySheet.Cells[1, 1].Value = isRu ? "Товар" : "Mahsulot";
+        inventorySheet.Cells[1, 2].Value = isRu ? "Количество" : "Miqdor";
+        inventorySheet.Cells[1, 3].Value = isRu ? "Цена покупки" : "Xarid narxi";
+        inventorySheet.Cells[1, 4].Value = isRu ? "Цена продажи" : "Sotuv narxi";
+        inventorySheet.Cells[1, 5].Value = isRu ? "Минимальная цена" : "Minimal narx";
+        inventorySheet.Cells[1, 6].Value = isRu ? "Общая закупочная стоимость" : "Jami xarid qiymati";
+        inventorySheet.Cells[1, 7].Value = isRu ? "Общая стоимость продажи" : "Jami sotuv qiymati";
+        inventorySheet.Cells[1, 8].Value = isRu ? "Потенциальная прибыль" : "Potensial foyda";
 
         using (var headerRange = inventorySheet.Cells[1, 1, 1, 8])
         {
