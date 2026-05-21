@@ -29,6 +29,7 @@ public static class PermissionKeys
 
     public const string CustomersAccess = "customers.access";
     public const string CustomersManage = "customers.manage";
+    public const string CustomersDelete = "customers.delete";
     public const string CustomersExport = "customers.export";
 
     public const string ZakupAccess = "zakup.access";
@@ -61,7 +62,7 @@ public static class PermissionKeys
         ProductsAccess, ProductsCreate, ProductsEdit, ProductsDelete, ProductsExport,
         CategoriesAccess, CategoriesManage,
         SalesAccess, SalesCreate, SalesEdit, SalesDelete, SalesExport,
-        CustomersAccess, CustomersManage, CustomersExport,
+        CustomersAccess, CustomersManage, CustomersDelete, CustomersExport,
         ZakupAccess, ZakupCreate,
         CashRegisterAccess, CashRegisterManage,
         ReportsAccess, ReportsExport,

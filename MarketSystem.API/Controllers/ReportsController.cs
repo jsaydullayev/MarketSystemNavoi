@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using OfficeOpenXml;
@@ -10,7 +12,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "AdminOrOwner")]
+[Authorize]
 public class ReportsController : ControllerBase
 {
     private readonly IReportService _reportService;
@@ -42,6 +44,7 @@ public class ReportsController : ControllerBase
     /// Get daily sales report
     /// </summary>
     [HttpGet("daily")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<DailyReportDto>> GetDailyReport([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -55,6 +58,7 @@ public class ReportsController : ControllerBase
     /// Get daily sale items - detailed list of products sold on specific date
     /// </summary>
     [HttpGet("daily-items")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<DailySaleItemsResponseDto>> GetDailySaleItems([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -68,6 +72,7 @@ public class ReportsController : ControllerBase
     /// Get sales report for a period
     /// </summary>
     [HttpGet("period")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<PeriodReportDto>> GetPeriodReport(
         [FromQuery] DateTime start,
         [FromQuery] DateTime end)
@@ -90,6 +95,7 @@ public class ReportsController : ControllerBase
     /// Export sales report to Excel
     /// </summary>
     [HttpGet("period/export")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<IActionResult> ExportToExcel(
         [FromQuery] DateTime start,
         [FromQuery] DateTime end)
@@ -115,6 +121,7 @@ public class ReportsController : ControllerBase
     /// Seller reports are only visible to Owner role
     /// </summary>
     [HttpGet("comprehensive")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<ComprehensiveReportDto>> GetComprehensiveReport([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -128,6 +135,7 @@ public class ReportsController : ControllerBase
     /// Export comprehensive report to Excel
     /// </summary>
     [HttpGet("comprehensive/export")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<IActionResult> ExportComprehensiveToExcel(
         [FromQuery] DateTime date,
         [FromQuery] string lang = "uz")
@@ -150,7 +158,7 @@ public class ReportsController : ControllerBase
     /// Get profit summary - Owner only
     /// </summary>
     [HttpGet("profit-summary")]
-    [Authorize(Policy = "OwnerOnly")]
+    [RequirePermission(PermissionKeys.DataProfit)]
     public async Task<ActionResult<ProfitSummaryDto>> GetProfitSummary()
     {
         var summary = await _reportService.GetProfitSummaryAsync();
@@ -164,6 +172,7 @@ public class ReportsController : ControllerBase
     /// Profit values are zero unless the caller is Owner.
     /// </summary>
     [HttpGet("weekly-series")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<WeeklySeriesDto>> GetWeeklySeries(
         [FromQuery] int days = 7,
         [FromQuery] bool compare = false)
@@ -179,6 +188,7 @@ public class ReportsController : ControllerBase
     /// page. Profit is hidden for non-Owner callers.
     /// </summary>
     [HttpGet("top-products")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<TopProductsDto>> GetTopProducts(
         [FromQuery] string period = "month",
         [FromQuery] string sortBy = "quantity",
@@ -195,6 +205,7 @@ public class ReportsController : ControllerBase
     /// quiet seller doesn't silently disappear from the team list.
     /// </summary>
     [HttpGet("staff-performance")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<StaffPerformanceDto>> GetStaffPerformance(
         [FromQuery] string period = "week")
     {
@@ -209,6 +220,7 @@ public class ReportsController : ControllerBase
     /// ever sees their own row.
     /// </summary>
     [HttpGet("my-performance")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<MyPerformanceDto>> GetMyPerformance(
         [FromQuery] string period = "today")
     {
@@ -224,7 +236,7 @@ public class ReportsController : ControllerBase
     /// Get cash balance - Owner only
     /// </summary>
     [HttpGet("cash-balance")]
-    [Authorize(Policy = "OwnerOnly")]
+    [RequirePermission(PermissionKeys.DataCashBalance)]
     public async Task<ActionResult<CashBalanceDto>> GetCashBalance()
     {
         var balance = await _reportService.GetCashBalanceAsync();
@@ -238,7 +250,7 @@ public class ReportsController : ControllerBase
     /// - Seller: sees only their own sales without profit
     /// </summary>
     [HttpGet("daily-sales-list")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<DailySalesListDto>> GetDailySalesList([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -254,7 +266,7 @@ public class ReportsController : ControllerBase
     /// Export all sales to Excel with detailed formatting
     /// </summary>
     [HttpGet("sales/export")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportSalesToExcel(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
@@ -730,7 +742,7 @@ public class ReportsController : ControllerBase
 
 
     [HttpGet("comprehensive-report/export")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportComprehensiveReportToExcel(
         [FromQuery] DateTime? date = null,
         [FromQuery] string lang = "uz",
@@ -1038,7 +1050,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("monthly-category-sales")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<MonthlyCategorySalesResponseDto>> GetMonthlyCategorySales([FromQuery] DateTime date, CancellationToken cancellationToken = default)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -1049,7 +1061,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("daily/export-pdf")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date)
     {
         var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
@@ -1064,7 +1076,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("period/export-pdf")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportPeriodReportToPdf(
         [FromQuery] DateTime start,
         [FromQuery] DateTime end)
@@ -1088,7 +1100,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("comprehensive/export-pdf")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -1106,7 +1118,7 @@ public class ReportsController : ControllerBase
     /// Export daily report to Excel - kunlik hisobot, sotuvlar ro'yxati va mahsulotlar bo'yicha
     /// </summary>
     [HttpGet("daily/export")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportDailyReportToExcel([FromQuery] DateTime date)
     {
         try
@@ -1403,7 +1415,7 @@ public class ReportsController : ControllerBase
     /// Export inventory report to Excel - ombor hisoboti
     /// </summary>
     [HttpGet("inventory/export")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportInventoryReportToExcel([FromQuery] DateTime date)
     {
         try

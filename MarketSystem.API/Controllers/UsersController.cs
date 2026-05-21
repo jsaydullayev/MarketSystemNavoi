@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using System.Text.Json;
@@ -11,7 +13,7 @@ namespace MarketSystem.API.Controllers;
 //new code
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(Policy = "AllRoles")]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -24,6 +26,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionKeys.UsersAccess)]
     public async Task<ActionResult<UserDto>> GetUser(Guid id)
     {
         var user = await _userService.GetUserByIdAsync(id);
@@ -48,6 +51,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.UsersAccess)]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
     {
         var users = await _userService.GetAllUsersAsync();
@@ -71,7 +75,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto request)
     {
         try
@@ -86,7 +90,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto request)
     {
         if (id != request.Id)
@@ -233,7 +237,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _userService.DeleteUserAsync(id);
@@ -244,7 +248,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id}/deactivate")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<IActionResult> DeactivateUser(Guid id)
     {
         var result = await _userService.DeactivateUserAsync(id);
@@ -255,7 +259,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id}/activate")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<IActionResult> ActivateUser(Guid id)
     {
         var result = await _userService.ActivateUserAsync(id);
@@ -270,7 +274,7 @@ public class UsersController : ControllerBase
     /// [startUtc, endUtc] window). Admin/Owner only.
     /// </summary>
     [HttpPut("{id}/shift")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersShift)]
     public async Task<ActionResult<UserDto>> UpdateShift(Guid id, [FromBody] UpdateShiftDto request)
     {
         try
