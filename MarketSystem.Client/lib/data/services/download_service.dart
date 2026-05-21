@@ -108,20 +108,19 @@ class DownloadService {
   }
 
   /// Umumiy hisobotni Excel formatida yuklab olish
-  Future<void> downloadComprehensiveReport({DateTime? date}) async {
+  Future<void> downloadComprehensiveReport({DateTime? date, String lang = 'uz'}) async {
     try {
-      String url = '/Reports/comprehensive-report/export';
-
-      // Sana parametrini qo'shish (yyyy-MM-dd formatda)
-      if (date != null) {
-        url += '?date=${_formatDateForQuery(date)}';
-      }
+      final params = <String, String>{'lang': lang};
+      if (date != null) params['date'] = _formatDateForQuery(date);
+      final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+      final url = '/Reports/comprehensive-report/export?$query';
 
       final response = await _httpService.get(url);
 
       if (response.statusCode == 200) {
-        final filename =
-            'hisobotlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        final filename = lang == 'ru'
+            ? 'otchet_${DateTime.now().millisecondsSinceEpoch}.xlsx'
+            : 'hisobot_${DateTime.now().millisecondsSinceEpoch}.xlsx';
         if (kIsWeb) {
           _downloadWeb(response.bodyBytes, filename);
         } else {
