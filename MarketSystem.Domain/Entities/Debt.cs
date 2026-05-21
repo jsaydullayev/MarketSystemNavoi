@@ -10,6 +10,7 @@ public class Debt : BaseEntity
     public decimal TotalDebt { get; set; }
     public decimal RemainingDebt { get; set; }
     public DebtStatus Status { get; set; } = DebtStatus.Open;
+    public DateTime? DueDate { get; set; }
 
     // Multi-tenancy
     public int MarketId { get; set; }
