@@ -27,6 +27,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<CashWithdrawal> CashWithdrawals => Set<CashWithdrawal>();
     public DbSet<RegistrationRequest> RegistrationRequests => Set<RegistrationRequest>();
     public DbSet<RevokedToken> RevokedTokens => Set<RevokedToken>();
+    public DbSet<Shift> Shifts => Set<Shift>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -297,6 +298,21 @@ public class AppDbContext : DbContext, IAppDbContext
             b.HasIndex(x => x.MarketId);
             b.HasIndex(x => x.SaleId)
                 .HasDatabaseName("IX_Debt_SaleId");
+        });
+
+        // Configure Shift — seller work sessions
+        modelBuilder.Entity<Shift>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.OpenedAt).IsRequired();
+
+            b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // keep shift history if a user is removed
+            b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId);
+
+            b.HasIndex(x => x.MarketId);
+            // Fast "is there an open shift for this user" lookup.
+            b.HasIndex(x => new { x.UserId, x.ClosedAt });
         });
 
         // Configure DebtAuditLog

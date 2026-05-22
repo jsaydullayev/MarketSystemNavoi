@@ -24,6 +24,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<DebtAuditLog> DebtAuditLogs { get; }
     public IRepository<Zakup> Zakups { get; }
     public IRepository<AuditLog> AuditLogs { get; }
+    public IRepository<Shift> Shifts { get; }
     public IRefreshTokenRepository RefreshTokens { get; }
 
     public UnitOfWork(AppDbContext context, ILogger<UnitOfWork> logger)
@@ -42,6 +43,7 @@ public class UnitOfWork : IUnitOfWork
         DebtAuditLogs = new DebtAuditLogRepository(context);
         Zakups = new ZakupRepository(context);
         AuditLogs = new AuditLogRepository(context);
+        Shifts = new ShiftRepository(context);
         RefreshTokens = new RefreshTokenRepository(context);
     }
 
