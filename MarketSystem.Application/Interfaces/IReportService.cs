@@ -14,7 +14,12 @@ public interface IReportService
     // New methods for role-based access control
     Task<ProfitSummaryDto> GetProfitSummaryAsync(CancellationToken cancellationToken = default);
     Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default);
-    Task<DailySalesListDto> GetDailySalesListAsync(DateTime date, string? userRole = null, Guid? userId = null, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Sales list for a single Tashkent day, or — when <paramref name="endDate"/>
+    /// is supplied — for the inclusive [date, endDate] day range. The range
+    /// overload backs the multi-day sales Excel export.
+    /// </summary>
+    Task<DailySalesListDto> GetDailySalesListAsync(DateTime date, string? userRole = null, Guid? userId = null, DateTime? endDate = null, CancellationToken cancellationToken = default);
     Task<MonthlyCategorySalesResponseDto> GetMonthlyCategorySalesAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default);
 
     // Detailed sales with items for export
