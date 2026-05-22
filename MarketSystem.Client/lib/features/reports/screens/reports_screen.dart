@@ -22,6 +22,7 @@ import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/report_service.dart';
 import '../../../data/services/download_service.dart';
+import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
 import 'daily_sales_details_screen.dart';
 
@@ -215,7 +216,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final canViewCostPrice = authProvider.user?['role'] != 'Seller';
+    final canViewCostPrice = authProvider.can(Permissions.dataCostPrice);
 
     return NetworkWrapper(
       onRetry: _loadReports,

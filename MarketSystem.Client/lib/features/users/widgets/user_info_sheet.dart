@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:market_system_client/core/auth/permissions.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/data/services/users_service.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
@@ -165,10 +166,10 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
     final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : '?';
     final colors = _roleColors(context, role);
 
-    // The shift section is shown only when an Admin/Owner is viewing a Seller.
+    // The shift section is shown only when the viewer holds users.shift and
+    // the viewed user is a Seller.
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final currentRole = (auth.user?['role'] ?? '').toString().toLowerCase();
-    final canManageShift = currentRole == 'owner' || currentRole == 'admin';
+    final canManageShift = auth.can(Permissions.usersShift);
     final isSellerViewed = role.toLowerCase() == 'seller';
 
     return Container(

@@ -6,6 +6,7 @@ import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:market_system_client/core/auth/permissions.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 
 /// One row in the zakup (stock receive) history list.
@@ -29,10 +30,9 @@ class ZakupCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final createdAt = DateTime.tryParse(zakup['createdAt'] ?? '');
 
-    // Hide cost price for Sellers
+    // Hide cost price unless the user holds data.costPrice
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userRole = authProvider.user?['role'];
-    final canViewCostPrice = userRole != 'Seller';
+    final canViewCostPrice = authProvider.can(Permissions.dataCostPrice);
 
     final qty = (zakup['quantity'] as num?)?.toDouble() ?? 0.0;
     final qtyStr =
