@@ -28,19 +28,6 @@ class ReportService {
     }
   }
 
-  // Export comprehensive report to Excel
-  Future<void> exportComprehensiveToExcel(DateTime date) async {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-    final response = await _httpService.get(
-      '${ApiConstants.reports}/comprehensive/export?date=$formattedDate',
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to export report: ${response.statusCode}');
-    }
-  }
-
   // Get daily report
   Future<dynamic> getDailyReport(DateTime date) async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
@@ -68,20 +55,6 @@ class ReportService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to load period report: ${response.statusCode}');
-    }
-  }
-
-  // Export period report to Excel
-  Future<void> exportPeriodReportToExcel(DateTime start, DateTime end) async {
-    final startDate = DateFormat('yyyy-MM-dd').format(start);
-    final endDate = DateFormat('yyyy-MM-dd').format(end);
-
-    final response = await _httpService.get(
-      '${ApiConstants.reports}/period/export?start=$startDate&end=$endDate',
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to export report: ${response.statusCode}');
     }
   }
 
@@ -162,19 +135,6 @@ class ReportService {
     }
   }
 
-  // Kunlik hisobotni Excel ga export qilish (kunlik hisobot + sotuvlar ro'yxati + mahsulotlar bo'yicha)
-  Future<void> exportDailyReportToExcel(DateTime date) async {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-    final response = await _httpService.get(
-      '${ApiConstants.reports}/daily/export?date=$formattedDate',
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to export daily report: ${response.statusCode}');
-    }
-  }
-
   /// Download the daily report as raw Excel bytes so the caller can save/open
   /// or share the file. Returns null if the response was empty or non-200.
   Future<List<int>?> downloadDailyExcel(DateTime date) async {
@@ -182,19 +142,6 @@ class ReportService {
     return await _httpService.downloadBytes(
       '${ApiConstants.reports}/daily/export?date=$formattedDate',
     );
-  }
-
-  // Ombor hisobotini Excel ga export qilish
-  Future<void> exportInventoryReportToExcel(DateTime date) async {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-    final response = await _httpService.get(
-      '${ApiConstants.reports}/inventory/export?date=$formattedDate',
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to export inventory report: ${response.statusCode}');
-    }
   }
 
   // ---------------------------------------------------------------------------
