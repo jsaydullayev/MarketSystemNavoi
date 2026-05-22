@@ -49,4 +49,7 @@ class Permissions {
   static const dataProfit = 'data.profit';
   static const dataCashBalance = 'data.cashBalance';
   static const dataAllSalesView = 'data.allSalesView';
+  // Audit-log viewing — Owner / SuperAdmin always have it (handler bypass);
+  // Owner may grant it to a trusted Admin via the permission-matrix screen.
+  static const dataAuditLog = 'data.auditLog';
 }

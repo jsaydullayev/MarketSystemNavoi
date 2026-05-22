@@ -1052,6 +1052,18 @@ class _DashboardDrawer extends StatelessWidget {
       ]);
     }
 
+    // Security Journal — gated by data.auditLog (Plan 07 Bosqich 4). Owner /
+    // SuperAdmin always pass via the handler bypass; an Admin appears here
+    // only when the Owner has explicitly granted them the permission.
+    if (context.can(Permissions.dataAuditLog)) {
+      items.add(_DrawerItem(
+        icon: Icons.shield_outlined,
+        label: l10n.securityJournal,
+        onTap: () =>
+            Navigator.pushNamed(context, AppRoutes.securityJournal),
+      ));
+    }
+
     return [
       for (final it in items)
         _SettingsTile(

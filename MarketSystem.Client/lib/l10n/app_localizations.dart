@@ -5071,6 +5071,96 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Boshlangan: {time}'**
   String shiftStartedAt(String time);
+
+  /// No description provided for @securityJournal.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xavfsizlik jurnali'**
+  String get securityJournal;
+
+  /// No description provided for @securityJournalAllTab.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasi'**
+  String get securityJournalAllTab;
+
+  /// No description provided for @securityJournalSuspiciousTab.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shubhali'**
+  String get securityJournalSuspiciousTab;
+
+  /// No description provided for @securityJournalFilterEntityType.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hodisa turi'**
+  String get securityJournalFilterEntityType;
+
+  /// No description provided for @securityJournalFilterAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Amal'**
+  String get securityJournalFilterAction;
+
+  /// No description provided for @securityJournalFilterAll.
+  ///
+  /// In uz, this message translates to:
+  /// **'Barchasi'**
+  String get securityJournalFilterAll;
+
+  /// No description provided for @securityJournalEmptyAll.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha audit yozuvlari yo\'q.'**
+  String get securityJournalEmptyAll;
+
+  /// No description provided for @securityJournalNoSuspicious.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha shubhali faollik aniqlanmadi.'**
+  String get securityJournalNoSuspicious;
+
+  /// No description provided for @securityJournalAnonymousActor.
+  ///
+  /// In uz, this message translates to:
+  /// **'Anonim'**
+  String get securityJournalAnonymousActor;
+
+  /// No description provided for @securityJournalFailedLoginBursts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xato login urinishlari'**
+  String get securityJournalFailedLoginBursts;
+
+  /// No description provided for @securityJournalBulkDeleteBursts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ko\'p o\'chirish urinishlari'**
+  String get securityJournalBulkDeleteBursts;
+
+  /// No description provided for @securityJournalFirstSeen.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshlangan'**
+  String get securityJournalFirstSeen;
+
+  /// No description provided for @securityJournalLastSeen.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oxirgi'**
+  String get securityJournalLastSeen;
+
+  /// No description provided for @securityJournalSourceIps.
+  ///
+  /// In uz, this message translates to:
+  /// **'Manba IP'**
+  String get securityJournalSourceIps;
+
+  /// No description provided for @securityJournalEntityTypes.
+  ///
+  /// In uz, this message translates to:
+  /// **'Obyektlar'**
+  String get securityJournalEntityTypes;
 }
 
 class _AppLocalizationsDelegate

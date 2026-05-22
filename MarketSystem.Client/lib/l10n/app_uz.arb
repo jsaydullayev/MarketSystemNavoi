@@ -915,5 +915,20 @@
     "placeholders": {
       "time": { "type": "String" }
     }
-  }
+  },
+  "securityJournal": "Xavfsizlik jurnali",
+  "securityJournalAllTab": "Hammasi",
+  "securityJournalSuspiciousTab": "Shubhali",
+  "securityJournalFilterEntityType": "Hodisa turi",
+  "securityJournalFilterAction": "Amal",
+  "securityJournalFilterAll": "Barchasi",
+  "securityJournalEmptyAll": "Hozircha audit yozuvlari yo'q.",
+  "securityJournalNoSuspicious": "Hozircha shubhali faollik aniqlanmadi.",
+  "securityJournalAnonymousActor": "Anonim",
+  "securityJournalFailedLoginBursts": "Xato login urinishlari",
+  "securityJournalBulkDeleteBursts": "Ko'p o'chirish urinishlari",
+  "securityJournalFirstSeen": "Boshlangan",
+  "securityJournalLastSeen": "Oxirgi",
+  "securityJournalSourceIps": "Manba IP",
+  "securityJournalEntityTypes": "Obyektlar"
 }

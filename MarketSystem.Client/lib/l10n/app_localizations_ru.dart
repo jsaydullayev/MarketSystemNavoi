@@ -2657,4 +2657,50 @@ class AppLocalizationsRu extends AppLocalizations {
   String shiftStartedAt(String time) {
     return 'Начата: $time';
   }
+
+  @override
+  String get securityJournal => 'Журнал безопасности';
+
+  @override
+  String get securityJournalAllTab => 'Все';
+
+  @override
+  String get securityJournalSuspiciousTab => 'Подозрительные';
+
+  @override
+  String get securityJournalFilterEntityType => 'Тип события';
+
+  @override
+  String get securityJournalFilterAction => 'Действие';
+
+  @override
+  String get securityJournalFilterAll => 'Все';
+
+  @override
+  String get securityJournalEmptyAll => 'Записей аудита пока нет.';
+
+  @override
+  String get securityJournalNoSuspicious =>
+      'Подозрительной активности пока не обнаружено.';
+
+  @override
+  String get securityJournalAnonymousActor => 'Анонимный';
+
+  @override
+  String get securityJournalFailedLoginBursts => 'Серии неудачных входов';
+
+  @override
+  String get securityJournalBulkDeleteBursts => 'Массовые удаления';
+
+  @override
+  String get securityJournalFirstSeen => 'Начало';
+
+  @override
+  String get securityJournalLastSeen => 'Последнее';
+
+  @override
+  String get securityJournalSourceIps => 'Источник IP';
+
+  @override
+  String get securityJournalEntityTypes => 'Объекты';
 }
