@@ -1040,11 +1040,11 @@ public class ReportsController : ControllerBase
 
     [HttpGet("daily/export-pdf")]
     [RequirePermission(PermissionKeys.ReportsExport)]
-    public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date)
+    public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date, [FromQuery] string lang = "uz")
     {
         var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-        var pdfBytes = await _reportService.ExportDailyReportToPdfAsync(utcDate, userRole);
+        var pdfBytes = await _reportService.ExportDailyReportToPdfAsync(utcDate, userRole, lang);
 
         return File(
             pdfBytes,
@@ -1057,7 +1057,8 @@ public class ReportsController : ControllerBase
     [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportPeriodReportToPdf(
         [FromQuery] DateTime start,
-        [FromQuery] DateTime end)
+        [FromQuery] DateTime end,
+        [FromQuery] string lang = "uz")
     {
         if (start > end)
             return BadRequest("Start date cannot be after end date");
@@ -1068,7 +1069,7 @@ public class ReportsController : ControllerBase
         var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
 
         var request = new PeriodReportRequest(utcStart, utcEnd);
-        var pdfBytes = await _reportService.ExportPeriodReportToPdfAsync(request, userRole);
+        var pdfBytes = await _reportService.ExportPeriodReportToPdfAsync(request, userRole, lang);
 
         return File(
             pdfBytes,
@@ -1079,11 +1080,11 @@ public class ReportsController : ControllerBase
 
     [HttpGet("comprehensive/export-pdf")]
     [RequirePermission(PermissionKeys.ReportsExport)]
-    public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date)
+    public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date, [FromQuery] string lang = "uz")
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
         var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var pdfBytes = await _reportService.ExportComprehensiveReportToPdfAsync(utcDate, userRole);
+        var pdfBytes = await _reportService.ExportComprehensiveReportToPdfAsync(utcDate, userRole, lang);
 
         return File(
             pdfBytes,

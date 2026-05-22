@@ -61,6 +61,30 @@ public class PdfExportTests
         AssertValidPdf(ReportService.RenderInvoicePdf(data));
     }
 
+    [Fact]
+    public void RenderInvoicePdf_RussianLocale_IsValid()
+    {
+        var data = new ReportService.InvoiceData(
+            MarketName: "Strotech Market",
+            MarketDescription: "Qurilish mollari",
+            SellerName: "Jahongir",
+            CustomerName: "Без клиента",
+            InvoiceNumber: Guid.NewGuid(),
+            Date: new DateTime(2026, 5, 12, 22, 36, 0),
+            PaymentType: "Наличные",
+            Items: new List<ReportService.InvoiceItemData>
+            {
+                new("Taxta", 5m, 18000m, 90000m, null, false),
+                new("Mix", 10m, 1000m, 10000m, "Tezkor buyurtma", true),
+            },
+            TotalAmount: 100000m,
+            PaidAmount: 60000m,
+            RemainingAmount: 40000m,
+            Status: "Debt");
+
+        AssertValidPdf(ReportService.RenderInvoicePdf(data, lang: "ru"));
+    }
+
     // ---- Sales list ----
 
     private static List<ReportService.SalesReportItem> SampleRows() => new()
@@ -91,6 +115,13 @@ public class PdfExportTests
             new List<ReportService.SalesReportItem>(), null, null,
             includeProfit: true, includeCost: true,
             totalSales: 0m, totalProfit: 0m));
+
+    [Fact]
+    public void RenderSalesListPdf_RussianLocale_OwnerView_IsValid()
+        => AssertValidPdf(ReportService.RenderSalesListPdf(
+            SampleRows(), new DateTime(2026, 5, 13), new DateTime(2026, 5, 13),
+            includeProfit: true, includeCost: true,
+            totalSales: 515500m, totalProfit: 50000m, lang: "ru"));
 
     // ---- Daily / period summary report ----
 
