@@ -134,7 +134,8 @@ class _SalesScreenState extends State<SalesScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
-      final bytes = await salesService.downloadSalesPdf();
+      final lang = Localizations.localeOf(context).languageCode;
+      final bytes = await salesService.downloadSalesPdf(lang: lang);
 
       if (bytes != null && bytes.isNotEmpty) {
         final success = await core_file_helper.FileHelper.saveAndOpenPdf(

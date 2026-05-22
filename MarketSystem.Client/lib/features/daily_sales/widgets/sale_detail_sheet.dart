@@ -45,6 +45,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
   Future<void> _downloadPdf() async {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
+    final lang = Localizations.localeOf(context).languageCode;
 
     final saleId = widget.sale.id?.toString() ?? '';
 
@@ -62,7 +63,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
 
     try {
       // PDFni serverdan yuklab olish
-      final pdfData = await _salesService.downloadInvoice(saleId);
+      final pdfData = await _salesService.downloadInvoice(saleId, lang: lang);
 
       if (pdfData == null || pdfData.isEmpty) {
         if (mounted) {

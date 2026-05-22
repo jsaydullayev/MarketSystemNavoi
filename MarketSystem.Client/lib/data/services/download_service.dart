@@ -240,9 +240,9 @@ class DownloadService {
   }
 
   /// Kunlik hisobotni PDF formatida yuklab olish
-  Future<void> downloadDailyReportToPdf(DateTime date) async {
+  Future<void> downloadDailyReportToPdf(DateTime date, {String lang = 'uz'}) async {
     try {
-      String url = '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}';
+      String url = '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
 
       final response = await _httpService.get(url);
 
@@ -263,9 +263,9 @@ class DownloadService {
   }
 
   /// Davr hisobotni PDF formatida yuklab olish
-  Future<void> downloadPeriodReportToPdf(DateTime start, DateTime end) async {
+  Future<void> downloadPeriodReportToPdf(DateTime start, DateTime end, {String lang = 'uz'}) async {
     try {
-      String url = '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}';
+      String url = '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}&lang=$lang';
 
       final response = await _httpService.get(url);
 
@@ -286,9 +286,9 @@ class DownloadService {
   }
 
   /// Umumiy hisobotni PDF formatida yuklab olish
-  Future<void> downloadComprehensiveReportToPdf(DateTime date) async {
+  Future<void> downloadComprehensiveReportToPdf(DateTime date, {String lang = 'uz'}) async {
     try {
-      String url = '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}';
+      String url = '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
 
       final response = await _httpService.get(url);
 

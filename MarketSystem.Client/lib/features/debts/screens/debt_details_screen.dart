@@ -52,6 +52,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
   Future<void> _downloadPdf() async {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
+    final lang = Localizations.localeOf(context).languageCode;
 
     final saleId = widget.debt['saleId']?.toString() ?? '';
 
@@ -63,7 +64,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     );
 
     try {
-      final pdfData = await _salesService.downloadInvoice(saleId);
+      final pdfData = await _salesService.downloadInvoice(saleId, lang: lang);
 
       if (pdfData == null || pdfData.isEmpty) {
         if (mounted) {
