@@ -56,6 +56,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   Future<void> _downloadPdf(Map<String, dynamic> sale) async {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
+    final lang = Localizations.localeOf(context).languageCode;
 
     // Loading dialog ko'rsatish
     if (!mounted) return;
@@ -71,7 +72,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
     try {
       // PDFni serverdan yuklab olish
-      final pdfData = await _salesService.downloadInvoice(widget.saleId);
+      final pdfData = await _salesService.downloadInvoice(widget.saleId, lang: lang);
 
       if (pdfData == null || pdfData.isEmpty) {
         if (mounted) {

@@ -175,12 +175,14 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
+      final lang = Localizations.localeOf(context).languageCode;
       // PDF endpoint accepts a date range; collapse it to a single day.
       final bytes = await salesService.downloadSalesPdf(
         startDate: DateTime(
             _selectedDate.year, _selectedDate.month, _selectedDate.day),
         endDate: DateTime(_selectedDate.year, _selectedDate.month,
             _selectedDate.day, 23, 59, 59),
+        lang: lang,
       );
       if (!mounted) return;
       if (bytes == null || bytes.isEmpty) {
