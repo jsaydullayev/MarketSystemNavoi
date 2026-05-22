@@ -72,42 +72,6 @@ class DownloadService {
     }
   }
 
-  /// Sotuvlarni Excel formatida yuklab olish
-  Future<void> downloadSales({
-    DateTime? startDate,
-    DateTime? endDate,
-    String lang = 'uz',
-  }) async {
-    try {
-      String url = '/Reports/sales/export?lang=$lang';
-
-      // Qo'shimcha parametrlarni qo'shish
-      if (startDate != null) {
-        url += '&startDate=${_formatDateForQuery(startDate)}';
-      }
-      if (endDate != null) {
-        url += '&endDate=${_formatDateForQuery(endDate)}';
-      }
-
-      final response = await _httpService.get(url);
-
-      if (response.statusCode == 200) {
-        final filename =
-            'sotuvlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-        if (kIsWeb) {
-          _downloadWeb(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-            'Sotuvlarni yuklab olishda xatolik: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Sotuvlarni yuklab olishda xatolik: $e');
-    }
-  }
-
   /// Umumiy hisobotni Excel formatida yuklab olish
   Future<void> downloadComprehensiveReport({DateTime? date, String lang = 'uz'}) async {
     try {
