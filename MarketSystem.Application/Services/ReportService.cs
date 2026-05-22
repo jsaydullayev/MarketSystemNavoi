@@ -1326,20 +1326,266 @@ public class ReportService : IReportService
         => c.Background(background).BorderBottom(1).BorderColor(PdfTheme.Line)
             .PaddingVertical(5).PaddingHorizontal(6).AlignMiddle();
 
-    public Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
+        var report = await GetDailyReportAsync(date, userRole, cancellationToken);
+        var kpis = new List<(string Label, string Value, string Accent)>
+        {
+            ("Jami savdo",    $"{report.TotalSales:N0} so'm",     PdfTheme.Ink),
+            ("To'langan",     $"{report.TotalPaidSales:N0} so'm", PdfTheme.Success),
+            ("Qarz",          $"{report.TotalDebtSales:N0} so'm", PdfTheme.Danger),
+            ("Cheklar soni",  $"{report.TotalTransactions:N0}",   PdfTheme.Ink),
+            ("Zakup",         $"{report.TotalZakup:N0} so'm",     PdfTheme.Muted),
+        };
+        if (report.Profit.HasValue)
+            kpis.Add(("Sof foyda", $"{report.Profit.Value:N0} so'm",
+                report.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger));
+
+        return RenderSummaryReportPdf("KUNLIK HISOBOT", date.ToString("dd.MM.yyyy"),
+            kpis, report.PaymentBreakdown);
     }
 
-    public Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
+        var report = await GetPeriodReportAsync(request, userRole, cancellationToken);
+        var kpis = new List<(string Label, string Value, string Accent)>
+        {
+            ("Jami savdo",    $"{report.TotalSales:N0} so'm",     PdfTheme.Ink),
+            ("To'langan",     $"{report.TotalPaidSales:N0} so'm", PdfTheme.Success),
+            ("Qarz",          $"{report.TotalDebtSales:N0} so'm", PdfTheme.Danger),
+            ("Cheklar soni",  $"{report.TotalTransactions:N0}",   PdfTheme.Ink),
+            ("O'rtacha chek", $"{report.AverageSale:N0} so'm",    PdfTheme.Ink),
+            ("Zakup",         $"{report.TotalZakup:N0} so'm",     PdfTheme.Muted),
+        };
+        if (report.Profit.HasValue)
+            kpis.Add(("Sof foyda", $"{report.Profit.Value:N0} so'm",
+                report.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger));
+
+        var period = $"{request.StartDate:dd.MM.yyyy} — {request.EndDate:dd.MM.yyyy}";
+        return RenderSummaryReportPdf("DAVRIY HISOBOT", period, kpis, report.PaymentBreakdown);
     }
 
-    public Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
+        var report = await GetComprehensiveReportAsync(date, userRole, cancellationToken);
+        return RenderComprehensiveReportPdf(report, date.ToString("dd.MM.yyyy"));
     }
+
+    /// <summary>
+    /// Renders a daily/period summary report — KPI cards + payment breakdown.
+    /// Pure rendering (no I/O); unit-testable via PdfExportTests.
+    /// </summary>
+    internal static byte[] RenderSummaryReportPdf(
+        string title, string period,
+        IReadOnlyList<(string Label, string Value, string Accent)> kpis,
+        IReadOnlyList<PaymentBreakdownDto> payments)
+    {
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(0);
+                page.DefaultTextStyle(x => x.FontSize(10).FontColor(PdfTheme.Ink));
+
+                page.Header().Element(h => ReportHeaderBand(h, title, period));
+
+                page.Content().PaddingHorizontal(32).PaddingTop(22).Column(column =>
+                {
+                    column.Spacing(20);
+
+                    foreach (var chunk in kpis.Chunk(3))
+                    {
+                        column.Item().Row(row =>
+                        {
+                            row.Spacing(12);
+                            foreach (var k in chunk) KpiCard(row, k.Label, k.Value, k.Accent);
+                            for (int p = chunk.Length; p < 3; p++) row.RelativeItem();
+                        });
+                    }
+
+                    if (payments.Count > 0)
+                        column.Item().Column(sec =>
+                        {
+                            sec.Item().PaddingBottom(6).Text("TO'LOV TURLARI")
+                                .FontSize(11).Bold().FontColor(PdfTheme.BrandDark);
+                            sec.Item().Element(e => PaymentBreakdownTable(e, payments));
+                        });
+                });
+
+                page.Footer().Element(ReportFooterBand);
+            });
+        }).GeneratePdf();
+    }
+
+    /// <summary>
+    /// Renders the comprehensive report — daily summary KPIs, per-seller table
+    /// and an inventory overview. Pure rendering; unit-testable.
+    /// </summary>
+    internal static byte[] RenderComprehensiveReportPdf(ComprehensiveReportDto report, string dateLabel)
+    {
+        var d = report.DailyReport;
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(0);
+                page.DefaultTextStyle(x => x.FontSize(9.5f).FontColor(PdfTheme.Ink));
+
+                page.Header().Element(h => ReportHeaderBand(h, "TO'LIQ HISOBOT", dateLabel));
+
+                page.Content().PaddingHorizontal(32).PaddingTop(20).Column(column =>
+                {
+                    column.Spacing(18);
+
+                    // Daily summary KPIs
+                    column.Item().Row(row =>
+                    {
+                        row.Spacing(12);
+                        KpiCard(row, "Jami savdo", $"{d.TotalSales:N0} so'm", PdfTheme.Ink);
+                        KpiCard(row, "To'langan", $"{d.TotalPaidSales:N0} so'm", PdfTheme.Success);
+                        KpiCard(row, "Qarz", $"{d.TotalDebtSales:N0} so'm", PdfTheme.Danger);
+                        if (d.Profit.HasValue)
+                            KpiCard(row, "Sof foyda", $"{d.Profit.Value:N0} so'm",
+                                d.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger);
+                    });
+
+                    // Seller breakdown
+                    column.Item().Column(sec =>
+                    {
+                        sec.Item().PaddingBottom(6).Text("SOTUVCHILAR")
+                            .FontSize(11).Bold().FontColor(PdfTheme.BrandDark);
+                        sec.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(3);
+                                columns.ConstantColumn(120);
+                                columns.ConstantColumn(80);
+                                columns.ConstantColumn(120);
+                            });
+                            table.Header(header =>
+                            {
+                                header.Cell().Element(SalesHeadCell).Text("SOTUVCHI");
+                                header.Cell().Element(SalesHeadCell).AlignRight().Text("SAVDO");
+                                header.Cell().Element(SalesHeadCell).AlignRight().Text("CHEKLAR");
+                                header.Cell().Element(SalesHeadCell).AlignRight().Text("FOYDA");
+                            });
+                            int i = 0;
+                            foreach (var s in report.SellerReports)
+                            {
+                                var bg = i++ % 2 == 0 ? PdfTheme.White : PdfTheme.Zebra;
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).Text(s.SellerName);
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{s.TotalSales:N0}");
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{s.TransactionCount:N0}");
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight()
+                                    .Text(s.TotalProfit.HasValue ? $"{s.TotalProfit.Value:N0}" : "—");
+                            }
+                        });
+                    });
+
+                    // Inventory overview
+                    column.Item().Column(sec =>
+                    {
+                        sec.Item().PaddingBottom(6).Text("SKLAD HOLATI")
+                            .FontSize(11).Bold().FontColor(PdfTheme.BrandDark);
+                        sec.Item().Row(row =>
+                        {
+                            row.Spacing(12);
+                            KpiCard(row, "Mahsulotlar", $"{report.ProductCount:N0}", PdfTheme.Ink);
+                            KpiCard(row, "Jami qiymat", $"{report.TotalInventoryValue:N0} so'm", PdfTheme.Ink);
+                            KpiCard(row, "Kam qolgan", $"{report.LowStockCount:N0}", PdfTheme.BrandDark);
+                            KpiCard(row, "Tugagan", $"{report.OutOfStockCount:N0}", PdfTheme.Danger);
+                        });
+                    });
+                });
+
+                page.Footer().Element(ReportFooterBand);
+            });
+        }).GeneratePdf();
+    }
+
+    // ── Report rendering helpers ──
+    private static void ReportHeaderBand(IContainer header, string title, string subtitle)
+    {
+        header.Background(PdfTheme.Brand).PaddingVertical(16).PaddingHorizontal(32).Row(row =>
+        {
+            row.RelativeItem().Column(col =>
+            {
+                col.Item().Text(title).FontSize(18).Bold().FontColor(PdfTheme.White);
+                col.Item().PaddingTop(2).Text(subtitle).FontSize(10).FontColor(PdfTheme.BrandTint);
+            });
+            row.ConstantItem(170).AlignRight().AlignBottom()
+                .Text($"Yaratilgan: {DateTime.Now:dd.MM.yyyy HH:mm}")
+                .FontSize(8).FontColor(PdfTheme.BrandTint);
+        });
+    }
+
+    private static void ReportFooterBand(IContainer footer)
+    {
+        footer.BorderTop(1).BorderColor(PdfTheme.Line)
+            .PaddingHorizontal(32).PaddingVertical(8).Row(row =>
+        {
+            row.RelativeItem().AlignMiddle()
+                .Text("Strotech tomonidan yaratildi  ·  strotech.uz")
+                .FontSize(8).FontColor(PdfTheme.Muted);
+            row.RelativeItem().AlignRight().AlignMiddle().Text(x =>
+            {
+                x.DefaultTextStyle(s => s.FontSize(8).FontColor(PdfTheme.Muted));
+                x.Span("Sahifa ");
+                x.CurrentPageNumber();
+                x.Span(" / ");
+                x.TotalPages();
+            });
+        });
+    }
+
+    private static void KpiCard(QuestPDF.Fluent.RowDescriptor row, string label, string value, string accent)
+    {
+        row.RelativeItem().Border(1).BorderColor(PdfTheme.Line).Background(PdfTheme.White)
+            .Padding(12).Column(col =>
+        {
+            col.Item().Text(label.ToUpperInvariant()).FontSize(7.5f).Bold().FontColor(PdfTheme.Muted);
+            col.Item().PaddingTop(5).Text(value).FontSize(13).Bold().FontColor(accent);
+        });
+    }
+
+    private static void PaymentBreakdownTable(IContainer container, IReadOnlyList<PaymentBreakdownDto> payments)
+    {
+        container.Table(table =>
+        {
+            table.ColumnsDefinition(columns =>
+            {
+                columns.RelativeColumn(3);
+                columns.ConstantColumn(90);
+                columns.ConstantColumn(150);
+            });
+            table.Header(header =>
+            {
+                header.Cell().Element(SalesHeadCell).Text("TUR");
+                header.Cell().Element(SalesHeadCell).AlignRight().Text("SONI");
+                header.Cell().Element(SalesHeadCell).AlignRight().Text("SUMMA");
+            });
+            int i = 0;
+            foreach (var p in payments)
+            {
+                var bg = i++ % 2 == 0 ? PdfTheme.White : PdfTheme.Zebra;
+                table.Cell().Element(c => SalesBodyCell(c, bg)).Text(PaymentLabelUz(p.PaymentType));
+                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{p.Count:N0}");
+                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{p.Amount:N0} so'm");
+            }
+        });
+    }
+
+    private static string PaymentLabelUz(string type) => type switch
+    {
+        "Cash" => "Naqd",
+        "Transfer" => "O'tkazma / Hisob",
+        "Qaytarilgan" or "Refund" => "Qaytarilgan",
+        _ => type, // Terminal / Click — already fine
+    };
 
     public async Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, CancellationToken cancellationToken = default)
     {
