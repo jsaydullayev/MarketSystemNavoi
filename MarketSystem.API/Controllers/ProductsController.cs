@@ -4,7 +4,6 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Constants;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.API.Authorization;
-using MarketSystem.API.Helpers;
 using MarketSystem.Domain.Constants;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;

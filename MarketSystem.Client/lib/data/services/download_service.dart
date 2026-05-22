@@ -25,14 +25,15 @@ class DownloadService {
 
   /// Kategoriyalarni Excel formatida yuklab olish
   // TODO: hoist into ApiConstants as `categoriesExportExcel` constant.
-  Future<void> downloadCategories() async {
+  Future<void> downloadCategories({String lang = 'uz'}) async {
     try {
       final response = await _httpService
-          .get('/ProductCategories/ExportCategoriesToExcel');
+          .get('/ProductCategories/ExportCategoriesToExcel?lang=$lang');
 
       if (response.statusCode == 200) {
-        final filename =
-            'kategoriyalar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        final filename = lang == 'ru'
+            ? 'Kategorii_${DateTime.now().millisecondsSinceEpoch}.xlsx'
+            : 'Kategoriyalar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
         if (kIsWeb) {
           _downloadWeb(response.bodyBytes, filename);
         } else {
