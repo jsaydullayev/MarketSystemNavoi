@@ -374,12 +374,14 @@ public class AppDbContext : DbContext, IAppDbContext
 
             // IMPORTANT: Audit log tarixi hech qachon o'CHMASIN kerak.
             // UserId is optional — an anonymous event (failed login where the
-            // username didn't resolve to any user) carries NULL. When a user IS
-            // deleted we keep the audit row and just null the FK, so the
-            // history survives the actor's removal.
+            // username didn't resolve to any user) carries NULL. Restrict (not
+            // SetNull) is deliberate: paired with the append-only trigger added
+            // in the AuditLogImmutability migration, no FK-cascade UPDATE can
+            // ever rewrite an audit row. A user with audit history therefore
+            // cannot be hard-deleted; UserService.DeleteUserAsync soft-deletes.
             b.HasOne(x => x.User).WithMany(p => p.AuditLogs).HasForeignKey(x => x.UserId)
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
             b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId)
                 .OnDelete(DeleteBehavior.SetNull);
 

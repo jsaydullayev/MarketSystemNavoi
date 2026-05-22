@@ -230,7 +230,14 @@ public class UserService : IUserService
         if (user.Role == Role.SuperAdmin)
             return false;
 
-        _unitOfWork.Users.Delete(user);
+        // Soft-delete — mirrors the SuperAdmin owner-delete flow and preserves
+        // audit history. A hard delete would either fail (FK RESTRICT against
+        // AuditLogs.UserId, per Plan 07 Bosqich 5) or rewrite history if we
+        // ever relaxed the FK — soft-delete sidesteps both. The user becomes
+        // hidden by the global IsDeleted query filter.
+        user.IsActive = false;
+        user.IsDeleted = true;
+        _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
     }
