@@ -98,4 +98,19 @@ public class AuditLogIntegrationTests : TestBase
         var log = await DbContext.Set<AuditLog>().SingleAsync();
         log.Payload.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task LogAction_WithEmptyUserId_StoresNullUserId()
+    {
+        // Mirrors what AuthService does on a failed login — the username
+        // didn't resolve to a real account, so the caller passes Guid.Empty.
+        // The service must store NULL or the FK to Users will reject the row
+        // in production (in-memory tests don't enforce FKs).
+        var service = CreateService(HttpContextWith(remoteIp: null));
+
+        await service.LogActionAsync("Auth", Guid.Empty, "LoginFailed", Guid.Empty);
+
+        var log = await DbContext.Set<AuditLog>().SingleAsync();
+        log.UserId.Should().BeNull();
+    }
 }

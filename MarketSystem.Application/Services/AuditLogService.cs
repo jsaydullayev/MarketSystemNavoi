@@ -43,7 +43,10 @@ public class AuditLogService : IAuditLogService
                 EntityType = entityType,
                 EntityId = entityId,
                 Action = action,
-                UserId = userId,
+                // Guid.Empty from callers (e.g. LoginFailed where the username
+                // doesn't resolve to a real account) is normalised to NULL so
+                // the row doesn't violate the FK to Users.
+                UserId = userId == Guid.Empty ? null : userId,
                 MarketId = _currentMarketService.TryGetCurrentMarketId(),
                 Payload = payload != null ? JsonSerializer.Serialize(payload) : string.Empty,
                 IpAddress = _httpContextAccessor.HttpContext?
