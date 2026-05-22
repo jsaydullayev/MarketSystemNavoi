@@ -5041,6 +5041,36 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Ruxsatlarni boshqarish'**
   String get managePermissions;
+
+  /// No description provided for @shiftOpen.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena ochiq'**
+  String get shiftOpen;
+
+  /// No description provided for @shiftClosed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena yopiq'**
+  String get shiftClosed;
+
+  /// No description provided for @openShift.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smenani ochish'**
+  String get openShift;
+
+  /// No description provided for @closeShift.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smenani yopish'**
+  String get closeShift;
+
+  /// No description provided for @shiftStartedAt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshlangan: {time}'**
+  String shiftStartedAt(String time);
 }
 
 class _AppLocalizationsDelegate

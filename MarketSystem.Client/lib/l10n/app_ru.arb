@@ -905,5 +905,10 @@
   "permissionsSaved": "Права сохранены",
   "permissionsUsingRoleDefaults": "Стандартные права по роли",
   "permissionsCustomized": "Настроено вручную",
-  "managePermissions": "Управление правами"
+  "managePermissions": "Управление правами",
+  "shiftOpen": "Смена открыта",
+  "shiftClosed": "Смена закрыта",
+  "openShift": "Открыть смену",
+  "closeShift": "Закрыть смену",
+  "shiftStartedAt": "Начата: {time}"
 }
