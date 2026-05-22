@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/common_app_bar.dart';
+import '../../../data/services/debt_service.dart';
 import '../../../data/services/notification_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
@@ -25,6 +26,8 @@ import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../dashboard/dashboard_widgets.dart' show AlertCard, AlertTone, SectionHeader;
+import '../../debts/screens/debt_details_screen.dart';
+import '../../products/presentation/screens/products_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -55,6 +58,61 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       _feedFuture = _load();
     });
     await _feedFuture.catchError((_) => const AlertFeed());
+  }
+
+  /// Debt alert tapped — resolve the debt by id and open its detail screen.
+  /// Falls back to the debts list when the debt can't be found (e.g. it was
+  /// just paid off) or the lookup fails.
+  Future<void> _openDebt(AlertItem item) async {
+    final id = item.subjectId;
+    if (id == null || id.isEmpty) {
+      Navigator.pushNamed(context, AppRoutes.debts);
+      return;
+    }
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) =>
+          Center(child: CircularProgressIndicator(color: context.colors.brand)),
+    );
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final debts = await DebtService(authProvider: auth).getAllDebts();
+      final match = debts
+          .whereType<Map<String, dynamic>>()
+          .firstWhere((d) => d['id']?.toString() == id,
+              orElse: () => const <String, dynamic>{});
+      if (!mounted) return;
+      Navigator.pop(context); // dismiss the loader
+      if (match.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DebtDetailsScreen(
+              debt: match,
+              customerName: (match['customerName'] ?? item.title).toString(),
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushNamed(context, AppRoutes.debts);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      Navigator.pushNamed(context, AppRoutes.debts);
+    }
+  }
+
+  /// Low-stock alert tapped — open the products screen pre-filtered to that
+  /// product so the owner lands straight on the item that triggered the alert.
+  void _openProduct(AlertItem item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductsScreen(initialSearch: item.title),
+      ),
+    );
   }
 
   @override
@@ -97,8 +155,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     items: feed.overdueDebts,
                     tone: AlertTone.danger,
                     emoji: '⚠️',
-                    onTap: (item) =>
-                        Navigator.pushNamed(context, AppRoutes.debts),
+                    onTap: _openDebt,
                   ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
@@ -110,8 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     items: feed.lowStock,
                     tone: AlertTone.warning,
                     emoji: '📦',
-                    onTap: (item) =>
-                        Navigator.pushNamed(context, AppRoutes.products),
+                    onTap: _openProduct,
                   ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
@@ -123,8 +179,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     items: feed.recentDebts,
                     tone: AlertTone.warning,
                     emoji: '💳',
-                    onTap: (item) =>
-                        Navigator.pushNamed(context, AppRoutes.debts),
+                    onTap: _openDebt,
                   ),
                 ],
               ],

@@ -25,7 +25,12 @@ import '../../../../l10n/app_localizations.dart';
 
 class ProductsScreen extends StatefulWidget {
   final bool isReadOnly;
-  const ProductsScreen({super.key, this.isReadOnly = false});
+
+  /// Pre-fills the search box — used to deep-link straight to one product
+  /// (e.g. from a low-stock notification).
+  final String? initialSearch;
+
+  const ProductsScreen({super.key, this.isReadOnly = false, this.initialSearch});
 
   @override
   State<ProductsScreen> createState() => _ProductsScreenState();
@@ -41,6 +46,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void initState() {
     super.initState();
+    // Seed the search box before wiring the listener so a deep-linked
+    // product is filtered in as soon as the list finishes loading.
+    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+      _searchController.text = widget.initialSearch!;
+    }
     _loadProducts();
     _searchController.addListener(_filterProducts);
   }
@@ -77,6 +87,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
         _filteredProducts = products;
         _isLoading = false;
       });
+      // Re-apply the active search — keeps a deep-linked (initialSearch)
+      // product filtered in once the list arrives.
+      _filterProducts();
     } catch (e) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
