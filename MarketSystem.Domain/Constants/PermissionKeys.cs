@@ -53,6 +53,9 @@ public static class PermissionKeys
     public const string DataProfit = "data.profit";
     public const string DataCashBalance = "data.cashBalance";
     public const string DataAllSalesView = "data.allSalesView";
+    // Audit-log viewing — Owner/SuperAdmin always have it (handler bypass);
+    // Owner can grant it to a trusted Admin via the permission-matrix screen.
+    public const string DataAuditLog = "data.auditLog";
 
     /// <summary>Every permission key, in catalogue order. Used for validation
     /// and to render the Owner permission-matrix screen.</summary>
@@ -68,7 +71,7 @@ public static class PermissionKeys
         ReportsAccess, ReportsExport,
         UsersAccess, UsersManage, UsersShift,
         DebtsAccess, DebtsManage,
-        DataCostPrice, DataProfit, DataCashBalance, DataAllSalesView,
+        DataCostPrice, DataProfit, DataCashBalance, DataAllSalesView, DataAuditLog,
     };
 
     /// <summary>True when <paramref name="key"/> is a recognised permission

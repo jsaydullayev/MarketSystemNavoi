@@ -476,7 +476,12 @@ try
     builder.Services.AddScoped<ISaleService, SaleService>();
     builder.Services.AddScoped<IZakupService, ZakupService>();
     builder.Services.AddScoped<IReportService, ReportService>();
-    builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+    // One AuditLogService instance per scope satisfies both the write
+    // (Domain) and read (Application) interfaces — forward them so the
+    // container doesn't materialise two copies per request.
+    builder.Services.AddScoped<AuditLogService>();
+    builder.Services.AddScoped<IAuditLogService>(sp => sp.GetRequiredService<AuditLogService>());
+    builder.Services.AddScoped<IAuditLogQueryService>(sp => sp.GetRequiredService<AuditLogService>());
     builder.Services.AddScoped<ICashRegisterService, CashRegisterService>();
     builder.Services.AddScoped<IMarketService, MarketService>();
     builder.Services.AddScoped<ICurrentMarketService, CurrentMarketService>();

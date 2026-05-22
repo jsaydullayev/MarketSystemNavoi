@@ -4,27 +4,31 @@ using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
 
-public class AuditLogService : IAuditLogService
+public class AuditLogService : IAuditLogService, IAuditLogQueryService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AuditLogService> _logger;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IAppDbContext _context;
 
     public AuditLogService(
         IUnitOfWork unitOfWork,
         ILogger<AuditLogService> logger,
         ICurrentMarketService currentMarketService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IAppDbContext context)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _currentMarketService = currentMarketService;
         _httpContextAccessor = httpContextAccessor;
+        _context = context;
     }
 
     public async Task LogActionAsync(
@@ -132,5 +136,60 @@ public class AuditLogService : IAuditLogService
                 Status = debt.Status.ToString()
             }, cancellationToken);
         }
+    }
+
+    // ─── Read API (Plan 07 Bosqich 2) ────────────────────────────────────
+
+    // Bounds on `size` — small enough to keep payloads modest, large enough to
+    // amortise round trips on a busy market's log. Page < 1 collapses to 1.
+    private const int MinPageSize = 1;
+    private const int MaxPageSize = 200;
+
+    /// <inheritdoc />
+    public async Task<PagedResult<AuditLogDto>> QueryAsync(
+        AuditLogFilter filter,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.AuditLogs.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filter.EntityType))
+            query = query.Where(a => a.EntityType == filter.EntityType);
+        if (!string.IsNullOrWhiteSpace(filter.Action))
+            query = query.Where(a => a.Action == filter.Action);
+        if (filter.UserId.HasValue)
+            query = query.Where(a => a.UserId == filter.UserId.Value);
+        if (filter.MarketId.HasValue)
+            query = query.Where(a => a.MarketId == filter.MarketId.Value);
+        if (filter.FromUtc.HasValue)
+            query = query.Where(a => a.CreatedAt >= filter.FromUtc.Value);
+        if (filter.ToUtc.HasValue)
+            query = query.Where(a => a.CreatedAt < filter.ToUtc.Value);
+
+        var total = await query.CountAsync(cancellationToken);
+
+        var page = Math.Max(1, filter.Page);
+        var size = Math.Clamp(filter.Size, MinPageSize, MaxPageSize);
+
+        // The projection drives EF to emit a single LEFT JOIN to Users for
+        // FullName — no Include needed, and anonymous rows (UserId NULL) come
+        // back with UserName == null exactly as the DTO contract says.
+        var items = await query
+            .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .Select(a => new AuditLogDto(
+                a.Id,
+                a.EntityType,
+                a.EntityId,
+                a.Action,
+                a.UserId,
+                a.User != null ? a.User.FullName : null,
+                a.Payload,
+                a.IpAddress,
+                a.MarketId,
+                a.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        return PagedResult<AuditLogDto>.From(items, page, size, total);
     }
 }
