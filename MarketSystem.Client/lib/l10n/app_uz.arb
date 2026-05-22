@@ -898,5 +898,12 @@
       "time": {"type": "String"}
     }
   },
-  "dismiss": "Tushundim"
+  "dismiss": "Tushundim",
+  "permissionsTitle": "Ruxsatlar",
+  "permissionsNextLoginNote": "O'zgarishlar foydalanuvchi keyingi marta tizimga kirganda kuchga kiradi.",
+  "resetToDefault": "Standartga qaytarish",
+  "permissionsSaved": "Ruxsatlar saqlandi",
+  "permissionsUsingRoleDefaults": "Rol bo'yicha standart ruxsatlar",
+  "permissionsCustomized": "Maxsus sozlangan",
+  "managePermissions": "Ruxsatlarni boshqarish"
 }

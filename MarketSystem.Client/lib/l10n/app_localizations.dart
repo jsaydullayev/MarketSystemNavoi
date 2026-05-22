@@ -4999,6 +4999,48 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Tushundim'**
   String get dismiss;
+
+  /// No description provided for @permissionsTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ruxsatlar'**
+  String get permissionsTitle;
+
+  /// No description provided for @permissionsNextLoginNote.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'zgarishlar foydalanuvchi keyingi marta tizimga kirganda kuchga kiradi.'**
+  String get permissionsNextLoginNote;
+
+  /// No description provided for @resetToDefault.
+  ///
+  /// In uz, this message translates to:
+  /// **'Standartga qaytarish'**
+  String get resetToDefault;
+
+  /// No description provided for @permissionsSaved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ruxsatlar saqlandi'**
+  String get permissionsSaved;
+
+  /// No description provided for @permissionsUsingRoleDefaults.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rol bo\'yicha standart ruxsatlar'**
+  String get permissionsUsingRoleDefaults;
+
+  /// No description provided for @permissionsCustomized.
+  ///
+  /// In uz, this message translates to:
+  /// **'Maxsus sozlangan'**
+  String get permissionsCustomized;
+
+  /// No description provided for @managePermissions.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ruxsatlarni boshqarish'**
+  String get managePermissions;
 }
 
 class _AppLocalizationsDelegate

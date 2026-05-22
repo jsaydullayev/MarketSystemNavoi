@@ -2618,4 +2618,26 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dismiss => 'Понятно';
+
+  @override
+  String get permissionsTitle => 'Права доступа';
+
+  @override
+  String get permissionsNextLoginNote =>
+      'Изменения вступят в силу при следующем входе пользователя.';
+
+  @override
+  String get resetToDefault => 'Сбросить к стандартным';
+
+  @override
+  String get permissionsSaved => 'Права сохранены';
+
+  @override
+  String get permissionsUsingRoleDefaults => 'Стандартные права по роли';
+
+  @override
+  String get permissionsCustomized => 'Настроено вручную';
+
+  @override
+  String get managePermissions => 'Управление правами';
 }
