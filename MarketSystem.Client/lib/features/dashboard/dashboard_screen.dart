@@ -23,6 +23,7 @@ import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../l10n/app_localizations.dart';
+import 'shift_control_card.dart';
 import '../auth/presentation/screens/login_screen.dart';
 import '../categories/screens/category_management_screen.dart';
 import '../daily_sales/screens/daily_sales_screen.dart';
@@ -763,9 +764,13 @@ class _SellerBody extends StatelessWidget {
           subtitle: l10n.tapToSelectProduct,
           onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
         ),
-        // Seller-only: pending draft + personal stats row, wired to
-        // /Reports/my-performance + /Sales/my-drafts.
+        // Seller-only: shift open/close control, pending draft + personal
+        // stats row — wired to /Shifts, /Reports/my-performance, /Sales/my-drafts.
         if (!isAdmin) ...[
+          const SizedBox(height: AppSpacing.lg),
+          ShiftControlCard(
+            authProvider: Provider.of<AuthProvider>(context, listen: false),
+          ),
           const SizedBox(height: AppSpacing.lg),
           FutureBuilder<SellerDashboardSummary>(
             future: summaryFuture,

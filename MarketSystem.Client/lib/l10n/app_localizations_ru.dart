@@ -2640,4 +2640,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get managePermissions => 'Управление правами';
+
+  @override
+  String get shiftOpen => 'Смена открыта';
+
+  @override
+  String get shiftClosed => 'Смена закрыта';
+
+  @override
+  String get openShift => 'Открыть смену';
+
+  @override
+  String get closeShift => 'Закрыть смену';
+
+  @override
+  String shiftStartedAt(String time) {
+    return 'Начата: $time';
+  }
 }

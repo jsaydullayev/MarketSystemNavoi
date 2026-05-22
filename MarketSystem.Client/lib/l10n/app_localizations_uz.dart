@@ -2635,4 +2635,21 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get managePermissions => 'Ruxsatlarni boshqarish';
+
+  @override
+  String get shiftOpen => 'Smena ochiq';
+
+  @override
+  String get shiftClosed => 'Smena yopiq';
+
+  @override
+  String get openShift => 'Smenani ochish';
+
+  @override
+  String get closeShift => 'Smenani yopish';
+
+  @override
+  String shiftStartedAt(String time) {
+    return 'Boshlangan: $time';
+  }
 }

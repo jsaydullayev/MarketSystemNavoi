@@ -905,5 +905,15 @@
   "permissionsSaved": "Ruxsatlar saqlandi",
   "permissionsUsingRoleDefaults": "Rol bo'yicha standart ruxsatlar",
   "permissionsCustomized": "Maxsus sozlangan",
-  "managePermissions": "Ruxsatlarni boshqarish"
+  "managePermissions": "Ruxsatlarni boshqarish",
+  "shiftOpen": "Smena ochiq",
+  "shiftClosed": "Smena yopiq",
+  "openShift": "Smenani ochish",
+  "closeShift": "Smenani yopish",
+  "shiftStartedAt": "Boshlangan: {time}",
+  "@shiftStartedAt": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  }
 }
