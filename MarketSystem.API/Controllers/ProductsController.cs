@@ -156,7 +156,9 @@ public class ProductsController : ControllerBase
                 Цена_продажи = p.SalePrice,
                 Минимальная_цена = p.MinSalePrice,
                 Количество = p.Quantity,
+                Ед_изм = p.UnitName,
                 Минимальный_остаток = p.MinThreshold,
+                Заканчивается = p.IsLowStock ? "Да" : "Нет",
                 Временный = p.IsTemporary ? "Да" : "Нет"
             }).Cast<object>()
             : products.Select(p => new
@@ -168,7 +170,9 @@ public class ProductsController : ControllerBase
                 Sotuv_narxi = p.SalePrice,
                 Minimal_narx = p.MinSalePrice,
                 Miqdor = p.Quantity,
+                Birlik = p.UnitName,
                 Minimal_chegara = p.MinThreshold,
+                Kam_qoldi = p.IsLowStock ? "Ha" : "Yo'q",
                 Vaqtinchalik = p.IsTemporary ? "Ha" : "Yo'q"
             }).Cast<object>();
 

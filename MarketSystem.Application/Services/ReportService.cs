@@ -251,7 +251,9 @@ public class ReportService : IReportService
                     productName = item.ExternalProductName ?? "Tashqi mahsulot";
                 }
 
-                worksheet.Cells[row, 1].Value = sale.CreatedAt.ToString("yyyy-MM-dd");
+                // Anchor the date to the Tashkent business day — a raw UTC
+                // date shifts late-evening sales onto the following day.
+                worksheet.Cells[row, 1].Value = _clock.ToLocal(sale.CreatedAt).ToString("yyyy-MM-dd");
                 worksheet.Cells[row, 2].Value = "Sale";
                 worksheet.Cells[row, 3].Value = productName;
                 worksheet.Cells[row, 4].Value = item.Quantity;
@@ -272,7 +274,7 @@ public class ReportService : IReportService
         {
             var product = productMap.GetValueOrDefault(zakup.ProductId);
 
-            worksheet.Cells[row, 1].Value = zakup.CreatedAt.ToString("yyyy-MM-dd");
+            worksheet.Cells[row, 1].Value = _clock.ToLocal(zakup.CreatedAt).ToString("yyyy-MM-dd");
             worksheet.Cells[row, 2].Value = "Zakup";
             worksheet.Cells[row, 3].Value = product?.Name ?? "Unknown";
             worksheet.Cells[row, 4].Value = zakup.Quantity;
@@ -732,10 +734,14 @@ public class ReportService : IReportService
         DateTime date,
         string? userRole = null,
         Guid? userId = null,
+        DateTime? endDate = null,
         CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var (start, end) = GetUtcDateRange(date);
+        // Single day when endDate is null; otherwise the inclusive [date,
+        // endDate] Tashkent-day range — start of the first day, end of the last.
+        var (start, _) = GetUtcDateRange(date);
+        var (_, end) = GetUtcDateRange(endDate ?? date);
 
         Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
                               s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft &&

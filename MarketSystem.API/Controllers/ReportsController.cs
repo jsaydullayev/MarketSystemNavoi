@@ -289,13 +289,16 @@ public class ReportsController : ControllerBase
             var utcEnd = DateTime.SpecifyKind(queryEndDate.Date, DateTimeKind.Utc);
 
             _logger.LogInformation("Fetching sales list for period: {Start} to {End}", utcStart, utcEnd);
-            var salesList = await _reportService.GetDailySalesListAsync(utcStart, userRole, userId);
+            // Pass endDate so the service returns the whole [start, end] range —
+            // previously this fetched only utcStart's single day, so a multi-day
+            // export silently dropped every sale after day one.
+            var salesList = await _reportService.GetDailySalesListAsync(
+                utcStart, userRole, userId, endDate: utcEnd, cancellationToken);
             _logger.LogInformation("Got {Count} sales from service", salesList.Sales.Count);
 
-            // Filter by date range if specified
-            var filteredSales = salesList.Sales
-                .Where(s => s.CreatedAt >= utcStart && s.CreatedAt < utcEnd.AddDays(1))
-                .ToList();
+            // The service already scoped the query to the range; this guard
+            // just keeps the rest of the method working off an explicit list.
+            var filteredSales = salesList.Sales.ToList();
             _logger.LogInformation("Filtered to {Count} sales within date range", filteredSales.Count);
 
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
