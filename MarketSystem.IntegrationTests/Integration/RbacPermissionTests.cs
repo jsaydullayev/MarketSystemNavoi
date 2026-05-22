@@ -50,14 +50,18 @@ public class RbacPermissionTests
     {
         var admin = UserWith(Role.Admin); // empty set → role default
 
-        // Owner-only report metrics — Admin was blocked by the OwnerOnly policy.
+        // Owner-only sensitive data — Admin was blocked by the OwnerOnly policy
+        // (profit / cash balance) or is gated to Owner by default (audit log).
         admin.HasPermission(PermissionKeys.DataProfit).Should().BeFalse();
         admin.HasPermission(PermissionKeys.DataCashBalance).Should().BeFalse();
+        admin.HasPermission(PermissionKeys.DataAuditLog).Should().BeFalse();
 
         // Everything else was reachable by Admin via AdminOrOwner / AllRoles.
         foreach (var key in PermissionKeys.All)
         {
-            if (key is PermissionKeys.DataProfit or PermissionKeys.DataCashBalance)
+            if (key is PermissionKeys.DataProfit
+                    or PermissionKeys.DataCashBalance
+                    or PermissionKeys.DataAuditLog)
                 continue;
             admin.HasPermission(key).Should().BeTrue($"Admin default must include {key}");
         }
@@ -105,6 +109,7 @@ public class RbacPermissionTests
             PermissionKeys.ReportsAccess,
             PermissionKeys.UsersManage, PermissionKeys.UsersShift,
             PermissionKeys.DataCostPrice, PermissionKeys.DataProfit, PermissionKeys.DataCashBalance,
+            PermissionKeys.DataAuditLog,
         };
         foreach (var key in denied)
             seller.HasPermission(key).Should().BeFalse($"Seller default must NOT include {key}");

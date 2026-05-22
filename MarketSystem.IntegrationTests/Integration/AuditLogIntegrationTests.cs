@@ -1,4 +1,6 @@
 using System.Net;
+using MarketSystem.Application.DTOs;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Application.Services;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Infrastructure.Repositories;
@@ -28,7 +30,8 @@ public class AuditLogIntegrationTests : TestBase
             unitOfWork,
             NullLogger<AuditLogService>.Instance,
             CurrentMarketServiceMock.Object,
-            httpContextAccessor);
+            httpContextAccessor,
+            DbContext);
     }
 
     private static IHttpContextAccessor HttpContextWith(string? remoteIp)
@@ -112,5 +115,174 @@ public class AuditLogIntegrationTests : TestBase
 
         var log = await DbContext.Set<AuditLog>().SingleAsync();
         log.UserId.Should().BeNull();
+    }
+
+    // ─── Read API (Plan 07 Bosqich 2) ─────────────────────────────────────
+
+    /// <summary>Direct-insert an audit row so the read tests have
+    /// deterministic timestamps / market IDs (the write API uses
+    /// DateTime.UtcNow which is too coarse for ordering assertions).</summary>
+    private AuditLog SeedRow(
+        string entityType = "Sale",
+        string action = "Create",
+        Guid? userId = null,
+        int? marketId = null,
+        DateTime? createdAt = null)
+    {
+        var row = new AuditLog
+        {
+            Id = Guid.NewGuid(),
+            EntityType = entityType,
+            EntityId = Guid.NewGuid(),
+            Action = action,
+            UserId = userId ?? TestUserId,
+            MarketId = marketId ?? TestMarketId,
+            Payload = string.Empty,
+            CreatedAt = createdAt ?? DateTime.UtcNow,
+        };
+        DbContext.AuditLogs.Add(row);
+        return row;
+    }
+
+    private IAuditLogQueryService QueryService()
+        => CreateService(HttpContextWith(remoteIp: null));
+
+    [Fact]
+    public async Task Query_ReturnsRowsOrderedByCreatedAtDescending()
+    {
+        SeedRow(action: "Create", createdAt: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        SeedRow(action: "Cancel", createdAt: new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc));
+        SeedRow(action: "Update", createdAt: new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc));
+        await DbContext.SaveChangesAsync();
+
+        var result = await QueryService().QueryAsync(new AuditLogFilter());
+
+        result.Total.Should().Be(3);
+        result.Items.Select(i => i.Action).Should().Equal("Cancel", "Update", "Create");
+    }
+
+    [Fact]
+    public async Task Query_FilterByEntityType_NarrowsResults()
+    {
+        SeedRow(entityType: "Sale");
+        SeedRow(entityType: "Sale");
+        SeedRow(entityType: "Payment");
+        await DbContext.SaveChangesAsync();
+
+        var result = await QueryService().QueryAsync(new AuditLogFilter(EntityType: "Sale"));
+
+        result.Total.Should().Be(2);
+        result.Items.Should().OnlyContain(i => i.EntityType == "Sale");
+    }
+
+    [Fact]
+    public async Task Query_FilterByActionAndUserId_NarrowsResults()
+    {
+        var otherUser = Guid.NewGuid();
+        SeedRow(action: "Login", userId: TestUserId);
+        SeedRow(action: "Login", userId: otherUser);
+        SeedRow(action: "LoginFailed", userId: TestUserId);
+        await DbContext.SaveChangesAsync();
+
+        var result = await QueryService().QueryAsync(
+            new AuditLogFilter(Action: "Login", UserId: TestUserId));
+
+        result.Total.Should().Be(1);
+        result.Items[0].Action.Should().Be("Login");
+        result.Items[0].UserId.Should().Be(TestUserId);
+    }
+
+    [Fact]
+    public async Task Query_FilterByMarketIdAndDateRange_NarrowsResults()
+    {
+        var inRange = new DateTime(2026, 5, 15, 12, 0, 0, DateTimeKind.Utc);
+        var beforeRange = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var otherMarket = TestMarketId + 1000;
+
+        SeedRow(marketId: TestMarketId, createdAt: inRange);
+        SeedRow(marketId: TestMarketId, createdAt: beforeRange);
+        SeedRow(marketId: otherMarket, createdAt: inRange); // wrong market — filtered out
+        await DbContext.SaveChangesAsync();
+
+        var result = await QueryService().QueryAsync(new AuditLogFilter(
+            MarketId: TestMarketId,
+            FromUtc: new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc),
+            ToUtc: new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+        result.Total.Should().Be(1);
+        result.Items[0].MarketId.Should().Be(TestMarketId);
+        result.Items[0].CreatedAt.Should().Be(inRange);
+    }
+
+    [Fact]
+    public async Task Query_PopulatesUserNameFromJoin()
+    {
+        SeedRow(userId: TestUserId); // TestUser.FullName = "Test User"
+        await DbContext.SaveChangesAsync();
+
+        var result = await QueryService().QueryAsync(new AuditLogFilter());
+
+        result.Items[0].UserName.Should().Be("Test User");
+    }
+
+    [Fact]
+    public async Task Query_AnonymousRow_HasNullUserName()
+    {
+        // Direct-insert with null UserId — what LoginFailed writes via the
+        // Guid.Empty → null mapping. The LEFT JOIN to Users must keep UserName null.
+        DbContext.AuditLogs.Add(new AuditLog
+        {
+            Id = Guid.NewGuid(),
+            EntityType = "Auth",
+            EntityId = Guid.Empty,
+            Action = "LoginFailed",
+            UserId = null,
+            MarketId = TestMarketId,
+            Payload = string.Empty,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await DbContext.SaveChangesAsync();
+
+        var result = await QueryService().QueryAsync(new AuditLogFilter());
+
+        result.Total.Should().Be(1);
+        result.Items[0].UserId.Should().BeNull();
+        result.Items[0].UserName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Query_PagingReturnsCorrectSliceAndTotalCount()
+    {
+        // 5 rows, page size 2 → page 2 should contain rows #3 and #4 (newest-first).
+        for (var i = 0; i < 5; i++)
+            SeedRow(action: $"A{i}", createdAt: new DateTime(2026, 1, 1).AddMinutes(i));
+        await DbContext.SaveChangesAsync();
+
+        var result = await QueryService().QueryAsync(new AuditLogFilter(Page: 2, Size: 2));
+
+        result.Total.Should().Be(5);
+        result.Page.Should().Be(2);
+        result.Size.Should().Be(2);
+        result.TotalPages.Should().Be(3);
+        result.Items.Should().HaveCount(2);
+        // Newest-first ordering — page 2 skips A4+A3 (page 1), returns A2+A1.
+        result.Items.Select(i => i.Action).Should().Equal("A2", "A1");
+    }
+
+    [Fact]
+    public async Task Query_PageAndSizeBoundsAreClamped()
+    {
+        SeedRow();
+        await DbContext.SaveChangesAsync();
+
+        // size below 1 clamps up to 1; size above 200 clamps down to 200; page
+        // below 1 clamps up to 1. The clamp values surface on the response so
+        // the client can render correct paging controls.
+        var below = await QueryService().QueryAsync(new AuditLogFilter(Page: 0, Size: 0));
+        below.Page.Should().Be(1);
+        below.Size.Should().Be(1);
+
+        var above = await QueryService().QueryAsync(new AuditLogFilter(Size: 5000));
+        above.Size.Should().Be(200);
     }
 }
