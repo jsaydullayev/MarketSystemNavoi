@@ -1,3 +1,4 @@
+using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Services;
 using FluentAssertions;
 using Xunit;
@@ -90,4 +91,56 @@ public class PdfExportTests
             new List<ReportService.SalesReportItem>(), null, null,
             includeProfit: true, includeCost: true,
             totalSales: 0m, totalProfit: 0m));
+
+    // ---- Daily / period summary report ----
+
+    [Fact]
+    public void RenderSummaryReportPdf_WithKpisAndPayments_IsValid()
+    {
+        var kpis = new List<(string, string, string)>
+        {
+            ("Jami savdo", "3 823 500 so'm", "#0F172A"),
+            ("To'langan", "3 700 000 so'm", "#16A34A"),
+            ("Qarz", "123 500 so'm", "#DC2626"),
+            ("Cheklar soni", "7", "#0F172A"),
+            ("Sof foyda", "483 000 so'm", "#16A34A"),
+        };
+        var payments = new List<PaymentBreakdownDto>
+        {
+            new("Cash", 2_000_000m, 4),
+            new("Click", 1_823_500m, 3),
+        };
+
+        AssertValidPdf(ReportService.RenderSummaryReportPdf(
+            "KUNLIK HISOBOT", "13.05.2026", kpis, payments));
+    }
+
+    [Fact]
+    public void RenderSummaryReportPdf_NoPayments_IsValid()
+        => AssertValidPdf(ReportService.RenderSummaryReportPdf(
+            "DAVRIY HISOBOT", "01.05.2026 — 31.05.2026",
+            new List<(string, string, string)> { ("Jami savdo", "0 so'm", "#0F172A") },
+            new List<PaymentBreakdownDto>()));
+
+    // ---- Comprehensive report ----
+
+    [Fact]
+    public void RenderComprehensiveReportPdf_WithSellers_IsValid()
+    {
+        var daily = new DailyReportDto(
+            new DateTime(2026, 5, 13), 3_823_500m, 3_700_000m, 123_500m, 500_000m,
+            483_000m, 483_000m, 7,
+            new List<PaymentBreakdownDto> { new("Cash", 2_000_000m, 4) });
+        var sellers = new List<SellerReportDto>
+        {
+            new(Guid.NewGuid(), "Jahongir", 3_823_500m, 483_000m, 7),
+            new(Guid.NewGuid(), "Ixtiyor", 0m, null, 0),
+        };
+        var report = new ComprehensiveReportDto(
+            new DateTime(2026, 5, 13), daily, sellers,
+            new List<InventoryReportDto>(),
+            10_000_000m, 14_000_000m, 42, 14_000_000m, 3, 1);
+
+        AssertValidPdf(ReportService.RenderComprehensiveReportPdf(report, "13.05.2026"));
+    }
 }
