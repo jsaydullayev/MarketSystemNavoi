@@ -370,6 +370,7 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.EntityType).IsRequired().HasMaxLength(100);
             b.Property(x => x.Action).IsRequired().HasMaxLength(50);
             b.Property(x => x.Payload);
+            b.Property(x => x.IpAddress).HasMaxLength(64);
 
             // IMPORTANT: Audit log tarixi hech qachon o'CHMASIN kerak
             b.HasOne(x => x.User).WithMany(p => p.AuditLogs).HasForeignKey(x => x.UserId)

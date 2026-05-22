@@ -3,6 +3,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Application.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
@@ -12,12 +13,18 @@ public class AuditLogService : IAuditLogService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AuditLogService> _logger;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AuditLogService(IUnitOfWork unitOfWork, ILogger<AuditLogService> logger, ICurrentMarketService currentMarketService)
+    public AuditLogService(
+        IUnitOfWork unitOfWork,
+        ILogger<AuditLogService> logger,
+        ICurrentMarketService currentMarketService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _currentMarketService = currentMarketService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task LogActionAsync(
@@ -39,6 +46,8 @@ public class AuditLogService : IAuditLogService
                 UserId = userId,
                 MarketId = _currentMarketService.TryGetCurrentMarketId(),
                 Payload = payload != null ? JsonSerializer.Serialize(payload) : string.Empty,
+                IpAddress = _httpContextAccessor.HttpContext?
+                    .Connection.RemoteIpAddress?.ToString(),
                 CreatedAt = DateTime.UtcNow
             };
 

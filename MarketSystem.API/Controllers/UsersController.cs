@@ -18,12 +18,22 @@ public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IAuditLogService _auditLogService;
 
-    public UsersController(IUserService userService, ICurrentMarketService currentMarketService)
+    public UsersController(
+        IUserService userService,
+        ICurrentMarketService currentMarketService,
+        IAuditLogService auditLogService)
     {
         _userService = userService;
         _currentMarketService = currentMarketService;
+        _auditLogService = auditLogService;
     }
+
+    /// <summary>The authenticated caller's user id, taken from the JWT — recorded
+    /// as the actor on audit entries. Guid.Empty if the claim is somehow absent.</summary>
+    private Guid CurrentUserId() =>
+        Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : Guid.Empty;
 
     [HttpGet("{id}")]
     [RequirePermission(PermissionKeys.UsersAccess)]
@@ -81,6 +91,9 @@ public class UsersController : ControllerBase
         try
         {
             var user = await _userService.CreateUserAsync(request);
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, user.Id, AuditActions.Create, CurrentUserId(),
+                new { user.Username, user.Role, user.FullName });
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
         catch (InvalidOperationException ex)
@@ -101,6 +114,10 @@ public class UsersController : ControllerBase
             var user = await _userService.UpdateUserAsync(request);
             if (user is null)
                 return NotFound();
+
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, user.Id, AuditActions.Update, CurrentUserId(),
+                new { user.Username, user.Role, user.IsActive });
 
             return Ok(user);
         }
@@ -244,6 +261,9 @@ public class UsersController : ControllerBase
         if (!result)
             return NotFound();
 
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.User, id, AuditActions.Delete, CurrentUserId());
+
         return NoContent();
     }
 
@@ -255,6 +275,9 @@ public class UsersController : ControllerBase
         if (!result)
             return NotFound();
 
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.User, id, AuditActions.Deactivate, CurrentUserId());
+
         return Ok(new { message = "User deactivated" });
     }
 
@@ -265,6 +288,9 @@ public class UsersController : ControllerBase
         var result = await _userService.ActivateUserAsync(id);
         if (!result)
             return NotFound();
+
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.User, id, AuditActions.Activate, CurrentUserId());
 
         return Ok(new { message = "User activated" });
     }
@@ -318,9 +344,23 @@ public class UsersController : ControllerBase
     {
         try
         {
+            // Snapshot the effective set BEFORE the change so the audit record
+            // shows exactly what was granted/revoked, not merely the final state.
+            var before = await _userService.GetUserPermissionsAsync(id);
+
             var permissions = await _userService.UpdateUserPermissionsAsync(id, request);
             if (permissions is null)
                 return NotFound();
+
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.Permission, id, AuditActions.PermissionChange, CurrentUserId(),
+                new
+                {
+                    targetUserId = id,
+                    before = before?.EffectivePermissions,
+                    after = permissions.EffectivePermissions,
+                    isCustomized = permissions.IsCustomized
+                });
 
             return Ok(permissions);
         }

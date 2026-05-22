@@ -1,7 +1,9 @@
 using MarketSystem.Application.Services;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging.Abstractions;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace MarketSystem.IntegrationTests.Integration;
@@ -16,7 +18,7 @@ public class ShiftIntegrationTests : TestBase
     private ShiftService CreateService()
     {
         var unitOfWork = new UnitOfWork(DbContext, NullLogger<UnitOfWork>.Instance);
-        return new ShiftService(unitOfWork, CurrentMarketServiceMock.Object);
+        return new ShiftService(unitOfWork, CurrentMarketServiceMock.Object, AuditLogServiceMock.Object);
     }
 
     [Fact]
@@ -75,5 +77,41 @@ public class ShiftIntegrationTests : TestBase
         await service.CloseShiftAsync(TestUserId);
         (await service.GetCurrentShiftAsync(TestUserId))
             .Should().BeNull("the shift was closed");
+    }
+
+    // --- Audit log coverage (Plan 07, Bosqich 1) ------------------------
+
+    [Fact]
+    public async Task OpenShift_WritesOpenAuditLog()
+    {
+        await CreateService().OpenShiftAsync(TestUserId);
+
+        AuditLogServiceMock.Verify(x => x.LogActionAsync(
+            AuditEntityTypes.Shift, It.IsAny<Guid>(), AuditActions.Open, TestUserId,
+            It.IsAny<object?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CloseShift_WritesCloseAuditLog()
+    {
+        var service = CreateService();
+        await service.OpenShiftAsync(TestUserId);
+        await service.CloseShiftAsync(TestUserId);
+
+        AuditLogServiceMock.Verify(x => x.LogActionAsync(
+            AuditEntityTypes.Shift, It.IsAny<Guid>(), AuditActions.Close, TestUserId,
+            It.IsAny<object?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task OpenShift_WhenAlreadyOpen_WritesNoSecondAuditLog()
+    {
+        var service = CreateService();
+        await service.OpenShiftAsync(TestUserId);
+        await service.OpenShiftAsync(TestUserId); // idempotent re-open — no state change
+
+        AuditLogServiceMock.Verify(x => x.LogActionAsync(
+            AuditEntityTypes.Shift, It.IsAny<Guid>(), AuditActions.Open, It.IsAny<Guid>(),
+            It.IsAny<object?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

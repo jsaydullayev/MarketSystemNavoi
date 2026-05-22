@@ -1,8 +1,10 @@
 using MarketSystem.Application.DTOs;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace MarketSystem.IntegrationTests.Integration;
@@ -364,5 +366,71 @@ public class CashRegisterIntegrationTests : TestBase
         var lastWithdrawal = await DbContext.CashWithdrawals.FindAsync(cashRegister.LastWithdrawalId);
         lastWithdrawal.Should().NotBeNull();
         lastWithdrawal!.Amount.Should().Be(100m);
+    }
+
+    // --- Audit log coverage (Plan 07, Bosqich 1) ------------------------
+
+    [Fact]
+    public async Task WithdrawCash_Cash_WritesWithdrawAuditLog()
+    {
+        await CashRegisterService.AddCashAsync(500m);
+        ClearDbContext();
+
+        var request = new WithdrawCashRequest
+        {
+            Amount = 100m,
+            Comment = "Audit cash test",
+            WithdrawType = "cash"
+        };
+
+        var result = await CashRegisterService.WithdrawCashAsync(request, TestUserId);
+
+        result.Should().BeTrue();
+        AuditLogServiceMock.Verify(x => x.LogActionAsync(
+            AuditEntityTypes.CashRegister, It.IsAny<Guid>(), AuditActions.Withdraw, TestUserId,
+            It.IsAny<object?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task WithdrawCash_Click_WritesWithdrawAuditLog()
+    {
+        await CashRegisterService.AddCashAsync(500m);
+        ClearDbContext();
+
+        var request = new WithdrawCashRequest
+        {
+            Amount = 100m,
+            Comment = "Audit click test",
+            WithdrawType = "click"
+        };
+
+        var result = await CashRegisterService.WithdrawCashAsync(request, TestUserId);
+
+        result.Should().BeTrue();
+        AuditLogServiceMock.Verify(x => x.LogActionAsync(
+            AuditEntityTypes.CashRegister, It.IsAny<Guid>(), AuditActions.Withdraw, TestUserId,
+            It.IsAny<object?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task WithdrawCash_WhenItFails_WritesNoAuditLog()
+    {
+        // Insufficient funds — the withdrawal must not produce an audit entry.
+        await CashRegisterService.AddCashAsync(50m);
+        ClearDbContext();
+
+        var request = new WithdrawCashRequest
+        {
+            Amount = 100m,
+            Comment = "Too much",
+            WithdrawType = "cash"
+        };
+
+        var result = await CashRegisterService.WithdrawCashAsync(request, TestUserId);
+
+        result.Should().BeFalse();
+        AuditLogServiceMock.Verify(x => x.LogActionAsync(
+            AuditEntityTypes.CashRegister, It.IsAny<Guid>(), AuditActions.Withdraw, It.IsAny<Guid>(),
+            It.IsAny<object?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

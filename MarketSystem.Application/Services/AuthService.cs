@@ -1,4 +1,5 @@
 using MarketSystem.Application.DTOs;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Application.Interfaces;
@@ -19,6 +20,7 @@ public class AuthService : IAuthService
     private readonly JwtSetting _jwtSetting;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly IRevokedTokenStore _revokedTokens;
+    private readonly IAuditLogService _auditLogService;
 
     public AuthService(
         IUnitOfWork unitOfWork,
@@ -27,7 +29,8 @@ public class AuthService : IAuthService
         IAppDbContext context,
         IConfiguration configuration,
         ICurrentMarketService currentMarketService,
-        IRevokedTokenStore revokedTokens)
+        IRevokedTokenStore revokedTokens,
+        IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
@@ -36,11 +39,21 @@ public class AuthService : IAuthService
         _jwtSetting = configuration.GetSection("Jwt").Get<JwtSetting>()!;
         _currentMarketService = currentMarketService;
         _revokedTokens = revokedTokens;
+        _auditLogService = auditLogService;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Login attempt for username: {Username}", request.Username);
+
+        // Audit a failed authentication attempt. The username may not map to any
+        // real account, so userId is unknown — Guid.Empty is used and the username
+        // travels in the payload; the client IP is captured by AuditLogService.
+        // LogActionAsync swallows its own errors, so a failed audit never masks
+        // the 401 nor breaks the login flow.
+        Task LogLoginFailedAsync() => _auditLogService.LogActionAsync(
+            AuditEntityTypes.Auth, Guid.Empty, AuditActions.LoginFailed, Guid.Empty,
+            new { username = request.Username }, cancellationToken);
 
         // Username uniqueness is enforced PER MARKET (partial index). A tenant user and a
         // cross-tenant user (e.g. SuperAdmin with MarketId=NULL) can therefore share the same
@@ -54,6 +67,7 @@ public class AuthService : IAuthService
         if (candidates.Count == 0)
         {
             _logger.LogWarning("User not found or inactive: {Username}", request.Username);
+            await LogLoginFailedAsync();
             return null;
         }
 
@@ -67,6 +81,7 @@ public class AuthService : IAuthService
                     // Two distinct accounts share the same username AND password.
                     // Refuse to log in rather than guess which identity to grant.
                     _logger.LogError("Ambiguous login: multiple users with username {Username} accepted the same password", request.Username);
+                    await LogLoginFailedAsync();
                     return null;
                 }
                 matched = candidate;
@@ -76,6 +91,7 @@ public class AuthService : IAuthService
         if (matched is null)
         {
             _logger.LogWarning("Invalid password for user: {Username}", request.Username);
+            await LogLoginFailedAsync();
             return null;
         }
 
@@ -113,6 +129,9 @@ public class AuthService : IAuthService
         }
 
         _logger.LogInformation("Login successful for user: {Username}, ID: {UserId}", matched.Username, matched.Id);
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Auth, matched.Id, AuditActions.Login, matched.Id,
+            new { username = matched.Username, role = matched.Role.ToString() }, cancellationToken);
         return await GenerateAuthResponseAsync(matched, cancellationToken);
     }
 
@@ -304,6 +323,10 @@ public class AuthService : IAuthService
         {
             await _revokedTokens.RevokeAsync(accessTokenJti, accessTokenExpiry.Value, cancellationToken);
         }
+
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Auth, callerUserId, AuditActions.Logout, callerUserId,
+            null, cancellationToken);
 
         return true;
     }

@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
@@ -727,9 +728,9 @@ public class RegistrationRequestService : IRegistrationRequestService
             market.Id, market.Name, superAdminUserId, market.BlockedReason);
 
         await _auditLog.LogActionAsync(
-            entityType: "Market",
+            entityType: AuditEntityTypes.Market,
             entityId: Guid.Empty,                       // Market.Id is an int, not a Guid.
-            action: "Blocked",
+            action: AuditActions.Block,
             userId: superAdminUserId,
             payload: new { MarketId = market.Id, MarketName = market.Name, market.BlockedReason },
             cancellationToken);
@@ -757,9 +758,9 @@ public class RegistrationRequestService : IRegistrationRequestService
                 market.Id, market.Name, superAdminUserId);
 
             await _auditLog.LogActionAsync(
-                entityType: "Market",
+                entityType: AuditEntityTypes.Market,
                 entityId: Guid.Empty,
-                action: "Unblocked",
+                action: AuditActions.Unblock,
                 userId: superAdminUserId,
                 payload: new { MarketId = market.Id, MarketName = market.Name },
                 cancellationToken);
