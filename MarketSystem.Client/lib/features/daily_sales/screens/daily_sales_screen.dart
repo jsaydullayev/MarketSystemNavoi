@@ -13,6 +13,7 @@ import 'package:market_system_client/features/daily_sales/widgets/sale_list_row.
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/services/report_service.dart';
 import '../../../data/services/sales_service.dart';
@@ -243,7 +244,7 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
 
   Future<void> _showSaleDetails(DailySalesListItemModel sale) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final isOwner = authProvider.user?['role'] == 'Owner';
+    final canSeeProfit = authProvider.can(Permissions.dataProfit);
     final salesService = SalesService(authProvider: authProvider);
 
     showModalBottomSheet(
@@ -270,7 +271,7 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
         builder: (context) => SaleDetailSheet(
           sale: sale,
           saleDetails: saleDetails,
-          isOwner: isOwner,
+          isOwner: canSeeProfit,
         ),
       );
     } catch (e) {

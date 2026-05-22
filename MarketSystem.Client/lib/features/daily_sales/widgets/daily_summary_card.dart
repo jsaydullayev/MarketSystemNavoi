@@ -5,6 +5,7 @@ import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/auth/permissions.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../data/models/profit_model.dart';
 
@@ -33,13 +34,13 @@ class DailySummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
-    final isOwner = auth.user?['role'] == 'Owner';
+    final canSeeProfit = auth.can(Permissions.dataProfit);
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
-        if (isOwner) _buildProfitHero(context, l10n),
-        if (isOwner) const SizedBox(height: AppSpacing.lg),
+        if (canSeeProfit) _buildProfitHero(context, l10n),
+        if (canSeeProfit) const SizedBox(height: AppSpacing.lg),
         _buildMiniStatsRow(context, l10n),
       ],
     );

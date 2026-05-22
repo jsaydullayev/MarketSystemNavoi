@@ -11,6 +11,8 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/auth/permission_context.dart';
+import '../../core/auth/permissions.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/routes/app_routes.dart';
@@ -982,7 +984,8 @@ class _DashboardDrawer extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ProductsScreen(isReadOnly: role == 'Seller'),
+            builder: (_) =>
+              ProductsScreen(isReadOnly: !context.can(Permissions.productsEdit)),
           ),
         ),
       ),

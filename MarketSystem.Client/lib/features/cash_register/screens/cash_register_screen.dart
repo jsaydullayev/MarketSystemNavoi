@@ -10,6 +10,7 @@ import 'package:market_system_client/features/cash_register/widgets/withdraw_bot
 import 'package:market_system_client/features/cash_register/widgets/withdraw_button.dart';
 import 'package:market_system_client/features/cash_register/widgets/withdrawal_history_list.dart';
 import 'package:provider/provider.dart';
+import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/models/cash_register_model.dart';
 import '../../../data/services/cash_register_service.dart';
@@ -148,8 +149,7 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context);
-    final role = authProvider.user?['role'];
-    final isAdmin = role == 'Admin' || role == 'Owner';
+    final isAdmin = authProvider.can(Permissions.cashRegisterAccess);
 
     return NetworkWrapper(
       onRetry: _loadCashRegister,

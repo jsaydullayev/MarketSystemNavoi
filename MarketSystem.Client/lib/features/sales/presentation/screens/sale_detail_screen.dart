@@ -6,6 +6,7 @@ import 'package:universal_html/html.dart' as html;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/core/extensions/app_extensions.dart';
+import 'package:market_system_client/core/auth/permissions.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -307,15 +308,14 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final remainingAmount = totalAmount - paidAmount;
       final items = sale['items'] as List<dynamic>? ?? [];
 
-      // Refund control: sellers can't reverse a closed sale — return is an
-      // Admin/Owner action (matches backend AdminOrOwner policy on
-      // /Sales/{id}/return-item).
-      final userRole = Provider.of<AuthProvider>(context, listen: false)
-          .user?['role']
-          ?.toString();
-      final isAdminOrOwner = userRole == 'Owner' || userRole == 'Admin';
+      // Refund control: returning an item is a sales.edit capability —
+      // matches the backend [RequirePermission(sales.edit)] on
+      // /Sales/{id}/return-item. Sellers lack it by default.
+      final canEditSales =
+          Provider.of<AuthProvider>(context, listen: false)
+              .can(Permissions.salesEdit);
       final statusLower = status.toLowerCase();
-      final canReturn = isAdminOrOwner &&
+      final canReturn = canEditSales &&
           (statusLower == 'paid' ||
               statusLower == 'debt' ||
               statusLower == 'closed');

@@ -20,6 +20,29 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _user != null;
   HttpService get httpService => _authService.httpService;
 
+  /// Current user's role string ("Owner" / "Admin" / "Seller" / "SuperAdmin").
+  String? get role => _user?['role'] as String?;
+
+  /// The effective permission set the backend sent at login (or profile
+  /// fetch). Owner/SuperAdmin receive the full catalogue from the server,
+  /// but [can] short-circuits them anyway.
+  Set<String> get permissions {
+    final raw = _user?['permissions'];
+    if (raw is List) return raw.whereType<String>().toSet();
+    return const {};
+  }
+
+  /// True when the current user may perform [permissionKey].
+  ///
+  /// Mirrors the backend `User.HasPermission`: Owner and SuperAdmin always
+  /// pass; everyone else is checked against their effective set. This only
+  /// gates what the UI offers — the server still enforces every request.
+  bool can(String permissionKey) {
+    final r = role;
+    if (r == 'Owner' || r == 'SuperAdmin') return true;
+    return permissions.contains(permissionKey);
+  }
+
   // Login
   // Surfaces the structured reason a login attempt failed (market blocked,
   // invalid creds, network down, etc.) so the screen can render the right UI.
