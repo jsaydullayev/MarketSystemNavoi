@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using OfficeOpenXml;
 using Serilog;
 using System.Security.Claims;
 using Serilog.Events;
@@ -39,8 +38,6 @@ static TimeZoneInfo ResolveTashkentTimeZone()
     }
     return TimeZoneInfo.CreateCustomTimeZone("Asia/Tashkent", TimeSpan.FromHours(5), "Tashkent", "Tashkent");
 }
-
-ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()

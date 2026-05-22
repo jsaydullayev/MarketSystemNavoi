@@ -1,4 +1,4 @@
-using OfficeOpenXml;
+using ClosedXML.Excel;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -26,7 +26,6 @@ public class ReportService : IReportService
     // instance ever being created (e.g. from tests).
     static ReportService()
     {
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
@@ -211,23 +210,20 @@ public class ReportService : IReportService
             z => z.CreatedAt >= request.StartDate && z.CreatedAt < endDateTime && z.MarketId == marketId,
             cancellationToken);
 
-        using var package = new ExcelPackage();
-        var worksheet = package.Workbook.Worksheets.Add("Report");
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Report");
 
-        worksheet.Cells[1, 1].Value = "Date";
-        worksheet.Cells[1, 2].Value = "Type";
-        worksheet.Cells[1, 3].Value = "Product";
-        worksheet.Cells[1, 4].Value = "Quantity";
-        worksheet.Cells[1, 5].Value = "Amount";
-        worksheet.Cells[1, 6].Value = "Cost";
-        worksheet.Cells[1, 7].Value = "Profit";
+        worksheet.Cell(1, 1).Value = "Date";
+        worksheet.Cell(1, 2).Value = "Type";
+        worksheet.Cell(1, 3).Value = "Product";
+        worksheet.Cell(1, 4).Value = "Quantity";
+        worksheet.Cell(1, 5).Value = "Amount";
+        worksheet.Cell(1, 6).Value = "Cost";
+        worksheet.Cell(1, 7).Value = "Profit";
 
-        using (var range = worksheet.Cells[1, 1, 1, 7])
-        {
-            range.Style.Font.Bold = true;
-            range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-            range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
-        }
+        var headerRange = worksheet.Range(1, 1, 1, 7);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
 
         // Barcha kerakli productlarni bir marta batch yuklash (N+1 oldini olish)
         var saleProductIds = sales
@@ -265,21 +261,22 @@ public class ReportService : IReportService
 
                 // Anchor the date to the Tashkent business day — a raw UTC
                 // date shifts late-evening sales onto the following day.
-                worksheet.Cells[row, 1].Value = _clock.ToLocal(sale.CreatedAt).ToString("yyyy-MM-dd");
-                worksheet.Cells[row, 2].Value = "Sale";
-                worksheet.Cells[row, 3].Value = productName;
-                worksheet.Cells[row, 4].Value = item.Quantity;
-                worksheet.Cells[row, 5].Value = item.SalePrice * item.Quantity;
                 var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
-                worksheet.Cells[row, 6].Value = costPrice * item.Quantity;
+                worksheet.Cell(row, 1).Value = _clock.ToLocal(sale.CreatedAt).ToString("yyyy-MM-dd");
+                worksheet.Cell(row, 2).Value = "Sale";
+                worksheet.Cell(row, 3).Value = productName;
+                worksheet.Cell(row, 4).Value = item.Quantity;
+                worksheet.Cell(row, 5).Value = item.SalePrice * item.Quantity;
+                worksheet.Cell(row, 6).Value = costPrice * item.Quantity;
                 // Compute profit inline from the stored CostPrice column. The
                 // SaleItem.Profit computed property reads Product?.CostPrice,
                 // but Product isn't loaded here (includeProperties omits it),
                 // so for non-external items it would resolve cost to 0 and
                 // report the full sale price as profit.
-                worksheet.Cells[row, 7].Value = includeProfit
-                    ? (object)((item.SalePrice - costPrice) * item.Quantity)
-                    : "—";
+                if (includeProfit)
+                    worksheet.Cell(row, 7).Value = (item.SalePrice - costPrice) * item.Quantity;
+                else
+                    worksheet.Cell(row, 7).Value = "—";
                 row++;
             }
         }
@@ -288,19 +285,24 @@ public class ReportService : IReportService
         {
             var product = productMap.GetValueOrDefault(zakup.ProductId);
 
-            worksheet.Cells[row, 1].Value = _clock.ToLocal(zakup.CreatedAt).ToString("yyyy-MM-dd");
-            worksheet.Cells[row, 2].Value = "Zakup";
-            worksheet.Cells[row, 3].Value = product?.Name ?? "Unknown";
-            worksheet.Cells[row, 4].Value = zakup.Quantity;
-            worksheet.Cells[row, 5].Value = zakup.Quantity * zakup.CostPrice;
-            worksheet.Cells[row, 6].Value = zakup.Quantity * zakup.CostPrice;
-            worksheet.Cells[row, 7].Value = includeProfit ? (object)0m : "—";
+            worksheet.Cell(row, 1).Value = _clock.ToLocal(zakup.CreatedAt).ToString("yyyy-MM-dd");
+            worksheet.Cell(row, 2).Value = "Zakup";
+            worksheet.Cell(row, 3).Value = product?.Name ?? "Unknown";
+            worksheet.Cell(row, 4).Value = zakup.Quantity;
+            worksheet.Cell(row, 5).Value = zakup.Quantity * zakup.CostPrice;
+            worksheet.Cell(row, 6).Value = zakup.Quantity * zakup.CostPrice;
+            if (includeProfit)
+                worksheet.Cell(row, 7).Value = 0m;
+            else
+                worksheet.Cell(row, 7).Value = "—";
             row++;
         }
-        
-        worksheet.Cells.AutoFitColumns();
 
-        return await package.GetAsByteArrayAsync();
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
     }
 
     public async Task<ComprehensiveReportDto> GetComprehensiveReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
@@ -427,89 +429,79 @@ public class ReportService : IReportService
         var report = await GetComprehensiveReportAsync(date, Role.Owner.ToString(), cancellationToken);
         var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
 
-        using var package = new ExcelPackage();
+        using var workbook = new XLWorkbook();
 
         // 1. Summary Sheet
-        var summarySheet = package.Workbook.Worksheets.Add(isRu ? "Сводка" : "Summary");
-        summarySheet.Cells[1, 1].Value = isRu ? "Дата отчёта:" : "Hisobot sanasi:";
-        summarySheet.Cells[1, 2].Value = date.ToString("yyyy-MM-dd");
-        summarySheet.Cells[2, 1].Value = isRu ? "Общая выручка:" : "Jami savdo:";
-        summarySheet.Cells[2, 2].Value = report.DailyReport.TotalSales;
-        summarySheet.Cells[3, 1].Value = isRu ? "Общая прибыль:" : "Jami foyda:";
-        summarySheet.Cells[3, 2].Value = report.DailyReport.Profit;
-        summarySheet.Cells[4, 1].Value = isRu ? "Число транзакций:" : "Jami tranzaksiyalar:";
-        summarySheet.Cells[4, 2].Value = report.DailyReport.TotalTransactions;
-        summarySheet.Cells[5, 1].Value = isRu ? "Стоимость склада (закупка):" : "Skladdagi tovarlar qiymati (xarid narxi):";
-        summarySheet.Cells[5, 2].Value = report.TotalInventoryCost;
-        summarySheet.Cells[6, 1].Value = isRu ? "Стоимость склада (продажа):" : "Skladdagi tovarlar qiymati (sotuv narxi):";
-        summarySheet.Cells[6, 2].Value = report.TotalInventorySaleValue;
-
-        using (var range = summarySheet.Cells[1, 1, 6, 2])
-        {
-            range.Style.Font.Bold = true;
-        }
+        var summarySheet = workbook.Worksheets.Add(isRu ? "Сводка" : "Summary");
+        summarySheet.Cell(1, 1).Value = isRu ? "Дата отчёта:" : "Hisobot sanasi:";
+        summarySheet.Cell(1, 2).Value = date.ToString("yyyy-MM-dd");
+        summarySheet.Cell(2, 1).Value = isRu ? "Общая выручка:" : "Jami savdo:";
+        summarySheet.Cell(2, 2).Value = report.DailyReport.TotalSales;
+        summarySheet.Cell(3, 1).Value = isRu ? "Общая прибыль:" : "Jami foyda:";
+        summarySheet.Cell(3, 2).Value = report.DailyReport.Profit;
+        summarySheet.Cell(4, 1).Value = isRu ? "Число транзакций:" : "Jami tranzaksiyalar:";
+        summarySheet.Cell(4, 2).Value = report.DailyReport.TotalTransactions;
+        summarySheet.Cell(5, 1).Value = isRu ? "Стоимость склада (закупка):" : "Skladdagi tovarlar qiymati (xarid narxi):";
+        summarySheet.Cell(5, 2).Value = report.TotalInventoryCost;
+        summarySheet.Cell(6, 1).Value = isRu ? "Стоимость склада (продажа):" : "Skladdagi tovarlar qiymati (sotuv narxi):";
+        summarySheet.Cell(6, 2).Value = report.TotalInventorySaleValue;
+        summarySheet.Range(1, 1, 6, 2).Style.Font.Bold = true;
 
         // 2. Seller Reports Sheet
-        var sellerSheet = package.Workbook.Worksheets.Add(isRu ? "Продавцы" : "Sotuvchilar");
-        sellerSheet.Cells[1, 1].Value = isRu ? "Продавец" : "Sotuvchi";
-        sellerSheet.Cells[1, 2].Value = isRu ? "Общие продажи" : "Jami savdo";
-        sellerSheet.Cells[1, 3].Value = isRu ? "Прибыль" : "Foyda";
-        sellerSheet.Cells[1, 4].Value = isRu ? "Число транзакций" : "Tranzaksiyalar soni";
-
-        using (var headerRange = sellerSheet.Cells[1, 1, 1, 4])
-        {
-            headerRange.Style.Font.Bold = true;
-            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
-        }
+        var sellerSheet = workbook.Worksheets.Add(isRu ? "Продавцы" : "Sotuvchilar");
+        sellerSheet.Cell(1, 1).Value = isRu ? "Продавец" : "Sotuvchi";
+        sellerSheet.Cell(1, 2).Value = isRu ? "Общие продажи" : "Jami savdo";
+        sellerSheet.Cell(1, 3).Value = isRu ? "Прибыль" : "Foyda";
+        sellerSheet.Cell(1, 4).Value = isRu ? "Число транзакций" : "Tranzaksiyalar soni";
+        var sellerHeader = sellerSheet.Range(1, 1, 1, 4);
+        sellerHeader.Style.Font.Bold = true;
+        sellerHeader.Style.Fill.BackgroundColor = XLColor.LightBlue;
 
         int row = 2;
         foreach (var seller in report.SellerReports)
         {
-            sellerSheet.Cells[row, 1].Value = seller.SellerName;
-            sellerSheet.Cells[row, 2].Value = seller.TotalSales;
-            sellerSheet.Cells[row, 3].Value = seller.TotalProfit;
-            sellerSheet.Cells[row, 4].Value = seller.TransactionCount;
+            sellerSheet.Cell(row, 1).Value = seller.SellerName;
+            sellerSheet.Cell(row, 2).Value = seller.TotalSales;
+            sellerSheet.Cell(row, 3).Value = seller.TotalProfit;
+            sellerSheet.Cell(row, 4).Value = seller.TransactionCount;
             row++;
         }
 
-        sellerSheet.Cells.AutoFitColumns();
+        sellerSheet.Columns().AdjustToContents();
 
         // 3. Inventory Sheet
-        var inventorySheet = package.Workbook.Worksheets.Add(isRu ? "Склад" : "Sklad");
-        inventorySheet.Cells[1, 1].Value = isRu ? "Товар" : "Mahsulot";
-        inventorySheet.Cells[1, 2].Value = isRu ? "Количество" : "Miqdor";
-        inventorySheet.Cells[1, 3].Value = isRu ? "Цена покупки" : "Xarid narxi";
-        inventorySheet.Cells[1, 4].Value = isRu ? "Цена продажи" : "Sotuv narxi";
-        inventorySheet.Cells[1, 5].Value = isRu ? "Минимальная цена" : "Minimal narx";
-        inventorySheet.Cells[1, 6].Value = isRu ? "Общая закупочная стоимость" : "Jami xarid qiymati";
-        inventorySheet.Cells[1, 7].Value = isRu ? "Общая стоимость продажи" : "Jami sotuv qiymati";
-        inventorySheet.Cells[1, 8].Value = isRu ? "Потенциальная прибыль" : "Potensial foyda";
-
-        using (var headerRange = inventorySheet.Cells[1, 1, 1, 8])
-        {
-            headerRange.Style.Font.Bold = true;
-            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
-        }
+        var inventorySheet = workbook.Worksheets.Add(isRu ? "Склад" : "Sklad");
+        inventorySheet.Cell(1, 1).Value = isRu ? "Товар" : "Mahsulot";
+        inventorySheet.Cell(1, 2).Value = isRu ? "Количество" : "Miqdor";
+        inventorySheet.Cell(1, 3).Value = isRu ? "Цена покупки" : "Xarid narxi";
+        inventorySheet.Cell(1, 4).Value = isRu ? "Цена продажи" : "Sotuv narxi";
+        inventorySheet.Cell(1, 5).Value = isRu ? "Минимальная цена" : "Minimal narx";
+        inventorySheet.Cell(1, 6).Value = isRu ? "Общая закупочная стоимость" : "Jami xarid qiymati";
+        inventorySheet.Cell(1, 7).Value = isRu ? "Общая стоимость продажи" : "Jami sotuv qiymati";
+        inventorySheet.Cell(1, 8).Value = isRu ? "Потенциальная прибыль" : "Potensial foyda";
+        var invHeader = inventorySheet.Range(1, 1, 1, 8);
+        invHeader.Style.Font.Bold = true;
+        invHeader.Style.Fill.BackgroundColor = XLColor.LightGreen;
 
         row = 2;
         foreach (var item in report.InventoryReport)
         {
-            inventorySheet.Cells[row, 1].Value = item.ProductName;
-            inventorySheet.Cells[row, 2].Value = item.Quantity;
-            inventorySheet.Cells[row, 3].Value = item.CostPrice;
-            inventorySheet.Cells[row, 4].Value = item.SalePrice;
-            inventorySheet.Cells[row, 5].Value = item.MinSalePrice;
-            inventorySheet.Cells[row, 6].Value = item.TotalCostValue;
-            inventorySheet.Cells[row, 7].Value = item.TotalSaleValue;
-            inventorySheet.Cells[row, 8].Value = item.PotentialProfit;
+            inventorySheet.Cell(row, 1).Value = item.ProductName;
+            inventorySheet.Cell(row, 2).Value = item.Quantity;
+            inventorySheet.Cell(row, 3).Value = item.CostPrice;
+            inventorySheet.Cell(row, 4).Value = item.SalePrice;
+            inventorySheet.Cell(row, 5).Value = item.MinSalePrice;
+            inventorySheet.Cell(row, 6).Value = item.TotalCostValue;
+            inventorySheet.Cell(row, 7).Value = item.TotalSaleValue;
+            inventorySheet.Cell(row, 8).Value = item.PotentialProfit;
             row++;
         }
 
-        inventorySheet.Cells.AutoFitColumns();
+        inventorySheet.Columns().AdjustToContents();
 
-        return await package.GetAsByteArrayAsync();
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
     }
 
     private static DailyReportDto CalculateReport(
