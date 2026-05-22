@@ -66,4 +66,59 @@ public class ExcelExportTests
         ws.Cell(3, 2).GetString().Should().Be("Non");
         ws.LastColumnUsed()!.ColumnNumber().Should().Be(2);
     }
+
+    [Fact]
+    public void GenerateExcel_PreservesNumericAndDateTypes()
+    {
+        // Regression guard for the "numbers exported as text" bug — without
+        // typed cell writes, Excel's SUM, filters, charts and PivotTables
+        // would silently break on Products / Customers / Sales exports.
+        var rows = new[]
+        {
+            new
+            {
+                Name = "Olma",
+                Price = 1500.50m,            // decimal — money
+                Quantity = 10,               // int — count
+                CreatedAt = new DateTime(2026, 5, 22, 14, 30, 0, DateTimeKind.Utc),
+                IsActive = true,
+            },
+        };
+
+        var bytes = new ExcelService().GenerateExcel(rows, "Test");
+        using var wb = OpenWorkbook(bytes);
+        var ws = wb.Worksheet(1);
+
+        var price = ws.Cell(2, 2);
+        price.DataType.Should().Be(XLDataType.Number);
+        price.GetValue<decimal>().Should().Be(1500.50m);
+
+        var qty = ws.Cell(2, 3);
+        qty.DataType.Should().Be(XLDataType.Number);
+        qty.GetValue<int>().Should().Be(10);
+
+        var createdAt = ws.Cell(2, 4);
+        createdAt.DataType.Should().Be(XLDataType.DateTime);
+        createdAt.GetValue<DateTime>().Should().Be(new DateTime(2026, 5, 22, 14, 30, 0));
+
+        var isActive = ws.Cell(2, 5);
+        isActive.DataType.Should().Be(XLDataType.Boolean);
+        isActive.GetValue<bool>().Should().BeTrue();
+    }
+
+    [Fact]
+    public void GenerateExcel_NullValues_BecomeEmptyCells()
+    {
+        var rows = new[]
+        {
+            new { Name = "row1", Note = (string?)null, Quantity = (int?)null },
+        };
+
+        var bytes = new ExcelService().GenerateExcel(rows, "Test");
+        using var wb = OpenWorkbook(bytes);
+        var ws = wb.Worksheet(1);
+
+        ws.Cell(2, 2).GetString().Should().BeEmpty();
+        ws.Cell(2, 3).GetString().Should().BeEmpty();
+    }
 }
