@@ -2310,20 +2310,39 @@ public class ReportService : IReportService
         var revenue = salesList.Sum(s => s.TotalAmount);
         var averageCheck = saleCount == 0 ? 0m : revenue / saleCount;
 
-        // "Shift duration" = minutes since the first sale. This is an
-        // approximation until we have a proper Shift entity — sellers
-        // typically take their first sale shortly after clocking in, so the
-        // signal is close enough for a dashboard hint.
         DateTime? firstSaleAt = saleCount == 0
             ? null
             : salesList.Min(s => s.CreatedAt);
-        int shiftMinutes = 0;
-        if (firstSaleAt is { } first)
+
+        // Real shift tracking: sum the worked minutes of every Shift the seller
+        // opened within the period (open shifts count up to "now"). Falls back
+        // to the "minutes since first sale" heuristic when the seller has no
+        // recorded shifts yet — so the dashboard never regresses to 0.
+        var shifts = await _unitOfWork.Shifts.FindAsync(
+            s => s.UserId == userId && s.MarketId == marketId &&
+                 s.OpenedAt >= rangeStartUtc && s.OpenedAt < rangeEndUtc,
+            cancellationToken);
+        var shiftList = shifts.ToList();
+
+        int shiftMinutes;
+        if (shiftList.Count > 0)
+        {
+            shiftMinutes = shiftList.Sum(s =>
+            {
+                var minutes = ((s.ClosedAt ?? DateTime.UtcNow) - s.OpenedAt).TotalMinutes;
+                return minutes > 0 ? (int)minutes : 0;
+            });
+        }
+        else if (firstSaleAt is { } first)
         {
             var elapsed = DateTime.UtcNow - first;
             // Clamp to non-negative — clock-skew between server and DB can
             // produce small negatives that would render as "-3 min".
             shiftMinutes = elapsed.TotalMinutes > 0 ? (int)elapsed.TotalMinutes : 0;
+        }
+        else
+        {
+            shiftMinutes = 0;
         }
 
         return new MyPerformanceDto(

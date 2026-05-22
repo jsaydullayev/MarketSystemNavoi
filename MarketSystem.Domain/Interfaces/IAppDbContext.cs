@@ -33,6 +33,7 @@ public interface IAppDbContext
     DbSet<CashWithdrawal> CashWithdrawals { get; }
     DbSet<RegistrationRequest> RegistrationRequests { get; }
     DbSet<RevokedToken> RevokedTokens { get; }
+    DbSet<Shift> Shifts { get; }
 
     DatabaseFacade Database { get; }
 

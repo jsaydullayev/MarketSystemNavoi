@@ -484,6 +484,7 @@ try
     builder.Services.AddSingleton<ITashkentClock, TashkentClock>();
     builder.Services.AddScoped<IRegistrationRequestService, RegistrationRequestService>();
     builder.Services.AddScoped<IDebtService, DebtService>();
+    builder.Services.AddScoped<IShiftService, ShiftService>();
     // Singleton — the process-local revocation map must outlive any single request.
     builder.Services.AddSingleton<IRevokedTokenStore, InMemoryRevokedTokenStore>();
 

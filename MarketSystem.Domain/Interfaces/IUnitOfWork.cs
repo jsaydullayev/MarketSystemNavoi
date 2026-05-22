@@ -15,6 +15,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<DebtAuditLog> DebtAuditLogs { get; }
     IRepository<Zakup> Zakups { get; }
     IRepository<AuditLog> AuditLogs { get; }
+    IRepository<Shift> Shifts { get; }
     IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
