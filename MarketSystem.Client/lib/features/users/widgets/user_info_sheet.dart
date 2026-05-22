@@ -8,6 +8,7 @@ import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
+import 'package:market_system_client/features/users/screens/user_permissions_screen.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 /// User detail bottom sheet matching the staff-detail hero card from
@@ -171,6 +172,11 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final canManageShift = auth.can(Permissions.usersShift);
     final isSellerViewed = role.toLowerCase() == 'seller';
+    // Permission management is Owner-only (backend endpoint is OwnerOnly) and
+    // only meaningful for the gateable roles — Admin and Seller.
+    final roleLower = role.toLowerCase();
+    final canManagePermissions =
+        auth.role == 'Owner' && (roleLower == 'admin' || roleLower == 'seller');
 
     return Container(
       constraints: BoxConstraints(
@@ -271,6 +277,24 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
                       start: now, end: now.add(const Duration(hours: 24)));
                 },
                 onSetWindow: _pickWindow,
+              ),
+            ],
+            // Owner → fine-grained permission matrix for this user.
+            if (canManagePermissions) ...[
+              const SizedBox(height: AppSpacing.lg),
+              AppSecondaryButton(
+                label: l10n.managePermissions,
+                icon: Icons.shield_outlined,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UserPermissionsScreen(
+                      userId: (_user['id'] ?? '').toString(),
+                      userName: (_user['fullName'] ?? '').toString(),
+                      userRole: role,
+                    ),
+                  ),
+                ),
               ),
             ],
             const SizedBox(height: AppSpacing.lg),

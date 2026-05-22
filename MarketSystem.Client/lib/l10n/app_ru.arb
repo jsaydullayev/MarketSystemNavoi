@@ -898,5 +898,12 @@
       "time": {"type": "String"}
     }
   },
-  "dismiss": "Понятно"
+  "dismiss": "Понятно",
+  "permissionsTitle": "Права доступа",
+  "permissionsNextLoginNote": "Изменения вступят в силу при следующем входе пользователя.",
+  "resetToDefault": "Сбросить к стандартным",
+  "permissionsSaved": "Права сохранены",
+  "permissionsUsingRoleDefaults": "Стандартные права по роли",
+  "permissionsCustomized": "Настроено вручную",
+  "managePermissions": "Управление правами"
 }

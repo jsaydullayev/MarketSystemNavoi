@@ -2613,4 +2613,26 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get dismiss => 'Tushundim';
+
+  @override
+  String get permissionsTitle => 'Ruxsatlar';
+
+  @override
+  String get permissionsNextLoginNote =>
+      'O\'zgarishlar foydalanuvchi keyingi marta tizimga kirganda kuchga kiradi.';
+
+  @override
+  String get resetToDefault => 'Standartga qaytarish';
+
+  @override
+  String get permissionsSaved => 'Ruxsatlar saqlandi';
+
+  @override
+  String get permissionsUsingRoleDefaults => 'Rol bo\'yicha standart ruxsatlar';
+
+  @override
+  String get permissionsCustomized => 'Maxsus sozlangan';
+
+  @override
+  String get managePermissions => 'Ruxsatlarni boshqarish';
 }
