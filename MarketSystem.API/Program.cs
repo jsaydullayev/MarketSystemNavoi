@@ -590,6 +590,19 @@ try
         ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
         ctx.Response.Headers["X-Frame-Options"] = "DENY";
         ctx.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        // Content-Security-Policy — this is a JSON API plus a couple of static
+        // HTML pages (privacy.html). 'unsafe-inline' is kept for script/style
+        // so those pages aren't broken; the real wins here are frame-ancestors
+        // (clickjacking), object-src and base-uri lockdown. The Flutter client
+        // runs on its own origin and is unaffected.
+        ctx.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline'; " +
+            "style-src 'self' 'unsafe-inline'; " +
+            "img-src 'self' data:; " +
+            "object-src 'none'; " +
+            "base-uri 'self'; " +
+            "frame-ancestors 'none'";
         await next();
     });
 
