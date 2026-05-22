@@ -1,7 +1,9 @@
 using System.Net;
+using System.Text.Json;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Application.Services;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Http;
@@ -284,5 +286,152 @@ public class AuditLogIntegrationTests : TestBase
 
         var above = await QueryService().QueryAsync(new AuditLogFilter(Size: 5000));
         above.Size.Should().Be(200);
+    }
+
+    // ─── Suspicious-activity detection (Plan 07 Bosqich 3) ────────────────
+
+    /// <summary>Insert a LoginFailed row with a username payload — the shape
+    /// AuthService writes in production. UserId stays null (anonymous).</summary>
+    private void SeedLoginFailed(string username, string? ipAddress, DateTime createdAt, int? marketId = null)
+    {
+        DbContext.AuditLogs.Add(new AuditLog
+        {
+            Id = Guid.NewGuid(),
+            EntityType = AuditEntityTypes.Auth,
+            EntityId = Guid.Empty,
+            Action = AuditActions.LoginFailed,
+            UserId = null,
+            MarketId = marketId ?? TestMarketId,
+            Payload = JsonSerializer.Serialize(new { username }),
+            IpAddress = ipAddress,
+            CreatedAt = createdAt,
+        });
+    }
+
+    [Fact]
+    public async Task GetSuspicious_NoActivity_ReturnsEmptyReport()
+    {
+        var report = await QueryService().GetSuspiciousAsync(TestMarketId);
+
+        report.FailedLoginBursts.Should().BeEmpty();
+        report.BulkDeleteBursts.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetSuspicious_FailedLoginBurst_FlagsAtThreshold()
+    {
+        var now = DateTime.UtcNow;
+        for (var i = 0; i < 5; i++)
+            SeedLoginFailed("bob", ipAddress: "1.2.3.4", createdAt: now.AddMinutes(-i));
+        await DbContext.SaveChangesAsync();
+
+        var report = await QueryService().GetSuspiciousAsync(TestMarketId);
+
+        report.FailedLoginBursts.Should().HaveCount(1);
+        var burst = report.FailedLoginBursts[0];
+        burst.Username.Should().Be("bob");
+        burst.Count.Should().Be(5);
+        burst.IpAddresses.Should().Equal("1.2.3.4");
+    }
+
+    [Fact]
+    public async Task GetSuspicious_FailedLoginBurst_BelowThreshold_NotFlagged()
+    {
+        var now = DateTime.UtcNow;
+        for (var i = 0; i < 4; i++) // 4 < threshold of 5
+            SeedLoginFailed("alice", ipAddress: "1.2.3.4", createdAt: now.AddMinutes(-i));
+        await DbContext.SaveChangesAsync();
+
+        var report = await QueryService().GetSuspiciousAsync(TestMarketId);
+
+        report.FailedLoginBursts.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetSuspicious_FailedLoginBurst_IgnoresEventsOutsideWindow()
+    {
+        var now = DateTime.UtcNow;
+        // 5 events INSIDE the 15-min window — should flag with count == 5.
+        for (var i = 0; i < 5; i++)
+            SeedLoginFailed("carol", ipAddress: "1.2.3.4", createdAt: now.AddMinutes(-i));
+        // One extra OUTSIDE the window — must be ignored, count must stay 5.
+        SeedLoginFailed("carol", ipAddress: "1.2.3.4", createdAt: now.AddMinutes(-30));
+        await DbContext.SaveChangesAsync();
+
+        var report = await QueryService().GetSuspiciousAsync(TestMarketId);
+
+        report.FailedLoginBursts.Should().HaveCount(1);
+        report.FailedLoginBursts[0].Count.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task GetSuspicious_FailedLoginBurst_CollectsDistinctIpAddresses()
+    {
+        var now = DateTime.UtcNow;
+        SeedLoginFailed("dave", "1.1.1.1", now.AddMinutes(-1));
+        SeedLoginFailed("dave", "1.1.1.1", now.AddMinutes(-2));
+        SeedLoginFailed("dave", "2.2.2.2", now.AddMinutes(-3));
+        SeedLoginFailed("dave", null, now.AddMinutes(-4)); // null IP must be dropped
+        SeedLoginFailed("dave", "2.2.2.2", now.AddMinutes(-5));
+        await DbContext.SaveChangesAsync();
+
+        var report = await QueryService().GetSuspiciousAsync(TestMarketId);
+
+        report.FailedLoginBursts.Should().HaveCount(1);
+        report.FailedLoginBursts[0].IpAddresses.Should().Equal("1.1.1.1", "2.2.2.2");
+    }
+
+    [Fact]
+    public async Task GetSuspicious_BulkDelete_FlagsAtThreshold()
+    {
+        var now = DateTime.UtcNow;
+        for (var i = 0; i < 5; i++)
+            SeedRow(action: AuditActions.Delete, userId: TestUserId, createdAt: now.AddMinutes(-i));
+        await DbContext.SaveChangesAsync();
+
+        var report = await QueryService().GetSuspiciousAsync(TestMarketId);
+
+        report.BulkDeleteBursts.Should().HaveCount(1);
+        var burst = report.BulkDeleteBursts[0];
+        burst.UserId.Should().Be(TestUserId);
+        burst.UserName.Should().Be("Test User"); // resolved from the seeded TestUser
+        burst.Count.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task GetSuspicious_BulkDelete_RecordsDistinctEntityTypes()
+    {
+        var now = DateTime.UtcNow;
+        SeedRow(entityType: "Sale", action: AuditActions.Delete, userId: TestUserId, createdAt: now.AddMinutes(-1));
+        SeedRow(entityType: "Sale", action: AuditActions.Delete, userId: TestUserId, createdAt: now.AddMinutes(-2));
+        SeedRow(entityType: "User", action: AuditActions.Delete, userId: TestUserId, createdAt: now.AddMinutes(-3));
+        SeedRow(entityType: "User", action: AuditActions.Delete, userId: TestUserId, createdAt: now.AddMinutes(-4));
+        SeedRow(entityType: "Customer", action: AuditActions.Delete, userId: TestUserId, createdAt: now.AddMinutes(-5));
+        await DbContext.SaveChangesAsync();
+
+        var report = await QueryService().GetSuspiciousAsync(TestMarketId);
+
+        report.BulkDeleteBursts.Should().HaveCount(1);
+        report.BulkDeleteBursts[0].EntityTypes.Should().Equal("Customer", "Sale", "User"); // sorted distinct
+    }
+
+    [Fact]
+    public async Task GetSuspicious_ScopedToMarket_IgnoresOtherTenants()
+    {
+        var now = DateTime.UtcNow;
+        var otherMarket = TestMarketId + 1000;
+
+        // 5 failed logins in OUR market — should flag.
+        for (var i = 0; i < 5; i++)
+            SeedLoginFailed("eve", "1.2.3.4", now.AddMinutes(-i), marketId: TestMarketId);
+        // 5 failed logins in ANOTHER market — must be invisible to us.
+        for (var i = 0; i < 5; i++)
+            SeedLoginFailed("frank", "9.9.9.9", now.AddMinutes(-i), marketId: otherMarket);
+        await DbContext.SaveChangesAsync();
+
+        var report = await QueryService().GetSuspiciousAsync(TestMarketId);
+
+        report.FailedLoginBursts.Should().HaveCount(1);
+        report.FailedLoginBursts[0].Username.Should().Be("eve");
     }
 }
