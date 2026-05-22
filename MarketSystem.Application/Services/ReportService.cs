@@ -183,9 +183,13 @@ public class ReportService : IReportService
         );
     }
 
-    public async Task<byte[]> ExportToExcelAsync(PeriodReportRequest request, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportToExcelAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
+        // Profit is an Owner-only figure (mirrors the profit-summary gate).
+        // The period/export endpoint is also reachable by Admin, so the
+        // Profit column must be masked for everyone except the Owner.
+        var includeProfit = userRole == Role.Owner.ToString();
 
         // Use < instead of <= to include the entire end day (up to 23:59:59.999)
         var endDateTime = request.EndDate.AddDays(1);
@@ -265,7 +269,9 @@ public class ReportService : IReportService
                 // but Product isn't loaded here (includeProperties omits it),
                 // so for non-external items it would resolve cost to 0 and
                 // report the full sale price as profit.
-                worksheet.Cells[row, 7].Value = (item.SalePrice - costPrice) * item.Quantity;
+                worksheet.Cells[row, 7].Value = includeProfit
+                    ? (object)((item.SalePrice - costPrice) * item.Quantity)
+                    : "—";
                 row++;
             }
         }
@@ -280,7 +286,7 @@ public class ReportService : IReportService
             worksheet.Cells[row, 4].Value = zakup.Quantity;
             worksheet.Cells[row, 5].Value = zakup.Quantity * zakup.CostPrice;
             worksheet.Cells[row, 6].Value = zakup.Quantity * zakup.CostPrice;
-            worksheet.Cells[row, 7].Value = 0;
+            worksheet.Cells[row, 7].Value = includeProfit ? (object)0m : "—";
             row++;
         }
         

@@ -107,7 +107,8 @@ public class ReportsController : ControllerBase
         var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
 
         var request = new PeriodReportRequest(utcStart, utcEnd);
-        var excelBytes = await _reportService.ExportToExcelAsync(request);
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var excelBytes = await _reportService.ExportToExcelAsync(request, userRole);
 
         return File(
             excelBytes,
@@ -672,26 +673,6 @@ public class ReportsController : ControllerBase
 
                     // Auto filter
                     itemsSheet.Cells[1, 1, 1, colCount].AutoFilter = true;
-
-                    itemsSheet.Cells[itemsSheet.Dimension.Address].AutoFitColumns();
-                    itemsSheet.Column(1).Width = 6;
-                    itemsSheet.Column(2).Width = 18;
-                    itemsSheet.Column(3).Width = 40;
-                    itemsSheet.Column(4).Width = 20;
-                    itemsSheet.Column(5).Width = 40;
-                    itemsSheet.Column(6).Width = 12;
-                    itemsSheet.Column(7).Width = 12;
-                    itemsSheet.Column(8).Width = 15;
-                    if (userRole == "Owner") itemsSheet.Column(9).Width = 15;
-
-                    // Borders
-                    using (var range = itemsSheet.Cells[1, 1, itemRow, colCount])
-                    {
-                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    }
 
                     _logger.LogInformation("Successfully created product detail sheet with {RowCount} rows", itemRow - 1);
                 }
