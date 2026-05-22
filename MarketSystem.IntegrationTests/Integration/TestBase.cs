@@ -106,7 +106,7 @@ public abstract class TestBase : IDisposable
         var clock = new TashkentClock(SharedTashkentTimeZone);
         CustomerService = new CustomerService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, httpContextAccessorMock.Object);
         SaleService = new SaleService(unitOfWork, AuditLogServiceMock.Object, DbContext, SaleServiceLoggerMock.Object, CurrentMarketServiceMock.Object, CustomerService);
-        CashRegisterService = new CashRegisterService(unitOfWork, CashRegisterServiceLoggerMock.Object, DbContext, CurrentMarketServiceMock.Object, clock);
+        CashRegisterService = new CashRegisterService(unitOfWork, CashRegisterServiceLoggerMock.Object, DbContext, CurrentMarketServiceMock.Object, clock, AuditLogServiceMock.Object);
 
         // Seed test data
         SeedTestData();

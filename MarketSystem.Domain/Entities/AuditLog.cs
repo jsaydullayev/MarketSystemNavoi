@@ -10,6 +10,10 @@ public class AuditLog : BaseEntity
     public Guid UserId { get; set; }
     public string Payload { get; set; } = string.Empty;
 
+    /// <summary>Client IP captured at write time — key for security review
+    /// (e.g. which address a failed login came from). Null when unavailable.</summary>
+    public string? IpAddress { get; set; }
+
     // Multi-tenancy — nullable so cross-tenant operations (e.g. SuperAdmin
     // approving a registration before a market exists) can still be logged.
     public int? MarketId { get; set; }

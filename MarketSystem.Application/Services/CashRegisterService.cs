@@ -1,5 +1,6 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -17,14 +18,16 @@ public class CashRegisterService : ICashRegisterService
     private readonly IAppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly ITashkentClock _clock;
+    private readonly IAuditLogService _auditLogService;
 
-    public CashRegisterService(IUnitOfWork unitOfWork, ILogger<CashRegisterService> logger, IAppDbContext context, ICurrentMarketService currentMarketService, ITashkentClock clock)
+    public CashRegisterService(IUnitOfWork unitOfWork, ILogger<CashRegisterService> logger, IAppDbContext context, ICurrentMarketService currentMarketService, ITashkentClock clock, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _context = context;
         _currentMarketService = currentMarketService;
         _clock = clock;
+        _auditLogService = auditLogService;
     }
 
     private async Task<CashRegister> GetOrCreateRegisterAsync(int marketId, CancellationToken cancellationToken)
@@ -102,8 +105,9 @@ public class CashRegisterService : ICashRegisterService
         try
         {
             var marketId = _currentMarketService.GetCurrentMarketId();
+            CashWithdrawal? recorded = null;
 
-            return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            var ok = await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 var cashRegister = await _context.CashRegisters
                     .FirstOrDefaultAsync(x => x.MarketId == marketId, cancellationToken);
@@ -149,6 +153,7 @@ public class CashRegisterService : ICashRegisterService
                     cashRegister.LastWithdrawalId = withdrawal.Id;
 
                     await _context.SaveChangesAsync(cancellationToken);
+                    recorded = withdrawal;
                     _logger.LogInformation("Cash withdrawn. Amount: {Amount}", request.Amount);
                 }
                 else if (request.WithdrawType == WithdrawTypeClick)
@@ -169,6 +174,7 @@ public class CashRegisterService : ICashRegisterService
                     cashRegister.LastWithdrawalId = withdrawal.Id;
 
                     await _context.SaveChangesAsync(cancellationToken);
+                    recorded = withdrawal;
                     _logger.LogInformation("Click withdrawal recorded. Amount: {Amount}", request.Amount);
                 }
                 else
@@ -179,6 +185,18 @@ public class CashRegisterService : ICashRegisterService
 
                 return true;
             }, cancellationToken);
+
+            // Audit AFTER the transaction commits. LogActionAsync swallows its
+            // own errors, but running it outside the transaction also guarantees
+            // a failed audit write can never roll back a completed withdrawal.
+            if (ok && recorded is not null)
+            {
+                await _auditLogService.LogActionAsync(
+                    AuditEntityTypes.CashRegister, recorded.Id, AuditActions.Withdraw, userId,
+                    new { recorded.Amount, recorded.WithdrawType, recorded.Comment }, cancellationToken);
+            }
+
+            return ok;
         }
         catch (Exception ex)
         {

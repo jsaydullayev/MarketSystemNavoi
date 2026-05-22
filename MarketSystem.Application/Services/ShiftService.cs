@@ -1,5 +1,6 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 
@@ -10,11 +11,16 @@ public class ShiftService : IShiftService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IAuditLogService _auditLogService;
 
-    public ShiftService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService)
+    public ShiftService(
+        IUnitOfWork unitOfWork,
+        ICurrentMarketService currentMarketService,
+        IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
+        _auditLogService = auditLogService;
     }
 
     public async Task<ShiftDto?> GetCurrentShiftAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -40,6 +46,11 @@ public class ShiftService : IShiftService
         };
         await _unitOfWork.Shifts.AddAsync(shift, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Shift, shift.Id, AuditActions.Open, userId,
+            new { shift.OpenedAt }, cancellationToken);
+
         return ToDto(shift);
     }
 
@@ -51,6 +62,11 @@ public class ShiftService : IShiftService
         open.ClosedAt = DateTime.UtcNow;
         _unitOfWork.Shifts.Update(open);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Shift, open.Id, AuditActions.Close, userId,
+            new { open.OpenedAt, open.ClosedAt, open.DurationMinutes }, cancellationToken);
+
         return ToDto(open);
     }
 
