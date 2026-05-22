@@ -372,9 +372,14 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.Payload);
             b.Property(x => x.IpAddress).HasMaxLength(64);
 
-            // IMPORTANT: Audit log tarixi hech qachon o'CHMASIN kerak
+            // IMPORTANT: Audit log tarixi hech qachon o'CHMASIN kerak.
+            // UserId is optional — an anonymous event (failed login where the
+            // username didn't resolve to any user) carries NULL. When a user IS
+            // deleted we keep the audit row and just null the FK, so the
+            // history survives the actor's removal.
             b.HasOne(x => x.User).WithMany(p => p.AuditLogs).HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
             b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId)
                 .OnDelete(DeleteBehavior.SetNull);
 
