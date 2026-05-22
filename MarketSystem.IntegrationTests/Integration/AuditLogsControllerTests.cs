@@ -32,6 +32,11 @@ public class AuditLogsControllerTests
         _queryServiceMock
             .Setup(x => x.QueryAsync(It.IsAny<AuditLogFilter>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(PagedResult<AuditLogDto>.Empty(1, 50));
+        _queryServiceMock
+            .Setup(x => x.GetSuspiciousAsync(It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SuspiciousActivityReport(
+                Array.Empty<FailedLoginBurstDto>(),
+                Array.Empty<BulkDeleteBurstDto>()));
     }
 
     private AuditLogsController ControllerAs(Role role)
@@ -96,6 +101,35 @@ public class AuditLogsControllerTests
 
         _queryServiceMock.Verify(x => x.QueryAsync(
             It.Is<AuditLogFilter>(f => f.MarketId == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // ─── GetSuspicious tenant scoping (Plan 07 Bosqich 3) ────────────────
+
+    [Theory]
+    [InlineData(Role.Owner)]
+    [InlineData(Role.Admin)]
+    [InlineData(Role.Seller)]
+    public async Task GetSuspicious_NonSuperAdmin_PinnedToOwnMarket(Role role)
+    {
+        var controller = ControllerAs(role);
+
+        await controller.GetSuspicious(marketId: 999);
+
+        _queryServiceMock.Verify(x => x.GetSuspiciousAsync(
+            CallerMarketId,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetSuspicious_SuperAdmin_HonoursMarketIdQueryParam()
+    {
+        var controller = ControllerAs(Role.SuperAdmin);
+
+        await controller.GetSuspicious(marketId: 99);
+
+        _queryServiceMock.Verify(x => x.GetSuspiciousAsync(
+            99,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }

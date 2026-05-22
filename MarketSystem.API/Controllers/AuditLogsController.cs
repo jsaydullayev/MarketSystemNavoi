@@ -74,4 +74,27 @@ public class AuditLogsController : ControllerBase
 
         return Ok(await _queryService.QueryAsync(filter, ct));
     }
+
+    /// <summary>
+    /// Suspicious-activity detection (Plan 07 Bosqich 3): groups recent
+    /// audit events by the configured rules (failed-login burst, bulk
+    /// delete) and returns whichever groups currently trip the threshold.
+    /// Tenant scoping mirrors <see cref="Query"/> — SuperAdmin sees every
+    /// market, everyone else is pinned to their own.
+    /// </summary>
+    [HttpGet("suspicious")]
+    [RequirePermission(PermissionKeys.DataAuditLog)]
+    public async Task<ActionResult<SuspiciousActivityReport>> GetSuspicious(
+        [FromQuery] int? marketId,
+        CancellationToken ct = default)
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        var isSuperAdmin = string.Equals(role, nameof(Role.SuperAdmin), StringComparison.Ordinal);
+
+        var effectiveMarketId = isSuperAdmin
+            ? marketId
+            : _currentMarketService.TryGetCurrentMarketId();
+
+        return Ok(await _queryService.GetSuspiciousAsync(effectiveMarketId, ct));
+    }
 }
