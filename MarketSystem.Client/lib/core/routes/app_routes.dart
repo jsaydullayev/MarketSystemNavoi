@@ -41,6 +41,9 @@ class AppRoutes {
   static const String privacy = '/privacy';
   static const String cashRegister = '/cash-register';
   static const String notifications = '/notifications';
+  // Owner / SuperAdmin (or Admin granted data.auditLog) — audit-log review.
+  // Plan 07 Bosqich 4.
+  static const String securityJournal = '/security-journal';
 
   // Sub-routes
   static const String productDetail = '/products/:id';

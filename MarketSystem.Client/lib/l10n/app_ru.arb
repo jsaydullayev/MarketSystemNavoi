@@ -910,5 +910,20 @@
   "shiftClosed": "Смена закрыта",
   "openShift": "Открыть смену",
   "closeShift": "Закрыть смену",
-  "shiftStartedAt": "Начата: {time}"
+  "shiftStartedAt": "Начата: {time}",
+  "securityJournal": "Журнал безопасности",
+  "securityJournalAllTab": "Все",
+  "securityJournalSuspiciousTab": "Подозрительные",
+  "securityJournalFilterEntityType": "Тип события",
+  "securityJournalFilterAction": "Действие",
+  "securityJournalFilterAll": "Все",
+  "securityJournalEmptyAll": "Записей аудита пока нет.",
+  "securityJournalNoSuspicious": "Подозрительной активности пока не обнаружено.",
+  "securityJournalAnonymousActor": "Анонимный",
+  "securityJournalFailedLoginBursts": "Серии неудачных входов",
+  "securityJournalBulkDeleteBursts": "Массовые удаления",
+  "securityJournalFirstSeen": "Начало",
+  "securityJournalLastSeen": "Последнее",
+  "securityJournalSourceIps": "Источник IP",
+  "securityJournalEntityTypes": "Объекты"
 }

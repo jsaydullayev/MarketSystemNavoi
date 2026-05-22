@@ -2652,4 +2652,50 @@ class AppLocalizationsUz extends AppLocalizations {
   String shiftStartedAt(String time) {
     return 'Boshlangan: $time';
   }
+
+  @override
+  String get securityJournal => 'Xavfsizlik jurnali';
+
+  @override
+  String get securityJournalAllTab => 'Hammasi';
+
+  @override
+  String get securityJournalSuspiciousTab => 'Shubhali';
+
+  @override
+  String get securityJournalFilterEntityType => 'Hodisa turi';
+
+  @override
+  String get securityJournalFilterAction => 'Amal';
+
+  @override
+  String get securityJournalFilterAll => 'Barchasi';
+
+  @override
+  String get securityJournalEmptyAll => 'Hozircha audit yozuvlari yo\'q.';
+
+  @override
+  String get securityJournalNoSuspicious =>
+      'Hozircha shubhali faollik aniqlanmadi.';
+
+  @override
+  String get securityJournalAnonymousActor => 'Anonim';
+
+  @override
+  String get securityJournalFailedLoginBursts => 'Xato login urinishlari';
+
+  @override
+  String get securityJournalBulkDeleteBursts => 'Ko\'p o\'chirish urinishlari';
+
+  @override
+  String get securityJournalFirstSeen => 'Boshlangan';
+
+  @override
+  String get securityJournalLastSeen => 'Oxirgi';
+
+  @override
+  String get securityJournalSourceIps => 'Manba IP';
+
+  @override
+  String get securityJournalEntityTypes => 'Obyektlar';
 }

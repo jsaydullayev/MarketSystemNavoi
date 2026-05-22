@@ -46,6 +46,10 @@ class ApiConstants {
   // Public sign-up: anonymous POST { fullName, phone } — a SuperAdmin reviews
   // the queue in the hidden console and provisions the Owner + Market on approval.
   static const String registrationRequests = '/RegistrationRequests';
+  // Audit-log read API (Plan 07 Bosqich 2/3). Lower-kebab to match the
+  // backend's literal route — every other endpoint uses [controller] casing,
+  // but AuditLogsController declares `[Route("api/audit-logs")]` directly.
+  static const String auditLogs = '/audit-logs';
 
   // Auth endpoints
   static const String login = '$auth/Login';

@@ -26,6 +26,7 @@ import '../../features/reports/screens/reports_screen.dart';
 import '../../features/debts/screens/debts_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/privacy/screens/privacy_screen.dart';
+import '../../features/security_journal/screens/security_journal_screen.dart';
 import '../../features/superadmin/presentation/superadmin_console_screen.dart';
 
 /// Generate route
@@ -115,6 +116,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case AppRoutes.notifications:
       return MaterialPageRoute(builder: (_) => const NotificationsScreen());
+
+    case AppRoutes.securityJournal:
+      return MaterialPageRoute(builder: (_) => const SecurityJournalScreen());
 
     default:
       return MaterialPageRoute(
