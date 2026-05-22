@@ -401,7 +401,7 @@ public class SalesController : ControllerBase
 
     [HttpGet("export-pdf")]
     [RequirePermission(PermissionKeys.SalesExport)]
-    public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, CancellationToken ct = default)
+    public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string lang = "uz", CancellationToken ct = default)
     {
         try
         {
@@ -411,7 +411,7 @@ public class SalesController : ControllerBase
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             _logger.LogInformation("Exporting PDF for user role: {UserRole}", userRole ?? "Unknown");
 
-            var pdfBytes = await _reportService.ExportSalesListToPdfAsync(startDate, endDate, userRole);
+            var pdfBytes = await _reportService.ExportSalesListToPdfAsync(startDate, endDate, userRole, lang);
 
             _logger.LogInformation("Sales PDF generated successfully");
 
@@ -469,14 +469,14 @@ public class SalesController : ControllerBase
     /// </summary>
     [HttpGet("{id}/invoice")]
     [RequirePermission(PermissionKeys.SalesAccess)]
-    public async Task<IActionResult> GetInvoice(Guid id, CancellationToken ct = default)
+    public async Task<IActionResult> GetInvoice(Guid id, [FromQuery] string lang = "uz", CancellationToken ct = default)
     {
         try
         {
             _logger.LogInformation("GetInvoice called - Sale ID: {SaleId}", id);
 
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole);
+            var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole, lang);
 
             var sale = await _saleService.GetSaleByIdAsync(id);
             var fileName = $"Faktura_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";

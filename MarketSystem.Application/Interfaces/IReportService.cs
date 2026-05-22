@@ -25,16 +25,16 @@ public interface IReportService
     // Detailed sales with items for export
     Task<List<SaleWithItemsDto>> GetSalesWithItemsAsync(DateTime startDate, DateTime endDate, string? userRole = null, Guid? userId = null, CancellationToken cancellationToken = default);
 
-    // PDF export methods (temporarily disabled - being updated)
-    Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default);
-    Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default);
-    Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default);
+    // PDF export methods — `lang` ("uz" | "ru") localises the document text.
+    Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
+    Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
+    Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
 
     // Invoice generation
-    Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, CancellationToken cancellationToken = default);
+    Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
 
     // Sales list export to PDF
-    Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, CancellationToken cancellationToken = default);
+    Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
 
     // Dashboard aggregations — added 2026-05-18 to back the new design's
     // ChartCard (weekly bar series), TopSellersCard (ranking), and the
