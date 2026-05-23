@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../data/services/shift_service.dart';
 import '../../design/tokens/app_theme_colors.dart';
@@ -57,6 +58,32 @@ class _ShiftControlCardState extends State<ShiftControlCard> {
           _shift == null ? await _service.openShift() : await _service.closeShift();
       if (!mounted) return;
       setState(() => _shift = result.isOpen ? result : null);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      // G4 — branch on the structured error code. The most common case here
+      // is `closeShift` on a state where no shift is open (e.g. another
+      // tab already closed it, or the local cache was stale). The backend
+      // returns 409 + SHIFT_NOT_OPEN; show the dedicated message and
+      // reload so the toggle flips back to "open" state.
+      if (e.isShiftNotOpen) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(l10n.shiftNotOpenError),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ));
+        await _load();
+        return;
+      }
+      // Fall through to a generic localized snackbar for every other
+      // status / code (rate-limit, market blocked, 5xx, …). We still use
+      // the backend's `message` when present because it's already in the
+      // user's locale.
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message.isNotEmpty ? e.message : l10n.errorOccurred),
+        backgroundColor: AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+      ));
     } catch (e) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;

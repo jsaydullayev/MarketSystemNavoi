@@ -2654,6 +2654,9 @@ class AppLocalizationsUz extends AppLocalizations {
   }
 
   @override
+  String get shiftNotOpenError => 'Ochiq smena topilmadi. Avval smenani oching.';
+
+  @override
   String get securityJournal => 'Xavfsizlik jurnali';
 
   @override

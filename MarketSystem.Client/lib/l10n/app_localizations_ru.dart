@@ -2659,6 +2659,9 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get shiftNotOpenError => 'Открытая смена не найдена. Сначала откройте смену.';
+
+  @override
   String get securityJournal => 'Журнал безопасности';
 
   @override
