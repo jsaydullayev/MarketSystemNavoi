@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show debugPrint;
 
+import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
 import 'http_service.dart';
 
@@ -71,16 +72,30 @@ class ShiftService {
   Future<Shift> openShift() async {
     final res = await _http.post('/Shifts/open');
     if (res.statusCode != 200) {
-      throw Exception('Smenani ochishda xatolik (${res.statusCode})');
+      // G4 — throw the typed ApiException so callers can branch on the
+      // structured code (e.g. RATE_LIMITED on the open endpoint) instead
+      // of pattern-matching a string. Falls back to a localized generic
+      // when the body isn't JSON.
+      throw ApiException.fromResponse(
+        res,
+        fallbackMessage: 'Smenani ochishda xatolik (${res.statusCode})',
+      );
     }
     return Shift.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
-  /// Closes the caller's open shift.
+  /// Closes the caller's open shift. The backend now throws
+  /// `ShiftNotOpenException` → HTTP 409 with `code: SHIFT_NOT_OPEN` when
+  /// there is no open shift; callers can detect that via
+  /// [ApiException.isShiftNotOpen] and surface "Avval smenani oching"
+  /// instead of a generic error.
   Future<Shift> closeShift() async {
     final res = await _http.post('/Shifts/close');
     if (res.statusCode != 200) {
-      throw Exception('Smenani yopishda xatolik (${res.statusCode})');
+      throw ApiException.fromResponse(
+        res,
+        fallbackMessage: 'Smenani yopishda xatolik (${res.statusCode})',
+      );
     }
     return Shift.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }

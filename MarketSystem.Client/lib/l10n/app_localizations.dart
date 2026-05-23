@@ -5072,6 +5072,16 @@ abstract class AppLocalizations {
   /// **'Boshlangan: {time}'**
   String shiftStartedAt(String time);
 
+  /// G4 — surfaced when the backend returns HTTP 409 with
+  /// `code: SHIFT_NOT_OPEN` (the seller tried to close a shift that
+  /// was never opened, or a POS endpoint refused because no shift is
+  /// active). The accompanying snackbar usually carries a "Smenani
+  /// ochish" CTA.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ochiq smena topilmadi. Avval smenani oching.'**
+  String get shiftNotOpenError;
+
   /// No description provided for @securityJournal.
   ///
   /// In uz, this message translates to:

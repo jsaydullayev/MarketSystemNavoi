@@ -911,6 +911,7 @@
   "openShift": "Открыть смену",
   "closeShift": "Закрыть смену",
   "shiftStartedAt": "Начата: {time}",
+  "shiftNotOpenError": "Открытая смена не найдена. Сначала откройте смену.",
   "securityJournal": "Журнал безопасности",
   "securityJournalAllTab": "Все",
   "securityJournalSuspiciousTab": "Подозрительные",

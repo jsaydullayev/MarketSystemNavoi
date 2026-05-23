@@ -911,6 +911,7 @@
   "openShift": "Smenani ochish",
   "closeShift": "Smenani yopish",
   "shiftStartedAt": "Boshlangan: {time}",
+  "shiftNotOpenError": "Ochiq smena topilmadi. Avval smenani oching.",
   "@shiftStartedAt": {
     "placeholders": {
       "time": { "type": "String" }
