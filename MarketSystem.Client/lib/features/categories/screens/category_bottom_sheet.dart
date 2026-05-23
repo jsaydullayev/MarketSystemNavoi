@@ -71,11 +71,15 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
   @override
   void initState() {
     super.initState();
-    if (_isEditing) {
-      _nameCtrl.text = widget.category!.name;
-      _descCtrl.text = widget.category!.description ?? '';
-      _isActive = widget.category!.isActive;
-      final savedIcon = widget.category!.icon;
+    // Snapshot the widget field once so flow analysis can promote it for
+    // the rest of the block — `widget.category` is a getter access and
+    // wouldn't survive a `_isEditing` (i.e. != null) check on its own.
+    final category = widget.category;
+    if (category != null) {
+      _nameCtrl.text = category.name;
+      _descCtrl.text = category.description ?? '';
+      _isActive = category.isActive;
+      final savedIcon = category.icon;
       if (savedIcon != null && savedIcon.isNotEmpty) {
         _selectedEmoji = savedIcon;
         // A saved icon outside the default grid becomes the custom slot so
@@ -121,6 +125,10 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
   }
 
   Future<void> _save() async {
+    // FormState is the framework-supplied current state of a Form widget —
+    // null only if the Form hasn't been built yet, which can't happen by
+    // the time the Save button is reachable. The `!` matches Flutter's
+    // own examples for this idiom.
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
@@ -128,7 +136,8 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final service = CategoryService(authProvider: auth);
 
-      if (!_isEditing) {
+      final category = widget.category;
+      if (category == null) {
         await service.createCategory(
           name: _nameCtrl.text.trim(),
           description: _descCtrl.text.trim(),
@@ -136,7 +145,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
         );
       } else {
         await service.updateCategory(
-          id: widget.category!.id,
+          id: category.id,
           name: _nameCtrl.text.trim(),
           description: _descCtrl.text.trim(),
           icon: _selectedEmoji,
@@ -225,9 +234,9 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                           style: AppTextStyles.titleMedium(),
                         ),
                         Text(
-                          _isEditing
-                              ? widget.category!.name
-                              : l10n.newCategory,
+                          // Null-aware shortcut: when editing, show the
+                          // category's name; otherwise show the "new" label.
+                          widget.category?.name ?? l10n.newCategory,
                           style: AppTextStyles.bodySmall().copyWith(
                             color: context.colors.textMuted,
                             fontSize: 12,
@@ -263,7 +272,9 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
                 // preserved.
                 options: [
                   ..._defaultEmojis,
-                  if (_customEmoji != null) _customEmoji!,
+                  // Dart-3 non-null pattern: matches when _customEmoji is
+                  // non-null and binds it as a non-nullable local.
+                  if (_customEmoji case final emoji?) emoji,
                 ],
                 selected: _selectedEmoji,
                 onSelect: (e) => setState(() => _selectedEmoji = e),
