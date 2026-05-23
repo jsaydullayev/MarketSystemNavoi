@@ -290,6 +290,15 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.TotalDebt).HasPrecision(18, 2);
             b.Property(x => x.RemainingDebt).HasPrecision(18, 2);
 
+            // K3 — optimistic concurrency via PostgreSQL system column xmin.
+            // Stops PayAsync, CancelSale's debt-close, and partial-return paths
+            // from silently overwriting each other's RemainingDebt.
+            b.Property(x => x.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
             b.HasOne(x => x.Sale).WithOne(x => x.Debt).HasForeignKey<Debt>(x => x.SaleId)
                 .OnDelete(DeleteBehavior.Cascade); // Sale o'chirilsa, Debt ham o'chadi
 
@@ -433,6 +442,15 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.CurrentBalance).HasPrecision(18, 2).IsRequired();
             b.Property(x => x.LastUpdated).IsRequired();
             b.HasIndex(x => x.LastUpdated);
+
+            // K2 — optimistic concurrency via PostgreSQL system column xmin.
+            // No DDL needed — xmin exists on every PG table. Stops concurrent
+            // AddCash / WithdrawCash from silently clobbering each other.
+            b.Property(x => x.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
 
             // Multi-tenancy: each Market has exactly one CashRegister.
             b.Property(x => x.MarketId).IsRequired();
