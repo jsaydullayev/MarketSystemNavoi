@@ -211,7 +211,14 @@ public class AppDbContext : DbContext, IAppDbContext
                 .HasDatabaseName("IX_Sale_CustomerId");
             b.HasIndex(x => new { x.SellerId, x.Status })
                 .HasDatabaseName("IX_Sale_Seller_Status");
-            b.HasIndex(x => x.MarketId);
+            // P1 — the hottest sales-list query is per-market, ordered by
+            // CreatedAt DESC (POS history, paged + filtered). The single
+            // (MarketId) index narrowed rows but PG still had to sort. This
+            // composite lets the planner do an index-only range scan in
+            // reverse date order without a separate sort step.
+            b.HasIndex(x => new { x.MarketId, x.CreatedAt })
+                .IsDescending(false, true)
+                .HasDatabaseName("IX_Sale_Market_CreatedAt_Desc");
 
             // Soft delete filter
             b.HasQueryFilter(x => !x.IsDeleted);
@@ -390,8 +397,17 @@ public class AppDbContext : DbContext, IAppDbContext
                 .HasDatabaseName("IX_AuditLog_Entity_CreatedAt");
             b.HasIndex(x => new { x.UserId, x.CreatedAt })
                 .HasDatabaseName("IX_AuditLog_User_CreatedAt");
-            b.HasIndex(x => x.MarketId)
-                .HasDatabaseName("IX_AuditLog_MarketId");
+            // P5 — security-journal screen does `WHERE MarketId = ? [+
+            // filters] ORDER BY CreatedAt DESC LIMIT page`. The old single
+            // (MarketId) index narrowed rows but PG still had to sort —
+            // expensive once a market accumulates 100k+ audit rows. The
+            // composite drives an index-only range scan in reverse-date
+            // order. Anonymous events (MarketId NULL) live outside this
+            // index and are still served by the (EntityType, EntityId,
+            // CreatedAt) one.
+            b.HasIndex(x => new { x.MarketId, x.CreatedAt })
+                .IsDescending(false, true)
+                .HasDatabaseName("IX_AuditLog_Market_CreatedAt_Desc");
         });
 
         // Configure RefreshToken
