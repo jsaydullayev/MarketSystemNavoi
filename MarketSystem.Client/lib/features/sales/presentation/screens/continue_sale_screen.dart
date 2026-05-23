@@ -507,6 +507,15 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
     final isClosed = _sale?['status'] == 'Closed';
 
+    // G3 — backend S2: UpdateSaleItemPriceAsync now refuses anything that
+    // isn't Draft or Debt. Mirror the gate so the pencil-edit chip on
+    // each cart item only shows in those two states. (`isClosed` is a
+    // narrower check — it doesn't cover Paid / Cancelled, both of which
+    // the backend now rejects.)
+    final status = _sale?['status'] as String?;
+    final canEditPrice = status == 'Draft' || status == 'Debt';
+
+
     return NetworkWrapper(
       onRetry: _loadData,
       child: Scaffold(
@@ -529,6 +538,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                   itemBuilder: (context, index) => ContinueSaleCartItem(
                     item: _cartItems[index],
                     isClosed: isClosed,
+                    canEditPrice: canEditPrice,
                     onEditPrice: () => _updateItemPrice(index),
                     onReturn: () => _returnItem(index),
                     onDecrement: () async {
