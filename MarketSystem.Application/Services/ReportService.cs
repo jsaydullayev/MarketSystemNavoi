@@ -9,6 +9,7 @@ using MarketSystem.Domain.Extensions;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Application.Interfaces;
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
@@ -19,6 +20,7 @@ public class ReportService : IReportService
     private readonly ICurrentMarketService _currentMarketService;
     private readonly ILogger<ReportService> _logger;
     private readonly ITashkentClock _clock;
+    private readonly IAppDbContext _context;
 
     // License setup lives in the STATIC constructor so it runs before any
     // Excel/PDF is produced — including via the static PDF renderers
@@ -29,12 +31,18 @@ public class ReportService : IReportService
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public ReportService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService, ILogger<ReportService> logger, ITashkentClock clock)
+    public ReportService(
+        IUnitOfWork unitOfWork,
+        ICurrentMarketService currentMarketService,
+        ILogger<ReportService> logger,
+        ITashkentClock clock,
+        IAppDbContext context)
     {
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
         _logger = logger;
         _clock = clock;
+        _context = context;
     }
 
     public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
@@ -444,43 +452,56 @@ public class ReportService : IReportService
         var (todayStart, todayEnd) = GetUtcDateRange(todayLocal);
 
         // Week = rolling 7-day window (last 7 days including today), anchored to
-        // Tashkent local midnight. Previously this anchored to the most recent
-        // Sunday, which meant the "weekProfit" KPI would reset to ~0 every
-        // Sunday/Monday morning even if business had been steady — confusing
-        // for owners. Rolling-7d matches user intuition: "shu hafta = oxirgi
-        // 7 kun".
+        // Tashkent local midnight. Rolling-7d matches user intuition
+        // ("shu hafta = oxirgi 7 kun") and avoids the Sunday/Monday reset that
+        // an ISO-week anchor causes.
         var weekStart = ToUtcDate(todayLocal.AddDays(-6));
-
-        // Month (anchored to Tashkent local month)
         var monthStart = ToUtcDate(new DateTime(todayLocal.Year, todayLocal.Month, 1));
 
-        var todaySales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= todayStart && s.CreatedAt < todayEnd &&
-                 s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems");
-
-        var weekSales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= weekStart && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems");
-
-        var monthSales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= monthStart && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems");
-
-        var allSales = await _unitOfWork.Sales.FindAsync(
-            s => s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems");
+        // P2 — the previous version loaded every Sale + SaleItem for today,
+        // week, month, AND all-time into memory (the all-time fetch is
+        // O(history) — fatal once a market has a year of data) just to sum
+        // profit. Replace with one DB-side aggregation that emits a single
+        // SQL statement with four conditional SUMs.
+        //
+        // EF translates the CASE WHEN into PG's FILTER clause. Profit per
+        // item = (SalePrice − effectiveCost) × Quantity, where effectiveCost
+        // is ExternalCostPrice for tashqi mahsulot and CostPrice for normal
+        // products. allTime always passes the date filter (constant true).
+        var summary = await _context.SaleItems
+            .AsNoTracking()
+            .Where(si => si.Sale.MarketId == marketId
+                      && si.Sale.Status != SaleStatus.Cancelled
+                      && si.Sale.Status != SaleStatus.Draft)
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Today = g.Sum(si =>
+                    si.Sale.CreatedAt >= todayStart && si.Sale.CreatedAt < todayEnd
+                        ? ((si.IsExternal ? si.SalePrice - si.ExternalCostPrice
+                                          : si.SalePrice - si.CostPrice) * si.Quantity)
+                        : 0m),
+                Week = g.Sum(si =>
+                    si.Sale.CreatedAt >= weekStart
+                        ? ((si.IsExternal ? si.SalePrice - si.ExternalCostPrice
+                                          : si.SalePrice - si.CostPrice) * si.Quantity)
+                        : 0m),
+                Month = g.Sum(si =>
+                    si.Sale.CreatedAt >= monthStart
+                        ? ((si.IsExternal ? si.SalePrice - si.ExternalCostPrice
+                                          : si.SalePrice - si.CostPrice) * si.Quantity)
+                        : 0m),
+                All = g.Sum(si =>
+                    (si.IsExternal ? si.SalePrice - si.ExternalCostPrice
+                                   : si.SalePrice - si.CostPrice) * si.Quantity),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
         return new ProfitSummaryDto(
-            CalculateProfitFromSales(todaySales),
-            CalculateProfitFromSales(weekSales),
-            CalculateProfitFromSales(monthSales),
-            CalculateProfitFromSales(allSales)
-        );
+            summary?.Today ?? 0m,
+            summary?.Week ?? 0m,
+            summary?.Month ?? 0m,
+            summary?.All ?? 0m);
     }
 
     public async Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default)
