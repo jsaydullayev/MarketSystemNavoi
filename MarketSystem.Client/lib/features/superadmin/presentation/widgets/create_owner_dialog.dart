@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/validators/password_validator.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
@@ -474,8 +475,12 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                             ),
                             helper: l10n.minEightCharsHelper,
                           ),
-                          validator: (v) =>
-                              (v ?? '').length < 8 ? l10n.minEightChars : null,
+                          // G2 — was length-only; now enforces the full
+                          // StrongPassword policy (8+ chars AND ≥1 letter
+                          // AND ≥1 digit) so a SuperAdmin-minted Owner
+                          // password can't be silently rejected by the
+                          // backend on the next save.
+                          validator: (v) => PasswordValidator.validateNew(v, context),
                         ),
                       ),
                     ],

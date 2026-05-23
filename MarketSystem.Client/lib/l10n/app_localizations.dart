@@ -1133,7 +1133,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordMinLength.
   ///
   /// In uz, this message translates to:
-  /// **'Parol kamida 6 ta belgi'**
+  /// **'Parol kamida 8 belgi, 1 harf va 1 raqam o\'z ichiga olishi kerak'**
   String get passwordMinLength;
 
   /// No description provided for @passwordConfirm.

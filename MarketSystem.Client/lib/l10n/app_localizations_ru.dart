@@ -532,7 +532,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get usernameMinLength => 'Имя пользователя минимум 3 символа';
 
   @override
-  String get passwordMinLength => 'Пароль минимум 6 символов';
+  String get passwordMinLength => 'Минимум 8 символов, 1 буква и 1 цифра';
 
   @override
   String get passwordConfirm => 'Подтвердите пароль';

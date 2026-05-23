@@ -532,7 +532,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get usernameMinLength => 'Username kamida 3 ta belgi';
 
   @override
-  String get passwordMinLength => 'Parol kamida 6 ta belgi';
+  String get passwordMinLength => 'Parol kamida 8 belgi, 1 harf va 1 raqam o\'z ichiga olishi kerak';
 
   @override
   String get passwordConfirm => 'Parolni tasdiqlash';

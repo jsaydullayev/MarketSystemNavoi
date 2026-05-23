@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
+import '../../../core/validators/password_validator.dart';
 import '../../../core/widgets/common_app_bar.dart';
 import '../../../data/services/user_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
@@ -374,6 +375,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
+    // G2 — client-side gate before round-tripping to the server. The backend's
+    // StrongPasswordAttribute now refuses anything below 8 chars / no letter
+    // / no digit with a 400 — catch it here so the user sees a localized
+    // hint inline instead of a translated server-error snackbar later.
+    if (!PasswordValidator.isStrong(_newPasswordController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.passwordMinLength),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
     setModalState(() => _isChangingPassword = true);
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -392,9 +407,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        // G2 — try to surface the backend's "Parol kamida 8 belgi…" message
+        // cleanly. The service layer throws Exception('...{"message":"..."}')
+        // for unexpected statuses; pull the human-readable text out.
+        final raw = e.toString();
+        final extracted = _extractServerMessage(raw) ?? raw;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(extracted),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -404,6 +424,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _currentPasswordController.clear();
       _newPasswordController.clear();
     }
+  }
+
+  /// Pull the `message` field out of a structured backend error payload,
+  /// stripping the verbose `Exception: ...` prefix the service layer wraps
+  /// it in. Returns null when the input doesn't look like a structured
+  /// error so callers can fall back to the raw string.
+  String? _extractServerMessage(String raw) {
+    final start = raw.indexOf('"message":"');
+    if (start < 0) return null;
+    final from = start + '"message":"'.length;
+    final end = raw.indexOf('"', from);
+    if (end < 0) return null;
+    return raw.substring(from, end);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
