@@ -35,6 +35,12 @@ const _entityTypes = <String>[
   'RegistrationRequest',
 ];
 
+// G6 — must stay in lockstep with `MarketSystem.Domain/Constants/AuditEvents.cs`
+// `AuditActions`. The backend will EMIT any action it lists; whatever isn't
+// in this filter chip-list is still rendered as a row, just unfilterable.
+// Last sync with backend Y1: added Deposit (cash AddCash), PasswordChange
+// (UpdateProfile w/ new password), ShiftChange (admin sets seller shift),
+// ProfileImageUpdate (avatar set/clear).
 const _actions = <String>[
   'Create',
   'Update',
@@ -49,8 +55,12 @@ const _actions = <String>[
   'Block',
   'Unblock',
   'Withdraw',
+  'Deposit',
   'Open',
   'Close',
+  'PasswordChange',
+  'ShiftChange',
+  'ProfileImageUpdate',
 ];
 
 class SecurityJournalScreen extends StatefulWidget {
@@ -535,9 +545,18 @@ class _AuditLogCard extends StatelessWidget {
   }
 
   /// Anything that signals an account-takeover attempt or a privileged
-  /// change gets the danger pill instead of the brand pill.
+  /// change gets the danger pill instead of the brand pill. G6 — added
+  /// PasswordChange (credential mutation; review for plausibility against
+  /// the actor's normal pattern) and ShiftChange (admin gating a seller's
+  /// ability to log in; misuse can lock out the till outside hours).
   bool _isHighRiskAction(String action) => switch (action) {
-        'LoginFailed' || 'Delete' || 'PermissionChange' || 'Block' => true,
+        'LoginFailed' ||
+        'Delete' ||
+        'PermissionChange' ||
+        'Block' ||
+        'PasswordChange' ||
+        'ShiftChange' =>
+          true,
         _ => false,
       };
 
