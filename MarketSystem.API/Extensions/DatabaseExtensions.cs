@@ -1,4 +1,4 @@
-using MarketSystem.Domain.Interfaces;
+using MarketSystem.Application.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
