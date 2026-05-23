@@ -24,11 +24,12 @@ public class ProductService : IProductService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var products = await _unitOfWork.Products.FindAsync(
-            p => p.Id == id && p.MarketId == marketId,
-            cancellationToken);
-
-        var product = products.FirstOrDefault();
+        // P3 — pure read-then-map path. Don't pay the change-tracker cost
+        // (snapshot of every loaded property + reverse navigation fix-up)
+        // on a single-entity lookup that only serves a DTO.
+        var product = await _context.Products
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id && p.MarketId == marketId, cancellationToken);
 
         if (product is null)
             return null;
@@ -40,10 +41,12 @@ public class ProductService : IProductService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var products = await _unitOfWork.Products.FindAsync(
-            p => p.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "Category");
+        // P3 — list-then-map path; same reasoning as GetProductByIdAsync.
+        var products = await _context.Products
+            .AsNoTracking()
+            .Include(p => p.Category)
+            .Where(p => p.MarketId == marketId)
+            .ToListAsync(cancellationToken);
 
         return products.Select(MapToDto);
     }
@@ -74,10 +77,12 @@ public class ProductService : IProductService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        var products = await _unitOfWork.Products.FindAsync(
-            p => p.MarketId == marketId && p.Quantity <= p.MinThreshold,
-            cancellationToken,
-            includeProperties: "Category");  // ✅ Include Category
+        // P3 — dashboard widget; reads only.
+        var products = await _context.Products
+            .AsNoTracking()
+            .Include(p => p.Category)
+            .Where(p => p.MarketId == marketId && p.Quantity <= p.MinThreshold)
+            .ToListAsync(cancellationToken);
 
         return products.Select(MapToDto);
     }

@@ -38,8 +38,9 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        // P3 — DTO-only path; skip change tracking.
         var customer = await _context.Customers
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id && c.MarketId == marketId && !c.IsDeleted, cancellationToken);
 
         if (customer is null)
@@ -52,8 +53,9 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        // P3 — DTO-only path; skip change tracking.
         var customer = await _context.Customers
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Phone == phone && c.MarketId == marketId && !c.IsDeleted, cancellationToken);
 
         if (customer is null)
