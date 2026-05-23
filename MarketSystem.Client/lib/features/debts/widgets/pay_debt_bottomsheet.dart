@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:market_system_client/core/errors/api_exception.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
@@ -101,11 +102,28 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
           ),
         );
       }
+    } on ApiException catch (e) {
+      // G5 — branch on the structured envelope. K3 added Xmin on
+      // Debt.RemainingDebt; a parallel payment by another seller now lands
+      // here as 409 ConflictException. Show the dedicated "data was changed"
+      // message and trigger a refresh up the tree so the user sees the
+      // current RemainingDebt before they retry.
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.isConflict
+              ? l10n.concurrentChangeError
+              : (e.message.isNotEmpty ? e.message : l10n.error);
+        });
+        if (e.isConflict) widget.onSuccess(); // triggers refresh of parent list
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = ErrorParser.parse(e.toString());
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = ErrorParser.parse(e.toString());
+        });
+      }
     }
   }
 

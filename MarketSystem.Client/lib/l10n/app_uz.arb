@@ -912,6 +912,7 @@
   "closeShift": "Smenani yopish",
   "shiftStartedAt": "Boshlangan: {time}",
   "shiftNotOpenError": "Ochiq smena topilmadi. Avval smenani oching.",
+  "concurrentChangeError": "Ma'lumot boshqa foydalanuvchi tomonidan o'zgartirildi. Sahifani yangilang va qaytadan urinib ko'ring.",
   "@shiftStartedAt": {
     "placeholders": {
       "time": { "type": "String" }

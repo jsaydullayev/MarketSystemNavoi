@@ -5082,6 +5082,15 @@ abstract class AppLocalizations {
   /// **'Ochiq smena topilmadi. Avval smenani oching.'**
   String get shiftNotOpenError;
 
+  /// G5 — surfaced when the backend returns HTTP 409 from an
+  /// optimistic-concurrency conflict (xmin token mismatch on Sale /
+  /// CashRegister / Debt). The user's local view is stale; the screen
+  /// reloads in the background so the next retry sees fresh data.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumot boshqa foydalanuvchi tomonidan o\'zgartirildi. Sahifani yangilang va qaytadan urinib ko\'ring.'**
+  String get concurrentChangeError;
+
   /// No description provided for @securityJournal.
   ///
   /// In uz, this message translates to:
