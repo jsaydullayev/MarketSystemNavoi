@@ -162,12 +162,13 @@ public partial class RegistrationRequestService : IRegistrationRequestService
             await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Re-read the request INSIDE the transaction with a row lock so a
-                // concurrent SuperAdmin can't pass the same Pending check. xmin
-                // adds a second layer of protection at SaveChanges time.
-                var request = await _context.RegistrationRequests
-                    .FromSqlInterpolated($"SELECT *, xmin FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
-                    .FirstOrDefaultAsync(cancellationToken)
+                // Y6 — Re-read INSIDE the transaction with a row lock so a
+                // concurrent SuperAdmin can't pass the same Pending check.
+                // FOR UPDATE is PostgreSQL-only; the InMemory test provider
+                // falls back to a plain query. xmin on the row still catches
+                // concurrent SaveChanges in both providers, so correctness is
+                // preserved.
+                var request = await LoadRequestForUpdateAsync(requestId, cancellationToken)
                     ?? throw new KeyNotFoundException("So'rov topilmadi.");
 
                 if (request.Status != RegistrationRequestStatus.Pending)
@@ -277,9 +278,10 @@ public partial class RegistrationRequestService : IRegistrationRequestService
             await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var request = await _context.RegistrationRequests
-                    .FromSqlInterpolated($"SELECT *, xmin FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
-                    .FirstOrDefaultAsync(cancellationToken);
+                // Y6 — FOR UPDATE on PostgreSQL, fall back to a plain read on
+                // the InMemory test provider. See ApproveAsync for the full
+                // rationale.
+                var request = await LoadRequestForUpdateAsync(requestId, cancellationToken);
                 if (request == null) return false;
 
                 if (request.Status == RegistrationRequestStatus.Rejected) return true; // idempotent
@@ -845,6 +847,28 @@ public partial class RegistrationRequestService : IRegistrationRequestService
     /// confusing for operators and ambiguous for tenant lookup. EF Core
     /// translates `string.ToLower()` to PostgreSQL `LOWER(...)`, which is
     /// indexable; the unique constraint at the DB level is still
+    /// <summary>
+    /// Y6 — Re-read a RegistrationRequest inside the surrounding transaction.
+    /// On PostgreSQL the query uses <c>SELECT … FOR UPDATE</c> so a parallel
+    /// SuperAdmin review on the same row blocks until we commit. On the
+    /// EF Core InMemory provider (test suite) raw SQL isn't supported, so
+    /// we fall back to a plain query — xmin on the row catches the
+    /// concurrent SaveChanges either way, but in tests we get the simpler
+    /// "second write fails and retries" semantic instead of a real row lock.
+    /// </summary>
+    private async Task<RegistrationRequest?> LoadRequestForUpdateAsync(Guid requestId, CancellationToken ct)
+    {
+        var isPostgres = _context.Database.ProviderName?.Contains("InMemory") == false;
+        if (isPostgres)
+        {
+            return await _context.RegistrationRequests
+                .FromSqlInterpolated($"SELECT *, xmin FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
+                .FirstOrDefaultAsync(ct);
+        }
+        return await _context.RegistrationRequests.FirstOrDefaultAsync(r => r.Id == requestId, ct);
+    }
+
+    /// <summary>
     /// case-sensitive but the application-layer check catches the
     /// case-only collision before INSERT.
     /// </summary>
