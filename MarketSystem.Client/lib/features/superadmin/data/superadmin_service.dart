@@ -179,7 +179,11 @@ class SuperAdminService {
         );
       }
       return _mapNonSuccess<Map<String, dynamic>>(response.statusCode);
-    } catch (_) {
+    } catch (e) {
+      // Logged so an Owner debugging "the approve button does nothing" gets
+      // the underlying cause (DNS / parse / auth) in `flutter logs`; release
+      // builds suppress debugPrint via main.dart so this is dev-only noise.
+      debugPrint('SuperAdminService request failed: $e');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -229,7 +233,11 @@ class SuperAdminService {
         );
       }
       return _mapNonSuccess<OwnerDetail>(response.statusCode, body: response.body);
-    } catch (_) {
+    } catch (e) {
+      // Logged so an Owner debugging "the approve button does nothing" gets
+      // the underlying cause (DNS / parse / auth) in `flutter logs`; release
+      // builds suppress debugPrint via main.dart so this is dev-only noise.
+      debugPrint('SuperAdminService request failed: $e');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -274,7 +282,11 @@ class SuperAdminService {
         response.statusCode,
         body: response.body,
       );
-    } catch (_) {
+    } catch (e) {
+      // Logged so an Owner debugging "the approve button does nothing" gets
+      // the underlying cause (DNS / parse / auth) in `flutter logs`; release
+      // builds suppress debugPrint via main.dart so this is dev-only noise.
+      debugPrint('SuperAdminService request failed: $e');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -321,7 +333,11 @@ class SuperAdminService {
         );
       }
       return _mapNonSuccess<OwnerDetail>(response.statusCode, body: response.body);
-    } catch (_) {
+    } catch (e) {
+      // Logged so an Owner debugging "the approve button does nothing" gets
+      // the underlying cause (DNS / parse / auth) in `flutter logs`; release
+      // builds suppress debugPrint via main.dart so this is dev-only noise.
+      debugPrint('SuperAdminService request failed: $e');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -352,7 +368,11 @@ class SuperAdminService {
         return SuperAdminOpResult(SuperAdminOpStatus.success);
       }
       return _mapNonSuccess<void>(response.statusCode, body: response.body);
-    } catch (_) {
+    } catch (e) {
+      // Logged so an Owner debugging "the approve button does nothing" gets
+      // the underlying cause (DNS / parse / auth) in `flutter logs`; release
+      // builds suppress debugPrint via main.dart so this is dev-only noise.
+      debugPrint('SuperAdminService request failed: $e');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -386,7 +406,11 @@ class SuperAdminService {
         response.statusCode,
         body: response.body,
       );
-    } catch (_) {
+    } catch (e) {
+      // Logged so an Owner debugging "the approve button does nothing" gets
+      // the underlying cause (DNS / parse / auth) in `flutter logs`; release
+      // builds suppress debugPrint via main.dart so this is dev-only noise.
+      debugPrint('SuperAdminService request failed: $e');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
@@ -414,7 +438,11 @@ class SuperAdminService {
         response.statusCode,
         body: response.body,
       );
-    } catch (_) {
+    } catch (e) {
+      // Logged so an Owner debugging "the approve button does nothing" gets
+      // the underlying cause (DNS / parse / auth) in `flutter logs`; release
+      // builds suppress debugPrint via main.dart so this is dev-only noise.
+      debugPrint('SuperAdminService request failed: $e');
       return SuperAdminOpResult(SuperAdminOpStatus.failure);
     }
   }
