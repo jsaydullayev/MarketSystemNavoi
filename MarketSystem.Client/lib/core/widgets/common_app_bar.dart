@@ -58,7 +58,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       scrolledUnderElevation: 0,
       bottom: bottom,
       actions: [
-        if (extraActions != null) ...extraActions!,
+        if (extraActions case final actions?) ...actions,
         if (onRefresh != null)
           IconButton(
             icon: Icon(Icons.refresh, color: fg),

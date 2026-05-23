@@ -312,7 +312,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 ),
               ),
             ],
-            if (_errorMessage != null) ...[
+            if (_errorMessage case final msg?) ...[
               const SizedBox(height: AppSpacing.lg),
               Container(
                 width: double.infinity,
@@ -329,7 +329,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
-                        _errorMessage!,
+                        msg,
                         style: AppTextStyles.bodySmall().copyWith(
                           color: AppColors.danger,
                           fontWeight: FontWeight.w500,

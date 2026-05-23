@@ -129,7 +129,7 @@ class _WithdrawalItem extends StatelessWidget {
               ],
             ),
           ),
-          if (withdrawal.userName != null)
+          if (withdrawal.userName case final userName?)
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md + 2,
@@ -140,7 +140,7 @@ class _WithdrawalItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.md - 2),
               ),
               child: Text(
-                withdrawal.userName!,
+                userName,
                 style: AppTextStyles.bodySmall().copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,

@@ -306,8 +306,11 @@ class WeeklySeries {
   /// higher). Returns null when there's no previous-period data, or when the
   /// previous total is zero (division-by-zero would yield ±infinity).
   double? get deltaPercent {
-    if (previousTotal == null || previousTotal == 0) return null;
-    return ((currentTotal - previousTotal!) / previousTotal!) * 100;
+    // Snapshot once — `previousTotal` is a nullable field on this class,
+    // so reading it twice would re-fetch (and not promote).
+    final prev = previousTotal;
+    if (prev == null || prev == 0) return null;
+    return ((currentTotal - prev) / prev) * 100;
   }
 
   factory WeeklySeries.fromJson(Map<String, dynamic> json) {

@@ -134,8 +134,8 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
-      return _ErrorView(error: _error!, onRetry: _loadCategories, l10n: l10n);
+    if (_error case final err?) {
+      return _ErrorView(error: err, onRetry: _loadCategories, l10n: l10n);
     }
 
     if (_categories.isEmpty) {

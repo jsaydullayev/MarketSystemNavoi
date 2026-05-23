@@ -182,6 +182,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final userRole = authProvider.user?['role'];
     final l10n = AppLocalizations.of(context)!;
+    // Snapshot the nullable state field so the inline ternary below can use
+    // the local (which promotes through `!= null`) instead of `!`.
+    final errorMessage = _errorMessage;
 
     return NetworkWrapper(
       onRetry: _loadProducts,
@@ -301,9 +304,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                         color: context.colors.brand,
                       ),
                     )
-                  : _errorMessage != null
+                  : errorMessage != null
                       ? _ErrorState(
-                          message: _errorMessage!,
+                          message: errorMessage,
                           onRetry: _loadProducts,
                           l10n: l10n,
                         )

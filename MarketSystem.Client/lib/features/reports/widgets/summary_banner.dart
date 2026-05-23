@@ -91,7 +91,7 @@ class DailySummaryBanner extends StatelessWidget {
               ],
             ),
           ),
-          if (totalProfit != null) ...[
+          if (totalProfit case final profit?) ...[
             const SizedBox(width: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg + 2),
@@ -114,7 +114,7 @@ class DailySummaryBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    '${NumberFormatter.formatDecimal(totalProfit!)} ${l10n.currencySom}',
+                    '${NumberFormatter.formatDecimal(profit)} ${l10n.currencySom}',
                     style: AppTextStyles.titleMedium().copyWith(
                       color: Colors.white,
                       fontSize: 16,

@@ -161,9 +161,14 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
                 child: AppDangerButton(
                   label: l10n.confirm,
                   isLoading: widget.isWithdrawing,
-                  onPressed: (_selectedType == null || widget.isWithdrawing)
-                      ? null
-                      : () => widget.onConfirm(_selectedType!),
+                  onPressed: switch (_selectedType) {
+                    // The `null` branch disables the button so onConfirm
+                    // only ever fires with a real type.
+                    null => null,
+                    final type when !widget.isWithdrawing =>
+                      () => widget.onConfirm(type),
+                    _ => null,
+                  },
                 ),
               ),
             ],

@@ -49,9 +49,9 @@ class AppTextInput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (label != null) ...[
+        if (label case final lbl?) ...[
           Text(
-            label!.toUpperCase(),
+            lbl.toUpperCase(),
             style: AppTextStyles.caption().copyWith(
               color: labelColor,
               letterSpacing: 0.8,
