@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class UsersService {
   final AuthProvider authProvider;
@@ -21,7 +22,7 @@ class UsersService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load users: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load users');
     }
   }
 
@@ -33,7 +34,7 @@ class UsersService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load user: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load user');
     }
   }
 
@@ -57,7 +58,7 @@ class UsersService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to create user: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to create user');
     }
   }
 
@@ -83,7 +84,7 @@ class UsersService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to update user: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update user');
     }
   }
 
@@ -94,10 +95,7 @@ class UsersService {
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      final msg = response.body.isNotEmpty
-          ? response.body
-          : 'Server javobi yo\'q (${response.statusCode})';
-      throw Exception('Failed to delete user: $msg');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to delete user');
     }
   }
 
@@ -112,7 +110,7 @@ class UsersService {
       body: {},
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to deactivate: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to deactivate');
     }
   }
 
@@ -122,7 +120,7 @@ class UsersService {
       body: {},
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to activate: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to activate');
     }
   }
 
@@ -148,15 +146,8 @@ class UsersService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
-
-    // The backend returns { "message": "..." } on a 400 (bad window etc.).
-    String msg = 'Failed to update shift: ${response.statusCode}';
-    try {
-      final body = jsonDecode(response.body);
-      if (body is Map && body['message'] != null) {
-        msg = body['message'].toString();
-      }
-    } catch (_) {}
-    throw Exception(msg);
+    // ApiException.fromResponse picks up the `message` field on its own;
+    // the previous manual try/jsonDecode block is redundant now.
+    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update shift');
   }
 }
