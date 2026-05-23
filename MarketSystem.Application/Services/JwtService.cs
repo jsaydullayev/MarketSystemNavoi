@@ -13,10 +13,34 @@ using System.Text;
 
 namespace MarketSystem.Application.Services;
 
-public class JwtService(IConfiguration configuration, ILogger<JwtService> logger) : IJwtService
+public class JwtService : IJwtService
 {
-    private readonly JwtSetting _jwtSetting = configuration.GetSection("Jwt")
-        .Get<JwtSetting>()!;
+    private readonly JwtSetting _jwtSetting;
+    private readonly ILogger<JwtService> logger;
+
+    public JwtService(IConfiguration configuration, ILogger<JwtService> logger)
+    {
+        this.logger = logger;
+        _jwtSetting = configuration.GetSection("Jwt").Get<JwtSetting>()
+            ?? throw new InvalidOperationException(
+                "JWT configuration section is missing. Set Jwt:Key, Jwt:Issuer, Jwt:Audience.");
+
+        // S5 — every JWT operation (sign / verify) depends on Key being a
+        // non-empty, sufficiently long secret. Program.cs does the same check
+        // at startup, but Scoped services are re-resolved per request, so if
+        // configuration was hot-reloaded to an empty Key we'd start signing
+        // tokens with a zero-length HMAC key. Fail loudly here so we never
+        // silently accept the fallback.
+        if (string.IsNullOrWhiteSpace(_jwtSetting.Key) || _jwtSetting.Key.Length < 32)
+            throw new InvalidOperationException(
+                "Jwt:Key is missing or shorter than 32 characters. " +
+                "JWT signing cannot proceed with a weak / empty key.");
+
+        if (string.IsNullOrWhiteSpace(_jwtSetting.Issuer))
+            throw new InvalidOperationException("Jwt:Issuer is missing.");
+        if (string.IsNullOrWhiteSpace(_jwtSetting.Audience))
+            throw new InvalidOperationException("Jwt:Audience is missing.");
+    }
 
     public TokenDto GenerateToken(User user, bool populateExp)
     {
