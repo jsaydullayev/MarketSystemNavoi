@@ -1,7 +1,9 @@
 import 'dart:convert';
+
+import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
 import 'http_service.dart';
-import '../../core/constants/api_constants.dart';
 
 class DebtService {
   final AuthProvider authProvider;
@@ -82,8 +84,15 @@ class DebtService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to pay debt: ${response.body}');
     }
+    // G5 — K3 added Xmin on Debt.RemainingDebt; two callers paying the same
+    // debt concurrently see the loser as 409. Surface the structured envelope
+    // so the bottomsheet can branch on `isConflict` and render
+    // `concurrentChangeError` with a quiet refresh, instead of dumping
+    // `Exception: Failed to pay debt: {"message":"..."}` into a snackbar.
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to pay debt',
+    );
   }
 }

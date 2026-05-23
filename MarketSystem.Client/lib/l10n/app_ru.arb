@@ -912,6 +912,7 @@
   "closeShift": "Закрыть смену",
   "shiftStartedAt": "Начата: {time}",
   "shiftNotOpenError": "Открытая смена не найдена. Сначала откройте смену.",
+  "concurrentChangeError": "Данные были изменены другим пользователем. Обновите страницу и попробуйте снова.",
   "securityJournal": "Журнал безопасности",
   "securityJournalAllTab": "Все",
   "securityJournalSuspiciousTab": "Подозрительные",

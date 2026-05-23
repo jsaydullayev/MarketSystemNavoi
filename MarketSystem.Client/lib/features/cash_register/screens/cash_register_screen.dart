@@ -11,6 +11,7 @@ import 'package:market_system_client/features/cash_register/widgets/withdraw_but
 import 'package:market_system_client/features/cash_register/widgets/withdrawal_history_list.dart';
 import 'package:provider/provider.dart';
 import '../../../core/auth/permissions.dart';
+import '../../../core/errors/api_exception.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/models/cash_register_model.dart';
 import '../../../data/services/cash_register_service.dart';
@@ -110,24 +111,38 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
 
     setState(() => _isWithdrawing = true);
 
-    final success = await _cashRegisterService.withdrawCash(
-      amount,
-      _commentController.text.trim(),
-      withdrawType,
-    );
+    try {
+      await _cashRegisterService.withdrawCash(
+        amount,
+        _commentController.text.trim(),
+        withdrawType,
+      );
 
-    setState(() => _isWithdrawing = false);
-    if (!mounted) return;
-
-    if (success) {
+      if (!mounted) return;
       _showSnack(
         l10n.withdrawalSuccessType(
             withdrawType == 'cash' ? l10n.cash : l10n.click),
         isError: false,
       );
       _loadCashRegister();
-    } else {
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      // G5 — K2 added Xmin on CashRegister.CurrentBalance, so two parallel
+      // withdrawals will now surface the loser as 409. Show a refresh-and-
+      // retry hint AND reload the till so the user sees the current balance
+      // before they try again. Falls back to the server message (already
+      // localised) for non-409 errors.
+      if (e.isConflict) {
+        _showSnack(l10n.concurrentChangeError, isError: true);
+        _loadCashRegister();
+      } else {
+        _showSnack(e.message.isNotEmpty ? e.message : l10n.error, isError: true);
+      }
+    } catch (_) {
+      if (!mounted) return;
       _showSnack(l10n.error, isError: true);
+    } finally {
+      if (mounted) setState(() => _isWithdrawing = false);
     }
   }
 

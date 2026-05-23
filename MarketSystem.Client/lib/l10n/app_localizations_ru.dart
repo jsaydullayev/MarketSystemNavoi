@@ -2662,6 +2662,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get shiftNotOpenError => 'Открытая смена не найдена. Сначала откройте смену.';
 
   @override
+  String get concurrentChangeError => 'Данные были изменены другим пользователем. Обновите страницу и попробуйте снова.';
+
+  @override
   String get securityJournal => 'Журнал безопасности';
 
   @override

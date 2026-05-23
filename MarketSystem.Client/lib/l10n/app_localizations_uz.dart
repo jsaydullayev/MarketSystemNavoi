@@ -2657,6 +2657,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get shiftNotOpenError => 'Ochiq smena topilmadi. Avval smenani oching.';
 
   @override
+  String get concurrentChangeError => 'Ma\'lumot boshqa foydalanuvchi tomonidan o\'zgartirildi. Sahifani yangilang va qaytadan urinib ko\'ring.';
+
+  @override
   String get securityJournal => 'Xavfsizlik jurnali';
 
   @override
