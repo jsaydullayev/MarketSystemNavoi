@@ -431,9 +431,16 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.Amount).HasPrecision(18, 2).IsRequired();
             b.Property(x => x.Comment).IsRequired().HasMaxLength(500);
             b.Property(x => x.WithdrawalDate).IsRequired();
+            b.Property(x => x.MarketId).IsRequired();
 
             b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+            // Tenant scope. Restrict instead of Cascade so a Market hard-delete
+            // never silently rewrites cash history; soft-deactivate the market
+            // first. Composite index makes the per-market list query cheap.
+            b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId)
+                .OnDelete(DeleteBehavior.Restrict);
             b.HasIndex(x => x.WithdrawalDate);
+            b.HasIndex(x => new { x.MarketId, x.WithdrawalDate });
         });
 
         // Configure RegistrationRequest

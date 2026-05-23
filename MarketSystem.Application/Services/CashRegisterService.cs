@@ -71,9 +71,13 @@ public class CashRegisterService : ICashRegisterService
             var marketId = _currentMarketService.GetCurrentMarketId();
             var cashRegister = await GetOrCreateRegisterAsync(marketId, cancellationToken);
 
+            // K2: filter by CashWithdrawal.MarketId directly. The previous
+            // query joined to User and accepted UserId=null rows as "ok",
+            // which leaked every other tenant's orphaned withdrawals (e.g.
+            // after a user is hard-deleted) into this market's list.
             var withdrawals = await _context.CashWithdrawals
                 .Include(x => x.User)
-                .Where(x => x.User == null || x.User.MarketId == marketId)
+                .Where(x => x.MarketId == marketId)
                 .OrderByDescending(x => x.WithdrawalDate)
                 .Take(50)
                 .ToListAsync(cancellationToken);
@@ -143,7 +147,8 @@ public class CashRegisterService : ICashRegisterService
                         Comment = request.Comment,
                         WithdrawalDate = DateTime.UtcNow,
                         UserId = userId,
-                        WithdrawType = WithdrawTypeCash
+                        WithdrawType = WithdrawTypeCash,
+                        MarketId = marketId
                     };
 
                     _context.CashWithdrawals.Add(withdrawal);
@@ -165,7 +170,8 @@ public class CashRegisterService : ICashRegisterService
                         Comment = request.Comment,
                         WithdrawalDate = DateTime.UtcNow,
                         UserId = userId,
-                        WithdrawType = WithdrawTypeClick
+                        WithdrawType = WithdrawTypeClick,
+                        MarketId = marketId
                     };
 
                     _context.CashWithdrawals.Add(withdrawal);
