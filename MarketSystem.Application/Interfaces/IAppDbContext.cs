@@ -3,16 +3,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace MarketSystem.Domain.Interfaces;
+namespace MarketSystem.Application.Interfaces;
 
 /// <summary>
 /// Abstraction over the EF Core DbContext so Application-layer services can be
 /// unit-tested without a real PostgreSQL dependency. Implemented by
 /// <c>MarketSystem.Infrastructure.Data.AppDbContext</c>.
 ///
-/// Lives in Domain — both Application and Infrastructure depend on Domain, so
-/// placing the interface here avoids a circular reference (Infrastructure must
-/// implement <see cref="IAppDbContext"/> but cannot reference Application).
+/// K4 — Previously lived in Domain, which forced Domain to take a hard
+/// dependency on Microsoft.EntityFrameworkCore. Moved to Application so that
+/// Domain stays a pure model layer (Clean Architecture). Infrastructure
+/// already references Application, so the contract still has a single
+/// implementer with no circular references.
 /// </summary>
 public interface IAppDbContext
 {

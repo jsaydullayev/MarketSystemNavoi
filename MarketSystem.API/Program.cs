@@ -103,11 +103,12 @@ try
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 
-    // Application-layer services depend on IAppDbContext (Domain abstraction)
+    // Application-layer services depend on IAppDbContext (Application abstraction)
     // rather than the concrete AppDbContext. Both resolutions share the same
     // scoped instance — without this binding, DI throws "Unable to resolve
     // service for type 'IAppDbContext'" on every service that wants the abstraction.
-    builder.Services.AddScoped<MarketSystem.Domain.Interfaces.IAppDbContext>(
+    // K4: IAppDbContext moved from Domain → Application so Domain stays EF-free.
+    builder.Services.AddScoped<MarketSystem.Application.Interfaces.IAppDbContext>(
         sp => sp.GetRequiredService<AppDbContext>());
 
     var port = Environment.GetEnvironmentVariable("PORT") ??
