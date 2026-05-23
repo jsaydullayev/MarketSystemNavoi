@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MarketSystem.Application.Services;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
@@ -13,9 +14,16 @@ public class RefreshTokenRepository : BaseRepository<RefreshToken>, IRefreshToke
 
     public async Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken cancellationToken = default)
     {
+        // K1 — caller passes the plaintext token from the request body; the DB
+        // stores only the SHA-256 hash of it. Hash before comparing so the
+        // index lookup still works without ever materialising the plaintext.
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+
+        var hash = RefreshTokenHasher.Hash(token);
         return await _dbSet
             .Include(r => r.User)
-            .FirstOrDefaultAsync(r => r.Token == token, cancellationToken);
+            .FirstOrDefaultAsync(r => r.Token == hash, cancellationToken);
     }
 
     public async Task<RefreshToken?> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
