@@ -23,6 +23,30 @@ class MarketBlockedInfo {
   final DateTime? blockedAt;
 }
 
+/// Reasons the local session was terminated. Surfaced through
+/// [HttpService.sessionEndedStream] so the app shell can show the right
+/// recovery UX (snackbar + redirect to login) instead of dumping the user on
+/// an empty screen full of failed requests.
+enum SessionEndedReason {
+  /// Refresh-token call returned an error (or 401). Could mean the token was
+  /// rotated by the backend's reuse detector (S1 — a stolen copy was used
+  /// somewhere) OR the refresh-token row was invalidated by the K1 deploy
+  /// (every plaintext token in the DB became unreachable after we switched
+  /// to SHA-256-hashed lookups). Either way the user has to log in again.
+  refreshFailed,
+
+  /// Explicit user-initiated logout. Provided so listeners can route to
+  /// /login without distinguishing the cause.
+  loggedOut,
+}
+
+/// Emitted when local auth state must be discarded. See [SessionEndedReason].
+class SessionEndedInfo {
+  SessionEndedInfo({required this.reason});
+
+  final SessionEndedReason reason;
+}
+
 class HttpService {
   String? _accessToken;
   AuthService? _authService;
@@ -49,6 +73,21 @@ class HttpService {
       StreamController<MarketBlockedInfo>.broadcast();
   static Stream<MarketBlockedInfo> get marketBlockedStream =>
       _marketBlockedController.stream;
+
+  /// G1 — broadcast when the local session ends. Fires from the 401-refresh
+  /// path when the refresh attempt itself fails (either the backend rotated
+  /// the token under us — see S1 / reuse detection — or the K1 deploy
+  /// invalidated every plaintext refresh-token row in the database, which
+  /// will happen ONCE per user the moment the backend ships).
+  ///
+  /// The app shell listens to this and routes to /login with a localized
+  /// "session ended" snackbar instead of leaving the user on whatever
+  /// dashboard / report they were viewing while every parallel request
+  /// silently 401s.
+  static final StreamController<SessionEndedInfo> _sessionEndedController =
+      StreamController<SessionEndedInfo>.broadcast();
+  static Stream<SessionEndedInfo> get sessionEndedStream =>
+      _sessionEndedController.stream;
 
   String get baseUrl => ApiConstants.baseUrl;
 
@@ -227,15 +266,31 @@ class HttpService {
   }
 
   Future<bool> _doRefresh() async {
+    bool succeeded = false;
     try {
       final refreshed = await _authService?.refreshToken();
-      return refreshed != null;
+      succeeded = refreshed != null;
+      return succeeded;
     } catch (e) {
       debugPrint('HttpService._doRefresh error: $e');
       return false;
     } finally {
       // Clear so a later (post-batch) expiry can trigger a fresh refresh.
       _refreshInFlight = null;
+      // G1 — emit ONCE per failed refresh, not once per waiting request. The
+      // single-flight gate above means every concurrent 401 awaited THIS
+      // Future, so firing the event here keeps listeners from receiving a
+      // duplicate "session ended" event for every parallel call. The first
+      // listener (AuthProvider) navigates to /login and clears state;
+      // subsequent listeners are idempotent.
+      if (!succeeded) {
+        // Wipe any stale local copies so a navigator pop back to a protected
+        // route can't re-authorize with the dead token.
+        await clearTokens();
+        _sessionEndedController.add(
+          SessionEndedInfo(reason: SessionEndedReason.refreshFailed),
+        );
+      }
     }
   }
 
