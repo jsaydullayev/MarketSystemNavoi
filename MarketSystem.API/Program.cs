@@ -499,6 +499,12 @@ try
     builder.Services.AddSingleton<DbRevokedTokenStore>();
     builder.Services.AddSingleton<IRevokedTokenStore>(
         sp => sp.GetRequiredService<DbRevokedTokenStore>());
+    // Brute-force lockout (Plan 05 Bosqich 3). Singleton — the failure
+    // counter must outlive any single request scope. Process-local; the IP
+    // rate limiter and this username tracker are the two complementary
+    // defences (one stops a single IP from probing fast, the other stops a
+    // distributed attacker from probing one username at a normal pace).
+    builder.Services.AddSingleton<ILoginAttemptTracker, InMemoryLoginAttemptTracker>();
 
     var app = builder.Build();
 

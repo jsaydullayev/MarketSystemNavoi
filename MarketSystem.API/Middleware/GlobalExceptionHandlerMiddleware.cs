@@ -64,6 +64,17 @@ public class GlobalExceptionHandlerMiddleware
                 response.BlockedAt = blockedEx.BlockedAt;
                 break;
 
+            case LoginLockedException lockedEx:
+                // 429 Too Many Requests — username-based brute-force lockout.
+                // The client branches on `code` ACCOUNT_LOCKED to render
+                // "try again in N minutes" instead of mistaking the lock for
+                // an invalid password and prompting the user to keep retrying.
+                context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
+                response.Message = "Hisob vaqtinchalik bloklandi. Bir necha daqiqadan keyin qaytadan urinib ko'ring.";
+                response.Code = "ACCOUNT_LOCKED";
+                response.BlockedAt = lockedEx.LockedUntilUtc;
+                break;
+
             case InvalidOperationException:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 response.Message = isDev ? exception.Message : "So'rov noto'g'ri. Iltimos, ma'lumotlarni tekshiring.";

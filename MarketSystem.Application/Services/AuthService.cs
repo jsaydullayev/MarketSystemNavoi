@@ -21,6 +21,7 @@ public class AuthService : IAuthService
     private readonly ICurrentMarketService _currentMarketService;
     private readonly IRevokedTokenStore _revokedTokens;
     private readonly IAuditLogService _auditLogService;
+    private readonly ILoginAttemptTracker _loginAttempts;
 
     public AuthService(
         IUnitOfWork unitOfWork,
@@ -30,7 +31,8 @@ public class AuthService : IAuthService
         IConfiguration configuration,
         ICurrentMarketService currentMarketService,
         IRevokedTokenStore revokedTokens,
-        IAuditLogService auditLogService)
+        IAuditLogService auditLogService,
+        ILoginAttemptTracker loginAttempts)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
@@ -40,6 +42,7 @@ public class AuthService : IAuthService
         _currentMarketService = currentMarketService;
         _revokedTokens = revokedTokens;
         _auditLogService = auditLogService;
+        _loginAttempts = loginAttempts;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -55,6 +58,40 @@ public class AuthService : IAuthService
             AuditEntityTypes.Auth, Guid.Empty, AuditActions.LoginFailed, Guid.Empty,
             new { username = request.Username }, cancellationToken);
 
+        // Record a failure against the brute-force tracker AND audit-log it.
+        // If this failure tripped the threshold, surface a LoginLockedException
+        // so the client sees "try again in N minutes" instead of yet another
+        // generic 401 — and so an attacker enumerating passwords learns we
+        // notice. The IP-based rate limiter still gates burst rates; this
+        // catches a distributed attacker hitting one username from many IPs.
+        async Task<AuthResponse?> RejectAndMaybeLockAsync()
+        {
+            await LogLoginFailedAsync();
+            var attempt = _loginAttempts.RecordFailure(request.Username);
+            if (attempt.LockedUntilUtc is { } lockedUntil)
+            {
+                _logger.LogWarning(
+                    "Account locked after {Count} failures: {Username} until {Until:O}",
+                    attempt.FailureCount, request.Username, lockedUntil);
+                throw new MarketSystem.Domain.Exceptions.LoginLockedException(
+                    request.Username, lockedUntil, attempt.FailureCount);
+            }
+            return null;
+        }
+
+        // Cheap lock check before touching the DB — a locked username should
+        // not be able to keep timing the password hash.
+        var lockedUntilUtc = _loginAttempts.GetLockedUntilUtc(request.Username);
+        if (lockedUntilUtc is { } existingLockUntil)
+        {
+            _logger.LogWarning(
+                "Login refused — account already locked until {Until:O}: {Username}",
+                existingLockUntil, request.Username);
+            await LogLoginFailedAsync();
+            throw new MarketSystem.Domain.Exceptions.LoginLockedException(
+                request.Username, existingLockUntil, 0);
+        }
+
         // Username uniqueness is enforced PER MARKET (partial index). A tenant user and a
         // cross-tenant user (e.g. SuperAdmin with MarketId=NULL) can therefore share the same
         // username. Iterate all candidates and pick the one whose password hash matches.
@@ -67,8 +104,7 @@ public class AuthService : IAuthService
         if (candidates.Count == 0)
         {
             _logger.LogWarning("User not found or inactive: {Username}", request.Username);
-            await LogLoginFailedAsync();
-            return null;
+            return await RejectAndMaybeLockAsync();
         }
 
         User? matched = null;
@@ -81,8 +117,7 @@ public class AuthService : IAuthService
                     // Two distinct accounts share the same username AND password.
                     // Refuse to log in rather than guess which identity to grant.
                     _logger.LogError("Ambiguous login: multiple users with username {Username} accepted the same password", request.Username);
-                    await LogLoginFailedAsync();
-                    return null;
+                    return await RejectAndMaybeLockAsync();
                 }
                 matched = candidate;
             }
@@ -91,8 +126,7 @@ public class AuthService : IAuthService
         if (matched is null)
         {
             _logger.LogWarning("Invalid password for user: {Username}", request.Username);
-            await LogLoginFailedAsync();
-            return null;
+            return await RejectAndMaybeLockAsync();
         }
 
         // Market block check — reject login before issuing a token when the
@@ -129,6 +163,10 @@ public class AuthService : IAuthService
         }
 
         _logger.LogInformation("Login successful for user: {Username}, ID: {UserId}", matched.Username, matched.Id);
+        // Wipe the brute-force counter — a user who got the password right
+        // after one typo shouldn't stay one failure closer to a lockout for
+        // the next 15 minutes.
+        _loginAttempts.RecordSuccess(request.Username);
         await _auditLogService.LogActionAsync(
             AuditEntityTypes.Auth, matched.Id, AuditActions.Login, matched.Id,
             new { username = matched.Username, role = matched.Role.ToString() }, cancellationToken);
