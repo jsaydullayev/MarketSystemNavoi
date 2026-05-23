@@ -64,14 +64,8 @@ class SaleRemoteDataSource {
   }
 
   /// Sotuvni bekor qilish
-  Future<dynamic> cancelSale({
-    required String saleId,
-    required String adminId,
-  }) async {
-    return _salesService.cancelSale(
-      saleId: saleId,
-      adminId: adminId,
-    );
+  Future<dynamic> cancelSale({required String saleId}) async {
+    return _salesService.cancelSale(saleId: saleId);
   }
 
   /// Sotilgan mahsulotni qaytarish

@@ -110,15 +110,9 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
   }
 
   @override
-  Future<ApiResult<void>> cancelSale({
-    required String saleId,
-    required String adminId,
-  }) async {
+  Future<ApiResult<void>> cancelSale({required String saleId}) async {
     try {
-      await remoteDataSource.cancelSale(
-        saleId: saleId,
-        adminId: adminId,
-      );
+      await remoteDataSource.cancelSale(saleId: saleId);
 
       return ApiResult.success(null);
     } catch (e) {

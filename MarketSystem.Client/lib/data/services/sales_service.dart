@@ -275,21 +275,17 @@ class SalesService {
     }
   }
 
-  // Sotuvni bekor qilish (Admin/Owner)
-  Future<dynamic> cancelSale({
-    required String saleId,
-    required String adminId,
-  }) async {
+  // Sotuvni bekor qilish (Admin/Owner). Backend audit row'ining actor'ini
+  // JWT'dan oladi — bu yerdan adminId yubormaymiz. Avval body'da adminId
+  // yuborilardi va server uni audit'ga aynan o'zini yozardi, bu esa istalgan
+  // admin'ning ID'sini forgery qilish vektori edi. Endi body bo'sh.
+  Future<dynamic> cancelSale({required String saleId}) async {
     debugPrint('=== CANCEL SALE REQUEST ===');
     debugPrint('URL: ${ApiConstants.sales}/$saleId/cancel');
-    debugPrint('Admin ID: $adminId');
-    debugPrint('Body: {"adminId": "$adminId"}');
 
     final response = await _httpService.post(
       '${ApiConstants.sales}/$saleId/cancel',
-      body: {
-        'adminId': adminId,
-      },
+      body: const <String, dynamic>{},
     );
 
     debugPrint('Response Status: ${response.statusCode}');

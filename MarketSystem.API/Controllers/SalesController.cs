@@ -211,13 +211,21 @@ public class SalesController : ControllerBase
 
     [HttpPost("{saleId}/cancel")]
     [RequirePermission(PermissionKeys.SalesDelete)]
-    public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request, CancellationToken ct = default)
+    public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, CancellationToken ct = default)
     {
+        // CRITICAL: the actor on the audit row MUST be the authenticated
+        // caller — taken from the JWT, never from a client-supplied body.
+        // The previous version accepted `{ adminId }` and trusted it
+        // verbatim, so anyone with sales.delete could forge another admin's
+        // id into the audit chain. We read the claim and drop the DTO.
+        if (!Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var adminId))
+            return Unauthorized();
+
         try
         {
-            _logger.LogInformation("CancelSale called - Sale ID: {SaleId}, Admin ID: {AdminId}", saleId, request.AdminId);
+            _logger.LogInformation("CancelSale called - Sale ID: {SaleId}, Admin ID: {AdminId}", saleId, adminId);
 
-            var sale = await _saleService.CancelSaleAsync(saleId, request.AdminId);
+            var sale = await _saleService.CancelSaleAsync(saleId, adminId, ct);
             if (sale is null)
                 return NotFound();
 

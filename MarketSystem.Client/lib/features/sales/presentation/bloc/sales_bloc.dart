@@ -146,10 +146,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     Emitter<SalesState> emit,
   ) async {
     emit(const SalesLoading());
-    final result = await cancelSaleUseCase(
-      saleId: event.saleId,
-      adminId: event.adminId,
-    );
+    final result = await cancelSaleUseCase(saleId: event.saleId);
 
     if (result.isSuccess) {
       emit(const SaleCancelled());
