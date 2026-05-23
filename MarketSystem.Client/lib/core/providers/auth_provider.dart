@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,8 +9,40 @@ import '../../data/services/http_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
+  StreamSubscription<SessionEndedInfo>? _sessionEndedSub;
 
-  AuthProvider({required AuthService authService}) : _authService = authService;
+  AuthProvider({required AuthService authService}) : _authService = authService {
+    // G1 — listen for forced session-end events (refresh-token expired or
+    // revoked by the server). The HttpService has already cleared local
+    // tokens by the time this fires; here we drop the in-memory user object
+    // and notify so the shell can route to /login. Listening once at
+    // construction matches the singleton lifetime of HttpService — no need
+    // to unsubscribe in normal operation, but dispose() cleans up for tests.
+    _sessionEndedSub = HttpService.sessionEndedStream.listen((_) {
+      if (_user == null) return; // already logged out — nothing to do
+      _user = null;
+      _sessionEndedExternally = true;
+      notifyListeners();
+    });
+  }
+
+  /// Set to true by the [HttpService.sessionEndedStream] listener so the app
+  /// shell can render a one-shot "Sessiya yangilandi, qaytadan kiring"
+  /// snackbar on the next /login render. The shell clears the flag with
+  /// [consumeSessionEndedFlag] after showing the message.
+  bool _sessionEndedExternally = false;
+  bool get sessionEndedExternally => _sessionEndedExternally;
+  bool consumeSessionEndedFlag() {
+    final wasSet = _sessionEndedExternally;
+    _sessionEndedExternally = false;
+    return wasSet;
+  }
+
+  @override
+  void dispose() {
+    _sessionEndedSub?.cancel();
+    super.dispose();
+  }
 
   bool _isLoading = false;
   String? _errorCode;
