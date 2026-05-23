@@ -977,16 +977,13 @@ public partial class SaleService : ISaleService
     /// ✅ ISEXTERNAL SHARTI - TASHQI MAHSULOT
     /// ============================================
     /// </summary>
-    public async Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default)
+    public async Task<SaleDto?> CancelSaleAsync(Guid saleId, Guid adminId, CancellationToken cancellationToken = default)
     {
-        // Parse adminId from string to Guid
-        if (!Guid.TryParse(adminId, out var adminGuid))
-        {
-            _logger.LogWarning("Invalid Admin ID format: {AdminId}", adminId);
-            throw new InvalidOperationException("Invalid Admin ID format");
-        }
-
-        _logger.LogInformation("Admin ID (parsed): {AdminGuid}", adminGuid);
+        // adminId is the JWT-extracted caller identity (controller pulls it
+        // from ClaimTypes.NameIdentifier). It used to be a string parsed
+        // from a client-supplied request body, which let any caller with
+        // sales.delete forge another admin's id into the audit row.
+        _logger.LogInformation("CancelSale by Admin {AdminId}", adminId);
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -1070,7 +1067,7 @@ public partial class SaleService : ISaleService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Audit log
-            await _auditLogService.LogSaleActionAsync(saleId, "Cancel", adminGuid, cancellationToken);
+            await _auditLogService.LogSaleActionAsync(saleId, "Cancel", adminId, cancellationToken);
 
             return await MapToDtoAsync(sale, cancellationToken);
         }, cancellationToken);

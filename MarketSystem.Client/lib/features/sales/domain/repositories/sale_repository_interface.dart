@@ -36,11 +36,9 @@ abstract class SaleRepositoryInterface {
     required double amount,
   });
 
-  /// Sotuvni bekor qilish (Admin/Owner)
-  Future<ApiResult<void>> cancelSale({
-    required String saleId,
-    required String adminId,
-  });
+  /// Sotuvni bekor qilish (Admin/Owner). Backend audit row aktorini JWT
+  /// claim'idan oladi — adminId param qabul qilmaymiz.
+  Future<ApiResult<void>> cancelSale({required String saleId});
 
   /// Sotilgan mahsulotni qaytarish
   Future<ApiResult<void>> returnSaleItem({

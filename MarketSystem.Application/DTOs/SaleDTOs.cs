@@ -110,12 +110,6 @@ public record AddPaymentDto(
     decimal Amount
 );
 
-public record CancelSaleDto(
-    [property: JsonPropertyName("adminId")]
-    [param: Required(ErrorMessage = "Admin ID majburiy")]
-    string AdminId
-);
-
 public record UpdateSaleItemPriceDto(
     [property: JsonPropertyName("saleItemId")]
     [param: Required]

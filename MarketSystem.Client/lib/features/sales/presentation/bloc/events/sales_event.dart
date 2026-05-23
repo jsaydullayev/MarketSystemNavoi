@@ -69,18 +69,15 @@ class AddPaymentEvent extends SalesEvent {
   List<Object?> get props => [saleId, paymentType, amount];
 }
 
-/// Cancel sale event
+/// Cancel sale event. The acting admin is taken from the JWT on the server
+/// — no adminId param here.
 class CancelSaleEvent extends SalesEvent {
   final String saleId;
-  final String adminId;
 
-  const CancelSaleEvent({
-    required this.saleId,
-    required this.adminId,
-  });
+  const CancelSaleEvent({required this.saleId});
 
   @override
-  List<Object?> get props => [saleId, adminId];
+  List<Object?> get props => [saleId];
 }
 
 /// Get sale detail event

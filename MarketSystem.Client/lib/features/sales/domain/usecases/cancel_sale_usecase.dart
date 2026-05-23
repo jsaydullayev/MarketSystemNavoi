@@ -10,23 +10,13 @@ class CancelSaleUseCase {
 
   const CancelSaleUseCase(this.repository);
 
-  /// Sotuvni bekor qilish (Admin/Owner)
-  Future<ApiResult<void>> call({
-    required String saleId,
-    required String adminId,
-  }) async {
-    // Biznes validatsiyalar
+  /// Sotuvni bekor qilish (Admin/Owner). Backend audit row aktorini JWT'dan
+  /// oladi — adminId bu yerdan o'tmaydi.
+  Future<ApiResult<void>> call({required String saleId}) async {
     if (saleId.isEmpty) {
       return ApiResult.failure('Sotuv ID bo\'sh bo\'lishi mumkin emas');
     }
 
-    if (adminId.isEmpty) {
-      return ApiResult.failure('Admin ID bo\'sh bo\'lishi mumkin emas');
-    }
-
-    return repository.cancelSale(
-      saleId: saleId,
-      adminId: adminId,
-    );
+    return repository.cancelSale(saleId: saleId);
   }
 }
