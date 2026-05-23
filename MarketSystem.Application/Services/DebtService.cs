@@ -94,15 +94,35 @@ public class DebtService : IDebtService
             await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // SELECT … FOR UPDATE so a parallel /api/Debts/{id}/pay request
-                // blocks until we commit. Without this, two concurrent payments
+                // Y6 — SELECT … FOR UPDATE blocks a parallel /api/Debts/{id}/pay
+                // request until we commit. Without this, two concurrent payments
                 // would both see RemainingDebt = 100, both subtract, both add
                 // their full amount into the cash register — the customer ends
                 // up paying twice for the same debt and the till is over.
-                var debt = await _context.Debts
-                    .FromSqlInterpolated($"SELECT * FROM \"Debts\" WHERE \"Id\" = {debtId} FOR UPDATE")
-                    .FirstOrDefaultAsync(cancellationToken)
-                    ?? throw new KeyNotFoundException("Qarz topilmadi.");
+                //
+                // FOR UPDATE is PostgreSQL-only syntax. The integration test
+                // suite uses EF Core InMemory which doesn't understand raw SQL,
+                // so on the InMemory provider we fall back to a plain
+                // FirstOrDefaultAsync. The Debt + Sale entities both carry an
+                // Xmin concurrency token, so concurrent writes still get caught
+                // there — FOR UPDATE just upgrades the conflict from "second
+                // write fails and retries" to "second read blocks". Production
+                // gets the stronger guarantee; tests still exercise the path.
+                var isPostgres = _context.Database.ProviderName?.Contains("InMemory") == false;
+
+                Debt? debt;
+                if (isPostgres)
+                {
+                    debt = await _context.Debts
+                        .FromSqlInterpolated($"SELECT * FROM \"Debts\" WHERE \"Id\" = {debtId} FOR UPDATE")
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
+                else
+                {
+                    debt = await _context.Debts.FirstOrDefaultAsync(d => d.Id == debtId, cancellationToken);
+                }
+                if (debt is null)
+                    throw new KeyNotFoundException("Qarz topilmadi.");
 
                 if (debt.MarketId != marketId)
                     throw new KeyNotFoundException("Qarz topilmadi.");
@@ -110,10 +130,19 @@ public class DebtService : IDebtService
                     throw new InvalidOperationException("Bu qarz allaqachon yopilgan.");
 
                 // The sale row needs to move with the debt so we lock that too.
-                var sale = await _context.Sales
-                    .FromSqlInterpolated($"SELECT *, xmin FROM \"Sales\" WHERE \"Id\" = {debt.SaleId} FOR UPDATE")
-                    .FirstOrDefaultAsync(cancellationToken)
-                    ?? throw new KeyNotFoundException("Savdo topilmadi.");
+                Sale? sale;
+                if (isPostgres)
+                {
+                    sale = await _context.Sales
+                        .FromSqlInterpolated($"SELECT *, xmin FROM \"Sales\" WHERE \"Id\" = {debt.SaleId} FOR UPDATE")
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
+                else
+                {
+                    sale = await _context.Sales.FirstOrDefaultAsync(s => s.Id == debt.SaleId, cancellationToken);
+                }
+                if (sale is null)
+                    throw new KeyNotFoundException("Savdo topilmadi.");
                 if (sale.MarketId != marketId)
                     throw new KeyNotFoundException("Savdo topilmadi.");
 
