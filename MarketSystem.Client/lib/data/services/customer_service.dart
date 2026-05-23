@@ -41,10 +41,9 @@ class CustomerService {
   }
 
   // Telefon bo'yicha mijoz topish
-  // TODO: hoist into ApiConstants as `customerByPhone(phone)` helper.
   Future<dynamic> getCustomerByPhone(String phone) async {
-    final response = await _httpService
-        .get('${ApiConstants.customers}/GetCustomerByPhone/phone/$phone');
+    final response =
+        await _httpService.get(ApiConstants.customerByPhone(phone));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -110,10 +109,9 @@ class CustomerService {
   }
 
   // Mijoz o'chirish ma'lumotlarini olish
-  // TODO: hoist into ApiConstants as `customerDeleteInfo(id)` helper.
   Future<Map<String, dynamic>> getCustomerDeleteInfo(String id) async {
-    final response = await _httpService
-        .get('${ApiConstants.customers}/GetCustomerDeleteInfo/$id/delete-info');
+    final response =
+        await _httpService.get(ApiConstants.customerDeleteInfo(id));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;

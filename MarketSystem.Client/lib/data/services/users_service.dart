@@ -103,12 +103,12 @@ class UsersService {
 
   // User deactivate/activate
   // Backend route: POST /api/Users/{Deactivate,Activate}User/{id}/{deactivate,activate}
-  // (The doubled `/api/Users/` in the old path was a copy-paste artifact that
-  // 404'd on every call.)
-  // TODO: hoist into ApiConstants as `deactivateUser(id)` / `activateUser(id)` helpers.
+  // The ApiConstants helpers keep the (doubled-segment) shape in one place
+  // so the original `/api/Users/api/Users/...` copy-paste typo can't sneak
+  // back in.
   Future<void> deactivateUser(dynamic id) async {
     final response = await _httpService.post(
-      '${ApiConstants.users}/DeactivateUser/$id/deactivate',
+      ApiConstants.deactivateUser(id),
       body: {},
     );
     if (response.statusCode != 200) {
@@ -118,7 +118,7 @@ class UsersService {
 
   Future<void> activateUser(dynamic id) async {
     final response = await _httpService.post(
-      '${ApiConstants.users}/ActivateUser/$id/activate',
+      ApiConstants.activateUser(id),
       body: {},
     );
     if (response.statusCode != 200) {

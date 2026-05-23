@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:open_filex/open_filex.dart';
 
+import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
 
 class DownloadService {
@@ -26,11 +27,11 @@ class DownloadService {
   }
 
   /// Kategoriyalarni Excel formatida yuklab olish
-  // TODO: hoist into ApiConstants as `categoriesExportExcel` constant.
   Future<void> downloadCategories({String lang = 'uz'}) async {
     try {
-      final response = await _httpService
-          .get('/ProductCategories/ExportCategoriesToExcel?lang=$lang');
+      final response = await _httpService.get(
+        '${ApiConstants.productCategoriesExportExcel}?lang=$lang',
+      );
 
       if (response.statusCode == 200) {
         final filename = lang == 'ru'
@@ -51,11 +52,10 @@ class DownloadService {
   }
 
   /// Mahsulotlarni Excel formatida yuklab olish
-  // TODO: hoist into ApiConstants as `productsExportExcel` constant.
   Future<void> downloadProducts() async {
     try {
       final response =
-          await _httpService.get('/Products/ExportProductsToExcel/export');
+          await _httpService.get(ApiConstants.productsExportExcel);
 
       if (response.statusCode == 200) {
         final filename =

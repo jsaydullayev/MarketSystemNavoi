@@ -35,6 +35,7 @@ class ApiConstants {
   // Endpoints (Controller names must match)
   static const String auth = '/Auth';
   static const String products = '/Products';
+  static const String productCategories = '/ProductCategories';
   static const String customers = '/Customers';
   static const String sales = '/Sales';
   static const String zakups = '/Zakups';
@@ -56,4 +57,39 @@ class ApiConstants {
   static const String register = '$auth/Register';
   static const String refreshToken = '$auth/RefreshToken';
   static const String logout = '$auth/Logout';
+
+  // ── Sub-route helpers ───────────────────────────────────────────
+  // These exist so call sites don't have to memorise the exact backend
+  // path shape (some are `/Controller/Action/{id}/{verb}`, some are
+  // flat). One place to fix when a route moves.
+
+  // Customers — by-phone and pre-delete-info are looked up frequently
+  // and the URL shape (`GetX/segment/{value}`) is non-obvious.
+  static String customerByPhone(String phone) =>
+      '$customers/GetCustomerByPhone/phone/$phone';
+  static String customerDeleteInfo(String id) =>
+      '$customers/GetCustomerDeleteInfo/$id/delete-info';
+
+  // Products — Excel export ships through a doubly-segmented route.
+  static const String productsExportExcel =
+      '$products/ExportProductsToExcel/export';
+
+  // Categories — Excel export lives on the ProductCategories controller.
+  static const String productCategoriesExportExcel =
+      '$productCategories/ExportCategoriesToExcel';
+
+  // Users — the activate / deactivate pair is the worst offender:
+  // double-segment paths with a literal verb on the end. Helpers keep
+  // call sites from accidentally re-introducing the original
+  // `/api/Users/api/Users/...` typo.
+  static String deactivateUser(dynamic id) =>
+      '$users/DeactivateUser/$id/deactivate';
+  static String activateUser(dynamic id) =>
+      '$users/ActivateUser/$id/activate';
+
+  // Zakups — date-range list (ISO 8601 query) and Excel export.
+  static String zakupsByDateRange(DateTime start, DateTime end) =>
+      '$zakups/GetZakupsByDateRange/by-date'
+      '?start=${start.toIso8601String()}&end=${end.toIso8601String()}';
+  static const String zakupsExportExcel = '$zakups/ExportZakupsToExcel/export';
 }
