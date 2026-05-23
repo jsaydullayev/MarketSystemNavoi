@@ -39,8 +39,9 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
   @override
   void initState() {
     super.initState();
-    if (widget.currentReason != null) {
-      _reason.text = widget.currentReason!;
+    final reason = widget.currentReason;
+    if (reason != null) {
+      _reason.text = reason;
     }
   }
 
@@ -267,7 +268,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                       ],
                     ),
                   ),
-                  if (widget.currentReason != null) ...[
+                  if (widget.currentReason case final previousReason?) ...[
                     const SizedBox(height: AppSpacing.lg),
                     Text(
                       l10n.previousBlockReason,
@@ -277,12 +278,12 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.currentReason!,
+                      previousReason,
                       style: AppTextStyles.bodyMedium(),
                     ),
                   ],
                 ],
-                if (_errorMessage != null) ...[
+                if (_errorMessage case final msg?) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md + 2),
@@ -291,7 +292,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Text(
-                      _errorMessage!,
+                      msg,
                       style: AppTextStyles.bodySmall().copyWith(
                         color: AppColors.danger,
                       ),

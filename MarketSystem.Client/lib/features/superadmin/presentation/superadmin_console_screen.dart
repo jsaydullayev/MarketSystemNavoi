@@ -481,7 +481,7 @@ class _RequestsTab extends StatelessWidget {
         child: CircularProgressIndicator(color: context.colors.brand),
       );
     }
-    if (error != null) return _ErrorState(error: error!, onRetry: onRefresh);
+    if (error case final err?) return _ErrorState(error: err, onRetry: onRefresh);
     final list = items ?? const <RegistrationRequest>[];
 
     return RefreshIndicator(
@@ -839,7 +839,7 @@ class _OwnersTab extends StatelessWidget {
         child: CircularProgressIndicator(color: context.colors.brand),
       );
     }
-    if (error != null) return _ErrorState(error: error!, onRetry: onRefresh);
+    if (error case final err?) return _ErrorState(error: err, onRetry: onRefresh);
     final all = items ?? const <OwnerSummary>[];
     final filtered = search.isEmpty
         ? all
@@ -1044,7 +1044,11 @@ class _OwnerCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            owner.phone!,
+                            // Phone reaches this branch via an outer
+                            // `if (owner.phone != null)` guard — but field
+                            // access doesn't promote, so the safer shape is
+                            // the null-aware default.
+                            owner.phone ?? '',
                             style: AppTextStyles.bodySmall().copyWith(
                               fontSize: 12,
                             ),
@@ -1059,7 +1063,7 @@ class _OwnerCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  if (owner.marketName != null)
+                  if (owner.marketName case final marketName?)
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1072,7 +1076,7 @@ class _OwnerCard extends StatelessWidget {
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 140),
                           child: Text(
-                            owner.marketName!,
+                            marketName,
                             style: AppTextStyles.bodySmall().copyWith(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,

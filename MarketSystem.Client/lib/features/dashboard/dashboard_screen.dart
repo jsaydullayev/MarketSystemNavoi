@@ -90,12 +90,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
     // Await whichever futures we actually scheduled so RefreshIndicator's
     // spinner stays visible until the data lands.
+    // Dart-3 non-null patterns avoid the `! ` round-trip after the != null
+    // collection-if guard — the same field access on a Future could otherwise
+    // race with a setState clearing it to null between checks.
     await Future.wait([
-      if (_summaryFuture != null) _summaryFuture!.catchError((_) =>
-          const DashboardSummary()),
-      if (_sellerSummaryFuture != null)
-        _sellerSummaryFuture!.catchError((_) => const SellerDashboardSummary()),
-      if (_unreadFuture != null) _unreadFuture!.catchError((_) => 0),
+      if (_summaryFuture case final f?)
+        f.catchError((_) => const DashboardSummary()),
+      if (_sellerSummaryFuture case final f?)
+        f.catchError((_) => const SellerDashboardSummary()),
+      if (_unreadFuture case final f?) f.catchError((_) => 0),
     ]);
   }
 
@@ -780,15 +783,14 @@ class _SellerBody extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (summary.pendingDraft != null)
+                  // Non-null pattern binds the draft to `d` so the subtitle
+                  // composition doesn't need the inline-closure + `!` dance.
+                  if (summary.pendingDraft case final d?)
                     PendingSaleCard(
                       title: l10n.oneSaleInProgress,
-                      subtitle: () {
-                        final d = summary.pendingDraft!;
-                        // "3 dona · 42 000 UZS"
-                        return '${d.itemCount} ${l10n.unitPiece} · '
-                            '${_grouped(d.totalAmount)} UZS';
-                      }(),
+                      // "3 dona · 42 000 UZS"
+                      subtitle: '${d.itemCount} ${l10n.unitPiece} · '
+                          '${_grouped(d.totalAmount)} UZS',
                       onTap: () =>
                           Navigator.pushNamed(context, AppRoutes.sales),
                     ),
@@ -1330,7 +1332,7 @@ class _SettingsTile extends StatelessWidget {
                       .copyWith(color: color, fontWeight: FontWeight.w600),
                 ),
               ),
-              if (trailing != null) trailing!,
+              if (trailing case final t?) t,
             ],
           ),
         ),
