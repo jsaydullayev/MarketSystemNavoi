@@ -17,6 +17,14 @@ public abstract class BaseRepository<T> : IRepository<T> where T : class
         _dbSet = context.Set<T>();
     }
 
+    // M8 — generic IRepository<T> takes T : class, not T : BaseEntity, because
+    // a couple of entities (Market, ProductCategory) carry int Ids and therefore
+    // don't derive from BaseEntity. That forces the GetById path to take an
+    // `object`-typed id and rely on FindAsync / EF.Property reflection instead
+    // of a typed `e => e.Id == id`. The reflection is correct but mildly more
+    // expensive than a typed predicate; a future refactor that introduces
+    // IRepository<TEntity, TKey> (or splits the int-Id entities into their
+    // own repository pair) would let us drop EF.Property here.
     public virtual async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet.FindAsync(new object[] { id }, cancellationToken);

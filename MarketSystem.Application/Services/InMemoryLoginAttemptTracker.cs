@@ -9,6 +9,18 @@ namespace MarketSystem.Application.Services;
 /// one server process — short revocations resetting on restart are tolerable
 /// because the IP-based rate limiter still gates the burst surface.
 ///
+/// M1 — Known limitation: in-memory state is lost on process restart, so
+/// a determined attacker who can trigger restarts (or just wait for a
+/// natural restart) could side-step the username-based lockout. The IP
+/// rate limiter and the per-username audit-log "FailedLogin burst"
+/// detection (see <c>AuditLogService.GetFailedLoginBurstsAsync</c>) cover
+/// the same threat at the network layer. If/when that combination ever
+/// proves insufficient, swap this implementation for a DB-backed one
+/// (new <c>LoginAttempt</c> entity scoped by username, queried on every
+/// login). Going DB-backed adds one DB write per failed login — a real
+/// cost — so we accept the in-memory trade-off until evidence justifies
+/// the change.
+///
 /// Tunables (all internal — these are the rule, not config):
 ///   • <see cref="Threshold"/> failures inside <see cref="Window"/> → lock
 ///   • lock holds for <see cref="LockDuration"/> from the threshold failure

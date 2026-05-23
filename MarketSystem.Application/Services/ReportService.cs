@@ -14,7 +14,22 @@ using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
 
-public class ReportService : IReportService
+/// <summary>
+/// M5 — ReportService is intentionally <c>partial</c> so future PRs can lift
+/// its three natural sub-modules into separate files without renaming the
+/// type or touching every call-site:
+///   • <c>ReportService.Pdf.cs</c> — the static PDF renderers and the
+///     <c>PdfTheme</c> palette (~700 lines, pure rendering, already
+///     unit-tested in isolation via PdfExportTests).
+///   • <c>ReportService.Dashboard.cs</c> — GetWeeklySeriesAsync,
+///     GetTopProductsAsync, GetStaffPerformanceAsync, GetMyPerformanceAsync.
+///   • <c>ReportService.cs</c> (this file) — the report-data fetchers
+///     (daily, period, comprehensive, profit summary, cash balance).
+/// The split is deferred — a 2200-line file move is high-touch and the
+/// current organisation is workable. The partial declaration unblocks
+/// incremental moves whenever someone has a quiet PR.
+/// </summary>
+public partial class ReportService : IReportService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMarketService _currentMarketService;

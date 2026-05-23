@@ -10,7 +10,20 @@ using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
 
-public class RegistrationRequestService : IRegistrationRequestService
+/// <summary>
+/// M6 — RegistrationRequestService is <c>partial</c> so a future PR can lift
+/// its three natural sub-modules into their own files without renaming the
+/// type or touching call-sites:
+///   • <c>RegistrationRequestService.Submit.cs</c> — public sign-up flow
+///     (SubmitAsync, validation rules, dedup).
+///   • <c>RegistrationRequestService.Review.cs</c> — SuperAdmin review
+///     actions (ApproveAsync, RejectAsync, listing).
+///   • <c>RegistrationRequestService.cs</c> (this file) — shared helpers
+///     and the constructor.
+/// The partial declaration is preparation only — no code moved yet — but
+/// it unblocks an incremental split without a single big rename PR.
+/// </summary>
+public partial class RegistrationRequestService : IRegistrationRequestService
 {
     private readonly IAppDbContext _context;
     private readonly ILogger<RegistrationRequestService> _logger;
