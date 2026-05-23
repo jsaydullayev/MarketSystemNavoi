@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -61,13 +62,15 @@ class _UsersScreenState extends State<UsersScreen> {
     final q = _searchCtrl.text.toLowerCase().trim();
     return users.where((u) {
       final role = (u['role'] ?? '').toString().toLowerCase();
-      final isActive = u['isActive'] ?? false;
+      // "Shift open/closed" reflects the real shift state, not the account
+      // active flag — Admin/Owner control it from the user detail sheet.
+      final onShift = u['isShiftActive'] ?? false;
       switch (_filter) {
         case _UsersFilter.shiftOpen:
-          if (!isActive) return false;
+          if (!onShift) return false;
           break;
         case _UsersFilter.shiftClosed:
-          if (isActive) return false;
+          if (onShift) return false;
           break;
         case _UsersFilter.admin:
           if (role != 'admin') return false;
@@ -163,7 +166,7 @@ class _UsersScreenState extends State<UsersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
@@ -178,7 +181,7 @@ class _UsersScreenState extends State<UsersScreen> {
             child: Text(
               l10n.no,
               style: AppTextStyles.labelLarge()
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: context.colors.textSecondary),
             ),
           ),
           TextButton(
@@ -221,12 +224,12 @@ class _UsersScreenState extends State<UsersScreen> {
     return NetworkWrapper(
       onRetry: _loadUsers,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: CommonAppBar(title: l10n.users, onRefresh: _loadUsers),
         body: _buildBody(l10n),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => AddUserSheet.show(context),
-          backgroundColor: AppColors.brand,
+          backgroundColor: context.colors.brand,
           foregroundColor: Colors.white,
           icon: const Icon(Icons.person_add_rounded),
           label: Text(
@@ -250,36 +253,50 @@ class _UsersScreenState extends State<UsersScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadUsers,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl,
-          AppSpacing.xl,
-          AppSpacing.xl,
-          96,
-        ),
-        children: [
-          _SearchBar(controller: _searchCtrl),
-          const SizedBox(height: AppSpacing.lg),
-          _StaffSummary(users: _users, todayRevenue: _todayRevenue),
-          const SizedBox(height: AppSpacing.lg),
-          _FilterChips(
-            active: _filter,
-            onChanged: (f) => setState(() => _filter = f),
+      // Centered + max-width container so the layout adapts cleanly to any
+      // device width — phone (full width), tablet, and web (800px cap).
+      // Previously the list spanned the entire window on desktop, which
+      // made each card stretch to ~1400px and broke the card-density feel
+      // designed for mobile.
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.xl,
+              AppSpacing.xl,
+              96,
+            ),
+            children: [
+              _SearchBar(controller: _searchCtrl),
+              const SizedBox(height: AppSpacing.lg),
+              _StaffSummary(users: _users, todayRevenue: _todayRevenue),
+              const SizedBox(height: AppSpacing.lg),
+              _FilterChips(
+                active: _filter,
+                onChanged: (f) => setState(() => _filter = f),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (filtered.isEmpty)
+                _EmptyView(
+                  isSearching: _searchCtrl.text.isNotEmpty ||
+                      _filter != _UsersFilter.all,
+                )
+              else
+                ...filtered.map((u) => UserCard(
+                      user: u,
+                      onTap: () => UserInfoSheet.show(
+                        context,
+                        user: u,
+                        onChanged: _loadUsers,
+                      ),
+                      onToggleStatus: () => _toggleStatus(u),
+                      onDelete: () => _deleteUser(u),
+                    )),
+            ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          if (filtered.isEmpty)
-            _EmptyView(
-              isSearching: _searchCtrl.text.isNotEmpty ||
-                  _filter != _UsersFilter.all,
-            )
-          else
-            ...filtered.map((u) => UserCard(
-                  user: u,
-                  onTap: () => UserInfoSheet.show(context, user: u),
-                  onToggleStatus: () => _toggleStatus(u),
-                  onDelete: () => _deleteUser(u),
-                )),
-        ],
+        ),
       ),
     );
   }
@@ -298,18 +315,18 @@ class _SearchBar extends StatelessWidget {
       decoration: InputDecoration(
         hintText: l10n.searchUser,
         hintStyle: AppTextStyles.bodyMedium().copyWith(
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
           fontSize: 15,
         ),
-        prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+        prefixIcon: Icon(Icons.search, color: context.colors.textSecondary),
         suffixIcon: controller.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.clear, color: AppColors.textMuted),
+                icon: Icon(Icons.clear, color: context.colors.textMuted),
                 onPressed: controller.clear,
               )
             : null,
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: context.colors.inputFill,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
           vertical: AppSpacing.lg + 2,
@@ -324,7 +341,7 @@ class _SearchBar extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: BorderSide(color: context.colors.brand, width: 1.5),
         ),
       ),
     );
@@ -332,8 +349,10 @@ class _SearchBar extends StatelessWidget {
 }
 
 /// 3-stat summary card matching the demo's `.prod-summary` block:
-/// JAMI (total users) / SMENADA (active users) / BUGUN TUSHUM (today's
-/// combined sales from /Reports/staff-performance, summed across staff).
+/// "Jami" (total users) / "Smenada" (active users) / "Bugun tushum"
+/// (today's combined sales from /Reports/staff-performance, summed across
+/// staff). All three labels are localised — they previously hardcoded
+/// uppercase Uzbek which leaked into the Russian UI.
 class _StaffSummary extends StatelessWidget {
   const _StaffSummary({required this.users, this.todayRevenue});
   final List<dynamic> users;
@@ -345,9 +364,10 @@ class _StaffSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final total = users.length;
     final onShift =
-        users.where((u) => (u['isActive'] ?? false) == true).length;
+        users.where((u) => (u['isShiftActive'] ?? false) == true).length;
 
     // Compact a big number (450 000 → 450K, 12.4M → 12.4M) for the stat
     // tile so it stays on one line even on narrow screens.
@@ -374,24 +394,24 @@ class _StaffSummary extends StatelessWidget {
         vertical: AppSpacing.xl,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Row(
         children: [
           Expanded(
             child: _SummaryStat(
               value: '$total',
-              label: 'JAMI',
-              valueColor: AppColors.text,
+              label: l10n.totalShort,
+              valueColor: context.colors.text,
             ),
           ),
           const _Divider(),
           Expanded(
             child: _SummaryStat(
               value: '$onShift',
-              label: 'SMENADA',
+              label: l10n.usersOnShiftShort,
               valueColor: AppColors.success,
             ),
           ),
@@ -399,8 +419,8 @@ class _StaffSummary extends StatelessWidget {
           Expanded(
             child: _SummaryStat(
               value: revenueLabel,
-              label: 'BUGUN TUSHUM',
-              valueColor: AppColors.brand,
+              label: l10n.usersTodayRevenueShort,
+              valueColor: context.colors.brand,
             ),
           ),
         ],
@@ -416,7 +436,7 @@ class _Divider extends StatelessWidget {
     return Container(
       width: 1,
       height: 32,
-      color: AppColors.borderSoft,
+      color: context.colors.borderSoft,
     );
   }
 }
@@ -446,7 +466,7 @@ class _SummaryStat extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
             fontSize: 10,
           ),
         ),
@@ -474,14 +494,14 @@ class _FilterChips extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           _Chip(
-            label: 'Smena ochiq',
+            label: l10n.shiftOpenLabel,
             leadingDot: AppColors.success,
             isActive: active == _UsersFilter.shiftOpen,
             onTap: () => onChanged(_UsersFilter.shiftOpen),
           ),
           const SizedBox(width: AppSpacing.md),
           _Chip(
-            label: 'Smena yopiq',
+            label: l10n.shiftClosedLabel,
             isActive: active == _UsersFilter.shiftClosed,
             onTap: () => onChanged(_UsersFilter.shiftClosed),
           ),
@@ -530,10 +550,10 @@ class _Chip extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.brand : AppColors.inputFill,
+          color: isActive ? context.colors.brand : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: isActive ? AppColors.brand : AppColors.border,
+            color: isActive ? context.colors.brand : context.colors.border,
           ),
         ),
         child: Row(
@@ -554,14 +574,18 @@ class _Chip extends StatelessWidget {
               Icon(
                 leadingIcon,
                 size: 14,
-                color: isActive ? Colors.white : AppColors.textSecondary,
+                color: isActive
+                    ? context.colors.onBrand
+                    : context.colors.textSecondary,
               ),
               const SizedBox(width: 4),
             ],
             Text(
               label,
               style: AppTextStyles.bodyMedium().copyWith(
-                color: isActive ? Colors.white : AppColors.textSecondary,
+                color: isActive
+                    ? context.colors.onBrand
+                    : context.colors.textSecondary,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -587,21 +611,21 @@ class _EmptyView extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl3),
-            decoration: const BoxDecoration(
-              color: AppColors.inputFill,
+            decoration: BoxDecoration(
+              color: context.colors.inputFill,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.people_outline,
               size: 56,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
             isSearching ? l10n.userNotFound : l10n.noUsersFound,
             style: AppTextStyles.titleMedium()
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: context.colors.textSecondary),
           ),
         ],
       ),
@@ -651,7 +675,7 @@ class _ErrorView extends StatelessWidget {
                 style: const TextStyle(color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
+                backgroundColor: context.colors.brand,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl3,
                   vertical: AppSpacing.lg,

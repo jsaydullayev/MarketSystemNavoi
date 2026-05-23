@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
@@ -31,9 +32,9 @@ class DebtSummaryHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2, AppSpacing.xl, AppSpacing.xl2, AppSpacing.xl2),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        border: Border(bottom: BorderSide(color: context.colors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +72,7 @@ class DebtSummaryHeader extends StatelessWidget {
                   label: l10n.totalDebt,
                   value:
                       '${NumberFormatter.format(debt['totalDebt'])} ${l10n.currencySom}',
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                 ),
               ),
               const SizedBox(width: AppSpacing.lg),
@@ -99,7 +100,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final color = isOpen ? AppColors.success : AppColors.textMuted;
+    final color = isOpen ? AppColors.success : context.colors.textMuted;
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md + 2, vertical: AppSpacing.xs + 1),

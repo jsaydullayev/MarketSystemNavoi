@@ -159,6 +159,29 @@ class AppLocalizationsUz extends AppLocalizations {
   String get minThreshold => 'Min. chegara';
 
   @override
+  String get productBasicInfoSection => 'Asosiy ma\'lumotlar';
+
+  @override
+  String get productNameHint => 'Masalan: Coca-Cola 1.5L';
+
+  @override
+  String get forDiscountHint => '(chegirma uchun)';
+
+  @override
+  String get currentStockLabel => 'Hozirgi stok';
+
+  @override
+  String get minStockLabel => 'Min. stok';
+
+  @override
+  String get forWarningHint => '(ogoh.)';
+
+  @override
+  String minSalePriceTip(String amount) {
+    return 'Sotuvchi mijozga $amount UZS gacha tushira oladi. Pastroq narx uchun Owner ruxsati kerak.';
+  }
+
+  @override
   String get temporary => 'Vaqtinchalik';
 
   @override
@@ -877,7 +900,10 @@ class AppLocalizationsUz extends AppLocalizations {
   String get customerAdded => 'Mijoz muvaffaqiyatli qo\'shildi';
 
   @override
-  String get addNewCustomer => 'Yangi mijoz';
+  String get addNewCustomer => 'Yangi mijoz qo\'shish';
+
+  @override
+  String get addCustomerForDebtHint => 'Yangi mijoz qo\'shish';
 
   @override
   String get searchCustomer => 'Mijoz qidirish...';
@@ -1282,6 +1308,52 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get today => 'Bugun';
+
+  @override
+  String get period7Days => '7 kun';
+
+  @override
+  String get period30Days => '30 kun';
+
+  @override
+  String get periodYear => 'Yil';
+
+  @override
+  String get shiftSection => 'Ish smenasi';
+
+  @override
+  String get shiftStateActive => 'Faol smena';
+
+  @override
+  String get shiftStateBlocked => 'Bloklangan';
+
+  @override
+  String get shiftStateScheduled => 'Rejalashtirilgan';
+
+  @override
+  String get shiftActivate => 'Faollashtirish';
+
+  @override
+  String get shiftBlock => 'Bloklash';
+
+  @override
+  String get shiftOpen24h => '24 soat';
+
+  @override
+  String get shiftSetWindow => 'Muddat';
+
+  @override
+  String get shiftUpdated => 'Smena yangilandi';
+
+  @override
+  String get shiftActiveNow => 'Ishlay oladi';
+
+  @override
+  String get shiftInactiveNow => 'Ishlay olmaydi';
+
+  @override
+  String get shiftInvalidWindow =>
+      'Tugash vaqti boshlanish vaqtidan keyin bo\'lishi kerak';
 
   @override
   String get yesterday => 'Kecha';
@@ -1696,6 +1768,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get refundLabel => 'Qaytarish';
 
   @override
+  String get refundActionDesc => 'Sotuvni qaytarish';
+
+  @override
   String get cashRegisterShort => 'Kassa';
 
   @override
@@ -1723,6 +1798,9 @@ class AppLocalizationsUz extends AppLocalizations {
   String get topSellersFallbackHint => 'Bugun savdo bo\'lmadi — oxirgi hafta:';
 
   @override
+  String get chartVsLastWeek => 'o\'tgan haftaga nisbatan';
+
+  @override
   String get notificationsTitle => 'Ogohlantirishlar';
 
   @override
@@ -1740,6 +1818,148 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get alertsRecentDebtTitle => 'Yangi qarz savdolar';
+
+  @override
+  String alertDescOverdue(int days, String amount) {
+    return 'Qarz $days kunda · $amount UZS';
+  }
+
+  @override
+  String alertDescRecent(String amount) {
+    return 'Bugun · $amount UZS';
+  }
+
+  @override
+  String alertDescLowStock(String qty, String unit, String threshold) {
+    return 'Qoldiq: $qty $unit · min $threshold $unit';
+  }
+
+  @override
+  String alertDescLowStockNoMin(String qty, String unit) {
+    return 'Qoldiq: $qty $unit';
+  }
+
+  @override
+  String get fallbackCustomerName => 'Mijoz';
+
+  @override
+  String get settingsSection => 'SOZLASH';
+
+  @override
+  String get languageLabel => 'Til';
+
+  @override
+  String get themeLabel => 'Mavzu';
+
+  @override
+  String get themeDark => 'Tungi';
+
+  @override
+  String get themeLight => 'Yorug\'';
+
+  @override
+  String get lowStockShort => 'KAM STOK';
+
+  @override
+  String get outOfStockShort => 'TUGADI';
+
+  @override
+  String get totalShort => 'JAMI';
+
+  @override
+  String get stockShort => 'Stok';
+
+  @override
+  String get popularChip => 'Mashhur';
+
+  @override
+  String get editAction => 'Tahrirlash';
+
+  @override
+  String get filterLowStock => 'Kam stok';
+
+  @override
+  String get filterOutOfStock => 'Tugadi';
+
+  @override
+  String get serverUnreachable => 'Serverga ulanib bo\'lmadi';
+
+  @override
+  String get sessionExpired => 'Sessiya tugadi, qayta kiring';
+
+  @override
+  String get noPermission => 'Sizga ruxsat yo\'q';
+
+  @override
+  String get customEmojiHint => 'O\'zingiz emoji yozing';
+
+  @override
+  String get filterOldDebt => 'Eski qarz';
+
+  @override
+  String get filterRecent => 'Yangi';
+
+  @override
+  String get pricesSection => 'Narxlar';
+
+  @override
+  String get shortCostPrice => 'Tannarx';
+
+  @override
+  String get temporaryProductDesc => 'Vaqtinchalik mahsulot';
+
+  @override
+  String get usersOnShiftShort => 'SMENADA';
+
+  @override
+  String get usersTodayRevenueShort => 'BUGUN TUSHUM';
+
+  @override
+  String get shiftOpenLabel => 'Smena ochiq';
+
+  @override
+  String get shiftClosedLabel => 'Smena yopiq';
+
+  @override
+  String get roleOwnerDesc => 'To\'liq nazorat';
+
+  @override
+  String get roleAdminDesc => 'Sotuv + mahsulot';
+
+  @override
+  String get roleSellerDesc => 'Faqat sotuv';
+
+  @override
+  String alertPreviewActiveDebts(int count) {
+    return '$count ta faol qarz mavjud';
+  }
+
+  @override
+  String alertPreviewActiveDebtsDesc(String amount) {
+    return 'Jami: $amount UZS';
+  }
+
+  @override
+  String alertPreviewOverdueDebts(int count) {
+    return '$count ta to\'lov muddati o\'tgan';
+  }
+
+  @override
+  String get alertPreviewOverdueDebtsDesc => 'Mijoz bilan bog\'laning';
+
+  @override
+  String alertPreviewLowStock(int count) {
+    return '$count ta mahsulot tugab qoldi';
+  }
+
+  @override
+  String get alertPreviewLowStockDesc => 'Omborni to\'ldirish kerak';
+
+  @override
+  String get alertPreviewEmpty => 'Hech qanday ogohlantirish yo\'q';
+
+  @override
+  String get alertPreviewEmptyDesc => 'Hammasi joyida';
 
   @override
   String get quickActions => 'Tezkor amallar';
@@ -2223,4 +2443,213 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get noAccount => 'Akkauntingiz yo\'qmi? ';
+
+  @override
+  String get loginLabel => 'Login';
+
+  @override
+  String get loginHint => 'Loginni kiriting';
+
+  @override
+  String get passwordHint => 'Parolni kiriting';
+
+  @override
+  String get loginButton => 'Kirish';
+
+  @override
+  String get loginAction => 'Tizimga kirish';
+
+  @override
+  String get loginFormSubtitle => 'Login va parolingizni kiriting';
+
+  @override
+  String get appTagline => 'Kichik do\'konlar uchun savdo tizimi';
+
+  @override
+  String get welcomeSubtitle => 'Kichik do\'konlar uchun savdo va hisob tizimi';
+
+  @override
+  String get registerShop => 'Yangi do\'kon — ro\'yxatdan o\'tish';
+
+  @override
+  String get agreePrefix => 'Davom etish orqali ';
+
+  @override
+  String get agreeSuffix => 'ga rozisiz';
+
+  @override
+  String get rememberMe => 'Eslab qol';
+
+  @override
+  String get forgotPassword => 'Parolni unutdingizmi?';
+
+  @override
+  String get dateTimeLabel => 'Sana / vaqt';
+
+  @override
+  String get statusLabel => 'Status';
+
+  @override
+  String get externalTag => 'tashqi';
+
+  @override
+  String get printAction => 'Chop etish';
+
+  @override
+  String get sendSms => 'SMS yuborish';
+
+  @override
+  String get comingSoon => 'Tez orada...';
+
+  @override
+  String get returnWarning =>
+      'Qaytarish Owner\'ga xabar yuboradi va stokga qaytariladi';
+
+  @override
+  String get whichProductReturning => 'QAYSI MAHSULOT QAYTARILYAPTI?';
+
+  @override
+  String soldQtyFormat(Object qty, String price) {
+    return 'Sotildi: $qty × $price';
+  }
+
+  @override
+  String get reasonLabel => 'SABAB';
+
+  @override
+  String get returnReasonBad => 'Sifatsiz';
+
+  @override
+  String get returnReasonExpired => 'Muddat o\'tgan';
+
+  @override
+  String get returnReasonDisliked => 'Yoqmadi';
+
+  @override
+  String get returnReasonOther => 'Boshqa';
+
+  @override
+  String get additionalCommentHint => 'Qo\'shimcha izoh (ixtiyoriy)';
+
+  @override
+  String get returnMethodLabel => 'QAYTARISH USULI';
+
+  @override
+  String get cashReturn => 'Naqd qaytarish';
+
+  @override
+  String get toCustomerHere => 'Mijozga shu yerda';
+
+  @override
+  String get toBalance => 'Balansga';
+
+  @override
+  String get forNextSale => 'Keyingi sotuvga';
+
+  @override
+  String get toReturnLabel => 'QAYTARILADI';
+
+  @override
+  String get confirmAndReturn => 'Tasdiqlash va qaytarish';
+
+  @override
+  String get orDivider => 'YOKI';
+
+  @override
+  String get createNewShop => 'Yangi do\'kon yarating';
+
+  @override
+  String get statProducts => 'Mahsulotlar';
+
+  @override
+  String get statSales => 'Sotuvlar';
+
+  @override
+  String get statCustomers => 'Mijozlar';
+
+  @override
+  String get statActiveTypes => 'Faol turlari';
+
+  @override
+  String get statTotalReceipts => 'Jami chek';
+
+  @override
+  String get statActiveCustomers => 'Faol mijozlar';
+
+  @override
+  String get statTotalUZS => 'UZS jami';
+
+  @override
+  String get paymentCash => 'Naqd';
+
+  @override
+  String get paymentRefund => 'Qaytarilgan';
+
+  @override
+  String get forgotPasswordContactAdmin =>
+      'Parolni tiklash uchun administrator bilan bog\'laning.';
+
+  @override
+  String get loginFailed => 'Login yoki parol noto\'g\'ri.';
+
+  @override
+  String get rateLimited =>
+      'Juda ko\'p urinish. Iltimos, biroz kutib qayta urinib ko\'ring.';
+
+  @override
+  String get loginGenericError => 'Xatolik yuz berdi.';
+
+  @override
+  String get shopBlocked => 'Do\'kon bloklangan';
+
+  @override
+  String get shopBlockedBody =>
+      'Sizning do\'koningiz administrator tomonidan bloklangan. Iltimos, administrator bilan bog\'laning.';
+
+  @override
+  String blockedAtLabel(String time) {
+    return 'Bloklangan: $time';
+  }
+
+  @override
+  String get dismiss => 'Tushundim';
+
+  @override
+  String get permissionsTitle => 'Ruxsatlar';
+
+  @override
+  String get permissionsNextLoginNote =>
+      'O\'zgarishlar foydalanuvchi keyingi marta tizimga kirganda kuchga kiradi.';
+
+  @override
+  String get resetToDefault => 'Standartga qaytarish';
+
+  @override
+  String get permissionsSaved => 'Ruxsatlar saqlandi';
+
+  @override
+  String get permissionsUsingRoleDefaults => 'Rol bo\'yicha standart ruxsatlar';
+
+  @override
+  String get permissionsCustomized => 'Maxsus sozlangan';
+
+  @override
+  String get managePermissions => 'Ruxsatlarni boshqarish';
+
+  @override
+  String get shiftOpen => 'Smena ochiq';
+
+  @override
+  String get shiftClosed => 'Smena yopiq';
+
+  @override
+  String get openShift => 'Smenani ochish';
+
+  @override
+  String get closeShift => 'Smenani yopish';
+
+  @override
+  String shiftStartedAt(String time) {
+    return 'Boshlangan: $time';
+  }
 }

@@ -1,4 +1,10 @@
-/// Web-specific platform handler
+/// Web-specific platform handler.
+///
+/// This file is only ever compiled for the web target (it's behind a
+/// conditional import in platform_interface.dart), so using `dart:html`
+/// here is intentional and correct — the lints that warn against web-only
+/// libraries don't apply to a deliberately web-only handler.
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 library;
 
 import 'dart:html' as html;

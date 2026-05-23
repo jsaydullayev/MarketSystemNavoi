@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -31,15 +32,15 @@ class BalanceCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl3),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.brand, AppColors.brandDark],
+        gradient: LinearGradient(
+          colors: [context.colors.brand, context.colors.brandDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brand.withValues(alpha: 0.30),
+            color: context.colors.brand.withValues(alpha: 0.30),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

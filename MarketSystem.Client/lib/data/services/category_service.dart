@@ -58,10 +58,12 @@ class CategoryService {
   Future<ProductCategoryModel> createCategory({
     required String name,
     String? description,
+    String? icon,
   }) async {
     final request = CreateCategoryRequestModel(
       name: name,
       description: description,
+      icon: icon,
     );
 
     final response = await _httpService.post(
@@ -83,12 +85,14 @@ class CategoryService {
     required int id,
     required String name,
     String? description,
+    String? icon,
     bool isActive = true,
   }) async {
     final request = UpdateCategoryRequestModel(
       id: id,
       name: name,
       description: description,
+      icon: icon,
       isActive: isActive,
     );
 

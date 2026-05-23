@@ -26,6 +26,7 @@
     <ProjectReference Include="..\MarketSystem.Domain\MarketSystem.Domain.csproj" />
     <ProjectReference Include="..\MarketSystem.Application\MarketSystem.Application.csproj" />
     <ProjectReference Include="..\MarketSystem.Infrastructure\MarketSystem.Infrastructure.csproj" />
+    <ProjectReference Include="..\MarketSystem.API\MarketSystem.API.csproj" />
   </ItemGroup>
 
 </Project>

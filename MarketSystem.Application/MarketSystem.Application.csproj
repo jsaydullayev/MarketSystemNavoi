@@ -9,9 +9,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Exposes internal PDF renderers (RenderInvoicePdf / RenderSalesListPdf
+         and their data records) to the test project so QuestPDF layout can be
+         exercised without a database. -->
+    <InternalsVisibleTo Include="MarketSystem.IntegrationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="ClosedXML" Version="0.105.0" />
-    <PackageReference Include="EPPlus" Version="7.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />

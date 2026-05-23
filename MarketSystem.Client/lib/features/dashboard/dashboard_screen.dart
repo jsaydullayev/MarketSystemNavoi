@@ -4,21 +4,26 @@
 // previous implementation; only the body has been rebuilt to match the
 // HTML demo (#page-owner-dash and #page-staff-dash in design-demo).
 
+import 'dart:convert' show base64Decode;
 import 'dart:math' show max;
 
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/auth/permission_context.dart';
+import '../../core/auth/permissions.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../data/services/dashboard_service.dart';
 import '../../data/services/notification_service.dart';
+import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../l10n/app_localizations.dart';
+import 'shift_control_card.dart';
 import '../auth/presentation/screens/login_screen.dart';
 import '../categories/screens/category_management_screen.dart';
 import '../daily_sales/screens/daily_sales_screen.dart';
@@ -102,7 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       drawer: _DashboardDrawer(user: user, role: role, l10n: l10n),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -110,17 +115,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         leading: Builder(
           builder: (context) => IconButton(
             onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: const Icon(Icons.menu_rounded, color: AppColors.text),
+            icon: Icon(Icons.menu_rounded, color: context.colors.text),
           ),
         ),
         title: Text(
           'STROTECH',
           style: AppTextStyles.titleMedium()
-              .copyWith(letterSpacing: 2, color: AppColors.text),
+              .copyWith(letterSpacing: 2, color: context.colors.text),
         ),
       ),
       body: RefreshIndicator(
-        color: AppColors.brand,
+        color: context.colors.brand,
         onRefresh: _refresh,
         child: _DashboardBody(
           user: user,
@@ -160,29 +165,32 @@ class _DashboardBody extends StatelessWidget {
     return AppLocalizations.of(context)!.defaultUserName;
   }
 
-  String _dateLabel() {
-    const months = [
-      'yanvar',
-      'fevral',
-      'mart',
-      'aprel',
-      'may',
-      'iyun',
-      'iyul',
-      'avgust',
-      'sentabr',
-      'oktabr',
-      'noyabr',
-      'dekabr',
+  String _dateLabel(BuildContext context) {
+    // Localised month names. The greeting card previously hardcoded Uzbek
+    // month spellings ("yanvar", "fevral", ...) which leaked Uzbek date
+    // strings into the Russian UI ("19-may" instead of "19 мая"). Picks
+    // from the bundle based on the current locale code.
+    const monthsUz = [
+      'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
+      'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr',
     ];
+    const monthsRu = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+    ];
+    final code = Localizations.localeOf(context).languageCode;
+    final months = code == 'ru' ? monthsRu : monthsUz;
     final now = DateTime.now();
-    return '${now.day}-${months[now.month - 1]}';
+    // Uzbek style uses a hyphen ("19-may"); Russian style uses a space
+    // ("19 мая") — preserves the convention each language reads naturally.
+    final sep = code == 'ru' ? ' ' : '-';
+    return '${now.day}$sep${months[now.month - 1]}';
   }
 
   @override
   Widget build(BuildContext context) {
     final name = _fullName(context);
-    final date = _dateLabel();
+    final date = _dateLabel(context);
 
     // Greeting bell badge — true when there's at least one "thing to look at"
     // (low-stock, today's debt, etc.). Reflects unreadFuture once it resolves;
@@ -271,7 +279,15 @@ class _OwnerBody extends StatelessWidget {
               ),
             SalesHeroCard(
               amount: NumberFormatter.format(summary.todayRevenue),
-              deltaText: l10n.todaysSale,
+              // Header label (rendered uppercase by the card). Was
+              // hardcoded to 'Bugungi sotuv' on the widget side; now
+              // sourced from l10n so the Russian locale gets the
+              // localised header too.
+              label: l10n.todaysSale,
+              // No deltaText: we don't yet have a yesterday-comparison
+              // endpoint for daily revenue. Previously this was passed
+              // l10n.todaysSale, producing a misleading green "↑ Bugungi
+              // sotuv" row directly below the header that read the same.
               stats: [
                 SalesHeroStat(
                   value: '${summary.todayCheckCount}',
@@ -298,39 +314,15 @@ class _OwnerBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(title: l10n.alertsSectionLabel),
             const SizedBox(height: AppSpacing.md),
-            if (summary.pendingDebtsCount > 0)
-              AlertCard(
-                emoji: '💸',
-                title:
-                    '${summary.pendingDebtsCount} ta faol qarz mavjud',
-                description:
-                    'Jami: ${NumberFormatter.format(summary.pendingDebtsTotal)} UZS',
-                tone: AlertTone.danger,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
-              ),
-            if (summary.pendingDebtsCount > 0 && summary.lowStockCount > 0)
-              const SizedBox(height: AppSpacing.md),
-            if (summary.lowStockCount > 0)
-              AlertCard(
-                emoji: '📦',
-                title:
-                    '${summary.lowStockCount} ta mahsulot tugab qoldi',
-                description: "Omborni to'ldirish kerak",
-                tone: AlertTone.warning,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ProductsScreen(isReadOnly: false),
-                  ),
-                ),
-              ),
-            if (summary.pendingDebtsCount == 0 && summary.lowStockCount == 0)
-              const AlertCard(
-                emoji: '✅',
-                title: "Hech qanday ogohlantirish yo'q",
-                description: 'Hammasi joyida',
-                tone: AlertTone.warning,
-              ),
+            // Alert preview — at most 2–3 cards rendered, ordered by urgency:
+            //   1. Overdue debts (danger)   — to'lov muddati o'tgan
+            //   2. Active debts that aren't overdue yet (warning)
+            //   3. Low-stock products (warning)
+            // When all three buckets are empty we show a single success
+            // card (green tick) so the slot doesn't disappear and shrink
+            // the layout. Tapping any card lands on the relevant feature
+            // screen so the owner can act immediately.
+            ..._buildAlertPreviewCards(context, summary, l10n),
             const SizedBox(height: AppSpacing.xl),
             SectionHeader(
               title: l10n.analysisSectionLabel,
@@ -369,6 +361,84 @@ class _OwnerBody extends StatelessWidget {
     return NumberFormatter.format(value);
   }
 
+  /// Dashboard alert-preview row builder. Returns an ordered list of widgets
+  /// (cards interleaved with spacers) so the caller can splat them with `...`
+  /// into the surrounding Column. Empty buckets are skipped entirely, and
+  /// when every bucket is empty we fall through to a single success card —
+  /// the slot never collapses, the section header always has something
+  /// under it.
+  static List<Widget> _buildAlertPreviewCards(
+    BuildContext context,
+    DashboardSummary summary,
+    AppLocalizations l10n,
+  ) {
+    final cards = <Widget>[];
+
+    // 1) Overdue payments — most urgent. Heuristic for "due today" until
+    //    the Debt entity gains a real DueDate field.
+    if (summary.overdueDebtsCount > 0) {
+      cards.add(AlertCard(
+        emoji: '⚠️',
+        title: l10n.alertPreviewOverdueDebts(summary.overdueDebtsCount),
+        description: l10n.alertPreviewOverdueDebtsDesc,
+        tone: AlertTone.danger,
+        onTap: () => Navigator.pushNamed(context, AppRoutes.notifications),
+      ));
+    }
+
+    // 2) Active-but-not-yet-overdue debts. Subtract the overdue count so
+    //    we don't double-report the same debt in two cards.
+    final nonOverdueActive = summary.pendingDebtsCount - summary.overdueDebtsCount;
+    if (nonOverdueActive > 0) {
+      cards.add(AlertCard(
+        emoji: '💸',
+        title: l10n.alertPreviewActiveDebts(nonOverdueActive),
+        description: l10n.alertPreviewActiveDebtsDesc(
+          NumberFormatter.format(summary.pendingDebtsTotal),
+        ),
+        tone: AlertTone.warning,
+        onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
+      ));
+    }
+
+    // 3) Low-stock — least urgent of the three.
+    if (summary.lowStockCount > 0) {
+      cards.add(AlertCard(
+        emoji: '📦',
+        title: l10n.alertPreviewLowStock(summary.lowStockCount),
+        description: l10n.alertPreviewLowStockDesc,
+        tone: AlertTone.warning,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ProductsScreen(isReadOnly: false),
+          ),
+        ),
+      ));
+    }
+
+    if (cards.isEmpty) {
+      return [
+        AlertCard(
+          emoji: '✅',
+          title: l10n.alertPreviewEmpty,
+          description: l10n.alertPreviewEmptyDesc,
+          tone: AlertTone.success,
+        ),
+      ];
+    }
+
+    // Interleave spacers between cards (but not after the last one).
+    final out = <Widget>[];
+    for (var i = 0; i < cards.length; i++) {
+      out.add(cards[i]);
+      if (i != cards.length - 1) {
+        out.add(const SizedBox(height: AppSpacing.md));
+      }
+    }
+    return out;
+  }
+
   /// Bar chart for the last 7 days, fed by [DashboardSummary.weeklySeries].
   /// Bars are scaled to the window's max revenue (so the tallest day fills
   /// the card) and the footer shows the running total. If the endpoint
@@ -394,16 +464,19 @@ class _OwnerBody extends StatelessWidget {
         : '— UZS';
 
     // Week-over-week delta — sourced from /weekly-series?compare=true. We
-    // render the sign + integer percent + a localized "vs last week" hint.
-    // Falls back to blank when the previous week was empty (division-by-zero
-    // would otherwise yield infinity) or the comparison wasn't requested.
+    // pass the magnitude as a plain "5%" string and let the card add the
+    // sign arrow + colour itself. Previously we baked the arrow into the
+    // string which (combined with the card hardcoding its own "↑") rendered
+    // a double-arrow ("↑ ↑ 5%") in the up case and an always-green arrow
+    // in the down case. Falls back to blank when the previous week was
+    // empty (division-by-zero would yield infinity) or the comparison
+    // wasn't requested.
     final delta = summary.weeklyDeltaPercent;
-    String footerDelta;
-    if (delta == null || delta.isNaN || delta.isInfinite) {
-      footerDelta = '';
-    } else {
-      final sign = delta >= 0 ? '↑' : '↓';
-      footerDelta = '$sign ${delta.abs().toStringAsFixed(0)}%';
+    String footerDelta = '';
+    bool deltaIsPositive = true;
+    if (delta != null && !delta.isNaN && !delta.isInfinite) {
+      deltaIsPositive = delta >= 0;
+      footerDelta = '${delta.abs().toStringAsFixed(0)}%';
     }
 
     return ChartCard(
@@ -412,6 +485,14 @@ class _OwnerBody extends StatelessWidget {
       bars: bars,
       footerValue: footerValue,
       footerDelta: footerDelta,
+      // Caption clarifies the delta % is week-over-week (this week's total
+      // vs the previous week's), so a figure like "↑ 1535%" is explained.
+      deltaCaption: footerDelta.isEmpty ? '' : l10n.chartVsLastWeek,
+      deltaIsPositive: deltaIsPositive,
+      // When neither the current nor previous week have any data, dim the
+      // bars so the card reads as "no data yet" rather than "everything is
+      // a flat tiny bar above 0".
+      isEmpty: series.isEmpty || maxRev == 0,
     );
   }
 
@@ -511,9 +592,17 @@ class _KpiGrid extends StatelessWidget {
               label: l10n.customers,
               tone: KpiTone.blue,
             ),
+            // Top product KPI — shows the *name* of the bestselling product
+            // today (or the period the backend fell back to), not a count.
+            // The previous "{distinct-product-count}" rendering was confusing:
+            // a user looking at "5 · Top mahsulot" can't tell whether 5 is
+            // a rank, a count, or a quantity. Pulling the name from
+            // topProductRows.first makes the card immediately readable.
             KpiCard(
               emoji: '💎',
-              value: '${summary.topProductCount}',
+              value: summary.topProductRows.isNotEmpty
+                  ? summary.topProductRows.first.name
+                  : '—',
               label: l10n.topProduct,
               tone: KpiTone.orange,
             ),
@@ -575,9 +664,9 @@ class _SkeletonBox extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.inputFill,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
     );
   }
@@ -629,16 +718,21 @@ class _SellerBody extends StatelessWidget {
   final Future<SellerDashboardSummary>? summaryFuture;
 
   /// Compact UZS formatter for the stats row: "1 200 000" → "1.2M",
-  /// "42 000" → "42K", "950" → "950". Mirrors the Owner KPI compact helper.
+  /// "42 500" → "42.5K", "950" → "950". Mirrors the Owner KPI compact
+  /// helper — see _OwnerBody._compact.
   String _compactUzs(double v) {
     final n = v.abs();
     if (n >= 1000000) {
-      final m = (v / 1000000).toStringAsFixed(v % 1000000 == 0 ? 0 : 1);
-      return '${m}M';
+      final m = v / 1000000;
+      // 12.4M → "12M" (drop decimal once magnitude is ≥10 so cards don't
+      // get crowded), 1.5M → "1.5M".
+      return '${m.toStringAsFixed(m.abs() >= 10 ? 0 : 1)}M';
     }
     if (n >= 1000) {
-      final k = (v / 1000).toStringAsFixed(v % 1000 == 0 ? 0 : 0);
-      return '${k}K';
+      final k = v / 1000;
+      // Previously the K branch was `(v % 1000 == 0 ? 0 : 0)` — both
+      // arms were 0, so "1500" rendered as "2K" instead of "1.5K".
+      return '${k.toStringAsFixed(k.abs() >= 100 ? 0 : 1)}K';
     }
     return v.toStringAsFixed(0);
   }
@@ -670,9 +764,13 @@ class _SellerBody extends StatelessWidget {
           subtitle: l10n.tapToSelectProduct,
           onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
         ),
-        // Seller-only: pending draft + personal stats row, wired to
-        // /Reports/my-performance + /Sales/my-drafts.
+        // Seller-only: shift open/close control, pending draft + personal
+        // stats row — wired to /Shifts, /Reports/my-performance, /Sales/my-drafts.
         if (!isAdmin) ...[
+          const SizedBox(height: AppSpacing.lg),
+          ShiftControlCard(
+            authProvider: Provider.of<AuthProvider>(context, listen: false),
+          ),
           const SizedBox(height: AppSpacing.lg),
           FutureBuilder<SellerDashboardSummary>(
             future: summaryFuture,
@@ -736,8 +834,11 @@ class _SellerBody extends StatelessWidget {
             Expanded(
               child: KpiCard(
                 emoji: '↩️',
+                // Big text: short noun ("Qaytarish"). Subtitle: action
+                // description ("Sotuvni qaytarish"). Previously both were
+                // refundLabel, so the card rendered the same string twice.
                 value: l10n.refundLabel,
-                label: l10n.refundLabel,
+                label: l10n.refundActionDesc,
                 tone: KpiTone.blue,
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.sales),
@@ -803,7 +904,7 @@ class _DashboardDrawer extends StatelessWidget {
     final isDark = AdaptiveTheme.of(context).mode.isDark;
     return Drawer(
       width: width,
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.surface,
+      backgroundColor: isDark ? AppColors.darkBg : context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(20)),
       ),
@@ -820,7 +921,7 @@ class _DashboardDrawer extends StatelessWidget {
                 children: [
                   ..._menuTiles(context, role),
                   const SizedBox(height: AppSpacing.lg),
-                  const Divider(color: AppColors.border, height: 1),
+                  Divider(color: context.colors.border, height: 1),
                   const SizedBox(height: AppSpacing.md),
                   _SettingsTile(
                     icon: isDark
@@ -829,7 +930,7 @@ class _DashboardDrawer extends StatelessWidget {
                     label: isDark ? l10n.lightMode : l10n.darkMode,
                     trailing: Switch.adaptive(
                       value: isDark,
-                      activeThumbColor: AppColors.brand,
+                      activeThumbColor: context.colors.brand,
                       onChanged: (_) {
                         if (isDark) {
                           AdaptiveTheme.of(context).setLight();
@@ -858,8 +959,8 @@ class _DashboardDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(
-                color: AppColors.border,
+            Divider(
+                color: context.colors.border,
                 indent: AppSpacing.xl,
                 endIndent: AppSpacing.xl,
                 height: 1),
@@ -888,7 +989,8 @@ class _DashboardDrawer extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ProductsScreen(isReadOnly: role == 'Seller'),
+            builder: (_) =>
+              ProductsScreen(isReadOnly: !context.can(Permissions.productsEdit)),
           ),
         ),
       ),
@@ -967,14 +1069,14 @@ class _DashboardDrawer extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         title: Row(
           children: [
-            const Icon(Icons.translate_rounded, color: AppColors.brand),
+            Icon(Icons.translate_rounded, color: context.colors.brand),
             const SizedBox(width: AppSpacing.lg),
             Text(
               AppLocalizations.of(context)!.selectLanguage,
@@ -1020,7 +1122,7 @@ class _DashboardDrawer extends StatelessWidget {
                   ? Icons.radio_button_checked_rounded
                   : Icons.radio_button_unchecked_rounded,
               color:
-                  isSelected ? AppColors.brand : AppColors.textSecondary,
+                  isSelected ? ctx.colors.brand : ctx.colors.textSecondary,
               size: 22,
             ),
             const SizedBox(width: AppSpacing.lg),
@@ -1061,8 +1163,10 @@ class _DrawerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = AdaptiveTheme.of(context).mode.isDark;
-    final name = (user?['fullName'] as String?) ??
-        (l10n.localeName == 'uz' ? 'Foydalanuvchi' : 'Пользователь');
+    final rawName = user?['fullName'] as String?;
+    final name = (rawName != null && rawName.trim().isNotEmpty)
+        ? rawName
+        : l10n.defaultUserName;
     final initial = name.trim().isEmpty ? 'U' : name.trim()[0].toUpperCase();
 
     return InkWell(
@@ -1078,26 +1182,17 @@ class _DrawerHeader extends StatelessWidget {
         margin: const EdgeInsets.all(AppSpacing.lg),
         padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.surface,
+          color: isDark ? AppColors.darkSurface : context.colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.xl),
           border: Border.all(
-            color: isDark ? Colors.white12 : AppColors.border,
+            color: isDark ? Colors.white12 : context.colors.border,
           ),
         ),
         child: Row(
           children: [
             ClipOval(
-              child: user?['profileImage'] != null
-                  ? Image.network(
-                      user!['profileImage'],
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _fallback(initial),
-                      loadingBuilder: (_, child, progress) =>
-                          progress == null ? child : _fallback(initial),
-                    )
-                  : _fallback(initial),
+              child: _buildAvatar(
+                  context, user?['profileImage'] as String?, initial),
             ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
@@ -1109,7 +1204,7 @@ class _DrawerHeader extends StatelessWidget {
                     name,
                     style: AppTextStyles.labelLarge().copyWith(
                       fontSize: 14,
-                      color: isDark ? Colors.white : AppColors.text,
+                      color: isDark ? Colors.white : context.colors.text,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1117,7 +1212,7 @@ class _DrawerHeader extends StatelessWidget {
                   Text(
                     role,
                     style: AppTextStyles.bodySmall().copyWith(
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -1125,19 +1220,55 @@ class _DrawerHeader extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.edit_note_rounded,
-                color: AppColors.brand, size: 26),
+            Icon(Icons.edit_note_rounded,
+                color: context.colors.brand, size: 26),
           ],
         ),
       ),
     );
   }
 
-  Widget _fallback(String initial) => Container(
+  /// Render the user's avatar: profile image when set + decodable,
+  /// otherwise the coloured first-letter circle. Mirrors GreetingCard's
+  /// rendering logic — profileImage may be a URL, a base64 data URI, or a
+  /// raw base64 blob; anything else falls back to the letter.
+  Widget _buildAvatar(BuildContext context, String? img, String initial) {
+    final fallback = _fallback(context, initial);
+    if (img == null || img.isEmpty) return fallback;
+
+    Widget? imgWidget;
+    if (img.startsWith('http')) {
+      imgWidget = Image.network(
+        img,
         width: 50,
         height: 50,
-        decoration: const BoxDecoration(
-          color: AppColors.brand,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => fallback,
+        loadingBuilder: (_, child, progress) =>
+            progress == null ? child : fallback,
+      );
+    } else if (img.startsWith('data:image') || img.length > 100) {
+      try {
+        final b64 = img.contains(',') ? img.split(',').last : img;
+        imgWidget = Image.memory(
+          base64Decode(b64),
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => fallback,
+        );
+      } catch (_) {
+        imgWidget = null;
+      }
+    }
+    return imgWidget ?? fallback;
+  }
+
+  Widget _fallback(BuildContext context, String initial) => Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          color: context.colors.brand,
           shape: BoxShape.circle,
         ),
         alignment: Alignment.center,
@@ -1167,7 +1298,7 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = AdaptiveTheme.of(context).mode.isDark;
-    final color = tint ?? (isDark ? Colors.white : AppColors.text);
+    final color = tint ?? (isDark ? Colors.white : context.colors.text);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(

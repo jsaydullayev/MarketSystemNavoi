@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_button.dart';
@@ -104,14 +105,14 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.text,
+        backgroundColor: context.colors.surface,
+        foregroundColor: context.colors.text,
         elevation: 0,
         scrolledUnderElevation: 0,
-        shape: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
+        shape: Border(
+          bottom: BorderSide(color: context.colors.border, width: 1),
         ),
         title: Text(
           l10n.ownerInfoTitle,
@@ -119,7 +120,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.brand))
+          ? Center(child: CircularProgressIndicator(color: context.colors.brand))
           : _error != null
               ? _ErrorState(error: _error!, onRetry: _load)
               : _detail == null
@@ -130,7 +131,7 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
                       ),
                     )
                   : RefreshIndicator(
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                       onRefresh: _load,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -193,9 +194,9 @@ class _HeroCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       child: LayoutBuilder(
         builder: (ctx, constraints) {
@@ -207,7 +208,7 @@ class _HeroCard extends StatelessWidget {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 alignment: Alignment.center,
@@ -242,12 +243,12 @@ class _HeroCard extends StatelessWidget {
                               ? AppColors.danger
                               : (detail.isActive
                                   ? AppColors.success
-                                  : AppColors.textMuted),
+                                  : context.colors.textMuted),
                           background: blocked
                               ? AppColors.dangerLight
                               : (detail.isActive
                                   ? AppColors.successLight
-                                  : AppColors.inputFill),
+                                  : context.colors.inputFill),
                         ),
                       ],
                     ),
@@ -410,7 +411,7 @@ class _MetaItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppColors.textSecondary),
+        Icon(icon, size: 14, color: context.colors.textSecondary),
         const SizedBox(width: 5),
         Text(text, style: AppTextStyles.bodySmall()),
       ],
@@ -424,6 +425,7 @@ class _StatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return LayoutBuilder(
       builder: (ctx, c) {
         final cross = c.maxWidth < 600 ? 2 : 4;
@@ -436,33 +438,33 @@ class _StatsGrid extends StatelessWidget {
           childAspectRatio: cross == 2 ? 1.7 : 1.35,
           children: [
             _StatTile(
-              label: 'MAHSULOTLAR',
+              label: l10n.statProducts.toUpperCase(),
               value: _fmtNum(stats.productsCount),
-              subtitle: 'Faol turlari',
-              color: AppColors.text,
+              subtitle: l10n.statActiveTypes,
+              color: context.colors.text,
               icon: Icons.inventory_2_outlined,
             ),
             _StatTile(
-              label: 'SOTUVLAR',
+              label: l10n.statSales.toUpperCase(),
               value: _fmtNum(stats.salesCount),
-              subtitle: 'Jami chek',
+              subtitle: l10n.statTotalReceipts,
               color: AppColors.success,
               icon: Icons.point_of_sale_outlined,
             ),
             _StatTile(
-              label: 'MIJOZLAR',
+              label: l10n.statCustomers.toUpperCase(),
               value: _fmtNum(stats.customersCount),
-              subtitle: 'Faol mijozlar',
-              color: AppColors.text,
+              subtitle: l10n.statActiveCustomers,
+              color: context.colors.text,
               icon: Icons.people_outline,
             ),
             _StatTile(
-              label: 'QARZ',
+              label: l10n.debt.toUpperCase(),
               value: _fmtMoney(stats.outstandingDebt),
-              subtitle: 'UZS jami',
+              subtitle: l10n.statTotalUZS,
               color: stats.outstandingDebt > 0
                   ? AppColors.warning
-                  : AppColors.text,
+                  : context.colors.text,
               icon: Icons.account_balance_wallet_outlined,
             ),
           ],
@@ -502,9 +504,9 @@ class _StatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,7 +515,7 @@ class _StatTile extends StatelessWidget {
           Text(
             label,
             style: AppTextStyles.caption()
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: context.colors.textSecondary),
           ),
           Text(
             value,
@@ -525,7 +527,7 @@ class _StatTile extends StatelessWidget {
           ),
           Row(
             children: [
-              Icon(icon, size: 14, color: AppColors.textSecondary),
+              Icon(icon, size: 14, color: context.colors.textSecondary),
               const SizedBox(width: AppSpacing.xs),
               Flexible(
                 child: Text(
@@ -568,7 +570,7 @@ class _OwnerInfoCard extends StatelessWidget {
           label: l10n.statusUpper,
           value: detail.isActive ? l10n.statusActive : l10n.statusInactive,
           valueColor:
-              detail.isActive ? AppColors.success : AppColors.textMuted,
+              detail.isActive ? AppColors.success : context.colors.textMuted,
         ),
       ],
     );
@@ -602,7 +604,7 @@ class _MarketInfoCard extends StatelessWidget {
               : (market.isActive ? l10n.statusActive : l10n.statusInactive),
           valueColor: market.isBlocked
               ? AppColors.danger
-              : (market.isActive ? AppColors.success : AppColors.textMuted),
+              : (market.isActive ? AppColors.success : context.colors.textMuted),
         ),
         if (market.isBlocked && market.blockedReason != null)
           _InfoRow(
@@ -641,21 +643,21 @@ class _SectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: AppColors.textSecondary),
+              Icon(icon, size: 16, color: context.colors.textSecondary),
               const SizedBox(width: AppSpacing.md),
               Text(
                 title,
                 style: AppTextStyles.caption()
-                    .copyWith(color: AppColors.textSecondary),
+                    .copyWith(color: context.colors.textSecondary),
               ),
             ],
           ),
@@ -701,14 +703,14 @@ class _InfoRow extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.caption()
-              .copyWith(color: AppColors.textSecondary),
+              .copyWith(color: context.colors.textSecondary),
         ),
         const SizedBox(height: 4),
         Text(
           value,
           style: AppTextStyles.bodyMedium().copyWith(
             fontWeight: FontWeight.w600,
-            color: valueColor ?? AppColors.text,
+            color: valueColor ?? context.colors.text,
             fontFamily: mono ? 'monospace' : null,
           ),
           overflow: TextOverflow.ellipsis,

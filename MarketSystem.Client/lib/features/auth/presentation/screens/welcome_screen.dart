@@ -4,11 +4,13 @@
 
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -23,13 +25,13 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       // Subtle gradient bg from white to brand-tint (orange light).
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
               Colors.white,
-              AppColors.brandLight,
+              context.colors.brandLight,
             ],
           ),
         ),
@@ -45,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
               children: [
                 _buildTopBar(context, isDark),
                 const Spacer(flex: 2),
-                _buildBrandSection(),
+                _buildBrandSection(context),
                 const Spacer(flex: 3),
                 _buildActions(context),
                 const SizedBox(height: AppSpacing.lg),
@@ -73,7 +75,8 @@ class WelcomeScreen extends StatelessWidget {
   }
 
   /// Brand: existing orangeLogo.png asset (120x120) + "Strotech" title + subtitle.
-  Widget _buildBrandSection() {
+  Widget _buildBrandSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -89,33 +92,34 @@ class WelcomeScreen extends StatelessWidget {
           style: AppTextStyles.displayLarge().copyWith(
             fontSize: 32,
             fontWeight: FontWeight.w800,
-            color: AppColors.text,
+            color: context.colors.text,
             letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: AppSpacing.md),
         Text(
-          "Kichik do'konlar uchun savdo va hisob tizimi",
+          l10n.welcomeSubtitle,
           textAlign: TextAlign.center,
           style: AppTextStyles.bodyMedium().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
         ),
       ],
     );
   }
 
-  /// CTA buttons: "Tizimga kirish" (primary) + "Yangi do'kon" (secondary).
+  /// CTA buttons.
   Widget _buildActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         AppPrimaryButton(
-          label: 'Tizimga kirish',
+          label: l10n.loginAction,
           onPressed: () => _onLoginPressed(context),
         ),
         const SizedBox(height: AppSpacing.lg),
         AppSecondaryButton(
-          label: "Yangi do'kon — ro'yxatdan o'tish",
+          label: l10n.registerShop,
           onPressed: () => Navigator.of(context).pushNamed(AppRoutes.register),
         ),
       ],
@@ -124,6 +128,7 @@ class WelcomeScreen extends StatelessWidget {
 
   /// Footer caption with Privacy Policy link.
   Widget _buildPrivacyCaption(BuildContext context, bool isDark) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.lg),
       child: GestureDetector(
@@ -132,18 +137,18 @@ class WelcomeScreen extends StatelessWidget {
           textAlign: TextAlign.center,
           text: TextSpan(
             style: AppTextStyles.caption().copyWith(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
             children: [
-              const TextSpan(text: 'Davom etish orqali '),
+              TextSpan(text: l10n.agreePrefix),
               TextSpan(
-                text: 'Maxfiylik siyosati',
+                text: l10n.privacyPolicyTitle,
                 style: AppTextStyles.caption().copyWith(
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const TextSpan(text: 'ga rozisiz'),
+              TextSpan(text: l10n.agreeSuffix),
             ],
           ),
         ),
@@ -164,7 +169,7 @@ class WelcomeScreen extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       builder: (ctx) => Dialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl2),
         ),
@@ -177,9 +182,9 @@ class WelcomeScreen extends StatelessWidget {
               // Header
               Container(
                 padding: const EdgeInsets.all(AppSpacing.xl2),
-                decoration: const BoxDecoration(
-                  color: AppColors.brand,
-                  borderRadius: BorderRadius.vertical(
+                decoration: BoxDecoration(
+                  color: context.colors.brand,
+                  borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(AppRadius.xl2),
                   ),
                 ),
@@ -187,7 +192,7 @@ class WelcomeScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Maxfiylik siyosati',
+                      AppLocalizations.of(context)!.privacyPolicyTitle,
                       style: AppTextStyles.titleMedium().copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,
@@ -274,9 +279,9 @@ class _LanguageChip extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.full),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.colors.border),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -290,10 +295,10 @@ class _LanguageChip extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 16,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ],
         ),
@@ -304,7 +309,7 @@ class _LanguageChip extends StatelessWidget {
   void _openSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
       ),
@@ -318,12 +323,12 @@ class _LanguageChip extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text('Tilni tanlang', style: AppTextStyles.titleMedium()),
+              Text(AppLocalizations.of(context)!.selectLanguage, style: AppTextStyles.titleMedium()),
               const SizedBox(height: AppSpacing.lg),
               for (final option in _options)
                 ListTile(
@@ -336,7 +341,7 @@ class _LanguageChip extends StatelessWidget {
                     style: AppTextStyles.bodyLarge(),
                   ),
                   trailing: option['code'] == provider.locale.languageCode
-                      ? const Icon(Icons.check_rounded, color: AppColors.brand)
+                      ? Icon(Icons.check_rounded, color: context.colors.brand)
                       : null,
                 ),
               const SizedBox(height: AppSpacing.xl),
@@ -357,9 +362,9 @@ class _ThemeToggleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: IconButton(
         onPressed: () => isDark
@@ -372,7 +377,7 @@ class _ThemeToggleButton extends StatelessWidget {
                 ? Icons.wb_sunny_outlined
                 : Icons.nightlight_round_outlined,
             key: ValueKey(isDark),
-            color: isDark ? Colors.amber : AppColors.text,
+            color: isDark ? Colors.amber : context.colors.text,
             size: 20,
           ),
         ),
@@ -396,7 +401,7 @@ class _PrivacySection extends StatelessWidget {
           Text(
             title,
             style: AppTextStyles.titleMedium().copyWith(
-              color: AppColors.brand,
+              color: context.colors.brand,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -404,7 +409,7 @@ class _PrivacySection extends StatelessWidget {
           Text(
             body,
             style: AppTextStyles.bodyMedium().copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               height: 1.5,
             ),
           ),

@@ -25,23 +25,29 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Resolve surface / foreground against the active theme so the bar is
+    // dark-navy in dark mode instead of staying white.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppColors.darkSurface : AppColors.surface;
+    final fg = isDark ? AppColors.darkText : AppColors.text;
+
     return AppBar(
       title: Text(
         title,
         style: AppTextStyles.titleMedium().copyWith(
           fontWeight: FontWeight.w800,
-          color: AppColors.text,
+          color: fg,
         ),
       ),
       centerTitle: true,
-      backgroundColor: AppColors.surface,
-      foregroundColor: AppColors.text,
+      backgroundColor: surface,
+      foregroundColor: fg,
       surfaceTintColor: Colors.transparent,
       leading: IconButton(
-        icon: const Icon(
+        icon: Icon(
           Icons.arrow_back_ios_new_rounded,
           size: 20,
-          color: AppColors.text,
+          color: fg,
         ),
         // maybePop respects any PopScope registered upstream (e.g. the
         // "save as draft?" prompt in Yangi sotuv). Navigator.pop bypasses
@@ -55,7 +61,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (extraActions != null) ...extraActions!,
         if (onRefresh != null)
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.text),
+            icon: Icon(Icons.refresh, color: fg),
             onPressed: onRefresh,
           ),
       ],

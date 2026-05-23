@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/features/reports/widgets/date_picker_row.dart';
 import 'package:market_system_client/features/reports/widgets/empty_report.dart';
-import 'package:market_system_client/features/reports/widgets/export_button.dart';
 import 'package:market_system_client/features/reports/widgets/payment_breakdown_card.dart';
 import 'package:market_system_client/features/reports/widgets/section_title.dart';
 import 'package:market_system_client/features/reports/widgets/stat_card.dart';
@@ -20,7 +20,6 @@ class DailyReportTab extends StatelessWidget {
   final bool isLoadingDetails;
   final ValueChanged<DateTime> onDateChanged;
   final VoidCallback onViewDetails;
-  final VoidCallback onExport;
 
   const DailyReportTab({
     super.key,
@@ -29,7 +28,6 @@ class DailyReportTab extends StatelessWidget {
     required this.isLoadingDetails,
     required this.onDateChanged,
     required this.onViewDetails,
-    required this.onExport,
   });
 
   @override
@@ -79,7 +77,7 @@ class DailyReportTab extends StatelessWidget {
                   value:
                       '${NumberFormatter.formatDecimal(profit)} ${l10n.currencySom}',
                   icon: Icons.account_balance_wallet_outlined,
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                 ),
               ),
             ],
@@ -126,8 +124,6 @@ class DailyReportTab extends StatelessWidget {
             );
           }),
         ],
-        const SizedBox(height: AppSpacing.xl2),
-        ExportButton(onTap: onExport),
       ],
     );
   }

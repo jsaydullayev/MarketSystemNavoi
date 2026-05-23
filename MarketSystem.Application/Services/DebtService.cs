@@ -208,10 +208,15 @@ public class DebtService : IDebtService
                     ? (si.ExternalProductName ?? "Noma'lum mahsulot")
                     : (si.Product?.Name ?? "Noma'lum mahsulot"),
                 si.Quantity,
-                si.CostPrice,
+                // Effective cost: external items store their cost in
+                // ExternalCostPrice (CostPrice stays 0). Profit is computed
+                // inline from the same effective cost so the two columns
+                // stay consistent — SaleItem.Profit would instead read the
+                // *current* Product.CostPrice, drifting from this snapshot.
+                si.IsExternal ? si.ExternalCostPrice : si.CostPrice,
                 si.SalePrice,
                 si.TotalPrice,
-                si.Profit,
+                (si.SalePrice - (si.IsExternal ? si.ExternalCostPrice : si.CostPrice)) * si.Quantity,
                 si.IsExternal ? "" : (si.Product?.GetUnitName() ?? "dona"),
                 si.Comment,
                 si.IsExternal
@@ -227,6 +232,7 @@ public class DebtService : IDebtService
             debt.RemainingDebt,
             debt.Status.ToString(),
             debt.Sale?.CreatedAt ?? DateTime.MinValue,
+            debt.DueDate,
             saleItems
         );
     }

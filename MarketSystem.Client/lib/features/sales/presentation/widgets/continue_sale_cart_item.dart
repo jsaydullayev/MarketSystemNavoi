@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -49,9 +50,9 @@ class ContinueSaleCartItem extends StatelessWidget {
       width: 155,
       margin: const EdgeInsets.only(right: AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0A000000),
@@ -74,7 +75,7 @@ class ContinueSaleCartItem extends StatelessWidget {
                     style: AppTextStyles.bodySmall().copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.text,
+                      color: context.colors.text,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -103,7 +104,7 @@ class ContinueSaleCartItem extends StatelessWidget {
               style: AppTextStyles.caption().copyWith(
                 fontSize: 10,
                 letterSpacing: 0,
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
               ),
             ),
 
@@ -116,7 +117,7 @@ class ContinueSaleCartItem extends StatelessWidget {
                     style: AppTextStyles.labelLarge().copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -128,13 +129,13 @@ class ContinueSaleCartItem extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
-                        color: AppColors.brandLight,
+                        color: context.colors.brandLight,
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.edit_rounded,
                         size: 11,
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                       ),
                     ),
                   ),
@@ -194,7 +195,7 @@ class ContinueSaleCartItem extends StatelessWidget {
                       style: AppTextStyles.labelLarge().copyWith(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.text,
+                        color: context.colors.text,
                       ),
                     ),
                   ),
@@ -225,10 +226,10 @@ class _QtyButton extends StatelessWidget {
         width: 24,
         height: 24,
         decoration: BoxDecoration(
-          color: AppColors.brandLight,
+          color: context.colors.brandLight,
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
-        child: Icon(icon, size: 13, color: AppColors.brand),
+        child: Icon(icon, size: 13, color: context.colors.brand),
       ),
     );
   }

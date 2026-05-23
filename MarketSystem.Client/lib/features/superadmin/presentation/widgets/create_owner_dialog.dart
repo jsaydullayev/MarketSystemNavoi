@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -239,7 +240,8 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
     }
   }
 
-  InputDecoration _decoration({
+  InputDecoration _decoration(
+    BuildContext context, {
     required IconData prefix,
     required String hint,
     Widget? suffixIcon,
@@ -250,10 +252,10 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
     return InputDecoration(
       hintText: hint,
       hintStyle: AppTextStyles.bodyMedium().copyWith(
-        color: AppColors.textMuted,
+        color: context.colors.textMuted,
         fontSize: 15,
       ),
-      prefixIcon: Icon(prefix, size: 20, color: AppColors.textSecondary),
+      prefixIcon: Icon(prefix, size: 20, color: context.colors.textSecondary),
       suffixIcon: suffixIcon,
       suffixText: suffixText,
       suffixStyle: AppTextStyles.bodySmall(),
@@ -261,7 +263,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
       helperText: helper,
       helperStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
       filled: true,
-      fillColor: AppColors.inputFill,
+      fillColor: context.colors.inputFill,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.xl,
         vertical: AppSpacing.lg + 2,
@@ -276,7 +278,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
-        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        borderSide: BorderSide(color: context.colors.brand, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -301,7 +303,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
         _subdomainState == _Check.taken;
 
     return Dialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
@@ -322,12 +324,12 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: AppColors.brandLight,
+                          color: context.colors.brandLight,
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.person_add_outlined,
-                          color: AppColors.brand,
+                          color: context.colors.brand,
                           size: 20,
                         ),
                       ),
@@ -340,7 +342,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         onPressed: _submitting
                             ? null
                             : () => Navigator.pop(context),
@@ -375,6 +377,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                     controller: _fullName,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       prefix: Icons.person_outline,
                       hint: l10n.fullNameRequired,
                     ),
@@ -391,6 +394,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                               .copyWith(fontSize: 15),
                           keyboardType: TextInputType.phone,
                           decoration: _decoration(
+                            context,
                             prefix: Icons.phone_outlined,
                             hint: l10n.phoneHintExample,
                           ),
@@ -405,7 +409,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.lg),
-                      Expanded(child: _languageDropdown()),
+                      Expanded(child: _languageDropdown(context)),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md + 2),
@@ -417,6 +421,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                           style: AppTextStyles.bodyMedium()
                               .copyWith(fontSize: 15),
                           decoration: _decoration(
+                            context,
                             prefix: Icons.alternate_email,
                             hint: l10n.usernameRequiredShort,
                             suffixIcon: _suffix(_userState),
@@ -437,6 +442,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                           style: AppTextStyles.bodyMedium()
                               .copyWith(fontSize: 15),
                           decoration: _decoration(
+                            context,
                             prefix: Icons.lock_outline,
                             hint: l10n.passwordRequiredShort,
                             suffixIcon: Row(
@@ -447,7 +453,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                                     _obscurePassword
                                         ? Icons.visibility_outlined
                                         : Icons.visibility_off_outlined,
-                                    color: AppColors.textSecondary,
+                                    color: context.colors.textSecondary,
                                     size: 20,
                                   ),
                                   onPressed: () => setState(() =>
@@ -455,9 +461,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                                   tooltip: l10n.show,
                                 ),
                                 IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.casino_outlined,
-                                    color: AppColors.textSecondary,
+                                    color: context.colors.textSecondary,
                                     size: 20,
                                   ),
                                   onPressed: _generatePassword,
@@ -480,6 +486,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                     controller: _marketName,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       prefix: Icons.storefront_outlined,
                       hint: l10n.shopNameRequired,
                       suffixIcon: _suffix(_marketState),
@@ -495,6 +502,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                     controller: _subdomain,
                     style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
                     decoration: _decoration(
+                      context,
                       prefix: Icons.language_outlined,
                       hint: l10n.subdomainOptionalShort,
                       suffixText: '.strotech.uz',
@@ -510,10 +518,10 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                       padding: const EdgeInsets.only(top: 6, left: 4),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.public,
                             size: 13,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           const SizedBox(width: 5),
                           Text(
@@ -526,7 +534,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                             style: AppTextStyles.bodySmall().copyWith(
                               fontSize: 12,
                               fontFamily: 'monospace',
-                              color: AppColors.brand,
+                              color: context.colors.brand,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -564,18 +572,18 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
     );
   }
 
-  Widget _languageDropdown() {
+  Widget _languageDropdown(BuildContext context) {
     return DropdownButtonFormField<String>(
       initialValue: _language,
       style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
       decoration: InputDecoration(
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.translate_rounded,
           size: 20,
-          color: AppColors.textSecondary,
+          color: context.colors.textSecondary,
         ),
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: context.colors.inputFill,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
           vertical: AppSpacing.lg + 2,
@@ -590,7 +598,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: BorderSide(color: context.colors.brand, width: 1.5),
         ),
       ),
       items: const [
@@ -613,7 +621,7 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) => Text(
         title.toUpperCase(),
         style: AppTextStyles.caption().copyWith(
-          color: AppColors.textSecondary,
+          color: context.colors.textSecondary,
         ),
       );
 }

@@ -55,5 +55,5 @@ class RouteArguments {
   static const String customerId = 'customer_id';
   static const String saleId = 'sale_id';
   static const String userId = 'user_id';
-  static const String ZakupId = 'zakup_id';
+  static const String zakupId = 'zakup_id';
 }

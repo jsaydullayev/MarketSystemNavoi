@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -64,10 +65,10 @@ class _PaymentTypeOption extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg + 2),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.brand : AppColors.brandLight,
+          color: isSelected ? context.colors.brand : context.colors.brandLight,
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
           border: Border.all(
-            color: isSelected ? AppColors.brand : Colors.transparent,
+            color: isSelected ? context.colors.brand : Colors.transparent,
           ),
         ),
         child: Column(
@@ -76,7 +77,8 @@ class _PaymentTypeOption extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: isSelected ? Colors.white : AppColors.brand,
+              color:
+                  isSelected ? context.colors.onBrand : context.colors.brand,
             ),
             const SizedBox(height: AppSpacing.xs + 2),
             Text(
@@ -84,7 +86,8 @@ class _PaymentTypeOption extends StatelessWidget {
               style: AppTextStyles.bodyMedium().copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.brand,
+                color:
+                  isSelected ? context.colors.onBrand : context.colors.brand,
               ),
             ),
           ],

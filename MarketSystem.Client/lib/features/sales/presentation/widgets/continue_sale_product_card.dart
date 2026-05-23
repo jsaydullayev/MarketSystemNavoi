@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -30,10 +31,10 @@ class ContinueSaleProductCard extends StatelessWidget {
     // Stock color logic: out → muted grey, low → warning amber, healthy →
     // brand orange (matches the demo's `.low` accent on tight stock).
     final stockColor = !isInStock
-        ? AppColors.textMuted
+        ? context.colors.textMuted
         : isLow
             ? AppColors.warning
-            : AppColors.brand;
+            : context.colors.brand;
 
     return Material(
       color: Colors.transparent,
@@ -43,10 +44,14 @@ class ContinueSaleProductCard extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: isInStock ? AppColors.surface : AppColors.inputFill,
+            color: isInStock
+                ? context.colors.surface
+                : context.colors.inputFill,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
-              color: isInStock ? AppColors.border : AppColors.borderSoft,
+              color: isInStock
+                  ? context.colors.border
+                  : context.colors.borderSoft,
               width: 1,
             ),
           ),
@@ -63,7 +68,9 @@ class ContinueSaleProductCard extends StatelessWidget {
                   style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: isInStock ? AppColors.text : AppColors.textMuted,
+                    color: isInStock
+                        ? context.colors.text
+                        : context.colors.textMuted,
                     height: 1.25,
                   ),
                   maxLines: 2,
@@ -75,7 +82,9 @@ class ContinueSaleProductCard extends StatelessWidget {
                   style: AppTextStyles.labelLarge().copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: isInStock ? AppColors.brand : AppColors.textMuted,
+                    color: isInStock
+                        ? context.colors.brand
+                        : context.colors.textMuted,
                   ),
                 ),
                 // Stock label — colored dot + count. Low stock turns amber.

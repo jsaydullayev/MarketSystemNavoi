@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -62,9 +63,9 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl3,
@@ -84,7 +85,7 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: context.colors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -95,11 +96,11 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md + 2),
                     decoration: BoxDecoration(
-                      color: AppColors.brandLight,
+                      color: context.colors.brandLight,
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
-                    child: const Icon(Icons.person_add_rounded,
-                        color: AppColors.brand, size: 22),
+                    child: Icon(Icons.person_add_rounded,
+                        color: context.colors.brand, size: 22),
                   ),
                   const SizedBox(width: AppSpacing.lg),
                   Text(l10n.addNewCustomer,
@@ -134,7 +135,7 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
               Text(
                 l10n.debtStatus.toUpperCase(),
                 style: AppTextStyles.caption().copyWith(
-                  color: AppColors.textSecondary,
+                  color: context.colors.textSecondary,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -195,20 +196,20 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: AppColors.brandLight,
+                  color: context.colors.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.lightbulb_outline,
-                        color: AppColors.brandDark, size: 18),
+                    Icon(Icons.lightbulb_outline,
+                        color: context.colors.brandDark, size: 18),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         "Yangi mijozni qo'shgach, har sotuvda uni tanlash mumkin va qarz tarixi avtomatik yuritiladi.",
                         style: AppTextStyles.bodySmall().copyWith(
-                          color: AppColors.brandDark,
+                          color: context.colors.brandDark,
                           fontSize: 12,
                         ),
                       ),

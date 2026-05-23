@@ -17,7 +17,7 @@ class SalesService {
   // The API returns a paginated wrapper `{ items: [...], page, size, total, totalPages }`.
   // We accept both shapes (bare list or wrapped) so older deployments don't break.
   Future<List<dynamic>> getAllSales() async {
-    final response = await _httpService.get('${ApiConstants.sales}');
+    final response = await _httpService.get(ApiConstants.sales);
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
@@ -90,7 +90,7 @@ class SalesService {
   // Yangi sotuv yaratish
   Future<dynamic> createSale({String? customerId}) async {
     final response = await _httpService.post(
-      '${ApiConstants.sales}',
+      ApiConstants.sales,
       body: {
         if (customerId != null) 'customerId': customerId,
       },
@@ -421,25 +421,23 @@ class SalesService {
     }
   }
 
-  Future<List<int>?> downloadSalesExcel() async {
+  Future<List<int>?> downloadSalesExcel({String lang = 'uz'}) async {
     return await _httpService
-        .downloadBytes('${ApiConstants.sales}/export');
+        .downloadBytes('${ApiConstants.sales}/export?lang=$lang');
   }
 
   // Barcha sotuvlarni PDF formatda yuklab olish
-  Future<List<int>?> downloadSalesPdf({DateTime? startDate, DateTime? endDate}) async {
+  Future<List<int>?> downloadSalesPdf({DateTime? startDate, DateTime? endDate, String lang = 'uz'}) async {
     debugPrint('=== DOWNLOAD SALES PDF ===');
     String url = '${ApiConstants.sales}/export-pdf';
-    List<String> queryParams = [];
+    List<String> queryParams = ['lang=$lang'];
     if (startDate != null) {
       queryParams.add('startDate=${startDate.toIso8601String()}');
     }
     if (endDate != null) {
       queryParams.add('endDate=${endDate.toIso8601String()}');
     }
-    if (queryParams.isNotEmpty) {
-      url += '?${queryParams.join('&')}';
-    }
+    url += '?${queryParams.join('&')}';
     debugPrint('URL: $url');
     debugPrint('=======================');
 
@@ -447,12 +445,12 @@ class SalesService {
   }
 
   // Savdo uchun faktura (PDF) yuklab olish
-  Future<List<int>?> downloadInvoice(String saleId) async {
+  Future<List<int>?> downloadInvoice(String saleId, {String lang = 'uz'}) async {
     debugPrint('=== DOWNLOAD INVOICE ===');
     debugPrint('Sale ID: $saleId');
-    debugPrint('URL: ${ApiConstants.sales}/$saleId/invoice');
+    debugPrint('URL: ${ApiConstants.sales}/$saleId/invoice?lang=$lang');
     debugPrint('=======================');
 
-    return await _httpService.downloadBytes('${ApiConstants.sales}/$saleId/invoice');
+    return await _httpService.downloadBytes('${ApiConstants.sales}/$saleId/invoice?lang=$lang');
   }
 }

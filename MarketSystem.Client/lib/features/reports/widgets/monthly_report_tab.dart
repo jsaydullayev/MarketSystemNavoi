@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/features/reports/widgets/date_range_picker.dart';
 import 'package:market_system_client/features/reports/widgets/empty_report.dart';
-import 'package:market_system_client/features/reports/widgets/export_button.dart';
 import 'package:market_system_client/features/reports/widgets/payment_breakdown_card.dart';
 import 'package:market_system_client/features/reports/widgets/section_title.dart';
 import 'package:market_system_client/features/reports/widgets/stat_card.dart';
@@ -19,7 +19,6 @@ class MonthlyReportTab extends StatelessWidget {
   final DateTime startDate;
   final DateTime endDate;
   final Function(DateTime, DateTime) onRangeChanged;
-  final VoidCallback onExport;
 
   const MonthlyReportTab({
     super.key,
@@ -27,7 +26,6 @@ class MonthlyReportTab extends StatelessWidget {
     required this.startDate,
     required this.endDate,
     required this.onRangeChanged,
-    required this.onExport,
   });
 
   @override
@@ -64,7 +62,7 @@ class MonthlyReportTab extends StatelessWidget {
                 value:
                     '${NumberFormatter.formatDecimal(totalSales)} ${l10n.currencySom}',
                 icon: Icons.attach_money_rounded,
-                color: AppColors.brand,
+                color: context.colors.brand,
               ),
             ),
             const SizedBox(width: AppSpacing.lg),
@@ -138,8 +136,6 @@ class MonthlyReportTab extends StatelessWidget {
             );
           }),
         ],
-        const SizedBox(height: AppSpacing.xl2),
-        ExportButton(onTap: onExport),
       ],
     );
   }

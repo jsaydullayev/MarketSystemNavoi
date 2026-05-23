@@ -30,6 +30,7 @@ public class ProductCategoryService : IProductCategoryService
                 c.Id,
                 c.Name,
                 c.Description,
+                c.Icon,
                 c.IsActive,
                 c.Products.Count(p => !p.IsDeleted)
             ))
@@ -50,6 +51,7 @@ public class ProductCategoryService : IProductCategoryService
                 c.Id,
                 c.Name,
                 c.Description,
+                c.Icon,
                 c.IsActive,
                 c.Products.Count(p => !p.IsDeleted)
             ))
@@ -66,6 +68,7 @@ public class ProductCategoryService : IProductCategoryService
         {
             Name = request.Name,
             Description = request.Description,
+            Icon = request.Icon,
             MarketId = marketId,
             IsActive = true
         };
@@ -77,6 +80,7 @@ public class ProductCategoryService : IProductCategoryService
             category.Id,
             category.Name,
             category.Description,
+            category.Icon,
             category.IsActive,
             0
         );
@@ -97,6 +101,7 @@ public class ProductCategoryService : IProductCategoryService
 
         category.Name = request.Name;
         category.Description = request.Description;
+        category.Icon = request.Icon;
         category.IsActive = request.IsActive;
 
         _unitOfWork.ProductCategories.Update(category);
@@ -106,6 +111,7 @@ public class ProductCategoryService : IProductCategoryService
             category.Id,
             category.Name,
             category.Description,
+            category.Icon,
             category.IsActive,
             category.Products.Count(p => !p.IsDeleted)
         );

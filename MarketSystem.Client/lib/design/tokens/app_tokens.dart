@@ -45,19 +45,33 @@ class AppColors {
   static const Color inputFill = Color(0xFFF3F4F6);
 
   // ─── Dark theme palette ──────────────────────────────────────
-  // Uses the old design's dark-blue family so users who prefer the
-  // previous look still feel at home in dark mode.
-  static const Color darkPrimary = Color(0xFF1E3A8A);
-  static const Color darkPrimaryLight = Color(0xFF3B82F6);
-  static const Color darkBg = Color(0xFF0F172A);
-  static const Color darkSurface = Color(0xFF1E293B);
-  static const Color darkSurface2 = Color(0xFF334155);
-  static const Color darkBorder = Color(0xFF334155);
-  static const Color darkBorderSoft = Color(0xFF1E293B);
-  static const Color darkText = Color(0xFFE5E7EB);
-  static const Color darkTextSecondary = Color(0xFF94A3B8);
-  static const Color darkTextMuted = Color(0xFF64748B);
-  static const Color darkInputFill = Color(0xFF334155);
+  // Minimalist "deep navy + sky blue" family — recognisable to long-time
+  // users of the legacy design (which used #1E3A8A blue) but tuned for the
+  // new design's flat, low-contrast aesthetic. All backgrounds carry a
+  // subtle blue tint instead of pure slate, so the accent sky-blue feels
+  // like part of the surface rather than sitting on top of grey.
+  //
+  // Hierarchy (darkest → lightest):
+  //   darkBg            : page background (under everything)
+  //   darkSurface       : card / appbar surface
+  //   darkSurface2      : raised surfaces (KPI cards, modals)
+  //   darkInputFill     : input fields, switches
+  //
+  // Accent:
+  //   darkPrimary       : deep navy for buttons, primary actions
+  //   darkPrimaryLight  : light sky blue for active states, focus rings,
+  //                       chart bars, hyperlinks
+  static const Color darkPrimary = Color(0xFF1E3A8A); // navy-800
+  static const Color darkPrimaryLight = Color(0xFF60A5FA); // sky-400 — softer
+  static const Color darkBg = Color(0xFF0B1426); // deeper navy than slate-900
+  static const Color darkSurface = Color(0xFF152238); // navy-tinted surface
+  static const Color darkSurface2 = Color(0xFF1F2C44); // raised navy
+  static const Color darkBorder = Color(0xFF243763); // subtle blue divider
+  static const Color darkBorderSoft = Color(0xFF152238);
+  static const Color darkText = Color(0xFFF1F5F9); // slate-100 — high contrast
+  static const Color darkTextSecondary = Color(0xFFCBD5E1); // slate-300
+  static const Color darkTextMuted = Color(0xFF64748B); // slate-500
+  static const Color darkInputFill = Color(0xFF1F2C44);
 }
 
 class AppSpacing {

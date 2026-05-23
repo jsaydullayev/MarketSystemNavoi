@@ -3,6 +3,7 @@
 // migrate the visuals. New code should use `AppTextInput` directly.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 
@@ -41,7 +42,7 @@ class CustomTextField extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             letterSpacing: 0.8,
           ),
         ),
@@ -56,9 +57,9 @@ class CustomTextField extends StatelessWidget {
           inputFormatters: inputFormatters,
           style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20, color: AppColors.textSecondary),
+            prefixIcon: Icon(icon, size: 20, color: context.colors.textSecondary),
             filled: true,
-            fillColor: AppColors.inputFill,
+            fillColor: context.colors.inputFill,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.xl,
               vertical: AppSpacing.lg + 2,
@@ -74,7 +75,7 @@ class CustomTextField extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
               borderSide:
-                  const BorderSide(color: AppColors.brand, width: 1.5),
+                  BorderSide(color: context.colors.brand, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -91,7 +92,7 @@ class CustomTextField extends StatelessWidget {
           Text(
             helperText!,
             style: AppTextStyles.bodySmall().copyWith(
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
               fontSize: 12,
             ),
           ),

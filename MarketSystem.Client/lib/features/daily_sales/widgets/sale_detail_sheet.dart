@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:intl/intl.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -44,6 +45,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
   Future<void> _downloadPdf() async {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
+    final lang = Localizations.localeOf(context).languageCode;
 
     final saleId = widget.sale.id?.toString() ?? '';
 
@@ -52,16 +54,16 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
+      builder: (context) => Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+          valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand),
         ),
       ),
     );
 
     try {
       // PDFni serverdan yuklab olish
-      final pdfData = await _salesService.downloadInvoice(saleId);
+      final pdfData = await _salesService.downloadInvoice(saleId, lang: lang);
 
       if (pdfData == null || pdfData.isEmpty) {
         if (mounted) {
@@ -181,9 +183,10 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom +
@@ -197,7 +200,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.colors.border,
               borderRadius: BorderRadius.circular(10),
             ),
           ),
@@ -211,11 +214,12 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoTile(Icons.person_outline, l10n.customer,
+                  _buildInfoTile(context, Icons.person_outline, l10n.customer,
                       widget.sale.customerName ?? l10n.anonymousCustomer),
                   _buildInfoTile(
-                      Icons.badge_outlined, l10n.seller, sellerName),
+                      context, Icons.badge_outlined, l10n.seller, sellerName),
                   _buildInfoTile(
+                      context,
                       Icons.account_balance_wallet_outlined,
                       l10n.paymentType,
                       _getPaymentText(widget.sale.paymentType, l10n)),
@@ -224,9 +228,9 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
                       style: AppTextStyles.titleMedium()
                           .copyWith(fontSize: 16)),
                   const SizedBox(height: AppSpacing.md),
-                  ...items.map((item) => _buildProductItem(item, l10n)),
+                  ...items.map((item) => _buildProductItem(context, item, l10n)),
                   const SizedBox(height: AppSpacing.xl3),
-                  _buildTotalsCard(l10n),
+                  _buildTotalsCard(context, l10n),
                   const SizedBox(height: AppSpacing.xl2),
                 ],
               ),
@@ -258,18 +262,18 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
             children: [
               IconButton(
                 onPressed: _downloadPdf,
-                icon: const Icon(Icons.download, color: AppColors.brand),
+                icon: Icon(Icons.download, color: context.colors.brand),
                 tooltip: l10n.downloadPdf,
                 style: IconButton.styleFrom(
-                    backgroundColor: AppColors.brandLight),
+                    backgroundColor: context.colors.brandLight),
               ),
               const SizedBox(width: 4),
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded,
-                    color: AppColors.textSecondary),
+                icon: Icon(Icons.close_rounded,
+                    color: context.colors.textSecondary),
                 style: IconButton.styleFrom(
-                    backgroundColor: AppColors.inputFill),
+                    backgroundColor: context.colors.inputFill),
               )
             ],
           )
@@ -278,16 +282,17 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String value) {
+  Widget _buildInfoTile(
+      BuildContext context, IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.brand),
+          Icon(icon, size: 18, color: context.colors.brand),
           const SizedBox(width: AppSpacing.lg),
           Text('$label: ',
               style: AppTextStyles.bodySmall()
-                  .copyWith(color: AppColors.textSecondary)),
+                  .copyWith(color: context.colors.textSecondary)),
           Expanded(
             child: Text(value,
                 style: AppTextStyles.bodyMedium()
@@ -300,7 +305,8 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
     );
   }
 
-  Widget _buildProductItem(dynamic item, AppLocalizations l10n) {
+  Widget _buildProductItem(
+      BuildContext context, dynamic item, AppLocalizations l10n) {
     final isExternal = item['isExternal'] == true;
     // Comment is what the seller typed in the price-input sheet
     // ("description" in the user's words). API returns it as `comment`.
@@ -318,12 +324,12 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.bg,
+        color: context.colors.bg,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: isExternal
             ? Border.all(
-                color: AppColors.brand.withValues(alpha: 0.4), width: 1)
-            : Border.all(color: AppColors.borderSoft),
+                color: context.colors.brand.withValues(alpha: 0.4), width: 1)
+            : Border.all(color: context.colors.borderSoft),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +363,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
                               'tashqi',
                               style: AppTextStyles.caption().copyWith(
                                 fontSize: 9,
-                                color: AppColors.brandDark,
+                                color: context.colors.brandDark,
                               ),
                             ),
                           ),
@@ -373,7 +379,7 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
               Text(
                 '$totalPrice ${l10n.currencySom}',
                 style: AppTextStyles.labelLarge().copyWith(
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   fontSize: 14,
                 ),
               ),
@@ -385,21 +391,21 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.brandLight,
+                color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.notes_rounded,
-                      size: 13, color: AppColors.brandDark),
+                  Icon(Icons.notes_rounded,
+                      size: 13, color: context.colors.brandDark),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       comment,
                       style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 12,
-                        color: AppColors.text,
+                        color: context.colors.text,
                       ),
                     ),
                   ),
@@ -412,12 +418,12 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
     );
   }
 
-  Widget _buildTotalsCard(AppLocalizations l10n) {
+  Widget _buildTotalsCard(BuildContext context, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl2),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.brand, AppColors.brandDark],
+        gradient: LinearGradient(
+          colors: [context.colors.brand, context.colors.brandDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

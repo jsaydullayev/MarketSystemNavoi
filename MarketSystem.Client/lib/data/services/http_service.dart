@@ -27,7 +27,20 @@ class HttpService {
   String? _accessToken;
   AuthService? _authService;
 
-  bool _isRefreshing = false;
+  /// Single-flight token refresh. When the access token expires and a burst
+  /// of requests fire in parallel (e.g. the dashboard's ~12 concurrent
+  /// loads), every one of them gets a 401 at nearly the same instant. They
+  /// must all funnel through ONE refresh and then retry — never race.
+  ///
+  /// The previous implementation used a `bool _isRefreshing` flag: the first
+  /// 401 set it and refreshed, but every other concurrent 401 saw the flag
+  /// already true, skipped the refresh block entirely, and returned its raw
+  /// 401. That's why a parallel dashboard load rendered all-zeros after a
+  /// token expiry — only one request was ever retried.
+  ///
+  /// Holds the in-flight refresh Future; concurrent 401s await the same one.
+  /// Cleared when the refresh settles so a later expiry can refresh again.
+  Future<bool>? _refreshInFlight;
 
   // Broadcast so multiple listeners (auth provider, app shell, login screen)
   // can react. Late events do not need to be replayed — a fresh login attempt
@@ -39,7 +52,25 @@ class HttpService {
 
   String get baseUrl => ApiConstants.baseUrl;
 
-  HttpService();
+  // ── Singleton ───────────────────────────────────────────────
+  // HttpService MUST be a singleton. The DI wiring calls
+  // `setAuthService()` exactly once (di.dart) so the 401 / refresh path
+  // has an AuthService to call. But the data services
+  // (ReportService, CustomerService, DebtService, …) each did
+  // `_httpService = httpService ?? HttpService()` — creating their OWN
+  // fresh instance whose `_authService` was null. Those instances could
+  // never refresh a token: the dashboard's requests would 401 and fail,
+  // while NotificationService (which used the wired instance) succeeded.
+  // That's the "data only appears on the 2nd refresh" bug — the wired
+  // instance refreshed the token as a side effect, so the next load
+  // found a valid token already in storage.
+  //
+  // A factory-singleton means every `HttpService()` call — no matter
+  // which service makes it — returns the one wired instance, with a
+  // shared `_authService` and a shared single-flight `_refreshInFlight`.
+  static final HttpService _instance = HttpService._internal();
+  factory HttpService() => _instance;
+  HttpService._internal();
 
   void setAuthService(AuthService authService) {
     _authService = authService;
@@ -88,6 +119,53 @@ class HttpService {
     _accessToken = null;
   }
 
+  /// True when the JWT's `exp` claim is in the past (with a 15-second
+  /// leeway so a token about to expire mid-request is renewed now). On any
+  /// decode failure returns false — we then proceed and let the reactive
+  /// 401 handler deal with it rather than blocking on an unreadable token.
+  bool _isAccessTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+      final payload = jsonDecode(
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+      final exp = payload is Map ? payload['exp'] : null;
+      if (exp is! int) return false;
+      final expiry =
+          DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
+      return DateTime.now()
+          .toUtc()
+          .isAfter(expiry.subtract(const Duration(seconds: 15)));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Returns a non-expired access token, refreshing PROACTIVELY (single-
+  /// flight) when the stored one has already expired.
+  ///
+  /// This is the key fix for the "dashboard intermittently shows no data"
+  /// bug: a screen like the dashboard fires ~12 requests in parallel. With
+  /// a stale token they would ALL 401 at once, and the reactive refresh +
+  /// retry path is racy — requests whose 401 lands after the shared refresh
+  /// future already settled would start a second refresh or fail to retry.
+  /// Checking expiry up-front means the dozen requests funnel through ONE
+  /// refresh BEFORE they're sent, so there's no 401-storm to recover from.
+  ///
+  /// `/Auth/` endpoints skip this — Login carries no token and RefreshToken
+  /// must not recurse.
+  Future<String?> _freshAccessToken(String endpoint) async {
+    final token = await getAccessToken();
+    if (token == null || token.isEmpty) return token;
+    if (endpoint.contains('/Auth/')) return token;
+    if (_isAccessTokenExpired(token)) {
+      debugPrint('Access token expired — proactive refresh before $endpoint');
+      final ok = await _refreshTokenOnce();
+      if (ok) return await getAccessToken();
+    }
+    return token;
+  }
+
   // ✅ 401 xatolikni qayta ishlash va token refresh
   Future<http.Response> _handleResponse(
       http.Response response, String method, String endpoint,
@@ -119,29 +197,46 @@ class HttpService {
       return response;
     }
 
-    // Agar 401 bo'lsa va refresh qilinayotgan bo'lmasa
-    if (response.statusCode == 401 && !_isRefreshing) {
-      _isRefreshing = true;
+    // 401 — the access token expired. Refresh once (shared across every
+    // concurrent 401), then retry THIS request with the fresh token.
+    //
+    // Auth endpoints are excluded: a 401 from Login / RefreshToken / Logout
+    // is a genuine credential failure, not an expiry to transparently paper
+    // over — retrying it would just loop.
+    if (response.statusCode == 401 && !endpoint.contains('/Auth/')) {
+      debugPrint('Access token expired (401 on $endpoint) — refreshing...');
 
-      debugPrint('Access token expired, attempting refresh...');
+      final refreshed = await _refreshTokenOnce();
 
-      // Tokenni refresh qilish
-      final refreshed = await _authService?.refreshToken();
-
-      _isRefreshing = false;
-
-      if (refreshed != null) {
-        debugPrint('Token refreshed successfully, retrying request...');
-
-        // So'rovni yangi token bilan qayta yuborish
+      if (refreshed) {
+        debugPrint('Token refreshed — retrying $method $endpoint');
         return _retryRequest(method, endpoint, body);
-      } else {
-        debugPrint('Token refresh failed - user must login again');
-        return response; // 401 qaytarish
       }
+      debugPrint('Token refresh failed — user must login again');
+      return response; // surface the 401 so the app shell can route to login
     }
 
     return response;
+  }
+
+  /// Refresh the access token, shared single-flight across concurrent 401s.
+  /// The first caller starts the refresh; everyone else awaits the same
+  /// Future. Returns true when the token was renewed.
+  Future<bool> _refreshTokenOnce() {
+    return _refreshInFlight ??= _doRefresh();
+  }
+
+  Future<bool> _doRefresh() async {
+    try {
+      final refreshed = await _authService?.refreshToken();
+      return refreshed != null;
+    } catch (e) {
+      debugPrint('HttpService._doRefresh error: $e');
+      return false;
+    } finally {
+      // Clear so a later (post-batch) expiry can trigger a fresh refresh.
+      _refreshInFlight = null;
+    }
   }
 
   // So'rovni qayta yuborish
@@ -208,7 +303,7 @@ class HttpService {
   }
 
   Future<http.Response> _performGet(String endpoint) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
 
     debugPrint('=== HTTP GET ===');
     debugPrint('URL: $baseUrl$endpoint');
@@ -237,7 +332,7 @@ class HttpService {
   }
 
   Future<http.Response> _performPost(String endpoint, {Object? body}) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
     final encodedBody = body != null ? jsonEncode(body) : null;
 
     debugPrint('=== HTTP POST ===');
@@ -269,7 +364,7 @@ class HttpService {
   }
 
   Future<http.Response> _performPut(String endpoint, {Object? body}) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
     final encodedBody = body != null ? jsonEncode(body) : null;
 
     debugPrint('=== HTTP PUT ===');
@@ -331,7 +426,7 @@ class HttpService {
   }
 
   Future<http.Response> _performDelete(String endpoint, Object? body) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
 
     final fullUrl = '$baseUrl$endpoint';
     debugPrint('=== HTTP DELETE ===');
@@ -366,7 +461,7 @@ class HttpService {
   }
 
   Future<http.Response> _performPatch(String endpoint, {Object? body}) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
     final encodedBody = body != null ? jsonEncode(body) : null;
 
     debugPrint('=== HTTP PATCH ===');
@@ -393,7 +488,7 @@ class HttpService {
     String? fileFieldName,
     Map<String, String>? fields,
   }) async {
-    final token = await getAccessToken();
+    final token = await _freshAccessToken(endpoint);
     final file = File(filePath);
 
     final request = http.MultipartRequest(
@@ -440,7 +535,7 @@ class HttpService {
   // Fayl yuklab olish (byte array qaytaradi)
   Future<List<int>?> downloadBytes(String endpoint) async {
     try {
-      final token = await getAccessToken();
+      final token = await _freshAccessToken(endpoint);
 
       debugPrint('=== HTTP DOWNLOAD BYTES ===');
       debugPrint('URL: $baseUrl$endpoint');

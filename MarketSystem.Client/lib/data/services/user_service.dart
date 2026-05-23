@@ -99,4 +99,39 @@ class UserService {
       throw Exception('Rasm yuklashda xatolik: $e');
     }
   }
+
+  // --- Owner RBAC — per-user permission management (Owner-only) ---------
+
+  /// Reads one user's permission configuration. Returns a map shaped like
+  /// the backend `UserPermissionsDto`: userId, role, isCustomized,
+  /// effectivePermissions[], roleDefaults[], catalog[].
+  Future<Map<String, dynamic>> getUserPermissions(String userId) async {
+    final response = await _httpService
+        .get('${ApiConstants.users}/GetUserPermissions/$userId');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Failed to load permissions: ${response.statusCode}');
+  }
+
+  /// Overwrites a user's explicit permission set. Pass an empty list to reset
+  /// the user back to its role default. Returns the refreshed configuration.
+  Future<Map<String, dynamic>> updateUserPermissions(
+      String userId, List<String> permissions) async {
+    final response = await _httpService.put(
+      '${ApiConstants.users}/UpdateUserPermissions/$userId',
+      body: {'permissions': permissions},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    String message = 'Failed to update permissions: ${response.statusCode}';
+    try {
+      final err = jsonDecode(response.body);
+      message = err['message']?.toString() ?? message;
+    } catch (_) {}
+    throw Exception(message);
+  }
 }

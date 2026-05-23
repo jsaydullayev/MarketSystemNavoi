@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/auth/permissions.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../data/models/profit_model.dart';
 
@@ -32,13 +34,13 @@ class DailySummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
-    final isOwner = auth.user?['role'] == 'Owner';
+    final canSeeProfit = auth.can(Permissions.dataProfit);
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
-        if (isOwner) _buildProfitHero(context, l10n),
-        if (isOwner) const SizedBox(height: AppSpacing.lg),
+        if (canSeeProfit) _buildProfitHero(context, l10n),
+        if (canSeeProfit) const SizedBox(height: AppSpacing.lg),
         _buildMiniStatsRow(context, l10n),
       ],
     );
@@ -51,15 +53,15 @@ class DailySummaryCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           vertical: AppSpacing.xl2, horizontal: AppSpacing.xl2),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.brand, AppColors.brandDark],
+        gradient: LinearGradient(
+          colors: [context.colors.brand, context.colors.brandDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.brand.withValues(alpha: 0.25),
+            color: context.colors.brand.withValues(alpha: 0.25),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -103,7 +105,7 @@ class DailySummaryCard extends StatelessWidget {
           child: _MiniStat(
             label: l10n.totalSale,
             value: data.totalSales,
-            color: AppColors.text,
+            color: context.colors.text,
             isSelected: selectedFilter == DailySaleFilter.all,
             onTap: () => onFilterChanged(DailySaleFilter.all),
           ),
@@ -170,12 +172,12 @@ class _MiniStat extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? color.withValues(alpha: 0.10)
-                : AppColors.surface,
+                : context.colors.surface,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
               color: isSelected
                   ? color.withValues(alpha: 0.55)
-                  : AppColors.border,
+                  : context.colors.border,
               width: isSelected ? 1.5 : 1,
             ),
           ),

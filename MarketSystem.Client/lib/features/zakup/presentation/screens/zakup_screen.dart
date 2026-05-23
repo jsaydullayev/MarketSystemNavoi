@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -139,7 +140,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
           context.read<ZakupBloc>().add(const GetZakupsEvent());
         },
         child: Scaffold(
-          backgroundColor: AppColors.bg,
+          backgroundColor: context.colors.bg,
           appBar: CommonAppBar(
             title: l10n.zakup,
             onRefresh: () =>
@@ -188,7 +189,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
                 return RefreshIndicator(
                   onRefresh: () async =>
                       context.read<ZakupBloc>().add(const GetZakupsEvent()),
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.xl,
@@ -208,7 +209,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
           floatingActionButton: canAdd
               ? FloatingActionButton.extended(
                   onPressed: () => _openAddSheet(context),
-                  backgroundColor: AppColors.brand,
+                  backgroundColor: context.colors.brand,
                   foregroundColor: Colors.white,
                   elevation: 2,
                   icon: const Icon(Icons.add_rounded),
@@ -238,14 +239,14 @@ class _EmptyView extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl3),
-            decoration: const BoxDecoration(
-              color: AppColors.brandLight,
+            decoration: BoxDecoration(
+              color: context.colors.brandLight,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.shopping_bag_outlined,
               size: 48,
-              color: AppColors.brand,
+              color: context.colors.brand,
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -253,7 +254,7 @@ class _EmptyView extends StatelessWidget {
             l10n.noPurchases,
             style: AppTextStyles.bodyLarge().copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ],

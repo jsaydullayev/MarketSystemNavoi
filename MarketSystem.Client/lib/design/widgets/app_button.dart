@@ -22,22 +22,32 @@ class _AppButtonBase extends StatelessWidget {
   final IconData? icon;
   final bool isLoading;
 
-  Color get _bg {
+  /// Background colour, resolved against the active theme.
+  ///   light primary   → brand orange
+  ///   dark  primary   → light "sky" blue (per the dark palette)
+  ///   secondary       → the theme's input-fill grey
+  ///   danger          → red (same in both themes)
+  Color _bg(bool isDark) {
     switch (variant) {
       case _AppButtonVariant.primary:
-        return AppColors.brand;
+        return isDark ? AppColors.darkPrimaryLight : AppColors.brand;
       case _AppButtonVariant.secondary:
-        return AppColors.inputFill;
+        return isDark ? AppColors.darkInputFill : AppColors.inputFill;
       case _AppButtonVariant.danger:
         return AppColors.danger;
     }
   }
 
-  Color get _fg {
+  /// Foreground (text/icon) colour.
+  ///   light primary → white on orange
+  ///   dark  primary → dark navy on light-blue — white text fails the
+  ///                   contrast check against #60A5FA, navy passes.
+  Color _fg(bool isDark) {
     switch (variant) {
       case _AppButtonVariant.secondary:
-        return AppColors.text;
+        return isDark ? AppColors.darkText : AppColors.text;
       case _AppButtonVariant.primary:
+        return isDark ? AppColors.darkBg : Colors.white;
       case _AppButtonVariant.danger:
         return Colors.white;
     }
@@ -46,15 +56,18 @@ class _AppButtonBase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null || isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = _bg(isDark);
+    final fg = _fg(isDark);
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: _bg,
-          foregroundColor: _fg,
-          disabledBackgroundColor: _bg.withValues(alpha: 0.5),
-          disabledForegroundColor: _fg.withValues(alpha: 0.8),
+          backgroundColor: bg,
+          foregroundColor: fg,
+          disabledBackgroundColor: bg.withValues(alpha: 0.5),
+          disabledForegroundColor: fg.withValues(alpha: 0.8),
           elevation: 0,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl,
@@ -70,7 +83,7 @@ class _AppButtonBase extends StatelessWidget {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(_fg),
+                  valueColor: AlwaysStoppedAnimation<Color>(fg),
                 ),
               )
             : Row(
@@ -78,12 +91,12 @@ class _AppButtonBase extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 18, color: _fg),
+                    Icon(icon, size: 18, color: fg),
                     const SizedBox(width: AppSpacing.md),
                   ],
                   Text(
                     label,
-                    style: AppTextStyles.labelLarge().copyWith(color: _fg),
+                    style: AppTextStyles.labelLarge().copyWith(color: fg),
                   ),
                 ],
               ),

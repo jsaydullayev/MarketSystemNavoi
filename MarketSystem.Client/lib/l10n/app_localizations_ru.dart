@@ -159,6 +159,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get minThreshold => 'Мин. порог';
 
   @override
+  String get productBasicInfoSection => 'Основная информация';
+
+  @override
+  String get productNameHint => 'Например: Coca-Cola 1.5L';
+
+  @override
+  String get forDiscountHint => '(для скидки)';
+
+  @override
+  String get currentStockLabel => 'Текущий остаток';
+
+  @override
+  String get minStockLabel => 'Мин. остаток';
+
+  @override
+  String get forWarningHint => '(для предупр.)';
+
+  @override
+  String minSalePriceTip(String amount) {
+    return 'Продавец может снизить цену для клиента до $amount UZS. Для более низкой цены нужно разрешение владельца.';
+  }
+
+  @override
   String get temporary => 'Временный';
 
   @override
@@ -878,7 +901,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get customerAdded => 'Клиент успешно добавлен';
 
   @override
-  String get addNewCustomer => 'Новый клиент';
+  String get addNewCustomer => 'Добавить клиента';
+
+  @override
+  String get addCustomerForDebtHint => 'Добавить клиента';
 
   @override
   String get searchCustomer => 'Поиск клиента...';
@@ -1286,6 +1312,52 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get today => 'Сегодня';
+
+  @override
+  String get period7Days => '7 дней';
+
+  @override
+  String get period30Days => '30 дней';
+
+  @override
+  String get periodYear => 'Год';
+
+  @override
+  String get shiftSection => 'Рабочая смена';
+
+  @override
+  String get shiftStateActive => 'Смена активна';
+
+  @override
+  String get shiftStateBlocked => 'Заблокирована';
+
+  @override
+  String get shiftStateScheduled => 'По расписанию';
+
+  @override
+  String get shiftActivate => 'Активировать';
+
+  @override
+  String get shiftBlock => 'Заблокировать';
+
+  @override
+  String get shiftOpen24h => '24 часа';
+
+  @override
+  String get shiftSetWindow => 'Период';
+
+  @override
+  String get shiftUpdated => 'Смена обновлена';
+
+  @override
+  String get shiftActiveNow => 'Может работать';
+
+  @override
+  String get shiftInactiveNow => 'Не может работать';
+
+  @override
+  String get shiftInvalidWindow =>
+      'Время окончания должно быть позже времени начала';
 
   @override
   String get yesterday => 'Вчера';
@@ -1700,6 +1772,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get refundLabel => 'Возврат';
 
   @override
+  String get refundActionDesc => 'Возврат продажи';
+
+  @override
   String get cashRegisterShort => 'Касса';
 
   @override
@@ -1727,6 +1802,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get topSellersFallbackHint => 'Сегодня продаж не было — за неделю:';
 
   @override
+  String get chartVsLastWeek => 'к прошлой неделе';
+
+  @override
   String get notificationsTitle => 'Уведомления';
 
   @override
@@ -1744,6 +1822,148 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get alertsRecentDebtTitle => 'Новые долговые продажи';
+
+  @override
+  String alertDescOverdue(int days, String amount) {
+    return 'Долг $days дн. · $amount UZS';
+  }
+
+  @override
+  String alertDescRecent(String amount) {
+    return 'Сегодня · $amount UZS';
+  }
+
+  @override
+  String alertDescLowStock(String qty, String unit, String threshold) {
+    return 'Остаток: $qty $unit · мин $threshold $unit';
+  }
+
+  @override
+  String alertDescLowStockNoMin(String qty, String unit) {
+    return 'Остаток: $qty $unit';
+  }
+
+  @override
+  String get fallbackCustomerName => 'Клиент';
+
+  @override
+  String get settingsSection => 'НАСТРОЙКИ';
+
+  @override
+  String get languageLabel => 'Язык';
+
+  @override
+  String get themeLabel => 'Тема';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get lowStockShort => 'МАЛО';
+
+  @override
+  String get outOfStockShort => 'НЕТ';
+
+  @override
+  String get totalShort => 'ВСЕГО';
+
+  @override
+  String get stockShort => 'Остаток';
+
+  @override
+  String get popularChip => 'Популярный';
+
+  @override
+  String get editAction => 'Изменить';
+
+  @override
+  String get filterLowStock => 'Мало';
+
+  @override
+  String get filterOutOfStock => 'Нет в наличии';
+
+  @override
+  String get serverUnreachable => 'Не удалось подключиться к серверу';
+
+  @override
+  String get sessionExpired => 'Сессия истекла, войдите снова';
+
+  @override
+  String get noPermission => 'У вас нет прав';
+
+  @override
+  String get customEmojiHint => 'Введите свой эмодзи';
+
+  @override
+  String get filterOldDebt => 'Старый долг';
+
+  @override
+  String get filterRecent => 'Новые';
+
+  @override
+  String get pricesSection => 'Цены';
+
+  @override
+  String get shortCostPrice => 'Себестоимость';
+
+  @override
+  String get temporaryProductDesc => 'Временный товар';
+
+  @override
+  String get usersOnShiftShort => 'В СМЕНЕ';
+
+  @override
+  String get usersTodayRevenueShort => 'ВЫРУЧКА';
+
+  @override
+  String get shiftOpenLabel => 'Смена открыта';
+
+  @override
+  String get shiftClosedLabel => 'Смена закрыта';
+
+  @override
+  String get roleOwnerDesc => 'Полный доступ';
+
+  @override
+  String get roleAdminDesc => 'Продажи + товары';
+
+  @override
+  String get roleSellerDesc => 'Только продажи';
+
+  @override
+  String alertPreviewActiveDebts(int count) {
+    return '$count активных долгов';
+  }
+
+  @override
+  String alertPreviewActiveDebtsDesc(String amount) {
+    return 'Всего: $amount UZS';
+  }
+
+  @override
+  String alertPreviewOverdueDebts(int count) {
+    return '$count просроченных платежей';
+  }
+
+  @override
+  String get alertPreviewOverdueDebtsDesc => 'Свяжитесь с клиентом';
+
+  @override
+  String alertPreviewLowStock(int count) {
+    return '$count товаров на исходе';
+  }
+
+  @override
+  String get alertPreviewLowStockDesc => 'Нужно пополнить склад';
+
+  @override
+  String get alertPreviewEmpty => 'Уведомлений нет';
+
+  @override
+  String get alertPreviewEmptyDesc => 'Всё в порядке';
 
   @override
   String get quickActions => 'Быстрые действия';
@@ -2227,4 +2447,214 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noAccount => 'Нет аккаунта? ';
+
+  @override
+  String get loginLabel => 'Логин';
+
+  @override
+  String get loginHint => 'Введите логин';
+
+  @override
+  String get passwordHint => 'Введите пароль';
+
+  @override
+  String get loginButton => 'Войти';
+
+  @override
+  String get loginAction => 'Войти в систему';
+
+  @override
+  String get loginFormSubtitle => 'Введите ваш логин и пароль';
+
+  @override
+  String get appTagline => 'Торговая система для малого бизнеса';
+
+  @override
+  String get welcomeSubtitle => 'Система продаж и учёта для малых магазинов';
+
+  @override
+  String get registerShop => 'Новый магазин — регистрация';
+
+  @override
+  String get agreePrefix => 'Продолжая, вы соглашаетесь с ';
+
+  @override
+  String get agreeSuffix => '';
+
+  @override
+  String get rememberMe => 'Запомнить';
+
+  @override
+  String get forgotPassword => 'Забыли пароль?';
+
+  @override
+  String get dateTimeLabel => 'Дата / время';
+
+  @override
+  String get statusLabel => 'Статус';
+
+  @override
+  String get externalTag => 'внешний';
+
+  @override
+  String get printAction => 'Распечатать';
+
+  @override
+  String get sendSms => 'Отправить SMS';
+
+  @override
+  String get comingSoon => 'Скоро...';
+
+  @override
+  String get returnWarning =>
+      'Возврат уведомит владельца и вернёт товар на склад';
+
+  @override
+  String get whichProductReturning => 'КАКОЙ ТОВАР ВОЗВРАЩАЕТСЯ?';
+
+  @override
+  String soldQtyFormat(Object qty, String price) {
+    return 'Продано: $qty × $price';
+  }
+
+  @override
+  String get reasonLabel => 'ПРИЧИНА';
+
+  @override
+  String get returnReasonBad => 'Бракованный';
+
+  @override
+  String get returnReasonExpired => 'Просроченный';
+
+  @override
+  String get returnReasonDisliked => 'Не понравился';
+
+  @override
+  String get returnReasonOther => 'Другое';
+
+  @override
+  String get additionalCommentHint =>
+      'Дополнительный комментарий (необязательно)';
+
+  @override
+  String get returnMethodLabel => 'МЕТОД ВОЗВРАТА';
+
+  @override
+  String get cashReturn => 'Возврат наличными';
+
+  @override
+  String get toCustomerHere => 'Клиенту на месте';
+
+  @override
+  String get toBalance => 'На баланс';
+
+  @override
+  String get forNextSale => 'В счёт следующей покупки';
+
+  @override
+  String get toReturnLabel => 'ВОЗВРАЩАЕТСЯ';
+
+  @override
+  String get confirmAndReturn => 'Подтвердить и вернуть';
+
+  @override
+  String get orDivider => 'ИЛИ';
+
+  @override
+  String get createNewShop => 'Создать новый магазин';
+
+  @override
+  String get statProducts => 'Товары';
+
+  @override
+  String get statSales => 'Продажи';
+
+  @override
+  String get statCustomers => 'Клиенты';
+
+  @override
+  String get statActiveTypes => 'Активных видов';
+
+  @override
+  String get statTotalReceipts => 'Всего чеков';
+
+  @override
+  String get statActiveCustomers => 'Активных клиентов';
+
+  @override
+  String get statTotalUZS => 'Итого UZS';
+
+  @override
+  String get paymentCash => 'Наличные';
+
+  @override
+  String get paymentRefund => 'Возврат';
+
+  @override
+  String get forgotPasswordContactAdmin =>
+      'Для восстановления пароля обратитесь к администратору.';
+
+  @override
+  String get loginFailed => 'Неверный логин или пароль.';
+
+  @override
+  String get rateLimited =>
+      'Слишком много попыток. Пожалуйста, подождите и попробуйте снова.';
+
+  @override
+  String get loginGenericError => 'Произошла ошибка.';
+
+  @override
+  String get shopBlocked => 'Магазин заблокирован';
+
+  @override
+  String get shopBlockedBody =>
+      'Ваш магазин заблокирован администратором. Пожалуйста, свяжитесь с администратором.';
+
+  @override
+  String blockedAtLabel(String time) {
+    return 'Заблокирован: $time';
+  }
+
+  @override
+  String get dismiss => 'Понятно';
+
+  @override
+  String get permissionsTitle => 'Права доступа';
+
+  @override
+  String get permissionsNextLoginNote =>
+      'Изменения вступят в силу при следующем входе пользователя.';
+
+  @override
+  String get resetToDefault => 'Сбросить к стандартным';
+
+  @override
+  String get permissionsSaved => 'Права сохранены';
+
+  @override
+  String get permissionsUsingRoleDefaults => 'Стандартные права по роли';
+
+  @override
+  String get permissionsCustomized => 'Настроено вручную';
+
+  @override
+  String get managePermissions => 'Управление правами';
+
+  @override
+  String get shiftOpen => 'Смена открыта';
+
+  @override
+  String get shiftClosed => 'Смена закрыта';
+
+  @override
+  String get openShift => 'Открыть смену';
+
+  @override
+  String get closeShift => 'Закрыть смену';
+
+  @override
+  String shiftStartedAt(String time) {
+    return 'Начата: $time';
+  }
 }

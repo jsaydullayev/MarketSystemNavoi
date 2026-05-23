@@ -11,6 +11,9 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  # Used by main.dart for usePathUrlStrategy() (clean web URLs without #).
+  flutter_web_plugins:
+    sdk: flutter
 
   # UI
   cupertino_icons: ^1.0.6

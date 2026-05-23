@@ -27,6 +27,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<CashWithdrawal> CashWithdrawals => Set<CashWithdrawal>();
     public DbSet<RegistrationRequest> RegistrationRequests => Set<RegistrationRequest>();
     public DbSet<RevokedToken> RevokedTokens => Set<RevokedToken>();
+    public DbSet<Shift> Shifts => Set<Shift>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +95,11 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.Language).HasDefaultValue(Language.Uzbek).IsRequired();
             // ProfileImage stores base64 encoded image data - use TEXT type for unlimited size
             b.Property(x => x.ProfileImage).HasColumnType("text");
+            // Owner RBAC — explicit permission set as a PostgreSQL text[] array.
+            // Npgsql maps List<string> to text[] natively; default is an empty array.
+            b.Property(x => x.Permissions)
+                .HasColumnType("text[]")
+                .HasDefaultValueSql("'{}'::text[]");
             b.HasQueryFilter(x => !x.IsDeleted);
 
             // Multi-tenancy
@@ -153,6 +159,7 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.Id).ValueGeneratedOnAdd();
             b.Property(x => x.Name).IsRequired().HasMaxLength(100);
             b.Property(x => x.Description).HasMaxLength(500);
+            b.Property(x => x.Icon).HasMaxLength(32);  // Single emoji glyph (ZWJ sequences fit in 32)
             b.Property(x => x.MarketId).IsRequired();  // ✅ NOT NULL - required
             b.Property(x => x.IsActive).IsRequired();
             b.Property(x => x.CreatedAt).IsRequired();
@@ -291,6 +298,21 @@ public class AppDbContext : DbContext, IAppDbContext
             b.HasIndex(x => x.MarketId);
             b.HasIndex(x => x.SaleId)
                 .HasDatabaseName("IX_Debt_SaleId");
+        });
+
+        // Configure Shift — seller work sessions
+        modelBuilder.Entity<Shift>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.OpenedAt).IsRequired();
+
+            b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // keep shift history if a user is removed
+            b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId);
+
+            b.HasIndex(x => x.MarketId);
+            // Fast "is there an open shift for this user" lookup.
+            b.HasIndex(x => new { x.UserId, x.ClosedAt });
         });
 
         // Configure DebtAuditLog

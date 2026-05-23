@@ -11,6 +11,7 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -185,19 +186,19 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     return NetworkWrapper(
       onRetry: _loadProducts,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          foregroundColor: AppColors.text,
+          backgroundColor: context.colors.surface,
+          foregroundColor: context.colors.text,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: true,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 20,
-              color: AppColors.text,
+              color: context.colors.text,
             ),
             onPressed: () {
               Navigator.pushReplacement(
@@ -210,12 +211,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
             l10n.adminProductsManagement,
             style: AppTextStyles.titleMedium().copyWith(
               fontWeight: FontWeight.w800,
-              color: AppColors.text,
+              color: context.colors.text,
             ),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: AppColors.text),
+              icon: Icon(Icons.refresh_rounded, color: context.colors.text),
               onPressed: _loadProducts,
             ),
           ],
@@ -234,15 +235,15 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               child: Container(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  color: AppColors.brandLight,
+                  color: context.colors.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(color: AppColors.brandTint, width: 1),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.info_outline_rounded,
-                      color: AppColors.brandDark,
+                      color: context.colors.brandDark,
                       size: 18,
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -250,7 +251,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                       child: Text(
                         l10n.adminPriceTemporaryThresholdInfo,
                         style: AppTextStyles.bodySmall().copyWith(
-                          color: AppColors.brandDark,
+                          color: context.colors.brandDark,
                           fontSize: 12,
                         ),
                       ),
@@ -271,9 +272,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 prefixIcon: Icons.search_rounded,
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.clear_rounded,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         onPressed: () {
                           _searchController.clear();
@@ -295,9 +296,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
             // Body
             Expanded(
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                       ),
                     )
                   : _errorMessage != null
@@ -313,7 +314,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                               l10n: l10n,
                             )
                           : RefreshIndicator(
-                              color: AppColors.brand,
+                              color: context.colors.brand,
                               onRefresh: _loadProducts,
                               child: ListView.separated(
                                 physics: const AlwaysScrollableScrollPhysics(),
@@ -342,7 +343,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: AppColors.brand,
+          backgroundColor: context.colors.brand,
           foregroundColor: Colors.white,
           elevation: 4,
           onPressed: () => _openForm(),
@@ -422,10 +423,10 @@ class _Chip extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          color: active ? AppColors.brand : AppColors.inputFill,
+          color: active ? context.colors.brand : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: active ? AppColors.brand : AppColors.border,
+            color: active ? context.colors.brand : context.colors.border,
             width: 1,
           ),
         ),
@@ -436,7 +437,9 @@ class _Chip extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: active ? Colors.white : AppColors.textSecondary,
+                color: active
+                    ? context.colors.onBrand
+                    : context.colors.textSecondary,
               ),
               const SizedBox(width: 6),
             ],
@@ -445,7 +448,9 @@ class _Chip extends StatelessWidget {
               style: AppTextStyles.bodySmall().copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: active ? Colors.white : AppColors.textSecondary,
+                color: active
+                    ? context.colors.onBrand
+                    : context.colors.textSecondary,
               ),
             ),
           ],
@@ -490,12 +495,12 @@ class _ProductRow extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.brandLight,
+              color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.inventory_2_outlined,
-              color: AppColors.brandDark,
+              color: context.colors.brandDark,
               size: 22,
             ),
           ),
@@ -518,7 +523,7 @@ class _ProductRow extends StatelessWidget {
                 Text(
                   l10n.salePriceLabel(product['salePrice'] ?? 0),
                   style: AppTextStyles.bodySmall().copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     fontSize: 12,
                   ),
                   maxLines: 1,
@@ -527,7 +532,7 @@ class _ProductRow extends StatelessWidget {
                 Text(
                   l10n.costPriceLabel(product['costPrice'] ?? 0),
                   style: AppTextStyles.bodySmall().copyWith(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                     fontSize: 11,
                   ),
                   maxLines: 1,
@@ -539,8 +544,8 @@ class _ProductRow extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 4),
                     child: _Pill(
                       label: l10n.temporary,
-                      color: AppColors.brandDark,
-                      bg: AppColors.brandLight,
+                      color: context.colors.brandDark,
+                      bg: context.colors.brandLight,
                     ),
                   ),
                 if (isLow)
@@ -565,7 +570,7 @@ class _ProductRow extends StatelessWidget {
                     (product['salePrice'] as num?)?.toDouble() ?? 0),
                 style: AppTextStyles.bodyLarge().copyWith(
                   fontWeight: FontWeight.w800,
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   fontSize: 15,
                 ),
               ),
@@ -581,7 +586,7 @@ class _ProductRow extends StatelessWidget {
                       ? AppColors.danger
                       : (isLow
                           ? AppColors.warning
-                          : AppColors.textSecondary),
+                          : context.colors.textSecondary),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -590,7 +595,7 @@ class _ProductRow extends StatelessWidget {
                 children: [
                   _IconAction(
                     icon: Icons.edit_outlined,
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                     onTap: onEdit,
                     tooltip: l10n.edit,
                   ),
@@ -702,21 +707,21 @@ class _EmptyState extends StatelessWidget {
           Container(
             width: 72,
             height: 72,
-            decoration: const BoxDecoration(
-              color: AppColors.inputFill,
+            decoration: BoxDecoration(
+              color: context.colors.inputFill,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.inventory_2_outlined,
               size: 36,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
             isSearching ? l10n.productNotFound : l10n.noProducts,
             style: AppTextStyles.titleMedium().copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ],

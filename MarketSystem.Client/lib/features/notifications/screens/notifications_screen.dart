@@ -18,12 +18,16 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/common_app_bar.dart';
+import '../../../data/services/debt_service.dart';
 import '../../../data/services/notification_service.dart';
+import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../dashboard/dashboard_widgets.dart' show AlertCard, AlertTone, SectionHeader;
+import '../../debts/screens/debt_details_screen.dart';
+import '../../products/presentation/screens/products_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -56,21 +60,76 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await _feedFuture.catchError((_) => const AlertFeed());
   }
 
+  /// Debt alert tapped — resolve the debt by id and open its detail screen.
+  /// Falls back to the debts list when the debt can't be found (e.g. it was
+  /// just paid off) or the lookup fails.
+  Future<void> _openDebt(AlertItem item) async {
+    final id = item.subjectId;
+    if (id == null || id.isEmpty) {
+      Navigator.pushNamed(context, AppRoutes.debts);
+      return;
+    }
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) =>
+          Center(child: CircularProgressIndicator(color: context.colors.brand)),
+    );
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final debts = await DebtService(authProvider: auth).getAllDebts();
+      final match = debts
+          .whereType<Map<String, dynamic>>()
+          .firstWhere((d) => d['id']?.toString() == id,
+              orElse: () => const <String, dynamic>{});
+      if (!mounted) return;
+      Navigator.pop(context); // dismiss the loader
+      if (match.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DebtDetailsScreen(
+              debt: match,
+              customerName: (match['customerName'] ?? item.title).toString(),
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushNamed(context, AppRoutes.debts);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      Navigator.pushNamed(context, AppRoutes.debts);
+    }
+  }
+
+  /// Low-stock alert tapped — open the products screen pre-filtered to that
+  /// product so the owner lands straight on the item that triggered the alert.
+  void _openProduct(AlertItem item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductsScreen(initialSearch: item.title),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: CommonAppBar(title: l10n.notificationsTitle),
       body: RefreshIndicator(
-        color: AppColors.brand,
+        color: context.colors.brand,
         onRefresh: _refresh,
         child: FutureBuilder<AlertFeed>(
           future: _feedFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.brand),
+              return Center(
+                child: CircularProgressIndicator(color: context.colors.brand),
               );
             }
             final feed = snapshot.data ?? const AlertFeed();
@@ -96,8 +155,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     items: feed.overdueDebts,
                     tone: AlertTone.danger,
                     emoji: '⚠️',
-                    onTap: (item) =>
-                        Navigator.pushNamed(context, AppRoutes.debts),
+                    onTap: _openDebt,
                   ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
@@ -109,8 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     items: feed.lowStock,
                     tone: AlertTone.warning,
                     emoji: '📦',
-                    onTap: (item) =>
-                        Navigator.pushNamed(context, AppRoutes.products),
+                    onTap: _openProduct,
                   ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
@@ -122,8 +179,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     items: feed.recentDebts,
                     tone: AlertTone.warning,
                     emoji: '💳',
-                    onTap: (item) =>
-                        Navigator.pushNamed(context, AppRoutes.debts),
+                    onTap: _openDebt,
                   ),
                 ],
               ],
@@ -144,18 +200,66 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     required String emoji,
     required void Function(AlertItem item) onTap,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return [
       for (final item in items) ...[
         AlertCard(
           emoji: emoji,
-          title: item.title,
-          description: item.description,
+          title: item.title.isEmpty ? l10n.fallbackCustomerName : item.title,
+          description: _buildDescription(l10n, item),
           tone: tone,
           onTap: () => onTap(item),
         ),
         const SizedBox(height: AppSpacing.md),
       ],
     ];
+  }
+
+  /// Builds the localised one-line description for an alert item from its
+  /// raw fields. The service intentionally stores raw numbers + days so
+  /// this can re-format with the active locale (previously the service
+  /// hardcoded Uzbek phrases like "Bugun · …" which leaked into the
+  /// Russian UI as in screenshot 2026-05-19).
+  String _buildDescription(AppLocalizations l10n, AlertItem item) {
+    switch (item.category) {
+      case AlertCategory.lowStock:
+        final qty = _fmtNum(item.quantity ?? 0);
+        final unit = (item.unit ?? '').trim();
+        final threshold = item.threshold ?? 0;
+        if (threshold > 0) {
+          return l10n.alertDescLowStock(
+            qty,
+            unit,
+            _fmtNum(threshold),
+          );
+        }
+        return l10n.alertDescLowStockNoMin(qty, unit);
+      case AlertCategory.recentDebt:
+        return l10n.alertDescRecent(_fmtUzs(item.amount ?? 0));
+      case AlertCategory.overduePayment:
+        return l10n.alertDescOverdue(
+          item.ageDays ?? 0,
+          _fmtUzs(item.amount ?? 0),
+        );
+    }
+  }
+
+  /// "1500" → "1500" (whole) or "1.5" (fractional). Locale-neutral.
+  String _fmtNum(num v) {
+    if (v == v.toInt()) return v.toInt().toString();
+    return v.toStringAsFixed(2);
+  }
+
+  /// Group thousands with a space ("115500" → "115 500"). UZS rendering
+  /// — same convention used elsewhere in the app (e.g. NumberFormatter).
+  String _fmtUzs(num v) {
+    final n = v.toInt().toString();
+    final buf = StringBuffer();
+    for (var i = 0; i < n.length; i++) {
+      if (i > 0 && (n.length - i) % 3 == 0) buf.write(' ');
+      buf.write(n[i]);
+    }
+    return buf.toString();
   }
 }
 
@@ -191,7 +295,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             l10n.notificationsEmptyDescription,
             style: AppTextStyles.bodySmall()
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: context.colors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],

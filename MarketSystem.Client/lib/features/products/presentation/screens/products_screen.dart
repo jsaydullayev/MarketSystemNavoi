@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/file_helper.dart'
     as core_file_helper;
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -16,6 +17,7 @@ import 'package:market_system_client/features/products/presentation/screens/prod
 import 'package:market_system_client/features/products/presentation/widgets/product_body.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/auth/permissions.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../data/services/zakup_service.dart';
@@ -23,7 +25,12 @@ import '../../../../l10n/app_localizations.dart';
 
 class ProductsScreen extends StatefulWidget {
   final bool isReadOnly;
-  const ProductsScreen({super.key, this.isReadOnly = false});
+
+  /// Pre-fills the search box — used to deep-link straight to one product
+  /// (e.g. from a low-stock notification).
+  final String? initialSearch;
+
+  const ProductsScreen({super.key, this.isReadOnly = false, this.initialSearch});
 
   @override
   State<ProductsScreen> createState() => _ProductsScreenState();
@@ -39,6 +46,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void initState() {
     super.initState();
+    // Seed the search box before wiring the listener so a deep-linked
+    // product is filtered in as soon as the list finishes loading.
+    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+      _searchController.text = widget.initialSearch!;
+    }
     _loadProducts();
     _searchController.addListener(_filterProducts);
   }
@@ -75,6 +87,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
         _filteredProducts = products;
         _isLoading = false;
       });
+      // Re-apply the active search — keeps a deep-linked (initialSearch)
+      // product filtered in once the list arrives.
+      _filterProducts();
     } catch (e) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
@@ -83,12 +98,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
         if (errorMsg.contains('SocketException') ||
             errorMsg.contains('Connection refused') ||
             errorMsg.contains('Failed to fetch')) {
-          _errorMessage = "Serverga ulanib bo'lmadi";
+          _errorMessage = l10n.serverUnreachable;
         } else if (errorMsg.contains('401') ||
             errorMsg.contains('Unauthorized')) {
-          _errorMessage = 'Sessiya tugadi, qayta kiring';
+          _errorMessage = l10n.sessionExpired;
         } else if (errorMsg.contains('403') || errorMsg.contains('Forbidden')) {
-          _errorMessage = "Sizga ruxsat yo'q";
+          _errorMessage = l10n.noPermission;
         } else {
           _errorMessage = l10n.errorOccurred;
         }
@@ -149,10 +164,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
             AppSpacing.xl3,
             AppSpacing.xl4,
           ),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl2)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -162,7 +177,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: context.colors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -172,12 +187,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md + 2),
                       decoration: BoxDecoration(
-                        color: AppColors.brandLight,
+                        color: context.colors.brandLight,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.inventory_2_rounded,
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                         size: 22,
                       ),
                     ),
@@ -191,7 +206,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             style: AppTextStyles.caption().copyWith(
                               fontSize: 12,
                               letterSpacing: 0,
-                              color: AppColors.textMuted,
+                              color: context.colors.textMuted,
                             ),
                           ),
                           Text(
@@ -266,9 +281,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: AppTextStyles.bodySmall(),
-        prefixIcon: Icon(icon, size: 20, color: AppColors.brand),
+        prefixIcon: Icon(icon, size: 20, color: context.colors.brand),
         filled: true,
-        fillColor: AppColors.inputFill,
+        fillColor: context.colors.inputFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
           borderSide: BorderSide.none,
@@ -279,7 +294,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: BorderSide(color: context.colors.brand, width: 1.5),
         ),
       ),
     );
@@ -289,11 +304,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      // Pass the active locale to the backend so the workbook column
+      // headers ("Nomi" vs "Название") match the language the user sees
+      // in the app.
+      final lang = Localizations.localeOf(context).languageCode;
       final bytes = await ProductService(authProvider: authProvider)
-          .downloadProductsExcel();
+          .downloadProductsExcel(lang: lang);
       if (bytes != null && bytes.isNotEmpty) {
-        await core_file_helper.FileHelper.saveAndOpenExcel(
-            bytes, 'Mahsulotlar.xlsx');
+        final fileName = lang == 'ru' ? 'Tovary.xlsx' : 'Mahsulotlar.xlsx';
+        await core_file_helper.FileHelper.saveAndOpenExcel(bytes, fileName);
       }
     } catch (e) {
       _showSnackBar(e.toString(), AppColors.danger);
@@ -323,12 +342,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final canViewCostPrice = authProvider.user?['role'] != 'Seller';
+    final canViewCostPrice = authProvider.can(Permissions.dataCostPrice);
 
     return NetworkWrapper(
       onRetry: _loadProducts,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: _buildAppBar(l10n),
         body: ProductsBody(
           isLoading: _isLoading,
@@ -355,10 +374,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
+        decoration: BoxDecoration(
+          color: context.colors.surface,
           border: Border(
-            bottom: BorderSide(color: AppColors.borderSoft, width: 1),
+            bottom: BorderSide(color: context.colors.borderSoft, width: 1),
           ),
         ),
         child: SafeArea(
@@ -368,10 +387,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.arrow_back_ios_new_rounded,
                     size: 20,
-                    color: AppColors.text,
+                    color: context.colors.text,
                   ),
                   onPressed: () => Navigator.maybePop(context),
                 ),
@@ -387,18 +406,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.file_download_outlined,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     size: 22,
                   ),
                   onPressed: _exportExcel,
                   tooltip: 'Excel',
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.refresh_rounded,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     size: 22,
                   ),
                   onPressed: _loadProducts,
@@ -427,11 +446,11 @@ class _ProductsFab extends StatelessWidget {
         color: Colors.transparent,
         child: Ink(
           decoration: BoxDecoration(
-            color: AppColors.brand,
+            color: context.colors.brand,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppColors.brand.withValues(alpha: 0.35),
+                color: context.colors.brand.withValues(alpha: 0.35),
                 blurRadius: 14,
                 offset: const Offset(0, 6),
               ),

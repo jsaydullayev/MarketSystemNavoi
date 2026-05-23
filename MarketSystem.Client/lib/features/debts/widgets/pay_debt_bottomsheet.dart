@@ -4,6 +4,7 @@ import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/data/services/debt_service.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -117,9 +118,9 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
     final newBalance = (remaining - entered).clamp(0, double.infinity).toDouble();
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl2,
@@ -137,7 +138,7 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -150,7 +151,7 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
             Text(
               "MIJOZ QANCHA TO'LAYDI?",
               style: AppTextStyles.caption().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 letterSpacing: 0.8,
               ),
             ),
@@ -231,7 +232,7 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
             Text(
               "TO'LOV USULI",
               style: AppTextStyles.caption().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
                 letterSpacing: 0.8,
               ),
             ),
@@ -279,7 +280,7 @@ class _CustomerRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.borderSoft,
+        color: context.colors.borderSoft,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
@@ -406,9 +407,9 @@ class _PayAmountInput extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
+        border: Border.all(color: context.colors.brand.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,7 +417,7 @@ class _PayAmountInput extends StatelessWidget {
           Text(
             "TO'LANADI",
             style: AppTextStyles.caption().copyWith(
-              color: AppColors.brandDark,
+              color: context.colors.brandDark,
               letterSpacing: 0.8,
             ),
           ),
@@ -433,7 +434,7 @@ class _PayAmountInput extends StatelessWidget {
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                   ],
                   style: AppTextStyles.displayMedium().copyWith(
-                    color: AppColors.brandDark,
+                    color: context.colors.brandDark,
                     fontSize: 26,
                     letterSpacing: -0.5,
                   ),
@@ -450,7 +451,7 @@ class _PayAmountInput extends StatelessWidget {
                 child: Text(
                   currencyLabel,
                   style: AppTextStyles.bodyMedium().copyWith(
-                    color: AppColors.brandDark,
+                    color: context.colors.brandDark,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -506,8 +507,8 @@ class _QuickButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isDanger ? AppColors.danger : AppColors.text;
-    final bg = isDanger ? AppColors.dangerLight : AppColors.inputFill;
+    final fg = isDanger ? AppColors.danger : context.colors.text;
+    final bg = isDanger ? AppColors.dangerLight : context.colors.inputFill;
     return GestureDetector(
       onTap: onTap,
       child: Container(

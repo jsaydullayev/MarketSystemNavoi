@@ -10,6 +10,7 @@ import '../../core/constants/public_routes.dart';
 import '../../core/managers/route_state_manager.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/routes/app_routes.dart';
+import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../auth/presentation/screens/login_screen.dart';
@@ -125,14 +126,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       body: DecoratedBox(
         // Same gradient as the auth screens for a consistent first impression.
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.surface, AppColors.brandLight],
+            colors: [context.colors.surface, context.colors.brandLight],
           ),
         ),
         child: SafeArea(
@@ -153,7 +154,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   style: AppTextStyles.displayLarge().copyWith(
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.text,
+                    color: context.colors.text,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -161,17 +162,18 @@ class _SplashScreenState extends State<SplashScreen> {
                 Text(
                   "Kichik do'konlar uchun savdo tizimi",
                   style: AppTextStyles.bodyMedium().copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl4),
                 // Subtle loading indicator below the brand block.
-                const SizedBox(
+                SizedBox(
                   width: 28,
                   height: 28,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.brand),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(context.colors.brand),
                   ),
                 ),
               ],

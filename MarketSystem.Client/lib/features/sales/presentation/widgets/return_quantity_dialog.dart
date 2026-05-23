@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -50,7 +51,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl2)),
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl3),
         child: Column(
@@ -98,7 +99,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg, vertical: AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.inputFill,
+                color: context.colors.inputFill,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
@@ -124,11 +125,11 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
               style: AppTextStyles.bodyLarge(),
               decoration: InputDecoration(
                 labelText: l10n.returnQuantity,
-                labelStyle:
-                    AppTextStyles.bodyMedium().copyWith(color: AppColors.textSecondary),
+                labelStyle: AppTextStyles.bodyMedium()
+                    .copyWith(color: context.colors.textSecondary),
                 errorText: _isValid ? null : l10n.invalidQuantity,
                 filled: true,
-                fillColor: AppColors.inputFill,
+                fillColor: context.colors.inputFill,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   borderSide: BorderSide.none,
@@ -136,7 +137,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   borderSide:
-                      const BorderSide(color: AppColors.brand, width: 1.5),
+                      BorderSide(color: context.colors.brand, width: 1.5),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),

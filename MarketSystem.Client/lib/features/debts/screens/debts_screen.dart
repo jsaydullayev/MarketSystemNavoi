@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/debts/widgets/customer_debt_card.dart';
@@ -153,7 +154,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: CommonAppBar(
         title: l10n.debts,
         onRefresh: _loadData,
@@ -282,16 +283,18 @@ class _ChipPill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl, vertical: AppSpacing.md),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.brand : AppColors.inputFill,
+          color: isActive ? context.colors.brand : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: isActive ? AppColors.brand : AppColors.border,
+            color: isActive ? context.colors.brand : context.colors.border,
           ),
         ),
         child: Text(
           label,
           style: AppTextStyles.bodyMedium().copyWith(
-            color: isActive ? Colors.white : AppColors.textSecondary,
+            color: isActive
+                ? context.colors.onBrand
+                : context.colors.textSecondary,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),

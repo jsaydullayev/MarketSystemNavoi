@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 
@@ -38,7 +39,7 @@ class ProfileSectionTitle extends StatelessWidget {
             fontSize: 10,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.2,
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
           ),
         ),
       ),
@@ -62,19 +63,19 @@ class ProfileSettingsCard extends StatelessWidget {
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
-        rows.add(const Divider(
+        rows.add(Divider(
           height: 1,
           thickness: 1,
-          color: AppColors.border,
+          color: context.colors.border,
         ));
       }
       rows.add(children[i]);
     }
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -83,7 +84,7 @@ class ProfileSettingsCard extends StatelessWidget {
           children: [
             if (header != null)
               Container(
-                color: AppColors.bg,
+                color: context.colors.bg,
                 child: header!,
               ),
             ...rows,
@@ -118,10 +119,13 @@ class ProfileSettingsRow extends StatelessWidget {
     this.danger = false,
   });
 
-  ({Color bg, Color fg}) get _toneColors {
+  // A method (not a getter) so the brand / gray tones can resolve against
+  // the active theme — those two reference the surface/accent family which
+  // differs between light and dark.
+  ({Color bg, Color fg}) _toneColors(BuildContext context) {
     switch (tone) {
       case ProfileRowIconTone.brand:
-        return (bg: AppColors.brandLight, fg: AppColors.brand);
+        return (bg: context.colors.brandLight, fg: context.colors.brand);
       case ProfileRowIconTone.green:
         return (bg: AppColors.successLight, fg: AppColors.success);
       case ProfileRowIconTone.blue:
@@ -131,7 +135,7 @@ class ProfileSettingsRow extends StatelessWidget {
       case ProfileRowIconTone.pink:
         return (bg: const Color(0xFFFCE7F3), fg: const Color(0xFFDB2777));
       case ProfileRowIconTone.gray:
-        return (bg: AppColors.inputFill, fg: AppColors.textSecondary);
+        return (bg: context.colors.inputFill, fg: context.colors.textSecondary);
       case ProfileRowIconTone.red:
         return (bg: AppColors.dangerLight, fg: AppColors.danger);
     }
@@ -139,11 +143,11 @@ class ProfileSettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = _toneColors;
-    final titleColor = danger ? AppColors.danger : AppColors.text;
+    final colors = _toneColors(context);
+    final titleColor = danger ? AppColors.danger : context.colors.text;
 
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -184,7 +188,7 @@ class ProfileSettingsRow extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0,
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                         ),
                       ),
                     ],
@@ -199,7 +203,7 @@ class ProfileSettingsRow extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                   ),
                 ),
               ],
@@ -208,10 +212,10 @@ class ProfileSettingsRow extends StatelessWidget {
                 trailing!,
               ] else if (onTap != null && !danger) ...[
                 const SizedBox(width: AppSpacing.sm),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   size: 18,
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                 ),
               ],
             ],
@@ -251,7 +255,7 @@ class ProfileTopCard extends StatelessWidget {
     ].join(' · ');
 
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onTap,
@@ -259,9 +263,9 @@ class ProfileTopCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.lg + 2),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: Border.all(color: context.colors.border, width: 1),
           ),
           child: Row(
             children: [
@@ -269,8 +273,8 @@ class ProfileTopCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: AppColors.brandLight,
+                decoration: BoxDecoration(
+                  color: context.colors.brandLight,
                   shape: BoxShape.circle,
                 ),
                 child: Text(
@@ -278,7 +282,7 @@ class ProfileTopCard extends StatelessWidget {
                   style: AppTextStyles.titleMedium().copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                   ),
                 ),
               ),
@@ -293,7 +297,7 @@ class ProfileTopCard extends StatelessWidget {
                       style: AppTextStyles.bodyMedium().copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.text,
+                        color: context.colors.text,
                       ),
                     ),
                     if (roleText.isNotEmpty) ...[
@@ -304,17 +308,17 @@ class ProfileTopCard extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0,
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                         ),
                       ),
                     ],
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 18,
-                color: AppColors.textMuted,
+                color: context.colors.textMuted,
               ),
             ],
           ),
@@ -342,7 +346,7 @@ class ProfileEditableField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const disabledColor = AppColors.textMuted;
+    final disabledColor = context.colors.textMuted;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.xl,
@@ -354,13 +358,13 @@ class ProfileEditableField extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppColors.brandLight,
+              color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md - 1),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.edit_note_rounded,
               size: 16,
-              color: AppColors.brand,
+              color: context.colors.brand,
             ),
           ),
           const SizedBox(width: AppSpacing.lg),
@@ -374,7 +378,7 @@ class ProfileEditableField extends StatelessWidget {
                   style: AppTextStyles.caption().copyWith(
                     fontSize: 10,
                     letterSpacing: 0.8,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                   ),
                 ),
                 TextField(
@@ -383,7 +387,7 @@ class ProfileEditableField extends StatelessWidget {
                   style: AppTextStyles.bodyMedium().copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: enabled ? AppColors.text : disabledColor,
+                    color: enabled ? context.colors.text : disabledColor,
                   ),
                   decoration: const InputDecoration(
                     isDense: true,
@@ -397,7 +401,7 @@ class ProfileEditableField extends StatelessWidget {
               ],
             ),
           ),
-          Icon(icon, size: 18, color: AppColors.textMuted),
+          Icon(icon, size: 18, color: context.colors.textMuted),
         ],
       ),
     );
@@ -430,10 +434,10 @@ class ProfileInfoRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppColors.brandLight,
+              color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md - 1),
             ),
-            child: Icon(icon, size: 16, color: AppColors.brand),
+            child: Icon(icon, size: 16, color: context.colors.brand),
           ),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
@@ -446,7 +450,7 @@ class ProfileInfoRow extends StatelessWidget {
                   style: AppTextStyles.caption().copyWith(
                     fontSize: 10,
                     letterSpacing: 0.8,
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -455,7 +459,7 @@ class ProfileInfoRow extends StatelessWidget {
                   style: AppTextStyles.bodyMedium().copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.text,
+                    color: context.colors.text,
                   ),
                 ),
               ],

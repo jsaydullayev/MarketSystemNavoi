@@ -55,6 +55,8 @@ public class MarketsController : ControllerBase
                 return Unauthorized();
 
             var result = await _marketService.RegisterMarketForOwnerAsync(request, ownerId, cancellationToken);
+            if (result is null)
+                return BadRequest(new { message = "Do'kon ro'yxatdan o'tkazib bo'lmadi" });
 
             // Reload owner from database to get updated MarketId
             var updatedOwner = await _unitOfWork.Users.GetByIdAsync(ownerId, cancellationToken);

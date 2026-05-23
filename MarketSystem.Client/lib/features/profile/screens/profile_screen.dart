@@ -20,6 +20,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/widgets/common_app_bar.dart';
 import '../../../data/services/user_service.dart';
+import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_button.dart';
@@ -75,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: CommonAppBar(title: l10n.profile),
       body: Center(
         child: ConstrainedBox(
@@ -153,10 +154,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
-                      // SOZLASH — language + theme.
+                      // SOZLASH / НАСТРОЙКИ — language + theme.
                       ProfileSettingsCard(
-                        header:
-                            const ProfileSectionTitle(title: 'SOZLASH'),
+                        header: ProfileSectionTitle(title: l10n.settingsSection),
                         children: [
                           _buildLanguageRow(context),
                           _buildThemeRow(context),
@@ -206,12 +206,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildLanguageRow(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final localeProvider = Provider.of<LocaleProvider>(context);
     final code = localeProvider.locale.languageCode;
     return ProfileSettingsRow(
       icon: Icons.language_rounded,
       tone: ProfileRowIconTone.green,
-      title: 'Til',
+      title: l10n.languageLabel,
       value: _languageLabel(code),
       onTap: () => _showLanguageSheet(context),
     );
@@ -226,9 +227,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: context.colors.surface,
+            borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl,
@@ -243,12 +245,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text('Til', style: AppTextStyles.titleMedium()),
+              Text(
+                AppLocalizations.of(context)!.languageLabel,
+                style: AppTextStyles.titleMedium(),
+              ),
               const SizedBox(height: AppSpacing.lg),
               for (final entry in const [
                 ('uz', "O'zbekcha"),
@@ -273,12 +278,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildThemeRow(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final mode = AdaptiveTheme.of(context).mode;
     return ProfileSettingsRow(
       icon: Icons.palette_outlined,
       tone: ProfileRowIconTone.gray,
-      title: 'Mavzu',
-      value: mode.isDark ? 'Tungi' : "Yorug'",
+      title: l10n.themeLabel,
+      value: mode.isDark ? l10n.themeDark : l10n.themeLight,
       onTap: () {
         AdaptiveTheme.of(context).toggleThemeMode();
       },
@@ -306,9 +312,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               AppSpacing.xl,
               AppSpacing.xl3,
             ),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: context.colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -319,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.border,
+                      color: context.colors.border,
                       borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
                   ),
@@ -411,10 +418,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         AppSpacing.xl,
         AppSpacing.xl4,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.bg,
+      decoration: BoxDecoration(
+        color: context.colors.bg,
         border: Border(
-          top: BorderSide(color: AppColors.border),
+          top: BorderSide(color: context.colors.border),
         ),
       ),
       child: AppPrimaryButton(
@@ -454,7 +461,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
@@ -469,7 +476,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Text(
               l10n.no,
               style: AppTextStyles.labelLarge()
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: context.colors.textSecondary),
             ),
           ),
           TextButton(
@@ -512,7 +519,8 @@ class _LanguageOption extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Material(
-        color: selected ? AppColors.brandLight : AppColors.inputFill,
+        color:
+            selected ? context.colors.brandLight : context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: InkWell(
           onTap: onTap,
@@ -529,7 +537,9 @@ class _LanguageOption extends StatelessWidget {
                   height: 32,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.brand : AppColors.surface,
+                    color: selected
+                        ? context.colors.brand
+                        : context.colors.surface,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
@@ -538,7 +548,9 @@ class _LanguageOption extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
-                      color: selected ? Colors.white : AppColors.textSecondary,
+                      color: selected
+                          ? Colors.white
+                          : context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -548,15 +560,16 @@ class _LanguageOption extends StatelessWidget {
                     label,
                     style: AppTextStyles.bodyMedium().copyWith(
                       fontWeight: FontWeight.w600,
-                      color:
-                          selected ? AppColors.brandDark : AppColors.text,
+                      color: selected
+                          ? context.colors.brandDark
+                          : context.colors.text,
                     ),
                   ),
                 ),
                 if (selected)
-                  const Icon(
+                  Icon(
                     Icons.check_rounded,
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                     size: 20,
                   ),
               ],

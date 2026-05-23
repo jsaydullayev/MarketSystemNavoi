@@ -1,4 +1,4 @@
-using OfficeOpenXml;
+using ClosedXML.Excel;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -20,14 +20,21 @@ public class ReportService : IReportService
     private readonly ILogger<ReportService> _logger;
     private readonly ITashkentClock _clock;
 
+    // License setup lives in the STATIC constructor so it runs before any
+    // Excel/PDF is produced — including via the static PDF renderers
+    // (RenderInvoicePdf / RenderSalesListPdf), which may be reached without an
+    // instance ever being created (e.g. from tests).
+    static ReportService()
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+    }
+
     public ReportService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService, ILogger<ReportService> logger, ITashkentClock clock)
     {
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
         _logger = logger;
         _clock = clock;
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-        QuestPDF.Settings.License = LicenseType.Community;
     }
 
     public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
@@ -61,7 +68,9 @@ public class ReportService : IReportService
         var ordinaryProductIds = sales
             .SelectMany(s => s.SaleItems)
             .Where(si => !si.IsExternal && si.ProductId.HasValue)
-            .Select(si => si.ProductId.Value)
+            // The Where above already guarantees HasValue; the null-forgiving
+            // `!` just tells the compiler what the filter cannot express.
+            .Select(si => si.ProductId!.Value)
             .Distinct()
             .ToList();
 
@@ -94,8 +103,11 @@ public class ReportService : IReportService
 
                 if (!item.IsExternal)
                 {
-                    // Oddiy mahsulot
-                    if (!products.TryGetValue(item.ProductId.Value, out var product))
+                    // Oddiy mahsulot. A non-external item should always carry
+                    // a ProductId, but the column is nullable — guard so a
+                    // bad row is skipped instead of throwing.
+                    if (!item.ProductId.HasValue ||
+                        !products.TryGetValue(item.ProductId.Value, out var product))
                         continue;
 
                     productName = product.Name;
@@ -178,9 +190,13 @@ public class ReportService : IReportService
         );
     }
 
-    public async Task<byte[]> ExportToExcelAsync(PeriodReportRequest request, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportToExcelAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
+        // Profit is an Owner-only figure (mirrors the profit-summary gate).
+        // The period/export endpoint is also reachable by Admin, so the
+        // Profit column must be masked for everyone except the Owner.
+        var includeProfit = userRole == Role.Owner.ToString();
 
         // Use < instead of <= to include the entire end day (up to 23:59:59.999)
         var endDateTime = request.EndDate.AddDays(1);
@@ -194,23 +210,20 @@ public class ReportService : IReportService
             z => z.CreatedAt >= request.StartDate && z.CreatedAt < endDateTime && z.MarketId == marketId,
             cancellationToken);
 
-        using var package = new ExcelPackage();
-        var worksheet = package.Workbook.Worksheets.Add("Report");
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Report");
 
-        worksheet.Cells[1, 1].Value = "Date";
-        worksheet.Cells[1, 2].Value = "Type";
-        worksheet.Cells[1, 3].Value = "Product";
-        worksheet.Cells[1, 4].Value = "Quantity";
-        worksheet.Cells[1, 5].Value = "Amount";
-        worksheet.Cells[1, 6].Value = "Cost";
-        worksheet.Cells[1, 7].Value = "Profit";
+        worksheet.Cell(1, 1).Value = "Date";
+        worksheet.Cell(1, 2).Value = "Type";
+        worksheet.Cell(1, 3).Value = "Product";
+        worksheet.Cell(1, 4).Value = "Quantity";
+        worksheet.Cell(1, 5).Value = "Amount";
+        worksheet.Cell(1, 6).Value = "Cost";
+        worksheet.Cell(1, 7).Value = "Profit";
 
-        using (var range = worksheet.Cells[1, 1, 1, 7])
-        {
-            range.Style.Font.Bold = true;
-            range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-            range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
-        }
+        var headerRange = worksheet.Range(1, 1, 1, 7);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
 
         // Barcha kerakli productlarni bir marta batch yuklash (N+1 oldini olish)
         var saleProductIds = sales
@@ -246,14 +259,24 @@ public class ReportService : IReportService
                     productName = item.ExternalProductName ?? "Tashqi mahsulot";
                 }
 
-                worksheet.Cells[row, 1].Value = sale.CreatedAt.ToString("yyyy-MM-dd");
-                worksheet.Cells[row, 2].Value = "Sale";
-                worksheet.Cells[row, 3].Value = productName;
-                worksheet.Cells[row, 4].Value = item.Quantity;
-                worksheet.Cells[row, 5].Value = item.SalePrice * item.Quantity;
+                // Anchor the date to the Tashkent business day — a raw UTC
+                // date shifts late-evening sales onto the following day.
                 var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
-                worksheet.Cells[row, 6].Value = costPrice * item.Quantity;
-                worksheet.Cells[row, 7].Value = item.Profit;
+                worksheet.Cell(row, 1).Value = _clock.ToLocal(sale.CreatedAt).ToString("yyyy-MM-dd");
+                worksheet.Cell(row, 2).Value = "Sale";
+                worksheet.Cell(row, 3).Value = productName;
+                worksheet.Cell(row, 4).Value = item.Quantity;
+                worksheet.Cell(row, 5).Value = item.SalePrice * item.Quantity;
+                worksheet.Cell(row, 6).Value = costPrice * item.Quantity;
+                // Compute profit inline from the stored CostPrice column. The
+                // SaleItem.Profit computed property reads Product?.CostPrice,
+                // but Product isn't loaded here (includeProperties omits it),
+                // so for non-external items it would resolve cost to 0 and
+                // report the full sale price as profit.
+                if (includeProfit)
+                    worksheet.Cell(row, 7).Value = (item.SalePrice - costPrice) * item.Quantity;
+                else
+                    worksheet.Cell(row, 7).Value = "—";
                 row++;
             }
         }
@@ -262,19 +285,24 @@ public class ReportService : IReportService
         {
             var product = productMap.GetValueOrDefault(zakup.ProductId);
 
-            worksheet.Cells[row, 1].Value = zakup.CreatedAt.ToString("yyyy-MM-dd");
-            worksheet.Cells[row, 2].Value = "Zakup";
-            worksheet.Cells[row, 3].Value = product?.Name ?? "Unknown";
-            worksheet.Cells[row, 4].Value = zakup.Quantity;
-            worksheet.Cells[row, 5].Value = zakup.Quantity * zakup.CostPrice;
-            worksheet.Cells[row, 6].Value = zakup.Quantity * zakup.CostPrice;
-            worksheet.Cells[row, 7].Value = 0;
+            worksheet.Cell(row, 1).Value = _clock.ToLocal(zakup.CreatedAt).ToString("yyyy-MM-dd");
+            worksheet.Cell(row, 2).Value = "Zakup";
+            worksheet.Cell(row, 3).Value = product?.Name ?? "Unknown";
+            worksheet.Cell(row, 4).Value = zakup.Quantity;
+            worksheet.Cell(row, 5).Value = zakup.Quantity * zakup.CostPrice;
+            worksheet.Cell(row, 6).Value = zakup.Quantity * zakup.CostPrice;
+            if (includeProfit)
+                worksheet.Cell(row, 7).Value = 0m;
+            else
+                worksheet.Cell(row, 7).Value = "—";
             row++;
         }
-        
-        worksheet.Cells.AutoFitColumns();
 
-        return await package.GetAsByteArrayAsync();
+        worksheet.Columns().AdjustToContents();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
     }
 
     public async Task<ComprehensiveReportDto> GetComprehensiveReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
@@ -395,94 +423,85 @@ public class ReportService : IReportService
         );
     }
 
-    public async Task<byte[]> ExportComprehensiveToExcelAsync(DateTime date, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportComprehensiveToExcelAsync(DateTime date, string lang = "uz", CancellationToken cancellationToken = default)
     {
         // Export to Excel is Owner-only feature, so pass Role.Owner.ToString() as the role
         var report = await GetComprehensiveReportAsync(date, Role.Owner.ToString(), cancellationToken);
+        var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
 
-        using var package = new ExcelPackage();
+        using var workbook = new XLWorkbook();
 
         // 1. Summary Sheet
-        var summarySheet = package.Workbook.Worksheets.Add("Summary");
-        summarySheet.Cells[1, 1].Value = "Hisobot sanasi:";
-        summarySheet.Cells[1, 2].Value = date.ToString("yyyy-MM-dd");
-        summarySheet.Cells[2, 1].Value = "Jami savdo:";
-        summarySheet.Cells[2, 2].Value = report.DailyReport.TotalSales;
-        summarySheet.Cells[3, 1].Value = "Jami foyda:";
-        summarySheet.Cells[3, 2].Value = report.DailyReport.Profit;
-        summarySheet.Cells[4, 1].Value = "Jami tranzaksiyalar:";
-        summarySheet.Cells[4, 2].Value = report.DailyReport.TotalTransactions;
-        summarySheet.Cells[5, 1].Value = "Skladdagi tovarlar qiymati (xarid narxi):";
-        summarySheet.Cells[5, 2].Value = report.TotalInventoryCost;
-        summarySheet.Cells[6, 1].Value = "Skladdagi tovarlar qiymati (sotuv narxi):";
-        summarySheet.Cells[6, 2].Value = report.TotalInventorySaleValue;
-
-        using (var range = summarySheet.Cells[1, 1, 6, 2])
-        {
-            range.Style.Font.Bold = true;
-        }
+        var summarySheet = workbook.Worksheets.Add(isRu ? "Сводка" : "Summary");
+        summarySheet.Cell(1, 1).Value = isRu ? "Дата отчёта:" : "Hisobot sanasi:";
+        summarySheet.Cell(1, 2).Value = date.ToString("yyyy-MM-dd");
+        summarySheet.Cell(2, 1).Value = isRu ? "Общая выручка:" : "Jami savdo:";
+        summarySheet.Cell(2, 2).Value = report.DailyReport.TotalSales;
+        summarySheet.Cell(3, 1).Value = isRu ? "Общая прибыль:" : "Jami foyda:";
+        summarySheet.Cell(3, 2).Value = report.DailyReport.Profit;
+        summarySheet.Cell(4, 1).Value = isRu ? "Число транзакций:" : "Jami tranzaksiyalar:";
+        summarySheet.Cell(4, 2).Value = report.DailyReport.TotalTransactions;
+        summarySheet.Cell(5, 1).Value = isRu ? "Стоимость склада (закупка):" : "Skladdagi tovarlar qiymati (xarid narxi):";
+        summarySheet.Cell(5, 2).Value = report.TotalInventoryCost;
+        summarySheet.Cell(6, 1).Value = isRu ? "Стоимость склада (продажа):" : "Skladdagi tovarlar qiymati (sotuv narxi):";
+        summarySheet.Cell(6, 2).Value = report.TotalInventorySaleValue;
+        summarySheet.Range(1, 1, 6, 2).Style.Font.Bold = true;
 
         // 2. Seller Reports Sheet
-        var sellerSheet = package.Workbook.Worksheets.Add("Sotuvchilar");
-        sellerSheet.Cells[1, 1].Value = "Sotuvchi";
-        sellerSheet.Cells[1, 2].Value = "Jami savdo";
-        sellerSheet.Cells[1, 3].Value = "Foyda";
-        sellerSheet.Cells[1, 4].Value = "Tranzaksiyalar soni";
-
-        using (var headerRange = sellerSheet.Cells[1, 1, 1, 4])
-        {
-            headerRange.Style.Font.Bold = true;
-            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
-        }
+        var sellerSheet = workbook.Worksheets.Add(isRu ? "Продавцы" : "Sotuvchilar");
+        sellerSheet.Cell(1, 1).Value = isRu ? "Продавец" : "Sotuvchi";
+        sellerSheet.Cell(1, 2).Value = isRu ? "Общие продажи" : "Jami savdo";
+        sellerSheet.Cell(1, 3).Value = isRu ? "Прибыль" : "Foyda";
+        sellerSheet.Cell(1, 4).Value = isRu ? "Число транзакций" : "Tranzaksiyalar soni";
+        var sellerHeader = sellerSheet.Range(1, 1, 1, 4);
+        sellerHeader.Style.Font.Bold = true;
+        sellerHeader.Style.Fill.BackgroundColor = XLColor.LightBlue;
 
         int row = 2;
         foreach (var seller in report.SellerReports)
         {
-            sellerSheet.Cells[row, 1].Value = seller.SellerName;
-            sellerSheet.Cells[row, 2].Value = seller.TotalSales;
-            sellerSheet.Cells[row, 3].Value = seller.TotalProfit;
-            sellerSheet.Cells[row, 4].Value = seller.TransactionCount;
+            sellerSheet.Cell(row, 1).Value = seller.SellerName;
+            sellerSheet.Cell(row, 2).Value = seller.TotalSales;
+            sellerSheet.Cell(row, 3).Value = seller.TotalProfit;
+            sellerSheet.Cell(row, 4).Value = seller.TransactionCount;
             row++;
         }
 
-        sellerSheet.Cells.AutoFitColumns();
+        sellerSheet.Columns().AdjustToContents();
 
         // 3. Inventory Sheet
-        var inventorySheet = package.Workbook.Worksheets.Add("Sklad");
-        inventorySheet.Cells[1, 1].Value = "Mahsulot";
-        inventorySheet.Cells[1, 2].Value = "Miqdor";
-        inventorySheet.Cells[1, 3].Value = "Xarid narxi";
-        inventorySheet.Cells[1, 4].Value = "Sotuv narxi";
-        inventorySheet.Cells[1, 5].Value = "Minimal narx";
-        inventorySheet.Cells[1, 6].Value = "Jami xarid qiymati";
-        inventorySheet.Cells[1, 7].Value = "Jami sotuv qiymati";
-        inventorySheet.Cells[1, 8].Value = "Potensial foyda";
-
-        using (var headerRange = inventorySheet.Cells[1, 1, 1, 8])
-        {
-            headerRange.Style.Font.Bold = true;
-            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
-        }
+        var inventorySheet = workbook.Worksheets.Add(isRu ? "Склад" : "Sklad");
+        inventorySheet.Cell(1, 1).Value = isRu ? "Товар" : "Mahsulot";
+        inventorySheet.Cell(1, 2).Value = isRu ? "Количество" : "Miqdor";
+        inventorySheet.Cell(1, 3).Value = isRu ? "Цена покупки" : "Xarid narxi";
+        inventorySheet.Cell(1, 4).Value = isRu ? "Цена продажи" : "Sotuv narxi";
+        inventorySheet.Cell(1, 5).Value = isRu ? "Минимальная цена" : "Minimal narx";
+        inventorySheet.Cell(1, 6).Value = isRu ? "Общая закупочная стоимость" : "Jami xarid qiymati";
+        inventorySheet.Cell(1, 7).Value = isRu ? "Общая стоимость продажи" : "Jami sotuv qiymati";
+        inventorySheet.Cell(1, 8).Value = isRu ? "Потенциальная прибыль" : "Potensial foyda";
+        var invHeader = inventorySheet.Range(1, 1, 1, 8);
+        invHeader.Style.Font.Bold = true;
+        invHeader.Style.Fill.BackgroundColor = XLColor.LightGreen;
 
         row = 2;
         foreach (var item in report.InventoryReport)
         {
-            inventorySheet.Cells[row, 1].Value = item.ProductName;
-            inventorySheet.Cells[row, 2].Value = item.Quantity;
-            inventorySheet.Cells[row, 3].Value = item.CostPrice;
-            inventorySheet.Cells[row, 4].Value = item.SalePrice;
-            inventorySheet.Cells[row, 5].Value = item.MinSalePrice;
-            inventorySheet.Cells[row, 6].Value = item.TotalCostValue;
-            inventorySheet.Cells[row, 7].Value = item.TotalSaleValue;
-            inventorySheet.Cells[row, 8].Value = item.PotentialProfit;
+            inventorySheet.Cell(row, 1).Value = item.ProductName;
+            inventorySheet.Cell(row, 2).Value = item.Quantity;
+            inventorySheet.Cell(row, 3).Value = item.CostPrice;
+            inventorySheet.Cell(row, 4).Value = item.SalePrice;
+            inventorySheet.Cell(row, 5).Value = item.MinSalePrice;
+            inventorySheet.Cell(row, 6).Value = item.TotalCostValue;
+            inventorySheet.Cell(row, 7).Value = item.TotalSaleValue;
+            inventorySheet.Cell(row, 8).Value = item.PotentialProfit;
             row++;
         }
 
-        inventorySheet.Cells.AutoFitColumns();
+        inventorySheet.Columns().AdjustToContents();
 
-        return await package.GetAsByteArrayAsync();
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
     }
 
     private static DailyReportDto CalculateReport(
@@ -721,10 +740,14 @@ public class ReportService : IReportService
         DateTime date,
         string? userRole = null,
         Guid? userId = null,
+        DateTime? endDate = null,
         CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
-        var (start, end) = GetUtcDateRange(date);
+        // Single day when endDate is null; otherwise the inclusive [date,
+        // endDate] Tashkent-day range — start of the first day, end of the last.
+        var (start, _) = GetUtcDateRange(date);
+        var (_, end) = GetUtcDateRange(endDate ?? date);
 
         Expression<Func<Sale, bool>> salesQuery = s => s.CreatedAt >= start && s.CreatedAt < end &&
                               s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft &&
@@ -1046,8 +1069,11 @@ public class ReportService : IReportService
         return salesWithItems;
     }
 
-    public async Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
     {
+        bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        string L(string uz, string ru) => isRu ? ru : uz;
+
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         // Get all sales if no date range specified
@@ -1075,8 +1101,11 @@ public class ReportService : IReportService
             }
         }
 
-        // Owner role check - null or non-owner means no profit visibility
+        // Owner role check - null or non-owner means no profit visibility.
+        // Cost price is visible to Owner AND Admin (data.costPrice), but never
+        // to a Seller — so the Xarid column is masked for Sellers.
         bool includeProfit = !string.IsNullOrEmpty(userRole) && userRole == Role.Owner.ToString();
+        bool includeCost = userRole is "Owner" or "Admin";
         decimal totalSales = 0;
         decimal totalProfit = 0;
 
@@ -1124,8 +1153,8 @@ public class ReportService : IReportService
                 reportItems.Add(new SalesReportItem(
                     itemNumber++,
                     sale.CreatedAt,
-                    sale.Customer?.FullName ?? "Mijoz yo'q",
-                    sale.Seller?.FullName ?? "Noma'lum",
+                    sale.Customer?.FullName ?? L("Mijoz yo'q", "Без клиента"),
+                    sale.Seller?.FullName ?? L("Noma'lum", "Неизвестно"),
                     productName,
                     item.Quantity,
                     costPrice,  // ✅ Effective cost price (ExternalCostPrice for external products)
@@ -1141,135 +1170,7 @@ public class ReportService : IReportService
         try
         {
             _logger.LogInformation($"[ExportSalesListToPdfAsync] Starting PDF generation for {reportItems.Count} items");
-
-            return Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4);
-                    page.Margin(1, Unit.Centimetre);
-                    page.DefaultTextStyle(x => x.FontSize(9));
-
-                    // Header
-                    page.Header().Element(header =>
-                    {
-                        header.Column(column =>
-                        {
-                            column.Item().Row(row =>
-                            {
-                                row.RelativeItem().Column(col =>
-                                {
-                                    col.Item().Text("SOTUVLAR HISOBOTI").FontSize(16).Bold();
-                                    col.Item().Text(
-                                        startDate.HasValue && endDate.HasValue
-                                            ? $"{startDate.Value:dd.MM.yyyy} - {endDate.Value:dd.MM.yyyy}"
-                                            : "Barcha vaqt")
-                                        .FontSize(10).Light();
-                                });
-                            });
-                            column.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                        });
-                    });
-
-                    // Content - Table
-                    page.Content().Element(content =>
-                    {
-                        content.Table(table =>
-                        {
-                            // Define columns - always include profit column for consistency
-                            // It will be hidden if includeProfit is false
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.ConstantColumn(25);  // #
-                                columns.ConstantColumn(70); // Date
-                                columns.RelativeColumn(2);  // Customer
-                                columns.RelativeColumn(2);  // Seller
-                                columns.RelativeColumn(2);  // Product
-                                columns.ConstantColumn(50); // Quantity
-                                columns.ConstantColumn(60); // Cost
-                                columns.ConstantColumn(60); // Price
-                                columns.ConstantColumn(70); // Total
-                                columns.ConstantColumn(60); // Profit (always defined, conditionally shown)
-                                columns.ConstantColumn(50); // Status
-                            });
-
-                            // Table Header
-                            table.Header(header =>
-                            {
-                                header.Cell().Element(HeaderStyle).Text("#").SemiBold();
-                                header.Cell().Element(HeaderStyle).Text("Sana").SemiBold();
-                                header.Cell().Element(HeaderStyle).Text("Mijoz").SemiBold();
-                                header.Cell().Element(HeaderStyle).Text("Sotuvchi").SemiBold();
-                                header.Cell().Element(HeaderStyle).Text("Mahsulot").SemiBold();
-                                header.Cell().Element(HeaderStyle).AlignRight().Text("Miqdor").SemiBold();
-                                header.Cell().Element(HeaderStyle).AlignRight().Text("Xarid").SemiBold();
-                                header.Cell().Element(HeaderStyle).AlignRight().Text("Narx").SemiBold();
-                                header.Cell().Element(HeaderStyle).AlignRight().Text("Jami").SemiBold();
-                                header.Cell().Element(HeaderStyle).AlignRight().Text("Foyda").SemiBold();
-                                header.Cell().Element(HeaderStyle).Text("Holat").SemiBold();
-                            });
-
-                            // Table Rows
-                            foreach (var item in reportItems)
-                            {
-                                table.Cell().Element(RowStyle).Text($"{item.Number}");
-                                table.Cell().Element(RowStyle).Text(item.Date.ToString("dd.MM HH:mm"));
-                                table.Cell().Element(RowStyle).Text(item.CustomerName);
-                                table.Cell().Element(RowStyle).Text(item.SellerName);
-                                table.Cell().Element(RowStyle).Text(item.ProductName);
-                                table.Cell().Element(RowStyle).AlignRight().Text($"{item.Quantity:N2}");
-                                table.Cell().Element(RowStyle).AlignRight().Text($"{item.CostPrice:N0}");
-                                table.Cell().Element(RowStyle).AlignRight().Text($"{item.SalePrice:N0}");
-                                table.Cell().Element(RowStyle).AlignRight().Text($"{item.TotalPrice:N0}").Bold();
-                                if (includeProfit && item.Profit.HasValue)
-                                {
-                                    table.Cell().Element(RowStyle).AlignRight().Text($"{item.Profit.Value:N0}")
-                                        .FontColor(item.Profit.Value >= 0 ? Colors.Green.Darken2 : Colors.Red.Darken2);
-                                }
-                                else
-                                {
-                                    table.Cell().Element(RowStyle).AlignRight().Text("-");
-                                }
-                                table.Cell().Element(RowStyle).Text(item.Status);
-                            }
-                        });
-                    });
-
-                    // Footer with totals.
-                    // QuestPDF's `Element(...)` is a single-child slot — passing the
-                    // closure 3 separate items (line, row, page-number) directly into
-                    // `footer` blows up with: "You should not assign multiple child
-                    // elements to a single-child container." Wrap them in a Column.
-                    page.Footer().Element(footer =>
-                    {
-                        footer.Column(column =>
-                        {
-                            column.Item().PaddingTop(5).LineHorizontal(1)
-                                .LineColor(Colors.Grey.Lighten2);
-                            column.Item().PaddingTop(5).Row(row =>
-                            {
-                                row.RelativeItem();
-                                row.ConstantItem(150).Text("Jami savdo:").SemiBold();
-                                row.ConstantItem(100).Text($"{totalSales:N0} so'm").Bold();
-                                if (includeProfit)
-                                {
-                                    row.ConstantItem(100).Text("Jami foyda:").SemiBold();
-                                    row.ConstantItem(100).Text($"{totalProfit:N0} so'm")
-                                        .Bold()
-                                        .FontColor(totalProfit >= 0
-                                            ? Colors.Green.Darken2
-                                            : Colors.Red.Darken2);
-                                }
-                            });
-                            column.Item().PaddingTop(5).AlignCenter().Text(x =>
-                            {
-                                x.Span("Sahifa ");
-                                x.CurrentPageNumber();
-                            });
-                        });
-                    });
-                });
-            }).GeneratePdf();
+            return RenderSalesListPdf(reportItems, startDate, endDate, includeProfit, includeCost, totalSales, totalProfit, lang);
         }
         catch (Exception ex)
         {
@@ -1277,23 +1178,434 @@ public class ReportService : IReportService
         }
     }
 
-    public Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Renders the sales-list report as a branded A4 *landscape* PDF (Strotech
+    /// design system). Landscape gives the 11 columns enough width so headers
+    /// and names no longer wrap mid-word. Pure rendering — unit-testable.
+    /// </summary>
+    internal static byte[] RenderSalesListPdf(
+        IReadOnlyList<SalesReportItem> items,
+        DateTime? startDate,
+        DateTime? endDate,
+        bool includeProfit,
+        bool includeCost,
+        decimal totalSales,
+        decimal totalProfit,
+        string lang = "uz")
     {
-        throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
+        bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        string L(string uz, string ru) => isRu ? ru : uz;
+
+        var period = startDate.HasValue && endDate.HasValue
+            ? $"{startDate.Value:dd.MM.yyyy} — {endDate.Value:dd.MM.yyyy}"
+            : L("Barcha vaqt", "За всё время");
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4.Landscape());
+                page.Margin(0);
+                page.DefaultTextStyle(x => x.FontSize(8.5f).FontColor(PdfTheme.Ink));
+
+                // ── Brand header strip ──
+                page.Header().Background(PdfTheme.Brand).PaddingVertical(14).PaddingHorizontal(28).Row(row =>
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text(L("SOTUVLAR HISOBOTI", "ОТЧЁТ О ПРОДАЖАХ")).FontSize(17).Bold().FontColor(PdfTheme.White);
+                        col.Item().PaddingTop(2).Text(period).FontSize(9).FontColor(PdfTheme.BrandTint);
+                    });
+                    row.ConstantItem(180).AlignRight().AlignBottom()
+                        .Text($"{L("Yaratilgan: ", "Создан: ")}{DateTime.Now:dd.MM.yyyy HH:mm}")
+                        .FontSize(8).FontColor(PdfTheme.BrandTint);
+                });
+
+                // ── Content ──
+                page.Content().PaddingHorizontal(20).PaddingTop(14).Element(content =>
+                {
+                    if (items.Count == 0)
+                    {
+                        content.AlignCenter().PaddingTop(60)
+                            .Text(L("Tanlangan davr uchun ma'lumot topilmadi", "Нет данных за выбранный период"))
+                            .FontSize(11).FontColor(PdfTheme.Muted);
+                        return;
+                    }
+
+                    content.Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(26);   // #
+                            columns.ConstantColumn(82);   // Sana
+                            columns.RelativeColumn(2);    // Mijoz
+                            columns.RelativeColumn(2);    // Sotuvchi
+                            columns.RelativeColumn(2.4f); // Mahsulot
+                            columns.ConstantColumn(55);   // Miqdor
+                            if (includeCost) columns.ConstantColumn(72); // Xarid
+                            columns.ConstantColumn(72);   // Narx
+                            columns.ConstantColumn(90);   // Jami
+                            if (includeProfit) columns.ConstantColumn(78); // Foyda
+                            columns.ConstantColumn(86);   // Holat
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(SalesHeadCell).Text("#");
+                            header.Cell().Element(SalesHeadCell).Text(L("SANA", "ДАТА"));
+                            header.Cell().Element(SalesHeadCell).Text(L("MIJOZ", "КЛИЕНТ"));
+                            header.Cell().Element(SalesHeadCell).Text(L("SOTUVCHI", "ПРОДАВЕЦ"));
+                            header.Cell().Element(SalesHeadCell).Text(L("MAHSULOT", "ТОВАР"));
+                            header.Cell().Element(SalesHeadCell).AlignRight().Text(L("MIQDOR", "КОЛ-ВО"));
+                            if (includeCost)
+                                header.Cell().Element(SalesHeadCell).AlignRight().Text(L("XARID", "ЗАКУП"));
+                            header.Cell().Element(SalesHeadCell).AlignRight().Text(L("NARX", "ЦЕНА"));
+                            header.Cell().Element(SalesHeadCell).AlignRight().Text(L("JAMI", "СУММА"));
+                            if (includeProfit)
+                                header.Cell().Element(SalesHeadCell).AlignRight().Text(L("FOYDA", "ПРИБЫЛЬ"));
+                            header.Cell().Element(SalesHeadCell).Text(L("HOLAT", "СТАТУС"));
+                        });
+
+                        int i = 0;
+                        foreach (var item in items)
+                        {
+                            var bg = i++ % 2 == 0 ? PdfTheme.White : PdfTheme.Zebra;
+                            var (statusLabel, statusColor) = SaleStatusInfo(item.Status, isRu);
+
+                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text($"{item.Number}");
+                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text(item.Date.ToString("dd.MM.yy HH:mm"));
+                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text(item.CustomerName);
+                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text(item.SellerName);
+                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text(item.ProductName);
+                            table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{item.Quantity:N2}");
+                            if (includeCost)
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{item.CostPrice:N0}");
+                            table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{item.SalePrice:N0}");
+                            table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight()
+                                .Text($"{item.TotalPrice:N0}").SemiBold();
+                            if (includeProfit)
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight()
+                                    .Text($"{item.Profit ?? 0:N0}")
+                                    .FontColor((item.Profit ?? 0) >= 0 ? PdfTheme.Success : PdfTheme.Danger);
+                            table.Cell().Element(c => SalesBodyCell(c, bg))
+                                .Text(statusLabel).SemiBold().FontColor(statusColor);
+                        }
+                    });
+                });
+
+                // ── Footer: totals + page number ──
+                page.Footer().BorderTop(1).BorderColor(PdfTheme.Line)
+                    .PaddingHorizontal(20).PaddingVertical(8).Row(row =>
+                {
+                    row.RelativeItem().AlignMiddle()
+                        .Text(L("Strotech tomonidan yaratildi  ·  strotech.uz", "Создано в Strotech  ·  strotech.uz"))
+                        .FontSize(8).FontColor(PdfTheme.Muted);
+                    row.RelativeItem().AlignRight().AlignMiddle().Text(t =>
+                    {
+                        t.Span(L("Jami savdo:  ", "Общая сумма:  ")).FontSize(9).SemiBold().FontColor(PdfTheme.Muted);
+                        t.Span($"{totalSales:N0}{L(" so'm", " сум")}").FontSize(10).Bold().FontColor(PdfTheme.Ink);
+                        if (includeProfit)
+                        {
+                            t.Span(L("      Jami foyda:  ", "      Итого прибыль:  ")).FontSize(9).SemiBold().FontColor(PdfTheme.Muted);
+                            t.Span($"{totalProfit:N0}{L(" so'm", " сум")}").FontSize(10).Bold()
+                                .FontColor(totalProfit >= 0 ? PdfTheme.Success : PdfTheme.Danger);
+                        }
+                    });
+                });
+            });
+        }).GeneratePdf();
     }
 
-    public Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default)
+    // ── Sales-list rendering helpers ──
+    private static IContainer SalesHeadCell(IContainer c)
+        => c.Background(PdfTheme.Brand).PaddingVertical(6).PaddingHorizontal(6)
+            .DefaultTextStyle(x => x.FontSize(8).Bold().FontColor(PdfTheme.White));
+
+    private static IContainer SalesBodyCell(IContainer c, string background)
+        => c.Background(background).BorderBottom(1).BorderColor(PdfTheme.Line)
+            .PaddingVertical(5).PaddingHorizontal(6).AlignMiddle();
+
+    public async Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
+        bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        string L(string uz, string ru) => isRu ? ru : uz;
+
+        var report = await GetDailyReportAsync(date, userRole, cancellationToken);
+        var kpis = new List<(string Label, string Value, string Accent)>
+        {
+            (L("Jami savdo", "Общая выручка"),   $"{report.TotalSales:N0}{L(" so'm", " сум")}",     PdfTheme.Ink),
+            (L("To'langan", "Оплачено"),         $"{report.TotalPaidSales:N0}{L(" so'm", " сум")}", PdfTheme.Success),
+            (L("Qarz", "Долг"),                  $"{report.TotalDebtSales:N0}{L(" so'm", " сум")}", PdfTheme.Danger),
+            (L("Cheklar soni", "Кол-во чеков"),  $"{report.TotalTransactions:N0}",   PdfTheme.Ink),
+            (L("Zakup", "Закуп"),                $"{report.TotalZakup:N0}{L(" so'm", " сум")}",     PdfTheme.Muted),
+        };
+        if (report.Profit.HasValue)
+            kpis.Add((L("Sof foyda", "Чистая прибыль"), $"{report.Profit.Value:N0}{L(" so'm", " сум")}",
+                report.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger));
+
+        return RenderSummaryReportPdf(L("KUNLIK HISOBOT", "ДНЕВНОЙ ОТЧЁТ"), date.ToString("dd.MM.yyyy"),
+            kpis, report.PaymentBreakdown, lang);
     }
 
-    public Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("PDF export functionality is currently being updated. Please use Excel export instead.");
+        bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        string L(string uz, string ru) => isRu ? ru : uz;
+
+        var report = await GetPeriodReportAsync(request, userRole, cancellationToken);
+        var kpis = new List<(string Label, string Value, string Accent)>
+        {
+            (L("Jami savdo", "Общая выручка"),   $"{report.TotalSales:N0}{L(" so'm", " сум")}",     PdfTheme.Ink),
+            (L("To'langan", "Оплачено"),         $"{report.TotalPaidSales:N0}{L(" so'm", " сум")}", PdfTheme.Success),
+            (L("Qarz", "Долг"),                  $"{report.TotalDebtSales:N0}{L(" so'm", " сум")}", PdfTheme.Danger),
+            (L("Cheklar soni", "Кол-во чеков"),  $"{report.TotalTransactions:N0}",   PdfTheme.Ink),
+            (L("O'rtacha chek", "Средний чек"),  $"{report.AverageSale:N0}{L(" so'm", " сум")}",    PdfTheme.Ink),
+            (L("Zakup", "Закуп"),                $"{report.TotalZakup:N0}{L(" so'm", " сум")}",     PdfTheme.Muted),
+        };
+        if (report.Profit.HasValue)
+            kpis.Add((L("Sof foyda", "Чистая прибыль"), $"{report.Profit.Value:N0}{L(" so'm", " сум")}",
+                report.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger));
+
+        var period = $"{request.StartDate:dd.MM.yyyy} — {request.EndDate:dd.MM.yyyy}";
+        return RenderSummaryReportPdf(L("DAVRIY HISOBOT", "ОТЧЁТ ЗА ПЕРИОД"), period, kpis, report.PaymentBreakdown, lang);
     }
 
-    public async Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
     {
+        var report = await GetComprehensiveReportAsync(date, userRole, cancellationToken);
+        return RenderComprehensiveReportPdf(report, date.ToString("dd.MM.yyyy"), lang);
+    }
+
+    /// <summary>
+    /// Renders a daily/period summary report — KPI cards + payment breakdown.
+    /// Pure rendering (no I/O); unit-testable via PdfExportTests.
+    /// </summary>
+    internal static byte[] RenderSummaryReportPdf(
+        string title, string period,
+        IReadOnlyList<(string Label, string Value, string Accent)> kpis,
+        IReadOnlyList<PaymentBreakdownDto> payments,
+        string lang = "uz")
+    {
+        bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        string L(string uz, string ru) => isRu ? ru : uz;
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(0);
+                page.DefaultTextStyle(x => x.FontSize(10).FontColor(PdfTheme.Ink));
+
+                page.Header().Element(h => ReportHeaderBand(h, title, period, isRu));
+
+                page.Content().PaddingHorizontal(32).PaddingTop(22).Column(column =>
+                {
+                    column.Spacing(20);
+
+                    foreach (var chunk in kpis.Chunk(3))
+                    {
+                        column.Item().Row(row =>
+                        {
+                            row.Spacing(12);
+                            foreach (var k in chunk) KpiCard(row, k.Label, k.Value, k.Accent);
+                            for (int p = chunk.Length; p < 3; p++) row.RelativeItem();
+                        });
+                    }
+
+                    if (payments.Count > 0)
+                        column.Item().Column(sec =>
+                        {
+                            sec.Item().PaddingBottom(6).Text(L("TO'LOV TURLARI", "ТИПЫ ОПЛАТЫ"))
+                                .FontSize(11).Bold().FontColor(PdfTheme.BrandDark);
+                            sec.Item().Element(e => PaymentBreakdownTable(e, payments, isRu));
+                        });
+                });
+
+                page.Footer().Element(f => ReportFooterBand(f, isRu));
+            });
+        }).GeneratePdf();
+    }
+
+    /// <summary>
+    /// Renders the comprehensive report — daily summary KPIs, per-seller table
+    /// and an inventory overview. Pure rendering; unit-testable.
+    /// </summary>
+    internal static byte[] RenderComprehensiveReportPdf(ComprehensiveReportDto report, string dateLabel, string lang = "uz")
+    {
+        bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        string L(string uz, string ru) => isRu ? ru : uz;
+
+        var d = report.DailyReport;
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(0);
+                page.DefaultTextStyle(x => x.FontSize(9.5f).FontColor(PdfTheme.Ink));
+
+                page.Header().Element(h => ReportHeaderBand(h, L("TO'LIQ HISOBOT", "ПОЛНЫЙ ОТЧЁТ"), dateLabel, isRu));
+
+                page.Content().PaddingHorizontal(32).PaddingTop(20).Column(column =>
+                {
+                    column.Spacing(18);
+
+                    // Daily summary KPIs
+                    column.Item().Row(row =>
+                    {
+                        row.Spacing(12);
+                        KpiCard(row, L("Jami savdo", "Общая выручка"), $"{d.TotalSales:N0}{L(" so'm", " сум")}", PdfTheme.Ink);
+                        KpiCard(row, L("To'langan", "Оплачено"), $"{d.TotalPaidSales:N0}{L(" so'm", " сум")}", PdfTheme.Success);
+                        KpiCard(row, L("Qarz", "Долг"), $"{d.TotalDebtSales:N0}{L(" so'm", " сум")}", PdfTheme.Danger);
+                        if (d.Profit.HasValue)
+                            KpiCard(row, L("Sof foyda", "Чистая прибыль"), $"{d.Profit.Value:N0}{L(" so'm", " сум")}",
+                                d.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger);
+                    });
+
+                    // Seller breakdown
+                    column.Item().Column(sec =>
+                    {
+                        sec.Item().PaddingBottom(6).Text(L("SOTUVCHILAR", "ПРОДАВЦЫ"))
+                            .FontSize(11).Bold().FontColor(PdfTheme.BrandDark);
+                        sec.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn(3);
+                                columns.ConstantColumn(120);
+                                columns.ConstantColumn(80);
+                                columns.ConstantColumn(120);
+                            });
+                            table.Header(header =>
+                            {
+                                header.Cell().Element(SalesHeadCell).Text(L("SOTUVCHI", "ПРОДАВЕЦ"));
+                                header.Cell().Element(SalesHeadCell).AlignRight().Text(L("SAVDO", "ПРОДАЖИ"));
+                                header.Cell().Element(SalesHeadCell).AlignRight().Text(L("CHEKLAR", "ЧЕКИ"));
+                                header.Cell().Element(SalesHeadCell).AlignRight().Text(L("FOYDA", "ПРИБЫЛЬ"));
+                            });
+                            int i = 0;
+                            foreach (var s in report.SellerReports)
+                            {
+                                var bg = i++ % 2 == 0 ? PdfTheme.White : PdfTheme.Zebra;
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).Text(s.SellerName);
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{s.TotalSales:N0}");
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{s.TransactionCount:N0}");
+                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight()
+                                    .Text(s.TotalProfit.HasValue ? $"{s.TotalProfit.Value:N0}" : "—");
+                            }
+                        });
+                    });
+
+                    // Inventory overview
+                    column.Item().Column(sec =>
+                    {
+                        sec.Item().PaddingBottom(6).Text(L("SKLAD HOLATI", "СОСТОЯНИЕ СКЛАДА"))
+                            .FontSize(11).Bold().FontColor(PdfTheme.BrandDark);
+                        sec.Item().Row(row =>
+                        {
+                            row.Spacing(12);
+                            KpiCard(row, L("Mahsulotlar", "Товары"), $"{report.ProductCount:N0}", PdfTheme.Ink);
+                            KpiCard(row, L("Jami qiymat", "Общая стоимость"), $"{report.TotalInventoryValue:N0}{L(" so'm", " сум")}", PdfTheme.Ink);
+                            KpiCard(row, L("Kam qolgan", "Заканчивается"), $"{report.LowStockCount:N0}", PdfTheme.BrandDark);
+                            KpiCard(row, L("Tugagan", "Закончились"), $"{report.OutOfStockCount:N0}", PdfTheme.Danger);
+                        });
+                    });
+                });
+
+                page.Footer().Element(f => ReportFooterBand(f, isRu));
+            });
+        }).GeneratePdf();
+    }
+
+    // ── Report rendering helpers ──
+    private static void ReportHeaderBand(IContainer header, string title, string subtitle, bool isRu)
+    {
+        header.Background(PdfTheme.Brand).PaddingVertical(16).PaddingHorizontal(32).Row(row =>
+        {
+            row.RelativeItem().Column(col =>
+            {
+                col.Item().Text(title).FontSize(18).Bold().FontColor(PdfTheme.White);
+                col.Item().PaddingTop(2).Text(subtitle).FontSize(10).FontColor(PdfTheme.BrandTint);
+            });
+            row.ConstantItem(170).AlignRight().AlignBottom()
+                .Text($"{(isRu ? "Создан: " : "Yaratilgan: ")}{DateTime.Now:dd.MM.yyyy HH:mm}")
+                .FontSize(8).FontColor(PdfTheme.BrandTint);
+        });
+    }
+
+    private static void ReportFooterBand(IContainer footer, bool isRu)
+    {
+        footer.BorderTop(1).BorderColor(PdfTheme.Line)
+            .PaddingHorizontal(32).PaddingVertical(8).Row(row =>
+        {
+            row.RelativeItem().AlignMiddle()
+                .Text(isRu
+                    ? "Создано в Strotech  ·  strotech.uz"
+                    : "Strotech tomonidan yaratildi  ·  strotech.uz")
+                .FontSize(8).FontColor(PdfTheme.Muted);
+            row.RelativeItem().AlignRight().AlignMiddle().Text(x =>
+            {
+                x.DefaultTextStyle(s => s.FontSize(8).FontColor(PdfTheme.Muted));
+                x.Span(isRu ? "Стр. " : "Sahifa ");
+                x.CurrentPageNumber();
+                x.Span(" / ");
+                x.TotalPages();
+            });
+        });
+    }
+
+    private static void KpiCard(QuestPDF.Fluent.RowDescriptor row, string label, string value, string accent)
+    {
+        row.RelativeItem().Border(1).BorderColor(PdfTheme.Line).Background(PdfTheme.White)
+            .Padding(12).Column(col =>
+        {
+            col.Item().Text(label.ToUpperInvariant()).FontSize(7.5f).Bold().FontColor(PdfTheme.Muted);
+            col.Item().PaddingTop(5).Text(value).FontSize(13).Bold().FontColor(accent);
+        });
+    }
+
+    private static void PaymentBreakdownTable(IContainer container, IReadOnlyList<PaymentBreakdownDto> payments, bool isRu)
+    {
+        container.Table(table =>
+        {
+            table.ColumnsDefinition(columns =>
+            {
+                columns.RelativeColumn(3);
+                columns.ConstantColumn(90);
+                columns.ConstantColumn(150);
+            });
+            table.Header(header =>
+            {
+                header.Cell().Element(SalesHeadCell).Text(isRu ? "ТИП" : "TUR");
+                header.Cell().Element(SalesHeadCell).AlignRight().Text(isRu ? "КОЛ-ВО" : "SONI");
+                header.Cell().Element(SalesHeadCell).AlignRight().Text(isRu ? "СУММА" : "SUMMA");
+            });
+            int i = 0;
+            foreach (var p in payments)
+            {
+                var bg = i++ % 2 == 0 ? PdfTheme.White : PdfTheme.Zebra;
+                table.Cell().Element(c => SalesBodyCell(c, bg)).Text(PaymentLabel(p.PaymentType, isRu));
+                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{p.Count:N0}");
+                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{p.Amount:N0}{(isRu ? " сум" : " so'm")}");
+            }
+        });
+    }
+
+    private static string PaymentLabel(string type, bool isRu) => type switch
+    {
+        "Cash" => isRu ? "Наличные" : "Naqd",
+        "Transfer" => isRu ? "Перевод / Счёт" : "O'tkazma / Hisob",
+        "Qaytarilgan" or "Refund" => isRu ? "Возврат" : "Qaytarilgan",
+        _ => type, // Terminal / Click — already fine
+    };
+
+    public async Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
+    {
+        bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        string L(string uz, string ru) => isRu ? ru : uz;
+
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         var sales = await _unitOfWork.Sales.FindAsync(
@@ -1312,7 +1624,7 @@ public class ReportService : IReportService
         var seller = sale.Seller;
 
         // If seller was soft-deleted, fetch their name directly from database (ignoring soft-delete filter)
-        string sellerName = "Noma'lum sotuvchi";
+        string sellerName = L("Noma'lum sotuvchi", "Продавец не указан");
         if (seller != null)
         {
             sellerName = seller.FullName;
@@ -1330,10 +1642,11 @@ public class ReportService : IReportService
         var customer = sale.Customer;
 
         // If customer was soft-deleted, fetch their name from database (ignoring soft-delete filter)
-        string customerName = "Mijoz ko'rsatilmagan";
+        string noCustomer = L("Mijoz ko'rsatilmagan", "Без клиента");
+        string customerName = noCustomer;
         if (customer != null)
         {
-            customerName = customer.FullName ?? "Mijoz ko'rsatilmagan";
+            customerName = customer.FullName ?? noCustomer;
         }
         else if (sale.CustomerId.HasValue)
         {
@@ -1341,14 +1654,14 @@ public class ReportService : IReportService
             var deletedCustomer = await _unitOfWork.Customers.GetByIdIncludingDeletedAsync(sale.CustomerId.Value, cancellationToken);
             if (deletedCustomer != null)
             {
-                customerName = deletedCustomer.FullName ?? "Mijoz ko'rsatilmagan";
+                customerName = deletedCustomer.FullName ?? noCustomer;
             }
         }
 
         // ✅ Get all ordinary products for the sale items (faqat oddiy mahsulotlar uchun)
         var ordinaryProductIds = sale.SaleItems
             .Where(si => !si.IsExternal && si.ProductId.HasValue)
-            .Select(si => si.ProductId.Value)
+            .Select(si => si.ProductId!.Value)
             .Distinct()
             .ToList();
 
@@ -1368,7 +1681,14 @@ public class ReportService : IReportService
         // Determine payment type
         var primaryPayment = sale.Payments.FirstOrDefault(p => p.Amount > 0);
         var paymentTypeEnum = primaryPayment?.PaymentType ?? PaymentType.Cash;
-        string paymentTypeUz = paymentTypeEnum.ToUzbek();
+        string paymentTypeUz = isRu
+            ? paymentTypeEnum switch
+            {
+                PaymentType.Cash => "Наличные",
+                PaymentType.Transfer => "Перевод / Счёт",
+                _ => paymentTypeEnum.ToString(), // Terminal / Click — already fine
+            }
+            : paymentTypeEnum.ToUzbek();
 
         // Create invoice data
         var invoiceItems = new List<InvoiceItemData>();
@@ -1384,13 +1704,13 @@ public class ReportService : IReportService
                 else
                 {
                     var product = productDict.GetValueOrDefault(item.ProductId.Value);
-                    productName = product?.Name ?? "Noma'lum mahsulot";
+                    productName = product?.Name ?? L("Noma'lum mahsulot", "Неизвестный товар");
                 }
             }
             else
             {
                 // Tashqi mahsulot
-                productName = item.ExternalProductName ?? "Noma'lum mahsulot";
+                productName = item.ExternalProductName ?? L("Noma'lum mahsulot", "Неизвестный товар");
             }
             invoiceItems.Add(new InvoiceItemData(
                 productName,
@@ -1401,18 +1721,6 @@ public class ReportService : IReportService
                 item.IsExternal
             ));
         }
-
-        // Uzbek-friendly status labels. Without this the PDF would say
-        // "Paid" / "Closed" in English which feels off in a Uzbek invoice.
-        var statusUz = sale.Status switch
-        {
-            SaleStatus.Draft     => "Yangi (Draft)",
-            SaleStatus.Paid      => "To'langan",
-            SaleStatus.Debt      => "Qarz",
-            SaleStatus.Closed    => "Qarz yopilgan",
-            SaleStatus.Cancelled => "Bekor qilingan",
-            _                    => sale.Status.ToString()
-        };
 
         var invoiceData = new InvoiceData(
             market.Name,
@@ -1426,178 +1734,12 @@ public class ReportService : IReportService
             sale.TotalAmount,
             sale.PaidAmount,
             sale.TotalAmount - sale.PaidAmount,
-            statusUz
+            sale.Status.ToString() // raw enum — RenderInvoicePdf localises it
         );
 
-        // Generate PDF using QuestPDF
         try
         {
-            return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
-                page.Margin(2, Unit.Centimetre);
-                page.DefaultTextStyle(x => x.FontSize(10));
-
-                // Header
-                page.Header().Element(header =>
-                {
-                    header.Column(column =>
-                    {
-                        column.Item().Row(row =>
-                        {
-                            row.RelativeItem().Column(col =>
-                            {
-                                col.Item().Text(invoiceData.MarketName).FontSize(18).Bold();
-                                col.Item().Text(invoiceData.MarketDescription).FontSize(10).Light();
-                            });
-                            row.ConstantItem(100).AlignRight().Text("FAKTURA").FontSize(12).Bold();
-                        });
-                        column.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                    });
-                });
-
-                // Content
-                page.Content().Element(content =>
-                {
-                    content.Column(column =>
-                    {
-                        // Invoice details
-                        column.Spacing(10);
-
-                        column.Item().Row(row =>
-                        {
-                            row.RelativeItem().Column(col =>
-                            {
-                                col.Item().Text("Faktura №:").SemiBold();
-                                col.Item().Text(invoiceData.InvoiceNumber.ToString());
-                                col.Item().Text("Sana:").SemiBold();
-                                col.Item().Text(invoiceData.Date.ToString("dd.MM.yyyy HH:mm"));
-                            });
-
-                            row.RelativeItem().Column(col =>
-                            {
-                                col.Item().Text("Sotuvchi:").SemiBold();
-                                col.Item().Text(invoiceData.SellerName);
-                                col.Item().Text("Mijoz:").SemiBold();
-                                col.Item().Text(invoiceData.CustomerName);
-                            });
-                        });
-
-                        column.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-
-                        // Items table
-                        column.Item().Element(e =>
-                        {
-                            e.Table(table =>
-                            {
-                                table.ColumnsDefinition(columns =>
-                                {
-                                    columns.ConstantColumn(30);
-                                    columns.RelativeColumn(3);
-                                    columns.ConstantColumn(60);
-                                    columns.ConstantColumn(80);
-                                    columns.RelativeColumn(2);
-                                });
-
-                                table.Header(header =>
-                                {
-                                    header.Cell().Element(CellStyle).Text("#");
-                                    header.Cell().Element(CellStyle).Text("Mahsulot").SemiBold();
-                                    header.Cell().Element(CellStyle).AlignRight().Text("Miqdor");
-                                    header.Cell().Element(CellStyle).AlignRight().Text("Narx");
-                                    header.Cell().Element(CellStyle).AlignRight().Text("Jami").SemiBold();
-                                });
-
-                                int index = 1;
-                                foreach (var item in invoiceData.Items)
-                                {
-                                    table.Cell().Element(CellStyle).Text($"{index++}");
-                                    // External products get a "(tashqi)" tag inline so the
-                                    // customer can see at a glance which items came from
-                                    // outside stock — otherwise external and ordinary look
-                                    // identical in the invoice.
-                                    table.Cell().Element(CellStyle).Text(t =>
-                                    {
-                                        t.Span(item.ProductName);
-                                        if (item.IsExternal)
-                                        {
-                                            t.Span("  ");
-                                            t.Span("(tashqi)")
-                                                .FontSize(8)
-                                                .FontColor(Colors.Orange.Darken2)
-                                                .SemiBold();
-                                        }
-                                    });
-                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.Quantity:N2}");
-                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.Price:N2} so'm");
-                                    table.Cell().Element(CellStyle).AlignRight().Text($"{item.Total:N2} so'm");
-
-                                    if (!string.IsNullOrEmpty(item.Comment))
-                                    {
-                                        table.Cell().ColumnSpan(5).Element(CommentStyle).Text($"Izoh: {item.Comment}").FontSize(8);
-                                    }
-                                }
-                            });
-                        });
-
-                        column.Item().PaddingVertical(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-
-                        // Totals
-                        column.Item().AlignRight().Element(e =>
-                        {
-                            e.Table(table =>
-                            {
-                                table.ColumnsDefinition(columns =>
-                                {
-                                    columns.RelativeColumn(2);
-                                    columns.ConstantColumn(100);
-                                });
-
-                                // Status — colored to match its meaning (green=Paid,
-                                // amber=Debt, blue=Closed, red=Cancelled, grey=Draft).
-                                var statusColor = invoiceData.Status switch
-                                {
-                                    "To'langan"      => Colors.Green.Darken2,
-                                    "Qarz"           => Colors.Orange.Darken2,
-                                    "Qarz yopilgan" => Colors.Blue.Darken2,
-                                    "Bekor qilingan" => Colors.Red.Medium,
-                                    _                => Colors.Grey.Darken2
-                                };
-                                table.Cell().Element(TotalCellStyle).Text("Holat:");
-                                table.Cell().Element(TotalCellStyle).AlignRight()
-                                    .Text(invoiceData.Status)
-                                    .SemiBold()
-                                    .FontColor(statusColor);
-
-                                table.Cell().Element(TotalCellStyle).Text("To'lov turi:");
-                                table.Cell().Element(TotalCellStyle).AlignRight().Text(invoiceData.PaymentType).SemiBold();
-
-                                table.Cell().Element(TotalCellStyle).Text("Jami summa:").Bold();
-                                table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.TotalAmount:N2} so'm").Bold();
-
-                                table.Cell().Element(TotalCellStyle).Text("To'langan:");
-                                table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.PaidAmount:N2} so'm");
-
-                                if (invoiceData.RemainingAmount > 0)
-                                {
-                                    table.Cell().Element(TotalCellStyle).Text("Qarzdorlik:").Bold().FontColor(Colors.Red.Medium);
-                                    table.Cell().Element(TotalCellStyle).AlignRight().Text($"{invoiceData.RemainingAmount:N2} so'm").Bold().FontColor(Colors.Red.Medium);
-                                }
-                            });
-                        });
-                    });
-                });
-
-                // Footer
-                page.Footer().AlignCenter().Text(x =>
-                {
-                    x.Span("Sahifa ");
-                    x.CurrentPageNumber();
-                });
-            });
-        }).GeneratePdf();
+            return RenderInvoicePdf(invoiceData, lang);
         }
         catch (Exception ex)
         {
@@ -1605,35 +1747,180 @@ public class ReportService : IReportService
         }
     }
 
-    private static IContainer CellStyle(IContainer container)
+    /// <summary>
+    /// Renders a sale invoice as a branded A4 PDF (Strotech design system).
+    /// Pure rendering — no I/O — so it can be unit-tested with sample data.
+    /// </summary>
+    internal static byte[] RenderInvoicePdf(InvoiceData data, string lang = "uz")
     {
-        return container
-            .Border(1)
-            .BorderColor(Colors.Grey.Lighten2)
-            .Padding(5)
-            .AlignCenter()
-            .AlignMiddle();
+        bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        string L(string uz, string ru) => isRu ? ru : uz;
+
+        var (statusLabel, statusColor) = SaleStatusInfo(data.Status, isRu);
+        var shortId = data.InvoiceNumber.ToString("N")[..6].ToUpperInvariant();
+        var displayNumber = $"INV-{data.Date:yyMMdd}-{shortId}";
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(0);
+                page.DefaultTextStyle(x => x.FontSize(10).FontColor(PdfTheme.Ink));
+
+                // ── Brand header strip ──
+                page.Header().Background(PdfTheme.Brand).PaddingVertical(18).PaddingHorizontal(32).Row(row =>
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text(data.MarketName).FontSize(20).Bold().FontColor(PdfTheme.White);
+                        if (!string.IsNullOrWhiteSpace(data.MarketDescription))
+                            col.Item().PaddingTop(2).Text(data.MarketDescription)
+                                .FontSize(9).FontColor(PdfTheme.BrandTint);
+                    });
+                    row.ConstantItem(150).Column(col =>
+                    {
+                        col.Item().AlignRight().Text(L("FAKTURA", "СЧЁТ-ФАКТУРА")).FontSize(22).Bold().FontColor(PdfTheme.White);
+                        col.Item().AlignRight().Text(displayNumber).FontSize(9).FontColor(PdfTheme.BrandTint);
+                    });
+                });
+
+                // ── Content ──
+                page.Content().PaddingHorizontal(32).PaddingTop(22).Column(column =>
+                {
+                    column.Spacing(16);
+
+                    // Meta card
+                    column.Item().Background(PdfTheme.BrandLight).Padding(14).Row(row =>
+                    {
+                        row.RelativeItem().Column(col =>
+                        {
+                            InvoiceMetaField(col, L("Sana", "Дата"), data.Date.ToString("dd.MM.yyyy  HH:mm"));
+                            col.Item().PaddingTop(6);
+                            InvoiceMetaField(col, L("Sotuvchi", "Продавец"), data.SellerName);
+                        });
+                        row.RelativeItem().Column(col =>
+                        {
+                            InvoiceMetaField(col, L("Mijoz", "Клиент"), data.CustomerName);
+                            col.Item().PaddingTop(6);
+                            InvoiceMetaField(col, L("To'lov turi", "Тип оплаты"), data.PaymentType);
+                        });
+                        row.ConstantItem(120).AlignRight().AlignMiddle().Element(badge =>
+                        {
+                            badge.Background(statusColor).PaddingHorizontal(12).PaddingVertical(6)
+                                .Text(statusLabel.ToUpperInvariant())
+                                .FontSize(9).Bold().FontColor(PdfTheme.White);
+                        });
+                    });
+
+                    // Items table
+                    column.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(32);   // #
+                            columns.RelativeColumn(4);    // Mahsulot
+                            columns.RelativeColumn(1.4f); // Miqdor
+                            columns.RelativeColumn(2);    // Narx
+                            columns.RelativeColumn(2.2f); // Jami
+                        });
+
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(InvoiceHeadCell).Text("#");
+                            header.Cell().Element(InvoiceHeadCell).Text(L("MAHSULOT", "ТОВАР"));
+                            header.Cell().Element(InvoiceHeadCell).AlignRight().Text(L("MIQDOR", "КОЛ-ВО"));
+                            header.Cell().Element(InvoiceHeadCell).AlignRight().Text(L("NARX", "ЦЕНА"));
+                            header.Cell().Element(InvoiceHeadCell).AlignRight().Text(L("JAMI", "СУММА"));
+                        });
+
+                        int i = 0;
+                        foreach (var item in data.Items)
+                        {
+                            var bg = i++ % 2 == 0 ? PdfTheme.White : PdfTheme.Zebra;
+                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).Text($"{i}");
+                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).Text(t =>
+                            {
+                                t.Span(item.ProductName);
+                                if (item.IsExternal)
+                                    t.Span(L("  (tashqi)", "  (внешний)")).FontSize(8).SemiBold().FontColor(PdfTheme.BrandDark);
+                            });
+                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).AlignRight().Text($"{item.Quantity:N2}");
+                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).AlignRight().Text($"{item.Price:N0}");
+                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).AlignRight()
+                                .Text($"{item.Total:N0}").SemiBold();
+
+                            if (!string.IsNullOrWhiteSpace(item.Comment))
+                                table.Cell().ColumnSpan(5).Element(c => InvoiceBodyCell(c, bg))
+                                    .Text($"{L("Izoh", "Примечание")}: {item.Comment}").FontSize(8).Italic().FontColor(PdfTheme.Muted);
+                        }
+                    });
+
+                    // Totals block
+                    column.Item().AlignRight().Width(260).Column(col =>
+                    {
+                        InvoiceTotalRow(col, L("Jami summa", "Общая сумма"), $"{data.TotalAmount:N0}{L(" so'm", " сум")}", bold: true);
+                        InvoiceTotalRow(col, L("To'langan", "Оплачено"), $"{data.PaidAmount:N0}{L(" so'm", " сум")}");
+                        if (data.RemainingAmount > 0)
+                            InvoiceTotalRow(col, L("Qarzdorlik", "Задолженность"), $"{data.RemainingAmount:N0}{L(" so'm", " сум")}",
+                                bold: true, color: PdfTheme.Danger);
+                    });
+
+                    // Thank-you note
+                    column.Item().PaddingTop(8).AlignCenter()
+                        .Text(L("Xaridingiz uchun rahmat!", "Спасибо за покупку!"))
+                        .FontSize(11).Bold().FontColor(PdfTheme.BrandDark);
+                });
+
+                // ── Footer ──
+                page.Footer().BorderTop(1).BorderColor(PdfTheme.Line)
+                    .PaddingHorizontal(32).PaddingVertical(8).Row(row =>
+                {
+                    row.RelativeItem().AlignMiddle()
+                        .Text(L("Strotech tomonidan yaratildi  ·  strotech.uz", "Создано в Strotech  ·  strotech.uz"))
+                        .FontSize(8).FontColor(PdfTheme.Muted);
+                    row.RelativeItem().AlignRight().AlignMiddle().Text(x =>
+                    {
+                        x.DefaultTextStyle(s => s.FontSize(8).FontColor(PdfTheme.Muted));
+                        x.Span(L("Sahifa ", "Стр. "));
+                        x.CurrentPageNumber();
+                        x.Span(" / ");
+                        x.TotalPages();
+                    });
+                });
+            });
+        }).GeneratePdf();
     }
 
-    private static IContainer CommentStyle(IContainer container)
+    // ── Invoice rendering helpers ──
+    private static void InvoiceMetaField(QuestPDF.Fluent.ColumnDescriptor col, string label, string value)
     {
-        return container
-            .Border(1)
-            .BorderColor(Colors.Grey.Lighten2)
-            .PaddingLeft(35)
-            .AlignLeft()
-            .AlignMiddle();
+        col.Item().Text(label.ToUpperInvariant()).FontSize(7.5f).Bold().FontColor(PdfTheme.Muted);
+        col.Item().Text(value).FontSize(10).FontColor(PdfTheme.Ink);
     }
 
-    private static IContainer TotalCellStyle(IContainer container)
+    private static void InvoiceTotalRow(QuestPDF.Fluent.ColumnDescriptor col, string label, string value,
+        bool bold = false, string color = PdfTheme.Ink)
     {
-        return container
-            .Padding(3)
-            .AlignRight();
+        col.Item().PaddingVertical(3).Row(row =>
+        {
+            var l = row.RelativeItem().Text(label).FontSize(10).FontColor(color);
+            if (bold) l.SemiBold();
+            var v = row.ConstantItem(130).AlignRight().Text(value).FontSize(11).FontColor(color);
+            if (bold) v.Bold();
+        });
     }
 
-    // Invoice data classes
-    private record InvoiceData(
+    private static IContainer InvoiceHeadCell(IContainer c)
+        => c.Background(PdfTheme.Brand).PaddingVertical(7).PaddingHorizontal(8);
+
+    private static IContainer InvoiceBodyCell(IContainer c, string background)
+        => c.Background(background).BorderBottom(1).BorderColor(PdfTheme.Line)
+            .PaddingVertical(6).PaddingHorizontal(8).AlignMiddle();
+
+    // Invoice data classes — `internal` so the PDF renderers (and their tests)
+    // can construct them; see InternalsVisibleTo in the .csproj.
+    internal record InvoiceData(
         string MarketName,
         string MarketDescription,
         string SellerName,
@@ -1648,7 +1935,7 @@ public class ReportService : IReportService
         string Status
     );
 
-    private record InvoiceItemData(
+    internal record InvoiceItemData(
         string ProductName,
         decimal Quantity,
         decimal Price,
@@ -1657,7 +1944,7 @@ public class ReportService : IReportService
         bool IsExternal
     );
 
-    private record SalesReportItem(
+    internal record SalesReportItem(
         int Number,
         DateTime Date,
         string CustomerName,
@@ -1670,6 +1957,37 @@ public class ReportService : IReportService
         decimal? Profit,
         string Status
     );
+
+    // ── Strotech PDF design system ──────────────────────────────────────
+    // Single source of truth for every PDF's colours. Mirrors the Flutter
+    // app's design tokens (AppTokens) so printed documents match the UI.
+    internal static class PdfTheme
+    {
+        public const string Brand = "#FF6B00";       // primary accent (orange)
+        public const string BrandDark = "#E55400";   // headings / emphasis
+        public const string BrandLight = "#FFF4EB";  // tinted section background
+        public const string BrandTint = "#FFE9D6";   // on-brand subtle text
+        public const string Ink = "#0F172A";         // primary text
+        public const string Muted = "#64748B";       // secondary text
+        public const string Line = "#E2E8F0";        // dividers / borders
+        public const string Zebra = "#F8FAFC";       // alternate table row
+        public const string White = "#FFFFFF";
+        public const string Success = "#16A34A";     // paid / profit
+        public const string Danger = "#DC2626";      // debt / loss
+        public const string InfoBlue = "#2563EB";    // closed
+    }
+
+    /// <summary>Localised label + status colour for a sale status — accepts
+    /// both the raw enum name ("Paid") and an already-localised label.</summary>
+    private static (string Label, string Color) SaleStatusInfo(string status, bool isRu) => status switch
+    {
+        "Paid" or "To'langan" => (isRu ? "Оплачено" : "To'langan", PdfTheme.Success),
+        "Debt" or "Qarz" => (isRu ? "Долг" : "Qarz", PdfTheme.Danger),
+        "Closed" or "Qarz yopilgan" => (isRu ? "Долг закрыт" : "Qarz yopilgan", PdfTheme.InfoBlue),
+        "Cancelled" or "Bekor qilingan" => (isRu ? "Отменено" : "Bekor qilingan", PdfTheme.Danger),
+        "Draft" => (isRu ? "Черновик" : "Qoralama", PdfTheme.Muted),
+        _ => (status, PdfTheme.Muted),
+    };
 
     private static IContainer HeaderStyle(IContainer container)
     {
@@ -1905,7 +2223,10 @@ public class ReportService : IReportService
                 Profit: includeProfit ? agg.profit : null));
         }
 
-        return new TopProductsDto(period ?? "month", sortKey, rows);
+        // Echo the *resolved* period, not the requested one — that way when
+        // today→week fallback kicked in above the UI knows to re-label the
+        // panel as "Bu hafta" instead of misleadingly "Bugun".
+        return new TopProductsDto(effectivePeriod ?? "month", sortKey, rows);
     }
 
     /// <summary>
@@ -1989,20 +2310,39 @@ public class ReportService : IReportService
         var revenue = salesList.Sum(s => s.TotalAmount);
         var averageCheck = saleCount == 0 ? 0m : revenue / saleCount;
 
-        // "Shift duration" = minutes since the first sale. This is an
-        // approximation until we have a proper Shift entity — sellers
-        // typically take their first sale shortly after clocking in, so the
-        // signal is close enough for a dashboard hint.
         DateTime? firstSaleAt = saleCount == 0
             ? null
             : salesList.Min(s => s.CreatedAt);
-        int shiftMinutes = 0;
-        if (firstSaleAt is { } first)
+
+        // Real shift tracking: sum the worked minutes of every Shift the seller
+        // opened within the period (open shifts count up to "now"). Falls back
+        // to the "minutes since first sale" heuristic when the seller has no
+        // recorded shifts yet — so the dashboard never regresses to 0.
+        var shifts = await _unitOfWork.Shifts.FindAsync(
+            s => s.UserId == userId && s.MarketId == marketId &&
+                 s.OpenedAt >= rangeStartUtc && s.OpenedAt < rangeEndUtc,
+            cancellationToken);
+        var shiftList = shifts.ToList();
+
+        int shiftMinutes;
+        if (shiftList.Count > 0)
+        {
+            shiftMinutes = shiftList.Sum(s =>
+            {
+                var minutes = ((s.ClosedAt ?? DateTime.UtcNow) - s.OpenedAt).TotalMinutes;
+                return minutes > 0 ? (int)minutes : 0;
+            });
+        }
+        else if (firstSaleAt is { } first)
         {
             var elapsed = DateTime.UtcNow - first;
             // Clamp to non-negative — clock-skew between server and DB can
             // produce small negatives that would render as "-3 min".
             shiftMinutes = elapsed.TotalMinutes > 0 ? (int)elapsed.TotalMinutes : 0;
+        }
+        else
+        {
+            shiftMinutes = 0;
         }
 
         return new MyPerformanceDto(

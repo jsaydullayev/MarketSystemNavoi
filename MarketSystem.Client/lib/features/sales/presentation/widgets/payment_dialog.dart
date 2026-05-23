@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+import 'quick_add_customer_sheet.dart';
+
 class PaymentDialog extends StatefulWidget {
   final String saleId;
   final double totalAmount;
   final Map<String, dynamic>? selectedCustomer;
-  final Function(List<Map<String, dynamic>>, bool) onConfirm;
+
+  /// Fired on confirm. The third argument is the customer the sale should
+  /// be attributed to — it may differ from [selectedCustomer] if the cashier
+  /// created one inline from the debt row, so the caller MUST use this value
+  /// (not its own snapshot) when creating the sale.
+  final Function(List<Map<String, dynamic>>, bool, Map<String, dynamic>?)
+      onConfirm;
   final VoidCallback? onCancel;
 
   const PaymentDialog({
@@ -33,6 +42,11 @@ class PaymentDialogState extends State<PaymentDialog> {
   bool _useClick = false;
   bool _useDebt = false;
 
+  /// Local, mutable copy of the selected customer. Starts as
+  /// widget.selectedCustomer but can be replaced when the cashier creates a
+  /// customer inline via the debt row. The widget field stays final.
+  Map<String, dynamic>? _customer;
+
   final TextEditingController _cashController = TextEditingController();
   final TextEditingController _terminalController = TextEditingController();
   final TextEditingController _transferController = TextEditingController();
@@ -41,12 +55,31 @@ class PaymentDialogState extends State<PaymentDialog> {
   bool _isProcessing = false;
 
   @override
+  void initState() {
+    super.initState();
+    _customer = widget.selectedCustomer;
+  }
+
+  @override
   void dispose() {
     _cashController.dispose();
     _terminalController.dispose();
     _transferController.dispose();
     _clickController.dispose();
     super.dispose();
+  }
+
+  /// Open the inline "create customer" sheet. On success, adopt the new
+  /// customer and turn the debt toggle on — the cashier opened this sheet
+  /// precisely because they wanted a debt sale.
+  Future<void> _addCustomerInline() async {
+    final created = await showQuickAddCustomerSheet(context);
+    if (created != null && mounted) {
+      setState(() {
+        _customer = created;
+        _useDebt = true;
+      });
+    }
   }
 
   double get _totalPaid {
@@ -72,7 +105,7 @@ class PaymentDialogState extends State<PaymentDialog> {
   bool get _hasDebt => _useDebt && _remainingAmount > 0.01;
 
   bool _canConfirm() {
-    if (_hasDebt) return widget.selectedCustomer != null;
+    if (_hasDebt) return _customer != null;
     return _totalPaid > 0 && _remainingAmount <= 0.01;
   }
 
@@ -89,9 +122,10 @@ class PaymentDialogState extends State<PaymentDialog> {
           right: AppSpacing.xl2,
           top: AppSpacing.lg,
         ),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl2)),
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -101,7 +135,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -119,13 +153,13 @@ class PaymentDialogState extends State<PaymentDialog> {
                       vertical: AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.brandLight,
+                      color: context.colors.brandLight,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Text(
                       NumberFormatter.formatDecimal(widget.totalAmount),
                       style: AppTextStyles.labelLarge().copyWith(
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                       ),
                     ),
                   ),
@@ -133,6 +167,7 @@ class PaymentDialogState extends State<PaymentDialog> {
               ),
               const SizedBox(height: AppSpacing.lg),
               _buildPaymentRow(
+                context,
                 l10n.cash,
                 _useCash,
                 (v) => setState(() => _useCash = v!),
@@ -141,14 +176,16 @@ class PaymentDialogState extends State<PaymentDialog> {
                 AppColors.success,
               ),
               _buildPaymentRow(
+                context,
                 l10n.bankCard,
                 _useTerminal,
                 (v) => setState(() => _useTerminal = v!),
                 _terminalController,
                 Icons.credit_card,
-                AppColors.brand,
+                context.colors.brand,
               ),
               _buildPaymentRow(
+                context,
                 l10n.transfer,
                 _useTransfer,
                 (v) => setState(() => _useTransfer = v!),
@@ -157,15 +194,16 @@ class PaymentDialogState extends State<PaymentDialog> {
                 AppColors.warning,
               ),
               _buildPaymentRow(
+                context,
                 l10n.click,
                 _useClick,
                 (v) => setState(() => _useClick = v!),
                 _clickController,
                 Icons.phone_android,
-                AppColors.brand,
+                context.colors.brand,
               ),
-              const Divider(height: 30, color: AppColors.border),
-              _buildSummary(l10n),
+              Divider(height: 30, color: context.colors.border),
+              _buildSummary(context, l10n),
               const SizedBox(height: AppSpacing.xl2),
               Row(
                 children: [
@@ -195,6 +233,7 @@ class PaymentDialogState extends State<PaymentDialog> {
   }
 
   Widget _buildPaymentRow(
+    BuildContext context,
     String title,
     bool value,
     Function(bool?) onChanged,
@@ -216,7 +255,7 @@ class PaymentDialogState extends State<PaymentDialog> {
           onChanged: onChanged,
           secondary: Icon(icon, color: color),
           contentPadding: EdgeInsets.zero,
-          activeColor: AppColors.brand,
+          activeColor: context.colors.brand,
         ),
         if (value)
           Padding(
@@ -233,12 +272,12 @@ class PaymentDialogState extends State<PaymentDialog> {
               decoration: InputDecoration(
                 hintText: l10n.enterAmount,
                 hintStyle: AppTextStyles.bodyMedium().copyWith(
-                  color: AppColors.textMuted,
+                  color: context.colors.textMuted,
                 ),
                 suffixText: l10n.currencySom,
                 suffixStyle: AppTextStyles.bodySmall(),
                 filled: true,
-                fillColor: AppColors.inputFill,
+                fillColor: context.colors.inputFill,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   borderSide: BorderSide.none,
@@ -249,8 +288,8 @@ class PaymentDialogState extends State<PaymentDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide: const BorderSide(
-                    color: AppColors.brand,
+                  borderSide: BorderSide(
+                    color: context.colors.brand,
                     width: 1.5,
                   ),
                 ),
@@ -265,13 +304,13 @@ class PaymentDialogState extends State<PaymentDialog> {
     );
   }
 
-  Widget _buildSummary(AppLocalizations l10n) {
+  Widget _buildSummary(BuildContext context, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.bg,
+        color: context.colors.bg,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderSoft),
+        border: Border.all(color: context.colors.borderSoft),
       ),
       child: Column(
         children: [
@@ -286,23 +325,71 @@ class PaymentDialogState extends State<PaymentDialog> {
             NumberFormatter.formatDecimal(_remainingAmount),
             _remainingAmount > 0 ? AppColors.danger : AppColors.success,
           ),
-          const Divider(color: AppColors.border),
-          CheckboxListTile(
-            title: Text(
-              l10n.takeAsDebt,
-              style: AppTextStyles.bodyMedium(),
+          Divider(color: context.colors.border),
+          // Debt toggle. When a customer is attached this is a normal
+          // checkbox. When there isn't one, instead of greying the row out
+          // (which used to dead-end the cashier), the subtitle becomes a
+          // tappable "+ add customer" affordance that opens the inline
+          // create sheet — so a debt sale can be completed without leaving
+          // the payment dialog.
+          if (_customer != null)
+            CheckboxListTile(
+              title: Text(
+                l10n.takeAsDebt,
+                style: AppTextStyles.bodyMedium(),
+              ),
+              subtitle: Text(
+                _customer!['fullName']?.toString().isNotEmpty == true
+                    ? _customer!['fullName'].toString()
+                    : (_customer!['phone']?.toString() ?? ''),
+                style: AppTextStyles.bodySmall(),
+              ),
+              value: _useDebt,
+              onChanged: (v) => setState(() => _useDebt = v!),
+              contentPadding: EdgeInsets.zero,
+              activeColor: context.colors.brand,
+            )
+          else
+            InkWell(
+              onTap: _addCustomerInline,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.person_add_alt_1_rounded,
+                      color: context.colors.brand,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.takeAsDebt,
+                            style: AppTextStyles.bodyMedium(),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            l10n.addCustomerForDebtHint,
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: context.colors.brand,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: context.colors.brand,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            subtitle: Text(
-              widget.selectedCustomer?['fullName'] ?? l10n.selectCustomer,
-              style: AppTextStyles.bodySmall(),
-            ),
-            value: _useDebt,
-            onChanged: widget.selectedCustomer == null
-                ? null
-                : (v) => setState(() => _useDebt = v!),
-            contentPadding: EdgeInsets.zero,
-            activeColor: AppColors.brand,
-          ),
         ],
       ),
     );
@@ -356,6 +443,6 @@ class PaymentDialogState extends State<PaymentDialog> {
       });
     }
     setState(() => _isProcessing = true);
-    widget.onConfirm(payments, _hasDebt);
+    widget.onConfirm(payments, _hasDebt, _customer);
   }
 }

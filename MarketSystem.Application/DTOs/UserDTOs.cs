@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -11,7 +12,38 @@ public record UserDto(
     [property: JsonPropertyName("role")] string Role,
     [property: JsonPropertyName("language")] string Language,
     [property: JsonPropertyName("isActive")] bool IsActive,
-    [property: JsonPropertyName("marketId")] int? MarketId
+    [property: JsonPropertyName("marketId")] int? MarketId,
+    // Work shift — "Active" / "Blocked" / "Scheduled"; window times are only
+    // meaningful for "Scheduled". IsShiftActive is the computed effective state.
+    [property: JsonPropertyName("shiftStatus")] string ShiftStatus,
+    [property: JsonPropertyName("shiftStartUtc")] DateTime? ShiftStartUtc,
+    [property: JsonPropertyName("shiftEndUtc")] DateTime? ShiftEndUtc,
+    [property: JsonPropertyName("isShiftActive")] bool IsShiftActive,
+    // Owner RBAC — the user's effective permission set (full catalogue for
+    // Owner/SuperAdmin). Lets the client gate its UI without a second call.
+    [property: JsonPropertyName("permissions")] IReadOnlyList<string> Permissions
+);
+
+/// <summary>
+/// Owner-facing view of one user's permission configuration. Backs the
+/// permission-matrix screen: <see cref="Catalog"/> renders every toggle,
+/// <see cref="EffectivePermissions"/> marks the ones currently ON, and
+/// <see cref="RoleDefaults"/> powers a "reset to role default" action.
+/// </summary>
+public record UserPermissionsDto(
+    [property: JsonPropertyName("userId")] Guid UserId,
+    [property: JsonPropertyName("role")] string Role,
+    // True once the Owner has saved an explicit set; false while the user
+    // still runs on the role default.
+    [property: JsonPropertyName("isCustomized")] bool IsCustomized,
+    [property: JsonPropertyName("effectivePermissions")] IReadOnlyList<string> EffectivePermissions,
+    [property: JsonPropertyName("roleDefaults")] IReadOnlyList<string> RoleDefaults,
+    [property: JsonPropertyName("catalog")] IReadOnlyList<string> Catalog
+);
+
+/// <summary>Owner request to overwrite a user's explicit permission set.</summary>
+public record UpdatePermissionsDto(
+    [property: JsonPropertyName("permissions")] List<string> Permissions
 );
 
 public record CreateUserDto(
@@ -54,6 +86,17 @@ public record UpdateUserDto(
     string Role,
 
     [property: JsonPropertyName("isActive")] bool IsActive
+);
+
+/// <summary>
+/// Admin/Owner request to set a seller's work shift. <see cref="Status"/> is
+/// "Active", "Blocked" or "Scheduled"; the window times are required only
+/// when scheduling.
+/// </summary>
+public record UpdateShiftDto(
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("startUtc")] DateTime? StartUtc,
+    [property: JsonPropertyName("endUtc")] DateTime? EndUtc
 );
 
 public record UpdateProfileDto(

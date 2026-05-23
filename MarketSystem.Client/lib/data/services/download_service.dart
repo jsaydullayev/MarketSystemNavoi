@@ -25,14 +25,15 @@ class DownloadService {
 
   /// Kategoriyalarni Excel formatida yuklab olish
   // TODO: hoist into ApiConstants as `categoriesExportExcel` constant.
-  Future<void> downloadCategories() async {
+  Future<void> downloadCategories({String lang = 'uz'}) async {
     try {
       final response = await _httpService
-          .get('/ProductCategories/ExportCategoriesToExcel');
+          .get('/ProductCategories/ExportCategoriesToExcel?lang=$lang');
 
       if (response.statusCode == 200) {
-        final filename =
-            'kategoriyalar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        final filename = lang == 'ru'
+            ? 'Kategorii_${DateTime.now().millisecondsSinceEpoch}.xlsx'
+            : 'Kategoriyalar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
         if (kIsWeb) {
           _downloadWeb(response.bodyBytes, filename);
         } else {
@@ -72,20 +73,20 @@ class DownloadService {
   }
 
   /// Sotuvlarni Excel formatida yuklab olish
-  Future<void> downloadSales({DateTime? startDate, DateTime? endDate}) async {
+  Future<void> downloadSales({
+    DateTime? startDate,
+    DateTime? endDate,
+    String lang = 'uz',
+  }) async {
     try {
-      String url = '/Reports/sales/export';
+      String url = '/Reports/sales/export?lang=$lang';
 
       // Qo'shimcha parametrlarni qo'shish
-      if (startDate != null || endDate != null) {
-        url += '?';
-        if (startDate != null) {
-          url += 'startDate=${_formatDateForQuery(startDate)}';
-          if (endDate != null) url += '&';
-        }
-        if (endDate != null) {
-          url += 'endDate=${_formatDateForQuery(endDate)}';
-        }
+      if (startDate != null) {
+        url += '&startDate=${_formatDateForQuery(startDate)}';
+      }
+      if (endDate != null) {
+        url += '&endDate=${_formatDateForQuery(endDate)}';
       }
 
       final response = await _httpService.get(url);
@@ -108,20 +109,19 @@ class DownloadService {
   }
 
   /// Umumiy hisobotni Excel formatida yuklab olish
-  Future<void> downloadComprehensiveReport({DateTime? date}) async {
+  Future<void> downloadComprehensiveReport({DateTime? date, String lang = 'uz'}) async {
     try {
-      String url = '/Reports/comprehensive-report/export';
-
-      // Sana parametrini qo'shish (yyyy-MM-dd formatda)
-      if (date != null) {
-        url += '?date=${_formatDateForQuery(date)}';
-      }
+      final params = <String, String>{'lang': lang};
+      if (date != null) params['date'] = _formatDateForQuery(date);
+      final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+      final url = '/Reports/comprehensive-report/export?$query';
 
       final response = await _httpService.get(url);
 
       if (response.statusCode == 200) {
-        final filename =
-            'hisobotlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        final filename = lang == 'ru'
+            ? 'otchet_${DateTime.now().millisecondsSinceEpoch}.xlsx'
+            : 'hisobot_${DateTime.now().millisecondsSinceEpoch}.xlsx';
         if (kIsWeb) {
           _downloadWeb(response.bodyBytes, filename);
         } else {
@@ -140,10 +140,10 @@ class DownloadService {
   /// Backend endpoint: GET /api/Customers/ExportCustomersToExcel/export
   /// (added 2026-05-18 — mirrors /api/Products/.../export so the same
   /// download flow handles both files).
-  Future<void> downloadCustomers() async {
+  Future<void> downloadCustomers({String lang = 'uz'}) async {
     try {
-      final response =
-          await _httpService.get('/Customers/ExportCustomersToExcel/export');
+      final response = await _httpService
+          .get('/Customers/ExportCustomersToExcel/export?lang=$lang');
 
       if (response.statusCode == 200) {
         final filename =
@@ -241,9 +241,9 @@ class DownloadService {
   }
 
   /// Kunlik hisobotni PDF formatida yuklab olish
-  Future<void> downloadDailyReportToPdf(DateTime date) async {
+  Future<void> downloadDailyReportToPdf(DateTime date, {String lang = 'uz'}) async {
     try {
-      String url = '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}';
+      String url = '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
 
       final response = await _httpService.get(url);
 
@@ -264,9 +264,9 @@ class DownloadService {
   }
 
   /// Davr hisobotni PDF formatida yuklab olish
-  Future<void> downloadPeriodReportToPdf(DateTime start, DateTime end) async {
+  Future<void> downloadPeriodReportToPdf(DateTime start, DateTime end, {String lang = 'uz'}) async {
     try {
-      String url = '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}';
+      String url = '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}&lang=$lang';
 
       final response = await _httpService.get(url);
 
@@ -287,9 +287,9 @@ class DownloadService {
   }
 
   /// Umumiy hisobotni PDF formatida yuklab olish
-  Future<void> downloadComprehensiveReportToPdf(DateTime date) async {
+  Future<void> downloadComprehensiveReportToPdf(DateTime date, {String lang = 'uz'}) async {
     try {
-      String url = '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}';
+      String url = '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
 
       final response = await _httpService.get(url);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
@@ -30,9 +31,9 @@ class CustomerDebtCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
       ),
       child: Material(
         color: Colors.transparent,
@@ -82,7 +83,7 @@ class _DebtAmountRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg + 2, vertical: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.bg,
+        color: context.colors.bg,
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
       ),
       child: Row(
@@ -91,10 +92,10 @@ class _DebtAmountRow extends StatelessWidget {
             child: _AmountItem(
               label: l10n.totalDebt,
               amount: totalDebt,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
-          Container(width: 1, height: 32, color: AppColors.border),
+          Container(width: 1, height: 32, color: context.colors.border),
           Expanded(
             child: _AmountItem(
               label: l10n.remaining,

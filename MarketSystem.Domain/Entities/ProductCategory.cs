@@ -7,6 +7,7 @@ public class ProductCategory : ISoftDelete
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? Icon { get; set; }  // Emoji glyph chosen in the UI (nullable for legacy rows)
     public int MarketId { get; set; }  // ✅ Market-scoped (NOT nullable!)
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

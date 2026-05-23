@@ -9,10 +9,9 @@
 //   3. /api/sales/debtors                       — customers with open debts,
 //                                                 oldest-debt timestamp included
 //
-// "Overdue payments" don't have a server-side dueDate yet (the Debt entity
-// has CreatedAt + Status but no dueDate column). We approximate by treating
-// debts older than [_overdueAfterDays] as due. When a real DueDate field
-// lands, swap [_isOverdue] to read it.
+// "Overdue payments" use `dueDate` from the backend when present. When the
+// field is null (older debts created before the migration), the service falls
+// back to treating debts older than [_overdueAfterDays] days as overdue.
 //
 // [loadUnreadCount] returns just the total for the bell-badge red dot.
 // [loadAlerts] returns the full per-item feed for the notifications screen.
@@ -46,15 +45,19 @@ class AlertItem {
   const AlertItem({
     required this.category,
     required this.title,
-    required this.description,
     this.subjectId,
     this.amount,
     this.createdAt,
+    this.ageDays,
+    this.quantity,
+    this.threshold,
+    this.unit,
   });
 
   final AlertCategory category;
+
+  /// Headline — usually the customer name (debts) or product name (low stock).
   final String title;
-  final String description;
 
   /// Backing entity id (productId / debtId / customerId) — opens to the
   /// detail screen when the row is tapped. Optional so cards that don't
@@ -66,6 +69,25 @@ class AlertItem {
 
   /// Source row's createdAt — used for sub-grouping / "X days ago" labels.
   final DateTime? createdAt;
+
+  // Raw values for the description line. Stored unformatted so the UI layer
+  // can build a properly localised string at render time — previously the
+  // service hardcoded Uzbek phrases ("Bugun · …", "Qarz X kunda · …") which
+  // bled Uzbek into the Russian-locale UI.
+
+  /// For overdue debts: days since createdAt (set when category is
+  /// [AlertCategory.overduePayment]).
+  final int? ageDays;
+
+  /// For low-stock products: current on-hand quantity.
+  final double? quantity;
+
+  /// For low-stock products: configured minimum threshold.
+  final double? threshold;
+
+  /// For low-stock products: unit label ("dona", "kg", ...) as configured
+  /// on the product. May be empty.
+  final String? unit;
 }
 
 /// Full notification feed snapshot. Grouped because the UI renders each
@@ -91,12 +113,9 @@ class NotificationService {
 
   final HttpService _http;
 
-  // Tuning knobs (kept local so they're easy to find).
-  //
-  // [_overdueAfterDays] — how old an open debt has to be before we promote
-  // it from "recent" to "overdue". 14 days = a fortnight, matches the
-  // typical informal credit term in Uzbek bazaars. Lower it to be more
-  // aggressive; raise it once the backend ships a per-debt DueDate.
+  // [_overdueAfterDays] — fallback heuristic used only for legacy debts that
+  // have no dueDate from the backend (created before the AddDueDateToDebt
+  // migration). New debts use dueDate directly.
   //
   // [_recentWindowDays] — recent-debt window. We don't want to show every
   // debt the shop has ever taken; just the freshest ones the owner might
@@ -172,13 +191,16 @@ class NotificationService {
       final qty = _asNum(p['quantity']);
       final threshold = _asNum(p['minThreshold']);
       final unit = (p['unit'] ?? '').toString();
+      // Raw values stored on AlertItem — the screen formats them with the
+      // current AppLocalizations so the description respects the active
+      // locale.
       return AlertItem(
         category: AlertCategory.lowStock,
         title: name.isEmpty ? '—' : name,
-        description: threshold > 0
-            ? 'Qoldiq: ${_compactNum(qty)} $unit · min ${_compactNum(threshold)} $unit'
-            : 'Qoldiq: ${_compactNum(qty)} $unit',
         subjectId: (p['id'] ?? '').toString(),
+        quantity: qty.toDouble(),
+        threshold: threshold.toDouble(),
+        unit: unit,
       );
     }).toList();
   }
@@ -204,22 +226,31 @@ class NotificationService {
       if (remaining <= 0) continue;
 
       final created = _parseDate(d['createdAt']);
+      final dueDate = _parseDate(d['dueDate']);
       final customerName = (d['customerName'] ?? '').toString().trim();
       final ageDays =
           created == null ? 0 : now.difference(created).inDays;
 
-      final isOverdue = ageDays >= _overdueAfterDays;
+      // Prefer the explicit dueDate from the backend; fall back to the
+      // 14-day heuristic for legacy debts that predate the migration.
+      final isOverdue = dueDate != null
+          ? now.isAfter(dueDate)
+          : ageDays >= _overdueAfterDays;
       items.add(AlertItem(
         category: isOverdue
             ? AlertCategory.overduePayment
             : AlertCategory.recentDebt,
-        title: customerName.isEmpty ? 'Mijoz' : customerName,
-        description: isOverdue
-            ? 'Qarz $ageDays kunda · ${_formatUzs(remaining)} UZS'
-            : 'Bugun · ${_formatUzs(remaining)} UZS',
+        // Customer fallback ("Mijoz" / "Клиент") will be filled by the UI
+        // layer when title is empty — keeping it untranslated here.
+        title: customerName.isEmpty ? '' : customerName,
         subjectId: (d['id'] ?? '').toString(),
         amount: remaining.toDouble(),
         createdAt: created,
+        // Age in days — the UI uses it for both the recent ("Bugun · …" /
+        // "Сегодня · …" when fresh) and the overdue ("Qarz N kunda" /
+        // "Долг N дней назад") description lines, picking the right
+        // wording in the active locale.
+        ageDays: ageDays,
       ));
     }
     // Newest first for recent, oldest first for overdue.
@@ -256,21 +287,6 @@ class NotificationService {
     if (v is num) return v;
     if (v is String) return num.tryParse(v) ?? 0;
     return 0;
-  }
-
-  String _compactNum(num v) {
-    if (v == v.toInt()) return v.toInt().toString();
-    return v.toStringAsFixed(2);
-  }
-
-  String _formatUzs(num v) {
-    final n = v.toInt().toString();
-    final buf = StringBuffer();
-    for (var i = 0; i < n.length; i++) {
-      if (i > 0 && (n.length - i) % 3 == 0) buf.write(' ');
-      buf.write(n[i]);
-    }
-    return buf.toString();
   }
 
   DateTime? _parseDate(dynamic v) {

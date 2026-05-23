@@ -6,6 +6,6 @@ extension DoubleExtension on double {
 }
 
 extension IntExtension on int {
-  Widget get height => SizedBox(height: this.toDouble());
-  Widget get width => SizedBox(width: this.toDouble());
+  Widget get height => SizedBox(height: toDouble());
+  Widget get width => SizedBox(width: toDouble());
 }

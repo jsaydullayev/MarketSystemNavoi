@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using System.Text.Json;
@@ -11,7 +13,7 @@ namespace MarketSystem.API.Controllers;
 //new code
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(Policy = "AllRoles")]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -24,6 +26,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionKeys.UsersAccess)]
     public async Task<ActionResult<UserDto>> GetUser(Guid id)
     {
         var user = await _userService.GetUserByIdAsync(id);
@@ -48,6 +51,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.UsersAccess)]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
     {
         var users = await _userService.GetAllUsersAsync();
@@ -71,7 +75,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto request)
     {
         try
@@ -86,7 +90,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<ActionResult<UserDto>> UpdateUser(Guid id, [FromBody] UpdateUserDto request)
     {
         if (id != request.Id)
@@ -154,7 +158,11 @@ public class UsersController : ControllerBase
 
         try
         {
-            UpdateProfileImageDto request;
+            // Nullable: the JSON branch assigns from ReadFromJsonAsync which
+            // returns T?. Both branches below guarantee a non-null value
+            // before it's used (form branch via `new`, JSON branch via the
+            // explicit null check), so the later usage stays safe.
+            UpdateProfileImageDto? request;
 
             // Check if request contains file upload (multipart/form-data)
             if (Request.HasFormContentType && Request.Form != null && Request.Form.Files.Count > 0)
@@ -229,7 +237,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _userService.DeleteUserAsync(id);
@@ -240,7 +248,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id}/deactivate")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<IActionResult> DeactivateUser(Guid id)
     {
         var result = await _userService.DeactivateUserAsync(id);
@@ -251,7 +259,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id}/activate")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<IActionResult> ActivateUser(Guid id)
     {
         var result = await _userService.ActivateUserAsync(id);
@@ -259,5 +267,66 @@ public class UsersController : ControllerBase
             return NotFound();
 
         return Ok(new { message = "User activated" });
+    }
+
+    /// <summary>
+    /// Set a seller's work shift — "Active", "Blocked" or "Scheduled" (with a
+    /// [startUtc, endUtc] window). Admin/Owner only.
+    /// </summary>
+    [HttpPut("{id}/shift")]
+    [RequirePermission(PermissionKeys.UsersShift)]
+    public async Task<ActionResult<UserDto>> UpdateShift(Guid id, [FromBody] UpdateShiftDto request)
+    {
+        try
+        {
+            var user = await _userService.UpdateShiftAsync(id, request);
+            if (user is null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Owner RBAC — read a user's permission configuration (effective set,
+    /// role defaults and the full catalogue). Owner-only, scoped to the
+    /// caller's own market.
+    /// </summary>
+    [HttpGet("{id}")]
+    [Authorize(Policy = "OwnerOnly")]
+    public async Task<ActionResult<UserPermissionsDto>> GetUserPermissions(Guid id)
+    {
+        var permissions = await _userService.GetUserPermissionsAsync(id);
+        if (permissions is null)
+            return NotFound();
+
+        return Ok(permissions);
+    }
+
+    /// <summary>
+    /// Owner RBAC — overwrite a user's explicit permission set. Send an empty
+    /// list to reset the user to its role default. Owner/SuperAdmin cannot be
+    /// edited. The change takes effect on the user's next login/token refresh.
+    /// </summary>
+    [HttpPut("{id}")]
+    [Authorize(Policy = "OwnerOnly")]
+    public async Task<ActionResult<UserPermissionsDto>> UpdateUserPermissions(Guid id, [FromBody] UpdatePermissionsDto request)
+    {
+        try
+        {
+            var permissions = await _userService.UpdateUserPermissionsAsync(id, request);
+            if (permissions is null)
+                return NotFound();
+
+            return Ok(permissions);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/data/services/sales_service.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
+
+import 'quick_add_customer_sheet.dart';
 
 /// Modal bottom sheet for capturing payment on a "continue sale" flow.
 ///
@@ -46,6 +53,49 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
   bool _useDebt = false;
   bool _isProcessing = false;
 
+  /// Local, mutable customer. Starts as widget.selectedCustomer but can be
+  /// replaced when the cashier creates one inline from the debt toggle.
+  Map<String, dynamic>? _customer;
+
+  @override
+  void initState() {
+    super.initState();
+    _customer = widget.selectedCustomer;
+  }
+
+  /// Create a customer inline, then attach it to this (already-existing)
+  /// sale on the server so the debt the backend creates from the unpaid
+  /// remainder lands on the right customer.
+  Future<void> _addCustomerInline() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final created = await showQuickAddCustomerSheet(context);
+    if (created == null || !mounted) return;
+
+    final id = created['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      await SalesService(authProvider: auth).updateSaleCustomer(
+        saleId: widget.saleId,
+        customerId: id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _customer = created;
+        _useDebt = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: $e'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _cashCtrl.dispose();
@@ -71,7 +121,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
   bool get _hasDebt => _useDebt && _remaining > 0.01;
 
   bool get _canConfirm {
-    if (_hasDebt) return widget.selectedCustomer != null;
+    if (_hasDebt) return _customer != null;
     return _remaining <= 0.01 || _totalPaid > 0;
   }
 
@@ -104,9 +154,10 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl2)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl3,
@@ -129,7 +180,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: context.colors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -144,12 +195,12 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: AppColors.brandLight,
+                        color: context.colors.brandLight,
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.payments_outlined,
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                         size: 20,
                       ),
                     ),
@@ -166,13 +217,13 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                     vertical: AppSpacing.sm,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.brandLight,
+                    color: context.colors.brandLight,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Text(
                     '${NumberFormatter.formatDecimal(widget.totalAmount)} ${l10n.currencySom}',
                     style: AppTextStyles.labelLarge().copyWith(
-                      color: AppColors.brand,
+                      color: context.colors.brand,
                       fontSize: 13,
                     ),
                   ),
@@ -229,18 +280,14 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
 
             const SizedBox(height: AppSpacing.xs),
 
-            // Debt toggle. Requires a selected customer — otherwise we
-            // surface a warning snack instead of toggling.
+            // Debt toggle. With a customer attached this just flips the
+            // toggle. Without one, instead of dead-ending with a warning
+            // snack, tapping opens the inline "create customer" sheet so
+            // the debt sale can be completed without leaving this sheet.
             GestureDetector(
               onTap: () {
-                if (widget.selectedCustomer == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(l10n.selectCustomerForDebtWarning),
-                      backgroundColor: AppColors.warning,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                if (_customer == null) {
+                  _addCustomerInline();
                   return;
                 }
                 setState(() => _useDebt = !_useDebt);
@@ -252,48 +299,87 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                   vertical: AppSpacing.lg,
                 ),
                 decoration: BoxDecoration(
-                  color: _useDebt ? AppColors.brandLight : AppColors.inputFill,
+                  color: _useDebt
+                      ? context.colors.brandLight
+                      : context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   border: Border.all(
-                    color:
-                        _useDebt ? AppColors.brand : Colors.transparent,
+                    color: _useDebt
+                        ? context.colors.brand
+                        : Colors.transparent,
                     width: 1,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      Icons.money_off_rounded,
+                      _customer == null
+                          ? Icons.person_add_alt_1_rounded
+                          : Icons.money_off_rounded,
                       size: 20,
-                      color: _useDebt ? AppColors.brand : AppColors.textMuted,
+                      color: _useDebt
+                          ? context.colors.brand
+                          : context.colors.textMuted,
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
-                      child: Text(
-                        l10n.takeAsDebt,
-                        style: AppTextStyles.bodyMedium().copyWith(
-                          fontWeight: FontWeight.w700,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.takeAsDebt,
+                            style: AppTextStyles.bodyMedium().copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: _useDebt
+                                  ? context.colors.brand
+                                  : context.colors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _customer == null
+                                ? l10n.addCustomerForDebtHint
+                                : (_customer!['fullName']
+                                            ?.toString()
+                                            .isNotEmpty ==
+                                        true
+                                    ? _customer!['fullName'].toString()
+                                    : _customer!['phone']?.toString() ?? ''),
+                            style: AppTextStyles.bodySmall().copyWith(
+                              color: _customer == null
+                                  ? context.colors.brand
+                                  : context.colors.textSecondary,
+                              fontWeight: _customer == null
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_customer == null)
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: context.colors.brand,
+                      )
+                    else
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
                           color: _useDebt
-                              ? AppColors.brand
-                              : AppColors.textSecondary,
+                              ? context.colors.brand
+                              : context.colors.border,
+                          shape: BoxShape.circle,
                         ),
+                        child: _useDebt
+                            ? const Icon(
+                                Icons.check_rounded,
+                                size: 13,
+                                color: Colors.white,
+                              )
+                            : null,
                       ),
-                    ),
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: _useDebt ? AppColors.brand : AppColors.border,
-                        shape: BoxShape.circle,
-                      ),
-                      child: _useDebt
-                          ? const Icon(
-                              Icons.check_rounded,
-                              size: 13,
-                              color: Colors.white,
-                            )
-                          : null,
-                    ),
                   ],
                 ),
               ),
@@ -304,9 +390,9 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: context.colors.bg,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: AppColors.borderSoft),
+                border: Border.all(color: context.colors.borderSoft),
               ),
               child: Column(
                 children: [
@@ -322,17 +408,18 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                         '${NumberFormatter.formatDecimal(_totalPaid)} ${l10n.currencySom}',
                     valueColor: AppColors.success,
                   ),
-                  const Padding(
-                    padding:
-                        EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    child: Divider(height: 1, color: AppColors.border),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.md),
+                    child: Divider(
+                        height: 1, color: context.colors.border),
                   ),
                   _SummaryRow(
                     label: _hasDebt ? l10n.onDebt : l10n.remaining,
                     value:
                         '${NumberFormatter.formatDecimal(_remaining)} ${l10n.currencySom}',
                     valueColor: _hasDebt
-                        ? AppColors.brand
+                        ? context.colors.brand
                         : (_remaining <= 0
                             ? AppColors.success
                             : AppColors.danger),
@@ -408,10 +495,13 @@ class _PaymentMethodRow extends StatelessWidget {
                 vertical: AppSpacing.lg,
               ),
               decoration: BoxDecoration(
-                color: isActive ? AppColors.brandLight : AppColors.inputFill,
+                color: isActive
+                    ? context.colors.brandLight
+                    : context.colors.inputFill,
                 borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 border: Border.all(
-                  color: isActive ? AppColors.brand : Colors.transparent,
+                  color:
+                      isActive ? context.colors.brand : Colors.transparent,
                   width: 1,
                 ),
               ),
@@ -420,7 +510,9 @@ class _PaymentMethodRow extends StatelessWidget {
                   Icon(
                     icon,
                     size: 20,
-                    color: isActive ? AppColors.brand : AppColors.textMuted,
+                    color: isActive
+                        ? context.colors.brand
+                        : context.colors.textMuted,
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -429,8 +521,8 @@ class _PaymentMethodRow extends StatelessWidget {
                       style: AppTextStyles.bodyMedium().copyWith(
                         fontWeight: FontWeight.w700,
                         color: isActive
-                            ? AppColors.brand
-                            : AppColors.textSecondary,
+                            ? context.colors.brand
+                            : context.colors.textSecondary,
                       ),
                     ),
                   ),
@@ -438,7 +530,9 @@ class _PaymentMethodRow extends StatelessWidget {
                     width: 22,
                     height: 22,
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.brand : AppColors.border,
+                      color: isActive
+                          ? context.colors.brand
+                          : context.colors.border,
                       shape: BoxShape.circle,
                     ),
                     child: isActive
@@ -466,12 +560,12 @@ class _PaymentMethodRow extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: l10n.enterAmount,
                   hintStyle: AppTextStyles.bodyMedium().copyWith(
-                    color: AppColors.textMuted,
+                    color: context.colors.textMuted,
                   ),
                   suffixText: l10n.currencySom,
                   suffixStyle: AppTextStyles.bodySmall(),
                   filled: true,
-                  fillColor: AppColors.inputFill,
+                  fillColor: context.colors.inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.md + 2),
                     borderSide: BorderSide.none,
@@ -482,8 +576,8 @@ class _PaymentMethodRow extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                    borderSide: const BorderSide(
-                      color: AppColors.brand,
+                    borderSide: BorderSide(
+                      color: context.colors.brand,
                       width: 1.5,
                     ),
                   ),
@@ -522,7 +616,7 @@ class _SummaryRow extends StatelessWidget {
         Text(
           label,
           style: AppTextStyles.bodySmall().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             fontSize: 13,
           ),
         ),
@@ -531,12 +625,12 @@ class _SummaryRow extends StatelessWidget {
           style: bold
               ? AppTextStyles.labelLarge().copyWith(
                   fontSize: 15,
-                  color: valueColor ?? AppColors.text,
+                  color: valueColor ?? context.colors.text,
                 )
               : AppTextStyles.bodySmall().copyWith(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: valueColor ?? AppColors.text,
+                  color: valueColor ?? context.colors.text,
                 ),
         ),
       ],

@@ -20,16 +20,21 @@ class AppTheme {
       onError: Colors.white,
     );
 
+    // AppTextStyles no longer carry a colour — apply the light-theme text
+    // colours here so the textTheme is the single source of truth.
     final textTheme = TextTheme(
-      displayLarge: AppTextStyles.displayLarge(),
-      displayMedium: AppTextStyles.displayMedium(),
-      titleLarge: AppTextStyles.titleLarge(),
-      titleMedium: AppTextStyles.titleMedium(),
-      bodyLarge: AppTextStyles.bodyLarge(),
-      bodyMedium: AppTextStyles.bodyMedium(),
-      bodySmall: AppTextStyles.bodySmall(),
-      labelLarge: AppTextStyles.labelLarge(),
-      labelSmall: AppTextStyles.labelSmall(),
+      displayLarge: AppTextStyles.displayLarge().copyWith(color: AppColors.text),
+      displayMedium:
+          AppTextStyles.displayMedium().copyWith(color: AppColors.text),
+      titleLarge: AppTextStyles.titleLarge().copyWith(color: AppColors.text),
+      titleMedium: AppTextStyles.titleMedium().copyWith(color: AppColors.text),
+      bodyLarge: AppTextStyles.bodyLarge().copyWith(color: AppColors.text),
+      bodyMedium: AppTextStyles.bodyMedium().copyWith(color: AppColors.text),
+      bodySmall:
+          AppTextStyles.bodySmall().copyWith(color: AppColors.textSecondary),
+      labelLarge: AppTextStyles.labelLarge().copyWith(color: AppColors.text),
+      labelSmall:
+          AppTextStyles.labelSmall().copyWith(color: AppColors.textSecondary),
     );
 
     return ThemeData(
@@ -136,11 +141,15 @@ class AppTheme {
   /// as an accent (e.g. for destructive secondary highlights).
   static ThemeData get dark {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.darkPrimary,
+      seedColor: AppColors.darkPrimaryLight,
       brightness: Brightness.dark,
     ).copyWith(
-      primary: AppColors.darkPrimary,
-      onPrimary: Colors.white,
+      // Primary = light "sky" blue. Buttons / accents in dark mode read as
+      // light blue on the deep-navy background. onPrimary is the dark navy
+      // so text on a light-blue button stays high-contrast (white would
+      // fail WCAG against #60A5FA).
+      primary: AppColors.darkPrimaryLight,
+      onPrimary: AppColors.darkBg,
       secondary: AppColors.darkPrimaryLight,
       surface: AppColors.darkSurface,
       onSurface: AppColors.darkText,
@@ -166,7 +175,7 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.darkBg,
       textTheme: textTheme,
-      primaryColor: AppColors.darkPrimary,
+      primaryColor: AppColors.darkPrimaryLight,
       dividerColor: AppColors.darkBorder,
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.darkSurface,
@@ -220,8 +229,10 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.darkPrimary,
-          foregroundColor: Colors.white,
+          // Light-blue button, dark-navy label — matches the AppPrimaryButton
+          // dark-mode styling and keeps text contrast above WCAG AA.
+          backgroundColor: AppColors.darkPrimaryLight,
+          foregroundColor: AppColors.darkBg,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl,
@@ -230,7 +241,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
-          textStyle: AppTextStyles.labelLarge().copyWith(color: Colors.white),
+          textStyle:
+              AppTextStyles.labelLarge().copyWith(color: AppColors.darkBg),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(

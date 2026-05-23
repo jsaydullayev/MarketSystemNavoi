@@ -10,6 +10,7 @@
 // call, same success/error snackbars, same role gating from AuthProvider.
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -102,6 +103,12 @@ class _AddUserSheetState extends State<AddUserSheet> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      // Required so the sheet can grow past 50% of the screen — without this
+      // the success card's 3 info rows + warning panel + button overflow
+      // the default half-screen height, producing the yellow-striped
+      // "BOTTOM OVERFLOWED BY 56 PIXELS" indicator we saw on the Users
+      // page in 2026-05-19.
+      isScrollControlled: true,
       builder: (_) => _SuccessSheet(user: user),
     );
   }
@@ -115,9 +122,9 @@ class _AddUserSheetState extends State<AddUserSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -246,15 +253,15 @@ class _CredentialsInfo extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.lightbulb_outline,
-            color: AppColors.brandDark,
+            color: context.colors.brandDark,
             size: 18,
           ),
           const SizedBox(width: AppSpacing.md),
@@ -262,7 +269,7 @@ class _CredentialsInfo extends StatelessWidget {
             child: Text(
               l10n.giveCredentialsToUser,
               style: AppTextStyles.bodySmall().copyWith(
-                color: AppColors.brandDark,
+                color: context.colors.brandDark,
                 fontSize: 12,
               ),
             ),
@@ -277,21 +284,21 @@ class _SuccessSheet extends StatelessWidget {
   const _SuccessSheet({required this.user});
   final dynamic user;
 
-  Widget _row(String label, String value) => Container(
+  Widget _row(BuildContext context, String label, String value) => Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.md),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
           vertical: AppSpacing.lg,
         ),
         decoration: BoxDecoration(
-          color: AppColors.inputFill,
+          color: context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
         ),
         child: Row(children: [
           Text(
             label,
             style: AppTextStyles.bodySmall().copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
           const Spacer(),
@@ -307,78 +314,95 @@ class _SuccessSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl2,
-        AppSpacing.lg,
-        AppSpacing.xl2,
-        AppSpacing.xl4,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const _Handle(),
-          const SizedBox(height: AppSpacing.xl2),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: const BoxDecoration(
-              color: AppColors.successLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: AppColors.success,
-              size: 32,
-            ),
+    // On wide screens (tablet / web) clamp the sheet to a comfortable card
+    // width so the rows don't sprawl across the entire window. On phones
+    // the maxWidth is wider than the viewport so the layout is unchanged.
+    final mediaQ = MediaQuery.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: mediaQ.viewInsets.bottom),
+      child: Container(
+        constraints: BoxConstraints(
+          // Cap the sheet height to ~90% of the screen and let the body
+          // scroll. Combined with `isScrollControlled: true` on the
+          // showModalBottomSheet call, this stops the success card from
+          // overflowing on shorter viewports.
+          maxHeight: mediaQ.size.height * 0.9,
+          maxWidth: 520,
+        ),
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl2,
+            AppSpacing.lg,
+            AppSpacing.xl2,
+            AppSpacing.xl4,
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            l10n.userCreatedSuccess,
-            style: AppTextStyles.titleMedium(),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xl2),
-          _row(l10n.fullName, user['fullName'] ?? ''),
-          _row(l10n.username, '@${user['username'] ?? ''}'),
-          _row(l10n.role, user['role'] ?? ''),
-          const SizedBox(height: AppSpacing.lg),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: AppColors.warningLight,
-              borderRadius: BorderRadius.circular(AppRadius.md + 2),
-              border: Border.all(
-                color: AppColors.warning.withValues(alpha: 0.4),
-              ),
-            ),
-            child: Row(children: [
-              const Icon(
-                Icons.info_outline_rounded,
-                color: AppColors.warning,
-                size: 16,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  l10n.giveCredentialsToUser,
-                  style: AppTextStyles.bodySmall().copyWith(
-                    color: AppColors.warning,
-                    fontSize: 12,
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _Handle(),
+              const SizedBox(height: AppSpacing.xl2),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                decoration: const BoxDecoration(
+                  color: AppColors.successLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: AppColors.success,
+                  size: 32,
                 ),
               ),
-            ]),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                l10n.userCreatedSuccess,
+                style: AppTextStyles.titleMedium(),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xl2),
+              _row(context, l10n.fullName, user['fullName'] ?? ''),
+              _row(context, l10n.username, '@${user['username'] ?? ''}'),
+              _row(context, l10n.role, user['role'] ?? ''),
+              const SizedBox(height: AppSpacing.lg),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: AppColors.warningLight,
+                  borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.warning,
+                    size: 16,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      l10n.giveCredentialsToUser,
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: AppColors.warning,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              AppPrimaryButton(
+                label: l10n.understand,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.xl),
-          AppPrimaryButton(
-            label: l10n.understand,
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -397,7 +421,7 @@ class _Handle extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.colors.border,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -428,19 +452,19 @@ class _Header extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: AppColors.brandLight,
+            color: context.colors.brandLight,
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          child: Icon(icon, color: AppColors.brand, size: 20),
+          child: Icon(icon, color: context.colors.brand, size: 20),
         ),
         const SizedBox(width: AppSpacing.lg),
         Text(title, style: AppTextStyles.titleMedium()),
         const Spacer(),
         IconButton(
           onPressed: onClose,
-          icon: const Icon(
+          icon: Icon(
             Icons.close_rounded,
-            color: AppColors.textMuted,
+            color: context.colors.textMuted,
           ),
         ),
       ]),
@@ -473,7 +497,7 @@ class _SheetField extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             letterSpacing: 0.8,
           ),
         ),
@@ -488,7 +512,8 @@ class _SheetField extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 18, color: AppColors.textSecondary),
+            prefixIcon:
+                Icon(icon, size: 18, color: context.colors.textSecondary),
             suffixIcon: onToggle != null
                 ? IconButton(
                     icon: Icon(
@@ -496,13 +521,13 @@ class _SheetField extends StatelessWidget {
                           ? Icons.visibility_off_rounded
                           : Icons.visibility_rounded,
                       size: 18,
-                      color: AppColors.textMuted,
+                      color: context.colors.textMuted,
                     ),
                     onPressed: onToggle,
                   )
                 : null,
             filled: true,
-            fillColor: AppColors.inputFill,
+            fillColor: context.colors.inputFill,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.xl,
               vertical: AppSpacing.lg + 2,
@@ -517,7 +542,7 @@ class _SheetField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
-              borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+              borderSide: BorderSide(color: context.colors.brand, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -549,23 +574,24 @@ class _RoleSelector extends StatelessWidget {
   final ValueChanged<String> onChanged;
 
   ({Color bg, Color fg, IconData icon, String desc}) _roleSpec(
+    BuildContext context,
     AppLocalizations l10n,
     String role,
   ) {
     switch (role.toLowerCase()) {
       case 'owner':
         return (
-          bg: AppColors.brandLight,
-          fg: AppColors.brandDark,
+          bg: context.colors.brandLight,
+          fg: context.colors.brandDark,
           icon: Icons.workspace_premium_rounded,
-          desc: 'To\'liq nazorat',
+          desc: l10n.roleOwnerDesc,
         );
       case 'admin':
         return (
           bg: _adminBg,
           fg: _adminFg,
           icon: Icons.admin_panel_settings_rounded,
-          desc: 'Sotuv + mahsulot',
+          desc: l10n.roleAdminDesc,
         );
       case 'seller':
       default:
@@ -573,7 +599,7 @@ class _RoleSelector extends StatelessWidget {
           bg: _sellerBg,
           fg: _sellerFg,
           icon: Icons.storefront_rounded,
-          desc: 'Faqat sotuv',
+          desc: l10n.roleSellerDesc,
         );
     }
   }
@@ -587,7 +613,7 @@ class _RoleSelector extends StatelessWidget {
         Text(
           l10n.role.toUpperCase(),
           style: AppTextStyles.caption().copyWith(
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             letterSpacing: 0.8,
           ),
         ),
@@ -595,7 +621,7 @@ class _RoleSelector extends StatelessWidget {
         Row(
           children: roles.map((r) {
             final sel = selected == r;
-            final spec = _roleSpec(l10n, r);
+            final spec = _roleSpec(context, l10n, r);
             return Expanded(
               child: GestureDetector(
                 onTap: () => onChanged(r),
@@ -607,10 +633,10 @@ class _RoleSelector extends StatelessWidget {
                     horizontal: AppSpacing.md,
                   ),
                   decoration: BoxDecoration(
-                    color: sel ? spec.bg : AppColors.inputFill,
+                    color: sel ? spec.bg : context.colors.inputFill,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                     border: Border.all(
-                      color: sel ? spec.fg : AppColors.border,
+                      color: sel ? spec.fg : context.colors.border,
                       width: 1.5,
                     ),
                   ),
@@ -619,7 +645,7 @@ class _RoleSelector extends StatelessWidget {
                     children: [
                       Icon(
                         spec.icon,
-                        color: sel ? spec.fg : AppColors.textMuted,
+                        color: sel ? spec.fg : context.colors.textMuted,
                         size: 22,
                       ),
                       const SizedBox(height: AppSpacing.xs),
@@ -628,7 +654,7 @@ class _RoleSelector extends StatelessWidget {
                         style: AppTextStyles.bodyMedium().copyWith(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
-                          color: sel ? spec.fg : AppColors.textSecondary,
+                          color: sel ? spec.fg : context.colors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -639,7 +665,7 @@ class _RoleSelector extends StatelessWidget {
                           fontSize: 10,
                           color: sel
                               ? spec.fg.withValues(alpha: 0.8)
-                              : AppColors.textMuted,
+                              : context.colors.textMuted,
                         ),
                       ),
                     ],

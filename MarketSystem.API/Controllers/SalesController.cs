@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
 
@@ -9,7 +11,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "AllRoles")]
+[Authorize]
 public class SalesController : ControllerBase
 {
     private readonly ISaleService _saleService;
@@ -26,6 +28,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<SaleDto>> GetSale(Guid id, CancellationToken ct = default)
     {
         var sale = await _saleService.GetSaleByIdAsync(id);
@@ -36,6 +39,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<PagedResult<SaleDto>>> GetAllSales(
         [FromQuery] int page = 1,
         [FromQuery] int size = 50,
@@ -48,6 +52,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("by-date")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetSalesByDateRange([FromQuery] DateTime start, [FromQuery] DateTime end, CancellationToken ct = default)
     {
         if (start > end)
@@ -58,6 +63,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("my-drafts")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyDraftSales(CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -69,6 +75,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("my-unfinished")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<IEnumerable<SaleDto>>> GetMyUnfinishedSales(CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -80,6 +87,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleDto>> CreateSale([FromBody] CreateSaleDto request, CancellationToken ct = default)
     {
         var sellerIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -98,6 +106,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPatch("{saleId}/customer")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleDto>> UpdateSaleCustomer(Guid saleId, [FromBody] UpdateSaleCustomerDto request, CancellationToken ct = default)
     {
         try
@@ -115,6 +124,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/items")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleItemDto>> AddSaleItem(Guid saleId, [FromBody] AddSaleItemDto request, CancellationToken ct = default)
     {
         try
@@ -132,6 +142,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/items/remove")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleItemDto>> RemoveSaleItem(Guid saleId, [FromBody] RemoveSaleItemDto request, CancellationToken ct = default)
     {
         _logger.LogInformation("RemoveSaleItem called - SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
@@ -152,6 +163,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/payments")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<PaymentDto>> AddPayment(Guid saleId, [FromBody] AddPaymentDto request, CancellationToken ct = default)
     {
         try
@@ -172,7 +184,7 @@ public class SalesController : ControllerBase
     /// Savdoni o'chirish (faqat Draft va Paid statusdagi savdolar uchun)
     /// </summary>
     [HttpDelete("{saleId}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesDelete)]
     public async Task<ActionResult<SaleDto>> DeleteSale(Guid saleId, CancellationToken ct = default)
     {
         _logger.LogInformation("DeleteSale called - Sale ID: {SaleId}", saleId);
@@ -198,7 +210,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/cancel")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesDelete)]
     public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request, CancellationToken ct = default)
     {
         try
@@ -218,7 +230,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/mark-debt")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesEdit)]
     public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId, CancellationToken ct = default)
     {
         try
@@ -243,7 +255,7 @@ public class SalesController : ControllerBase
     /// - Closed debts: Only Owner and Admin can edit
     /// </summary>
     [HttpPatch("items/price")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesEdit)]
     public async Task<ActionResult<SaleItemDto>> UpdateSaleItemPrice([FromBody] UpdateSaleItemPriceDto request, CancellationToken ct = default)
     {
         try
@@ -285,7 +297,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/return-item")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.SalesEdit)]
     public async Task<ActionResult<SaleItemDto?>> ReturnSaleItem(Guid saleId, [FromBody] ReturnSaleItemRequest? request, CancellationToken ct = default)
     {
         try
@@ -312,6 +324,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("debtors")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<IEnumerable<DebtorDto>>> GetDebtors(CancellationToken ct = default)
     {
         try
@@ -327,34 +340,56 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export")]
-    public async Task<IActionResult> ExportSalesToExcel(CancellationToken ct = default)
+    [RequirePermission(PermissionKeys.SalesExport)]
+    public async Task<IActionResult> ExportSalesToExcel(
+        [FromQuery] string lang = "uz",
+        CancellationToken ct = default)
     {
         try
         {
             var sales = await _saleService.GetAllSalesAsync();
+            var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+            var orderedSales = sales.OrderByDescending(s => s.CreatedAt);
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var canSeeCost = role is "Owner" or "Admin";
 
-            // Har bir sotuvning har bir tovari uchun alohida qator
-            var exportData = sales.SelectMany(sale => sale.Items.Select(item => new
-            {
-                Sana = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                Mijoz = sale.CustomerName ?? "Mijoz yo'q",
-                Sotuvchi = sale.SellerName,
-                Holat = sale.Status,
-                Tovar_nomi = item.ProductName,
-                Miqdor = FormatDecimal(item.Quantity),
-                Birlik = item.Unit,
-                Harid_narxi = FormatDecimal(item.CostPrice),
-                Sotish_narxi = FormatDecimal(item.SalePrice),
-                Jami_summa = FormatDecimal(item.TotalPrice),
-                Foyda = FormatDecimal(item.Profit)
-            })).OrderByDescending(x => x.Sana);
+            object exportData = isRu
+                ? orderedSales.SelectMany(sale => sale.Items.Select(item => new
+                {
+                    Дата = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    Клиент = sale.CustomerName ?? "—",
+                    Продавец = sale.SellerName,
+                    Статус = sale.Status,
+                    Товар = item.ProductName,
+                    Количество = FormatDecimal(item.Quantity),
+                    Ед_изм = item.Unit,
+                    Цена_закупки = canSeeCost ? FormatDecimal(item.CostPrice) : "—",
+                    Цена_продажи = FormatDecimal(item.SalePrice),
+                    Сумма = FormatDecimal(item.TotalPrice),
+                    Прибыль = canSeeCost ? FormatDecimal(item.Profit) : "—"
+                })).Cast<object>()
+                : orderedSales.SelectMany(sale => sale.Items.Select(item => new
+                {
+                    Sana = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    Mijoz = sale.CustomerName ?? "Mijoz yo'q",
+                    Sotuvchi = sale.SellerName,
+                    Holat = sale.Status,
+                    Tovar_nomi = item.ProductName,
+                    Miqdor = FormatDecimal(item.Quantity),
+                    Birlik = item.Unit,
+                    Harid_narxi = canSeeCost ? FormatDecimal(item.CostPrice) : "—",
+                    Sotish_narxi = FormatDecimal(item.SalePrice),
+                    Jami_summa = FormatDecimal(item.TotalPrice),
+                    Foyda = canSeeCost ? FormatDecimal(item.Profit) : "—"
+                })).Cast<object>();
 
-            var fileContent = _excelService.GenerateExcel(exportData, "Sotuvlar");
+            var sheetName = isRu ? "Продажи" : "Sotuvlar";
+            var fileContent = _excelService.GenerateExcel((dynamic)exportData, sheetName);
 
             return File(
                 fileContent,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"Sotuvlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
             );
         }
         catch (Exception ex)
@@ -365,7 +400,8 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export-pdf")]
-    public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, CancellationToken ct = default)
+    [RequirePermission(PermissionKeys.SalesExport)]
+    public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string lang = "uz", CancellationToken ct = default)
     {
         try
         {
@@ -375,7 +411,7 @@ public class SalesController : ControllerBase
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             _logger.LogInformation("Exporting PDF for user role: {UserRole}", userRole ?? "Unknown");
 
-            var pdfBytes = await _reportService.ExportSalesListToPdfAsync(startDate, endDate, userRole);
+            var pdfBytes = await _reportService.ExportSalesListToPdfAsync(startDate, endDate, userRole, lang);
 
             _logger.LogInformation("Sales PDF generated successfully");
 
@@ -406,6 +442,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpPost("{saleId}/apply-credit")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
     public async Task<ActionResult<SaleDto>> ApplyCustomerCredit(Guid saleId, CancellationToken ct = default)
     {
         try
@@ -431,14 +468,15 @@ public class SalesController : ControllerBase
     /// Generate and download PDF invoice for a sale
     /// </summary>
     [HttpGet("{id}/invoice")]
-    public async Task<IActionResult> GetInvoice(Guid id, CancellationToken ct = default)
+    [RequirePermission(PermissionKeys.SalesAccess)]
+    public async Task<IActionResult> GetInvoice(Guid id, [FromQuery] string lang = "uz", CancellationToken ct = default)
     {
         try
         {
             _logger.LogInformation("GetInvoice called - Sale ID: {SaleId}", id);
 
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole);
+            var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole, lang);
 
             var sale = await _saleService.GetSaleByIdAsync(id);
             var fileName = $"Faktura_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";

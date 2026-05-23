@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Constants;
 using MarketSystem.Application.Interfaces;
-using MarketSystem.API.Helpers;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,7 @@ namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-[Authorize(Policy = "AllRoles")]
+[Authorize]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
@@ -24,6 +25,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<ProductDto>> GetProduct(Guid id, CancellationToken ct = default)
     {
         var product = await _productService.GetProductByIdAsync(id);
@@ -34,6 +36,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts(CancellationToken ct = default)
     {
         var products = await _productService.GetAllProductsAsync();
@@ -41,6 +44,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<PagedResult<ProductDto>>> GetAllProductsPaged(
         [FromQuery] int page = 1,
         [FromQuery] int size = 50,
@@ -51,6 +55,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("low-stock")]
+    [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetLowStockProducts(CancellationToken ct = default)
     {
         var products = await _productService.GetLowStockProductsAsync();
@@ -68,7 +73,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.ProductsCreate)]
     public async Task<ActionResult<ProductDto>> CreateProduct([FromBody] CreateProductDto request, CancellationToken ct = default)
     {
         var sellerId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -87,7 +92,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.ProductsEdit)]
     public async Task<ActionResult<ProductDto>> UpdateProduct(Guid id, [FromBody] UpdateProductDto request, CancellationToken ct = default)
     {
         if (id != request.Id)
@@ -108,7 +113,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Policy = "AdminOrOwner")]
+    [RequirePermission(PermissionKeys.ProductsDelete)]
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken ct = default)
     {
         var result = await _productService.DeleteProductAsync(id);
@@ -118,30 +123,65 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Exports all products as an .xlsx workbook. Column headers (and the
+    /// "Ha"/"Yo'q" boolean labels) come back in the caller's language —
+    /// pass `lang=ru` for Russian, anything else (or omit) yields Uzbek.
+    /// Returns every product the caller can see — same paging-disabled
+    /// fetch used by the in-app list. No filtering server-side; the user
+    /// can sort / filter in Excel if needed.
+    /// </summary>
     [HttpGet("export")]
-    public async Task<IActionResult> ExportProductsToExcel(CancellationToken ct = default)
+    [RequirePermission(PermissionKeys.ProductsExport)]
+    public async Task<IActionResult> ExportProductsToExcel(
+        [FromQuery] string lang = "uz",
+        CancellationToken ct = default)
     {
         var products = await _productService.GetAllProductsAsync();
+        var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        var canSeeCost = role is "Owner" or "Admin";
 
-        var exportData = products.Select(p => new
-        {
-            ID = p.Id.ToString(),
-            Nomi = p.Name,
-            Kategoriya = p.CategoryName ?? "",
-            Xarid_narxi = p.CostPrice,
-            Sotuv_narxi = p.SalePrice,
-            Minimal_narx = p.MinSalePrice,
-            Miqdor = p.Quantity,
-            Minimal_chegara = p.MinThreshold,
-            Vaqtinchalik = p.IsTemporary ? "Ha" : "Yo'q"
-        });
+        // Anonymous types pick up the field names as Excel column headers.
+        // We need two separate shapes for uz vs ru because anonymous-type
+        // member names are compile-time fixed.
+        object exportData = isRu
+            ? products.Select(p => new
+            {
+                ID = p.Id.ToString(),
+                Название = p.Name,
+                Категория = p.CategoryName ?? "",
+                Цена_закупки = canSeeCost ? p.CostPrice.ToString("G29") : "—",
+                Цена_продажи = p.SalePrice,
+                Минимальная_цена = p.MinSalePrice,
+                Количество = p.Quantity,
+                Ед_изм = p.UnitName,
+                Минимальный_остаток = p.MinThreshold,
+                Заканчивается = p.IsLowStock ? "Да" : "Нет",
+                Временный = p.IsTemporary ? "Да" : "Нет"
+            }).Cast<object>()
+            : products.Select(p => new
+            {
+                ID = p.Id.ToString(),
+                Nomi = p.Name,
+                Kategoriya = p.CategoryName ?? "",
+                Xarid_narxi = canSeeCost ? p.CostPrice.ToString("G29") : "—",
+                Sotuv_narxi = p.SalePrice,
+                Minimal_narx = p.MinSalePrice,
+                Miqdor = p.Quantity,
+                Birlik = p.UnitName,
+                Minimal_chegara = p.MinThreshold,
+                Kam_qoldi = p.IsLowStock ? "Ha" : "Yo'q",
+                Vaqtinchalik = p.IsTemporary ? "Ha" : "Yo'q"
+            }).Cast<object>();
 
-        var fileContent = _excelService.GenerateExcel(exportData, "Mahsulotlar");
+        var sheetName = isRu ? "Товары" : "Mahsulotlar";
+        var fileContent = _excelService.GenerateExcel((dynamic)exportData, sheetName);
 
         return File(
             fileContent,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"Mahsulotlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
         );
     }
 

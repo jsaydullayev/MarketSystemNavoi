@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/config/app_config.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_button.dart';
@@ -229,8 +230,8 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
 
     if (!AppConfig.hasSuperAdminConsole) {
       return Scaffold(
-        backgroundColor: AppColors.bg,
-        appBar: _buildAppBar(l10n, withTabs: false),
+        backgroundColor: context.colors.bg,
+        appBar: _buildAppBar(context, l10n, withTabs: false),
         body: Padding(
           padding: const EdgeInsets.all(AppSpacing.xl3),
           child: Center(
@@ -274,8 +275,9 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
     final ownersCount = _owners?.length ?? 0;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.colors.bg,
       appBar: _buildAppBar(
+        context,
         l10n,
         withTabs: true,
         pendingCount: pendingCount,
@@ -309,7 +311,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
               onPressed: _onCreateOwner,
               icon: const Icon(Icons.person_add_outlined),
               label: Text(l10n.newOwner),
-              backgroundColor: AppColors.brand,
+              backgroundColor: context.colors.brand,
               foregroundColor: Colors.white,
               elevation: 2,
             )
@@ -318,6 +320,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
   }
 
   PreferredSizeWidget _buildAppBar(
+    BuildContext context,
     AppLocalizations l10n, {
     required bool withTabs,
     int pendingCount = 0,
@@ -326,10 +329,10 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
     return AppBar(
       elevation: 0,
       scrolledUnderElevation: 0,
-      backgroundColor: AppColors.surface,
-      foregroundColor: AppColors.text,
-      shape: const Border(
-        bottom: BorderSide(color: AppColors.border, width: 1),
+      backgroundColor: context.colors.surface,
+      foregroundColor: context.colors.text,
+      shape: Border(
+        bottom: BorderSide(color: context.colors.border, width: 1),
       ),
       title: Row(
         children: [
@@ -337,12 +340,12 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: AppColors.brandLight,
+              color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.shield_outlined,
-              color: AppColors.brand,
+              color: context.colors.brand,
               size: 18,
             ),
           ),
@@ -373,16 +376,16 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
           ? PreferredSize(
               preferredSize: const Size.fromHeight(48),
               child: ColoredBox(
-                color: AppColors.surface,
+                color: context.colors.surface,
                 child: TabBar(
                   controller: _tabs,
-                  labelColor: AppColors.brand,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  indicatorColor: AppColors.brand,
+                  labelColor: context.colors.brand,
+                  unselectedLabelColor: context.colors.textSecondary,
+                  indicatorColor: context.colors.brand,
                   indicatorWeight: 2.5,
                   labelStyle: AppTextStyles.labelLarge(),
                   unselectedLabelStyle: AppTextStyles.labelLarge()
-                      .copyWith(color: AppColors.textSecondary),
+                      .copyWith(color: context.colors.textSecondary),
                   tabs: [
                     Tab(
                       child: _TabLabel(
@@ -424,7 +427,7 @@ class _TabLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.brand : AppColors.textSecondary;
+    final color = selected ? context.colors.brand : context.colors.textSecondary;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -435,7 +438,7 @@ class _TabLabel extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
           decoration: BoxDecoration(
-            color: selected ? AppColors.brand : AppColors.brandLight,
+            color: selected ? context.colors.brand : context.colors.brandLight,
             borderRadius: BorderRadius.circular(AppRadius.full),
           ),
           child: Text(
@@ -443,7 +446,9 @@ class _TabLabel extends StatelessWidget {
             style: AppTextStyles.bodySmall().copyWith(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: selected ? Colors.white : AppColors.brand,
+              color: selected
+                  ? context.colors.onBrand
+                  : context.colors.brand,
             ),
           ),
         ),
@@ -472,15 +477,15 @@ class _RequestsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     if (loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.brand),
+      return Center(
+        child: CircularProgressIndicator(color: context.colors.brand),
       );
     }
     if (error != null) return _ErrorState(error: error!, onRetry: onRefresh);
     final list = items ?? const <RegistrationRequest>[];
 
     return RefreshIndicator(
-      color: AppColors.brand,
+      color: context.colors.brand,
       onRefresh: onRefresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -527,7 +532,7 @@ class _RequestsTab extends StatelessWidget {
                   child: Text(
                     l10n.superAdminPendingRequestsHeader,
                     style: AppTextStyles.caption().copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -576,9 +581,9 @@ class _MiniStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,7 +592,7 @@ class _MiniStat extends StatelessWidget {
           Text(
             label,
             style: AppTextStyles.caption()
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: context.colors.textSecondary),
           ),
           Text(
             value,
@@ -616,7 +621,7 @@ class _RefreshChip extends StatelessWidget {
       icon: const Icon(Icons.refresh, size: 14),
       label: Text(l10n.refresh),
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.textSecondary,
+        foregroundColor: context.colors.textSecondary,
         textStyle: AppTextStyles.bodySmall().copyWith(fontSize: 12),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -624,7 +629,7 @@ class _RefreshChip extends StatelessWidget {
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.full),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: context.colors.border),
         ),
       ),
     );
@@ -648,10 +653,10 @@ class _EmptyState extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: AppColors.inputFill,
+                color: context.colors.inputFill,
                 borderRadius: BorderRadius.circular(AppRadius.xl),
               ),
-              child: Icon(icon, size: 32, color: AppColors.textMuted),
+              child: Icon(icon, size: 32, color: context.colors.textMuted),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(text, style: AppTextStyles.bodyMedium()),
@@ -680,9 +685,9 @@ class _RequestCard extends StatelessWidget {
         : '?';
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.colors.border, width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.xl,
@@ -700,7 +705,7 @@ class _RequestCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 alignment: Alignment.center,
@@ -722,10 +727,10 @@ class _RequestCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.phone_outlined,
                           size: 13,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         const SizedBox(width: 5),
                         Text(
@@ -779,7 +784,7 @@ class _RequestCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Divider(height: 1, color: AppColors.border),
+          Divider(height: 1, color: context.colors.border),
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
@@ -830,8 +835,8 @@ class _OwnersTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     if (loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.brand),
+      return Center(
+        child: CircularProgressIndicator(color: context.colors.brand),
       );
     }
     if (error != null) return _ErrorState(error: error!, onRetry: onRefresh);
@@ -847,7 +852,7 @@ class _OwnersTab extends StatelessWidget {
           }).toList();
 
     return RefreshIndicator(
-      color: AppColors.brand,
+      color: context.colors.brand,
       onRefresh: onRefresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -863,9 +868,9 @@ class _OwnersTab extends StatelessWidget {
             // Search bar
             Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.colors.surface,
                 borderRadius: BorderRadius.circular(AppRadius.full),
-                border: Border.all(color: AppColors.border, width: 1),
+                border: Border.all(color: context.colors.border, width: 1),
               ),
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.xl,
@@ -873,9 +878,9 @@ class _OwnersTab extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.search,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                     size: 18,
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -886,7 +891,7 @@ class _OwnersTab extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: l10n.ownerSearchHint,
                         hintStyle: AppTextStyles.bodyMedium().copyWith(
-                          color: AppColors.textMuted,
+                          color: context.colors.textMuted,
                           fontSize: 14,
                         ),
                         border: InputBorder.none,
@@ -900,7 +905,7 @@ class _OwnersTab extends StatelessWidget {
                   if (searchCtrl.text.isNotEmpty)
                     IconButton(
                       icon: const Icon(Icons.close, size: 18),
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       onPressed: () => searchCtrl.clear(),
                     ),
                 ],
@@ -913,7 +918,7 @@ class _OwnersTab extends StatelessWidget {
                   child: Text(
                     l10n.superAdminActiveOwnersHeader(filtered.length),
                     style: AppTextStyles.caption().copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -961,7 +966,7 @@ class _OwnerCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final initial =
         owner.fullName.isNotEmpty ? owner.fullName[0].toUpperCase() : '?';
-    final avatarColor = _avatarColor(owner.userId);
+    final avatarColor = _avatarColor(context, owner.userId);
 
     Color statusColor;
     Color statusBg;
@@ -976,12 +981,12 @@ class _OwnerCard extends StatelessWidget {
       statusBg = AppColors.successLight;
     } else {
       statusLabel = l10n.statusInactive;
-      statusColor = AppColors.textMuted;
-      statusBg = AppColors.inputFill;
+      statusColor = context.colors.textMuted;
+      statusBg = context.colors.inputFill;
     }
 
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -989,7 +994,7 @@ class _OwnerCard extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: Border.all(color: context.colors.border, width: 1),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl,
@@ -1024,7 +1029,7 @@ class _OwnerCard extends StatelessWidget {
                     Text(
                       '@${owner.username}',
                       style: AppTextStyles.bodySmall().copyWith(
-                        color: AppColors.brand,
+                        color: context.colors.brand,
                         fontSize: 13,
                       ),
                     ),
@@ -1032,10 +1037,10 @@ class _OwnerCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.phone_outlined,
                             size: 12,
-                            color: AppColors.textSecondary,
+                            color: context.colors.textSecondary,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -1058,10 +1063,10 @@ class _OwnerCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.storefront_outlined,
                           size: 13,
-                          color: AppColors.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                         const SizedBox(width: 5),
                         ConstrainedBox(
@@ -1071,7 +1076,7 @@ class _OwnerCard extends StatelessWidget {
                             style: AppTextStyles.bodySmall().copyWith(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.text,
+                              color: context.colors.text,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1114,9 +1119,9 @@ class _OwnerCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: AppSpacing.md),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ],
           ),
@@ -1127,9 +1132,9 @@ class _OwnerCard extends StatelessWidget {
 
   /// Deterministic per-owner colour so the same owner always gets the same
   /// avatar tint between sessions.
-  Color _avatarColor(String userId) {
+  Color _avatarColor(BuildContext context, String userId) {
     final palette = [
-      AppColors.brand,
+      context.colors.brand,
       AppColors.success,
       const Color(0xFF7C3AED), // purple
       const Color(0xFF0EA5E9), // sky

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -21,19 +22,19 @@ class EmptyItems extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl3),
-            decoration: const BoxDecoration(
-              color: AppColors.inputFill,
+            decoration: BoxDecoration(
+              color: context.colors.inputFill,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.receipt_long_outlined,
-                size: 48, color: AppColors.textMuted),
+            child: Icon(Icons.receipt_long_outlined,
+                size: 48, color: context.colors.textMuted),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
             l10n.noSalesToday,
             style: AppTextStyles.bodyLarge().copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
             ),
           ),
         ],

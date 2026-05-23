@@ -2,15 +2,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.API.Authorization;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
-using OfficeOpenXml;
+using ClosedXML.Excel;
 
 namespace MarketSystem.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "AdminOrOwner")]
+[Authorize]
 public class ReportsController : ControllerBase
 {
     private readonly IReportService _reportService;
@@ -42,6 +44,7 @@ public class ReportsController : ControllerBase
     /// Get daily sales report
     /// </summary>
     [HttpGet("daily")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<DailyReportDto>> GetDailyReport([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -55,6 +58,7 @@ public class ReportsController : ControllerBase
     /// Get daily sale items - detailed list of products sold on specific date
     /// </summary>
     [HttpGet("daily-items")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<DailySaleItemsResponseDto>> GetDailySaleItems([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -68,6 +72,7 @@ public class ReportsController : ControllerBase
     /// Get sales report for a period
     /// </summary>
     [HttpGet("period")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<PeriodReportDto>> GetPeriodReport(
         [FromQuery] DateTime start,
         [FromQuery] DateTime end)
@@ -90,6 +95,7 @@ public class ReportsController : ControllerBase
     /// Export sales report to Excel
     /// </summary>
     [HttpGet("period/export")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<IActionResult> ExportToExcel(
         [FromQuery] DateTime start,
         [FromQuery] DateTime end)
@@ -101,7 +107,8 @@ public class ReportsController : ControllerBase
         var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
 
         var request = new PeriodReportRequest(utcStart, utcEnd);
-        var excelBytes = await _reportService.ExportToExcelAsync(request);
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        var excelBytes = await _reportService.ExportToExcelAsync(request, userRole);
 
         return File(
             excelBytes,
@@ -115,6 +122,7 @@ public class ReportsController : ControllerBase
     /// Seller reports are only visible to Owner role
     /// </summary>
     [HttpGet("comprehensive")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<ComprehensiveReportDto>> GetComprehensiveReport([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -128,15 +136,20 @@ public class ReportsController : ControllerBase
     /// Export comprehensive report to Excel
     /// </summary>
     [HttpGet("comprehensive/export")]
-    public async Task<IActionResult> ExportComprehensiveToExcel([FromQuery] DateTime date)
+    [RequirePermission(PermissionKeys.ReportsAccess)]
+    public async Task<IActionResult> ExportComprehensiveToExcel(
+        [FromQuery] DateTime date,
+        [FromQuery] string lang = "uz")
     {
-        // Service handles UTC conversion internally via GetUtcDateRange
-        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(date);
+        var excelBytes = await _reportService.ExportComprehensiveToExcelAsync(date, lang);
+        var fileName = lang.Equals("ru", StringComparison.OrdinalIgnoreCase)
+            ? $"Otchet_{date:yyyyMMdd}.xlsx"
+            : $"Hisobot_{date:yyyyMMdd}.xlsx";
 
         return File(
             excelBytes,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"comprehensive_report_{date:yyyyMMdd}.xlsx"
+            fileName
         );
     }
 
@@ -146,7 +159,7 @@ public class ReportsController : ControllerBase
     /// Get profit summary - Owner only
     /// </summary>
     [HttpGet("profit-summary")]
-    [Authorize(Policy = "OwnerOnly")]
+    [RequirePermission(PermissionKeys.DataProfit)]
     public async Task<ActionResult<ProfitSummaryDto>> GetProfitSummary()
     {
         var summary = await _reportService.GetProfitSummaryAsync();
@@ -160,6 +173,7 @@ public class ReportsController : ControllerBase
     /// Profit values are zero unless the caller is Owner.
     /// </summary>
     [HttpGet("weekly-series")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<WeeklySeriesDto>> GetWeeklySeries(
         [FromQuery] int days = 7,
         [FromQuery] bool compare = false)
@@ -175,6 +189,7 @@ public class ReportsController : ControllerBase
     /// page. Profit is hidden for non-Owner callers.
     /// </summary>
     [HttpGet("top-products")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<TopProductsDto>> GetTopProducts(
         [FromQuery] string period = "month",
         [FromQuery] string sortBy = "quantity",
@@ -191,6 +206,7 @@ public class ReportsController : ControllerBase
     /// quiet seller doesn't silently disappear from the team list.
     /// </summary>
     [HttpGet("staff-performance")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<StaffPerformanceDto>> GetStaffPerformance(
         [FromQuery] string period = "week")
     {
@@ -205,6 +221,7 @@ public class ReportsController : ControllerBase
     /// ever sees their own row.
     /// </summary>
     [HttpGet("my-performance")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
     public async Task<ActionResult<MyPerformanceDto>> GetMyPerformance(
         [FromQuery] string period = "today")
     {
@@ -220,7 +237,7 @@ public class ReportsController : ControllerBase
     /// Get cash balance - Owner only
     /// </summary>
     [HttpGet("cash-balance")]
-    [Authorize(Policy = "OwnerOnly")]
+    [RequirePermission(PermissionKeys.DataCashBalance)]
     public async Task<ActionResult<CashBalanceDto>> GetCashBalance()
     {
         var balance = await _reportService.GetCashBalanceAsync();
@@ -234,7 +251,7 @@ public class ReportsController : ControllerBase
     /// - Seller: sees only their own sales without profit
     /// </summary>
     [HttpGet("daily-sales-list")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<DailySalesListDto>> GetDailySalesList([FromQuery] DateTime date)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -250,7 +267,7 @@ public class ReportsController : ControllerBase
     /// Export all sales to Excel with detailed formatting
     /// </summary>
     [HttpGet("sales/export")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportSalesToExcel(
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
@@ -273,34 +290,36 @@ public class ReportsController : ControllerBase
             var utcEnd = DateTime.SpecifyKind(queryEndDate.Date, DateTimeKind.Utc);
 
             _logger.LogInformation("Fetching sales list for period: {Start} to {End}", utcStart, utcEnd);
-            var salesList = await _reportService.GetDailySalesListAsync(utcStart, userRole, userId);
+            // Pass endDate so the service returns the whole [start, end] range —
+            // previously this fetched only utcStart's single day, so a multi-day
+            // export silently dropped every sale after day one.
+            var salesList = await _reportService.GetDailySalesListAsync(
+                utcStart, userRole, userId, endDate: utcEnd, cancellationToken);
             _logger.LogInformation("Got {Count} sales from service", salesList.Sales.Count);
 
-            // Filter by date range if specified
-            var filteredSales = salesList.Sales
-                .Where(s => s.CreatedAt >= utcStart && s.CreatedAt < utcEnd.AddDays(1))
-                .ToList();
+            // The service already scoped the query to the range; this guard
+            // just keeps the rest of the method working off an explicit list.
+            var filteredSales = salesList.Sales.ToList();
             _logger.LogInformation("Filtered to {Count} sales within date range", filteredSales.Count);
 
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            using (var package = new ExcelPackage())
+            using (var workbook = new XLWorkbook())
             {
                 // ============================================
                 // SHEET 1: KUNLIK UMUMIY HISOBOT (Summary)
                 // ============================================
-                var summarySheet = package.Workbook.Worksheets.Add("Kunlik Hisobot");
+                var summarySheet = workbook.Worksheets.Add("Kunlik Hisobot");
 
                 // Report title
-                summarySheet.Cells[1, 1].Value = "SOTUVLAR HISOBOTI";
-                summarySheet.Cells[1, 1, 1, 6].Merge = true;
-                summarySheet.Cells[1, 1].Style.Font.Bold = true;
-                summarySheet.Cells[1, 1].Style.Font.Size = 16;
-                summarySheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(1, 1).Value = "SOTUVLAR HISOBOTI";
+                summarySheet.Range(1, 1, 1, 6).Merge();
+                summarySheet.Cell(1, 1).Style.Font.Bold = true;
+                summarySheet.Cell(1, 1).Style.Font.FontSize = 16;
+                summarySheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 // Report period
-                summarySheet.Cells[2, 1].Value = $"Sana: {queryStartDate:yyyy-MM-dd} - {queryEndDate:yyyy-MM-dd}";
-                summarySheet.Cells[2, 1, 2, 6].Merge = true;
-                summarySheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(2, 1).Value = $"Sana: {queryStartDate:yyyy-MM-dd} - {queryEndDate:yyyy-MM-dd}";
+                summarySheet.Range(2, 1, 2, 6).Merge();
+                summarySheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 // Summary calculations
                 decimal totalSales = salesList.TotalSales;
@@ -341,108 +360,105 @@ public class ReportsController : ControllerBase
 
                 // Summary table
                 int row = 4;
-                summarySheet.Cells[row, 1].Value = "KO'RSATGICH";
-                summarySheet.Cells[row, 2].Value = "SUMMA (so'm)";
-                summarySheet.Cells[row, 1, row, 2].Style.Font.Bold = true;
-                summarySheet.Cells[row, 1, row, 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                summarySheet.Cells[row, 1, row, 2].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
-                summarySheet.Cells[row, 1, row, 2].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(row, 1).Value = "KO'RSATGICH";
+                summarySheet.Cell(row, 2).Value = "SUMMA (so'm)";
+                summarySheet.Range(row, 1, row, 2).Style.Font.Bold = true;
+                summarySheet.Range(row, 1, row, 2).Style.Fill.BackgroundColor = XLColor.LightBlue;
+                summarySheet.Range(row, 1, row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Jami savdo (Total)";
-                summarySheet.Cells[row, 2].Value = totalSales;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "Jami savdo (Total)";
+                summarySheet.Cell(row, 2).Value = totalSales;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "To'langan (Naqd)";
-                summarySheet.Cells[row, 2].Value = totalPaid;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "To'langan (Naqd)";
+                summarySheet.Cell(row, 2).Value = totalPaid;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Qarz (Debt)";
-                summarySheet.Cells[row, 2].Value = totalDebt;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "Qarz (Debt)";
+                summarySheet.Cell(row, 2).Value = totalDebt;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Vozvrat (Qaytarilgan)";
-                summarySheet.Cells[row, 2].Value = -refunds;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
-                summarySheet.Cells[row, 2].Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                summarySheet.Cell(row, 1).Value = "Vozvrat (Qaytarilgan)";
+                summarySheet.Cell(row, 2).Value = -refunds;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                summarySheet.Cell(row, 2).Style.Font.FontColor = XLColor.Red;
 
                 row += 2;
-                summarySheet.Cells[row, 1].Value = "TO'LOV TURLARI BO'YICHA";
-                summarySheet.Cells[row, 1, row, 2].Merge = true;
-                summarySheet.Cells[row, 1].Style.Font.Bold = true;
-                summarySheet.Cells[row, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(row, 1).Value = "TO'LOV TURLARI BO'YICHA";
+                summarySheet.Range(row, 1, row, 2).Merge();
+                summarySheet.Cell(row, 1).Style.Font.Bold = true;
+                summarySheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Naqd (Cash)";
-                summarySheet.Cells[row, 2].Value = cashPayments;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "Naqd (Cash)";
+                summarySheet.Cell(row, 2).Value = cashPayments;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Terminal";
-                summarySheet.Cells[row, 2].Value = terminalPayments;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "Terminal";
+                summarySheet.Cell(row, 2).Value = terminalPayments;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Click";
-                summarySheet.Cells[row, 2].Value = clickPayments;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "Click";
+                summarySheet.Cell(row, 2).Value = clickPayments;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Transfer / Hisob";
-                summarySheet.Cells[row, 2].Value = transferPayments;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "Transfer / Hisob";
+                summarySheet.Cell(row, 2).Value = transferPayments;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 if (userRole == "Owner")
                 {
                     row += 2;
-                    summarySheet.Cells[row, 1].Value = "FOYDA (Profit)";
-                    summarySheet.Cells[row, 1, row, 2].Merge = true;
-                    summarySheet.Cells[row, 1].Style.Font.Bold = true;
-                    summarySheet.Cells[row, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    summarySheet.Cells[row, 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                    summarySheet.Cell(row, 1).Value = "FOYDA (Profit)";
+                    summarySheet.Range(row, 1, row, 2).Merge();
+                    summarySheet.Cell(row, 1).Style.Font.Bold = true;
+                    summarySheet.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightGreen;
 
                     row++;
-                    summarySheet.Cells[row, 1].Value = "Jami foyda";
-                    summarySheet.Cells[row, 2].Value = totalProfit;
-                    summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
-                    summarySheet.Cells[row, 2].Style.Font.Bold = true;
+                    summarySheet.Cell(row, 1).Value = "Jami foyda";
+                    summarySheet.Cell(row, 2).Value = totalProfit;
+                    summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    summarySheet.Cell(row, 2).Style.Font.Bold = true;
                 }
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Tranzaksiyalar soni";
-                summarySheet.Cells[row, 2].Value = filteredSales.Count;
-                summarySheet.Cells[row, 2].Style.Font.Bold = true;
+                summarySheet.Cell(row, 1).Value = "Tranzaksiyalar soni";
+                summarySheet.Cell(row, 2).Value = filteredSales.Count;
+                summarySheet.Cell(row, 2).Style.Font.Bold = true;
 
-                summarySheet.Cells[summarySheet.Dimension.Address].AutoFitColumns();
+                summarySheet.Columns().AdjustToContents();
                 summarySheet.Column(1).Width = 30;
                 summarySheet.Column(2).Width = 20;
 
                 // ============================================
                 // SHEET 2: BATAFSIL SOTUVLAR RO'YXATI
                 // ============================================
-                var detailsSheet = package.Workbook.Worksheets.Add("Batafsil Sotuvlar");
+                var detailsSheet = workbook.Worksheets.Add("Batafsil Sotuvlar");
 
                 // Headers
-                detailsSheet.Cells[1, 1].Value = "№";
-                detailsSheet.Cells[1, 2].Value = "Sana";
-                detailsSheet.Cells[1, 3].Value = "Savdo ID";
-                detailsSheet.Cells[1, 4].Value = "Sotuvchi";
-                detailsSheet.Cells[1, 5].Value = "Mijoz";
-                detailsSheet.Cells[1, 6].Value = "Jami summa";
-                detailsSheet.Cells[1, 7].Value = "To'lov turi";
-                detailsSheet.Cells[1, 8].Value = "Holat";
-                detailsSheet.Cells[1, 9].Value = "Foyda";
+                detailsSheet.Cell(1, 1).Value = "№";
+                detailsSheet.Cell(1, 2).Value = "Sana";
+                detailsSheet.Cell(1, 3).Value = "Savdo ID";
+                detailsSheet.Cell(1, 4).Value = "Sotuvchi";
+                detailsSheet.Cell(1, 5).Value = "Mijoz";
+                detailsSheet.Cell(1, 6).Value = "Jami summa";
+                detailsSheet.Cell(1, 7).Value = "To'lov turi";
+                detailsSheet.Cell(1, 8).Value = "Holat";
+                detailsSheet.Cell(1, 9).Value = "Foyda";
 
                 // Header styling
-                using (var range = detailsSheet.Cells[1, 1, 1, 9])
+                var detailsHeaderRange = detailsSheet.Range(1, 1, 1, 9);
                 {
-                    range.Style.Font.Bold = true;
-                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
-                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    detailsHeaderRange.Style.Font.Bold = true;
+                    detailsHeaderRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                    detailsHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 }
 
                 // Data rows
@@ -452,53 +468,53 @@ public class ReportsController : ControllerBase
 
                 foreach (var sale in filteredSales)
                 {
-                    detailsSheet.Cells[detailRow, 1].Value = detailRow - 1;
-                    detailsSheet.Cells[detailRow, 2].Value = FmtTashkent(sale.CreatedAt);
-                    detailsSheet.Cells[detailRow, 3].Value = sale.Id.ToString();
-                    detailsSheet.Cells[detailRow, 4].Value = sale.SellerName ?? "";
-                    detailsSheet.Cells[detailRow, 5].Value = sale.CustomerName ?? "Mijoz yo'q";
-                    detailsSheet.Cells[detailRow, 6].Value = sale.TotalAmount;
-                    detailsSheet.Cells[detailRow, 6].Style.Numberformat.Format = "#,##0.00";
-                    detailsSheet.Cells[detailRow, 7].Value = GetPaymentTypeText(sale.PaymentType);
-                    detailsSheet.Cells[detailRow, 8].Value = GetStatusText(sale.Status);
+                    detailsSheet.Cell(detailRow, 1).Value = detailRow - 1;
+                    detailsSheet.Cell(detailRow, 2).Value = FmtTashkent(sale.CreatedAt);
+                    detailsSheet.Cell(detailRow, 3).Value = sale.Id.ToString();
+                    detailsSheet.Cell(detailRow, 4).Value = sale.SellerName ?? "";
+                    detailsSheet.Cell(detailRow, 5).Value = sale.CustomerName ?? "Mijoz yo'q";
+                    detailsSheet.Cell(detailRow, 6).Value = sale.TotalAmount;
+                    detailsSheet.Cell(detailRow, 6).Style.NumberFormat.Format = "#,##0.00";
+                    detailsSheet.Cell(detailRow, 7).Value = GetPaymentTypeText(sale.PaymentType);
+                    detailsSheet.Cell(detailRow, 8).Value = GetStatusText(sale.Status);
 
                     if (userRole == "Owner" && sale.Profit.HasValue)
                     {
-                        detailsSheet.Cells[detailRow, 9].Value = sale.Profit.Value;
-                        detailsSheet.Cells[detailRow, 9].Style.Numberformat.Format = "#,##0.00";
+                        detailsSheet.Cell(detailRow, 9).Value = sale.Profit.Value;
+                        detailsSheet.Cell(detailRow, 9).Style.NumberFormat.Format = "#,##0.00";
                         detailProfit += sale.Profit.Value;
                     }
                     else if (userRole == "Owner")
                     {
-                        detailsSheet.Cells[detailRow, 9].Value = 0;
+                        detailsSheet.Cell(detailRow, 9).Value = 0;
                     }
 
                     // Status coloring
-                    var statusCell = detailsSheet.Cells[detailRow, 8];
+                    var statusCell = detailsSheet.Cell(detailRow, 8);
                     switch (sale.Status.ToLower())
                     {
                         case "paid":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Green);
+                            statusCell.Style.Font.FontColor = XLColor.Green;
                             break;
                         case "debt":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                            statusCell.Style.Font.FontColor = XLColor.Red;
                             break;
                         case "cancelled":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Gray);
+                            statusCell.Style.Font.FontColor = XLColor.Gray;
                             break;
                         case "draft":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                            statusCell.Style.Font.FontColor = XLColor.Orange;
                             break;
                         case "closed":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.DarkBlue);
+                            statusCell.Style.Font.FontColor = XLColor.DarkBlue;
                             break;
                     }
 
                     // Payment type coloring
-                    var paymentCell = detailsSheet.Cells[detailRow, 7];
+                    var paymentCell = detailsSheet.Cell(detailRow, 7);
                     if (sale.PaymentType?.ToLower() == "qaytarilgan" || sale.PaymentType?.ToLower() == "refund")
                     {
-                        paymentCell.Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                        paymentCell.Style.Font.FontColor = XLColor.Red;
                         paymentCell.Style.Font.Bold = true;
                     }
 
@@ -507,21 +523,21 @@ public class ReportsController : ControllerBase
                 }
 
                 // Footer
-                detailsSheet.Cells[detailRow, 1].Value = "JAMI:";
-                detailsSheet.Cells[detailRow, 1, detailRow, 5].Merge = true;
-                detailsSheet.Cells[detailRow, 1].Style.Font.Bold = true;
-                detailsSheet.Cells[detailRow, 6].Value = detailTotal;
-                detailsSheet.Cells[detailRow, 6].Style.Numberformat.Format = "#,##0.00";
-                detailsSheet.Cells[detailRow, 6].Style.Font.Bold = true;
+                detailsSheet.Cell(detailRow, 1).Value = "JAMI:";
+                detailsSheet.Range(detailRow, 1, detailRow, 5).Merge();
+                detailsSheet.Cell(detailRow, 1).Style.Font.Bold = true;
+                detailsSheet.Cell(detailRow, 6).Value = detailTotal;
+                detailsSheet.Cell(detailRow, 6).Style.NumberFormat.Format = "#,##0.00";
+                detailsSheet.Cell(detailRow, 6).Style.Font.Bold = true;
 
                 if (userRole == "Owner")
                 {
-                    detailsSheet.Cells[detailRow, 9].Value = detailProfit;
-                    detailsSheet.Cells[detailRow, 9].Style.Numberformat.Format = "#,##0.00";
-                    detailsSheet.Cells[detailRow, 9].Style.Font.Bold = true;
+                    detailsSheet.Cell(detailRow, 9).Value = detailProfit;
+                    detailsSheet.Cell(detailRow, 9).Style.NumberFormat.Format = "#,##0.00";
+                    detailsSheet.Cell(detailRow, 9).Style.Font.Bold = true;
                 }
 
-                detailsSheet.Cells[detailsSheet.Dimension.Address].AutoFitColumns();
+                detailsSheet.Columns().AdjustToContents();
                 detailsSheet.Column(1).Width = 6;
                 detailsSheet.Column(2).Width = 18;
                 detailsSheet.Column(3).Width = 40;
@@ -533,16 +549,16 @@ public class ReportsController : ControllerBase
                 detailsSheet.Column(9).Width = 15;
 
                 // Borders
-                using (var range = detailsSheet.Cells[1, 1, detailRow, 9])
+                var detailsBorderRange = detailsSheet.Range(1, 1, detailRow, 9);
                 {
-                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    detailsBorderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                    detailsBorderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                    detailsBorderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                    detailsBorderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
                 }
 
                 // Auto filter
-                detailsSheet.Cells[1, 1, 1, 9].AutoFilter = true;
+                detailsSheet.Range(1, 1, 1, 9).SetAutoFilter();
 
                 // ============================================
                 // SHEET 3: MAHSULOTLAR BO'YICHA BATAFSIL (Products Detail)
@@ -554,33 +570,32 @@ public class ReportsController : ControllerBase
                         utcStart, utcEnd, userRole, userId, cancellationToken);
                     _logger.LogInformation("Found {Count} sales with items", salesWithItems.Count);
 
-                    var itemsSheet = package.Workbook.Worksheets.Add("Mahsulotlar Batafsil");
+                    var itemsSheet = workbook.Worksheets.Add("Mahsulotlar Batafsil");
 
                     // Determine column count based on user role
                     int colCount = userRole == "Owner" ? 9 : 8;
 
                     // Headers
-                    itemsSheet.Cells[1, 1].Value = "№";
-                    itemsSheet.Cells[1, 2].Value = "Sana";
-                    itemsSheet.Cells[1, 3].Value = "Savdo ID";
-                    itemsSheet.Cells[1, 4].Value = "Mijoz";
-                    itemsSheet.Cells[1, 5].Value = "Mahsulot nomi";
-                    itemsSheet.Cells[1, 6].Value = "Miqdor";
-                    itemsSheet.Cells[1, 7].Value = "Sotuv narxi";
-                    itemsSheet.Cells[1, 8].Value = "Jami summa";
+                    itemsSheet.Cell(1, 1).Value = "№";
+                    itemsSheet.Cell(1, 2).Value = "Sana";
+                    itemsSheet.Cell(1, 3).Value = "Savdo ID";
+                    itemsSheet.Cell(1, 4).Value = "Mijoz";
+                    itemsSheet.Cell(1, 5).Value = "Mahsulot nomi";
+                    itemsSheet.Cell(1, 6).Value = "Miqdor";
+                    itemsSheet.Cell(1, 7).Value = "Sotuv narxi";
+                    itemsSheet.Cell(1, 8).Value = "Jami summa";
 
                     if (userRole == "Owner")
                     {
-                        itemsSheet.Cells[1, 9].Value = "Foyda";
+                        itemsSheet.Cell(1, 9).Value = "Foyda";
                     }
 
                     // Header styling
-                    using (var range = itemsSheet.Cells[1, 1, 1, colCount])
+                    var itemsHeaderRange = itemsSheet.Range(1, 1, 1, colCount);
                     {
-                        range.Style.Font.Bold = true;
-                        range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                        range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
-                        range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                        itemsHeaderRange.Style.Font.Bold = true;
+                        itemsHeaderRange.Style.Fill.BackgroundColor = XLColor.LightGreen;
+                        itemsHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                     }
 
                     // Data rows
@@ -592,22 +607,22 @@ public class ReportsController : ControllerBase
                     {
                         foreach (var item in sale.Items)
                         {
-                            itemsSheet.Cells[itemRow, 1].Value = itemRow - 1;
-                            itemsSheet.Cells[itemRow, 2].Value = FmtTashkent(sale.CreatedAt);
-                            itemsSheet.Cells[itemRow, 3].Value = sale.Id.ToString();
-                            itemsSheet.Cells[itemRow, 4].Value = sale.CustomerName ?? "Mijoz yo'q";
-                            itemsSheet.Cells[itemRow, 5].Value = item.ProductName;
-                            itemsSheet.Cells[itemRow, 6].Value = item.Quantity;
-                            itemsSheet.Cells[itemRow, 6].Style.Numberformat.Format = "#,##0.000";
-                            itemsSheet.Cells[itemRow, 7].Value = item.SalePrice;
-                            itemsSheet.Cells[itemRow, 7].Style.Numberformat.Format = "#,##0.00";
-                            itemsSheet.Cells[itemRow, 8].Value = item.TotalAmount;
-                            itemsSheet.Cells[itemRow, 8].Style.Numberformat.Format = "#,##0.00";
+                            itemsSheet.Cell(itemRow, 1).Value = itemRow - 1;
+                            itemsSheet.Cell(itemRow, 2).Value = FmtTashkent(sale.CreatedAt);
+                            itemsSheet.Cell(itemRow, 3).Value = sale.Id.ToString();
+                            itemsSheet.Cell(itemRow, 4).Value = sale.CustomerName ?? "Mijoz yo'q";
+                            itemsSheet.Cell(itemRow, 5).Value = item.ProductName;
+                            itemsSheet.Cell(itemRow, 6).Value = item.Quantity;
+                            itemsSheet.Cell(itemRow, 6).Style.NumberFormat.Format = "#,##0.000";
+                            itemsSheet.Cell(itemRow, 7).Value = item.SalePrice;
+                            itemsSheet.Cell(itemRow, 7).Style.NumberFormat.Format = "#,##0.00";
+                            itemsSheet.Cell(itemRow, 8).Value = item.TotalAmount;
+                            itemsSheet.Cell(itemRow, 8).Style.NumberFormat.Format = "#,##0.00";
 
                             if (userRole == "Owner" && item.Profit.HasValue)
                             {
-                                itemsSheet.Cells[itemRow, 9].Value = item.Profit.Value;
-                                itemsSheet.Cells[itemRow, 9].Style.Numberformat.Format = "#,##0.00";
+                                itemsSheet.Cell(itemRow, 9).Value = item.Profit.Value;
+                                itemsSheet.Cell(itemRow, 9).Style.NumberFormat.Format = "#,##0.00";
                                 itemsProfit += item.Profit.Value;
                             }
 
@@ -617,21 +632,21 @@ public class ReportsController : ControllerBase
                     }
 
                     // Footer
-                    itemsSheet.Cells[itemRow, 1].Value = "JAMI:";
-                    itemsSheet.Cells[itemRow, 1, itemRow, 7].Merge = true;
-                    itemsSheet.Cells[itemRow, 1].Style.Font.Bold = true;
-                    itemsSheet.Cells[itemRow, 8].Value = itemsTotal;
-                    itemsSheet.Cells[itemRow, 8].Style.Numberformat.Format = "#,##0.00";
-                    itemsSheet.Cells[itemRow, 8].Style.Font.Bold = true;
+                    itemsSheet.Cell(itemRow, 1).Value = "JAMI:";
+                    itemsSheet.Range(itemRow, 1, itemRow, 7).Merge();
+                    itemsSheet.Cell(itemRow, 1).Style.Font.Bold = true;
+                    itemsSheet.Cell(itemRow, 8).Value = itemsTotal;
+                    itemsSheet.Cell(itemRow, 8).Style.NumberFormat.Format = "#,##0.00";
+                    itemsSheet.Cell(itemRow, 8).Style.Font.Bold = true;
 
                     if (userRole == "Owner")
                     {
-                        itemsSheet.Cells[itemRow, 9].Value = itemsProfit;
-                        itemsSheet.Cells[itemRow, 9].Style.Numberformat.Format = "#,##0.00";
-                        itemsSheet.Cells[itemRow, 9].Style.Font.Bold = true;
+                        itemsSheet.Cell(itemRow, 9).Value = itemsProfit;
+                        itemsSheet.Cell(itemRow, 9).Style.NumberFormat.Format = "#,##0.00";
+                        itemsSheet.Cell(itemRow, 9).Style.Font.Bold = true;
                     }
 
-                    itemsSheet.Cells[itemsSheet.Dimension.Address].AutoFitColumns();
+                    itemsSheet.Columns().AdjustToContents();
                     itemsSheet.Column(1).Width = 6;
                     itemsSheet.Column(2).Width = 18;
                     itemsSheet.Column(3).Width = 40;
@@ -643,36 +658,16 @@ public class ReportsController : ControllerBase
                     if (userRole == "Owner") itemsSheet.Column(9).Width = 15;
 
                     // Borders
-                    using (var range = itemsSheet.Cells[1, 1, itemRow, colCount])
+                    var itemsBorderRange = itemsSheet.Range(1, 1, itemRow, colCount);
                     {
-                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        itemsBorderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                        itemsBorderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                        itemsBorderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                        itemsBorderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
                     }
 
                     // Auto filter
-                    itemsSheet.Cells[1, 1, 1, colCount].AutoFilter = true;
-
-                    itemsSheet.Cells[itemsSheet.Dimension.Address].AutoFitColumns();
-                    itemsSheet.Column(1).Width = 6;
-                    itemsSheet.Column(2).Width = 18;
-                    itemsSheet.Column(3).Width = 40;
-                    itemsSheet.Column(4).Width = 20;
-                    itemsSheet.Column(5).Width = 40;
-                    itemsSheet.Column(6).Width = 12;
-                    itemsSheet.Column(7).Width = 12;
-                    itemsSheet.Column(8).Width = 15;
-                    if (userRole == "Owner") itemsSheet.Column(9).Width = 15;
-
-                    // Borders
-                    using (var range = itemsSheet.Cells[1, 1, itemRow, colCount])
-                    {
-                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    }
+                    itemsSheet.Range(1, 1, 1, colCount).SetAutoFilter();
 
                     _logger.LogInformation("Successfully created product detail sheet with {RowCount} rows", itemRow - 1);
                 }
@@ -682,7 +677,9 @@ public class ReportsController : ControllerBase
                     // Continue without this sheet - summary and details sheets are sufficient
                 }
 
-                var stream = new MemoryStream(package.GetAsByteArray());
+                var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                stream.Position = 0;
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 var fileName = $"sotuvlar_hisoboti_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 
@@ -697,43 +694,46 @@ public class ReportsController : ControllerBase
         }
     }
 
-    private string GetPaymentTypeText(string? paymentType)
+    private string GetPaymentTypeText(string? paymentType, bool isRu = false)
     {
         return paymentType?.ToLower() switch
         {
-            "cash" => "Naqd",
+            "cash" => isRu ? "Наличные" : "Naqd",
             "terminal" => "Terminal",
             "click" => "Click",
-            "transfer" => "Transfer / Hisob",
-            "qaytarilgan" => "QAYTARILGAN",
-            "refund" => "QAYTARILGAN",
+            "transfer" => isRu ? "Перевод / Счёт" : "Transfer / Hisob",
+            "qaytarilgan" => isRu ? "ВОЗВРАТ" : "QAYTARILGAN",
+            "refund" => isRu ? "ВОЗВРАТ" : "QAYTARILGAN",
             _ => paymentType ?? ""
         };
     }
 
-    private string GetStatusText(string? status)
+    private string GetStatusText(string? status, bool isRu = false)
     {
         return status switch
         {
-            "Draft" => "Qoralama",
-            "Paid" => "To'langan",
-            "Debt" => "Qarzli",
-            "Closed" => "Yopilgan",
-            "Cancelled" => "Bekor qilingan",
+            "Draft" => isRu ? "Черновик" : "Qoralama",
+            "Paid" => isRu ? "Оплачено" : "To'langan",
+            "Debt" => isRu ? "В долг" : "Qarzli",
+            "Closed" => isRu ? "Закрыто" : "Yopilgan",
+            "Cancelled" => isRu ? "Отменено" : "Bekor qilingan",
             _ => status ?? ""
         };
     }
 
 
     [HttpGet("comprehensive-report/export")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportComprehensiveReportToExcel(
         [FromQuery] DateTime? date = null,
+        [FromQuery] string lang = "uz",
         CancellationToken cancellationToken = default)
     {
         try
         {
             _logger.LogInformation("Exporting comprehensive report to Excel. Date: {Date}", date);
+
+            var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
 
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -745,71 +745,69 @@ public class ReportsController : ControllerBase
             var salesList = await _reportService.GetDailySalesListAsync(utcDate, userRole, userId);
             var dailyReport = await _reportService.GetDailyReportAsync(utcDate, userRole, cancellationToken);
 
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            using (var package = new ExcelPackage())
+            using (var workbook = new XLWorkbook())
             {
-             var summarySheet = package.Workbook.Worksheets.Add("Kunlik Hisobot");
+             var summarySheet = workbook.Worksheets.Add(isRu ? "Дневной отчёт" : "Kunlik Hisobot");
 
                 // Report title
-                summarySheet.Cells[1, 1].Value = "KUNLIK HISOBOT";
-                summarySheet.Cells[1, 1, 1, 3].Merge = true;
-                summarySheet.Cells[1, 1].Style.Font.Bold = true;
-                summarySheet.Cells[1, 1].Style.Font.Size = 16;
-                summarySheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(1, 1).Value = isRu ? "ДНЕВНОЙ ОТЧЁТ" : "KUNLIK HISOBOT";
+                summarySheet.Range(1, 1, 1, 3).Merge();
+                summarySheet.Cell(1, 1).Style.Font.Bold = true;
+                summarySheet.Cell(1, 1).Style.Font.FontSize = 16;
+                summarySheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 // Report date
-                summarySheet.Cells[2, 1].Value = $"Sana: {reportDate:dd.MM.yyyy}";
-                summarySheet.Cells[2, 1, 2, 3].Merge = true;
-                summarySheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(2, 1).Value = (isRu ? "Дата: " : "Sana: ") + reportDate.ToString("dd.MM.yyyy");
+                summarySheet.Range(2, 1, 2, 3).Merge();
+                summarySheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 // Summary statistics
                 int row = 4;
-                summarySheet.Cells[row, 1].Value = "KO'RSATGICH";
-                summarySheet.Cells[row, 2].Value = "QIYMATI";
-                summarySheet.Cells[row, 1, row, 2].Style.Font.Bold = true;
-                summarySheet.Cells[row, 1, row, 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                summarySheet.Cells[row, 1, row, 2].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                summarySheet.Cell(row, 1).Value = isRu ? "ПОКАЗАТЕЛЬ" : "KO'RSATGICH";
+                summarySheet.Cell(row, 2).Value = isRu ? "ЗНАЧЕНИЕ" : "QIYMATI";
+                summarySheet.Range(row, 1, row, 2).Style.Font.Bold = true;
+                summarySheet.Range(row, 1, row, 2).Style.Fill.BackgroundColor = XLColor.LightBlue;
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Sotuvlar soni";
-                summarySheet.Cells[row, 2].Value = salesList.Sales.Count;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
+                summarySheet.Cell(row, 1).Value = isRu ? "Количество продаж" : "Sotuvlar soni";
+                summarySheet.Cell(row, 2).Value = salesList.Sales.Count;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Jami savdo (Total)";
-                summarySheet.Cells[row, 2].Value = dailyReport.TotalSales;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = isRu ? "Общая выручка (Total)" : "Jami savdo (Total)";
+                summarySheet.Cell(row, 2).Value = dailyReport.TotalSales;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "To'langan (Paid)";
-                summarySheet.Cells[row, 2].Value = dailyReport.TotalPaidSales;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = isRu ? "Оплачено (Paid)" : "To'langan (Paid)";
+                summarySheet.Cell(row, 2).Value = dailyReport.TotalPaidSales;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Qarz (Debt)";
-                summarySheet.Cells[row, 2].Value = dailyReport.TotalDebtSales;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = isRu ? "Долг (Debt)" : "Qarz (Debt)";
+                summarySheet.Cell(row, 2).Value = dailyReport.TotalDebtSales;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 // Payment breakdown from the daily report
                 if (dailyReport.PaymentBreakdown != null && dailyReport.PaymentBreakdown.Any())
                 {
                     row += 2;
-                    summarySheet.Cells[row, 1].Value = "TO'LOV TURLARI";
-                    summarySheet.Cells[row, 1, row, 2].Merge = true;
-                    summarySheet.Cells[row, 1].Style.Font.Bold = true;
-                    summarySheet.Cells[row, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    summarySheet.Cell(row, 1).Value = isRu ? "ТИПЫ ОПЛАТЫ" : "TO'LOV TURLARI";
+                    summarySheet.Range(row, 1, row, 2).Merge();
+                    summarySheet.Cell(row, 1).Style.Font.Bold = true;
+                    summarySheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                     foreach (var payment in dailyReport.PaymentBreakdown)
                     {
                         row++;
-                        summarySheet.Cells[row, 1].Value = GetPaymentTypeText(payment.PaymentType);
-                        summarySheet.Cells[row, 2].Value = payment.Amount;
-                        summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                        summarySheet.Cell(row, 1).Value = GetPaymentTypeText(payment.PaymentType, isRu);
+                        summarySheet.Cell(row, 2).Value = payment.Amount;
+                        summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                         // Color refunds in red
                         if (payment.PaymentType?.ToLower() == "qaytarilgan")
                         {
-                            summarySheet.Cells[row, 2].Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                            summarySheet.Cell(row, 2).Style.Font.FontColor = XLColor.Red;
                         }
                     }
                 }
@@ -817,46 +815,44 @@ public class ReportsController : ControllerBase
                 if (userRole == "Owner" && dailyReport.Profit.HasValue)
                 {
                     row += 2;
-                    summarySheet.Cells[row, 1].Value = "FOYDA (Profit)";
-                    summarySheet.Cells[row, 1, row, 2].Merge = true;
-                    summarySheet.Cells[row, 1].Style.Font.Bold = true;
-                    summarySheet.Cells[row, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    summarySheet.Cells[row, 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                    summarySheet.Cell(row, 1).Value = isRu ? "ПРИБЫЛЬ (Profit)" : "FOYDA (Profit)";
+                    summarySheet.Range(row, 1, row, 2).Merge();
+                    summarySheet.Cell(row, 1).Style.Font.Bold = true;
+                    summarySheet.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightGreen;
 
                     row++;
-                    summarySheet.Cells[row, 1].Value = "Jami foyda";
-                    summarySheet.Cells[row, 2].Value = dailyReport.Profit.Value;
-                    summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
-                    summarySheet.Cells[row, 2].Style.Font.Bold = true;
+                    summarySheet.Cell(row, 1).Value = isRu ? "Общая прибыль" : "Jami foyda";
+                    summarySheet.Cell(row, 2).Value = dailyReport.Profit.Value;
+                    summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    summarySheet.Cell(row, 2).Style.Font.Bold = true;
                 }
 
-                summarySheet.Cells[summarySheet.Dimension.Address].AutoFitColumns();
+                summarySheet.Columns().AdjustToContents();
                 summarySheet.Column(1).Width = 30;
                 summarySheet.Column(2).Width = 20;
 
-                  var salesSheet = package.Workbook.Worksheets.Add("Sotuvlar Ro'yxati");
+                  var salesSheet = workbook.Worksheets.Add(isRu ? "Список продаж" : "Sotuvlar Ro'yxati");
 
-                salesSheet.Cells[1, 1].Value = "№";
-                salesSheet.Cells[1, 2].Value = "Sana";
-                salesSheet.Cells[1, 3].Value = "Savdo ID";
-                salesSheet.Cells[1, 4].Value = "Sotuvchi";
-                salesSheet.Cells[1, 5].Value = "Mijoz";
-                salesSheet.Cells[1, 6].Value = "Summa";
-                salesSheet.Cells[1, 7].Value = "To'lov turi";
-                salesSheet.Cells[1, 8].Value = "Holat";
+                salesSheet.Cell(1, 1).Value = "№";
+                salesSheet.Cell(1, 2).Value = isRu ? "Дата" : "Sana";
+                salesSheet.Cell(1, 3).Value = isRu ? "ID продажи" : "Savdo ID";
+                salesSheet.Cell(1, 4).Value = isRu ? "Продавец" : "Sotuvchi";
+                salesSheet.Cell(1, 5).Value = isRu ? "Клиент" : "Mijoz";
+                salesSheet.Cell(1, 6).Value = isRu ? "Сумма" : "Summa";
+                salesSheet.Cell(1, 7).Value = isRu ? "Тип оплаты" : "To'lov turi";
+                salesSheet.Cell(1, 8).Value = isRu ? "Статус" : "Holat";
                 if (userRole == "Owner")
                 {
-                    salesSheet.Cells[1, 9].Value = "Foyda";
+                    salesSheet.Cell(1, 9).Value = isRu ? "Прибыль" : "Foyda";
                 }
 
                 // Header styling
                 int headerCols = userRole == "Owner" ? 9 : 8;
-                using (var range = salesSheet.Cells[1, 1, 1, headerCols])
+                var salesHeaderRange = salesSheet.Range(1, 1, 1, headerCols);
                 {
-                    range.Style.Font.Bold = true;
-                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
-                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    salesHeaderRange.Style.Font.Bold = true;
+                    salesHeaderRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                    salesHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 }
 
                 // Data rows
@@ -866,48 +862,48 @@ public class ReportsController : ControllerBase
 
                 foreach (var sale in salesList.Sales)
                 {
-                    salesSheet.Cells[salesRow, 1].Value = salesRow - 1;
-                    salesSheet.Cells[salesRow, 2].Value = FmtTashkent(sale.CreatedAt);
-                    salesSheet.Cells[salesRow, 3].Value = sale.Id.ToString();
-                    salesSheet.Cells[salesRow, 4].Value = sale.SellerName ?? "";
-                    salesSheet.Cells[salesRow, 5].Value = sale.CustomerName ?? "Mijoz yo'q";
-                    salesSheet.Cells[salesRow, 6].Value = sale.TotalAmount;
-                    salesSheet.Cells[salesRow, 6].Style.Numberformat.Format = "#,##0.00";
-                    salesSheet.Cells[salesRow, 7].Value = GetPaymentTypeText(sale.PaymentType);
-                    salesSheet.Cells[salesRow, 8].Value = GetStatusText(sale.Status ?? "");
+                    salesSheet.Cell(salesRow, 1).Value = salesRow - 1;
+                    salesSheet.Cell(salesRow, 2).Value = FmtTashkent(sale.CreatedAt);
+                    salesSheet.Cell(salesRow, 3).Value = sale.Id.ToString();
+                    salesSheet.Cell(salesRow, 4).Value = sale.SellerName ?? "";
+                    salesSheet.Cell(salesRow, 5).Value = sale.CustomerName ?? (isRu ? "Без клиента" : "Mijoz yo'q");
+                    salesSheet.Cell(salesRow, 6).Value = sale.TotalAmount;
+                    salesSheet.Cell(salesRow, 6).Style.NumberFormat.Format = "#,##0.00";
+                    salesSheet.Cell(salesRow, 7).Value = GetPaymentTypeText(sale.PaymentType, isRu);
+                    salesSheet.Cell(salesRow, 8).Value = GetStatusText(sale.Status ?? "", isRu);
 
                     if (userRole == "Owner")
                     {
-                        salesSheet.Cells[salesRow, 9].Value = sale.Profit ?? 0;
-                        salesSheet.Cells[salesRow, 9].Style.Numberformat.Format = "#,##0.00";
+                        salesSheet.Cell(salesRow, 9).Value = sale.Profit ?? 0;
+                        salesSheet.Cell(salesRow, 9).Style.NumberFormat.Format = "#,##0.00";
                         sheetProfit += sale.Profit ?? 0;
                     }
 
-                    var statusCell = salesSheet.Cells[salesRow, 8];
+                    var statusCell = salesSheet.Cell(salesRow, 8);
                     switch (sale.Status?.ToLower())
                     {
                         case "paid":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Green);
+                            statusCell.Style.Font.FontColor = XLColor.Green;
                             break;
                         case "debt":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                            statusCell.Style.Font.FontColor = XLColor.Red;
                             break;
                         case "cancelled":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Gray);
+                            statusCell.Style.Font.FontColor = XLColor.Gray;
                             break;
                         case "draft":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                            statusCell.Style.Font.FontColor = XLColor.Orange;
                             break;
                         case "closed":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.DarkBlue);
+                            statusCell.Style.Font.FontColor = XLColor.DarkBlue;
                             break;
                     }
 
                     // Payment type coloring for refunds
-                    var paymentCell = salesSheet.Cells[salesRow, 7];
+                    var paymentCell = salesSheet.Cell(salesRow, 7);
                     if (sale.PaymentType?.ToLower() == "qaytarilgan" || sale.PaymentType?.ToLower() == "refund")
                     {
-                        paymentCell.Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                        paymentCell.Style.Font.FontColor = XLColor.Red;
                         paymentCell.Style.Font.Bold = true;
                     }
 
@@ -915,21 +911,21 @@ public class ReportsController : ControllerBase
                     salesRow++;
                 }
 
-                salesSheet.Cells[salesRow, 1].Value = "JAMI:";
-                salesSheet.Cells[salesRow, 1, salesRow, 5].Merge = true;
-                salesSheet.Cells[salesRow, 1].Style.Font.Bold = true;
-                salesSheet.Cells[salesRow, 6].Value = sheetTotal;
-                salesSheet.Cells[salesRow, 6].Style.Numberformat.Format = "#,##0.00";
-                salesSheet.Cells[salesRow, 6].Style.Font.Bold = true;
+                salesSheet.Cell(salesRow, 1).Value = isRu ? "ИТОГО:" : "JAMI:";
+                salesSheet.Range(salesRow, 1, salesRow, 5).Merge();
+                salesSheet.Cell(salesRow, 1).Style.Font.Bold = true;
+                salesSheet.Cell(salesRow, 6).Value = sheetTotal;
+                salesSheet.Cell(salesRow, 6).Style.NumberFormat.Format = "#,##0.00";
+                salesSheet.Cell(salesRow, 6).Style.Font.Bold = true;
 
                 if (userRole == "Owner")
                 {
-                    salesSheet.Cells[salesRow, 9].Value = sheetProfit;
-                    salesSheet.Cells[salesRow, 9].Style.Numberformat.Format = "#,##0.00";
-                    salesSheet.Cells[salesRow, 9].Style.Font.Bold = true;
+                    salesSheet.Cell(salesRow, 9).Value = sheetProfit;
+                    salesSheet.Cell(salesRow, 9).Style.NumberFormat.Format = "#,##0.00";
+                    salesSheet.Cell(salesRow, 9).Style.Font.Bold = true;
                 }
 
-                salesSheet.Cells[salesSheet.Dimension.Address].AutoFitColumns();
+                salesSheet.Columns().AdjustToContents();
                 salesSheet.Column(1).Width = 6;
                 salesSheet.Column(2).Width = 18;
                 salesSheet.Column(3).Width = 40;
@@ -940,38 +936,37 @@ public class ReportsController : ControllerBase
                 salesSheet.Column(8).Width = 15;
                 if (userRole == "Owner") salesSheet.Column(9).Width = 15;
 
-                using (var range = salesSheet.Cells[1, 1, salesRow, headerCols])
+                var salesBorderRange = salesSheet.Range(1, 1, salesRow, headerCols);
                 {
-                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    salesBorderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                    salesBorderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                    salesBorderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                    salesBorderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
                 }
-                salesSheet.Cells[1, 1, 1, headerCols].AutoFilter = true;
+                salesSheet.Range(1, 1, 1, headerCols).SetAutoFilter();
 
-                var productsSheet = package.Workbook.Worksheets.Add("Mahsulotlar Bo'yicha");
-                productsSheet.Cells[1, 1].Value = "MAHSULOTLAR BO'YICHA HISOBOT";
-                productsSheet.Cells[1, 1, 1, 5].Merge = true;
-                productsSheet.Cells[1, 1].Style.Font.Bold = true;
-                productsSheet.Cells[1, 1].Style.Font.Size = 14;
-                productsSheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                var productsSheet = workbook.Worksheets.Add(isRu ? "По товарам" : "Mahsulotlar Bo'yicha");
+                productsSheet.Cell(1, 1).Value = isRu ? "ОТЧЁТ ПО ТОВАРАМ" : "MAHSULOTLAR BO'YICHA HISOBOT";
+                productsSheet.Range(1, 1, 1, 5).Merge();
+                productsSheet.Cell(1, 1).Style.Font.Bold = true;
+                productsSheet.Cell(1, 1).Style.Font.FontSize = 14;
+                productsSheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                productsSheet.Cells[2, 1].Value = $"Sana: {reportDate:dd.MM.yyyy}";
-                productsSheet.Cells[2, 1, 2, 5].Merge = true;
-                productsSheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                productsSheet.Cell(2, 1).Value = (isRu ? "Дата: " : "Sana: ") + reportDate.ToString("dd.MM.yyyy");
+                productsSheet.Range(2, 1, 2, 5).Merge();
+                productsSheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                productsSheet.Cells[4, 1].Value = "№";
-                productsSheet.Cells[4, 2].Value = "Mahsulot nomi";
-                productsSheet.Cells[4, 3].Value = "Miqdor";
-                productsSheet.Cells[4, 4].Value = "Sotuv narxi";
-                productsSheet.Cells[4, 5].Value = "Jami summa";
+                productsSheet.Cell(4, 1).Value = "№";
+                productsSheet.Cell(4, 2).Value = isRu ? "Название товара" : "Mahsulot nomi";
+                productsSheet.Cell(4, 3).Value = isRu ? "Количество" : "Miqdor";
+                productsSheet.Cell(4, 4).Value = isRu ? "Цена продажи" : "Sotuv narxi";
+                productsSheet.Cell(4, 5).Value = isRu ? "Общая сумма" : "Jami summa";
 
-                using (var range = productsSheet.Cells[4, 1, 4, 5])
+                var productsHeaderRange = productsSheet.Range(4, 1, 4, 5);
                 {
-                    range.Style.Font.Bold = true;
-                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
-                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    productsHeaderRange.Style.Font.Bold = true;
+                    productsHeaderRange.Style.Fill.BackgroundColor = XLColor.LightGreen;
+                    productsHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 }
 
                 var dailySaleItems = await _reportService.GetDailySaleItemsAsync(utcDate, userRole, cancellationToken);
@@ -980,44 +975,46 @@ public class ReportsController : ControllerBase
 
                 foreach (var item in dailySaleItems.SaleItems)
                 {
-                    productsSheet.Cells[prodRow, 1].Value = prodRow - 4;
-                    productsSheet.Cells[prodRow, 2].Value = item.ProductName;
-                    productsSheet.Cells[prodRow, 3].Value = item.Quantity;
-                    productsSheet.Cells[prodRow, 3].Style.Numberformat.Format = "#,##0.000";
-                    productsSheet.Cells[prodRow, 4].Value = item.SalePrice;
-                    productsSheet.Cells[prodRow, 4].Style.Numberformat.Format = "#,##0.00";
-                    productsSheet.Cells[prodRow, 5].Value = item.TotalRevenue;
-                    productsSheet.Cells[prodRow, 5].Style.Numberformat.Format = "#,##0.00";
+                    productsSheet.Cell(prodRow, 1).Value = prodRow - 4;
+                    productsSheet.Cell(prodRow, 2).Value = item.ProductName;
+                    productsSheet.Cell(prodRow, 3).Value = item.Quantity;
+                    productsSheet.Cell(prodRow, 3).Style.NumberFormat.Format = "#,##0.000";
+                    productsSheet.Cell(prodRow, 4).Value = item.SalePrice;
+                    productsSheet.Cell(prodRow, 4).Style.NumberFormat.Format = "#,##0.00";
+                    productsSheet.Cell(prodRow, 5).Value = item.TotalRevenue;
+                    productsSheet.Cell(prodRow, 5).Style.NumberFormat.Format = "#,##0.00";
 
                     prodTotal += item.TotalRevenue;
                     prodRow++;
                 }
 
-                productsSheet.Cells[prodRow, 1].Value = "JAMI:";
-                productsSheet.Cells[prodRow, 1, prodRow, 4].Merge = true;
-                productsSheet.Cells[prodRow, 1].Style.Font.Bold = true;
-                productsSheet.Cells[prodRow, 5].Value = prodTotal;
-                productsSheet.Cells[prodRow, 5].Style.Numberformat.Format = "#,##0.00";
-                productsSheet.Cells[prodRow, 5].Style.Font.Bold = true;
+                productsSheet.Cell(prodRow, 1).Value = isRu ? "ИТОГО:" : "JAMI:";
+                productsSheet.Range(prodRow, 1, prodRow, 4).Merge();
+                productsSheet.Cell(prodRow, 1).Style.Font.Bold = true;
+                productsSheet.Cell(prodRow, 5).Value = prodTotal;
+                productsSheet.Cell(prodRow, 5).Style.NumberFormat.Format = "#,##0.00";
+                productsSheet.Cell(prodRow, 5).Style.Font.Bold = true;
 
-                productsSheet.Cells[productsSheet.Dimension.Address].AutoFitColumns();
+                productsSheet.Columns().AdjustToContents();
                 productsSheet.Column(1).Width = 6;
                 productsSheet.Column(2).Width = 40;
                 productsSheet.Column(3).Width = 12;
                 productsSheet.Column(4).Width = 15;
                 productsSheet.Column(5).Width = 15;
 
-                using (var range = productsSheet.Cells[4, 1, prodRow, 5])
+                var productsBorderRange = productsSheet.Range(4, 1, prodRow, 5);
                 {
-                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    productsBorderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                    productsBorderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                    productsBorderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                    productsBorderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
                 }
 
-                var stream = new MemoryStream(package.GetAsByteArray());
+                var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                stream.Position = 0;
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                var fileName = $"hisobotlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                var fileName = (isRu ? "otchet_" : "hisobot_") + $"{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 
                 _logger.LogInformation("Successfully exported comprehensive report to Excel");
                 return File(stream, contentType, fileName);
@@ -1031,7 +1028,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("monthly-category-sales")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<MonthlyCategorySalesResponseDto>> GetMonthlyCategorySales([FromQuery] DateTime date, CancellationToken cancellationToken = default)
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -1042,12 +1039,12 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("daily/export-pdf")]
-    [Authorize(Policy = "AllRoles")]
-    public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date)
+    [RequirePermission(PermissionKeys.ReportsExport)]
+    public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date, [FromQuery] string lang = "uz")
     {
         var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-        var pdfBytes = await _reportService.ExportDailyReportToPdfAsync(utcDate, userRole);
+        var pdfBytes = await _reportService.ExportDailyReportToPdfAsync(utcDate, userRole, lang);
 
         return File(
             pdfBytes,
@@ -1057,10 +1054,11 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("period/export-pdf")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportPeriodReportToPdf(
         [FromQuery] DateTime start,
-        [FromQuery] DateTime end)
+        [FromQuery] DateTime end,
+        [FromQuery] string lang = "uz")
     {
         if (start > end)
             return BadRequest("Start date cannot be after end date");
@@ -1071,7 +1069,7 @@ public class ReportsController : ControllerBase
         var utcEnd = DateTime.SpecifyKind(end.Date, DateTimeKind.Utc);
 
         var request = new PeriodReportRequest(utcStart, utcEnd);
-        var pdfBytes = await _reportService.ExportPeriodReportToPdfAsync(request, userRole);
+        var pdfBytes = await _reportService.ExportPeriodReportToPdfAsync(request, userRole, lang);
 
         return File(
             pdfBytes,
@@ -1081,12 +1079,12 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("comprehensive/export-pdf")]
-    [Authorize(Policy = "AllRoles")]
-    public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date)
+    [RequirePermission(PermissionKeys.ReportsExport)]
+    public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date, [FromQuery] string lang = "uz")
     {
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
         var utcDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
-        var pdfBytes = await _reportService.ExportComprehensiveReportToPdfAsync(utcDate, userRole);
+        var pdfBytes = await _reportService.ExportComprehensiveReportToPdfAsync(utcDate, userRole, lang);
 
         return File(
             pdfBytes,
@@ -1099,7 +1097,7 @@ public class ReportsController : ControllerBase
     /// Export daily report to Excel - kunlik hisobot, sotuvlar ro'yxati va mahsulotlar bo'yicha
     /// </summary>
     [HttpGet("daily/export")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportDailyReportToExcel([FromQuery] DateTime date)
     {
         try
@@ -1115,71 +1113,69 @@ public class ReportsController : ControllerBase
             var salesList = await _reportService.GetDailySalesListAsync(utcDate, userRole, userId);
             var dailyReport = await _reportService.GetDailyReportAsync(utcDate, userRole);
 
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            using (var package = new ExcelPackage())
+            using (var workbook = new XLWorkbook())
             {
                 // SHEET 1: Kunlik Hisobot
-                var summarySheet = package.Workbook.Worksheets.Add("Kunlik Hisobot");
+                var summarySheet = workbook.Worksheets.Add("Kunlik Hisobot");
 
                 // Report title
-                summarySheet.Cells[1, 1].Value = "KUNLIK HISOBOT";
-                summarySheet.Cells[1, 1, 1, 3].Merge = true;
-                summarySheet.Cells[1, 1].Style.Font.Bold = true;
-                summarySheet.Cells[1, 1].Style.Font.Size = 16;
-                summarySheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(1, 1).Value = "KUNLIK HISOBOT";
+                summarySheet.Range(1, 1, 1, 3).Merge();
+                summarySheet.Cell(1, 1).Style.Font.Bold = true;
+                summarySheet.Cell(1, 1).Style.Font.FontSize = 16;
+                summarySheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 // Report date
-                summarySheet.Cells[2, 1].Value = $"Sana: {date:dd.MM.yyyy}";
-                summarySheet.Cells[2, 1, 2, 3].Merge = true;
-                summarySheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(2, 1).Value = $"Sana: {date:dd.MM.yyyy}";
+                summarySheet.Range(2, 1, 2, 3).Merge();
+                summarySheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 // Summary statistics
                 int row = 4;
-                summarySheet.Cells[row, 1].Value = "KO'RSATGICH";
-                summarySheet.Cells[row, 2].Value = "QIYMATI";
-                summarySheet.Cells[row, 1, row, 2].Style.Font.Bold = true;
-                summarySheet.Cells[row, 1, row, 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                summarySheet.Cells[row, 1, row, 2].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
+                summarySheet.Cell(row, 1).Value = "KO'RSATGICH";
+                summarySheet.Cell(row, 2).Value = "QIYMATI";
+                summarySheet.Range(row, 1, row, 2).Style.Font.Bold = true;
+                summarySheet.Range(row, 1, row, 2).Style.Fill.BackgroundColor = XLColor.LightBlue;
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Sotuvlar soni";
-                summarySheet.Cells[row, 2].Value = salesList.Sales.Count;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
+                summarySheet.Cell(row, 1).Value = "Sotuvlar soni";
+                summarySheet.Cell(row, 2).Value = salesList.Sales.Count;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Jami savdo (Total)";
-                summarySheet.Cells[row, 2].Value = dailyReport.TotalSales;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "Jami savdo (Total)";
+                summarySheet.Cell(row, 2).Value = dailyReport.TotalSales;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "To'langan (Paid)";
-                summarySheet.Cells[row, 2].Value = dailyReport.TotalPaidSales;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "To'langan (Paid)";
+                summarySheet.Cell(row, 2).Value = dailyReport.TotalPaidSales;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Qarz (Debt)";
-                summarySheet.Cells[row, 2].Value = dailyReport.TotalDebtSales;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                summarySheet.Cell(row, 1).Value = "Qarz (Debt)";
+                summarySheet.Cell(row, 2).Value = dailyReport.TotalDebtSales;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                 // Payment breakdown
                 if (dailyReport.PaymentBreakdown != null && dailyReport.PaymentBreakdown.Any())
                 {
                     row += 2;
-                    summarySheet.Cells[row, 1].Value = "TO'LOV TURLARI";
-                    summarySheet.Cells[row, 1, row, 2].Merge = true;
-                    summarySheet.Cells[row, 1].Style.Font.Bold = true;
-                    summarySheet.Cells[row, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    summarySheet.Cell(row, 1).Value = "TO'LOV TURLARI";
+                    summarySheet.Range(row, 1, row, 2).Merge();
+                    summarySheet.Cell(row, 1).Style.Font.Bold = true;
+                    summarySheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                     foreach (var payment in dailyReport.PaymentBreakdown)
                     {
                         row++;
-                        summarySheet.Cells[row, 1].Value = GetPaymentTypeText(payment.PaymentType);
-                        summarySheet.Cells[row, 2].Value = payment.Amount;
-                        summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                        summarySheet.Cell(row, 1).Value = GetPaymentTypeText(payment.PaymentType);
+                        summarySheet.Cell(row, 2).Value = payment.Amount;
+                        summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
 
                         if (payment.PaymentType?.ToLower() == "qaytarilgan")
                         {
-                            summarySheet.Cells[row, 2].Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                            summarySheet.Cell(row, 2).Style.Font.FontColor = XLColor.Red;
                         }
                     }
                 }
@@ -1187,46 +1183,44 @@ public class ReportsController : ControllerBase
                 if (userRole == "Owner" && dailyReport.Profit.HasValue)
                 {
                     row += 2;
-                    summarySheet.Cells[row, 1].Value = "FOYDA (Profit)";
-                    summarySheet.Cells[row, 1, row, 2].Merge = true;
-                    summarySheet.Cells[row, 1].Style.Font.Bold = true;
-                    summarySheet.Cells[row, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    summarySheet.Cells[row, 1].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
+                    summarySheet.Cell(row, 1).Value = "FOYDA (Profit)";
+                    summarySheet.Range(row, 1, row, 2).Merge();
+                    summarySheet.Cell(row, 1).Style.Font.Bold = true;
+                    summarySheet.Cell(row, 1).Style.Fill.BackgroundColor = XLColor.LightGreen;
 
                     row++;
-                    summarySheet.Cells[row, 1].Value = "Jami foyda";
-                    summarySheet.Cells[row, 2].Value = dailyReport.Profit.Value;
-                    summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
-                    summarySheet.Cells[row, 2].Style.Font.Bold = true;
+                    summarySheet.Cell(row, 1).Value = "Jami foyda";
+                    summarySheet.Cell(row, 2).Value = dailyReport.Profit.Value;
+                    summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
+                    summarySheet.Cell(row, 2).Style.Font.Bold = true;
                 }
 
-                summarySheet.Cells[summarySheet.Dimension.Address].AutoFitColumns();
+                summarySheet.Columns().AdjustToContents();
                 summarySheet.Column(1).Width = 30;
                 summarySheet.Column(2).Width = 20;
 
                 // SHEET 2: Sotuvlar Ro'yxati
-                var salesSheet = package.Workbook.Worksheets.Add("Sotuvlar Ro'yxati");
+                var salesSheet = workbook.Worksheets.Add("Sotuvlar Ro'yxati");
 
-                salesSheet.Cells[1, 1].Value = "№";
-                salesSheet.Cells[1, 2].Value = "Sana";
-                salesSheet.Cells[1, 3].Value = "Savdo ID";
-                salesSheet.Cells[1, 4].Value = "Sotuvchi";
-                salesSheet.Cells[1, 5].Value = "Mijoz";
-                salesSheet.Cells[1, 6].Value = "Summa";
-                salesSheet.Cells[1, 7].Value = "To'lov turi";
-                salesSheet.Cells[1, 8].Value = "Holat";
+                salesSheet.Cell(1, 1).Value = "№";
+                salesSheet.Cell(1, 2).Value = "Sana";
+                salesSheet.Cell(1, 3).Value = "Savdo ID";
+                salesSheet.Cell(1, 4).Value = "Sotuvchi";
+                salesSheet.Cell(1, 5).Value = "Mijoz";
+                salesSheet.Cell(1, 6).Value = "Summa";
+                salesSheet.Cell(1, 7).Value = "To'lov turi";
+                salesSheet.Cell(1, 8).Value = "Holat";
                 if (userRole == "Owner")
                 {
-                    salesSheet.Cells[1, 9].Value = "Foyda";
+                    salesSheet.Cell(1, 9).Value = "Foyda";
                 }
 
                 int headerCols = userRole == "Owner" ? 9 : 8;
-                using (var range = salesSheet.Cells[1, 1, 1, headerCols])
+                var salesHeaderRange = salesSheet.Range(1, 1, 1, headerCols);
                 {
-                    range.Style.Font.Bold = true;
-                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
-                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    salesHeaderRange.Style.Font.Bold = true;
+                    salesHeaderRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                    salesHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 }
 
                 int salesRow = 2;
@@ -1235,40 +1229,40 @@ public class ReportsController : ControllerBase
 
                 foreach (var sale in salesList.Sales)
                 {
-                    salesSheet.Cells[salesRow, 1].Value = salesRow - 1;
-                    salesSheet.Cells[salesRow, 2].Value = FmtTashkent(sale.CreatedAt);
-                    salesSheet.Cells[salesRow, 3].Value = sale.Id.ToString();
-                    salesSheet.Cells[salesRow, 4].Value = sale.SellerName ?? "";
-                    salesSheet.Cells[salesRow, 5].Value = sale.CustomerName ?? "Mijoz yo'q";
-                    salesSheet.Cells[salesRow, 6].Value = sale.TotalAmount;
-                    salesSheet.Cells[salesRow, 6].Style.Numberformat.Format = "#,##0.00";
-                    salesSheet.Cells[salesRow, 7].Value = GetPaymentTypeText(sale.PaymentType);
-                    salesSheet.Cells[salesRow, 8].Value = GetStatusText(sale.Status ?? "");
+                    salesSheet.Cell(salesRow, 1).Value = salesRow - 1;
+                    salesSheet.Cell(salesRow, 2).Value = FmtTashkent(sale.CreatedAt);
+                    salesSheet.Cell(salesRow, 3).Value = sale.Id.ToString();
+                    salesSheet.Cell(salesRow, 4).Value = sale.SellerName ?? "";
+                    salesSheet.Cell(salesRow, 5).Value = sale.CustomerName ?? "Mijoz yo'q";
+                    salesSheet.Cell(salesRow, 6).Value = sale.TotalAmount;
+                    salesSheet.Cell(salesRow, 6).Style.NumberFormat.Format = "#,##0.00";
+                    salesSheet.Cell(salesRow, 7).Value = GetPaymentTypeText(sale.PaymentType);
+                    salesSheet.Cell(salesRow, 8).Value = GetStatusText(sale.Status ?? "");
 
                     if (userRole == "Owner")
                     {
-                        salesSheet.Cells[salesRow, 9].Value = sale.Profit ?? 0;
-                        salesSheet.Cells[salesRow, 9].Style.Numberformat.Format = "#,##0.00";
+                        salesSheet.Cell(salesRow, 9).Value = sale.Profit ?? 0;
+                        salesSheet.Cell(salesRow, 9).Style.NumberFormat.Format = "#,##0.00";
                         sheetProfit += sale.Profit ?? 0;
                     }
 
-                    var statusCell = salesSheet.Cells[salesRow, 8];
+                    var statusCell = salesSheet.Cell(salesRow, 8);
                     switch (sale.Status?.ToLower())
                     {
                         case "paid":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Green);
+                            statusCell.Style.Font.FontColor = XLColor.Green;
                             break;
                         case "debt":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                            statusCell.Style.Font.FontColor = XLColor.Red;
                             break;
                         case "cancelled":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Gray);
+                            statusCell.Style.Font.FontColor = XLColor.Gray;
                             break;
                         case "draft":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                            statusCell.Style.Font.FontColor = XLColor.Orange;
                             break;
                         case "closed":
-                            statusCell.Style.Font.Color.SetColor(System.Drawing.Color.DarkBlue);
+                            statusCell.Style.Font.FontColor = XLColor.DarkBlue;
                             break;
                     }
 
@@ -1276,21 +1270,21 @@ public class ReportsController : ControllerBase
                     salesRow++;
                 }
 
-                salesSheet.Cells[salesRow, 1].Value = "JAMI:";
-                salesSheet.Cells[salesRow, 1, salesRow, 5].Merge = true;
-                salesSheet.Cells[salesRow, 1].Style.Font.Bold = true;
-                salesSheet.Cells[salesRow, 6].Value = sheetTotal;
-                salesSheet.Cells[salesRow, 6].Style.Numberformat.Format = "#,##0.00";
-                salesSheet.Cells[salesRow, 6].Style.Font.Bold = true;
+                salesSheet.Cell(salesRow, 1).Value = "JAMI:";
+                salesSheet.Range(salesRow, 1, salesRow, 5).Merge();
+                salesSheet.Cell(salesRow, 1).Style.Font.Bold = true;
+                salesSheet.Cell(salesRow, 6).Value = sheetTotal;
+                salesSheet.Cell(salesRow, 6).Style.NumberFormat.Format = "#,##0.00";
+                salesSheet.Cell(salesRow, 6).Style.Font.Bold = true;
 
                 if (userRole == "Owner")
                 {
-                    salesSheet.Cells[salesRow, 9].Value = sheetProfit;
-                    salesSheet.Cells[salesRow, 9].Style.Numberformat.Format = "#,##0.00";
-                    salesSheet.Cells[salesRow, 9].Style.Font.Bold = true;
+                    salesSheet.Cell(salesRow, 9).Value = sheetProfit;
+                    salesSheet.Cell(salesRow, 9).Style.NumberFormat.Format = "#,##0.00";
+                    salesSheet.Cell(salesRow, 9).Style.Font.Bold = true;
                 }
 
-                salesSheet.Cells[salesSheet.Dimension.Address].AutoFitColumns();
+                salesSheet.Columns().AdjustToContents();
                 salesSheet.Column(1).Width = 6;
                 salesSheet.Column(2).Width = 18;
                 salesSheet.Column(3).Width = 40;
@@ -1301,39 +1295,38 @@ public class ReportsController : ControllerBase
                 salesSheet.Column(8).Width = 15;
                 if (userRole == "Owner") salesSheet.Column(9).Width = 15;
 
-                using (var range = salesSheet.Cells[1, 1, salesRow, headerCols])
+                var salesBorderRange = salesSheet.Range(1, 1, salesRow, headerCols);
                 {
-                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    salesBorderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                    salesBorderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                    salesBorderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                    salesBorderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
                 }
-                salesSheet.Cells[1, 1, 1, headerCols].AutoFilter = true;
+                salesSheet.Range(1, 1, 1, headerCols).SetAutoFilter();
 
                 // SHEET 3: Mahsulotlar Bo'yicha
-                var productsSheet = package.Workbook.Worksheets.Add("Mahsulotlar Bo'yicha");
-                productsSheet.Cells[1, 1].Value = "MAHSULOTLAR BO'YICHA HISOBOT";
-                productsSheet.Cells[1, 1, 1, 5].Merge = true;
-                productsSheet.Cells[1, 1].Style.Font.Bold = true;
-                productsSheet.Cells[1, 1].Style.Font.Size = 14;
-                productsSheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                var productsSheet = workbook.Worksheets.Add("Mahsulotlar Bo'yicha");
+                productsSheet.Cell(1, 1).Value = "MAHSULOTLAR BO'YICHA HISOBOT";
+                productsSheet.Range(1, 1, 1, 5).Merge();
+                productsSheet.Cell(1, 1).Style.Font.Bold = true;
+                productsSheet.Cell(1, 1).Style.Font.FontSize = 14;
+                productsSheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                productsSheet.Cells[2, 1].Value = $"Sana: {date:dd.MM.yyyy}";
-                productsSheet.Cells[2, 1, 2, 5].Merge = true;
-                productsSheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                productsSheet.Cell(2, 1).Value = $"Sana: {date:dd.MM.yyyy}";
+                productsSheet.Range(2, 1, 2, 5).Merge();
+                productsSheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                productsSheet.Cells[4, 1].Value = "№";
-                productsSheet.Cells[4, 2].Value = "Mahsulot nomi";
-                productsSheet.Cells[4, 3].Value = "Miqdor";
-                productsSheet.Cells[4, 4].Value = "Sotuv narxi";
-                productsSheet.Cells[4, 5].Value = "Jami summa";
+                productsSheet.Cell(4, 1).Value = "№";
+                productsSheet.Cell(4, 2).Value = "Mahsulot nomi";
+                productsSheet.Cell(4, 3).Value = "Miqdor";
+                productsSheet.Cell(4, 4).Value = "Sotuv narxi";
+                productsSheet.Cell(4, 5).Value = "Jami summa";
 
-                using (var range = productsSheet.Cells[4, 1, 4, 5])
+                var productsHeaderRange = productsSheet.Range(4, 1, 4, 5);
                 {
-                    range.Style.Font.Bold = true;
-                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGreen);
-                    range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    productsHeaderRange.Style.Font.Bold = true;
+                    productsHeaderRange.Style.Fill.BackgroundColor = XLColor.LightGreen;
+                    productsHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                 }
 
                 var dailySaleItems = await _reportService.GetDailySaleItemsAsync(utcDate, userRole);
@@ -1342,42 +1335,44 @@ public class ReportsController : ControllerBase
 
                 foreach (var item in dailySaleItems.SaleItems)
                 {
-                    productsSheet.Cells[prodRow, 1].Value = prodRow - 4;
-                    productsSheet.Cells[prodRow, 2].Value = item.ProductName;
-                    productsSheet.Cells[prodRow, 3].Value = item.Quantity;
-                    productsSheet.Cells[prodRow, 3].Style.Numberformat.Format = "#,##0.000";
-                    productsSheet.Cells[prodRow, 4].Value = item.SalePrice;
-                    productsSheet.Cells[prodRow, 4].Style.Numberformat.Format = "#,##0.00";
-                    productsSheet.Cells[prodRow, 5].Value = item.TotalRevenue;
-                    productsSheet.Cells[prodRow, 5].Style.Numberformat.Format = "#,##0.00";
+                    productsSheet.Cell(prodRow, 1).Value = prodRow - 4;
+                    productsSheet.Cell(prodRow, 2).Value = item.ProductName;
+                    productsSheet.Cell(prodRow, 3).Value = item.Quantity;
+                    productsSheet.Cell(prodRow, 3).Style.NumberFormat.Format = "#,##0.000";
+                    productsSheet.Cell(prodRow, 4).Value = item.SalePrice;
+                    productsSheet.Cell(prodRow, 4).Style.NumberFormat.Format = "#,##0.00";
+                    productsSheet.Cell(prodRow, 5).Value = item.TotalRevenue;
+                    productsSheet.Cell(prodRow, 5).Style.NumberFormat.Format = "#,##0.00";
 
                     prodTotal += item.TotalRevenue;
                     prodRow++;
                 }
 
-                productsSheet.Cells[prodRow, 1].Value = "JAMI:";
-                productsSheet.Cells[prodRow, 1, prodRow, 4].Merge = true;
-                productsSheet.Cells[prodRow, 1].Style.Font.Bold = true;
-                productsSheet.Cells[prodRow, 5].Value = prodTotal;
-                productsSheet.Cells[prodRow, 5].Style.Numberformat.Format = "#,##0.00";
-                productsSheet.Cells[prodRow, 5].Style.Font.Bold = true;
+                productsSheet.Cell(prodRow, 1).Value = "JAMI:";
+                productsSheet.Range(prodRow, 1, prodRow, 4).Merge();
+                productsSheet.Cell(prodRow, 1).Style.Font.Bold = true;
+                productsSheet.Cell(prodRow, 5).Value = prodTotal;
+                productsSheet.Cell(prodRow, 5).Style.NumberFormat.Format = "#,##0.00";
+                productsSheet.Cell(prodRow, 5).Style.Font.Bold = true;
 
-                productsSheet.Cells[productsSheet.Dimension.Address].AutoFitColumns();
+                productsSheet.Columns().AdjustToContents();
                 productsSheet.Column(1).Width = 6;
                 productsSheet.Column(2).Width = 40;
                 productsSheet.Column(3).Width = 12;
                 productsSheet.Column(4).Width = 15;
                 productsSheet.Column(5).Width = 15;
 
-                using (var range = productsSheet.Cells[4, 1, prodRow, 5])
+                var productsBorderRange = productsSheet.Range(4, 1, prodRow, 5);
                 {
-                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    productsBorderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                    productsBorderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                    productsBorderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                    productsBorderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
                 }
 
-                var stream = new MemoryStream(package.GetAsByteArray());
+                var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                stream.Position = 0;
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 var fileName = $"kunlik_hisobot_{date:yyyyMMdd}.xlsx";
 
@@ -1396,7 +1391,7 @@ public class ReportsController : ControllerBase
     /// Export inventory report to Excel - ombor hisoboti
     /// </summary>
     [HttpGet("inventory/export")]
-    [Authorize(Policy = "AllRoles")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportInventoryReportToExcel([FromQuery] DateTime date)
     {
         try
@@ -1408,90 +1403,87 @@ public class ReportsController : ControllerBase
 
             var comprehensiveReport = await _reportService.GetComprehensiveReportAsync(utcDate, userRole);
 
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-            using (var package = new ExcelPackage())
+            using (var workbook = new XLWorkbook())
             {
                 // SHEET 1: Ombor xulosasi
-                var summarySheet = package.Workbook.Worksheets.Add("Ombor Xulosasi");
+                var summarySheet = workbook.Worksheets.Add("Ombor Xulosasi");
 
-                summarySheet.Cells[1, 1].Value = "OMBOR HISOBOTI";
-                summarySheet.Cells[1, 1, 1, 3].Merge = true;
-                summarySheet.Cells[1, 1].Style.Font.Bold = true;
-                summarySheet.Cells[1, 1].Style.Font.Size = 16;
-                summarySheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(1, 1).Value = "OMBOR HISOBOTI";
+                summarySheet.Range(1, 1, 1, 3).Merge();
+                summarySheet.Cell(1, 1).Style.Font.Bold = true;
+                summarySheet.Cell(1, 1).Style.Font.FontSize = 16;
+                summarySheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                summarySheet.Cells[2, 1].Value = $"Sana: {date:dd.MM.yyyy}";
-                summarySheet.Cells[2, 1, 2, 3].Merge = true;
-                summarySheet.Cells[2, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                summarySheet.Cell(2, 1).Value = $"Sana: {date:dd.MM.yyyy}";
+                summarySheet.Range(2, 1, 2, 3).Merge();
+                summarySheet.Cell(2, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 int row = 4;
-                summarySheet.Cells[row, 1].Value = "KO'RSATGICH";
-                summarySheet.Cells[row, 2].Value = "QIYMATI";
-                summarySheet.Cells[row, 1, row, 2].Style.Font.Bold = true;
-                summarySheet.Cells[row, 1, row, 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                summarySheet.Cells[row, 1, row, 2].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                summarySheet.Cell(row, 1).Value = "KO'RSATGICH";
+                summarySheet.Cell(row, 2).Value = "QIYMATI";
+                summarySheet.Range(row, 1, row, 2).Style.Font.Bold = true;
+                summarySheet.Range(row, 1, row, 2).Style.Fill.BackgroundColor = XLColor.LightGray;
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Mahsulotlar soni";
-                summarySheet.Cells[row, 2].Value = comprehensiveReport.ProductCount;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
+                summarySheet.Cell(row, 1).Value = "Mahsulotlar soni";
+                summarySheet.Cell(row, 2).Value = comprehensiveReport.ProductCount;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0";
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Jami ombor qiymati";
+                summarySheet.Cell(row, 1).Value = "Jami ombor qiymati";
                 if (userRole == "Owner")
                 {
-                    summarySheet.Cells[row, 2].Value = comprehensiveReport.TotalInventoryValue;
-                    summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0.00";
+                    summarySheet.Cell(row, 2).Value = comprehensiveReport.TotalInventoryValue;
+                    summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0.00";
                 }
                 else
                 {
-                    summarySheet.Cells[row, 2].Value = "Noma'lum";
+                    summarySheet.Cell(row, 2).Value = "Noma'lum";
                 }
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Kam qolgan mahsulotlar";
-                summarySheet.Cells[row, 2].Value = comprehensiveReport.LowStockCount;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
-                summarySheet.Cells[row, 2].Style.Font.Color.SetColor(System.Drawing.Color.Red);
+                summarySheet.Cell(row, 1).Value = "Kam qolgan mahsulotlar";
+                summarySheet.Cell(row, 2).Value = comprehensiveReport.LowStockCount;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0";
+                summarySheet.Cell(row, 2).Style.Font.FontColor = XLColor.Red;
 
                 row++;
-                summarySheet.Cells[row, 1].Value = "Tugagan mahsulotlar";
-                summarySheet.Cells[row, 2].Value = comprehensiveReport.OutOfStockCount;
-                summarySheet.Cells[row, 2].Style.Numberformat.Format = "#,##0";
-                summarySheet.Cells[row, 2].Style.Font.Color.SetColor(System.Drawing.Color.DarkRed);
+                summarySheet.Cell(row, 1).Value = "Tugagan mahsulotlar";
+                summarySheet.Cell(row, 2).Value = comprehensiveReport.OutOfStockCount;
+                summarySheet.Cell(row, 2).Style.NumberFormat.Format = "#,##0";
+                summarySheet.Cell(row, 2).Style.Font.FontColor = XLColor.DarkRed;
 
-                summarySheet.Cells[summarySheet.Dimension.Address].AutoFitColumns();
+                summarySheet.Columns().AdjustToContents();
                 summarySheet.Column(1).Width = 30;
                 summarySheet.Column(2).Width = 20;
 
                 // SHEET 2: Mahsulotlar ro'yxati
                 if (comprehensiveReport.InventoryReport != null && comprehensiveReport.InventoryReport.Any())
                 {
-                    var inventorySheet = package.Workbook.Worksheets.Add("Mahsulotlar Ro'yxati");
+                    var inventorySheet = workbook.Worksheets.Add("Mahsulotlar Ro'yxati");
 
-                    inventorySheet.Cells[1, 1].Value = "№";
-                    inventorySheet.Cells[1, 2].Value = "Mahsulot nomi";
-                    inventorySheet.Cells[1, 3].Value = "Kategoriya";
-                    inventorySheet.Cells[1, 4].Value = "Miqdor";
-                    inventorySheet.Cells[1, 5].Value = "Birligi";
+                    inventorySheet.Cell(1, 1).Value = "№";
+                    inventorySheet.Cell(1, 2).Value = "Mahsulot nomi";
+                    inventorySheet.Cell(1, 3).Value = "Kategoriya";
+                    inventorySheet.Cell(1, 4).Value = "Miqdor";
+                    inventorySheet.Cell(1, 5).Value = "Birligi";
                     if (userRole == "Owner")
                     {
-                        inventorySheet.Cells[1, 6].Value = "Olingan narxi";
-                        inventorySheet.Cells[1, 7].Value = "Sotuv narxi";
-                        inventorySheet.Cells[1, 8].Value = "Ombor qiymati";
+                        inventorySheet.Cell(1, 6).Value = "Olingan narxi";
+                        inventorySheet.Cell(1, 7).Value = "Sotuv narxi";
+                        inventorySheet.Cell(1, 8).Value = "Ombor qiymati";
                     }
                     else
                     {
-                        inventorySheet.Cells[1, 6].Value = "Sotuv narxi";
+                        inventorySheet.Cell(1, 6).Value = "Sotuv narxi";
                     }
 
                     int invHeaderCols = userRole == "Owner" ? 8 : 6;
-                    using (var range = inventorySheet.Cells[1, 1, 1, invHeaderCols])
+                    var inventoryHeaderRange = inventorySheet.Range(1, 1, 1, invHeaderCols);
                     {
-                        range.Style.Font.Bold = true;
-                        range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                        range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightBlue);
-                        range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                        inventoryHeaderRange.Style.Font.Bold = true;
+                        inventoryHeaderRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                        inventoryHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                     }
 
                     int invRow = 2;
@@ -1500,58 +1492,58 @@ public class ReportsController : ControllerBase
 
                     foreach (var item in comprehensiveReport.InventoryReport)
                     {
-                        inventorySheet.Cells[invRow, 1].Value = idx++;
-                        inventorySheet.Cells[invRow, 2].Value = item.ProductName;
-                        inventorySheet.Cells[invRow, 3].Value = item.Category ?? "";
-                        inventorySheet.Cells[invRow, 4].Value = item.Quantity;
-                        inventorySheet.Cells[invRow, 4].Style.Numberformat.Format = "#,##0.000";
-                        inventorySheet.Cells[invRow, 5].Value = item.Unit ?? "";
+                        inventorySheet.Cell(invRow, 1).Value = idx++;
+                        inventorySheet.Cell(invRow, 2).Value = item.ProductName;
+                        inventorySheet.Cell(invRow, 3).Value = item.Category ?? "";
+                        inventorySheet.Cell(invRow, 4).Value = item.Quantity;
+                        inventorySheet.Cell(invRow, 4).Style.NumberFormat.Format = "#,##0.000";
+                        inventorySheet.Cell(invRow, 5).Value = item.Unit ?? "";
 
                         if (userRole == "Owner")
                         {
-                            inventorySheet.Cells[invRow, 6].Value = item.CostPrice ?? 0;
-                            inventorySheet.Cells[invRow, 6].Style.Numberformat.Format = "#,##0.00";
-                            inventorySheet.Cells[invRow, 7].Value = item.SalePrice;
-                            inventorySheet.Cells[invRow, 7].Style.Numberformat.Format = "#,##0.00";
+                            inventorySheet.Cell(invRow, 6).Value = item.CostPrice ?? 0;
+                            inventorySheet.Cell(invRow, 6).Style.NumberFormat.Format = "#,##0.00";
+                            inventorySheet.Cell(invRow, 7).Value = item.SalePrice;
+                            inventorySheet.Cell(invRow, 7).Style.NumberFormat.Format = "#,##0.00";
 
                             decimal itemValue = (item.CostPrice ?? 0) * item.Quantity;
-                            inventorySheet.Cells[invRow, 8].Value = itemValue;
-                            inventorySheet.Cells[invRow, 8].Style.Numberformat.Format = "#,##0.00";
+                            inventorySheet.Cell(invRow, 8).Value = itemValue;
+                            inventorySheet.Cell(invRow, 8).Style.NumberFormat.Format = "#,##0.00";
                             totalInvValue += itemValue;
                         }
                         else
                         {
-                            inventorySheet.Cells[invRow, 6].Value = item.SalePrice;
-                            inventorySheet.Cells[invRow, 6].Style.Numberformat.Format = "#,##0.00";
+                            inventorySheet.Cell(invRow, 6).Value = item.SalePrice;
+                            inventorySheet.Cell(invRow, 6).Style.NumberFormat.Format = "#,##0.00";
                         }
 
                         // Highlight low stock and out of stock
                         if (item.Quantity <= 0)
                         {
-                            inventorySheet.Cells[invRow, 4].Style.Font.Color.SetColor(System.Drawing.Color.Red);
-                            inventorySheet.Cells[invRow, 4].Style.Font.Bold = true;
+                            inventorySheet.Cell(invRow, 4).Style.Font.FontColor = XLColor.Red;
+                            inventorySheet.Cell(invRow, 4).Style.Font.Bold = true;
                         }
                         else if (item.Quantity < 10)
                         {
-                            inventorySheet.Cells[invRow, 4].Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                            inventorySheet.Cell(invRow, 4).Style.Font.FontColor = XLColor.Orange;
                         }
 
                         invRow++;
                     }
 
                     // Footer
-                    inventorySheet.Cells[invRow, 1].Value = "JAMI:";
-                    inventorySheet.Cells[invRow, 1, invRow, 7].Merge = true;
-                    inventorySheet.Cells[invRow, 1].Style.Font.Bold = true;
+                    inventorySheet.Cell(invRow, 1).Value = "JAMI:";
+                    inventorySheet.Range(invRow, 1, invRow, 7).Merge();
+                    inventorySheet.Cell(invRow, 1).Style.Font.Bold = true;
 
                     if (userRole == "Owner")
                     {
-                        inventorySheet.Cells[invRow, 8].Value = totalInvValue;
-                        inventorySheet.Cells[invRow, 8].Style.Numberformat.Format = "#,##0.00";
-                        inventorySheet.Cells[invRow, 8].Style.Font.Bold = true;
+                        inventorySheet.Cell(invRow, 8).Value = totalInvValue;
+                        inventorySheet.Cell(invRow, 8).Style.NumberFormat.Format = "#,##0.00";
+                        inventorySheet.Cell(invRow, 8).Style.Font.Bold = true;
                     }
 
-                    inventorySheet.Cells[inventorySheet.Dimension.Address].AutoFitColumns();
+                    inventorySheet.Columns().AdjustToContents();
                     inventorySheet.Column(1).Width = 6;
                     inventorySheet.Column(2).Width = 40;
                     inventorySheet.Column(3).Width = 20;
@@ -1568,39 +1560,38 @@ public class ReportsController : ControllerBase
                         inventorySheet.Column(6).Width = 15;
                     }
 
-                    using (var range = inventorySheet.Cells[1, 1, invRow, invHeaderCols])
+                    var inventoryBorderRange = inventorySheet.Range(1, 1, invRow, invHeaderCols);
                     {
-                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        inventoryBorderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                        inventoryBorderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                        inventoryBorderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                        inventoryBorderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
                     }
-                    inventorySheet.Cells[1, 1, 1, invHeaderCols].AutoFilter = true;
+                    inventorySheet.Range(1, 1, 1, invHeaderCols).SetAutoFilter();
                 }
 
                 // SHEET 3: Kam qolgan mahsulotlar (agar mavjud bo'lsa)
                 if (comprehensiveReport.InventoryReport != null && comprehensiveReport.InventoryReport.Any(i => i.Quantity < 10))
                 {
-                    var lowStockSheet = package.Workbook.Worksheets.Add("Kam Qolgan Mahsulotlar");
+                    var lowStockSheet = workbook.Worksheets.Add("Kam Qolgan Mahsulotlar");
 
-                    lowStockSheet.Cells[1, 1].Value = "KAM QOLGAN VA TUGAGAN MAHSULOTLAR";
-                    lowStockSheet.Cells[1, 1, 1, 5].Merge = true;
-                    lowStockSheet.Cells[1, 1].Style.Font.Bold = true;
-                    lowStockSheet.Cells[1, 1].Style.Font.Size = 14;
-                    lowStockSheet.Cells[1, 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    lowStockSheet.Cell(1, 1).Value = "KAM QOLGAN VA TUGAGAN MAHSULOTLAR";
+                    lowStockSheet.Range(1, 1, 1, 5).Merge();
+                    lowStockSheet.Cell(1, 1).Style.Font.Bold = true;
+                    lowStockSheet.Cell(1, 1).Style.Font.FontSize = 14;
+                    lowStockSheet.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                    lowStockSheet.Cells[3, 1].Value = "№";
-                    lowStockSheet.Cells[3, 2].Value = "Mahsulot nomi";
-                    lowStockSheet.Cells[3, 3].Value = "Kategoriya";
-                    lowStockSheet.Cells[3, 4].Value = "Miqdor";
-                    lowStockSheet.Cells[3, 5].Value = "Holati";
+                    lowStockSheet.Cell(3, 1).Value = "№";
+                    lowStockSheet.Cell(3, 2).Value = "Mahsulot nomi";
+                    lowStockSheet.Cell(3, 3).Value = "Kategoriya";
+                    lowStockSheet.Cell(3, 4).Value = "Miqdor";
+                    lowStockSheet.Cell(3, 5).Value = "Holati";
 
-                    using (var range = lowStockSheet.Cells[3, 1, 3, 5])
+                    var lowStockHeaderRange = lowStockSheet.Range(3, 1, 3, 5);
                     {
-                        range.Style.Font.Bold = true;
-                        range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                        range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightCoral);
-                        range.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                        lowStockHeaderRange.Style.Font.Bold = true;
+                        lowStockHeaderRange.Style.Fill.BackgroundColor = XLColor.LightCoral;
+                        lowStockHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
                     }
 
                     int lowRow = 4;
@@ -1610,48 +1601,50 @@ public class ReportsController : ControllerBase
 
                     foreach (var item in lowStockItems)
                     {
-                        lowStockSheet.Cells[lowRow, 1].Value = lowIdx++;
-                        lowStockSheet.Cells[lowRow, 2].Value = item.ProductName;
-                        lowStockSheet.Cells[lowRow, 3].Value = item.Category ?? "";
-                        lowStockSheet.Cells[lowRow, 4].Value = item.Quantity;
-                        lowStockSheet.Cells[lowRow, 4].Style.Numberformat.Format = "#,##0.000";
+                        lowStockSheet.Cell(lowRow, 1).Value = lowIdx++;
+                        lowStockSheet.Cell(lowRow, 2).Value = item.ProductName;
+                        lowStockSheet.Cell(lowRow, 3).Value = item.Category ?? "";
+                        lowStockSheet.Cell(lowRow, 4).Value = item.Quantity;
+                        lowStockSheet.Cell(lowRow, 4).Style.NumberFormat.Format = "#,##0.000";
 
                         string status = item.Quantity <= 0 ? "TUGAGAN" : "KAM QOLGAN";
-                        lowStockSheet.Cells[lowRow, 5].Value = status;
+                        lowStockSheet.Cell(lowRow, 5).Value = status;
 
                         if (item.Quantity <= 0)
                         {
-                            lowStockSheet.Cells[lowRow, 4].Style.Font.Color.SetColor(System.Drawing.Color.DarkRed);
-                            lowStockSheet.Cells[lowRow, 4].Style.Font.Bold = true;
-                            lowStockSheet.Cells[lowRow, 5].Style.Font.Color.SetColor(System.Drawing.Color.DarkRed);
-                            lowStockSheet.Cells[lowRow, 5].Style.Font.Bold = true;
+                            lowStockSheet.Cell(lowRow, 4).Style.Font.FontColor = XLColor.DarkRed;
+                            lowStockSheet.Cell(lowRow, 4).Style.Font.Bold = true;
+                            lowStockSheet.Cell(lowRow, 5).Style.Font.FontColor = XLColor.DarkRed;
+                            lowStockSheet.Cell(lowRow, 5).Style.Font.Bold = true;
                         }
                         else
                         {
-                            lowStockSheet.Cells[lowRow, 4].Style.Font.Color.SetColor(System.Drawing.Color.Orange);
-                            lowStockSheet.Cells[lowRow, 5].Style.Font.Color.SetColor(System.Drawing.Color.Orange);
+                            lowStockSheet.Cell(lowRow, 4).Style.Font.FontColor = XLColor.Orange;
+                            lowStockSheet.Cell(lowRow, 5).Style.Font.FontColor = XLColor.Orange;
                         }
 
                         lowRow++;
                     }
 
-                    lowStockSheet.Cells[lowStockSheet.Dimension.Address].AutoFitColumns();
+                    lowStockSheet.Columns().AdjustToContents();
                     lowStockSheet.Column(1).Width = 6;
                     lowStockSheet.Column(2).Width = 40;
                     lowStockSheet.Column(3).Width = 20;
                     lowStockSheet.Column(4).Width = 12;
                     lowStockSheet.Column(5).Width = 15;
 
-                    using (var range = lowStockSheet.Cells[3, 1, lowRow - 1, 5])
+                    var lowStockBorderRange = lowStockSheet.Range(3, 1, lowRow - 1, 5);
                     {
-                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        lowStockBorderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                        lowStockBorderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                        lowStockBorderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                        lowStockBorderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
                     }
                 }
 
-                var stream = new MemoryStream(package.GetAsByteArray());
+                var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                stream.Position = 0;
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 var fileName = $"ombor_hisoboti_{date:yyyyMMdd}.xlsx";
 

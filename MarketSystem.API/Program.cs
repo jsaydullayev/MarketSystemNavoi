@@ -10,11 +10,11 @@ using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using MarketSystem.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using OfficeOpenXml;
 using Serilog;
 using System.Security.Claims;
 using Serilog.Events;
@@ -38,8 +38,6 @@ static TimeZoneInfo ResolveTashkentTimeZone()
     }
     return TimeZoneInfo.CreateCustomTimeZone("Asia/Tashkent", TimeSpan.FromHours(5), "Tashkent", "Tashkent");
 }
-
-ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -218,6 +216,12 @@ try
         options.AddPolicy("AllRoles", policy =>
             policy.RequireRole("Owner", "Admin", "Seller"));
     });
+
+    // Owner RBAC — dynamic "perm:<key>" policies behind [RequirePermission(...)].
+    // The custom provider synthesises a PermissionRequirement for those names
+    // and delegates every other policy name to the default provider.
+    builder.Services.AddSingleton<IAuthorizationPolicyProvider, MarketSystem.API.Authorization.PermissionPolicyProvider>();
+    builder.Services.AddScoped<IAuthorizationHandler, MarketSystem.API.Authorization.PermissionAuthorizationHandler>();
 
     // Rate limiting on authentication endpoints. We use a SLIDING window (6 segments
     // per minute) instead of fixed-window so a client cannot burst 2x the limit by
@@ -480,6 +484,7 @@ try
     builder.Services.AddSingleton<ITashkentClock, TashkentClock>();
     builder.Services.AddScoped<IRegistrationRequestService, RegistrationRequestService>();
     builder.Services.AddScoped<IDebtService, DebtService>();
+    builder.Services.AddScoped<IShiftService, ShiftService>();
     // Singleton — the process-local revocation map must outlive any single request.
     builder.Services.AddSingleton<IRevokedTokenStore, InMemoryRevokedTokenStore>();
 
@@ -579,6 +584,28 @@ try
     app.UseMiddleware<RequestLoggingMiddleware>();
     app.UseCors(app.Environment.IsDevelopment() ? "DevelopmentCors" : "ProductionCors");
 
+    // Standard hardening headers for every response.
+    app.Use(async (ctx, next) =>
+    {
+        ctx.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        ctx.Response.Headers["X-Frame-Options"] = "DENY";
+        ctx.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        // Content-Security-Policy — this is a JSON API plus a couple of static
+        // HTML pages (privacy.html). 'unsafe-inline' is kept for script/style
+        // so those pages aren't broken; the real wins here are frame-ancestors
+        // (clickjacking), object-src and base-uri lockdown. The Flutter client
+        // runs on its own origin and is unaffected.
+        ctx.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline'; " +
+            "style-src 'self' 'unsafe-inline'; " +
+            "img-src 'self' data:; " +
+            "object-src 'none'; " +
+            "base-uri 'self'; " +
+            "frame-ancestors 'none'";
+        await next();
+    });
+
     app.UseStaticFiles();
     // SuperAdmin URL gate — MUST run before UseAuthentication so an
     // unauthenticated probe to the wrong path returns 404 (not 401),
@@ -642,11 +669,14 @@ try
 
     app.MapHub<MarketSystem.API.Hubs.SalesHub>("/hubs/sales");
 
-    if (app.Environment.IsDevelopment())
+    // Seed endpoint: requires both IsDevelopment() AND SEED_ENABLED=true so it
+    // can never fire in production even if the environment var is misconfigured.
+    if (app.Environment.IsDevelopment() &&
+        Environment.GetEnvironmentVariable("SEED_ENABLED") == "true")
     {
         // Dev-only seeder. Reads credentials from env vars; refuses to run otherwise.
         // Required env:
-        //   SEED_SUPERADMIN_PASSWORD, SEED_OWNER_PASSWORD
+        //   SEED_ENABLED=true, SEED_SUPERADMIN_PASSWORD, SEED_OWNER_PASSWORD
         // Optional: SEED_ADMIN_PASSWORD, SEED_SELLER_PASSWORD
         app.MapGet("/seed", async (IConfiguration config, IServiceProvider services) =>
         {

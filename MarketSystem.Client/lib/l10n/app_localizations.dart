@@ -398,6 +398,48 @@ abstract class AppLocalizations {
   /// **'Min. chegara'**
   String get minThreshold;
 
+  /// No description provided for @productBasicInfoSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Asosiy ma\'lumotlar'**
+  String get productBasicInfoSection;
+
+  /// No description provided for @productNameHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Masalan: Coca-Cola 1.5L'**
+  String get productNameHint;
+
+  /// No description provided for @forDiscountHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'(chegirma uchun)'**
+  String get forDiscountHint;
+
+  /// No description provided for @currentStockLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozirgi stok'**
+  String get currentStockLabel;
+
+  /// No description provided for @minStockLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Min. stok'**
+  String get minStockLabel;
+
+  /// No description provided for @forWarningHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'(ogoh.)'**
+  String get forWarningHint;
+
+  /// No description provided for @minSalePriceTip.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuvchi mijozga {amount} UZS gacha tushira oladi. Pastroq narx uchun Owner ruxsati kerak.'**
+  String minSalePriceTip(String amount);
+
   /// No description provided for @temporary.
   ///
   /// In uz, this message translates to:
@@ -1811,8 +1853,14 @@ abstract class AppLocalizations {
   /// No description provided for @addNewCustomer.
   ///
   /// In uz, this message translates to:
-  /// **'Yangi mijoz'**
+  /// **'Yangi mijoz qo\'shish'**
   String get addNewCustomer;
+
+  /// No description provided for @addCustomerForDebtHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi mijoz qo\'shish'**
+  String get addCustomerForDebtHint;
 
   /// No description provided for @searchCustomer.
   ///
@@ -2533,6 +2581,96 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Bugun'**
   String get today;
+
+  /// No description provided for @period7Days.
+  ///
+  /// In uz, this message translates to:
+  /// **'7 kun'**
+  String get period7Days;
+
+  /// No description provided for @period30Days.
+  ///
+  /// In uz, this message translates to:
+  /// **'30 kun'**
+  String get period30Days;
+
+  /// No description provided for @periodYear.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yil'**
+  String get periodYear;
+
+  /// No description provided for @shiftSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ish smenasi'**
+  String get shiftSection;
+
+  /// No description provided for @shiftStateActive.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faol smena'**
+  String get shiftStateActive;
+
+  /// No description provided for @shiftStateBlocked.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklangan'**
+  String get shiftStateBlocked;
+
+  /// No description provided for @shiftStateScheduled.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rejalashtirilgan'**
+  String get shiftStateScheduled;
+
+  /// No description provided for @shiftActivate.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faollashtirish'**
+  String get shiftActivate;
+
+  /// No description provided for @shiftBlock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklash'**
+  String get shiftBlock;
+
+  /// No description provided for @shiftOpen24h.
+  ///
+  /// In uz, this message translates to:
+  /// **'24 soat'**
+  String get shiftOpen24h;
+
+  /// No description provided for @shiftSetWindow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muddat'**
+  String get shiftSetWindow;
+
+  /// No description provided for @shiftUpdated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena yangilandi'**
+  String get shiftUpdated;
+
+  /// No description provided for @shiftActiveNow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ishlay oladi'**
+  String get shiftActiveNow;
+
+  /// No description provided for @shiftInactiveNow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ishlay olmaydi'**
+  String get shiftInactiveNow;
+
+  /// No description provided for @shiftInvalidWindow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tugash vaqti boshlanish vaqtidan keyin bo\'lishi kerak'**
+  String get shiftInvalidWindow;
 
   /// No description provided for @yesterday.
   ///
@@ -3296,6 +3434,12 @@ abstract class AppLocalizations {
   /// **'Qaytarish'**
   String get refundLabel;
 
+  /// No description provided for @refundActionDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuvni qaytarish'**
+  String get refundActionDesc;
+
   /// No description provided for @cashRegisterShort.
   ///
   /// In uz, this message translates to:
@@ -3350,6 +3494,12 @@ abstract class AppLocalizations {
   /// **'Bugun savdo bo\'lmadi — oxirgi hafta:'**
   String get topSellersFallbackHint;
 
+  /// No description provided for @chartVsLastWeek.
+  ///
+  /// In uz, this message translates to:
+  /// **'o\'tgan haftaga nisbatan'**
+  String get chartVsLastWeek;
+
   /// No description provided for @notificationsTitle.
   ///
   /// In uz, this message translates to:
@@ -3385,6 +3535,258 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Yangi qarz savdolar'**
   String get alertsRecentDebtTitle;
+
+  /// No description provided for @alertDescOverdue.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz {days} kunda · {amount} UZS'**
+  String alertDescOverdue(int days, String amount);
+
+  /// No description provided for @alertDescRecent.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun · {amount} UZS'**
+  String alertDescRecent(String amount);
+
+  /// No description provided for @alertDescLowStock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qoldiq: {qty} {unit} · min {threshold} {unit}'**
+  String alertDescLowStock(String qty, String unit, String threshold);
+
+  /// No description provided for @alertDescLowStockNoMin.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qoldiq: {qty} {unit}'**
+  String alertDescLowStockNoMin(String qty, String unit);
+
+  /// No description provided for @fallbackCustomerName.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz'**
+  String get fallbackCustomerName;
+
+  /// No description provided for @settingsSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'SOZLASH'**
+  String get settingsSection;
+
+  /// No description provided for @languageLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Til'**
+  String get languageLabel;
+
+  /// No description provided for @themeLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mavzu'**
+  String get themeLabel;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tungi'**
+  String get themeDark;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yorug\''**
+  String get themeLight;
+
+  /// No description provided for @lowStockShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'KAM STOK'**
+  String get lowStockShort;
+
+  /// No description provided for @outOfStockShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'TUGADI'**
+  String get outOfStockShort;
+
+  /// No description provided for @totalShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'JAMI'**
+  String get totalShort;
+
+  /// No description provided for @stockShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'Stok'**
+  String get stockShort;
+
+  /// No description provided for @popularChip.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mashhur'**
+  String get popularChip;
+
+  /// No description provided for @editAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tahrirlash'**
+  String get editAction;
+
+  /// No description provided for @filterLowStock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kam stok'**
+  String get filterLowStock;
+
+  /// No description provided for @filterOutOfStock.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tugadi'**
+  String get filterOutOfStock;
+
+  /// No description provided for @serverUnreachable.
+  ///
+  /// In uz, this message translates to:
+  /// **'Serverga ulanib bo\'lmadi'**
+  String get serverUnreachable;
+
+  /// No description provided for @sessionExpired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sessiya tugadi, qayta kiring'**
+  String get sessionExpired;
+
+  /// No description provided for @noPermission.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sizga ruxsat yo\'q'**
+  String get noPermission;
+
+  /// No description provided for @customEmojiHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'zingiz emoji yozing'**
+  String get customEmojiHint;
+
+  /// No description provided for @filterOldDebt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Eski qarz'**
+  String get filterOldDebt;
+
+  /// No description provided for @filterRecent.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi'**
+  String get filterRecent;
+
+  /// No description provided for @pricesSection.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narxlar'**
+  String get pricesSection;
+
+  /// No description provided for @shortCostPrice.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tannarx'**
+  String get shortCostPrice;
+
+  /// No description provided for @temporaryProductDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Vaqtinchalik mahsulot'**
+  String get temporaryProductDesc;
+
+  /// No description provided for @usersOnShiftShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'SMENADA'**
+  String get usersOnShiftShort;
+
+  /// No description provided for @usersTodayRevenueShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'BUGUN TUSHUM'**
+  String get usersTodayRevenueShort;
+
+  /// No description provided for @shiftOpenLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena ochiq'**
+  String get shiftOpenLabel;
+
+  /// No description provided for @shiftClosedLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena yopiq'**
+  String get shiftClosedLabel;
+
+  /// No description provided for @roleOwnerDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'liq nazorat'**
+  String get roleOwnerDesc;
+
+  /// No description provided for @roleAdminDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuv + mahsulot'**
+  String get roleAdminDesc;
+
+  /// No description provided for @roleSellerDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faqat sotuv'**
+  String get roleSellerDesc;
+
+  /// No description provided for @alertPreviewActiveDebts.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta faol qarz mavjud'**
+  String alertPreviewActiveDebts(int count);
+
+  /// No description provided for @alertPreviewActiveDebtsDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Jami: {amount} UZS'**
+  String alertPreviewActiveDebtsDesc(String amount);
+
+  /// No description provided for @alertPreviewOverdueDebts.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta to\'lov muddati o\'tgan'**
+  String alertPreviewOverdueDebts(int count);
+
+  /// No description provided for @alertPreviewOverdueDebtsDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijoz bilan bog\'laning'**
+  String get alertPreviewOverdueDebtsDesc;
+
+  /// No description provided for @alertPreviewLowStock.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta mahsulot tugab qoldi'**
+  String alertPreviewLowStock(int count);
+
+  /// No description provided for @alertPreviewLowStockDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Omborni to\'ldirish kerak'**
+  String get alertPreviewLowStockDesc;
+
+  /// No description provided for @alertPreviewEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hech qanday ogohlantirish yo\'q'**
+  String get alertPreviewEmpty;
+
+  /// No description provided for @alertPreviewEmptyDesc.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasi joyida'**
+  String get alertPreviewEmptyDesc;
 
   /// No description provided for @quickActions.
   ///
@@ -4273,6 +4675,402 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Akkauntingiz yo\'qmi? '**
   String get noAccount;
+
+  /// No description provided for @loginLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Login'**
+  String get loginLabel;
+
+  /// No description provided for @loginHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Loginni kiriting'**
+  String get loginHint;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Parolni kiriting'**
+  String get passwordHint;
+
+  /// No description provided for @loginButton.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kirish'**
+  String get loginButton;
+
+  /// No description provided for @loginAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tizimga kirish'**
+  String get loginAction;
+
+  /// No description provided for @loginFormSubtitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Login va parolingizni kiriting'**
+  String get loginFormSubtitle;
+
+  /// No description provided for @appTagline.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kichik do\'konlar uchun savdo tizimi'**
+  String get appTagline;
+
+  /// No description provided for @welcomeSubtitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Kichik do\'konlar uchun savdo va hisob tizimi'**
+  String get welcomeSubtitle;
+
+  /// No description provided for @registerShop.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi do\'kon — ro\'yxatdan o\'tish'**
+  String get registerShop;
+
+  /// No description provided for @agreePrefix.
+  ///
+  /// In uz, this message translates to:
+  /// **'Davom etish orqali '**
+  String get agreePrefix;
+
+  /// No description provided for @agreeSuffix.
+  ///
+  /// In uz, this message translates to:
+  /// **'ga rozisiz'**
+  String get agreeSuffix;
+
+  /// No description provided for @rememberMe.
+  ///
+  /// In uz, this message translates to:
+  /// **'Eslab qol'**
+  String get rememberMe;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In uz, this message translates to:
+  /// **'Parolni unutdingizmi?'**
+  String get forgotPassword;
+
+  /// No description provided for @dateTimeLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sana / vaqt'**
+  String get dateTimeLabel;
+
+  /// No description provided for @statusLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Status'**
+  String get statusLabel;
+
+  /// No description provided for @externalTag.
+  ///
+  /// In uz, this message translates to:
+  /// **'tashqi'**
+  String get externalTag;
+
+  /// No description provided for @printAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Chop etish'**
+  String get printAction;
+
+  /// No description provided for @sendSms.
+  ///
+  /// In uz, this message translates to:
+  /// **'SMS yuborish'**
+  String get sendSms;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tez orada...'**
+  String get comingSoon;
+
+  /// No description provided for @returnWarning.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarish Owner\'ga xabar yuboradi va stokga qaytariladi'**
+  String get returnWarning;
+
+  /// No description provided for @whichProductReturning.
+  ///
+  /// In uz, this message translates to:
+  /// **'QAYSI MAHSULOT QAYTARILYAPTI?'**
+  String get whichProductReturning;
+
+  /// No description provided for @soldQtyFormat.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotildi: {qty} × {price}'**
+  String soldQtyFormat(Object qty, String price);
+
+  /// No description provided for @reasonLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'SABAB'**
+  String get reasonLabel;
+
+  /// No description provided for @returnReasonBad.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sifatsiz'**
+  String get returnReasonBad;
+
+  /// No description provided for @returnReasonExpired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muddat o\'tgan'**
+  String get returnReasonExpired;
+
+  /// No description provided for @returnReasonDisliked.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yoqmadi'**
+  String get returnReasonDisliked;
+
+  /// No description provided for @returnReasonOther.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshqa'**
+  String get returnReasonOther;
+
+  /// No description provided for @additionalCommentHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qo\'shimcha izoh (ixtiyoriy)'**
+  String get additionalCommentHint;
+
+  /// No description provided for @returnMethodLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'QAYTARISH USULI'**
+  String get returnMethodLabel;
+
+  /// No description provided for @cashReturn.
+  ///
+  /// In uz, this message translates to:
+  /// **'Naqd qaytarish'**
+  String get cashReturn;
+
+  /// No description provided for @toCustomerHere.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijozga shu yerda'**
+  String get toCustomerHere;
+
+  /// No description provided for @toBalance.
+  ///
+  /// In uz, this message translates to:
+  /// **'Balansga'**
+  String get toBalance;
+
+  /// No description provided for @forNextSale.
+  ///
+  /// In uz, this message translates to:
+  /// **'Keyingi sotuvga'**
+  String get forNextSale;
+
+  /// No description provided for @toReturnLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'QAYTARILADI'**
+  String get toReturnLabel;
+
+  /// No description provided for @confirmAndReturn.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tasdiqlash va qaytarish'**
+  String get confirmAndReturn;
+
+  /// No description provided for @orDivider.
+  ///
+  /// In uz, this message translates to:
+  /// **'YOKI'**
+  String get orDivider;
+
+  /// No description provided for @createNewShop.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi do\'kon yarating'**
+  String get createNewShop;
+
+  /// No description provided for @statProducts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulotlar'**
+  String get statProducts;
+
+  /// No description provided for @statSales.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuvlar'**
+  String get statSales;
+
+  /// No description provided for @statCustomers.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mijozlar'**
+  String get statCustomers;
+
+  /// No description provided for @statActiveTypes.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faol turlari'**
+  String get statActiveTypes;
+
+  /// No description provided for @statTotalReceipts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Jami chek'**
+  String get statTotalReceipts;
+
+  /// No description provided for @statActiveCustomers.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faol mijozlar'**
+  String get statActiveCustomers;
+
+  /// No description provided for @statTotalUZS.
+  ///
+  /// In uz, this message translates to:
+  /// **'UZS jami'**
+  String get statTotalUZS;
+
+  /// No description provided for @paymentCash.
+  ///
+  /// In uz, this message translates to:
+  /// **'Naqd'**
+  String get paymentCash;
+
+  /// No description provided for @paymentRefund.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qaytarilgan'**
+  String get paymentRefund;
+
+  /// No description provided for @forgotPasswordContactAdmin.
+  ///
+  /// In uz, this message translates to:
+  /// **'Parolni tiklash uchun administrator bilan bog\'laning.'**
+  String get forgotPasswordContactAdmin;
+
+  /// No description provided for @loginFailed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Login yoki parol noto\'g\'ri.'**
+  String get loginFailed;
+
+  /// No description provided for @rateLimited.
+  ///
+  /// In uz, this message translates to:
+  /// **'Juda ko\'p urinish. Iltimos, biroz kutib qayta urinib ko\'ring.'**
+  String get rateLimited;
+
+  /// No description provided for @loginGenericError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xatolik yuz berdi.'**
+  String get loginGenericError;
+
+  /// No description provided for @shopBlocked.
+  ///
+  /// In uz, this message translates to:
+  /// **'Do\'kon bloklangan'**
+  String get shopBlocked;
+
+  /// No description provided for @shopBlockedBody.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sizning do\'koningiz administrator tomonidan bloklangan. Iltimos, administrator bilan bog\'laning.'**
+  String get shopBlockedBody;
+
+  /// No description provided for @blockedAtLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bloklangan: {time}'**
+  String blockedAtLabel(String time);
+
+  /// No description provided for @dismiss.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tushundim'**
+  String get dismiss;
+
+  /// No description provided for @permissionsTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ruxsatlar'**
+  String get permissionsTitle;
+
+  /// No description provided for @permissionsNextLoginNote.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'zgarishlar foydalanuvchi keyingi marta tizimga kirganda kuchga kiradi.'**
+  String get permissionsNextLoginNote;
+
+  /// No description provided for @resetToDefault.
+  ///
+  /// In uz, this message translates to:
+  /// **'Standartga qaytarish'**
+  String get resetToDefault;
+
+  /// No description provided for @permissionsSaved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ruxsatlar saqlandi'**
+  String get permissionsSaved;
+
+  /// No description provided for @permissionsUsingRoleDefaults.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rol bo\'yicha standart ruxsatlar'**
+  String get permissionsUsingRoleDefaults;
+
+  /// No description provided for @permissionsCustomized.
+  ///
+  /// In uz, this message translates to:
+  /// **'Maxsus sozlangan'**
+  String get permissionsCustomized;
+
+  /// No description provided for @managePermissions.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ruxsatlarni boshqarish'**
+  String get managePermissions;
+
+  /// No description provided for @shiftOpen.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena ochiq'**
+  String get shiftOpen;
+
+  /// No description provided for @shiftClosed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smena yopiq'**
+  String get shiftClosed;
+
+  /// No description provided for @openShift.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smenani ochish'**
+  String get openShift;
+
+  /// No description provided for @closeShift.
+  ///
+  /// In uz, this message translates to:
+  /// **'Smenani yopish'**
+  String get closeShift;
+
+  /// No description provided for @shiftStartedAt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshlangan: {time}'**
+  String shiftStartedAt(String time);
 }
 
 class _AppLocalizationsDelegate

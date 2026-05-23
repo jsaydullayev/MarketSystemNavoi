@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
@@ -32,10 +33,11 @@ class ContinueSaleBottomBar extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border, width: 2)),
-        boxShadow: [
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        border: Border(
+            top: BorderSide(color: context.colors.border, width: 2)),
+        boxShadow: const [
           BoxShadow(
             color: Color(0x0F000000),
             blurRadius: 12,
@@ -63,7 +65,7 @@ class ContinueSaleBottomBar extends StatelessWidget {
                   Text(
                     l10n.totalSum,
                     style: AppTextStyles.bodySmall().copyWith(
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                       fontWeight: FontWeight.w500,
                       fontSize: 13,
                     ),
@@ -73,7 +75,7 @@ class ContinueSaleBottomBar extends StatelessWidget {
                     style: AppTextStyles.titleLarge().copyWith(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.text,
+                      color: context.colors.text,
                       letterSpacing: -0.5,
                     ),
                   ),

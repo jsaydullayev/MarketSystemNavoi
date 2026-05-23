@@ -10,6 +10,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../design/widgets/app_card.dart';
@@ -58,21 +59,21 @@ class GreetingCard extends StatelessWidget {
   /// Render the user's profile image as a 44×44 rounded tile, or a coloured
   /// first-letter tile if no image is available. Kept identical in size to
   /// the original letter tile so the rest of the row layout doesn't shift.
-  Widget _buildAvatar() {
+  Widget _buildAvatar(BuildContext context) {
     final img = profileImage;
     final hasImage = img != null && img.isNotEmpty;
     final letterTile = Container(
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.brandLight,
+        color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       alignment: Alignment.center,
       child: Text(
         _initial,
-        style: AppTextStyles.titleMedium()
-            .copyWith(color: AppColors.brand, fontWeight: FontWeight.w800),
+        style: AppTextStyles.titleMedium().copyWith(
+            color: context.colors.brand, fontWeight: FontWeight.w800),
       ),
     );
     if (!hasImage) return letterTile;
@@ -139,7 +140,7 @@ class GreetingCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Row(
         children: [
-          _buildAvatar(),
+          _buildAvatar(context),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
@@ -187,7 +188,9 @@ class GreetingCard extends StatelessWidget {
           ),
           _IconCircle(
             icon: Icons.notifications_none_rounded,
-            badge: hasNotification || unreadNotifications > 0,
+            badgeCount: unreadNotifications > 0
+                ? unreadNotifications
+                : (hasNotification ? 1 : 0),
             onTap: onNotificationTap,
           ),
           const SizedBox(width: AppSpacing.md),
@@ -204,12 +207,12 @@ class GreetingCard extends StatelessWidget {
 class _IconCircle extends StatelessWidget {
   const _IconCircle({
     required this.icon,
-    this.badge = false,
+    this.badgeCount = 0,
     this.onTap,
   });
 
   final IconData icon;
-  final bool badge;
+  final int badgeCount;
   final VoidCallback? onTap;
 
   @override
@@ -224,21 +227,31 @@ class _IconCircle extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.inputFill,
+              color: context.colors.inputFill,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(icon, size: 18, color: AppColors.text),
+            child: Icon(icon, size: 18, color: context.colors.text),
           ),
-          if (badge)
+          if (badgeCount > 0)
             Positioned(
-              right: 4,
-              top: 4,
+              right: -4,
+              top: -4,
               child: Container(
-                width: 8,
-                height: 8,
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: const BoxDecoration(
                   color: AppColors.danger,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                child: Text(
+                  badgeCount > 9 ? '9+' : '$badgeCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    height: 1.6,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -262,14 +275,25 @@ class SalesHeroCard extends StatelessWidget {
   const SalesHeroCard({
     super.key,
     required this.amount,
-    required this.deltaText,
+    required this.label,
     required this.stats,
-    this.label = 'Bugungi sotuv',
+    this.deltaText,
+    this.deltaIsPositive = true,
   });
 
   final String amount;
-  final String deltaText; // e.g. "15% kechagidan ko'p"
   final String label;
+
+  /// Optional comparison line ("15% kechagidan ko'p"). When null/empty, the
+  /// row is hidden entirely. Previously this was required and callers
+  /// passed a plain label string ("Bugungi sotuv") here, which combined
+  /// with the hardcoded "↑" arrow rendered "↑ Bugungi sotuv" — a green
+  /// up-arrow next to text that wasn't actually a growth indicator.
+  final String? deltaText;
+
+  /// Controls the arrow + colour for the optional delta line. Ignored when
+  /// deltaText is null/empty.
+  final bool deltaIsPositive;
   final List<SalesHeroStat> stats;
 
   @override
@@ -308,15 +332,21 @@ class SalesHeroCard extends StatelessWidget {
               letterSpacing: -1,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '↑ $deltaText',
-            style: AppTextStyles.bodySmall().copyWith(
-              color: AppColors.success,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
+          // Optional delta line. Hidden when deltaText is null/empty so
+          // the card doesn't render an orphan green up-arrow on its own.
+          if (deltaText != null && deltaText!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              '${deltaIsPositive ? '↑' : '↓'} $deltaText',
+              style: AppTextStyles.bodySmall().copyWith(
+                color: deltaIsPositive
+                    ? AppColors.success
+                    : AppColors.danger,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
             ),
-          ),
+          ],
           if (stats.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
@@ -379,7 +409,7 @@ class KpiCard extends StatelessWidget {
   final KpiTone tone;
   final VoidCallback? onTap;
 
-  ({Color bg, Color fg}) _toneColors() {
+  ({Color bg, Color fg}) _toneColors(BuildContext context) {
     switch (tone) {
       case KpiTone.green:
         return (bg: AppColors.successLight, fg: AppColors.success);
@@ -388,13 +418,13 @@ class KpiCard extends StatelessWidget {
       case KpiTone.blue:
         return (bg: AppColors.infoLight, fg: AppColors.infoDeep);
       case KpiTone.orange:
-        return (bg: AppColors.brandLight, fg: AppColors.brand);
+        return (bg: context.colors.brandLight, fg: context.colors.brand);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final t = _toneColors();
+    final t = _toneColors(context);
     final card = AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -418,13 +448,18 @@ class KpiCard extends StatelessWidget {
               fontWeight: FontWeight.w800,
               color: t.fg,
             ),
+            // Some KPI values are now strings (e.g. top-product name) instead
+            // of numbers — long product names need to truncate rather than
+            // overflow the card.
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
             label,
             style: AppTextStyles.caption().copyWith(
               fontSize: 11,
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               letterSpacing: 0.3,
             ),
             maxLines: 2,
@@ -446,7 +481,7 @@ class KpiCard extends StatelessWidget {
 // AlertCard — colored info strip (danger / warning) with title + desc + chevron.
 // ---------------------------------------------------------------------------
 
-enum AlertTone { danger, warning }
+enum AlertTone { danger, warning, success }
 
 class AlertCard extends StatelessWidget {
   const AlertCard({
@@ -479,6 +514,13 @@ class AlertCard extends StatelessWidget {
           border: AppColors.warning,
           title: AppColors.warningDeep,
           desc: AppColors.warningDark,
+        );
+      case AlertTone.success:
+        return (
+          bg: AppColors.successLight,
+          border: AppColors.success,
+          title: AppColors.successDeep,
+          desc: AppColors.successDeep,
         );
     }
   }
@@ -542,13 +584,32 @@ class ChartCard extends StatelessWidget {
     required this.bars, // values 0..1 — last bar highlighted
     required this.footerValue,
     required this.footerDelta,
+    this.deltaCaption = '',
+    this.deltaIsPositive = true,
+    this.isEmpty = false,
   });
 
   final String title;
   final String period;
   final List<double> bars;
   final String footerValue;
+  /// Already-formatted delta string (e.g. "5%"). The card adds the sign
+  /// arrow ("↑" or "↓") based on [deltaIsPositive]; do NOT include an arrow
+  /// in [footerDelta] yourself or you'll get a double arrow.
   final String footerDelta;
+
+  /// Tiny caption rendered under the delta % to say what the percent is
+  /// measured against (e.g. "vs last week"). Hidden when empty.
+  final String deltaCaption;
+
+  /// Tints the delta arrow green (true) or red (false). Ignored when
+  /// footerDelta is empty.
+  final bool deltaIsPositive;
+
+  /// When true, the bars are dimmed (placeholder mode) so the card doesn't
+  /// look like it shows real data of value zero. Use for the "no data yet"
+  /// state without hiding the chart entirely.
+  final bool isEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -568,7 +629,7 @@ class ChartCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
@@ -588,12 +649,20 @@ class ChartCard extends StatelessWidget {
                 for (var i = 0; i < bars.length; i++) ...[
                   Expanded(
                     child: FractionallySizedBox(
-                      heightFactor: bars[i].clamp(0.05, 1.0),
+                      // Empty-state placeholder bars are short (just enough
+                      // to hint at the axis) so the card isn't visually
+                      // dominated by full-height orange columns when there's
+                      // no real data behind them.
+                      heightFactor: isEmpty
+                          ? 0.08
+                          : bars[i].clamp(0.05, 1.0),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: i == bars.length - 1
-                              ? AppColors.brandDark
-                              : AppColors.brand,
+                          color: isEmpty
+                              ? context.colors.borderSoft
+                              : (i == bars.length - 1
+                                  ? context.colors.brandDark
+                                  : context.colors.brand),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(6),
                           ),
@@ -614,14 +683,39 @@ class ChartCard extends StatelessWidget {
                 footerValue,
                 style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
               ),
-              Text(
-                '↑ $footerDelta',
-                style: AppTextStyles.bodySmall().copyWith(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+              // Only render the arrow + percent when we actually have one.
+              // Previously this always showed "↑" even with an empty delta,
+              // producing an orphan green up-arrow next to "— UZS" — see the
+              // empty-state screenshots from 2026-05-19.
+              // Delta % + a caption saying what it's measured against
+              // (week-over-week), so a figure like "↑ 1535%" isn't an
+              // unexplained number.
+              if (footerDelta.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${deltaIsPositive ? '↑' : '↓'} $footerDelta',
+                      style: AppTextStyles.bodySmall().copyWith(
+                        color: deltaIsPositive
+                            ? AppColors.success
+                            : AppColors.danger,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (deltaCaption.isNotEmpty)
+                      Text(
+                        deltaCaption,
+                        style: AppTextStyles.caption().copyWith(
+                          color: context.colors.textMuted,
+                          fontSize: 10,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                  ],
                 ),
-              ),
             ],
           ),
         ],
@@ -676,7 +770,7 @@ class TopSellersCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.inputFill,
+                  color: context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
@@ -699,7 +793,7 @@ class TopSellersCard extends StatelessWidget {
                       '${i + 1}.',
                       style: AppTextStyles.bodyMedium().copyWith(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -712,7 +806,7 @@ class TopSellersCard extends StatelessWidget {
                       entries[i].name,
                       style: AppTextStyles.bodyMedium().copyWith(
                         fontSize: 13,
-                        color: AppColors.text,
+                        color: context.colors.text,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -722,7 +816,7 @@ class TopSellersCard extends StatelessWidget {
                     entries[i].countLabel,
                     style: AppTextStyles.bodyMedium().copyWith(
                       fontSize: 13,
-                      color: AppColors.text,
+                      color: context.colors.text,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -761,7 +855,7 @@ class SectionHeader extends StatelessWidget {
           Text(
             title.toUpperCase(),
             style: AppTextStyles.caption().copyWith(
-              color: AppColors.textSecondary,
+              color: context.colors.textSecondary,
               fontSize: 11,
               letterSpacing: 1,
               fontWeight: FontWeight.w700,
@@ -773,7 +867,7 @@ class SectionHeader extends StatelessWidget {
               child: Text(
                 '$actionLabel →',
                 style: AppTextStyles.bodySmall().copyWith(
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                   fontWeight: FontWeight.w700,
                   fontSize: 12,
                 ),
@@ -812,15 +906,15 @@ class SellerHeroCta extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.xl3),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.brand, AppColors.brandDark],
+            colors: [context.colors.brand, context.colors.brandDark],
           ),
           borderRadius: BorderRadius.circular(AppRadius.xl),
           boxShadow: [
             BoxShadow(
-              color: AppColors.brand.withValues(alpha: 0.35),
+              color: context.colors.brand.withValues(alpha: 0.35),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -922,7 +1016,7 @@ class SellerStatsRow extends StatelessWidget {
                     style: AppTextStyles.caption().copyWith(
                       fontSize: 10,
                       letterSpacing: 0.3,
-                      color: AppColors.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ],
@@ -932,7 +1026,7 @@ class SellerStatsRow extends StatelessWidget {
               Container(
                 width: 1,
                 height: 30,
-                color: AppColors.border,
+                color: context.colors.border,
               ),
           ],
         ],

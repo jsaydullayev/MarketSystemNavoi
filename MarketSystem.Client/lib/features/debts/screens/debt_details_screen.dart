@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/debts/widgets/debt_summary_header.dart';
@@ -51,6 +52,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
   Future<void> _downloadPdf() async {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
+    final lang = Localizations.localeOf(context).languageCode;
 
     final saleId = widget.debt['saleId']?.toString() ?? '';
 
@@ -62,7 +64,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     );
 
     try {
-      final pdfData = await _salesService.downloadInvoice(saleId);
+      final pdfData = await _salesService.downloadInvoice(saleId, lang: lang);
 
       if (pdfData == null || pdfData.isEmpty) {
         if (mounted) {
@@ -240,7 +242,7 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     return NetworkWrapper(
       onRetry: _loadSaleDetails,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.colors.bg,
         appBar: CommonAppBar(
           title: l10n.debtDetails,
           extraActions: [
@@ -316,18 +318,18 @@ class _SaleItemCard extends StatelessWidget {
     // returns it as `comment`.
     final comment = (item['comment'] as String?)?.trim() ?? '';
 
-    final accent = isExternal ? AppColors.brand : AppColors.text;
+    final accent = isExternal ? context.colors.brand : context.colors.text;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md + 2),
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: isExternal
-              ? AppColors.brand.withValues(alpha: 0.35)
-              : AppColors.border,
+              ? context.colors.brand.withValues(alpha: 0.35)
+              : context.colors.border,
         ),
       ),
       child: Column(
@@ -338,7 +340,7 @@ class _SaleItemCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md + 2),
                 decoration: BoxDecoration(
-                  color: (isExternal ? AppColors.brand : AppColors.text)
+                  color: (isExternal ? context.colors.brand : context.colors.text)
                       .withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 ),
@@ -346,7 +348,7 @@ class _SaleItemCard extends StatelessWidget {
                   isExternal
                       ? Icons.storefront_rounded
                       : Icons.inventory_2_rounded,
-                  color: isExternal ? AppColors.brand : AppColors.text,
+                  color: isExternal ? context.colors.brand : context.colors.text,
                   size: 22,
                 ),
               ),
@@ -375,14 +377,14 @@ class _SaleItemCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: AppSpacing.sm, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.brand.withValues(alpha: 0.15),
+                              color: context.colors.brand.withValues(alpha: 0.15),
                               borderRadius:
                                   BorderRadius.circular(AppRadius.full),
                             ),
                             child: Text(
                               'tashqi',
                               style: AppTextStyles.caption().copyWith(
-                                color: AppColors.brand,
+                                color: context.colors.brand,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.3,
@@ -396,7 +398,7 @@ class _SaleItemCard extends StatelessWidget {
                     Text(
                       '${quantity.toStringAsFixed(0)} ${l10n.piece} × ${NumberFormatter.format(salePrice)} ${l10n.currencySom}',
                       style: AppTextStyles.bodySmall()
-                          .copyWith(fontSize: 12, color: AppColors.textMuted),
+                          .copyWith(fontSize: 12, color: context.colors.textMuted),
                     ),
                   ],
                 ),
@@ -422,21 +424,21 @@ class _SaleItemCard extends StatelessWidget {
                             horizontal: AppSpacing.md + 2,
                             vertical: AppSpacing.xs),
                         decoration: BoxDecoration(
-                          color: AppColors.brandLight,
+                          color: context.colors.brandLight,
                           borderRadius: BorderRadius.circular(AppRadius.md - 2),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.edit_rounded,
-                                size: 12, color: AppColors.brand),
+                            Icon(Icons.edit_rounded,
+                                size: 12, color: context.colors.brand),
                             const SizedBox(width: AppSpacing.xs),
                             Text(
                               l10n.edit,
                               style: AppTextStyles.bodySmall().copyWith(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.brand,
+                                color: context.colors.brand,
                               ),
                             ),
                           ],
@@ -454,21 +456,21 @@ class _SaleItemCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md + 2, vertical: 7),
               decoration: BoxDecoration(
-                color: AppColors.borderSoft,
+                color: context.colors.borderSoft,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.notes_rounded,
-                      size: 14, color: AppColors.textSecondary),
+                  Icon(Icons.notes_rounded,
+                      size: 14, color: context.colors.textSecondary),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       comment,
                       style: AppTextStyles.bodySmall().copyWith(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: context.colors.textSecondary,
                         height: 1.3,
                       ),
                     ),
@@ -493,12 +495,12 @@ class _EmptySaleItemsView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.inventory_2_rounded,
-              size: 52, color: AppColors.textMuted),
+          Icon(Icons.inventory_2_rounded,
+              size: 52, color: context.colors.textMuted),
           const SizedBox(height: AppSpacing.lg),
           Text(l10n.noProducts,
               style: AppTextStyles.titleMedium()
-                  .copyWith(color: AppColors.textSecondary)),
+                  .copyWith(color: context.colors.textSecondary)),
         ],
       ),
     );

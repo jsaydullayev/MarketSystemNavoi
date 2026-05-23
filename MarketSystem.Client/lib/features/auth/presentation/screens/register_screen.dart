@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../data/services/http_service.dart';
 import '../../../../data/services/registration_request_service.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -107,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => Dialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl2),
         ),
@@ -169,14 +170,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       resizeToAvoidBottomInset: true,
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.surface, AppColors.brandLight],
+            colors: [context.colors.surface, context.colors.brandLight],
           ),
         ),
         child: SafeArea(
@@ -221,11 +222,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            color: AppColors.brand,
+            color: context.colors.brand,
             borderRadius: BorderRadius.circular(AppRadius.xl2),
             boxShadow: [
               BoxShadow(
-                color: AppColors.brand.withValues(alpha: 0.3),
+                color: context.colors.brand.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -253,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           textAlign: TextAlign.center,
           style: AppTextStyles.bodySmall().copyWith(
             fontSize: 13,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
             height: 1.4,
           ),
         ),
@@ -265,9 +266,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF64748B).withValues(alpha: 0.05),
@@ -286,7 +287,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             textCapitalization: TextCapitalization.words,
             style: AppTextStyles.bodyMedium().copyWith(
               fontSize: 14,
-              color: AppColors.text,
+              color: context.colors.text,
             ),
             decoration: _inputDecoration(
               hint: 'Masalan: Jahongir Saydullayev',
@@ -309,7 +310,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             inputFormatters: [_phoneFormatter],
             style: AppTextStyles.bodyMedium().copyWith(
               fontSize: 14,
-              color: AppColors.text,
+              color: context.colors.text,
             ),
             decoration: _inputDecoration(
               hint: '+998 90 123 45 67',
@@ -335,23 +336,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.brandLight,
+              color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline_rounded,
                   size: 16,
-                  color: AppColors.brand,
+                  color: context.colors.brand,
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
                     "Arizangiz administrator tomonidan ko'rib chiqilgach, sizga login va parol yuboriladi.",
                     style: AppTextStyles.caption().copyWith(
-                      color: AppColors.brandDark,
+                      color: context.colors.brandDark,
                       fontSize: 11,
                       height: 1.4,
                     ),
@@ -374,7 +375,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 1,
-          color: AppColors.textMuted,
+          color: context.colors.textMuted,
         ),
       ),
     );
@@ -387,16 +388,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return InputDecoration(
       hintText: hint,
       hintStyle: AppTextStyles.bodyMedium().copyWith(
-        color: AppColors.textMuted,
+        color: context.colors.textMuted,
         fontSize: 14,
       ),
       prefixIcon: Icon(
         prefixIcon,
         size: 20,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
       ),
       filled: true,
-      fillColor: AppColors.inputFill,
+      fillColor: context.colors.inputFill,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.lg,
@@ -411,7 +412,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
-        borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+        borderSide: BorderSide(color: context.colors.brand, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -428,12 +429,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Center(
       child: TextButton(
         onPressed: _submitting ? null : () => Navigator.pop(context),
-        style: TextButton.styleFrom(foregroundColor: AppColors.brand),
+        style: TextButton.styleFrom(foregroundColor: context.colors.brand),
         child: Text(
           l10n.backToLogin,
           style: AppTextStyles.labelLarge().copyWith(
             fontSize: 13,
-            color: AppColors.brand,
+            color: context.colors.brand,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -446,7 +447,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       '© 2026 Strotech',
       textAlign: TextAlign.center,
       style: AppTextStyles.caption().copyWith(
-        color: AppColors.textMuted,
+        color: context.colors.textMuted,
         fontSize: 11,
       ),
     );

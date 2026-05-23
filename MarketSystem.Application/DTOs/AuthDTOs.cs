@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -66,7 +67,10 @@ public record AuthResponse(
     [property: JsonPropertyName("language")] string Language,
     [property: JsonPropertyName("accessToken")] string AccessToken,
     [property: JsonPropertyName("refreshToken")] string RefreshToken,
-    [property: JsonPropertyName("expiresAt")] DateTime ExpiresAt
+    [property: JsonPropertyName("expiresAt")] DateTime ExpiresAt,
+    // Owner RBAC — the user's effective permission set, so the client can
+    // gate its UI. Owner/SuperAdmin receive the full catalogue.
+    [property: JsonPropertyName("permissions")] IReadOnlyList<string> Permissions
 ) {
-    public AuthResponse() : this(Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, DateTime.MinValue) { }
+    public AuthResponse() : this(Guid.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, DateTime.MinValue, new List<string>()) { }
 }

@@ -6,12 +6,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
@@ -42,15 +44,15 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.colors.surface,
       body: DecoratedBox(
         // Subtle white -> brandLight gradient, matching the demo's auth-screen
         // background.
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.surface, AppColors.brandLight],
+            colors: [context.colors.surface, context.colors.brandLight],
           ),
         ),
         child: SafeArea(
@@ -74,47 +76,56 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: AppSpacing.xl4),
                         _buildTitleBlock(),
                         const SizedBox(height: 22),
-                        AppTextInput(
-                          label: 'Login',
-                          hint: 'Login',
-                          prefixIcon: Icons.person_outline_rounded,
-                          controller: _usernameController,
-                          validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Loginni kiriting'
-                              : null,
-                        ),
+                        Builder(builder: (ctx) {
+                          final l10n = AppLocalizations.of(ctx)!;
+                          return AppTextInput(
+                            label: l10n.loginLabel,
+                            hint: l10n.loginLabel,
+                            prefixIcon: Icons.person_outline_rounded,
+                            controller: _usernameController,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? l10n.loginHint
+                                : null,
+                          );
+                        }),
                         const SizedBox(height: AppSpacing.lg),
-                        AppTextInput(
-                          label: 'Parol',
-                          hint: 'Parol',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscurePassword,
-                          controller: _passwordController,
-                          validator: (v) => (v == null || v.isEmpty)
-                              ? 'Parolni kiriting'
-                              : null,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 20,
-                              color: AppColors.textSecondary,
+                        Builder(builder: (ctx) {
+                          final l10n = AppLocalizations.of(ctx)!;
+                          return AppTextInput(
+                            label: l10n.password,
+                            hint: l10n.password,
+                            prefixIcon: Icons.lock_outline_rounded,
+                            obscureText: _obscurePassword,
+                            controller: _passwordController,
+                            validator: (v) => (v == null || v.isEmpty)
+                                ? l10n.passwordHint
+                                : null,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                size: 20,
+                                color: context.colors.textSecondary,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                        ),
+                          );
+                        }),
                         const SizedBox(height: AppSpacing.xl2),
                         _buildHelperRow(),
                         const SizedBox(height: AppSpacing.lg),
                         Consumer<AuthProvider>(
-                          builder: (_, auth, __) => AppPrimaryButton(
-                            label: 'Kirish',
-                            isLoading: auth.isLoading,
-                            onPressed: auth.isLoading ? null : _login,
-                          ),
+                          builder: (_, auth, __) {
+                            final l10n = AppLocalizations.of(context)!;
+                            return AppPrimaryButton(
+                              label: l10n.loginButton,
+                              isLoading: auth.isLoading,
+                              onPressed: auth.isLoading ? null : _login,
+                            );
+                          },
                         ),
                         const SizedBox(height: 22),
                         _buildDivider(),
@@ -135,6 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // --- Building blocks ------------------------------------------------------
 
   Widget _buildBrand() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -142,11 +154,11 @@ class _LoginScreenState extends State<LoginScreen> {
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            color: AppColors.brand,
+            color: context.colors.brand,
             borderRadius: BorderRadius.circular(AppRadius.xl2),
             boxShadow: [
               BoxShadow(
-                color: AppColors.brand.withValues(alpha: 0.3),
+                color: context.colors.brand.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -173,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          "Kichik do'konlar uchun savdo tizimi",
+          l10n.appTagline,
           style: AppTextStyles.bodySmall().copyWith(fontSize: 13),
           textAlign: TextAlign.center,
         ),
@@ -182,11 +194,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildTitleBlock() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tizimga kirish',
+          l10n.loginAction,
           style: AppTextStyles.titleMedium().copyWith(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -194,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Login va parolingizni kiriting',
+          l10n.loginFormSubtitle,
           style: AppTextStyles.bodySmall().copyWith(fontSize: 13),
         ),
       ],
@@ -202,6 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildHelperRow() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -223,8 +237,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize:
                         MaterialTapTargetSize.shrinkWrap,
-                    activeColor: AppColors.brand,
-                    side: const BorderSide(color: AppColors.border, width: 1.5),
+                    activeColor: context.colors.brand,
+                    side: BorderSide(color: context.colors.border, width: 1.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -232,10 +246,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Text(
-                  'Eslab qol',
+                  l10n.rememberMe,
                   style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 13,
-                    color: AppColors.text,
+                    color: context.colors.text,
                   ),
                 ),
               ],
@@ -250,11 +264,11 @@ class _LoginScreenState extends State<LoginScreen> {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: Text(
-            'Parolni unutdingizmi?',
+            l10n.forgotPassword,
             style: AppTextStyles.bodySmall().copyWith(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.brand,
+              color: context.colors.brand,
             ),
           ),
         ),
@@ -263,45 +277,49 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildDivider() {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
-        const Expanded(child: Divider(color: AppColors.border, height: 1)),
+        Expanded(
+            child: Divider(color: context.colors.border, height: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Text(
-            'YOKI',
+            l10n.orDivider,
             style: AppTextStyles.caption().copyWith(
               fontSize: 11,
               letterSpacing: 1,
-              color: AppColors.textMuted,
+              color: context.colors.textMuted,
             ),
           ),
         ),
-        const Expanded(child: Divider(color: AppColors.border, height: 1)),
+        Expanded(
+            child: Divider(color: context.colors.border, height: 1)),
       ],
     );
   }
 
   Widget _buildBottomLink() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Text.rich(
         TextSpan(
           style: AppTextStyles.bodySmall().copyWith(
             fontSize: 13,
-            color: AppColors.textSecondary,
+            color: context.colors.textSecondary,
           ),
           children: [
-            const TextSpan(text: "Hisobingiz yo'qmi? "),
+            TextSpan(text: l10n.noAccount),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: GestureDetector(
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.register),
                 child: Text(
-                  "Yangi do'kon yarating",
+                  l10n.createNewShop,
                   style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 13,
-                    color: AppColors.brand,
+                    color: context.colors.brand,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -316,12 +334,11 @@ class _LoginScreenState extends State<LoginScreen> {
   // --- Behavior -------------------------------------------------------------
 
   void _showForgotPasswordHint() {
+    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text(
-          "Parolni tiklash uchun administrator bilan bog'laning.",
-        ),
-        backgroundColor: AppColors.text,
+        content: Text(l10n.forgotPasswordContactAdmin),
+        backgroundColor: context.colors.text,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -389,20 +406,20 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    final l10n = AppLocalizations.of(context)!;
     String errorText;
     switch (authProvider.errorCode) {
       case 'login_failed':
-        errorText = "Login yoki parol noto'g'ri.";
+        errorText = l10n.loginFailed;
         break;
       case 'rate_limited':
-        errorText =
-            "Juda ko'p urinish. Iltimos, biroz kutib qayta urinib ko'ring.";
+        errorText = l10n.rateLimited;
         break;
       case 'network_error':
-        errorText = 'Tarmoq xatosi. Internetni tekshiring.';
+        errorText = l10n.networkError;
         break;
       default:
-        errorText = 'Xatolik yuz berdi.';
+        errorText = l10n.loginGenericError;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -432,10 +449,11 @@ class _LoginScreenState extends State<LoginScreen> {
           '${two(local.hour)}:${two(local.minute)}';
     }
 
+    final l10n = AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.colors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
@@ -457,7 +475,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Text(
-                "Do'kon bloklangan",
+                l10n.shopBlocked,
                 style: AppTextStyles.titleMedium().copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -470,10 +488,9 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Sizning do'koningiz administrator tomonidan bloklangan. "
-              "Iltimos, administrator bilan bog'laning.",
+              l10n.shopBlockedBody,
               style: AppTextStyles.bodyMedium().copyWith(
-                color: AppColors.textSecondary,
+                color: context.colors.textSecondary,
               ),
             ),
             if (reason != null && reason.isNotEmpty) ...[
@@ -489,7 +506,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'BLOKLASH SABABI',
+                      l10n.blockReasonUpper,
                       style: AppTextStyles.caption().copyWith(
                         fontSize: 11,
                         color: AppColors.danger,
@@ -501,7 +518,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       reason,
                       style: AppTextStyles.bodyMedium().copyWith(
-                        color: AppColors.text,
+                        color: context.colors.text,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -513,14 +530,14 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: AppSpacing.lg),
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.schedule_outlined,
                     size: 14,
-                    color: AppColors.textSecondary,
+                    color: context.colors.textSecondary,
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Text(
-                    'Bloklangan: $formattedTime',
+                    l10n.blockedAtLabel(formattedTime),
                     style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
                   ),
                 ],
@@ -531,8 +548,8 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            style: TextButton.styleFrom(foregroundColor: AppColors.brand),
-            child: const Text('Tushundim'),
+            style: TextButton.styleFrom(foregroundColor: context.colors.brand),
+            child: Text(l10n.dismiss),
           ),
         ],
       ),
