@@ -422,11 +422,15 @@ public class AuthService : IAuthService
             var accessToken = _jwtService.GenerateToken(user, true);
             var refreshToken = GenerateRefreshToken();
 
+            // K1 — store only the SHA-256 hash of the refresh token. The
+            // plaintext is returned to the client (line below) and lives
+            // exclusively in its secure storage from this point. A DB leak
+            // cannot revive any existing session.
             var refreshTokenEntity = new RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
-                Token = refreshToken,
+                Token = RefreshTokenHasher.Hash(refreshToken),
                 ExpiresAt = DateTime.UtcNow.AddDays(_jwtSetting.RefreshTokenExpireDays),
                 IsUsed = false,
                 IsRevoked = false
