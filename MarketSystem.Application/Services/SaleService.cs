@@ -177,43 +177,8 @@ public partial class SaleService : ISaleService
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
-        return sales.Select(s => new SaleDto(
-            s.Id,
-            s.SellerId,
-            s.Seller?.FullName ?? "Unknown",
-            s.CustomerId,
-            s.Customer?.FullName,
-            s.Customer?.Phone,
-            s.Status.ToString(),
-            s.TotalAmount,
-            s.PaidAmount,
-            s.TotalAmount - s.PaidAmount,
-            s.CreatedAt,
-            s.SaleItems.Select(si => {
-                // ✅ ISEXTERNAL SHARTI - Product name olish
-                string productName;
-                string unit = "";
-                if (!si.IsExternal)
-                {
-                    productName = si.Product?.Name ?? "Unknown";
-                    unit = si.Product?.GetUnitName() ?? "";
-                }
-                else
-                {
-                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
-                }
-                return MapSaleItemToDto(si, productName, unit);
-            }).ToList(),
-            s.Payments.Select(p => new PaymentDto(
-                p.Id,
-                p.PaymentType.ToString().ToLowerInvariant(),
-                p.Amount,
-                p.CreatedAt,
-                null,
-                null,
-                null
-            )).ToList()
-        ));
+        // M7 — was an inline duplicate of MapSaleToDto; consolidated.
+        return sales.Select(MapSaleToDto);
     }
 
     public async Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
@@ -232,43 +197,8 @@ public partial class SaleService : ISaleService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return sales.Select(s => new SaleDto(
-            s.Id,
-            s.SellerId,
-            s.Seller?.FullName ?? "Unknown",
-            s.CustomerId,
-            s.Customer?.FullName,
-            s.Customer?.Phone,
-            s.Status.ToString(),
-            s.TotalAmount,
-            s.PaidAmount,
-            s.TotalAmount - s.PaidAmount,
-            s.CreatedAt,
-            s.SaleItems.Select(si => {
-                // ✅ ISEXTERNAL SHARTI - Product name olish
-                string productName;
-                string unit = "";
-                if (!si.IsExternal)
-                {
-                    productName = si.Product?.Name ?? "Unknown";
-                    unit = si.Product?.GetUnitName() ?? "";
-                }
-                else
-                {
-                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
-                }
-                return MapSaleItemToDto(si, productName, unit);
-            }).ToList(),
-            s.Payments.Select(p => new PaymentDto(
-                p.Id,
-                p.PaymentType.ToString().ToLowerInvariant(),
-                p.Amount,
-                p.CreatedAt,
-                null,
-                null,
-                null
-            )).ToList()
-        ));
+        // M7 — was an inline duplicate of MapSaleToDto; consolidated.
+        return sales.Select(MapSaleToDto);
     }
 
     public async Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
@@ -288,43 +218,8 @@ public partial class SaleService : ISaleService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return sales.Select(s => new SaleDto(
-            s.Id,
-            s.SellerId,
-            s.Seller?.FullName ?? "Unknown",
-            s.CustomerId,
-            s.Customer?.FullName,
-            s.Customer?.Phone,
-            s.Status.ToString(),
-            s.TotalAmount,
-            s.PaidAmount,
-            s.TotalAmount - s.PaidAmount,
-            s.CreatedAt,
-            s.SaleItems.Select(si => {
-                // ✅ ISEXTERNAL SHARTI - Product name olish
-                string productName;
-                string unit = "";
-                if (!si.IsExternal)
-                {
-                    productName = si.Product?.Name ?? "Unknown";
-                    unit = si.Product?.GetUnitName() ?? "";
-                }
-                else
-                {
-                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
-                }
-                return MapSaleItemToDto(si, productName, unit);
-            }).ToList(),
-            s.Payments.Select(p => new PaymentDto(
-                p.Id,
-                p.PaymentType.ToString().ToLowerInvariant(),
-                p.Amount,
-                p.CreatedAt,
-                null,
-                null,
-                null
-            )).ToList()
-        ));
+        // M7 — was an inline duplicate of MapSaleToDto; consolidated.
+        return sales.Select(MapSaleToDto);
     }
 
     public async Task<SaleDto> CreateSaleAsync(CreateSaleDto request, Guid sellerId, CancellationToken cancellationToken = default)
