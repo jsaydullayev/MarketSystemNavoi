@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/api_constants.dart';
+import '../../core/storage/token_storage.dart';
 import 'auth_service.dart';
 
 /// Carries the reason a market was administratively blocked. Surfaced through
@@ -116,45 +116,34 @@ class HttpService {
   }
 
   // Tokenlarni saqlash
+  //
+  // FAZA 2 — both tokens now live in platform-secure storage (Keychain /
+  // EncryptedSharedPreferences) via TokenStorage. The previous version
+  // wrote them in plain SharedPreferences AND logged the first 20 chars
+  // of each — a rooted device or a stray logcat dump on dev hardware
+  // surfaced enough of the token to be a real risk. The "saved YES/NO"
+  // confirmation read was theatre (the write above had just completed
+  // synchronously); it's removed along with the token-prefix logs.
   Future<void> saveTokens(String accessToken, String refreshToken) async {
-    debugPrint('=== SAVING TOKENS ===');
-    debugPrint('Access Token: ${accessToken.substring(0, 20)}...');
-    debugPrint('Refresh Token: ${refreshToken.substring(0, 20)}...');
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', accessToken);
-    await prefs.setString('refresh_token', refreshToken);
+    await TokenStorage.instance.save(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
     _accessToken = accessToken;
-
-    // Tekshirish: saqlanganni o'qib ko'ramiz
-    final saved = prefs.getString('access_token');
-    debugPrint('Token saved: ${saved != null ? "YES" : "NO"}');
-    debugPrint('====================');
   }
 
   Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    _accessToken = prefs.getString('access_token');
-
-    if (_accessToken case final token?) {
-      debugPrint(
-          '✅ Token from SharedPreferences: ${token.substring(0, 20)}...');
-    } else {
-      debugPrint('❌ NO TOKEN FOUND!');
-    }
+    _accessToken = await TokenStorage.instance.readAccess();
     return _accessToken;
   }
 
   Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('refresh_token');
+    return TokenStorage.instance.readRefresh();
   }
 
   // Tokenlarni tozalash
   Future<void> clearTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
-    await prefs.remove('refresh_token');
+    await TokenStorage.instance.clear();
     _accessToken = null;
   }
 
