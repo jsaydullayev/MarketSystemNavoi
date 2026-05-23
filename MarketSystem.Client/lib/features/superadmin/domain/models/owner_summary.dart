@@ -1,5 +1,29 @@
+import 'package:json_annotation/json_annotation.dart';
+import 'package:market_system_client/core/utils/json_converters.dart';
+
+part 'owner_summary.g.dart';
+
 /// Mirror of the backend's `OwnerSummaryDto`.
+@JsonSerializable()
 class OwnerSummary {
+  final String userId;
+  @JsonKey(defaultValue: '')
+  final String fullName;
+  @JsonKey(defaultValue: '')
+  final String username;
+  final String? phone;
+  @JsonKey(defaultValue: false)
+  final bool isActive;
+  final int? marketId;
+  final String? marketName;
+  /// True when the SuperAdmin has administratively blocked this owner's
+  /// market (e.g. non-payment). Defaulted false so older API responses
+  /// without the field decode safely.
+  @JsonKey(defaultValue: false)
+  final bool isMarketBlocked;
+  @UtcIsoDateTimeConverter()
+  final DateTime createdAt;
+
   OwnerSummary({
     required this.userId,
     required this.fullName,
@@ -12,30 +36,8 @@ class OwnerSummary {
     this.isMarketBlocked = false,
   });
 
-  final String userId;
-  final String fullName;
-  final String username;
-  final String? phone;
-  final bool isActive;
-  final int? marketId;
-  final String? marketName;
-  /// True when the SuperAdmin has administratively blocked this owner's
-  /// market (e.g. non-payment). Defaulted false so older API responses
-  /// without the field decode safely.
-  final bool isMarketBlocked;
-  final DateTime createdAt;
+  factory OwnerSummary.fromJson(Map<String, dynamic> json) =>
+      _$OwnerSummaryFromJson(json);
 
-  factory OwnerSummary.fromJson(Map<String, dynamic> json) {
-    return OwnerSummary(
-      userId: json['userId'] as String,
-      fullName: json['fullName'] as String? ?? '',
-      username: json['username'] as String? ?? '',
-      phone: json['phone'] as String?,
-      isActive: json['isActive'] as bool? ?? false,
-      marketId: json['marketId'] as int?,
-      marketName: json['marketName'] as String?,
-      isMarketBlocked: json['isMarketBlocked'] as bool? ?? false,
-      createdAt: DateTime.parse(json['createdAt'] as String).toUtc(),
-    );
-  }
+  Map<String, dynamic> toJson() => _$OwnerSummaryToJson(this);
 }
