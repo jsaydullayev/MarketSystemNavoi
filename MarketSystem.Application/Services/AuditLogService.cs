@@ -42,23 +42,7 @@ public class AuditLogService : IAuditLogService, IAuditLogQueryService
     {
         try
         {
-            var auditLog = new AuditLog
-            {
-                Id = Guid.NewGuid(),
-                EntityType = entityType,
-                EntityId = entityId,
-                Action = action,
-                // Guid.Empty from callers (e.g. LoginFailed where the username
-                // doesn't resolve to a real account) is normalised to NULL so
-                // the row doesn't violate the FK to Users.
-                UserId = userId == Guid.Empty ? null : userId,
-                MarketId = _currentMarketService.TryGetCurrentMarketId(),
-                Payload = payload != null ? JsonSerializer.Serialize(payload) : string.Empty,
-                IpAddress = _httpContextAccessor.HttpContext?
-                    .Connection.RemoteIpAddress?.ToString(),
-                CreatedAt = DateTime.UtcNow
-            };
-
+            var auditLog = BuildAuditLog(entityType, entityId, action, userId, payload);
             await _unitOfWork.AuditLogs.AddAsync(auditLog, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -74,6 +58,50 @@ public class AuditLogService : IAuditLogService, IAuditLogQueryService
                 entityType, entityId);
         }
     }
+
+    /// <summary>
+    /// P6 — stage an audit-log row on the SHARED DbContext WITHOUT issuing a
+    /// SaveChanges. The caller's next SaveChangesAsync batches the audit
+    /// INSERT alongside the business write, saving one round trip per hot
+    /// operation. Use this when:
+    /// <list type="bullet">
+    /// <item>The audit MUST be part of the same business transaction (audit
+    /// row commits / rolls back together with the business state).</item>
+    /// <item>The caller is going to call SaveChangesAsync within the next
+    /// few statements.</item>
+    /// </list>
+    /// For the post-transaction audit pattern (fire-and-forget), keep using
+    /// <see cref="LogActionAsync"/> so the audit error swallowing applies.
+    /// </summary>
+    public Task EnqueueActionAsync(
+        string entityType,
+        Guid entityId,
+        string action,
+        Guid userId,
+        object? payload = null,
+        CancellationToken cancellationToken = default)
+    {
+        var auditLog = BuildAuditLog(entityType, entityId, action, userId, payload);
+        return _unitOfWork.AuditLogs.AddAsync(auditLog, cancellationToken);
+    }
+
+    private AuditLog BuildAuditLog(string entityType, Guid entityId, string action, Guid userId, object? payload) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            EntityType = entityType,
+            EntityId = entityId,
+            Action = action,
+            // Guid.Empty from callers (e.g. LoginFailed where the username
+            // doesn't resolve to a real account) is normalised to NULL so
+            // the row doesn't violate the FK to Users.
+            UserId = userId == Guid.Empty ? null : userId,
+            MarketId = _currentMarketService.TryGetCurrentMarketId(),
+            Payload = payload != null ? JsonSerializer.Serialize(payload) : string.Empty,
+            IpAddress = _httpContextAccessor.HttpContext?
+                .Connection.RemoteIpAddress?.ToString(),
+            CreatedAt = DateTime.UtcNow
+        };
 
     public async Task LogSaleActionAsync(Guid saleId, string action, Guid userId, CancellationToken cancellationToken = default)
     {
