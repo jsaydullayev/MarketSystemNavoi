@@ -78,6 +78,14 @@ class UserService {
         }
       } else if (response.statusCode == 401) {
         throw Exception('Avtorizatsiya xatosi. Iltimos, qaytadan kiring.');
+      } else if (response.statusCode == 404) {
+        // G7 — backend S3 added market-scoping to UpdateProfileImage. The
+        // service now returns 404 when the looked-up user's MarketId doesn't
+        // match the caller's current market — most commonly a freshly-
+        // registered Owner who hasn't created their market yet. Surface
+        // a directed message instead of a generic 404.
+        throw Exception(
+            'Avval do\'kon yarating, keyin profil rasmini o\'zgartirishingiz mumkin.');
       } else {
         String errorMessage = 'Xatolik: ${response.statusCode}';
         try {
