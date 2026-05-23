@@ -113,7 +113,13 @@ public class MarketService : IMarketService
             }
         }
 
-        // 3. Create Market
+        // 3. Create Market AND link the owner atomically.
+        // Y4 — previously: two separate SaveChanges back-to-back. If the
+        // second one (linking owner.MarketId) failed for any reason, the
+        // Market row was already persisted but the owner believed they had
+        // none — their next register attempt would 23505 on the subdomain
+        // unique index, leaving them stuck. Wrap both writes in one
+        // transaction so either both land or neither does.
         var market = new Market
         {
             Id = 0, // Auto-increment
@@ -126,15 +132,15 @@ public class MarketService : IMarketService
             OwnerId = ownerId  // Set OwnerId to link market to owner
         };
 
-        _context.Markets.Add(market);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            _context.Markets.Add(market);
+            await _context.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Market created with ID: {MarketId}", market.Id);
-
-        // 4. Update Owner's MarketId
-        owner.MarketId = market.Id;
-        _unitOfWork.Users.Update(owner);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            owner.MarketId = market.Id;
+            _unitOfWork.Users.Update(owner);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }, cancellationToken);
 
         _logger.LogInformation("Owner {OwnerId} linked to market {MarketId}", ownerId, market.Id);
 
