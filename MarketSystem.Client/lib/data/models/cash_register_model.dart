@@ -1,7 +1,16 @@
+import 'package:json_annotation/json_annotation.dart';
+import 'package:market_system_client/core/utils/json_converters.dart';
+
+part 'cash_register_model.g.dart';
+
+@JsonSerializable()
 class CashRegisterModel {
   final String id;
+  @FlexibleDoubleConverter()
   final double currentBalance;
+  @IsoDateTimeConverter()
   final DateTime lastUpdated;
+  @JsonKey(defaultValue: [])
   final List<CashWithdrawalModel> withdrawals;
 
   CashRegisterModel({
@@ -11,28 +20,19 @@ class CashRegisterModel {
     required this.withdrawals,
   });
 
-  factory CashRegisterModel.fromJson(Map<String, dynamic> json) {
-    var withdrawalsList = <CashWithdrawalModel>[];
-    if (json['withdrawals'] != null) {
-      withdrawalsList = (json['withdrawals'] as List)
-          .map((i) => CashWithdrawalModel.fromJson(i))
-          .toList();
-    }
+  factory CashRegisterModel.fromJson(Map<String, dynamic> json) =>
+      _$CashRegisterModelFromJson(json);
 
-    return CashRegisterModel(
-      id: json['id'] ?? '',
-      currentBalance: (json['currentBalance'] ?? 0).toDouble(),
-      lastUpdated: DateTime.parse(
-          json['lastUpdated'] ?? DateTime.now().toIso8601String()),
-      withdrawals: withdrawalsList,
-    );
-  }
+  Map<String, dynamic> toJson() => _$CashRegisterModelToJson(this);
 }
 
+@JsonSerializable()
 class CashWithdrawalModel {
   final String id;
+  @FlexibleDoubleConverter()
   final double amount;
   final String comment;
+  @IsoDateTimeConverter()
   final DateTime withdrawalDate;
   final String? userName;
 
@@ -44,26 +44,28 @@ class CashWithdrawalModel {
     this.userName,
   });
 
-  factory CashWithdrawalModel.fromJson(Map<String, dynamic> json) {
-    return CashWithdrawalModel(
-      id: json['id'] ?? '',
-      amount: (json['amount'] ?? 0).toDouble(),
-      comment: json['comment'] ?? '',
-      withdrawalDate: DateTime.parse(
-          json['withdrawalDate'] ?? DateTime.now().toIso8601String()),
-      userName: json['userName'],
-    );
-  }
+  factory CashWithdrawalModel.fromJson(Map<String, dynamic> json) =>
+      _$CashWithdrawalModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CashWithdrawalModelToJson(this);
 }
 
+@JsonSerializable()
 class TodaySalesSummaryModel {
   final int totalSales;
+  @FlexibleDoubleConverter()
   final double totalAmount;
+  @FlexibleDoubleConverter()
   final double totalPaid;
+  @FlexibleDoubleConverter()
   final double cashPaid;
+  @FlexibleDoubleConverter()
   final double cardPaid;
+  @FlexibleDoubleConverter()
   final double clickPaid;
+  @FlexibleDoubleConverter()
   final double debtAmount;
+  @IsoDateTimeConverter()
   final DateTime date;
 
   TodaySalesSummaryModel({
@@ -77,44 +79,8 @@ class TodaySalesSummaryModel {
     required this.date,
   });
 
-  factory TodaySalesSummaryModel.fromJson(Map<String, dynamic> json) {
-    return TodaySalesSummaryModel(
-      totalSales: json['totalSales'] ?? 0,
-      totalAmount: json['totalAmount'] != null
-          ? (json['totalAmount'] is num
-              ? (json['totalAmount'] as num).toDouble()
-              : double.tryParse(json['totalAmount'].toString()) ?? 0.0)
-          : 0.0,
-      totalPaid: json['totalPaid'] != null
-          ? (json['totalPaid'] is num
-              ? (json['totalPaid'] as num).toDouble()
-              : double.tryParse(json['totalPaid'].toString()) ?? 0.0)
-          : 0.0,
-      cashPaid: json['cashPaid'] != null
-          ? (json['cashPaid'] is num
-              ? (json['cashPaid'] as num).toDouble()
-              : double.tryParse(json['cashPaid'].toString()) ?? 0.0)
-          : 0.0,
-      cardPaid: json['cardPaid'] != null
-          ? (json['cardPaid'] is num
-              ? (json['cardPaid'] as num).toDouble()
-              : double.tryParse(json['cardPaid'].toString()) ?? 0.0)
-          : 0.0,
-      clickPaid: json['clickPaid'] != null
-          ? (json['clickPaid'] is num
-              ? (json['clickPaid'] as num).toDouble()
-              : double.tryParse(json['clickPaid'].toString()) ?? 0.0)
-          : 0.0,
-      debtAmount: json['debtAmount'] != null
-          ? (json['debtAmount'] is num
-              ? (json['debtAmount'] as num).toDouble()
-              : double.tryParse(json['debtAmount'].toString()) ?? 0.0)
-          : 0.0,
-      date: json['date'] != null
-          ? (json['date'] is DateTime
-              ? json['date'] as DateTime
-              : DateTime.parse(json['date'].toString()))
-          : DateTime.now(),
-    );
-  }
+  factory TodaySalesSummaryModel.fromJson(Map<String, dynamic> json) =>
+      _$TodaySalesSummaryModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$TodaySalesSummaryModelToJson(this);
 }
