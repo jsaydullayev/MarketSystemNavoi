@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/validators/password_validator.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
@@ -421,13 +422,11 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                             () => _obscurePassword = !_obscurePassword),
                       ),
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return l10n.enterPassword;
-                      if (v.length < 8) {
-                        return l10n.superAdminPasswordMinLength;
-                      }
-                      return null;
-                    },
+                    // G2 — SuperAdmin-minted Owner passwords go through the
+                    // same backend StrongPasswordAttribute. The legacy
+                    // "length ≥ 8" check let the SuperAdmin mint a password
+                    // like "12345678" that the server now rejects.
+                    validator: (v) => PasswordValidator.validateNew(v, context),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   _Label(l10n.marketName),

@@ -10,6 +10,7 @@
 // call, same success/error snackbars, same role gating from AuthProvider.
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/validators/password_validator.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
@@ -177,13 +178,12 @@ class _AddUserSheetState extends State<AddUserSheet> {
                         icon: Icons.lock_rounded,
                         obscure: _obscPass,
                         onToggle: () => setState(() => _obscPass = !_obscPass),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return l10n.passwordRequired;
-                          }
-                          if (v.length < 6) return l10n.passwordMinLength;
-                          return null;
-                        },
+                        // G2 — share the policy with the backend's
+                        // StrongPasswordAttribute (8+ chars, ≥1 letter,
+                        // ≥1 digit). The old check (length ≥ 6, no
+                        // complexity) accepted passwords the server now
+                        // rejects.
+                        validator: (v) => PasswordValidator.validateNew(v, context),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       _SheetField(

@@ -174,7 +174,7 @@
   "welcomeScreenSubtitle": "Ваше комплексное решение для управления бизнесом",
   "lightMode": "Светлая",
   "usernameMinLength": "Имя пользователя минимум 3 символа",
-  "passwordMinLength": "Пароль минимум 6 символов",
+  "passwordMinLength": "Минимум 8 символов, 1 буква и 1 цифра",
   "passwordConfirm": "Подтвердите пароль",
   "passwordConfirmRequired": "Подтверждение пароля обязательно",
   "passwordMismatch": "Пароли не совпадают",
