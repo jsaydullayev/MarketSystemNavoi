@@ -1,16 +1,23 @@
-// Zakup Entity
-// Xarid (Zakup) obyekti - biznes mantik uchun asosiy model
-
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:market_system_client/core/utils/json_converters.dart';
+
+part 'zakup_entity.g.dart';
 
 /// Zakup Entity - xarid obyekti
+@JsonSerializable()
 class ZakupEntity extends Equatable {
   final String id;
   final String productId;
+  @JsonKey(defaultValue: '')
   final String productName;
+  @FlexibleDoubleConverter()
   final double quantity;
+  @FlexibleDoubleConverter()
   final double costPrice;
+  @IsoDateTimeConverter()
   final DateTime createdAt;
+  @JsonKey(defaultValue: "Noma'lum")
   final String createdBy;
 
   const ZakupEntity({
@@ -23,45 +30,14 @@ class ZakupEntity extends Equatable {
     required this.createdBy,
   });
 
-  /// JSON dan ZakupEntity yaratish
-  factory ZakupEntity.fromJson(Map<String, dynamic> json) {
-    return ZakupEntity(
-      id: json['id'] as String,
-      productId: json['productId'] as String,
-      productName: json['productName'] as String? ?? '',
-      quantity: (json['quantity'] as num).toDouble(),
-      costPrice: (json['costPrice'] as num).toDouble(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      createdBy: json['createdBy'] as String? ?? 'Noma\'lum',
-    );
-  }
+  factory ZakupEntity.fromJson(Map<String, dynamic> json) =>
+      _$ZakupEntityFromJson(json);
 
-  /// Narxni formatlash
-  String getFormattedCostPrice() {
-    return costPrice.toStringAsFixed(2);
-  }
+  Map<String, dynamic> toJson() => _$ZakupEntityToJson(this);
 
-  /// ZakupEntity ni JSON ga aylantirish
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'productId': productId,
-      'productName': productName,
-      'quantity': quantity,
-      'costPrice': costPrice,
-      'createdAt': createdAt.toIso8601String(),
-      'createdBy': createdBy,
-    };
-  }
+  String getFormattedCostPrice() => costPrice.toStringAsFixed(2);
 
   @override
-  List<Object?> get props => [
-        id,
-        productId,
-        productName,
-        quantity,
-        costPrice,
-        createdAt,
-        createdBy,
-      ];
+  List<Object?> get props =>
+      [id, productId, productName, quantity, costPrice, createdAt, createdBy];
 }

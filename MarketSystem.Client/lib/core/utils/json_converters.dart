@@ -79,3 +79,20 @@ class NullableIsoDateTimeConverter implements JsonConverter<DateTime?, dynamic> 
   dynamic toJson(DateTime? value) => value?.toIso8601String();
 }
 
+/// Like IsoDateTimeConverter but always returns a UTC DateTime.
+/// Used for fields where explicit UTC is semantically important
+/// (e.g. audit timestamps displayed in the SuperAdmin console).
+class UtcIsoDateTimeConverter implements JsonConverter<DateTime, dynamic> {
+  const UtcIsoDateTimeConverter();
+
+  @override
+  DateTime fromJson(dynamic value) {
+    if (value == null) return DateTime.now().toUtc();
+    if (value is DateTime) return value.toUtc();
+    return DateTime.parse(value.toString()).toUtc();
+  }
+
+  @override
+  dynamic toJson(DateTime value) => value.toIso8601String();
+}
+
