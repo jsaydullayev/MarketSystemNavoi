@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class ProductService {
   final AuthProvider authProvider;
@@ -19,7 +20,7 @@ class ProductService {
     if (response.statusCode == 200) {
       return List<dynamic>.from(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to load products: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load products');
     }
   }
 
@@ -30,7 +31,7 @@ class ProductService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load product');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load product');
     }
   }
 
@@ -59,7 +60,7 @@ class ProductService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to create product: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to create product');
     }
   }
 
@@ -90,7 +91,7 @@ class ProductService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to update product: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update product');
     }
   }
 
@@ -99,7 +100,7 @@ class ProductService {
         .delete('${ApiConstants.products}/DeleteProduct/$id');
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete product: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to delete product');
     }
   }
 
