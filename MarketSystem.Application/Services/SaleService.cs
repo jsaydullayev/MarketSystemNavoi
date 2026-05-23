@@ -1057,11 +1057,22 @@ public partial class SaleService : ISaleService
             sale.Status = SaleStatus.Cancelled;
             _unitOfWork.Sales.Update(sale);
 
-            // Close associated debt if exists
-            if (sale.Debt != null && sale.Debt.Status == DebtStatus.Open)
+            // S4 — close the associated debt cleanly. The previous code
+            // relied on `sale.Debt` being eagerly loaded; the query above
+            // does NOT include it, so `sale.Debt` was always null and the
+            // debt never closed when the sale was cancelled. The customer's
+            // total outstanding balance kept showing the cancelled sale's
+            // RemainingDebt — a real financial-correctness bug. Look the
+            // debt up directly, mark it Closed AND zero RemainingDebt so
+            // the customer's running total stays consistent.
+            var openDebts = await _unitOfWork.Debts.FindAsync(
+                d => d.SaleId == saleId && d.Status == DebtStatus.Open,
+                cancellationToken);
+            foreach (var debt in openDebts)
             {
-                sale.Debt.Status = DebtStatus.Closed;
-                _unitOfWork.Debts.Update(sale.Debt);
+                debt.Status = DebtStatus.Closed;
+                debt.RemainingDebt = 0;
+                _unitOfWork.Debts.Update(debt);
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -1553,6 +1564,12 @@ public partial class SaleService : ISaleService
     /// </summary>
     public async Task<SaleItemDto?> UpdateSaleItemPriceAsync(Guid saleItemId, UpdateSaleItemPriceDto request, CancellationToken cancellationToken = default)
     {
+        // S2 — guard against negative prices at the entry point. The
+        // recalculated Sale.TotalAmount would otherwise silently go negative
+        // and break every downstream report that sums TotalAmount.
+        if (request.NewPrice < 0)
+            throw new InvalidOperationException("Narx manfiy bo'lmasin");
+
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -1570,23 +1587,27 @@ public partial class SaleService : ISaleService
             if (sale == null || sale.MarketId != marketId)
                 throw new InvalidOperationException("Sotuv topilmadi");
 
+            // S2 — refuse to mutate prices on a finalised sale. Previously the
+            // method would happily overwrite SalePrice on a Paid / Debt /
+            // Cancelled sale, corrupting the historic financial total even
+            // though Sale.Xmin would block the eventual save — that's a
+            // 500 to the user instead of a clean 400. Status check first.
+            if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Debt)
+                throw new InvalidOperationException(
+                    "Narxni faqat Draft yoki Qarz holatidagi sotuvlarda o'zgartirish mumkin");
+
             // Update SaleItem price
-            var oldPrice = saleItem.SalePrice;
             saleItem.SalePrice = request.NewPrice;
             _unitOfWork.SaleItems.Update(saleItem);
 
-            // Recalculate Sale.TotalAmount
-            var allSaleItems = await _unitOfWork.SaleItems.FindAsync(
-                si => si.SaleId == sale.Id,
-                cancellationToken);
-            var newTotalAmount = 0m;
-            foreach (var item in allSaleItems)
-            {
-                newTotalAmount += item.SalePrice * item.Quantity;
-            }
-            sale.TotalAmount = newTotalAmount;
-            _unitOfWork.Sales.Update(sale);
-
+            // S2 — persist the SaleItem change first, then SUM straight from
+            // the DB. The old code walked tracked entities in memory which
+            // depended on EF identity-resolution semantics; aligning with
+            // AddSaleItem's pattern (SaveChanges → RecalculateSaleTotalAsync
+            // via SUM → SaveChanges) makes the result deterministic and
+            // race-protected by Sale.Xmin.
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await RecalculateSaleTotalAsync(sale, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Get product name for response

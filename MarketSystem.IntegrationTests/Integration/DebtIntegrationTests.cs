@@ -436,4 +436,103 @@ public class DebtIntegrationTests : TestBase
         finalSale!.PaidAmount.Should().BeGreaterThan(0m); // Credit was applied
         finalSale.PaidAmount.Should().BeLessOrEqualTo(finalSale.TotalAmount); // Not overpaid
     }
+
+    // S4 — CancelSale must close the linked debt cleanly.
+    [Fact]
+    public async Task CancelSale_WithOpenDebt_ClosesDebtAndZerosRemaining()
+    {
+        // Regression test for S4. Before the fix, CancelSaleAsync read
+        // sale.Debt as a nav property without eager-loading it, so the
+        // null check always short-circuited and the debt stayed Open with
+        // its original RemainingDebt — the customer's outstanding balance
+        // kept showing the cancelled sale forever.
+
+        var product = CreateTestProduct(costPrice: 100m, salePrice: 150m);
+        var items = new List<(Guid productId, decimal quantity, decimal price)>
+        {
+            (product.Id, 2, 150m)
+        };
+
+        // Sale of 300, only 100 paid → debt of 200.
+        var sale = await CreateSaleWithItemsAsync(
+            totalAmount: 300m,
+            paidAmount: 100m,
+            items: items,
+            isDebt: true);
+
+        ClearDbContext();
+        var debtBefore = await DbContext.Debts.FirstAsync(d => d.SaleId == sale.Id);
+        debtBefore.Status.Should().Be(DebtStatus.Open);
+        debtBefore.RemainingDebt.Should().Be(200m);
+
+        // Act — cancel the sale.
+        var actingAdminId = Guid.NewGuid();
+        var cancelled = await SaleService.CancelSaleAsync(sale.Id, actingAdminId);
+        cancelled.Should().NotBeNull();
+
+        // Assert — the debt must be Closed AND RemainingDebt=0 so it stops
+        // counting against the customer's outstanding balance.
+        ClearDbContext();
+        var debtAfter = await DbContext.Debts.FirstAsync(d => d.SaleId == sale.Id);
+        debtAfter.Status.Should().Be(DebtStatus.Closed);
+        debtAfter.RemainingDebt.Should().Be(0m,
+            "a cancelled sale's debt must no longer count against the customer's outstanding balance");
+    }
+
+    // S2 — UpdateSaleItemPrice business-rule guards.
+    [Fact]
+    public async Task UpdateSaleItemPrice_OnCancelledSale_Throws()
+    {
+        var product = CreateTestProduct(costPrice: 100m, salePrice: 150m);
+        var items = new List<(Guid productId, decimal quantity, decimal price)>
+        {
+            (product.Id, 1, 150m)
+        };
+        var sale = await CreateSaleWithItemsAsync(
+            totalAmount: 150m, paidAmount: 150m, items: items, isDebt: false);
+
+        // Move the sale to Cancelled directly — UpdateSaleItemPrice must refuse.
+        ClearDbContext();
+        var tracked = await DbContext.Sales.FirstAsync(s => s.Id == sale.Id);
+        tracked.Status = SaleStatus.Cancelled;
+        await DbContext.SaveChangesAsync();
+
+        var saleItem = await DbContext.SaleItems.FirstAsync(si => si.SaleId == sale.Id);
+
+        Func<Task> act = async () =>
+            await SaleService.UpdateSaleItemPriceAsync(
+                saleItem.Id,
+                new UpdateSaleItemPriceDto(saleItem.Id.ToString(), 999m, null));
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Draft*");
+    }
+
+    [Fact]
+    public async Task UpdateSaleItemPrice_NegativePrice_Throws()
+    {
+        var product = CreateTestProduct(costPrice: 100m, salePrice: 150m);
+        var items = new List<(Guid productId, decimal quantity, decimal price)>
+        {
+            (product.Id, 1, 150m)
+        };
+        var sale = await CreateSaleWithItemsAsync(
+            totalAmount: 150m, paidAmount: 150m, items: items, isDebt: false);
+
+        // Make sure the sale is in a status that WOULD otherwise allow editing.
+        ClearDbContext();
+        var tracked = await DbContext.Sales.FirstAsync(s => s.Id == sale.Id);
+        tracked.Status = SaleStatus.Draft;
+        await DbContext.SaveChangesAsync();
+
+        var saleItem = await DbContext.SaleItems.FirstAsync(si => si.SaleId == sale.Id);
+
+        Func<Task> act = async () =>
+            await SaleService.UpdateSaleItemPriceAsync(
+                saleItem.Id,
+                new UpdateSaleItemPriceDto(saleItem.Id.ToString(), -10m, null));
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*manfiy*");
+    }
 }
