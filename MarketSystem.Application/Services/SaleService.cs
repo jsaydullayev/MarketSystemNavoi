@@ -425,11 +425,26 @@ public partial class SaleService : ISaleService
                     resultSaleItem = saleItem;
                 }
 
-                // Persist the SaleItem change first, then recompute Sale.TotalAmount
-                // from the authoritative SUM over SaleItems. Replacing the old
-                // arithmetic `sale.TotalAmount = old - x + new` with a fresh SUM kills
-                // a race where two concurrent AddSaleItem calls each read a stale
-                // in-memory total and overwrite each other's increment.
+                // M9 — the two SaveChanges below are intentional and BOTH
+                // required for correctness:
+                //
+                //   1st SaveChanges: persists the new/updated SaleItem +
+                //      Product stock change to the DB so the row(s) become
+                //      visible to subsequent DB-side queries in this txn.
+                //   RecalculateSaleTotalAsync: runs a SERVER-side SUM over
+                //      SaleItems (not the in-memory tracked set), so it
+                //      sees the row we just persisted plus anything
+                //      another concurrent transaction has already committed.
+                //   2nd SaveChanges: writes the authoritative TotalAmount.
+                //
+                // The old "math" approach (`sale.TotalAmount += newQty * newPrice`)
+                // collapsed under concurrency because two callers could each
+                // read the same stale total and overwrite each other's delta.
+                // The Sale.Xmin concurrency token would catch the conflict on
+                // commit, but recovery requires reloading the entity and
+                // re-running the math — which the DB-SUM approach gives us
+                // for free. Net: 1 extra round trip in exchange for race-free
+                // totals.
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await RecalculateSaleTotalAsync(sale, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
