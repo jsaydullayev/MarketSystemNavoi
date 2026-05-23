@@ -2,6 +2,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Exceptions;
 using MarketSystem.Domain.Interfaces;
 
 namespace MarketSystem.Application.Services;
@@ -56,8 +57,12 @@ public class ShiftService : IShiftService
 
     public async Task<ShiftDto> CloseShiftAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        // M4 — typed exception so the global handler can return 409 Conflict
+        // with a stable `code` instead of a generic 400. The Flutter client
+        // pivots on the code to surface "Avval smenani oching" instead of
+        // a generic error toast.
         var open = await FindOpenShiftAsync(userId, cancellationToken)
-            ?? throw new InvalidOperationException("Ochiq smena topilmadi.");
+            ?? throw new ShiftNotOpenException(userId);
 
         open.ClosedAt = DateTime.UtcNow;
         _unitOfWork.Shifts.Update(open);

@@ -59,7 +59,9 @@ public class ShiftIntegrationTests : TestBase
     {
         var act = () => CreateService().CloseShiftAsync(TestUserId);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        // M4 — typed exception so the global handler can return 409 Conflict
+        // with code SHIFT_NOT_OPEN.
+        await act.Should().ThrowAsync<MarketSystem.Domain.Exceptions.ShiftNotOpenException>();
     }
 
     [Fact]

@@ -75,6 +75,16 @@ public class GlobalExceptionHandlerMiddleware
                 response.BlockedAt = lockedEx.LockedUntilUtc;
                 break;
 
+            case ShiftNotOpenException:
+                // 409 Conflict — the user is trying to close (or otherwise act
+                // on) a shift that isn't open. Distinct `code` so the Flutter
+                // client surfaces "Avval smenani oching" instead of falling
+                // through to the generic 400 InvalidOperation branch.
+                context.Response.StatusCode = (int)HttpStatusCode.Conflict;
+                response.Message = "Ochiq smena topilmadi. Avval smenani oching.";
+                response.Code = "SHIFT_NOT_OPEN";
+                break;
+
             case InvalidOperationException:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 response.Message = isDev ? exception.Message : "So'rov noto'g'ri. Iltimos, ma'lumotlarni tekshiring.";
