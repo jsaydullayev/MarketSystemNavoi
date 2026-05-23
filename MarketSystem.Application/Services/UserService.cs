@@ -164,9 +164,20 @@ public class UserService : IUserService
 
     public async Task<UserDto?> UpdateProfileImageAsync(Guid userId, UpdateProfileImageDto request, CancellationToken cancellationToken = default)
     {
-        // Profile image update uchun faqat ID bo'yicha qidiramiz - foydalanuvchi o'z profil rasmini o'zgartira oladi
-        // MarketId tekshiruvi shart emas, chunki JWT token'dan userId olinmoqda
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        // S3 — scope the user lookup to the caller's current market. The old
+        // code trusted "the userId comes from the JWT, that's enough" — true
+        // for the request body, but every other UserService method also
+        // verifies the looked-up user lives in the caller's market. A token
+        // replayed onto the wrong subdomain (e.g. a stolen Owner-A token
+        // hitting tenant-B's host) would otherwise still let the attacker
+        // mutate their OWN profile image while running under tenant B's
+        // context. SuperAdmin (MarketId NULL) keeps working: we use
+        // TryGetCurrentMarketId so the null case matches user.MarketId IS NULL.
+        var currentMarketId = _currentMarketService.TryGetCurrentMarketId();
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == userId && u.MarketId == currentMarketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
 
         if (user is null)
             return null;
