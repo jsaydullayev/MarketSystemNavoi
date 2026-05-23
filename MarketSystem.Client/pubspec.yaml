@@ -71,6 +71,11 @@ dev_dependencies:
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
   flutter_launcher_icons: ^0.14.3
+  # FAZA 2 — bloc tests. `bloc_test` gives us `blocTest()` for transition
+  # assertions; `mocktail` is the null-safety-friendly mock library that
+  # doesn't need codegen (unlike Mockito). Both are dev-only.
+  bloc_test: ^9.1.5
+  mocktail: ^1.0.4
 
 flutter_launcher_icons:
   android: true
