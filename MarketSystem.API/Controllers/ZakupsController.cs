@@ -16,11 +16,13 @@ public class ZakupsController : ControllerBase
 {
     private readonly IZakupService _zakupService;
     private readonly IExcelService _excelService;
+    private readonly ITashkentClock _clock;
 
-    public ZakupsController(IZakupService zakupService, IExcelService excelService)
+    public ZakupsController(IZakupService zakupService, IExcelService excelService, ITashkentClock clock)
     {
         _zakupService = zakupService;
         _excelService = excelService;
+        _clock = clock;
     }
 
     private bool IsSeller()
@@ -153,7 +155,7 @@ public class ZakupsController : ControllerBase
         return File(
             fileContent,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"Xaridlar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            $"Xaridlar_{_clock.NowLocal:yyyyMMdd_HHmmss}.xlsx"
         );
     }
 }

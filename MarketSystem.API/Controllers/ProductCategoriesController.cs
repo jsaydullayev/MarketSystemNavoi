@@ -14,11 +14,13 @@ public class ProductCategoriesController : ControllerBase
 {
     private readonly IProductCategoryService _categoryService;
     private readonly IExcelService _excelService;
+    private readonly ITashkentClock _clock;
 
-    public ProductCategoriesController(IProductCategoryService categoryService, IExcelService excelService)
+    public ProductCategoriesController(IProductCategoryService categoryService, IExcelService excelService, ITashkentClock clock)
     {
         _categoryService = categoryService;
         _excelService = excelService;
+        _clock = clock;
     }
 
     [HttpGet]
@@ -130,7 +132,7 @@ public class ProductCategoriesController : ControllerBase
         return File(
             fileContent,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            $"{sheetName}_{_clock.NowLocal:yyyyMMdd_HHmmss}.xlsx"
         );
     }
 }

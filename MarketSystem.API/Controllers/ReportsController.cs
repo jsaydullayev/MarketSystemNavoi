@@ -536,7 +536,7 @@ public class ReportsController : ControllerBase
                 workbook.SaveAs(stream);
                 stream.Position = 0;
                 var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                var fileName = (isRu ? "otchet_" : "hisobot_") + $"{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                var fileName = (isRu ? "otchet_" : "hisobot_") + $"{TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _tashkent):yyyyMMdd_HHmmss}.xlsx";
 
                 _logger.LogInformation("Successfully exported comprehensive report to Excel");
                 return File(stream, contentType, fileName);

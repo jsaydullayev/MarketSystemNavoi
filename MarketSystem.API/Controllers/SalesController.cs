@@ -18,13 +18,15 @@ public class SalesController : ControllerBase
     private readonly ILogger<SalesController> _logger;
     private readonly IReportService _reportService;
     private readonly IExcelService _excelService;
+    private readonly ITashkentClock _clock;
 
-    public SalesController(ISaleService saleService, ILogger<SalesController> logger, IReportService reportService, IExcelService excelService)
+    public SalesController(ISaleService saleService, ILogger<SalesController> logger, IReportService reportService, IExcelService excelService, ITashkentClock clock)
     {
         _saleService = saleService;
         _logger = logger;
         _reportService = reportService;
         _excelService = excelService;
+        _clock = clock;
     }
 
     [HttpGet("{id}")]
@@ -397,7 +399,7 @@ public class SalesController : ControllerBase
             return File(
                 fileContent,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                $"{sheetName}_{_clock.NowLocal:yyyyMMdd_HHmmss}.xlsx"
             );
         }
         catch (Exception ex)
@@ -426,7 +428,7 @@ public class SalesController : ControllerBase
             return File(
                 pdfBytes,
                 "application/pdf",
-                $"Sotuvlar_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+                $"Sotuvlar_{_clock.NowLocal:yyyyMMdd_HHmmss}.pdf"
             );
         }
         catch (InvalidOperationException ex)
@@ -487,7 +489,7 @@ public class SalesController : ControllerBase
             var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole, lang);
 
             var sale = await _saleService.GetSaleByIdAsync(id);
-            var fileName = $"Faktura_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            var fileName = $"Faktura_{id}_{_clock.NowLocal:yyyyMMdd_HHmmss}.pdf";
 
             _logger.LogInformation("Invoice generated successfully for sale {SaleId}", id);
 
