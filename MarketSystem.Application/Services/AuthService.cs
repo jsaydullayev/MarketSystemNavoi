@@ -23,6 +23,14 @@ public class AuthService : IAuthService
     private readonly IAuditLogService _auditLogService;
     private readonly ILoginAttemptTracker _loginAttempts;
 
+    // S6 — a real BCrypt hash we verify against when the username is unknown
+    // so the response time is indistinguishable from a real-user-wrong-password
+    // path (BCrypt.Verify is the dominant cost — ~100 ms at cost factor 11).
+    // Computed once at type init so the value's well-formed; we never compare
+    // any real input against it and the original plaintext is discarded.
+    private static readonly string DummyBcryptHash =
+        BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString());
+
     public AuthService(
         IUnitOfWork unitOfWork,
         IJwtService jwtService,
@@ -103,6 +111,13 @@ public class AuthService : IAuthService
 
         if (candidates.Count == 0)
         {
+            // S6 — timing-attack mitigation. Without this, a missing-username
+            // path returns ~instantly while a real-username-wrong-password
+            // path takes the BCrypt.Verify hit (~100ms). That gap lets an
+            // attacker enumerate valid usernames just by measuring latency.
+            // Burn one verify against a fixed dummy hash so both paths spend
+            // roughly the same wall time. We discard the result.
+            _ = BCrypt.Net.BCrypt.Verify(request.Password, DummyBcryptHash);
             _logger.LogWarning("User not found or inactive: {Username}", request.Username);
             return await RejectAndMaybeLockAsync();
         }
@@ -272,8 +287,30 @@ public class AuthService : IAuthService
         var refreshToken = await _unitOfWork.RefreshTokens
             .GetByTokenAsync(request.RefreshToken, cancellationToken);
 
-        if (refreshToken is null || refreshToken.IsUsed || refreshToken.IsRevoked || refreshToken.ExpiresAt < DateTime.UtcNow)
+        if (refreshToken is null || refreshToken.ExpiresAt < DateTime.UtcNow)
             return null;
+
+        // S1 — refresh-token rotation reuse detection (RFC 6749 §10.4 / OAuth
+        // best-current-practice). If someone presents an ALREADY-USED or
+        // REVOKED token, that's a strong signal of theft: the legitimate
+        // user rotated it (or we revoked it on another security event) and
+        // a second copy is now in the attacker's hand. Don't just refuse —
+        // burn the entire family for that user so the attacker can't keep
+        // refreshing with another stolen token from the same chain.
+        if (refreshToken.IsUsed || refreshToken.IsRevoked)
+        {
+            _logger.LogWarning(
+                "Refresh-token reuse detected for user {UserId} (token IsUsed={IsUsed}, IsRevoked={IsRevoked}). " +
+                "Revoking ALL refresh tokens for this user as a defensive measure.",
+                refreshToken.UserId, refreshToken.IsUsed, refreshToken.IsRevoked);
+            await _unitOfWork.RefreshTokens.RevokeAllForUserAsync(refreshToken.UserId, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.Auth, refreshToken.UserId, AuditActions.LoginFailed, Guid.Empty,
+                new { reason = "refresh_token_reuse_detected", tokenId = refreshToken.Id },
+                cancellationToken);
+            return null;
+        }
 
         // Ensure the refresh token belongs to the same user as the access token.
         if (refreshToken.UserId != userId)
