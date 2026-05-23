@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
+import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
 import 'http_service.dart';
-import '../../core/constants/api_constants.dart';
 import '../models/profit_model.dart';
 
 class ReportService {
@@ -24,7 +25,7 @@ class ReportService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load report: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load report');
     }
   }
 
@@ -38,7 +39,7 @@ class ReportService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load daily report: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load daily report');
     }
   }
 
@@ -54,7 +55,7 @@ class ReportService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load period report: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load period report');
     }
   }
 
@@ -75,11 +76,11 @@ class ReportService {
         throw Exception('Null response body');
       }
       return ProfitSummaryModel.fromJson(decoded as Map<String, dynamic>);
-    } else if (response.statusCode == 403) {
-      throw Exception('Sizga bu ma\'lumotni ko\'rish huquqi yo\'q');
-    } else {
-      throw Exception('Failed to load profit summary: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(response,
+        fallbackMessage: response.statusCode == 403
+            ? 'Sizga bu ma\'lumotni ko\'rish huquqi yo\'q'
+            : 'Failed to load profit summary');
   }
 
   // Get cash balance - Owner only
@@ -90,11 +91,11 @@ class ReportService {
 
     if (response.statusCode == 200) {
       return CashBalanceModel.fromJson(jsonDecode(response.body));
-    } else if (response.statusCode == 403) {
-      throw Exception('Sizga bu ma\'lumotni ko\'rish huquqi yo\'q');
-    } else {
-      throw Exception('Failed to load cash balance: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(response,
+        fallbackMessage: response.statusCode == 403
+            ? 'Sizga bu ma\'lumotni ko\'rish huquqi yo\'q'
+            : 'Failed to load cash balance');
   }
 
   // Get daily sales list - Role-based filtering
@@ -107,7 +108,7 @@ class ReportService {
     if (response.statusCode == 200) {
       return DailySalesListModel.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to load daily sales list: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load daily sales list');
     }
   }
 
@@ -126,13 +127,12 @@ class ReportService {
       if (data == null) return [];
       final items = data['saleItems'] as List<dynamic>? ?? [];
       return items.map((item) => item as Map<String, dynamic>).toList();
-    } else if (response.statusCode == 403) {
-      throw Exception('Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin');
-    } else if (response.statusCode == 401) {
-      throw Exception('Avtorizatsiya xatosi: Tizimga qayta kiring');
-    } else {
-      throw Exception('Kunlik savdo detallarini yuklashda xatolik: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(response, fallbackMessage: switch (response.statusCode) {
+      403 => 'Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin',
+      401 => 'Avtorizatsiya xatosi: Tizimga qayta kiring',
+      _ => 'Kunlik savdo detallarini yuklashda xatolik',
+    });
   }
 
   /// Download the daily report as raw Excel bytes so the caller can save/open
@@ -172,11 +172,11 @@ class ReportService {
       }
       return WeeklySeries.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>);
-    } else if (response.statusCode == 403) {
-      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
-    } else {
-      throw Exception('Failed to load weekly series: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(response,
+        fallbackMessage: response.statusCode == 403
+            ? "Sizga bu ma'lumotni ko'rish huquqi yo'q"
+            : 'Failed to load weekly series');
   }
 
   /// Top-N products in the selected period, ranked by quantity / revenue /
@@ -198,11 +198,11 @@ class ReportService {
       }
       return TopProducts.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>);
-    } else if (response.statusCode == 403) {
-      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
-    } else {
-      throw Exception('Failed to load top products: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(response,
+        fallbackMessage: response.statusCode == 403
+            ? "Sizga bu ma'lumotni ko'rish huquqi yo'q"
+            : 'Failed to load top products');
   }
 
   /// Per-staff sales metrics for the period. Backs the Users list "BUGUN
@@ -219,12 +219,11 @@ class ReportService {
       }
       return StaffPerformance.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>);
-    } else if (response.statusCode == 403) {
-      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
-    } else {
-      throw Exception(
-          'Failed to load staff performance: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(response,
+        fallbackMessage: response.statusCode == 403
+            ? "Sizga bu ma'lumotni ko'rish huquqi yo'q"
+            : 'Failed to load staff performance');
   }
 
   /// Current user's own sales metrics for the period. Backs the Seller
@@ -241,10 +240,8 @@ class ReportService {
       }
       return MyPerformance.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>);
-    } else {
-      throw Exception(
-          'Failed to load my performance: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load my performance');
   }
 }
 

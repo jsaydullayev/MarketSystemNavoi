@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class UserService {
   final AuthProvider authProvider;
@@ -18,7 +19,7 @@ class UserService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load profile: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load profile');
     }
   }
 
@@ -40,7 +41,7 @@ class UserService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to update profile: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update profile');
     }
   }
 
@@ -120,7 +121,7 @@ class UserService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
-    throw Exception('Failed to load permissions: ${response.statusCode}');
+    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load permissions');
   }
 
   /// Overwrites a user's explicit permission set. Pass an empty list to reset
@@ -135,11 +136,6 @@ class UserService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
-    String message = 'Failed to update permissions: ${response.statusCode}';
-    try {
-      final err = jsonDecode(response.body);
-      message = err['message']?.toString() ?? message;
-    } catch (_) {}
-    throw Exception(message);
+    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update permissions');
   }
 }
