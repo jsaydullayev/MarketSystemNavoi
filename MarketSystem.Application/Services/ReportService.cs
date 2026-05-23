@@ -2036,8 +2036,10 @@ public class ReportService : IReportService
     /// <summary>
     /// Per-staff sales metrics for the period. Includes staff with zero sales
     /// so the page can show the whole team (otherwise a quiet seller would
-    /// silently disappear from the leaderboard).
-    /// Shift fields are placeholders (0 / false) until a Shift entity lands.
+    /// silently disappear from the leaderboard). Shift counts come from the
+    /// Shift entity — sessions opened inside the period count; the
+    /// <c>IsActiveShift</c> flag also catches sessions that opened earlier
+    /// and are still open right now.
     /// </summary>
     public async Task<StaffPerformanceDto> GetStaffPerformanceAsync(
         string period, CancellationToken cancellationToken = default)
@@ -2060,6 +2062,27 @@ public class ReportService : IReportService
             .GroupBy(s => s.SellerId)
             .ToDictionary(g => g.Key, g => (count: g.Count(), revenue: g.Sum(s => s.TotalAmount)));
 
+        // Pull the shifts in one round-trip and bucket them by user. The
+        // predicate keeps it cheap: "either opened in this period, or still
+        // open right now". A seller who clocked in last week and never
+        // closed shows IsActiveShift=true even if ShiftCount stays 0 for
+        // the current week.
+        var shifts = (await _unitOfWork.Shifts.FindAsync(
+            sh => sh.MarketId == marketId &&
+                  ((sh.OpenedAt >= rangeStartUtc && sh.OpenedAt < rangeEndUtc)
+                   || sh.ClosedAt == null),
+            cancellationToken)).ToList();
+
+        var shiftCountByUser = shifts
+            .Where(sh => sh.OpenedAt >= rangeStartUtc && sh.OpenedAt < rangeEndUtc)
+            .GroupBy(sh => sh.UserId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var activeShiftUsers = shifts
+            .Where(sh => sh.ClosedAt == null)
+            .Select(sh => sh.UserId)
+            .ToHashSet();
+
         var rows = new List<StaffRow>();
         foreach (var u in users)
         {
@@ -2072,8 +2095,8 @@ public class ReportService : IReportService
                 SaleCount: stats.Item1,
                 Revenue: stats.Item2,
                 AverageCheck: stats.Item1 == 0 ? 0m : stats.Item2 / stats.Item1,
-                ShiftCount: 0,        // TODO: wire when Shift entity exists
-                IsActiveShift: false  // TODO: wire when Shift entity exists
+                ShiftCount: shiftCountByUser.TryGetValue(u.Id, out var sc) ? sc : 0,
+                IsActiveShift: activeShiftUsers.Contains(u.Id)
             ));
         }
 

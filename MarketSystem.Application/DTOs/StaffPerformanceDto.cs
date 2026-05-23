@@ -21,8 +21,8 @@ public record StaffPerformanceDto(
 /// <param name="SaleCount">Distinct sales count attributed to this seller.</param>
 /// <param name="Revenue">Sum of <c>Sale.TotalAmount</c>.</param>
 /// <param name="AverageCheck">Revenue / SaleCount, or 0 when SaleCount = 0.</param>
-/// <param name="ShiftCount">Currently always 0 — no <c>Shift</c> entity exists yet (TODO: wire when shift tracking lands).</param>
-/// <param name="IsActiveShift">Currently always false — see <see cref="ShiftCount"/>.</param>
+/// <param name="ShiftCount">Distinct <c>Shift</c> sessions this user opened inside the period.</param>
+/// <param name="IsActiveShift">True when the user currently has an open shift — even if it opened before the period started.</param>
 public record StaffRow(
     int Rank,
     string UserId,
