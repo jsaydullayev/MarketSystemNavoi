@@ -17,11 +17,13 @@ public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
     private readonly IExcelService _excelService;
+    private readonly ITashkentClock _clock;
 
-    public ProductsController(IProductService productService, IExcelService excelService)
+    public ProductsController(IProductService productService, IExcelService excelService, ITashkentClock clock)
     {
         _productService = productService;
         _excelService = excelService;
+        _clock = clock;
     }
 
     [HttpGet("{id}")]
@@ -181,7 +183,7 @@ public class ProductsController : ControllerBase
         return File(
             fileContent,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            $"{sheetName}_{_clock.NowLocal:yyyyMMdd_HHmmss}.xlsx"
         );
     }
 

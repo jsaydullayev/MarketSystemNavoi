@@ -995,7 +995,7 @@ public class ReportService : IReportService
         try
         {
             _logger.LogInformation($"[ExportSalesListToPdfAsync] Starting PDF generation for {reportItems.Count} items");
-            return RenderSalesListPdf(reportItems, startDate, endDate, includeProfit, includeCost, totalSales, totalProfit, lang);
+            return RenderSalesListPdf(reportItems, startDate, endDate, includeProfit, includeCost, totalSales, totalProfit, _clock.NowLocal, lang);
         }
         catch (Exception ex)
         {
@@ -1016,6 +1016,7 @@ public class ReportService : IReportService
         bool includeCost,
         decimal totalSales,
         decimal totalProfit,
+        DateTime generatedAtLocal,
         string lang = "uz")
     {
         bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
@@ -1042,7 +1043,7 @@ public class ReportService : IReportService
                         col.Item().PaddingTop(2).Text(period).FontSize(9).FontColor(PdfTheme.BrandTint);
                     });
                     row.ConstantItem(180).AlignRight().AlignBottom()
-                        .Text($"{L("Yaratilgan: ", "Создан: ")}{DateTime.Now:dd.MM.yyyy HH:mm}")
+                        .Text($"{L("Yaratilgan: ", "Создан: ")}{generatedAtLocal:dd.MM.yyyy HH:mm}")
                         .FontSize(8).FontColor(PdfTheme.BrandTint);
                 });
 
@@ -1169,7 +1170,7 @@ public class ReportService : IReportService
                 report.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger));
 
         return RenderSummaryReportPdf(L("KUNLIK HISOBOT", "ДНЕВНОЙ ОТЧЁТ"), date.ToString("dd.MM.yyyy"),
-            kpis, report.PaymentBreakdown, lang);
+            kpis, report.PaymentBreakdown, _clock.NowLocal, lang);
     }
 
     public async Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
@@ -1192,13 +1193,13 @@ public class ReportService : IReportService
                 report.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger));
 
         var period = $"{request.StartDate:dd.MM.yyyy} — {request.EndDate:dd.MM.yyyy}";
-        return RenderSummaryReportPdf(L("DAVRIY HISOBOT", "ОТЧЁТ ЗА ПЕРИОД"), period, kpis, report.PaymentBreakdown, lang);
+        return RenderSummaryReportPdf(L("DAVRIY HISOBOT", "ОТЧЁТ ЗА ПЕРИОД"), period, kpis, report.PaymentBreakdown, _clock.NowLocal, lang);
     }
 
     public async Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
     {
         var report = await GetComprehensiveReportAsync(date, userRole, cancellationToken);
-        return RenderComprehensiveReportPdf(report, date.ToString("dd.MM.yyyy"), lang);
+        return RenderComprehensiveReportPdf(report, date.ToString("dd.MM.yyyy"), _clock.NowLocal, lang);
     }
 
     /// <summary>
@@ -1209,6 +1210,7 @@ public class ReportService : IReportService
         string title, string period,
         IReadOnlyList<(string Label, string Value, string Accent)> kpis,
         IReadOnlyList<PaymentBreakdownDto> payments,
+        DateTime generatedAtLocal,
         string lang = "uz")
     {
         bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
@@ -1222,7 +1224,7 @@ public class ReportService : IReportService
                 page.Margin(0);
                 page.DefaultTextStyle(x => x.FontSize(10).FontColor(PdfTheme.Ink));
 
-                page.Header().Element(h => ReportHeaderBand(h, title, period, isRu));
+                page.Header().Element(h => ReportHeaderBand(h, title, period, isRu, generatedAtLocal));
 
                 page.Content().PaddingHorizontal(32).PaddingTop(22).Column(column =>
                 {
@@ -1256,7 +1258,7 @@ public class ReportService : IReportService
     /// Renders the comprehensive report — daily summary KPIs, per-seller table
     /// and an inventory overview. Pure rendering; unit-testable.
     /// </summary>
-    internal static byte[] RenderComprehensiveReportPdf(ComprehensiveReportDto report, string dateLabel, string lang = "uz")
+    internal static byte[] RenderComprehensiveReportPdf(ComprehensiveReportDto report, string dateLabel, DateTime generatedAtLocal, string lang = "uz")
     {
         bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
         string L(string uz, string ru) => isRu ? ru : uz;
@@ -1271,7 +1273,7 @@ public class ReportService : IReportService
                 page.Margin(0);
                 page.DefaultTextStyle(x => x.FontSize(9.5f).FontColor(PdfTheme.Ink));
 
-                page.Header().Element(h => ReportHeaderBand(h, L("TO'LIQ HISOBOT", "ПОЛНЫЙ ОТЧЁТ"), dateLabel, isRu));
+                page.Header().Element(h => ReportHeaderBand(h, L("TO'LIQ HISOBOT", "ПОЛНЫЙ ОТЧЁТ"), dateLabel, isRu, generatedAtLocal));
 
                 page.Content().PaddingHorizontal(32).PaddingTop(20).Column(column =>
                 {
@@ -1345,7 +1347,7 @@ public class ReportService : IReportService
     }
 
     // ── Report rendering helpers ──
-    private static void ReportHeaderBand(IContainer header, string title, string subtitle, bool isRu)
+    private static void ReportHeaderBand(IContainer header, string title, string subtitle, bool isRu, DateTime generatedAtLocal)
     {
         header.Background(PdfTheme.Brand).PaddingVertical(16).PaddingHorizontal(32).Row(row =>
         {
@@ -1355,7 +1357,7 @@ public class ReportService : IReportService
                 col.Item().PaddingTop(2).Text(subtitle).FontSize(10).FontColor(PdfTheme.BrandTint);
             });
             row.ConstantItem(170).AlignRight().AlignBottom()
-                .Text($"{(isRu ? "Создан: " : "Yaratilgan: ")}{DateTime.Now:dd.MM.yyyy HH:mm}")
+                .Text($"{(isRu ? "Создан: " : "Yaratilgan: ")}{generatedAtLocal:dd.MM.yyyy HH:mm}")
                 .FontSize(8).FontColor(PdfTheme.BrandTint);
         });
     }

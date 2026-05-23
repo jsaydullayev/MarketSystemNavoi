@@ -16,6 +16,11 @@ namespace MarketSystem.IntegrationTests.Integration;
 /// </summary>
 public class PdfExportTests
 {
+    // Fixed Tashkent-local "generated at" so the PDF byte stream is
+    // reproducible — the renderer used to call DateTime.Now which made
+    // every test run print a different timestamp.
+    private static readonly DateTime FixedNow = new(2026, 5, 13, 17, 0, 0);
+
     private static void AssertValidPdf(byte[] bytes)
     {
         bytes.Should().NotBeNullOrEmpty();
@@ -100,28 +105,28 @@ public class PdfExportTests
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), new DateTime(2026, 5, 13), new DateTime(2026, 5, 13),
             includeProfit: true, includeCost: true,
-            totalSales: 515500m, totalProfit: 50000m));
+            totalSales: 515500m, totalProfit: 50000m, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_SellerView_NoCostNoProfitColumns_IsValid()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), null, null,
             includeProfit: false, includeCost: false,
-            totalSales: 515500m, totalProfit: 0m));
+            totalSales: 515500m, totalProfit: 0m, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_EmptyList_RendersNoDataMessage()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             new List<ReportService.SalesReportItem>(), null, null,
             includeProfit: true, includeCost: true,
-            totalSales: 0m, totalProfit: 0m));
+            totalSales: 0m, totalProfit: 0m, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_RussianLocale_OwnerView_IsValid()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), new DateTime(2026, 5, 13), new DateTime(2026, 5, 13),
             includeProfit: true, includeCost: true,
-            totalSales: 515500m, totalProfit: 50000m, lang: "ru"));
+            totalSales: 515500m, totalProfit: 50000m, generatedAtLocal: FixedNow, lang: "ru"));
 
     // ---- Daily / period summary report ----
 
@@ -143,7 +148,7 @@ public class PdfExportTests
         };
 
         AssertValidPdf(ReportService.RenderSummaryReportPdf(
-            "KUNLIK HISOBOT", "13.05.2026", kpis, payments));
+            "KUNLIK HISOBOT", "13.05.2026", kpis, payments, FixedNow));
     }
 
     [Fact]
@@ -151,7 +156,7 @@ public class PdfExportTests
         => AssertValidPdf(ReportService.RenderSummaryReportPdf(
             "DAVRIY HISOBOT", "01.05.2026 — 31.05.2026",
             new List<(string, string, string)> { ("Jami savdo", "0 so'm", "#0F172A") },
-            new List<PaymentBreakdownDto>()));
+            new List<PaymentBreakdownDto>(), FixedNow));
 
     // ---- Comprehensive report ----
 
@@ -172,6 +177,6 @@ public class PdfExportTests
             new List<InventoryReportDto>(),
             10_000_000m, 14_000_000m, 42, 14_000_000m, 3, 1);
 
-        AssertValidPdf(ReportService.RenderComprehensiveReportPdf(report, "13.05.2026"));
+        AssertValidPdf(ReportService.RenderComprehensiveReportPdf(report, "13.05.2026", FixedNow));
     }
 }
