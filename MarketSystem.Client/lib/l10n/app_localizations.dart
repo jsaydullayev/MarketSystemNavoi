@@ -5072,20 +5072,13 @@ abstract class AppLocalizations {
   /// **'Boshlangan: {time}'**
   String shiftStartedAt(String time);
 
-  /// G4 — surfaced when the backend returns HTTP 409 with
-  /// `code: SHIFT_NOT_OPEN` (the seller tried to close a shift that
-  /// was never opened, or a POS endpoint refused because no shift is
-  /// active). The accompanying snackbar usually carries a "Smenani
-  /// ochish" CTA.
+  /// No description provided for @shiftNotOpenError.
   ///
   /// In uz, this message translates to:
   /// **'Ochiq smena topilmadi. Avval smenani oching.'**
   String get shiftNotOpenError;
 
-  /// G5 — surfaced when the backend returns HTTP 409 from an
-  /// optimistic-concurrency conflict (xmin token mismatch on Sale /
-  /// CashRegister / Debt). The user's local view is stale; the screen
-  /// reloads in the background so the next retry sees fresh data.
+  /// No description provided for @concurrentChangeError.
   ///
   /// In uz, this message translates to:
   /// **'Ma\'lumot boshqa foydalanuvchi tomonidan o\'zgartirildi. Sahifani yangilang va qaytadan urinib ko\'ring.'**

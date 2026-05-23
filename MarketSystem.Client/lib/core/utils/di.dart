@@ -3,17 +3,9 @@
 library;
 
 import 'package:get_it/get_it.dart';
-import 'package:market_system_client/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:market_system_client/features/auth/domain/repositories/auth_repository_interface.dart';
 
 // Handlers
-import '../handlers/auth_handler.dart';
 import '../handlers/navigation_handler.dart';
-import '../handlers/network_handler.dart';
-import '../handlers/storage_handler.dart';
-
-// Constants
-import '../constants/api_constants.dart';
 
 // Providers
 import '../providers/auth_provider.dart';
@@ -78,16 +70,11 @@ Future<void> setupDependencyInjection() async {
 
 /// Initialize core services
 Future<void> _initCore() async {
-  // Handlers - registered as singletons
-  sl.registerLazySingleton<AuthHandler>(() => AuthHandler());
-  sl.registerLazySingleton<StorageHandler>(() => StorageHandler());
-  sl.registerLazySingleton<NetworkHandler>(
-    () => NetworkHandler(
-      baseUrl: ApiConstants.baseUrl,
-    ),
-  );
-
-  // Navigation handler is stateless, just register the type
+  // Navigation handler is stateless, just register the type. The legacy
+  // AuthHandler / NetworkHandler / StorageHandler trio that used to live
+  // here was dead code — the Dio-based AuthRepository they backed had no
+  // screen consumer, and tokens have moved to TokenStorage (secure
+  // storage) so SharedPreferences-based handlers are no longer needed.
   sl.registerLazySingleton(() => NavigationHandler());
 }
 
@@ -222,8 +209,9 @@ Future<void> resetDependencyInjection() async {
 }
 
 void _initAuthFeature() {
-  // Repository
-  sl.registerFactory<AuthRepositoryInterface>(
-    () => AuthRepositoryImpl(),
-  );
+  // The Clean-Architecture-style AuthRepository scaffold lived here but
+  // never had a screen consumer (login/register/welcome all talk to
+  // AuthService directly through AuthProvider). Removed alongside the
+  // Dio NetworkHandler stack — see the same commit's deletions in
+  // core/handlers and features/auth/data + features/auth/domain.
 }

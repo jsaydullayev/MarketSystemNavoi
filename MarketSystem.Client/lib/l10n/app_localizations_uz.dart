@@ -532,7 +532,8 @@ class AppLocalizationsUz extends AppLocalizations {
   String get usernameMinLength => 'Username kamida 3 ta belgi';
 
   @override
-  String get passwordMinLength => 'Parol kamida 8 belgi, 1 harf va 1 raqam o\'z ichiga olishi kerak';
+  String get passwordMinLength =>
+      'Parol kamida 8 belgi, 1 harf va 1 raqam o\'z ichiga olishi kerak';
 
   @override
   String get passwordConfirm => 'Parolni tasdiqlash';
@@ -2654,10 +2655,12 @@ class AppLocalizationsUz extends AppLocalizations {
   }
 
   @override
-  String get shiftNotOpenError => 'Ochiq smena topilmadi. Avval smenani oching.';
+  String get shiftNotOpenError =>
+      'Ochiq smena topilmadi. Avval smenani oching.';
 
   @override
-  String get concurrentChangeError => 'Ma\'lumot boshqa foydalanuvchi tomonidan o\'zgartirildi. Sahifani yangilang va qaytadan urinib ko\'ring.';
+  String get concurrentChangeError =>
+      'Ma\'lumot boshqa foydalanuvchi tomonidan o\'zgartirildi. Sahifani yangilang va qaytadan urinib ko\'ring.';
 
   @override
   String get securityJournal => 'Xavfsizlik jurnali';
