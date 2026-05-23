@@ -9,6 +9,7 @@ using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using MarketSystem.Infrastructure.Repositories;
+using MarketSystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -490,8 +491,14 @@ try
     builder.Services.AddScoped<IRegistrationRequestService, RegistrationRequestService>();
     builder.Services.AddScoped<IDebtService, DebtService>();
     builder.Services.AddScoped<IShiftService, ShiftService>();
-    // Singleton — the process-local revocation map must outlive any single request.
-    builder.Services.AddSingleton<IRevokedTokenStore, InMemoryRevokedTokenStore>();
+    // Singleton — the revocation map must outlive any single request.
+    // DbRevokedTokenStore caches entries in memory for O(1) IsRevoked() on
+    // the auth hot path, but persists each RevokeAsync write to PostgreSQL
+    // so revocations survive restarts and propagate across replicas. The
+    // cache is rehydrated from the DB once during startup (below).
+    builder.Services.AddSingleton<DbRevokedTokenStore>();
+    builder.Services.AddSingleton<IRevokedTokenStore>(
+        sp => sp.GetRequiredService<DbRevokedTokenStore>());
 
     var app = builder.Build();
 
@@ -529,6 +536,17 @@ try
     await MarketSystem.API.Bootstrap.SuperAdminSeeder.SeedFromConfigAsync(
         app.Services,
         app.Services.GetRequiredService<ILogger<Program>>());
+
+    // Hydrate the in-memory revocation cache from the RevokedTokens table.
+    // Without this, every restart would forget which JWTs were revoked and
+    // every still-valid leaked token would work again until its natural
+    // 30-minute expiry. The store also prunes expired DB rows here so the
+    // table stays bounded.
+    {
+        using var scope = app.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<DbRevokedTokenStore>();
+        await store.LoadFromDbAsync();
+    }
 
     // Trust X-Forwarded-* headers from the reverse proxy (nginx) so HttpContext.Request.Scheme
     // reflects the real HTTPS scheme, RemoteIpAddress is the original client, and
