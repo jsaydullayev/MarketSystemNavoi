@@ -229,16 +229,18 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                             lastUpdated: _cashRegister?.lastUpdated,
                           ),
                           const SizedBox(height: AppSpacing.xl),
-                          if (_todaySales != null) ...[
-                            TodaySalesCard(todaySales: _todaySales!),
+                          // Dart-3 non-null pattern: matches when _todaySales
+                          // is non-null and binds it as a non-nullable `s` so
+                          // the cards below use it without `!` round-trips.
+                          if (_todaySales case final s?) ...[
+                            TodaySalesCard(todaySales: s),
                             const SizedBox(height: AppSpacing.xl),
-                          ],
-                          if (_todaySales != null &&
-                              (_todaySales!.cashPaid > 0 ||
-                                  _todaySales!.cardPaid > 0 ||
-                                  _todaySales!.clickPaid > 0)) ...[
-                            PaymentBreakdownCard(todaySales: _todaySales!),
-                            const SizedBox(height: AppSpacing.xl2),
+                            if (s.cashPaid > 0 ||
+                                s.cardPaid > 0 ||
+                                s.clickPaid > 0) ...[
+                              PaymentBreakdownCard(todaySales: s),
+                              const SizedBox(height: AppSpacing.xl2),
+                            ],
                           ],
                           WithdrawButton(
                             isWithdrawing: _isWithdrawing,

@@ -44,8 +44,10 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
     emit(const CustomersLoading());
     final result = await getCustomersUseCase();
 
-    if (result.isSuccess && result.data != null) {
-      emit(CustomersLoaded(result.data!));
+    // Dart-3 pattern-with-guard: binds `data` as non-nullable only when
+    // result.data is non-null AND the call succeeded — no `!` round-trip.
+    if (result.data case final data? when result.isSuccess) {
+      emit(CustomersLoaded(data));
     } else {
       emit(CustomersError(result.error ?? 'Mijozlarni yuklashda xatolik'));
     }
@@ -60,8 +62,8 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
     final result = await getCustomerByPhoneUseCase(event.phone);
 
     if (result.isSuccess) {
-      if (result.data != null) {
-        emit(CustomerFound(result.data!));
+      if (result.data case final data?) {
+        emit(CustomerFound(data));
       } else {
         emit(const CustomerNotFound());
       }
@@ -83,8 +85,8 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
       initialDebt: event.initialDebt,
     );
 
-    if (result.isSuccess && result.data != null) {
-      emit(CustomerCreated(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(CustomerCreated(data));
     } else {
       emit(CustomersError(result.error ?? 'Mijoz yaratishda xatolik'));
     }
@@ -101,8 +103,8 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
       fullName: event.fullName,
     );
 
-    if (result.isSuccess && result.data != null) {
-      emit(CustomerUpdated(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(CustomerUpdated(data));
     } else {
       emit(CustomersError(result.error ?? 'Mijoz ma\'lumotlarini yangilashda xatolik'));
     }
@@ -131,8 +133,8 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
     emit(const CustomerDebtsLoading());
     final result = await getCustomerDebtsUseCase(event.customerId);
 
-    if (result.isSuccess && result.data != null) {
-      emit(CustomerDebtsLoaded(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(CustomerDebtsLoaded(data));
     } else {
       emit(CustomersError(result.error ?? 'Mijoz qarzlarini yuklashda xatolik'));
     }

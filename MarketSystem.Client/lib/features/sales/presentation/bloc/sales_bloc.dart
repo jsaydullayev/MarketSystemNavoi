@@ -52,8 +52,10 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     emit(const SalesLoading());
     final result = await getSalesUseCase();
 
-    if (result.isSuccess && result.data != null) {
-      emit(SalesLoaded(result.data!));
+    // Dart-3 pattern-with-guard: binds `data` as non-nullable only when
+    // result.data is non-null AND the call succeeded — no `!` round-trip.
+    if (result.data case final data? when result.isSuccess) {
+      emit(SalesLoaded(data));
     } else {
       emit(SalesError(result.error ?? 'Sotuvlarni yuklashda xatolik'));
     }
@@ -67,8 +69,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     emit(const SalesLoading());
     final result = await getMyDraftSalesUseCase();
 
-    if (result.isSuccess && result.data != null) {
-      emit(MyDraftSalesLoaded(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(MyDraftSalesLoaded(data));
     } else {
       emit(SalesError(result.error ?? 'Draft sotuvlarni yuklashda xatolik'));
     }
@@ -82,8 +84,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     emit(const SalesLoading());
     final result = await createSaleUseCase(customerId: event.customerId);
 
-    if (result.isSuccess && result.data != null) {
-      emit(SaleCreated(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(SaleCreated(data));
     } else {
       emit(SalesError(result.error ?? 'Sotuv yaratishda xatolik'));
     }
@@ -127,8 +129,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       // ✅ Payment qo'shilgandan keyin sales listni yangilash
       // Bu qarz statusga o'tgan savdolar ko'rinishi uchun kerak
       final salesResult = await getSalesUseCase();
-      if (salesResult.isSuccess && salesResult.data != null) {
-        emit(SalesLoaded(salesResult.data!));
+      if (salesResult.data case final data? when salesResult.isSuccess) {
+        emit(SalesLoaded(data));
       } else {
         // Agar sales list yuklanmasa, payment added state ni qaytaramiz
         emit(const PaymentAdded());
@@ -164,8 +166,8 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     emit(const SaleDetailLoading());
     final result = await getSaleDetailUseCase(event.saleId);
 
-    if (result.isSuccess && result.data != null) {
-      emit(SaleDetailLoaded(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(SaleDetailLoaded(data));
     } else {
       emit(SalesError(result.error ?? 'Sotuvni yuklashda xatolik'));
     }

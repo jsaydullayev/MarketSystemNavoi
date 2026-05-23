@@ -82,10 +82,10 @@ class ProfileSettingsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (header != null)
+            if (header case final h?)
               Container(
                 color: context.colors.bg,
-                child: header!,
+                child: h,
               ),
             ...rows,
           ],
@@ -180,10 +180,10 @@ class ProfileSettingsRow extends StatelessWidget {
                         color: titleColor,
                       ),
                     ),
-                    if (meta != null) ...[
+                    if (meta case final m?) ...[
                       const SizedBox(height: 2),
                       Text(
-                        meta!,
+                        m,
                         style: AppTextStyles.caption().copyWith(
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
@@ -195,10 +195,10 @@ class ProfileSettingsRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (value != null) ...[
+              if (value case final v?) ...[
                 const SizedBox(width: AppSpacing.md),
                 Text(
-                  value!,
+                  v,
                   style: AppTextStyles.caption().copyWith(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -207,9 +207,9 @@ class ProfileSettingsRow extends StatelessWidget {
                   ),
                 ),
               ],
-              if (trailing != null) ...[
+              if (trailing case final t?) ...[
                 const SizedBox(width: AppSpacing.sm),
-                trailing!,
+                t,
               ] else if (onTap != null && !danger) ...[
                 const SizedBox(width: AppSpacing.sm),
                 Icon(
