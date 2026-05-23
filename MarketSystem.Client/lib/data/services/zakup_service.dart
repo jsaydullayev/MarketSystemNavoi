@@ -39,10 +39,8 @@ class ZakupService {
   }
 
   Future<List<dynamic>> getZakupsByDateRange(DateTime start, DateTime end) async {
-    // TODO: hoist into ApiConstants as `zakupsByDateRange(start, end)` helper.
-    final response = await _httpService.get(
-      '${ApiConstants.zakups}/GetZakupsByDateRange/by-date?start=${start.toIso8601String()}&end=${end.toIso8601String()}',
-    );
+    final response =
+        await _httpService.get(ApiConstants.zakupsByDateRange(start, end));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -74,8 +72,6 @@ class ZakupService {
   }
 
   Future<List<int>?> downloadZakupsExcel() async {
-    // TODO: hoist into ApiConstants as `zakupsExportExcel` constant.
-    return await _httpService
-        .downloadBytes('${ApiConstants.zakups}/ExportZakupsToExcel/export');
+    return await _httpService.downloadBytes(ApiConstants.zakupsExportExcel);
   }
 }
