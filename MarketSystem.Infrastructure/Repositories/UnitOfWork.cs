@@ -134,8 +134,13 @@ public class UnitOfWork : IUnitOfWork
         {
             if (disposing)
             {
+                // Only dispose the transaction we own. AppDbContext is
+                // registered separately as Scoped and DI owns its lifetime —
+                // disposing it here causes a second dispose at scope end and,
+                // worse, kills the context while other scoped components in
+                // the same request may still be using it (K3 in the security
+                // audit).
                 _transaction?.Dispose();
-                _context.Dispose();
             }
 
             _disposed = true;
