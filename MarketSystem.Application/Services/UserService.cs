@@ -72,12 +72,19 @@ public class UserService : IUserService
         if (role is not (Role.Admin or Role.Seller))
             throw new InvalidOperationException("Faqat Admin yoki Seller foydalanuvchi yaratish mumkin.");
 
-        if (await _unitOfWork.Users.AnyAsync(u => u.Username == request.Username, cancellationToken))
-            throw new InvalidOperationException($"Username '{request.Username}' already exists");
-
         var currentMarketId = _currentMarketService.TryGetCurrentMarketId();
         if (!currentMarketId.HasValue)
             throw new InvalidOperationException("Market topilmadi. Iltimos, qaytadan tizimga kiring.");
+
+        // M3 — username uniqueness is enforced PER MARKET via the partial
+        // unique index "IX_Users_MarketId_Username_Unique" (see AppDbContext).
+        // The previous check was global, which would reject "ahmad" in
+        // market B just because some other tenant already had an "ahmad".
+        // Scope the precheck so it matches the DB constraint shape.
+        if (await _unitOfWork.Users.AnyAsync(
+                u => u.Username == request.Username && u.MarketId == currentMarketId,
+                cancellationToken))
+            throw new InvalidOperationException($"Username '{request.Username}' already exists");
 
         var user = new User
         {
