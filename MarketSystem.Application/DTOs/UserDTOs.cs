@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using MarketSystem.Application.Validation;
 
 namespace MarketSystem.Application.DTOs;
 
@@ -59,7 +60,7 @@ public record CreateUserDto(
 
     [property: JsonPropertyName("password")]
     [param: Required(ErrorMessage = "Parol majburiy")]
-    [param: StringLength(100, MinimumLength = 6)]
+    [param: StrongPassword]
     string Password,
 
     [property: JsonPropertyName("role")]
@@ -77,8 +78,10 @@ public record UpdateUserDto(
     [param: StringLength(100, MinimumLength = 2)]
     string FullName,
 
+    // Optional — empty means "don't change the password". When provided, the
+    // strong-password policy applies.
     [property: JsonPropertyName("password")]
-    [param: StringLength(100, MinimumLength = 6, ErrorMessage = "Parol kamida 6 belgi bo'lishi kerak")]
+    [param: StrongPassword]
     string? Password,
 
     [property: JsonPropertyName("role")]
@@ -104,12 +107,16 @@ public record UpdateProfileDto(
     [param: StringLength(100, MinimumLength = 2)]
     string? FullName,
 
+    // CurrentPassword verifies the legacy hash, so the strong-password rule
+    // does NOT apply — an old 6-char account must still be able to authenticate
+    // to change its password. NewPassword is the value being SET, so it must
+    // meet the policy.
     [property: JsonPropertyName("currentPassword")]
-    [param: StringLength(100, MinimumLength = 6)]
+    [param: StringLength(100, MinimumLength = 1)]
     string? CurrentPassword,
 
     [property: JsonPropertyName("newPassword")]
-    [param: StringLength(100, MinimumLength = 6)]
+    [param: StrongPassword]
     string? NewPassword
 );
 

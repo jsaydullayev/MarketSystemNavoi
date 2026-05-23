@@ -63,7 +63,15 @@ public class CashRegisterController : ControllerBase
     [RequirePermission(PermissionKeys.CashRegisterManage)]
     public async Task<IActionResult> AddCash([FromBody] AddCashRequest request, CancellationToken cancellationToken)
     {
-        var success = await _cashRegisterService.AddCashAsync(request.Amount, cancellationToken);
+        // Y3 — capture the JWT identity so the deposit audit row attributes
+        // the actor, same as WithdrawCash above.
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new { message = "Invalid user" });
+        }
+
+        var success = await _cashRegisterService.AddCashAsync(request.Amount, userId, cancellationToken);
         if (!success)
             return BadRequest(new { message = "Failed to add cash" });
 

@@ -140,6 +140,18 @@ public class UsersController : ControllerBase
             if (user is null)
                 return NotFound();
 
+            // Y1 — audit-log profile updates. PasswordChange is the
+            // security-critical case (a successful change of password is a
+            // forensic event); FullName-only edits are still recorded but
+            // tagged distinctly so review queries can filter.
+            var passwordChanged = !string.IsNullOrWhiteSpace(request.CurrentPassword)
+                                  && !string.IsNullOrWhiteSpace(request.NewPassword);
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, userId,
+                passwordChanged ? AuditActions.PasswordChange : AuditActions.Update,
+                CurrentUserId(),
+                new { user.Username, fullNameChanged = !string.IsNullOrWhiteSpace(request.FullName), passwordChanged });
+
             return Ok(user);
         }
         catch (UnauthorizedAccessException ex)
@@ -234,6 +246,14 @@ public class UsersController : ControllerBase
             if (user is null)
                 return NotFound();
 
+            // Y1 — profile image change is a low-risk event but still a
+            // user-initiated mutation; include it in the journal so the
+            // timeline of every "what changed on this account" is complete.
+            // Payload is intentionally just a flag — never log the base64.
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, userId, AuditActions.ProfileImageUpdate, userId,
+                new { imageSet = !string.IsNullOrEmpty(request.ProfileImage) });
+
             return Ok(user);
         }
         catch (UnauthorizedAccessException ex)
@@ -308,6 +328,13 @@ public class UsersController : ControllerBase
             var user = await _userService.UpdateShiftAsync(id, request);
             if (user is null)
                 return NotFound();
+
+            // Y1 — shift status changes are an admin-restricted operation that
+            // gates a seller's ability to log in at all. Audit so the journal
+            // shows who blocked / unblocked whom and when.
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, id, AuditActions.ShiftChange, CurrentUserId(),
+                new { request.Status, request.StartUtc, request.EndUtc });
 
             return Ok(user);
         }
