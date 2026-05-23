@@ -163,7 +163,9 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                 subdomainQuery);
     if (!stillCurrent) return;
 
-    if (result.status != SuperAdminOpStatus.success || result.data == null) {
+    // Snapshot before the guard so flow analysis can promote it.
+    final data = result.data;
+    if (result.status != SuperAdminOpStatus.success || data == null) {
       setState(() {
         if (usernameQuery != null) _usernameState = _CheckState.idle;
         if (marketQuery != null) _marketState = _CheckState.idle;
@@ -173,7 +175,6 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
     }
 
     setState(() {
-      final data = result.data!;
       if (usernameQuery != null && data['usernameAvailable'] is bool) {
         _usernameState = (data['usernameAvailable'] as bool)
             ? _CheckState.free

@@ -245,8 +245,8 @@ class _UsersScreenState extends State<UsersScreen> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null) {
-      return _ErrorView(message: _error!, onRetry: _loadUsers);
+    if (_error case final err?) {
+      return _ErrorView(message: err, onRetry: _loadUsers);
     }
 
     final filtered = _applyFilters(_users);
@@ -372,18 +372,21 @@ class _StaffSummary extends StatelessWidget {
     // Compact a big number (450 000 → 450K, 12.4M → 12.4M) for the stat
     // tile so it stays on one line even on narrow screens.
     String revenueLabel;
-    if (todayRevenue == null) {
+    // Snapshot the parameter into a non-nullable local so the formatter
+    // doesn't need `!` on every arithmetic call.
+    final revenue = todayRevenue;
+    if (revenue == null) {
       revenueLabel = '…';
     } else {
-      final v = todayRevenue!.abs();
+      final v = revenue.abs();
       if (v >= 1000000) {
-        final m = todayRevenue! / 1000000;
+        final m = revenue / 1000000;
         revenueLabel = '${m.toStringAsFixed(m >= 10 ? 0 : 1)}M';
       } else if (v >= 1000) {
-        final k = todayRevenue! / 1000;
+        final k = revenue / 1000;
         revenueLabel = '${k.toStringAsFixed(k >= 100 ? 0 : 1)}K';
       } else {
-        revenueLabel = NumberFormatter.format(todayRevenue!);
+        revenueLabel = NumberFormatter.format(revenue);
       }
     }
 

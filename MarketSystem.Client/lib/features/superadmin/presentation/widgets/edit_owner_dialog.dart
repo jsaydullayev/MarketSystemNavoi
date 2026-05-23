@@ -146,7 +146,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                     style: AppTextStyles.bodySmall(),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  if (_errorMessage != null) ...[
+                  if (_errorMessage case final msg?) ...[
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md + 2),
                       decoration: BoxDecoration(
@@ -163,7 +163,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: Text(
-                              _errorMessage!,
+                              msg,
                               style: AppTextStyles.bodySmall().copyWith(
                                 color: AppColors.danger,
                               ),

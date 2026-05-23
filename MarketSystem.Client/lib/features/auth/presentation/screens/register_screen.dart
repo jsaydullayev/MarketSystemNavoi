@@ -59,8 +59,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     switch (result.status) {
       case RegistrationRequestStatus.accepted:
-        if (result.message != null) {
-          _showSnack(result.message!, isError: true);
+        if (result.message case final msg?) {
+          _showSnack(msg, isError: true);
         } else {
           await _showSuccessDialog(l10n.registrationSent);
         }

@@ -139,9 +139,10 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
             (subdomainQ == null ||
                 _subdomain.text.trim().toLowerCase() == subdomainQ);
     if (!stillCurrent) return;
-    if (res.status != SuperAdminOpStatus.success || res.data == null) return;
+    // Snapshot before the guard so flow analysis can promote it.
+    final d = res.data;
+    if (res.status != SuperAdminOpStatus.success || d == null) return;
     setState(() {
-      final d = res.data!;
       if (usernameQ != null && d['usernameAvailable'] is bool) {
         _userState =
             (d['usernameAvailable'] as bool) ? _Check.free : _Check.taken;
@@ -355,7 +356,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                     style: AppTextStyles.bodySmall(),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  if (_errorMessage != null) ...[
+                  if (_errorMessage case final msg?) ...[
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md + 2),
                       decoration: BoxDecoration(
@@ -363,7 +364,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Text(
-                        _errorMessage!,
+                        msg,
                         style: AppTextStyles.bodySmall().copyWith(
                           color: AppColors.danger,
                         ),

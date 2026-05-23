@@ -491,11 +491,11 @@ class _AuditLogCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (entry.ipAddress != null && entry.ipAddress!.isNotEmpty) ...[
+              if (entry.ipAddress case final ip? when ip.isNotEmpty) ...[
                 Icon(Icons.public_rounded, size: 14, color: c.textMuted),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
-                  entry.ipAddress!,
+                  ip,
                   style: AppTextStyles.bodyMedium().copyWith(
                     color: c.textMuted,
                     fontFamily: 'monospace',
