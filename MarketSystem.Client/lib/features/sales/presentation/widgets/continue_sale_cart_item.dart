@@ -27,6 +27,15 @@ class ContinueSaleCartItem extends StatelessWidget {
   /// them from tapping it and seeing a 403 they can't act on.
   final bool canReturn;
 
+  /// G3 — mirrors backend S2: `SaleService.UpdateSaleItemPriceAsync` now
+  /// refuses anything that isn't Draft or Debt with a 400. The legacy
+  /// "show edit chip for any non-Closed sale" gate let the user tap the
+  /// pencil on a Paid or Cancelled sale and see a confusing error
+  /// snackbar. When [canEditPrice] is false the chip is hidden entirely.
+  /// Defaults to [isClosed]'s inverse so callers that haven't been
+  /// updated yet keep their previous behaviour.
+  final bool? canEditPrice;
+
   const ContinueSaleCartItem({
     super.key,
     required this.item,
@@ -37,6 +46,7 @@ class ContinueSaleCartItem extends StatelessWidget {
     required this.onIncrement,
     required this.onRemove,
     this.canReturn = true,
+    this.canEditPrice,
   });
 
   @override
@@ -122,7 +132,10 @@ class ContinueSaleCartItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (!isClosed)
+                // G3 — falls back to !isClosed for callers that haven't
+                // wired canEditPrice yet. New callers should pass the
+                // explicit Draft/Debt gate to match backend S2.
+                if (canEditPrice ?? !isClosed)
                   InkWell(
                     onTap: onEditPrice,
                     borderRadius: BorderRadius.circular(AppRadius.sm),
