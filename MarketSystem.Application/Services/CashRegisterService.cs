@@ -211,7 +211,7 @@ public class CashRegisterService : ICashRegisterService
         }
     }
 
-    public async Task<bool> AddCashAsync(decimal amount, CancellationToken cancellationToken = default)
+    public async Task<bool> AddCashAsync(decimal amount, Guid userId, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -228,16 +228,29 @@ public class CashRegisterService : ICashRegisterService
             // same balance, both add their amounts, and clobber each other.
             // The EnableRetryOnFailure on the DbContext also handles transient
             // failures, but only when the work is inside a transaction.
-            return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            var ok = await _unitOfWork.ExecuteInTransactionAsync(async () =>
             {
                 var cashRegister = await GetOrCreateRegisterAsync(marketId, cancellationToken);
                 cashRegister.CurrentBalance += amount;
                 cashRegister.LastUpdated = DateTime.UtcNow;
                 await _context.SaveChangesAsync(cancellationToken);
 
-                _logger.LogInformation("Cash added. Amount: {Amount}, MarketId: {MarketId}", amount, marketId);
+                _logger.LogInformation("Cash added. Amount: {Amount}, MarketId: {MarketId}, By: {UserId}",
+                    amount, marketId, userId);
                 return true;
             }, cancellationToken);
+
+            // Y3 — audit deposits the same way withdrawals are audited
+            // (see WithdrawCashAsync). Done AFTER the transaction commits so
+            // a failed audit row never rolls back a completed deposit.
+            if (ok)
+            {
+                await _auditLogService.LogActionAsync(
+                    AuditEntityTypes.CashRegister, Guid.NewGuid(), AuditActions.Deposit, userId,
+                    new { amount }, cancellationToken);
+            }
+
+            return ok;
         }
         catch (Exception ex)
         {

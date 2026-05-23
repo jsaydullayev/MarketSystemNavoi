@@ -35,6 +35,13 @@ public static class AuditActions
     public const string Block = "Block";
     public const string Unblock = "Unblock";
     public const string Withdraw = "Withdraw";
+    public const string Deposit = "Deposit";
     public const string Open = "Open";
     public const string Close = "Close";
+
+    // Y1 — distinguish password-change from a generic User Update so the
+    // security journal can isolate credential events for review.
+    public const string PasswordChange = "PasswordChange";
+    public const string ShiftChange = "ShiftChange";
+    public const string ProfileImageUpdate = "ProfileImageUpdate";
 }

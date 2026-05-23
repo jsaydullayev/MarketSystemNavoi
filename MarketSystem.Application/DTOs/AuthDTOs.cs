@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using MarketSystem.Application.Validation;
 
 namespace MarketSystem.Application.DTOs;
 
@@ -10,9 +11,13 @@ public record LoginRequest(
     [param: StringLength(50, MinimumLength = 3, ErrorMessage = "Username 3-50 belgi bo'lishi kerak")]
     string Username,
 
+    // Login DOES NOT enforce the strong-password rule — old accounts created
+    // under the previous 6-char policy must still be able to log in. The
+    // policy applies only to PASSWORD CREATION (Register / CreateUser /
+    // UpdateUser / UpdateProfile).
     [property: JsonPropertyName("password")]
     [param: Required(ErrorMessage = "Parol majburiy")]
-    [param: StringLength(100, MinimumLength = 6, ErrorMessage = "Parol kamida 6 belgi bo'lishi kerak")]
+    [param: StringLength(100, MinimumLength = 1, ErrorMessage = "Parol majburiy")]
     string Password
 ) {
     public LoginRequest() : this(string.Empty, string.Empty) { }
@@ -31,7 +36,7 @@ public record RegisterRequest(
 
     [property: JsonPropertyName("password")]
     [param: Required(ErrorMessage = "Parol majburiy")]
-    [param: StringLength(100, MinimumLength = 6, ErrorMessage = "Parol kamida 6 belgi bo'lishi kerak")]
+    [param: StrongPassword]
     string Password,
 
     [property: JsonPropertyName("role")]

@@ -40,7 +40,7 @@ public class CashRegisterIntegrationTests : TestBase
         var initialBalance = cashRegister.CurrentBalance;
 
         // Act
-        var result = await CashRegisterService.AddCashAsync(100m);
+        var result = await CashRegisterService.AddCashAsync(100m, TestUserId);
 
         // Assert
         result.Should().BeTrue();
@@ -57,9 +57,9 @@ public class CashRegisterIntegrationTests : TestBase
         var initialBalance = (await DbContext.CashRegisters.FirstAsync()).CurrentBalance;
 
         // Act
-        await CashRegisterService.AddCashAsync(50m);
-        await CashRegisterService.AddCashAsync(100m);
-        await CashRegisterService.AddCashAsync(25m);
+        await CashRegisterService.AddCashAsync(50m, TestUserId);
+        await CashRegisterService.AddCashAsync(100m, TestUserId);
+        await CashRegisterService.AddCashAsync(25m, TestUserId);
 
         // Assert
         ClearDbContext();
@@ -71,7 +71,7 @@ public class CashRegisterIntegrationTests : TestBase
     public async Task WithdrawCash_WithSufficientFunds_ShouldDecreaseBalance()
     {
         // Arrange
-        await CashRegisterService.AddCashAsync(500m);
+        await CashRegisterService.AddCashAsync(500m, TestUserId);
         ClearDbContext();
 
         var request = new WithdrawCashRequest
@@ -103,7 +103,7 @@ public class CashRegisterIntegrationTests : TestBase
     public async Task WithdrawCash_WithInsufficientFunds_ShouldFail()
     {
         // Arrange
-        await CashRegisterService.AddCashAsync(50m);
+        await CashRegisterService.AddCashAsync(50m, TestUserId);
         ClearDbContext();
 
         var request = new WithdrawCashRequest
@@ -128,7 +128,7 @@ public class CashRegisterIntegrationTests : TestBase
     public async Task WithdrawCash_WithInvalidAmount_ShouldFail()
     {
         // Arrange
-        await CashRegisterService.AddCashAsync(500m);
+        await CashRegisterService.AddCashAsync(500m, TestUserId);
         ClearDbContext();
 
         var request = new WithdrawCashRequest
@@ -167,7 +167,7 @@ public class CashRegisterIntegrationTests : TestBase
     public async Task WithdrawCash_ClickType_ShouldNotDecreaseBalance()
     {
         // Arrange - Click withdrawals are for record keeping only, don't affect balance
-        await CashRegisterService.AddCashAsync(500m);
+        await CashRegisterService.AddCashAsync(500m, TestUserId);
         ClearDbContext();
 
         var request = new WithdrawCashRequest
@@ -216,7 +216,7 @@ public class CashRegisterIntegrationTests : TestBase
     public async Task SequentialWithdrawals_ShouldTrackCorrectly()
     {
         // Arrange
-        await CashRegisterService.AddCashAsync(1000m);
+        await CashRegisterService.AddCashAsync(1000m, TestUserId);
         ClearDbContext();
 
         // Act - Multiple withdrawals
@@ -250,7 +250,7 @@ public class CashRegisterIntegrationTests : TestBase
         // The purpose is to document the potential race condition issue.
 
         // Arrange
-        await CashRegisterService.AddCashAsync(1000m);
+        await CashRegisterService.AddCashAsync(1000m, TestUserId);
         ClearDbContext();
 
         // Act - Simulate multiple operations sequentially
@@ -331,7 +331,7 @@ public class CashRegisterIntegrationTests : TestBase
         await Task.Delay(100); // Ensure time difference
 
         // Act
-        await CashRegisterService.AddCashAsync(100m);
+        await CashRegisterService.AddCashAsync(100m, TestUserId);
         ClearDbContext();
 
         var cashRegister = await DbContext.CashRegisters.FirstAsync();
@@ -344,7 +344,7 @@ public class CashRegisterIntegrationTests : TestBase
     public async Task WithdrawCash_ShouldUpdateLastWithdrawalId()
     {
         // Arrange
-        await CashRegisterService.AddCashAsync(500m);
+        await CashRegisterService.AddCashAsync(500m, TestUserId);
         ClearDbContext();
 
         var request = new WithdrawCashRequest
@@ -373,7 +373,7 @@ public class CashRegisterIntegrationTests : TestBase
     [Fact]
     public async Task WithdrawCash_Cash_WritesWithdrawAuditLog()
     {
-        await CashRegisterService.AddCashAsync(500m);
+        await CashRegisterService.AddCashAsync(500m, TestUserId);
         ClearDbContext();
 
         var request = new WithdrawCashRequest
@@ -394,7 +394,7 @@ public class CashRegisterIntegrationTests : TestBase
     [Fact]
     public async Task WithdrawCash_Click_WritesWithdrawAuditLog()
     {
-        await CashRegisterService.AddCashAsync(500m);
+        await CashRegisterService.AddCashAsync(500m, TestUserId);
         ClearDbContext();
 
         var request = new WithdrawCashRequest
@@ -416,7 +416,7 @@ public class CashRegisterIntegrationTests : TestBase
     public async Task WithdrawCash_WhenItFails_WritesNoAuditLog()
     {
         // Insufficient funds — the withdrawal must not produce an audit entry.
-        await CashRegisterService.AddCashAsync(50m);
+        await CashRegisterService.AddCashAsync(50m, TestUserId);
         ClearDbContext();
 
         var request = new WithdrawCashRequest
