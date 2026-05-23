@@ -89,7 +89,11 @@ class _ShiftControlCardState extends State<ShiftControlCard> {
       );
     }
 
-    final isOpen = _shift != null;
+    // Snapshot the nullable field so the "started at" line below can read
+    // it without `!` — `isOpen` is just a boolean and doesn't promote
+    // `_shift` for Dart's flow analysis.
+    final shift = _shift;
+    final isOpen = shift != null;
     final accent = isOpen ? AppColors.success : context.colors.textSecondary;
 
     return AppCard(
@@ -121,11 +125,11 @@ class _ShiftControlCardState extends State<ShiftControlCard> {
                       style: AppTextStyles.titleMedium()
                           .copyWith(fontWeight: FontWeight.w700, fontSize: 15),
                     ),
-                    if (isOpen) ...[
+                    if (shift != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         l10n.shiftStartedAt(
-                            DateFormat('HH:mm').format(_shift!.openedAt)),
+                            DateFormat('HH:mm').format(shift.openedAt)),
                         style: AppTextStyles.caption().copyWith(
                           fontSize: 11,
                           color: context.colors.textSecondary,

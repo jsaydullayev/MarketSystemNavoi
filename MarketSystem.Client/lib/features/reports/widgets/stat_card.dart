@@ -94,10 +94,10 @@ class StatCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (subtitle != null) ...[
+              if (subtitle case final sub?) ...[
                 const SizedBox(height: 3),
                 Text(
-                  subtitle!,
+                  sub,
                   style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
                 ),
               ],

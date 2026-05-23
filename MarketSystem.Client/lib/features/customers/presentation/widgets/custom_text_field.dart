@@ -87,10 +87,10 @@ class CustomTextField extends StatelessWidget {
             ),
           ),
         ),
-        if (helperText != null) ...[
+        if (helperText case final helper?) ...[
           const SizedBox(height: AppSpacing.xs + 2),
           Text(
-            helperText!,
+            helper,
             style: AppTextStyles.bodySmall().copyWith(
               color: context.colors.textMuted,
               fontSize: 12,

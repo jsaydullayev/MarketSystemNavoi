@@ -188,7 +188,7 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
                 ),
               ),
             ],
-            if (_errorMessage != null) ...[
+            if (_errorMessage case final msg?) ...[
               const SizedBox(height: AppSpacing.md),
               Container(
                 width: double.infinity,
@@ -205,7 +205,7 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
-                        _errorMessage!,
+                        msg,
                         style: AppTextStyles.bodySmall().copyWith(
                           color: AppColors.danger,
                           fontWeight: FontWeight.w500,

@@ -59,8 +59,9 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isActive = category.isActive;
     // Prefer the user-picked icon; fall back to a name guess for legacy rows.
-    final emoji = (category.icon != null && category.icon!.isNotEmpty)
-        ? category.icon!
+    final categoryIcon = category.icon;
+    final emoji = (categoryIcon != null && categoryIcon.isNotEmpty)
+        ? categoryIcon
         : _emojiFor(category.name);
 
     return Padding(

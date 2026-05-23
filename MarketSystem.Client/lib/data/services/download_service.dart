@@ -14,8 +14,10 @@ class DownloadService {
   DownloadService._internal(this._httpService);
 
   static DownloadService getInstance(HttpService httpService) {
-    _instance ??= DownloadService._internal(httpService);
-    return _instance!;
+    // Lazy singleton — the `??` returns the existing instance if any,
+    // otherwise the assignment expression produces (and stores) a new
+    // one. Whichever branch wins, the result is non-null.
+    return _instance ?? (_instance = DownloadService._internal(httpService));
   }
 
   /// DateTime ni yyyy-MM-dd formatida query parametr uchun formatlash

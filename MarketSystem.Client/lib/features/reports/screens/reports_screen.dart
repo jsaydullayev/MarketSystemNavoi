@@ -146,13 +146,17 @@ class _ReportsScreenState extends State<ReportsScreen>
       final saleItems = await _reportsService.getDailySaleItems(_selectedDate);
       if (!mounted) return;
       setState(() => _isLoadingDetails = false);
-      if (mounted) {
+      // Snapshot AFTER the setState so the latest report value is captured;
+      // if it's still null (e.g. the page opened before _loadReports finished)
+      // we silently bail instead of crashing on `_dailyReport!`.
+      final report = _dailyReport;
+      if (mounted && report != null) {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => DailySalesDetailsScreen(
               date: _selectedDate,
-              dailyReport: _dailyReport!,
+              dailyReport: report,
               saleItems: saleItems,
             ),
           ),

@@ -158,8 +158,8 @@ class NotificationService {
       } else {
         // Hide debts older than the recent window so the "recent" bucket
         // doesn't double-count with overdue — overdue items only.
-        if (d.createdAt != null) {
-          final age = now.difference(d.createdAt!).inDays;
+        if (d.createdAt case final createdAt?) {
+          final age = now.difference(createdAt).inDays;
           if (age <= _recentWindowDays) recent.add(d);
         } else {
           recent.add(d);

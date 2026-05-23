@@ -97,9 +97,9 @@ class HttpService {
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
 
-    if (_accessToken != null) {
+    if (_accessToken case final token?) {
       debugPrint(
-          '✅ Token from SharedPreferences: ${_accessToken!.substring(0, 20)}...');
+          '✅ Token from SharedPreferences: ${token.substring(0, 20)}...');
     } else {
       debugPrint('❌ NO TOKEN FOUND!');
     }

@@ -334,10 +334,10 @@ class SalesHeroCard extends StatelessWidget {
           ),
           // Optional delta line. Hidden when deltaText is null/empty so
           // the card doesn't render an orphan green up-arrow on its own.
-          if (deltaText != null && deltaText!.isNotEmpty) ...[
+          if (deltaText case final delta? when delta.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              '${deltaIsPositive ? '↑' : '↓'} $deltaText',
+              '${deltaIsPositive ? '↑' : '↓'} $delta',
               style: AppTextStyles.bodySmall().copyWith(
                 color: deltaIsPositive
                     ? AppColors.success

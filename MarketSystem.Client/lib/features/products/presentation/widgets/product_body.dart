@@ -102,6 +102,9 @@ class _ProductsBodyState extends State<ProductsBody> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Snapshot the widget field so the inline ternary below can compare a
+    // local — `widget.errorMessage` is a getter access and wouldn't promote.
+    final errorMessage = widget.errorMessage;
 
     return Center(
       child: Container(
@@ -114,9 +117,9 @@ class _ProductsBodyState extends State<ProductsBody> {
                   ? Center(
                       child: CircularProgressIndicator(
                           color: context.colors.brand))
-                  : widget.errorMessage != null
+                  : errorMessage != null
                       ? _ErrorView(
-                          message: widget.errorMessage!,
+                          message: errorMessage,
                           onRetry: widget.onRefresh,
                           l10n: l10n,
                         )
