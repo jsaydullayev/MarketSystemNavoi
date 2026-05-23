@@ -253,7 +253,7 @@ void main() {
       'emits [DebtsLoading, DebtsLoaded] on success',
       build: () {
         when(() => getDebts(any())).thenAnswer((_) async =>
-            ApiResult<List<Map<String, dynamic>>>.success([
+            ApiResult<List<Map<String, dynamic>>>.success(const [
               {'id': 'd1', 'amount': 100}
             ]));
         return buildBloc();

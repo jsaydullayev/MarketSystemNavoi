@@ -228,7 +228,7 @@ void main() {
       'uses SaleDetailLoading (not SalesLoading) and emits SaleDetailLoaded',
       build: () {
         when(() => getDetail(any())).thenAnswer((_) async =>
-            ApiResult<Map<String, dynamic>>.success({'id': 's-1'}));
+            ApiResult<Map<String, dynamic>>.success(const {'id': 's-1'}));
         return buildBloc();
       },
       act: (bloc) => bloc.add(const GetSaleDetailEvent('s-1')),
