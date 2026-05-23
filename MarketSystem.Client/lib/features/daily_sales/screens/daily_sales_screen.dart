@@ -39,19 +39,22 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
   /// service) — the rule is tiny and the user expects this to react instantly
   /// without refetching from the API.
   List<DailySalesListItemModel> get _visibleSales {
-    if (_dailySales == null) return const [];
+    // Snapshot the field so Dart can promote it to non-null below; field
+    // accesses don't survive the early-return guard otherwise.
+    final dailySales = _dailySales;
+    if (dailySales == null) return const [];
     switch (_filter) {
       case DailySaleFilter.all:
-        return _dailySales!.sales;
+        return dailySales.sales;
       case DailySaleFilter.paid:
         // "Paid" in the UI bucket means any fully-paid sale, including a
         // debt-on-record that was later closed by the customer.
-        return _dailySales!.sales.where((s) {
+        return dailySales.sales.where((s) {
           final st = s.status.toLowerCase();
           return st == 'paid' || st == 'closed';
         }).toList();
       case DailySaleFilter.debt:
-        return _dailySales!.sales
+        return dailySales.sales
             .where((s) => s.status.toLowerCase() == 'debt')
             .toList();
     }
@@ -376,7 +379,10 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
               valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand)));
     }
 
-    if (_error != null) {
+    // Snapshot the nullable state fields into locals so every later branch
+    // is type-checked as non-null without `!` round-trips.
+    final error = _error;
+    if (error != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -384,7 +390,7 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
             Icon(Icons.cloud_off_rounded,
                 size: 60, color: context.colors.textMuted),
             const SizedBox(height: AppSpacing.xl),
-            Text(_error!,
+            Text(error,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium()),
             TextButton(
@@ -397,7 +403,8 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       );
     }
 
-    if (_dailySales == null || _dailySales!.sales.isEmpty) {
+    final dailySales = _dailySales;
+    if (dailySales == null || dailySales.sales.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -424,12 +431,12 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
         padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
           DailySummaryCard(
-            data: _dailySales!,
+            data: dailySales,
             selectedFilter: _filter,
             onFilterChanged: (f) => setState(() => _filter = f),
           ),
           const SizedBox(height: AppSpacing.lg),
-          HourlyChart(sales: _dailySales!.sales),
+          HourlyChart(sales: dailySales.sales),
           const SizedBox(height: AppSpacing.xl),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
