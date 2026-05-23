@@ -541,7 +541,12 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
             ),
           )
           .toList(),
-      onChanged: (v) => setState(() => _selectedUnit = v!),
+      onChanged: (v) {
+        // Dropdown.onChanged's `v` is nullable per the framework signature;
+        // ignore the null call (no items would ever produce one) rather
+        // than assert with `!`.
+        if (v != null) setState(() => _selectedUnit = v);
+      },
     );
   }
 }
@@ -612,11 +617,11 @@ class _LabeledField extends StatelessWidget {
                   ),
                 ),
               ),
-            if (optional != null)
+            if (optional case final opt?)
               Padding(
                 padding: const EdgeInsets.only(left: 3),
                 child: Text(
-                  optional!,
+                  opt,
                   style: AppTextStyles.caption().copyWith(
                     fontSize: compact ? 10 : 11,
                     letterSpacing: 0,

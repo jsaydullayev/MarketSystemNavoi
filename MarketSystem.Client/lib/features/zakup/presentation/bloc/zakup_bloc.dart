@@ -32,8 +32,8 @@ class ZakupBloc extends Bloc<ZakupEvent, ZakupState> {
     emit(const ZakupLoading());
     final result = await getZakupsUseCase();
 
-    if (result.isSuccess && result.data != null) {
-      emit(ZakupLoaded(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(ZakupLoaded(data));
     } else {
       emit(ZakupError(result.error ?? 'Xaridlarni yuklashda xatolik'));
     }
@@ -50,8 +50,8 @@ class ZakupBloc extends Bloc<ZakupEvent, ZakupState> {
       event.end,
     );
 
-    if (result.isSuccess && result.data != null) {
-      emit(ZakupLoaded(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(ZakupLoaded(data));
     } else {
       emit(ZakupError(result.error ?? 'Sana bo\'yicha xaridlarni yuklashda xatolik'));
     }
@@ -69,8 +69,8 @@ class ZakupBloc extends Bloc<ZakupEvent, ZakupState> {
       costPrice: event.costPrice,
     );
 
-    if (result.isSuccess && result.data != null) {
-      emit(ZakupCreated(result.data!));
+    if (result.data case final data? when result.isSuccess) {
+      emit(ZakupCreated(data));
     } else {
       emit(ZakupError(result.error ?? 'Xarid yaratishda xatolik'));
     }

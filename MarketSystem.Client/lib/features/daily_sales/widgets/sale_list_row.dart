@@ -149,8 +149,10 @@ class _CustomerAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasName = name != null && name!.isNotEmpty;
-    final initial = hasName ? name!.trim()[0].toUpperCase() : '?';
+    // Snapshot the widget field so flow analysis can drop both `!`s.
+    final n = name;
+    final hasName = n != null && n.isNotEmpty;
+    final initial = hasName ? n.trim()[0].toUpperCase() : '?';
     return Container(
       width: 18,
       height: 18,
