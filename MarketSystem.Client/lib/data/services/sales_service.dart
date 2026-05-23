@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class SalesService {
   final AuthProvider authProvider;
@@ -30,7 +31,7 @@ class SalesService {
       }
       return [];
     } else {
-      throw Exception('Failed to load sales: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load sales');
     }
   }
 
@@ -51,9 +52,9 @@ class SalesService {
       }
       throw Exception('Invalid response format: expected Map');
     } else if (response.statusCode == 404) {
-      throw Exception('Sotuv topilmadi');
+      throw ApiException(statusCode: 404, message: 'Sotuv topilmadi');
     } else {
-      throw Exception('Failed to load sale: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load sale');
     }
   }
 
@@ -68,7 +69,7 @@ class SalesService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data ?? []);
     } else {
-      throw Exception('Failed to load draft sales: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load draft sales');
     }
   }
 
@@ -83,7 +84,7 @@ class SalesService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data ?? []);
     } else {
-      throw Exception('Failed to load unfinished sales: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load unfinished sales');
     }
   }
 
@@ -99,7 +100,7 @@ class SalesService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to create sale: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to create sale');
     }
   }
 
@@ -126,12 +127,10 @@ class SalesService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-    } else if (response.statusCode == 400) {
-      final errorBody = jsonDecode(response.body);
-      throw Exception(errorBody['message'] ?? 'Xatolik yuz berdi');
-    } else {
-      throw Exception('Failed to update sale customer: ${response.statusCode}');
     }
+    // ApiException.fromResponse already surfaces the `message` field from
+    // 4xx JSON bodies, so the previous 400-special-case is redundant.
+    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update sale customer');
   }
 
   // Sotuvga mahsulot qo'shish
@@ -177,19 +176,8 @@ class SalesService {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
-    } else {
-      String errorMsg = 'Failed to add sale item';
-      try {
-        final errorData = jsonDecode(response.body);
-        errorMsg = errorData['message'] ?? errorData['title'] ?? response.body;
-      } catch (_) {
-        errorMsg = response.body.isNotEmpty
-            ? response.body
-            : 'Server error: ${response.statusCode}';
-      }
-      throw Exception(
-          'Failed to add sale item: $errorMsg (Status: ${response.statusCode})');
     }
+    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to add sale item');
   }
 
   // Sotuvdan mahsulot o'chirish yoki miqdorni kamaytirish
@@ -220,19 +208,8 @@ class SalesService {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
-    } else {
-      String errorMsg = 'Failed to remove sale item';
-      try {
-        final errorData = jsonDecode(response.body);
-        errorMsg = errorData['message'] ?? errorData['title'] ?? response.body;
-      } catch (_) {
-        errorMsg = response.body.isNotEmpty
-            ? response.body
-            : 'Server error: ${response.statusCode}';
-      }
-      throw Exception(
-          'Failed to remove sale item: $errorMsg (Status: ${response.statusCode})');
     }
+    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to remove sale item');
   }
 
   // To'lov qo'shish
@@ -257,7 +234,7 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to add payment: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to add payment');
     }
   }
 
@@ -271,7 +248,7 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to mark sale as debt: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to mark sale as debt');
     }
   }
 
@@ -294,10 +271,8 @@ class SalesService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-    } else {
-      throw Exception(
-          'Failed to cancel sale. Status: ${response.statusCode}, Body: ${response.body}');
     }
+    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to cancel sale');
   }
 
   // Savdo item narxini o'zgartirish
@@ -327,14 +302,15 @@ class SalesService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-    } else if (response.statusCode == 403) {
-      throw Exception('Ruxsat yo\'q: Bu amalni bajarish huquqingiz yo\'q');
-    } else if (response.statusCode == 400) {
-      final errorBody = jsonDecode(response.body);
-      throw Exception(errorBody['message'] ?? 'Xatolik yuz berdi');
-    } else {
-      throw Exception('Narxni yangilashda xatolik: ${response.statusCode}');
     }
+    // ApiException carries the server's localized `message` for 400 (StrongPassword,
+    // domain validation, …) and the 403 status surfaces as `statusCode: 403` so
+    // a caller can branch on it without parsing the body again. Fallback string
+    // applies only when the body isn't JSON.
+    throw ApiException.fromResponse(response,
+        fallbackMessage: response.statusCode == 403
+            ? 'Ruxsat yo\'q: Bu amalni bajarish huquqingiz yo\'q'
+            : 'Narxni yangilashda xatolik');
   }
 
   // Tovarni qaytarish (vozvrat)
@@ -369,7 +345,7 @@ class SalesService {
     } else if (response.statusCode == 404) {
       return null;
     } else {
-      throw Exception('Failed to return sale item: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to return sale item');
     }
   }
 
@@ -393,7 +369,7 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to delete sale: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to delete sale');
     }
   }
 
@@ -413,7 +389,7 @@ class SalesService {
       debugPrint('Debtors count: ${data?.length ?? 0}');
       return List<dynamic>.from(data ?? []);
     } else {
-      throw Exception('Failed to get debtors: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to get debtors');
     }
   }
 

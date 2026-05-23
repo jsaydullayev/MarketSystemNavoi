@@ -30,7 +30,7 @@ class DebtService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data ?? []);
     } else {
-      throw Exception('Failed to load debts: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load debts');
     }
   }
 
@@ -48,7 +48,7 @@ class DebtService {
       if (data == null) return [];
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load customer debts: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load customer debts');
     }
   }
 
@@ -64,7 +64,7 @@ class DebtService {
       }
       return double.tryParse(response.body) ?? 0.0;
     } else {
-      throw Exception('Failed to load customer total debt: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load customer total debt');
     }
   }
 

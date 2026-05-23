@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class ZakupService {
   final AuthProvider authProvider;
@@ -19,7 +20,7 @@ class ZakupService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load zakups: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load zakups');
     }
   }
 
@@ -34,7 +35,7 @@ class ZakupService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to load zakups: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load zakups');
     }
   }
 
@@ -46,7 +47,7 @@ class ZakupService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load zakups by date: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load zakups by date');
     }
   }
 
@@ -67,7 +68,7 @@ class ZakupService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to create zakup: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to create zakup');
     }
   }
 

@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class CustomerService {
   final AuthProvider authProvider;
@@ -20,7 +21,7 @@ class CustomerService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load customers: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load customers');
     }
   }
 
@@ -36,7 +37,7 @@ class CustomerService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to load customers: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load customers');
     }
   }
 
@@ -50,7 +51,7 @@ class CustomerService {
     } else if (response.statusCode == 404) {
       return null;
     } else {
-      throw Exception('Failed to load customer: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load customer');
     }
   }
 
@@ -74,7 +75,7 @@ class CustomerService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to create customer: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to create customer');
     }
   }
 
@@ -94,7 +95,7 @@ class CustomerService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to update customer: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update customer');
     }
   }
 
@@ -104,7 +105,7 @@ class CustomerService {
         .delete('${ApiConstants.customers}/DeleteCustomer/$id');
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete customer: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to delete customer');
     }
   }
 
@@ -116,7 +117,7 @@ class CustomerService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to get customer delete info: ${response.body}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to get customer delete info');
     }
   }
 
@@ -129,7 +130,7 @@ class CustomerService {
       final data = jsonDecode(response.body);
       return List<Map<String, dynamic>>.from(data);
     } else {
-      throw Exception('Failed to load customer debts: ${response.statusCode}');
+      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load customer debts');
     }
   }
 }
