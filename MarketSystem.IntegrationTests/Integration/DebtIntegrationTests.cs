@@ -437,6 +437,53 @@ public class DebtIntegrationTests : TestBase
         finalSale.PaidAmount.Should().BeLessOrEqualTo(finalSale.TotalAmount); // Not overpaid
     }
 
+    // P4 — Cancel with many items must restock every product. The old code
+    // fired one SELECT per SaleItem to fetch the Product; the new code does
+    // a single batched IN query. Restocking correctness shouldn't have
+    // changed, but this test pins it so a future refactor can't drop
+    // products on the floor.
+    [Fact]
+    public async Task CancelSale_RestocksEveryDistinctProduct()
+    {
+        // Seed 3 distinct products and a sale that consumes all 3.
+        var pA = CreateTestProduct(costPrice: 100m, salePrice: 150m);
+        var pB = CreateTestProduct(costPrice: 50m,  salePrice: 80m);
+        var pC = CreateTestProduct(costPrice: 25m,  salePrice: 40m);
+
+        // CreateTestProduct seeds Quantity=100. Sell 5 of A, 2 of B, 1 of C.
+        var items = new List<(Guid productId, decimal quantity, decimal price)>
+        {
+            (pA.Id, 5m, 150m),
+            (pB.Id, 2m, 80m),
+            (pC.Id, 1m, 40m),
+        };
+        var sale = await CreateSaleWithItemsAsync(
+            totalAmount: 5*150m + 2*80m + 1*40m,
+            paidAmount: 5*150m + 2*80m + 1*40m,
+            items: items,
+            isDebt: false);
+
+        // Manually decrement product stock to simulate what AddSaleItem would
+        // have done. Then cancelling must put it all back.
+        ClearDbContext();
+        var stocked = await DbContext.Products.ToListAsync();
+        stocked.First(p => p.Id == pA.Id).Quantity = 95m;
+        stocked.First(p => p.Id == pB.Id).Quantity = 98m;
+        stocked.First(p => p.Id == pC.Id).Quantity = 99m;
+        await DbContext.SaveChangesAsync();
+
+        // Act.
+        var cancelled = await SaleService.CancelSaleAsync(sale.Id, Guid.NewGuid());
+        cancelled.Should().NotBeNull();
+
+        // Assert — every product back to 100.
+        ClearDbContext();
+        var products = await DbContext.Products.ToListAsync();
+        products.First(p => p.Id == pA.Id).Quantity.Should().Be(100m);
+        products.First(p => p.Id == pB.Id).Quantity.Should().Be(100m);
+        products.First(p => p.Id == pC.Id).Quantity.Should().Be(100m);
+    }
+
     // S4 — CancelSale must close the linked debt cleanly.
     [Fact]
     public async Task CancelSale_WithOpenDebt_ClosesDebtAndZerosRemaining()

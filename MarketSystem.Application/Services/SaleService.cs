@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
@@ -1003,33 +1004,38 @@ public partial class SaleService : ISaleService
             if (sale.Status == SaleStatus.Cancelled)
                 throw new InvalidOperationException("Sale is already cancelled");
 
-            // Restore stock for all items
-            var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == saleId, cancellationToken);
-            foreach (var item in saleItems)
-            {
-                /// <summary>
-                /// ============================================
-                /// ✅ ISEXTERNAL SHARTI - STOKNI QAYTARISH
-                /// ============================================
-                /// </summary>
-                if (!item.IsExternal && item.ProductId.HasValue)
-                {
-                    // ---- ORDINARY PRODUCT (Oddiy mahsulot) ----
-                    var productId = item.ProductId.Value;
-                    var products = await _unitOfWork.Products.FindAsync(
-                        p => p.Id == productId && p.MarketId == marketId,
-                        cancellationToken);
-                    var product = products.FirstOrDefault();
+            // Restore stock for all items.
+            // P4 — fetch every affected Product in ONE round trip instead of
+            // one-per-item. A cancelled sale with 50 ordinary items used to
+            // fire 50 separate `Products WHERE Id = ?` queries; now we issue
+            // a single `Products WHERE Id IN (...)`. External items have no
+            // ProductId so they're filtered out upfront.
+            var saleItems = (await _unitOfWork.SaleItems.FindAsync(
+                si => si.SaleId == saleId, cancellationToken)).ToList();
 
-                    if (product != null)
+            var ordinaryProductIds = saleItems
+                .Where(i => !i.IsExternal && i.ProductId.HasValue)
+                .Select(i => i.ProductId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (ordinaryProductIds.Count > 0)
+            {
+                var products = await _context.Products
+                    .Where(p => ordinaryProductIds.Contains(p.Id) && p.MarketId == marketId)
+                    .ToDictionaryAsync(p => p.Id, cancellationToken);
+
+                foreach (var item in saleItems)
+                {
+                    if (item.IsExternal || !item.ProductId.HasValue) continue;
+                    if (products.TryGetValue(item.ProductId.Value, out var product))
                     {
                         product.Quantity += item.Quantity;
                         _unitOfWork.Products.Update(product);
                     }
                 }
-                // ---- EXTERNAL PRODUCT (Tashqi mahsulot) ----
-                // ✅ Tashqi mahsulotlar - stokni o'zgarmaslik
             }
+            // External items (IsExternal == true) have no stock to restore.
 
             // Refund cash payments back to the till. Card / Click / Terminal payments
             // flow through external rails (POS / payment processor) so they don't touch
@@ -1075,10 +1081,26 @@ public partial class SaleService : ISaleService
                 _unitOfWork.Debts.Update(debt);
             }
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // P6 — stage the audit row on the same DbContext BEFORE the
+            // single SaveChanges so business state + audit INSERT batch into
+            // one round trip instead of two. The audit row will now commit /
+            // rollback with the surrounding business transaction (which is
+            // the stronger guarantee here — if the cancel rolls back we
+            // don't want a "Cancel" audit row lingering).
+            await _auditLogService.EnqueueActionAsync(
+                AuditEntityTypes.Sale, saleId, AuditActions.Cancel, adminId,
+                new
+                {
+                    SaleId = saleId,
+                    sale.SellerId,
+                    sale.CustomerId,
+                    Status = sale.Status.ToString(),
+                    sale.TotalAmount,
+                    sale.PaidAmount,
+                },
+                cancellationToken);
 
-            // Audit log
-            await _auditLogService.LogSaleActionAsync(saleId, "Cancel", adminId, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return await MapToDtoAsync(sale, cancellationToken);
         }, cancellationToken);
