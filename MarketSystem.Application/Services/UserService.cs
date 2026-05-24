@@ -23,7 +23,11 @@ public class UserService : IUserService
 
     public async Task<UserDto?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var marketId = _currentMarketService.GetCurrentMarketId();
+        // TryGetCurrentMarketId returns null for SuperAdmin (cross-tenant, no MarketId
+        // in JWT). For regular tenant users it returns the scoped market id. EF Core
+        // translates `u.MarketId == null` to `WHERE MarketId IS NULL`, which correctly
+        // matches the SuperAdmin row in the database.
+        var marketId = _currentMarketService.TryGetCurrentMarketId();
 
         var users = await _unitOfWork.Users.FindAsync(
             u => u.Id == id && u.MarketId == marketId,
