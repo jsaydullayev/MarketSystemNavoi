@@ -10,6 +10,7 @@ import '../../core/constants/public_routes.dart';
 import '../../core/managers/route_state_manager.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/widgets/network_wrapper.dart';
 import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
@@ -125,9 +126,19 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.colors.surface,
-      body: DecoratedBox(
+    // D2 — wrap so the very first frame on a cold boot without internet
+    // shows the localized no-internet panel instead of a spinner that
+    // never resolves. onRetry re-runs the auth-restore + navigation
+    // flow so the splash recovers automatically when the connection
+    // comes back.
+    return NetworkWrapper(
+      onRetry: () {
+        _isNavigating = false;
+        _initializeAndNavigate();
+      },
+      child: Scaffold(
+        backgroundColor: context.colors.surface,
+        body: DecoratedBox(
         // Same gradient as the auth screens for a consistent first impression.
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -180,6 +191,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

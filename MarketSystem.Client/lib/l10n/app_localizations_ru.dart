@@ -902,6 +902,13 @@ class AppLocalizationsRu extends AppLocalizations {
       'Проверьте интернет и повторите попытку. Если проблема не исчезла, свяжитесь с администратором.';
 
   @override
+  String get noInternetTitle => 'Нет подключения к интернету';
+
+  @override
+  String get noInternetDescription =>
+      'Пожалуйста, проверьте подключение к интернету и повторите попытку';
+
+  @override
   String get customerDeleted => 'Клиент успешно удален';
 
   @override

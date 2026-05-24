@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/widgets/network_wrapper.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
@@ -43,9 +44,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.colors.surface,
-      body: DecoratedBox(
+    // D2 — wrap login so the user sees the localized no-internet panel
+    // up front instead of typing a password and watching the submit
+    // call hang. There's no auto-retry here (login is user-initiated);
+    // restoring the connection just dismisses the panel.
+    return NetworkWrapper(
+      child: Scaffold(
+        backgroundColor: context.colors.surface,
+        body: DecoratedBox(
         // Subtle white -> brandLight gradient, matching the demo's auth-screen
         // background.
         decoration: BoxDecoration(
@@ -139,6 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
