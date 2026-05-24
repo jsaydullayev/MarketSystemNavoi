@@ -301,6 +301,8 @@
   "retry": "Qayta urinish",
   "loadFailedTitle": "Ma'lumotni yuklab bo'lmadi",
   "loadFailedDescription": "Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog'laning.",
+  "noInternetTitle": "Internet aloqasi yo'q",
+  "noInternetDescription": "Iltimos, internet aloqasini tekshiring va qayta urinib ko'ring",
   "customerDeleted": "Mijoz muvaffaqiyatli o'chirildi",
   "customerAdded": "Mijoz muvaffaqiyatli qo'shildi",
   "addNewCustomer": "Yangi mijoz qo'shish",

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/providers/auth_provider.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/widgets/network_wrapper.dart';
 import '../../data/services/dashboard_service.dart';
 import '../../data/services/notification_service.dart';
 import '../../design/tokens/app_theme_colors.dart';
@@ -94,33 +95,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final role = (user?['role'] ?? 'Seller') as String;
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: context.colors.bg,
-      drawer: DashboardDrawer(user: user, role: role, l10n: l10n),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: Icon(Icons.menu_rounded, color: context.colors.text),
+    // D2 — wrap with NetworkWrapper so a fresh dashboard on a dropped
+    // connection renders the localized no-internet panel (instead of
+    // a half-empty summary). Reconnect → onRetry re-runs the futures.
+    return NetworkWrapper(
+      onRetry: _refresh,
+      child: Scaffold(
+        backgroundColor: context.colors.bg,
+        drawer: DashboardDrawer(user: user, role: role, l10n: l10n),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: Builder(
+            builder: (context) => IconButton(
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              icon: Icon(Icons.menu_rounded, color: context.colors.text),
+            ),
+          ),
+          title: Text(
+            'STROTECH',
+            style: AppTextStyles.titleMedium()
+                .copyWith(letterSpacing: 2, color: context.colors.text),
           ),
         ),
-        title: Text(
-          'STROTECH',
-          style: AppTextStyles.titleMedium()
-              .copyWith(letterSpacing: 2, color: context.colors.text),
-        ),
-      ),
-      body: RefreshIndicator(
-        color: context.colors.brand,
-        onRefresh: _refresh,
-        child: _DashboardBody(
-          user: user,
-          role: role,
-          summaryFuture: _summaryFuture,
-          sellerSummaryFuture: _sellerSummaryFuture,
-          unreadFuture: _unreadFuture,
+        body: RefreshIndicator(
+          color: context.colors.brand,
+          onRefresh: _refresh,
+          child: _DashboardBody(
+            user: user,
+            role: role,
+            summaryFuture: _summaryFuture,
+            sellerSummaryFuture: _sellerSummaryFuture,
+            unreadFuture: _unreadFuture,
+          ),
         ),
       ),
     );

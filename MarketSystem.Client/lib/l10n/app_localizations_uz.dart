@@ -902,6 +902,13 @@ class AppLocalizationsUz extends AppLocalizations {
       'Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog\'laning.';
 
   @override
+  String get noInternetTitle => 'Internet aloqasi yo\'q';
+
+  @override
+  String get noInternetDescription =>
+      'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring';
+
+  @override
   String get customerDeleted => 'Mijoz muvaffaqiyatli o\'chirildi';
 
   @override

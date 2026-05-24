@@ -1852,6 +1852,20 @@ abstract class AppLocalizations {
   /// **'Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog\'laning.'**
   String get loadFailedDescription;
 
+  /// D2 — headline rendered by `NetworkWrapper` when device connectivity
+  /// drops or the API health check fails.
+  ///
+  /// In uz, this message translates to:
+  /// **'Internet aloqasi yo\'q'**
+  String get noInternetTitle;
+
+  /// D2 — subtitle under `noInternetTitle` hinting the user to check
+  /// their connection before tapping Retry.
+  ///
+  /// In uz, this message translates to:
+  /// **'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring'**
+  String get noInternetDescription;
+
   /// No description provided for @customerDeleted.
   ///
   /// In uz, this message translates to:
