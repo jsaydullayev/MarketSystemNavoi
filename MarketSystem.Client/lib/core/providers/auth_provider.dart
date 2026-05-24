@@ -109,6 +109,10 @@ class AuthProvider extends ChangeNotifier {
         }
         _isLoading = false;
         notifyListeners();
+        // Login response only carries JWT claims — profileImage is not
+        // included. Fetch the full profile in the background so the avatar
+        // appears shortly after navigation without blocking login.
+        fetchUserProfile();
         return true;
       }
 
