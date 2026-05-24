@@ -44,6 +44,8 @@ class TokenStorage {
   // before the user unlocks; cheaper than first_unlock for a kiosk-style
   // POS where the app may launch before the user touches the device. The
   // tokens are still encrypted at rest and tied to the device keychain.
+  // Web: flutter_secure_storage 9.x uses IndexedDB (persistent across
+  // refreshes) — no special WebOptions needed.
   final _secure = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     iOptions: IOSOptions(

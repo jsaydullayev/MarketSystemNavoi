@@ -10,6 +10,7 @@ import '../../core/constants/public_routes.dart';
 import '../../core/managers/route_state_manager.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/storage/token_storage.dart';
 import '../../core/widgets/network_wrapper.dart';
 import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
@@ -69,7 +70,10 @@ class _SplashScreenState extends State<SplashScreen> {
     // (no network wait) and survives transient backend outages.
     final prefs = await SharedPreferences.getInstance();
     final bool isFirstTime = prefs.getBool('is_first_time') ?? true;
-    final accessToken = prefs.getString('access_token');
+    // Read from TokenStorage (secure/localStorage) — the legacy SharedPrefs
+    // key 'access_token' is wiped by TokenStorage.migration on first run, so
+    // reading it here always returned null and caused a re-login on refresh.
+    final accessToken = await TokenStorage.instance.readAccess();
     final cachedRole = prefs.getString('user_role');
     final hasSession =
         (accessToken != null && accessToken.isNotEmpty) &&
