@@ -280,14 +280,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildThemeRow(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final mode = AdaptiveTheme.of(context).mode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ProfileSettingsRow(
       icon: Icons.palette_outlined,
       tone: ProfileRowIconTone.gray,
       title: l10n.themeLabel,
-      value: mode.isDark ? l10n.themeDark : l10n.themeLight,
+      value: isDark ? l10n.themeDark : l10n.themeLight,
       onTap: () {
-        AdaptiveTheme.of(context).toggleThemeMode();
+        if (isDark) {
+          AdaptiveTheme.of(context).setLight();
+        } else {
+          AdaptiveTheme.of(context).setDark();
+        }
       },
     );
   }

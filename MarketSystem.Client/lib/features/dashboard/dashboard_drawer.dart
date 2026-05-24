@@ -53,30 +53,6 @@ class DashboardDrawer extends StatelessWidget {
                   const SizedBox(height: AppSpacing.lg),
                   Divider(color: context.colors.border, height: 1),
                   const SizedBox(height: AppSpacing.md),
-                  _SettingsTile(
-                    icon: isDark
-                        ? Icons.light_mode_outlined
-                        : Icons.dark_mode_outlined,
-                    label: isDark ? l10n.lightMode : l10n.darkMode,
-                    trailing: Switch.adaptive(
-                      value: isDark,
-                      activeThumbColor: context.colors.brand,
-                      onChanged: (_) {
-                        if (isDark) {
-                          AdaptiveTheme.of(context).setLight();
-                        } else {
-                          AdaptiveTheme.of(context).setDark();
-                        }
-                      },
-                    ),
-                    onTap: () {
-                      if (isDark) {
-                        AdaptiveTheme.of(context).setLight();
-                      } else {
-                        AdaptiveTheme.of(context).setDark();
-                      }
-                    },
-                  ),
                   Consumer<LocaleProvider>(
                     builder: (context, lp, _) => _SettingsTile(
                       icon: Icons.translate_rounded,
@@ -185,7 +161,7 @@ class DashboardDrawer extends StatelessWidget {
       ]);
     }
 
-    if (context.can(Permissions.dataAuditLog)) {
+    if (role == 'SuperAdmin') {
       items.add(
         _DrawerItem(
           icon: Icons.shield_outlined,
@@ -515,14 +491,12 @@ class _SettingsTile extends StatelessWidget {
     required this.icon,
     required this.label,
     this.onTap,
-    this.trailing,
     this.tint,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
-  final Widget? trailing;
   final Color? tint;
 
   @override
@@ -552,7 +526,6 @@ class _SettingsTile extends StatelessWidget {
                   ),
                 ),
               ),
-              if (trailing case final t?) t,
             ],
           ),
         ),

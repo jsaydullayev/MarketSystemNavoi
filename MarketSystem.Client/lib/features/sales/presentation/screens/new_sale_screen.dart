@@ -267,39 +267,44 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             );
             final finalSaleId = sale['id'];
 
-            for (var item in cartSnapshot) {
-              if (item['isExternal'] == true) {
-                // External product - add through external endpoint
-                await salesService.addSaleItem(
-                  saleId: finalSaleId,
-                  isExternal: true,
-                  externalProductName: item['productName'],
-                  externalCostPrice: item['externalCostPrice'] ?? 0.0,
-                  quantity: item['quantity'],
-                  salePrice: item['salePrice'],
-                  minSalePrice: 0.0,
-                  comment: item['comment'],
-                );
-              } else {
-                // Regular product
-                await salesService.addSaleItem(
-                  saleId: finalSaleId,
-                  productId: item['productId'],
-                  quantity: item['quantity'],
-                  salePrice: item['salePrice'],
-                  minSalePrice: item['minSalePrice'] ?? 0.0,
-                  comment: item['comment'],
-                );
-              }
-            }
+            // Add all items in parallel — each addSaleItem is independent
+            // once the saleId is known. Reduces N sequential round-trips to 1.
+            await Future.wait(
+              cartSnapshot.map((item) {
+                if (item['isExternal'] == true) {
+                  return salesService.addSaleItem(
+                    saleId: finalSaleId,
+                    isExternal: true,
+                    externalProductName: item['productName'],
+                    externalCostPrice: item['externalCostPrice'] ?? 0.0,
+                    quantity: item['quantity'],
+                    salePrice: item['salePrice'],
+                    minSalePrice: 0.0,
+                    comment: item['comment'],
+                  );
+                } else {
+                  return salesService.addSaleItem(
+                    saleId: finalSaleId,
+                    productId: item['productId'],
+                    quantity: item['quantity'],
+                    salePrice: item['salePrice'],
+                    minSalePrice: item['minSalePrice'] ?? 0.0,
+                    comment: item['comment'],
+                  );
+                }
+              }),
+            );
 
-            for (var payment in payments) {
-              await salesService.addPayment(
-                saleId: finalSaleId,
-                paymentType: payment['paymentType'],
-                amount: payment['amount'],
-              );
-            }
+            // Add all payments in parallel as well.
+            await Future.wait(
+              payments.map(
+                (payment) => salesService.addPayment(
+                  saleId: finalSaleId,
+                  paymentType: payment['paymentType'],
+                  amount: payment['amount'],
+                ),
+              ),
+            );
 
             if (useDebt && payments.isEmpty) {
               await salesService.markSaleAsDebt(finalSaleId);

@@ -419,13 +419,15 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             listen: false,
           );
           final salesService = SalesService(authProvider: authProvider);
-          for (var payment in payments) {
-            await salesService.addPayment(
-              saleId: widget.saleId,
-              paymentType: payment['paymentType'],
-              amount: payment['amount'],
-            );
-          }
+          await Future.wait(
+            payments.map(
+              (payment) => salesService.addPayment(
+                saleId: widget.saleId,
+                paymentType: payment['paymentType'],
+                amount: payment['amount'],
+              ),
+            ),
+          );
           if (mounted) {
             Navigator.pop(context);
             Navigator.pop(context, true);
