@@ -532,7 +532,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get usernameMinLength => 'Имя пользователя минимум 3 символа';
 
   @override
-  String get passwordMinLength => 'Минимум 8 символов, 1 буква и 1 цифра';
+  String get passwordMinLength => 'Пароль минимум 6 символов';
 
   @override
   String get passwordConfirm => 'Подтвердите пароль';
@@ -893,38 +893,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get retry => 'Повторить попытку';
-
-  @override
-  String get loadFailedTitle => 'Не удалось загрузить данные';
-
-  @override
-  String get loadFailedDescription =>
-      'Проверьте интернет и повторите попытку. Если проблема не исчезла, свяжитесь с администратором.';
-
-  @override
-  String get noInternetTitle => 'Нет подключения к интернету';
-
-  @override
-  String get noInternetDescription =>
-      'Пожалуйста, проверьте подключение к интернету и повторите попытку';
-
-  @override
-  String get debtDueLabel => 'Срок';
-
-  @override
-  String get debtOverdueBadge => 'Просрочен';
-
-  @override
-  String get debtDueToday => 'Сегодня срок';
-
-  @override
-  String get debtDueTomorrow => 'Завтра срок';
-
-  @override
-  String debtDueInDays(Object n) => 'Осталось $n дн.';
-
-  @override
-  String debtOverdueByDays(Object n) => 'Просрочка $n дн.';
 
   @override
   String get customerDeleted => 'Клиент успешно удален';
@@ -2689,58 +2657,4 @@ class AppLocalizationsRu extends AppLocalizations {
   String shiftStartedAt(String time) {
     return 'Начата: $time';
   }
-
-  @override
-  String get shiftNotOpenError =>
-      'Открытая смена не найдена. Сначала откройте смену.';
-
-  @override
-  String get concurrentChangeError =>
-      'Данные были изменены другим пользователем. Обновите страницу и попробуйте снова.';
-
-  @override
-  String get securityJournal => 'Журнал безопасности';
-
-  @override
-  String get securityJournalAllTab => 'Все';
-
-  @override
-  String get securityJournalSuspiciousTab => 'Подозрительные';
-
-  @override
-  String get securityJournalFilterEntityType => 'Тип события';
-
-  @override
-  String get securityJournalFilterAction => 'Действие';
-
-  @override
-  String get securityJournalFilterAll => 'Все';
-
-  @override
-  String get securityJournalEmptyAll => 'Записей аудита пока нет.';
-
-  @override
-  String get securityJournalNoSuspicious =>
-      'Подозрительной активности пока не обнаружено.';
-
-  @override
-  String get securityJournalAnonymousActor => 'Анонимный';
-
-  @override
-  String get securityJournalFailedLoginBursts => 'Серии неудачных входов';
-
-  @override
-  String get securityJournalBulkDeleteBursts => 'Массовые удаления';
-
-  @override
-  String get securityJournalFirstSeen => 'Начало';
-
-  @override
-  String get securityJournalLastSeen => 'Последнее';
-
-  @override
-  String get securityJournalSourceIps => 'Источник IP';
-
-  @override
-  String get securityJournalEntityTypes => 'Объекты';
 }
