@@ -29,7 +29,9 @@ class WelcomeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.white, context.colors.brandLight],
+            colors: isDark
+                ? [AppColors.darkSurface2, AppColors.darkBg]
+                : [Colors.white, context.colors.brandLight],
           ),
         ),
         child: SafeArea(
