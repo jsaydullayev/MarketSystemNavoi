@@ -10,28 +10,35 @@ class ProductService {
   final HttpService _httpService;
 
   ProductService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   Future<List<dynamic>> getAllProducts() async {
-    final response =
-        await _httpService.get('${ApiConstants.products}/GetAllProducts');
+    final response = await _httpService.get(
+      '${ApiConstants.products}/GetAllProducts',
+    );
 
     if (response.statusCode == 200) {
       return List<dynamic>.from(jsonDecode(response.body));
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load products');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load products',
+      );
     }
   }
 
   Future<dynamic> getProductById(String id) async {
-    final response =
-        await _httpService.get('${ApiConstants.products}/GetProduct/$id');
+    final response = await _httpService.get(
+      '${ApiConstants.products}/GetProduct/$id',
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load product');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load product',
+      );
     }
   }
 
@@ -60,7 +67,10 @@ class ProductService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to create product');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to create product',
+      );
     }
   }
 
@@ -91,16 +101,23 @@ class ProductService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update product');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to update product',
+      );
     }
   }
 
   Future<void> deleteProduct(String id) async {
-    final response = await _httpService
-        .delete('${ApiConstants.products}/DeleteProduct/$id');
+    final response = await _httpService.delete(
+      '${ApiConstants.products}/DeleteProduct/$id',
+    );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to delete product');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to delete product',
+      );
     }
   }
 

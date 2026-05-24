@@ -31,9 +31,6 @@ class UpdateCustomerUseCase {
       return ApiResult.failure('Mijoz ismi bo\'sh bo\'lishi mumkin emas');
     }
 
-    return repository.updateCustomer(
-      phone: phone,
-      fullName: fullName?.trim(),
-    );
+    return repository.updateCustomer(phone: phone, fullName: fullName?.trim());
   }
 }

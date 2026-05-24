@@ -133,8 +133,7 @@ class _CredentialsHandoffDialogState extends State<CredentialsHandoffDialog> {
                       onPressed: () async {
                         final payload =
                             '${widget.username}\n${widget.password}\n${widget.marketName}';
-                        await Clipboard.setData(
-                            ClipboardData(text: payload));
+                        await Clipboard.setData(ClipboardData(text: payload));
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

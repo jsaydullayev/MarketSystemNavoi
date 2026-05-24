@@ -30,10 +30,7 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
   });
 
   static const _config = {
-    'Cash': {
-      'icon': Icons.payments_outlined,
-      'color': AppColors.success,
-    },
+    'Cash': {'icon': Icons.payments_outlined, 'color': AppColors.success},
     'Terminal': {
       // Fixed category marker colour (not the theme accent) — orange reads
       // fine on both light and dark, like the literal purple/blue below.
@@ -44,10 +41,7 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
       'icon': Icons.account_balance_outlined,
       'color': Color(0xFF8B5CF6),
     },
-    'Click': {
-      'icon': Icons.phone_android_outlined,
-      'color': Color(0xFF3B82F6),
-    },
+    'Click': {'icon': Icons.phone_android_outlined, 'color': Color(0xFF3B82F6)},
     'Qaytarilgan': {
       'icon': Icons.assignment_return_outlined,
       'color': AppColors.danger,
@@ -63,11 +57,9 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isRefund = paymentType == 'Qaytarilgan' || paymentType == 'Refund';
 
-    final cfg = _config[paymentType] ??
-        {
-          'icon': Icons.payment_outlined,
-          'color': context.colors.textMuted,
-        };
+    final cfg =
+        _config[paymentType] ??
+        {'icon': Icons.payment_outlined, 'color': context.colors.textMuted};
     final color = cfg['color'] as Color;
     final icon = cfg['icon'] as IconData;
     final String name;
@@ -146,7 +138,8 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
                         : 0,
                     backgroundColor: color.withValues(alpha: 0.1),
                     valueColor: AlwaysStoppedAnimation(
-                        isRefund ? AppColors.danger : color),
+                      isRefund ? AppColors.danger : color,
+                    ),
                     minHeight: 4,
                   ),
                 ),

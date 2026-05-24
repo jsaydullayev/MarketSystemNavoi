@@ -53,17 +53,15 @@ class DailySalesDetailsScreen extends StatelessWidget {
                 ? const EmptyItems(isDark: false)
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.xl,
-                        AppSpacing.lg,
-                        AppSpacing.xl,
-                        AppSpacing.xl4),
+                      AppSpacing.xl,
+                      AppSpacing.lg,
+                      AppSpacing.xl,
+                      AppSpacing.xl4,
+                    ),
                     itemCount: saleItems.length,
                     itemBuilder: (_, i) => Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.md + 2),
-                      child: SaleItemCard(
-                        item: saleItems[i],
-                        isDark: false,
-                      ),
+                      child: SaleItemCard(item: saleItems[i], isDark: false),
                     ),
                   ),
           ),

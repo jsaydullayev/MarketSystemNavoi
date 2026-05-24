@@ -52,11 +52,7 @@ class CreateCategoryRequestModel {
   final String? description;
   final String? icon;
 
-  CreateCategoryRequestModel({
-    required this.name,
-    this.description,
-    this.icon,
-  });
+  CreateCategoryRequestModel({required this.name, this.description, this.icon});
 
   /// Convert to JSON
   Map<String, dynamic> toJson() {

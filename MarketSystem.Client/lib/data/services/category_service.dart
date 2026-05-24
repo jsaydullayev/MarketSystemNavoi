@@ -9,12 +9,14 @@ class CategoryService {
   final HttpService _httpService;
 
   CategoryService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
+    : _httpService = httpService ?? HttpService();
 
   /// Get all categories
   Future<List<ProductCategoryModel>> getAllCategories() async {
     try {
-      final response = await _httpService.get('/ProductCategories/GetAllCategories');
+      final response = await _httpService.get(
+        '/ProductCategories/GetAllCategories',
+      );
 
       if (response.statusCode == 200) {
         // Bo'sh yoki whitespace-only javoblarni tekshirish
@@ -27,12 +29,16 @@ class CategoryService {
         final List<dynamic> data = jsonDecode(trimmedBody);
         return data.map((json) => ProductCategoryModel.fromJson(json)).toList();
       }
-      throw ApiException.fromResponse(response, fallbackMessage: switch (response.statusCode) {
-        401 => 'Avtorizatsiya xatosi: Iltimos, qayta tizimga kiring',
-        403 => 'Ruxsat yo\'q: Faqat Admin va Owner kategoriyalarni ko\'rishi mumkin',
-        404 => 'Endpoint topilmadi. Backend ishga tushganini tekshiring',
-        _ => 'Failed to load categories',
-      });
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: switch (response.statusCode) {
+          401 => 'Avtorizatsiya xatosi: Iltimos, qayta tizimga kiring',
+          403 =>
+            'Ruxsat yo\'q: Faqat Admin va Owner kategoriyalarni ko\'rishi mumkin',
+          404 => 'Endpoint topilmadi. Backend ishga tushganini tekshiring',
+          _ => 'Failed to load categories',
+        },
+      );
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -42,7 +48,9 @@ class CategoryService {
 
   /// Get category by ID
   Future<ProductCategoryModel?> getCategoryById(int id) async {
-    final response = await _httpService.get('/ProductCategories/GetCategoryById/$id');
+    final response = await _httpService.get(
+      '/ProductCategories/GetCategoryById/$id',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -50,7 +58,10 @@ class CategoryService {
     } else if (response.statusCode == 404) {
       return null;
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load category');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load category',
+      );
     }
   }
 
@@ -75,7 +86,10 @@ class CategoryService {
       final data = jsonDecode(response.body);
       return ProductCategoryModel.fromJson(data);
     }
-    throw ApiException.fromResponse(response, fallbackMessage: 'Category creation failed');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Category creation failed',
+    );
   }
 
   /// Update category
@@ -105,18 +119,26 @@ class CategoryService {
     } else if (response.statusCode == 404) {
       return null;
     }
-    throw ApiException.fromResponse(response, fallbackMessage: 'Category update failed');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Category update failed',
+    );
   }
 
   /// Delete category
   Future<bool> deleteCategory(int id) async {
-    final response = await _httpService.delete('/ProductCategories/DeleteCategory/$id');
+    final response = await _httpService.delete(
+      '/ProductCategories/DeleteCategory/$id',
+    );
 
     if (response.statusCode == 200) {
       return true;
     } else if (response.statusCode == 404) {
       return false;
     }
-    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to delete category');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to delete category',
+    );
   }
 }

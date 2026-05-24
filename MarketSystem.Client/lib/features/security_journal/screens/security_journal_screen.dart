@@ -95,10 +95,7 @@ class _SecurityJournalScreenState extends State<SecurityJournalScreen>
       appBar: AppBar(
         backgroundColor: context.colors.surface,
         elevation: 0,
-        title: Text(
-          l10n.securityJournal,
-          style: AppTextStyles.titleMedium(),
-        ),
+        title: Text(l10n.securityJournal, style: AppTextStyles.titleMedium()),
         bottom: TabBar(
           controller: _tabController,
           labelColor: context.colors.brand,
@@ -403,10 +400,7 @@ class _Chip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected ? c.brand : c.inputFill,
             borderRadius: BorderRadius.circular(AppRadius.full),
-            border: Border.all(
-              color: selected ? c.brand : c.border,
-              width: 1,
-            ),
+            border: Border.all(color: selected ? c.brand : c.border, width: 1),
           ),
           alignment: Alignment.center,
           child: Text(
@@ -446,18 +440,14 @@ class _AuditLogCard extends StatelessWidget {
                   vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: isHighRisk
-                      ? AppColors.dangerLight
-                      : c.brandLight,
+                  color: isHighRisk ? AppColors.dangerLight : c.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
                   entry.action,
                   style: AppTextStyles.bodyMedium().copyWith(
                     fontWeight: FontWeight.w700,
-                    color: isHighRisk
-                        ? AppColors.dangerDeep
-                        : c.brandDark,
+                    color: isHighRisk ? AppColors.dangerDeep : c.brandDark,
                   ),
                 ),
               ),
@@ -550,15 +540,14 @@ class _AuditLogCard extends StatelessWidget {
   /// the actor's normal pattern) and ShiftChange (admin gating a seller's
   /// ability to log in; misuse can lock out the till outside hours).
   bool _isHighRiskAction(String action) => switch (action) {
-        'LoginFailed' ||
-        'Delete' ||
-        'PermissionChange' ||
-        'Block' ||
-        'PasswordChange' ||
-        'ShiftChange' =>
-          true,
-        _ => false,
-      };
+    'LoginFailed' ||
+    'Delete' ||
+    'PermissionChange' ||
+    'Block' ||
+    'PasswordChange' ||
+    'ShiftChange' => true,
+    _ => false,
+  };
 
   String _previewPayload(String raw) {
     // Collapse the JSON to one line; the screen renders monospaced so newlines
@@ -616,8 +605,9 @@ class _SuspiciousViewState extends State<_SuspiciousView> {
                 const SizedBox(height: 80),
                 Center(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpacing.xl3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl3,
+                    ),
                     child: Column(
                       children: [
                         const Icon(

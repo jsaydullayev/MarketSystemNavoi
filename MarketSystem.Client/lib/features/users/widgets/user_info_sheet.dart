@@ -75,7 +75,11 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
   }
 
   /// Push a shift change to the backend, then refresh local + parent state.
-  Future<void> _applyShift(String status, {DateTime? start, DateTime? end}) async {
+  Future<void> _applyShift(
+    String status, {
+    DateTime? start,
+    DateTime? end,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _busy = true);
     try {
@@ -94,19 +98,23 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
         _busy = false;
       });
       widget.onChanged?.call();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(l10n.shiftUpdated),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.shiftUpdated),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString().replaceFirst('Exception: ', '')),
-        backgroundColor: AppColors.danger,
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -128,8 +136,13 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
       initialTime: TimeOfDay.fromDateTime(now),
     );
     if (startTime == null || !mounted) return;
-    final start = DateTime(startDate.year, startDate.month, startDate.day,
-        startTime.hour, startTime.minute);
+    final start = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+      startTime.hour,
+      startTime.minute,
+    );
 
     final defaultEnd = start.add(const Duration(hours: 8));
     final endDate = await showDatePicker(
@@ -144,15 +157,22 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
       initialTime: TimeOfDay.fromDateTime(defaultEnd),
     );
     if (endTime == null || !mounted) return;
-    final end = DateTime(endDate.year, endDate.month, endDate.day,
-        endTime.hour, endTime.minute);
+    final end = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      endTime.hour,
+      endTime.minute,
+    );
 
     if (!end.isAfter(start)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(l10n.shiftInvalidWindow),
-        backgroundColor: AppColors.danger,
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.shiftInvalidWindow),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
     await _applyShift('Scheduled', start: start, end: end);
@@ -273,8 +293,11 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
                 onBlock: () => _applyShift('Blocked'),
                 onOpen24h: () {
                   final now = DateTime.now();
-                  _applyShift('Scheduled',
-                      start: now, end: now.add(const Duration(hours: 24)));
+                  _applyShift(
+                    'Scheduled',
+                    start: now,
+                    end: now.add(const Duration(hours: 24)),
+                  );
                 },
                 onSetWindow: _pickWindow,
               ),
@@ -418,8 +441,11 @@ class _ShiftSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.schedule_rounded,
-                size: 14, color: context.colors.textMuted),
+            Icon(
+              Icons.schedule_rounded,
+              size: 14,
+              color: context.colors.textMuted,
+            ),
             const SizedBox(width: 6),
             Text(
               l10n.shiftSection.toUpperCase(),

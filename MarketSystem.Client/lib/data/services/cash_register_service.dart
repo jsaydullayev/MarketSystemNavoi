@@ -9,7 +9,7 @@ class CashRegisterService {
   final HttpService _httpService;
 
   CashRegisterService({required HttpService httpService})
-      : _httpService = httpService;
+    : _httpService = httpService;
 
   Future<CashRegisterModel?> getCashRegister() async {
     try {
@@ -25,8 +25,9 @@ class CashRegisterService {
 
   Future<TodaySalesSummaryModel?> getTodaySales() async {
     try {
-      final response =
-          await _httpService.get('${ApiConstants.cashRegister}/today-sales');
+      final response = await _httpService.get(
+        '${ApiConstants.cashRegister}/today-sales',
+      );
       if (response.statusCode == 200) {
         return TodaySalesSummaryModel.fromJson(jsonDecode(response.body));
       }
@@ -41,8 +42,11 @@ class CashRegisterService {
   /// guard the backend just added surfaces concurrent withdrawals as a
   /// 409 `DbUpdateConcurrencyException`; the previous `return statusCode
   /// == 200` collapsed every failure into a generic snackbar.
-  Future<void> withdrawCash(double amount, String comment,
-      [String withdrawType = 'cash']) async {
+  Future<void> withdrawCash(
+    double amount,
+    String comment, [
+    String withdrawType = 'cash',
+  ]) async {
     final response = await _httpService.post(
       '${ApiConstants.cashRegister}/withdraw',
       body: {

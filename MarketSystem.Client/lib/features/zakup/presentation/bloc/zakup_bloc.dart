@@ -45,15 +45,16 @@ class ZakupBloc extends Bloc<ZakupEvent, ZakupState> {
     Emitter<ZakupState> emit,
   ) async {
     emit(const ZakupLoading());
-    final result = await getZakupsByDateRangeUseCase(
-      event.start,
-      event.end,
-    );
+    final result = await getZakupsByDateRangeUseCase(event.start, event.end);
 
     if (result.data case final data? when result.isSuccess) {
       emit(ZakupLoaded(data));
     } else {
-      emit(ZakupError(result.error ?? 'Sana bo\'yicha xaridlarni yuklashda xatolik'));
+      emit(
+        ZakupError(
+          result.error ?? 'Sana bo\'yicha xaridlarni yuklashda xatolik',
+        ),
+      );
     }
   }
 

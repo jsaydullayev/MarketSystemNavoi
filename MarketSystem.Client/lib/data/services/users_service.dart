@@ -10,31 +10,38 @@ class UsersService {
   final HttpService _httpService;
 
   UsersService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   // Barcha userlarni olish
   Future<List<dynamic>> getAllUsers() async {
-    final response =
-        await _httpService.get('${ApiConstants.users}/GetAllUsers');
+    final response = await _httpService.get(
+      '${ApiConstants.users}/GetAllUsers',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load users');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load users',
+      );
     }
   }
 
   // User by ID
   Future<dynamic> getUserById(String id) async {
-    final response =
-        await _httpService.get('${ApiConstants.users}/GetUser/$id');
+    final response = await _httpService.get(
+      '${ApiConstants.users}/GetUser/$id',
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load user');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load user',
+      );
     }
   }
 
@@ -58,7 +65,10 @@ class UsersService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to create user');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to create user',
+      );
     }
   }
 
@@ -84,7 +94,10 @@ class UsersService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update user');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to update user',
+      );
     }
   }
 
@@ -95,7 +108,10 @@ class UsersService {
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to delete user');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to delete user',
+      );
     }
   }
 
@@ -110,7 +126,10 @@ class UsersService {
       body: {},
     );
     if (response.statusCode != 200) {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to deactivate');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to deactivate',
+      );
     }
   }
 
@@ -120,7 +139,10 @@ class UsersService {
       body: {},
     );
     if (response.statusCode != 200) {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to activate');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to activate',
+      );
     }
   }
 
@@ -148,6 +170,9 @@ class UsersService {
     }
     // ApiException.fromResponse picks up the `message` field on its own;
     // the previous manual try/jsonDecode block is redundant now.
-    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update shift');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to update shift',
+    );
   }
 }

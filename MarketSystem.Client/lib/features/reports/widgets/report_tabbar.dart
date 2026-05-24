@@ -20,7 +20,11 @@ class ReportTabBar extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(
-          AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.md + 2),
+        AppSpacing.xl,
+        0,
+        AppSpacing.xl,
+        AppSpacing.md + 2,
+      ),
       height: 42,
       decoration: BoxDecoration(
         color: context.colors.inputFill,
@@ -43,10 +47,14 @@ class ReportTabBar extends StatelessWidget {
         dividerColor: Colors.transparent,
         labelColor: Colors.white,
         unselectedLabelColor: context.colors.textSecondary,
-        labelStyle: AppTextStyles.labelSmall()
-            .copyWith(fontSize: 13, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: AppTextStyles.labelSmall()
-            .copyWith(fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle: AppTextStyles.labelSmall().copyWith(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: AppTextStyles.labelSmall().copyWith(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         tabs: [
           Tab(text: l10n.daily),
           Tab(text: l10n.monthly),

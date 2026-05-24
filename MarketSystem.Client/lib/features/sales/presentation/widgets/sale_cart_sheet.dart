@@ -18,8 +18,7 @@ void showCartSheet(
   BuildContext context, {
   required List<Map<String, dynamic>> cartItems,
   required void Function(int index, double newQty) onUpdateQuantity,
-  required void Function(int index, Map<String, dynamic> item)
-      onEditItemPrice,
+  required void Function(int index, Map<String, dynamic> item) onEditItemPrice,
   required void Function(int index) onRemoveFromCart,
   required VoidCallback onCheckout,
 }) {
@@ -49,7 +48,8 @@ void showCartSheet(
                 decoration: BoxDecoration(
                   color: context.colors.surface,
                   borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(24)),
+                    top: Radius.circular(24),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -63,8 +63,7 @@ void showCartSheet(
                       ),
                     ),
                     Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                      padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
                       child: Row(
                         children: [
                           Text(
@@ -74,11 +73,12 @@ void showCartSheet(
                           const SizedBox(width: AppSpacing.md),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 2),
+                              horizontal: 10,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: context.colors.brandLight,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.lg),
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
                             ),
                             child: Text(
                               '${cartItems.length}',
@@ -92,8 +92,10 @@ void showCartSheet(
                           const Spacer(),
                           IconButton(
                             onPressed: () => Navigator.pop(ctx),
-                            icon: Icon(Icons.close,
-                                color: context.colors.textSecondary),
+                            icon: Icon(
+                              Icons.close,
+                              color: context.colors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -110,13 +112,11 @@ void showCartSheet(
                             )
                           : ListView.separated(
                               controller: scrollController,
-                              padding: const EdgeInsets.fromLTRB(
-                                  16, 4, 16, 16),
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                               itemCount: cartItems.length,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: AppSpacing.md),
-                              itemBuilder: (_, index) =>
-                                  _buildItem(
+                              itemBuilder: (_, index) => _buildItem(
                                 context,
                                 ctx,
                                 index,
@@ -168,13 +168,10 @@ Widget _buildItem(
   return Container(
     padding: const EdgeInsets.all(AppSpacing.lg),
     decoration: BoxDecoration(
-      color: isExternal
-          ? context.colors.brandLight
-          : context.colors.surface,
+      color: isExternal ? context.colors.brandLight : context.colors.surface,
       borderRadius: BorderRadius.circular(AppRadius.lg),
       border: Border.all(
-        color:
-            isExternal ? AppColors.brandTint : context.colors.border,
+        color: isExternal ? AppColors.brandTint : context.colors.border,
       ),
     ),
     child: Column(
@@ -297,8 +294,7 @@ Widget _buildFooter(
     padding: const EdgeInsets.all(AppSpacing.xl),
     decoration: BoxDecoration(
       color: context.colors.surface,
-      border:
-          Border(top: BorderSide(color: context.colors.borderSoft)),
+      border: Border(top: BorderSide(color: context.colors.borderSoft)),
     ),
     child: SafeArea(
       top: false,
@@ -317,8 +313,9 @@ Widget _buildFooter(
               children: [
                 Text(
                   l10n.totalSum,
-                  style: AppTextStyles.bodyMedium()
-                      .copyWith(fontWeight: FontWeight.w500),
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 Text(
                   NumberFormatter.format(totalAmount),
@@ -332,8 +329,10 @@ Widget _buildFooter(
           ),
           const SizedBox(height: AppSpacing.lg),
           AppPrimaryButton(
-            label: l10n.processReturn
-                .replaceAll(l10n.returnText, l10n.saleText),
+            label: l10n.processReturn.replaceAll(
+              l10n.returnText,
+              l10n.saleText,
+            ),
             icon: Icons.credit_card_rounded,
             onPressed: onCheckout,
           ),

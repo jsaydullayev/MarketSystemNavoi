@@ -70,16 +70,20 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     );
 
     try {
-      final pdfData =
-          await _salesService.downloadInvoice(widget.saleId, lang: lang);
+      final pdfData = await _salesService.downloadInvoice(
+        widget.saleId,
+        lang: lang,
+      );
 
       if (pdfData == null || pdfData.isEmpty) {
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l10n.errorOccurred),
-            backgroundColor: AppColors.danger,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.errorOccurred),
+              backgroundColor: AppColors.danger,
+            ),
+          );
         }
         return;
       }
@@ -88,8 +92,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
       final createdAt = sale['createdAt'] != null
           ? (sale['createdAt'] is DateTime
-              ? sale['createdAt'] as DateTime
-              : DateTime.parse(sale['createdAt'].toString()))
+                ? sale['createdAt'] as DateTime
+                : DateTime.parse(sale['createdAt'].toString()))
           : DateTime.now();
       final dateStr = DateFormat('dd.MM.yyyy').format(createdAt);
       final fileName = 'faktura_${widget.saleId}_$dateStr.pdf';
@@ -130,17 +134,21 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           final result = await OpenFilex.open(path);
           if (result.type != ResultType.done) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('${l10n.errorOccurred}: ${result.message}'),
-                backgroundColor: AppColors.warning,
-              ));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${l10n.errorOccurred}: ${result.message}'),
+                  backgroundColor: AppColors.warning,
+                ),
+              );
             }
           } else {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(l10n.pdfDownloaded),
-                backgroundColor: AppColors.success,
-              ));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l10n.pdfDownloaded),
+                  backgroundColor: AppColors.success,
+                ),
+              );
             }
           }
         }
@@ -149,18 +157,22 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
 
       if (mounted) Navigator.pop(context);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(l10n.pdfDownloaded),
-          backgroundColor: AppColors.success,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.pdfDownloaded),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) Navigator.pop(context);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${l10n.errorOccurred}: $e'),
-          backgroundColor: AppColors.danger,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.errorOccurred}: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
       }
     }
   }
@@ -172,13 +184,19 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     return BlocListener<SalesBloc, SalesState>(
       listener: (context, state) {
         if (state is SalesError) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
               content: Text(state.message),
-              backgroundColor: AppColors.danger));
+              backgroundColor: AppColors.danger,
+            ),
+          );
         } else if (state is SaleItemReturned) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
               content: Text(l10n.returnSuccess),
-              backgroundColor: AppColors.success));
+              backgroundColor: AppColors.success,
+            ),
+          );
           _loadSaleDetails();
         }
       },
@@ -195,7 +213,8 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             ];
           }
 
-          final isDraft = state is SaleDetailLoaded &&
+          final isDraft =
+              state is SaleDetailLoaded &&
               (state.sale['status']?.toString().toLowerCase() == 'draft');
 
           return NetworkWrapper(
@@ -225,12 +244,15 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         if (result == true && mounted) _loadSaleDetails();
                       },
                       backgroundColor: const Color(0xFF3B82F6),
-                      icon: const Icon(Icons.play_arrow_rounded,
-                          color: Colors.white),
+                      icon: const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.white,
+                      ),
                       label: Text(
                         l10n.ongoing,
-                        style: AppTextStyles.labelLarge()
-                            .copyWith(color: Colors.white),
+                        style: AppTextStyles.labelLarge().copyWith(
+                          color: Colors.white,
+                        ),
                       ),
                     )
                   : null,
@@ -244,9 +266,10 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
   Widget _buildBody(SalesState state, AppLocalizations l10n) {
     if (state is SaleDetailLoading) {
       return Center(
-          child: CircularProgressIndicator(
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(context.colors.brand)));
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand),
+        ),
+      );
     }
     if (state is SaleDetailLoaded) {
       final sale = state.sale;
@@ -256,11 +279,13 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final remainingAmount = totalAmount - paidAmount;
       final items = sale['items'] as List<dynamic>? ?? [];
 
-      final canEditSales =
-          Provider.of<AuthProvider>(context, listen: false)
-              .can(Permissions.salesEdit);
+      final canEditSales = Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).can(Permissions.salesEdit);
       final statusLower = status.toLowerCase();
-      final canReturn = canEditSales &&
+      final canReturn =
+          canEditSales &&
           (statusLower == 'paid' ||
               statusLower == 'debt' ||
               statusLower == 'closed');
@@ -271,7 +296,11 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, 100),
+              AppSpacing.xl,
+              AppSpacing.xl,
+              AppSpacing.xl,
+              100,
+            ),
             child: Column(
               children: [
                 SaleMetaCard(sale: sale, status: status),

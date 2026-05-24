@@ -16,13 +16,17 @@ class EmptyReport extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bar_chart_rounded,
-              size: 64, color: context.colors.textMuted),
+          Icon(
+            Icons.bar_chart_rounded,
+            size: 64,
+            color: context.colors.textMuted,
+          ),
           const SizedBox(height: AppSpacing.lg),
           Text(
             l10n.noReports,
-            style: AppTextStyles.bodyLarge()
-                .copyWith(color: context.colors.textSecondary),
+            style: AppTextStyles.bodyLarge().copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
         ],
       ),

@@ -66,6 +66,7 @@ class DashboardSummary {
   /// dashboard. When this is > 0 the bell badge also picks them up via the
   /// notifications screen.
   final int overdueDebtsCount;
+
   /// Legacy top-3 list derived from daily-items aggregation. Kept for
   /// backwards-compat with any other consumer of [DashboardSummary]. The
   /// dashboard screen itself now prefers [topProductRows] which comes from
@@ -174,21 +175,17 @@ class PendingDraftSale {
       total = double.tryParse(t) ?? 0;
     }
 
-    return PendingDraftSale(
-      id: id,
-      itemCount: itemCount,
-      totalAmount: total,
-    );
+    return PendingDraftSale(id: id, itemCount: itemCount, totalAmount: total);
   }
 }
 
 class DashboardService {
   DashboardService({required this.authProvider})
-      : _reports = ReportService(authProvider: authProvider),
-        _customers = CustomerService(authProvider: authProvider),
-        _products = ProductService(authProvider: authProvider),
-        _debts = DebtService(authProvider: authProvider),
-        _sales = SalesService(authProvider: authProvider);
+    : _reports = ReportService(authProvider: authProvider),
+      _customers = CustomerService(authProvider: authProvider),
+      _products = ProductService(authProvider: authProvider),
+      _debts = DebtService(authProvider: authProvider),
+      _sales = SalesService(authProvider: authProvider);
 
   final AuthProvider authProvider;
   final ReportService _reports;
@@ -232,13 +229,16 @@ class DashboardService {
     //   top-products   → "Eng ko'p sotilgan" card (replaces local aggregation)
     // Each is _safe() wrapped so an empty / failing endpoint falls back to
     // null and the rest of the dashboard still renders.
-    final weeklySeriesFuture =
-        _safe(() => _reports.getWeeklySeries(days: 7, compare: true));
-    final topProductsTodayFuture = _safe(() => _reports.getTopProducts(
-          period: 'today',
-          sortBy: 'quantity',
-          limit: 3,
-        ));
+    final weeklySeriesFuture = _safe(
+      () => _reports.getWeeklySeries(days: 7, compare: true),
+    );
+    final topProductsTodayFuture = _safe(
+      () => _reports.getTopProducts(
+        period: 'today',
+        sortBy: 'quantity',
+        limit: 3,
+      ),
+    );
 
     final results = await Future.wait([
       profitFuture,
@@ -273,10 +273,12 @@ class DashboardService {
     final int todayCustomerCount = _countUniqueCustomersToday(salesList);
 
     // Profit numbers (Owner-only endpoint — may be null for other roles).
-    final double todayProfit =
-        profit == null ? 0.0 : (profit.todayProfit as num).toDouble();
-    final double weekProfit =
-        profit == null ? 0.0 : (profit.weekProfit as num).toDouble();
+    final double todayProfit = profit == null
+        ? 0.0
+        : (profit.todayProfit as num).toDouble();
+    final double weekProfit = profit == null
+        ? 0.0
+        : (profit.weekProfit as num).toDouble();
 
     // This-month revenue.
     final double monthRevenue = _num(month, 'totalSales').toDouble();
@@ -346,14 +348,12 @@ class DashboardService {
   /// resulting summary contains exclusively the current user's own numbers.
   /// Errors are isolated per-source; partial failure still renders.
   Future<SellerDashboardSummary> loadSellerSummary() async {
-    final myPerformanceFuture =
-        _safe(() => _reports.getMyPerformance(period: 'today'));
+    final myPerformanceFuture = _safe(
+      () => _reports.getMyPerformance(period: 'today'),
+    );
     final myDraftsFuture = _safe(() => _sales.getMyDraftSales());
 
-    final results = await Future.wait([
-      myPerformanceFuture,
-      myDraftsFuture,
-    ]);
+    final results = await Future.wait([myPerformanceFuture, myDraftsFuture]);
 
     final perf = results[0] as MyPerformance?;
     final drafts = results[1] as List<dynamic>?;

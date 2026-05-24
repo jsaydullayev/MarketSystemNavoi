@@ -25,13 +25,19 @@ class HourlyChart extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     final buckets = _bucketize(sales);
-    final maxValue =
-        buckets.fold<double>(0, (m, v) => v > m ? v : m); // 0 if all empty
+    final maxValue = buckets.fold<double>(
+      0,
+      (m, v) => v > m ? v : m,
+    ); // 0 if all empty
     final hasAnyData = maxValue > 0;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -85,11 +91,11 @@ class HourlyChart extends StatelessWidget {
                 final isHighlighted = hasAnyData && v == maxValue && v > 0;
                 final tooltipMsg = v > 0
                     ? '${startHour.toString().padLeft(2, '0')}:00–'
-                        '${endHour.toString().padLeft(2, '0')}:00\n'
-                        '${_fmtMoney(v)} ${l10n.currencySom}'
+                          '${endHour.toString().padLeft(2, '0')}:00\n'
+                          '${_fmtMoney(v)} ${l10n.currencySom}'
                     : '${startHour.toString().padLeft(2, '0')}:00–'
-                        '${endHour.toString().padLeft(2, '0')}:00\n'
-                        '${l10n.noData}';
+                          '${endHour.toString().padLeft(2, '0')}:00\n'
+                          '${l10n.noData}';
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -110,14 +116,16 @@ class HourlyChart extends StatelessWidget {
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md, vertical: 6),
+                        horizontal: AppSpacing.md,
+                        vertical: 6,
+                      ),
                       child: Align(
                         alignment: Alignment.bottomCenter,
                         child: FractionallySizedBox(
                           heightFactor: ratio.isFinite
                               ? (ratio < 0.06 && hasAnyData && v > 0
-                                  ? 0.06
-                                  : (ratio < 0.05 ? 0.05 : ratio))
+                                    ? 0.06
+                                    : (ratio < 0.05 ? 0.05 : ratio))
                               : 0.05,
                           widthFactor: 1,
                           child: Container(
@@ -125,9 +133,10 @@ class HourlyChart extends StatelessWidget {
                               color: isHighlighted
                                   ? context.colors.brand
                                   : (hasAnyData && v > 0
-                                      ? context.colors.brand
-                                          .withValues(alpha: 0.55)
-                                      : context.colors.inputFill),
+                                        ? context.colors.brand.withValues(
+                                            alpha: 0.55,
+                                          )
+                                        : context.colors.inputFill),
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(3),
                               ),

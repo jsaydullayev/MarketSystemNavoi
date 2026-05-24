@@ -38,6 +38,13 @@ class ZakupEntity extends Equatable {
   String getFormattedCostPrice() => costPrice.toStringAsFixed(2);
 
   @override
-  List<Object?> get props =>
-      [id, productId, productName, quantity, costPrice, createdAt, createdBy];
+  List<Object?> get props => [
+    id,
+    productId,
+    productName,
+    quantity,
+    costPrice,
+    createdAt,
+    createdBy,
+  ];
 }

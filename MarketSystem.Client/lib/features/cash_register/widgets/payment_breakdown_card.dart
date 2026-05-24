@@ -21,7 +21,8 @@ class PaymentBreakdownCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    final total = todaySales.cashPaid + todaySales.cardPaid + todaySales.clickPaid;
+    final total =
+        todaySales.cashPaid + todaySales.cardPaid + todaySales.clickPaid;
 
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -34,26 +35,14 @@ class PaymentBreakdownCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           if (todaySales.cashPaid > 0)
-            _PaymentRow(
-              label: l10n.cashMoney,
-              amount: todaySales.cashPaid,
-            ),
+            _PaymentRow(label: l10n.cashMoney, amount: todaySales.cashPaid),
           if (todaySales.cardPaid > 0)
-            _PaymentRow(
-              label: l10n.bankCard,
-              amount: todaySales.cardPaid,
-            ),
+            _PaymentRow(label: l10n.bankCard, amount: todaySales.cardPaid),
           if (todaySales.clickPaid > 0)
-            _PaymentRow(
-              label: l10n.click,
-              amount: todaySales.clickPaid,
-            ),
+            _PaymentRow(label: l10n.click, amount: todaySales.clickPaid),
           if (total > 0) ...[
             const SizedBox(height: AppSpacing.md),
-            Container(
-              height: 1,
-              color: context.colors.border,
-            ),
+            Container(height: 1, color: context.colors.border),
             const SizedBox(height: AppSpacing.lg),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

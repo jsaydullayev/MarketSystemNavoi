@@ -144,7 +144,8 @@ class _DebtsScreenState extends State<DebtsScreen> {
         return ids;
       case _DebtSort.recent:
         ids.sort(
-            (a, b) => _customerMostRecent(b).compareTo(_customerMostRecent(a)));
+          (a, b) => _customerMostRecent(b).compareTo(_customerMostRecent(a)),
+        );
         return ids;
     }
   }
@@ -155,71 +156,68 @@ class _DebtsScreenState extends State<DebtsScreen> {
 
     return Scaffold(
       backgroundColor: context.colors.bg,
-      appBar: CommonAppBar(
-        title: l10n.debts,
-        onRefresh: _loadData,
-      ),
+      appBar: CommonAppBar(title: l10n.debts, onRefresh: _loadData),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _debtsByCustomer.isEmpty
-              ? _EmptyDebtsView(onRefresh: _loadData)
-              : RefreshIndicator(
-                  onRefresh: _loadData,
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.xl, AppSpacing.md, AppSpacing.xl,
-                        AppSpacing.xl3),
-                    children: [
-                      _DebtsHero(
-                        totalRemaining: _totalRemaining,
-                        debtorCount: _debtsByCustomer.length,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      _DebtSortChips(
-                        active: _sort,
-                        onChanged: (s) => setState(() => _sort = s),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      for (final customerId in _sortedCustomerIds()) ...[
-                        Builder(
-                          builder: (context) {
-                            final customerDebts =
-                                _debtsByCustomer[customerId]!;
-                            final customerName =
-                                _customerNames[customerId] ?? l10n.unknown;
-
-                            double totalDebt = 0;
-                            double remainingDebt = 0;
-                            for (var d in customerDebts) {
-                              totalDebt +=
-                                  (d['totalDebt'] as num).toDouble();
-                              remainingDebt +=
-                                  (d['remainingDebt'] as num).toDouble();
-                            }
-
-                            return CustomerDebtCard(
-                              customerName: customerName,
-                              customerDebts: customerDebts,
-                              totalDebt: totalDebt,
-                              remainingDebt: remainingDebt,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => DebtDetailsScreen(
-                                    debt: customerDebts.first,
-                                    customerName: customerName,
-                                  ),
-                                ),
-                              ),
-                              onPay: () =>
-                                  _openPaySheet(customerDebts.first, l10n),
-                            );
-                          },
-                        ),
-                      ],
-                    ],
-                  ),
+          ? _EmptyDebtsView(onRefresh: _loadData)
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.md,
+                  AppSpacing.xl,
+                  AppSpacing.xl3,
                 ),
+                children: [
+                  _DebtsHero(
+                    totalRemaining: _totalRemaining,
+                    debtorCount: _debtsByCustomer.length,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _DebtSortChips(
+                    active: _sort,
+                    onChanged: (s) => setState(() => _sort = s),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  for (final customerId in _sortedCustomerIds()) ...[
+                    Builder(
+                      builder: (context) {
+                        final customerDebts = _debtsByCustomer[customerId]!;
+                        final customerName =
+                            _customerNames[customerId] ?? l10n.unknown;
+
+                        double totalDebt = 0;
+                        double remainingDebt = 0;
+                        for (var d in customerDebts) {
+                          totalDebt += (d['totalDebt'] as num).toDouble();
+                          remainingDebt += (d['remainingDebt'] as num)
+                              .toDouble();
+                        }
+
+                        return CustomerDebtCard(
+                          customerName: customerName,
+                          customerDebts: customerDebts,
+                          totalDebt: totalDebt,
+                          remainingDebt: remainingDebt,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DebtDetailsScreen(
+                                debt: customerDebts.first,
+                                customerName: customerName,
+                              ),
+                            ),
+                          ),
+                          onPay: () => _openPaySheet(customerDebts.first, l10n),
+                        );
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
     );
   }
 }
@@ -281,7 +279,9 @@ class _ChipPill extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           color: isActive ? context.colors.brand : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.full),
@@ -306,8 +306,7 @@ class _ChipPill extends StatelessWidget {
 
 /// Amber gradient hero showing the aggregate "JAMI QARZ" across all open debts.
 class _DebtsHero extends StatelessWidget {
-  const _DebtsHero(
-      {required this.totalRemaining, required this.debtorCount});
+  const _DebtsHero({required this.totalRemaining, required this.debtorCount});
   final double totalRemaining;
   final int debtorCount;
 
@@ -399,19 +398,19 @@ class _EmptyDebtsView extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xl2),
                 Text(l10n.noDebts, style: AppTextStyles.titleMedium()),
                 const SizedBox(height: AppSpacing.sm),
-                Text(
-                  l10n.allDebtsPaid,
-                  style: AppTextStyles.bodySmall(),
-                ),
+                Text(l10n.allDebtsPaid, style: AppTextStyles.bodySmall()),
                 const SizedBox(height: AppSpacing.xl3),
                 TextButton.icon(
                   onPressed: onRefresh,
-                  icon: const Icon(Icons.refresh_rounded,
-                      color: AppColors.success),
+                  icon: const Icon(
+                    Icons.refresh_rounded,
+                    color: AppColors.success,
+                  ),
                   label: Text(
                     l10n.retry,
-                    style: AppTextStyles.bodyMedium()
-                        .copyWith(color: AppColors.success),
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      color: AppColors.success,
+                    ),
                   ),
                 ),
               ],

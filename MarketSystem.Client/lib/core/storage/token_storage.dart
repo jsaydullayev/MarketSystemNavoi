@@ -71,7 +71,8 @@ class TokenStorage {
       if (legacyAccess != null && await _secure.read(key: _accessKey) == null) {
         await _secure.write(key: _accessKey, value: legacyAccess);
       }
-      if (legacyRefresh != null && await _secure.read(key: _refreshKey) == null) {
+      if (legacyRefresh != null &&
+          await _secure.read(key: _refreshKey) == null) {
         await _secure.write(key: _refreshKey, value: legacyRefresh);
       }
 
@@ -91,7 +92,10 @@ class TokenStorage {
     }
   }
 
-  Future<void> save({required String accessToken, required String refreshToken}) async {
+  Future<void> save({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
     await _migrateIfNeeded();
     await _secure.write(key: _accessKey, value: accessToken);
     await _secure.write(key: _refreshKey, value: refreshToken);

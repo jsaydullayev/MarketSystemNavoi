@@ -21,10 +21,7 @@ class GetZakupsByDateRangeEvent extends ZakupEvent {
   final DateTime start;
   final DateTime end;
 
-  const GetZakupsByDateRangeEvent({
-    required this.start,
-    required this.end,
-  });
+  const GetZakupsByDateRangeEvent({required this.start, required this.end});
 
   @override
   List<Object?> get props => [start, end];

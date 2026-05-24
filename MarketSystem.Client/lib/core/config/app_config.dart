@@ -20,8 +20,7 @@ class AppConfig {
   /// backend reads from `appsettings.Development.json` under
   /// `SuperAdmin:ConsoleSegment`. Release builds ignore it (kDebugMode==false)
   /// so production deployments are forced to set the env explicitly.
-  static const String _devFallbackSegment =
-      '0cdecf78d9ebba28ff6c18dd3d5af47b';
+  static const String _devFallbackSegment = '0cdecf78d9ebba28ff6c18dd3d5af47b';
 
   /// Opaque URL segment used by the hidden SuperAdmin console.
   ///
@@ -42,6 +41,5 @@ class AppConfig {
   /// True when this build has a non-empty SuperAdmin segment — used by the
   /// console screen to gate API calls and show a friendly "console not
   /// configured" banner instead of repeatedly hitting 404s.
-  static bool get hasSuperAdminConsole =>
-      superAdminConsoleSegment.isNotEmpty;
+  static bool get hasSuperAdminConsole => superAdminConsoleSegment.isNotEmpty;
 }

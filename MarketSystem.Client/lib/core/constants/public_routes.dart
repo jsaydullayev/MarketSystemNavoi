@@ -14,7 +14,7 @@ class PublicRoutes {
     AppRoutes.welcome,
     AppRoutes.login,
     AppRoutes.register,
-    AppRoutes.privacy,  // MUST BE HERE - prevents redirect from privacy page
+    AppRoutes.privacy, // MUST BE HERE - prevents redirect from privacy page
   };
 
   /// Check if a route is public

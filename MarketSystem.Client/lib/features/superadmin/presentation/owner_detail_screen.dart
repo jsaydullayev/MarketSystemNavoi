@@ -127,51 +127,50 @@ class _OwnerDetailScreenState extends State<OwnerDetailScreen> {
         shape: Border(
           bottom: BorderSide(color: context.colors.border, width: 1),
         ),
-        title: Text(
-          l10n.ownerInfoTitle,
-          style: AppTextStyles.titleMedium(),
-        ),
+        title: Text(l10n.ownerInfoTitle, style: AppTextStyles.titleMedium()),
       ),
       body: _loading
-          ? Center(child: CircularProgressIndicator(color: context.colors.brand))
+          ? Center(
+              child: CircularProgressIndicator(color: context.colors.brand),
+            )
           : error != null
-              ? _ErrorState(error: error, onRetry: _load)
-              : detail == null
-                  ? Center(
-                      child: Text(
-                        l10n.ownerNotFound,
-                        style: AppTextStyles.bodyMedium(),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      color: context.colors.brand,
-                      onRefresh: _load,
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(AppSpacing.xl),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _HeroCard(
-                              detail: detail,
-                              onEdit: _onEdit,
-                              onDelete: _onDelete,
-                              onBlock: _onBlock,
-                            ),
-                            const SizedBox(height: AppSpacing.lg),
-                            _StatsGrid(stats: detail.stats),
-                            const SizedBox(height: AppSpacing.lg),
-                            _OwnerInfoCard(detail: detail),
-                            const SizedBox(height: AppSpacing.lg),
-                            // Dart-3 non-null pattern: matches when
-                            // detail.market is non-null and binds it.
-                            if (detail.market case final market?)
-                              _MarketInfoCard(market: market),
-                            const SizedBox(height: AppSpacing.xl3),
-                          ],
-                        ),
-                      ),
+          ? _ErrorState(error: error, onRetry: _load)
+          : detail == null
+          ? Center(
+              child: Text(
+                l10n.ownerNotFound,
+                style: AppTextStyles.bodyMedium(),
+              ),
+            )
+          : RefreshIndicator(
+              color: context.colors.brand,
+              onRefresh: _load,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _HeroCard(
+                      detail: detail,
+                      onEdit: _onEdit,
+                      onDelete: _onDelete,
+                      onBlock: _onBlock,
                     ),
+                    const SizedBox(height: AppSpacing.lg),
+                    _StatsGrid(stats: detail.stats),
+                    const SizedBox(height: AppSpacing.lg),
+                    _OwnerInfoCard(detail: detail),
+                    const SizedBox(height: AppSpacing.lg),
+                    // Dart-3 non-null pattern: matches when
+                    // detail.market is non-null and binds it.
+                    if (detail.market case final market?)
+                      _MarketInfoCard(market: market),
+                    const SizedBox(height: AppSpacing.xl3),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -203,8 +202,9 @@ class _HeroCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final market = detail.market;
     final blocked = market?.isBlocked ?? false;
-    final initial =
-        detail.fullName.isNotEmpty ? detail.fullName[0].toUpperCase() : '?';
+    final initial = detail.fullName.isNotEmpty
+        ? detail.fullName[0].toUpperCase()
+        : '?';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl2),
@@ -253,17 +253,19 @@ class _HeroCard extends StatelessWidget {
                         _StatusChip(
                           label: blocked
                               ? l10n.statusBlocked
-                              : (detail.isActive ? l10n.statusActive : l10n.statusInactive),
+                              : (detail.isActive
+                                    ? l10n.statusActive
+                                    : l10n.statusInactive),
                           color: blocked
                               ? AppColors.danger
                               : (detail.isActive
-                                  ? AppColors.success
-                                  : context.colors.textMuted),
+                                    ? AppColors.success
+                                    : context.colors.textMuted),
                           background: blocked
                               ? AppColors.dangerLight
                               : (detail.isActive
-                                  ? AppColors.successLight
-                                  : context.colors.inputFill),
+                                    ? AppColors.successLight
+                                    : context.colors.inputFill),
                         ),
                       ],
                     ),
@@ -280,10 +282,7 @@ class _HeroCard extends StatelessWidget {
                         // Dart-3 non-null patterns let us bind the nullable
                         // field to a local in one line, no `!` needed.
                         if (detail.phone case final phone?)
-                          _MetaItem(
-                            icon: Icons.phone_outlined,
-                            text: phone,
-                          ),
+                          _MetaItem(icon: Icons.phone_outlined, text: phone),
                         if (market != null)
                           _MetaItem(
                             icon: Icons.storefront_outlined,
@@ -491,9 +490,9 @@ class _StatsGrid extends StatelessWidget {
   }
 
   String _fmtNum(int n) => n.toString().replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-        (m) => '${m[1]},',
-      );
+    RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+    (m) => '${m[1]},',
+  );
 
   String _fmtMoney(double d) {
     if (d >= 1000000) return '${(d / 1000000).toStringAsFixed(1)}M';
@@ -531,8 +530,9 @@ class _StatTile extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTextStyles.caption()
-                .copyWith(color: context.colors.textSecondary),
+            style: AppTextStyles.caption().copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
           Text(
             value,
@@ -573,7 +573,11 @@ class _OwnerInfoCard extends StatelessWidget {
       icon: Icons.person_outline,
       children: [
         _InfoRow(label: l10n.fullNameUpper, value: detail.fullName),
-        _InfoRow(label: l10n.usernameUpper, value: '@${detail.username}', mono: true),
+        _InfoRow(
+          label: l10n.usernameUpper,
+          value: '@${detail.username}',
+          mono: true,
+        ),
         _InfoRow(label: l10n.phoneUpper, value: detail.phone ?? '—'),
         _InfoRow(
           label: l10n.languageUpper,
@@ -586,8 +590,9 @@ class _OwnerInfoCard extends StatelessWidget {
         _InfoRow(
           label: l10n.statusUpper,
           value: detail.isActive ? l10n.statusActive : l10n.statusInactive,
-          valueColor:
-              detail.isActive ? AppColors.success : context.colors.textMuted,
+          valueColor: detail.isActive
+              ? AppColors.success
+              : context.colors.textMuted,
         ),
       ],
     );
@@ -628,7 +633,9 @@ class _MarketInfoCard extends StatelessWidget {
               : (market.isActive ? l10n.statusActive : l10n.statusInactive),
           valueColor: market.isBlocked
               ? AppColors.danger
-              : (market.isActive ? AppColors.success : context.colors.textMuted),
+              : (market.isActive
+                    ? AppColors.success
+                    : context.colors.textMuted),
         ),
         if (market.isBlocked && blockedReason != null)
           _InfoRow(
@@ -637,16 +644,16 @@ class _MarketInfoCard extends StatelessWidget {
             valueColor: AppColors.danger,
           ),
         if (market.isBlocked && blockedAt != null)
-          _InfoRow(
-            label: l10n.blockedAtUpper,
-            value: _formatDate(blockedAt),
-          ),
+          _InfoRow(label: l10n.blockedAtUpper, value: _formatDate(blockedAt)),
         if (expiresAt != null)
           _InfoRow(
             label: l10n.subscriptionExpiresUpper,
             value: _formatDate(expiresAt, withTime: false),
           ),
-        _InfoRow(label: l10n.createdUpper, value: _formatDate(market.createdAt)),
+        _InfoRow(
+          label: l10n.createdUpper,
+          value: _formatDate(market.createdAt),
+        ),
       ],
     );
   }
@@ -680,8 +687,9 @@ class _SectionCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.md),
               Text(
                 title,
-                style: AppTextStyles.caption()
-                    .copyWith(color: context.colors.textSecondary),
+                style: AppTextStyles.caption().copyWith(
+                  color: context.colors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -726,8 +734,9 @@ class _InfoRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppTextStyles.caption()
-              .copyWith(color: context.colors.textSecondary),
+          style: AppTextStyles.caption().copyWith(
+            color: context.colors.textSecondary,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -758,11 +767,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              color: AppColors.danger,
-              size: 48,
-            ),
+            const Icon(Icons.error_outline, color: AppColors.danger, size: 48),
             const SizedBox(height: AppSpacing.lg),
             Text(
               error,

@@ -26,7 +26,8 @@ import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../dashboard/dashboard_widgets.dart' show AlertCard, AlertTone, SectionHeader;
+import '../../dashboard/dashboard_widgets.dart'
+    show AlertCard, AlertTone, SectionHeader;
 import '../../debts/screens/debt_details_screen.dart';
 import '../../products/presentation/screens/products_screen.dart';
 
@@ -89,10 +90,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final debts = await DebtService(authProvider: auth).getAllDebts();
-      final match = debts
-          .whereType<Map<String, dynamic>>()
-          .firstWhere((d) => d['id']?.toString() == id,
-              orElse: () => const <String, dynamic>{});
+      final match = debts.whereType<Map<String, dynamic>>().firstWhere(
+        (d) => d['id']?.toString() == id,
+        orElse: () => const <String, dynamic>{},
+      );
       if (!mounted) return;
       Navigator.pop(context); // dismiss the loader
       if (match.isNotEmpty) {
@@ -246,11 +247,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         final unit = (item.unit ?? '').trim();
         final threshold = item.threshold ?? 0;
         if (threshold > 0) {
-          return l10n.alertDescLowStock(
-            qty,
-            unit,
-            _fmtNum(threshold),
-          );
+          return l10n.alertDescLowStock(qty, unit, _fmtNum(threshold));
         }
         return l10n.alertDescLowStockNoMin(qty, unit);
       case AlertCategory.recentDebt:
@@ -306,15 +303,17 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             l10n.notificationsEmptyTitle,
-            style: AppTextStyles.titleMedium()
-                .copyWith(fontWeight: FontWeight.w700),
+            style: AppTextStyles.titleMedium().copyWith(
+              fontWeight: FontWeight.w700,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.notificationsEmptyDescription,
-            style: AppTextStyles.bodySmall()
-                .copyWith(color: context.colors.textSecondary),
+            style: AppTextStyles.bodySmall().copyWith(
+              color: context.colors.textSecondary,
+            ),
             textAlign: TextAlign.center,
           ),
         ],

@@ -50,7 +50,8 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl2)),
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
+      ),
       backgroundColor: context.colors.surface,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl3),
@@ -67,8 +68,11 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                     color: AppColors.dangerLight,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: const Icon(Icons.assignment_return_rounded,
-                      color: AppColors.danger, size: 20),
+                  child: const Icon(
+                    Icons.assignment_return_rounded,
+                    color: AppColors.danger,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(
@@ -77,8 +81,9 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                     children: [
                       Text(
                         l10n.returnProduct,
-                        style: AppTextStyles.titleMedium()
-                            .copyWith(fontSize: 16),
+                        style: AppTextStyles.titleMedium().copyWith(
+                          fontSize: 16,
+                        ),
                       ),
                       Text(
                         widget.productName,
@@ -97,7 +102,9 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               decoration: BoxDecoration(
                 color: context.colors.inputFill,
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -105,8 +112,10 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(l10n.availableQuantity,
-                      style: AppTextStyles.bodySmall()),
+                  Text(
+                    l10n.availableQuantity,
+                    style: AppTextStyles.bodySmall(),
+                  ),
                   Text(
                     '${widget.maxQuantity % 1 == 0 ? widget.maxQuantity.toInt() : widget.maxQuantity}',
                     style: AppTextStyles.labelLarge().copyWith(fontSize: 15),
@@ -119,14 +128,16 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
             // Input
             TextField(
               controller: _controller,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               autofocus: true,
               style: AppTextStyles.bodyLarge(),
               decoration: InputDecoration(
                 labelText: l10n.returnQuantity,
-                labelStyle: AppTextStyles.bodyMedium()
-                    .copyWith(color: context.colors.textSecondary),
+                labelStyle: AppTextStyles.bodyMedium().copyWith(
+                  color: context.colors.textSecondary,
+                ),
                 errorText: _isValid ? null : l10n.invalidQuantity,
                 filled: true,
                 fillColor: context.colors.inputFill,
@@ -136,16 +147,22 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide:
-                      BorderSide(color: context.colors.brand, width: 1.5),
+                  borderSide: BorderSide(
+                    color: context.colors.brand,
+                    width: 1.5,
+                  ),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   borderSide: const BorderSide(
-                      color: AppColors.danger, width: 1.5),
+                    color: AppColors.danger,
+                    width: 1.5,
+                  ),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
+                  horizontal: AppSpacing.xl,
+                  vertical: AppSpacing.lg,
+                ),
               ),
               onChanged: _onChanged,
             ),
@@ -164,8 +181,9 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
                 Expanded(
                   child: AppDangerButton(
                     label: l10n.returnAction,
-                    onPressed:
-                        _isValid ? () => Navigator.pop(context, _returnQty) : null,
+                    onPressed: _isValid
+                        ? () => Navigator.pop(context, _returnQty)
+                        : null,
                   ),
                 ),
               ],

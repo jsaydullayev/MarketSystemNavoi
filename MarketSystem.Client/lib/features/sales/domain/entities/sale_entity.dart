@@ -80,16 +80,16 @@ class SaleEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        customerId,
-        sellerId,
-        customerName,
-        customerPhone,
-        totalAmount,
-        paidAmount,
-        remainingAmount,
-        status,
-        createdAt,
-        sellerName,
-      ];
+    id,
+    customerId,
+    sellerId,
+    customerName,
+    customerPhone,
+    totalAmount,
+    paidAmount,
+    remainingAmount,
+    status,
+    createdAt,
+    sellerName,
+  ];
 }

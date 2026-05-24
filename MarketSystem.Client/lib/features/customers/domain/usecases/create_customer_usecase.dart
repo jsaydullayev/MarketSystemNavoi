@@ -25,7 +25,9 @@ class CreateCustomerUseCase {
 
     // Telefon raqami formatini tekshirish
     if (phone.length != 12 || !phone.startsWith('998')) {
-      return ApiResult.failure('Telefon raqami noto\'g\'ri formatda (998********* ko\'rinishida bo\'lishi kerak)');
+      return ApiResult.failure(
+        'Telefon raqami noto\'g\'ri formatda (998********* ko\'rinishida bo\'lishi kerak)',
+      );
     }
 
     // Agar ism berilgan bo'lsa, u bo'sh bo'lmasligi kerak

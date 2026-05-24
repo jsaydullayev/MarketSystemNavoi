@@ -113,10 +113,7 @@ class ErrorRetryView extends StatelessWidget {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.6,
-          child: body,
-        ),
+        SizedBox(height: MediaQuery.of(context).size.height * 0.6, child: body),
       ],
     );
   }

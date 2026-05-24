@@ -50,7 +50,11 @@ class DailyReportTab extends StatelessWidget {
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xl4),
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.xl4,
+      ),
       children: [
         DatePickerRow(selectedDate: selectedDate, onChanged: onDateChanged),
         const SizedBox(height: AppSpacing.xl),

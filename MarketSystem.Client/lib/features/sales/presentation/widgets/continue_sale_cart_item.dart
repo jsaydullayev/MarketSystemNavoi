@@ -201,8 +201,9 @@ class ContinueSaleCartItem extends StatelessWidget {
                 children: [
                   _QtyButton(icon: Icons.remove_rounded, onTap: onDecrement),
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
                     child: Text(
                       qty % 1 == 0 ? '${qty.toInt()}' : '$qty',
                       style: AppTextStyles.labelLarge().copyWith(

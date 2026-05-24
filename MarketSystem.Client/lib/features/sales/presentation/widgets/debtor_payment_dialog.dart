@@ -149,8 +149,11 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
     }
   }
 
-  void _showSnack(ScaffoldMessengerState messenger, String msg,
-      {required bool isError}) {
+  void _showSnack(
+    ScaffoldMessengerState messenger,
+    String msg, {
+    required bool isError,
+  }) {
     messenger.showSnackBar(
       SnackBar(
         content: Text(msg),
@@ -170,14 +173,14 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
     final remaining = _remainingDebt;
     final entered = _entered;
-    final newBalance =
-        (remaining - entered).clamp(0, double.infinity).toDouble();
+    final newBalance = (remaining - entered)
+        .clamp(0, double.infinity)
+        .toDouble();
 
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl2,
@@ -193,7 +196,9 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
             Center(
               child: Container(
                 margin: const EdgeInsets.only(
-                    top: AppSpacing.lg, bottom: AppSpacing.xl2),
+                  top: AppSpacing.lg,
+                  bottom: AppSpacing.xl2,
+                ),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
@@ -249,8 +254,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
 
             _NewBalanceCard(
               newBalance: newBalance,
-              customerName:
-                  widget.debtor['customerName'] ?? l10n.noCustomer,
+              customerName: widget.debtor['customerName'] ?? l10n.noCustomer,
               currencyLabel: l10n.currencySom,
             ),
             const SizedBox(height: AppSpacing.xl2),
@@ -298,8 +302,10 @@ class _CustomerRow extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration:
-                BoxDecoration(color: avatarColor, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: avatarColor,
+              shape: BoxShape.circle,
+            ),
             alignment: Alignment.center,
             child: Text(
               initial,
@@ -363,9 +369,10 @@ class _BalanceCard extends StatelessWidget {
       child: Column(
         children: [
           _BalanceRow(
-              label: l10n.totalDebt,
-              value: NumberFormatter.format(remaining),
-              currency: l10n.currencySom),
+            label: l10n.totalDebt,
+            value: NumberFormatter.format(remaining),
+            currency: l10n.currencySom,
+          ),
           const SizedBox(height: AppSpacing.sm),
           Container(height: 1, color: Colors.white.withValues(alpha: 0.2)),
           const SizedBox(height: AppSpacing.sm),
@@ -407,14 +414,13 @@ class _BalanceRow extends StatelessWidget {
         ),
         Text(
           '$value $currency',
-          style: (isBig
-                  ? AppTextStyles.titleLarge()
-                  : AppTextStyles.bodyMedium())
-              .copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.4,
-          ),
+          style:
+              (isBig ? AppTextStyles.titleLarge() : AppTextStyles.bodyMedium())
+                  .copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
         ),
       ],
     );
@@ -422,8 +428,10 @@ class _BalanceRow extends StatelessWidget {
 }
 
 class _PayAmountInput extends StatelessWidget {
-  const _PayAmountInput(
-      {required this.controller, required this.currencyLabel});
+  const _PayAmountInput({
+    required this.controller,
+    required this.currencyLabel,
+  });
   final TextEditingController controller;
   final String currencyLabel;
 
@@ -431,12 +439,13 @@ class _PayAmountInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border:
-            Border.all(color: context.colors.brand.withValues(alpha: 0.3)),
+        border: Border.all(color: context.colors.brand.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,8 +464,9 @@ class _PayAmountInput extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                   ],
@@ -539,7 +549,9 @@ class _QuickButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -572,9 +584,10 @@ class _PayMethodGrid extends StatelessWidget {
     final methods = <_PayMethod>[
       _PayMethod(value: 'Cash', label: l10n.cash, icon: Icons.payments_rounded),
       _PayMethod(
-          value: 'Terminal',
-          label: l10n.card,
-          icon: Icons.credit_card_rounded),
+        value: 'Terminal',
+        label: l10n.card,
+        icon: Icons.credit_card_rounded,
+      ),
     ];
     return Row(
       children: [
@@ -586,7 +599,8 @@ class _PayMethodGrid extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.lg + 2),
+                  vertical: AppSpacing.lg + 2,
+                ),
                 decoration: BoxDecoration(
                   color: selected == methods[i].value
                       ? context.colors.brand
@@ -629,8 +643,11 @@ class _PayMethod {
   final String value;
   final String label;
   final IconData icon;
-  const _PayMethod(
-      {required this.value, required this.label, required this.icon});
+  const _PayMethod({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
 }
 
 class _NewBalanceCard extends StatelessWidget {

@@ -131,20 +131,19 @@ class _RejectRequestDialogState extends State<RejectRequestDialog> {
                       vertical: AppSpacing.lg + 2,
                     ),
                     border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.md + 2),
+                      borderRadius: BorderRadius.circular(AppRadius.md + 2),
                       borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.md + 2),
+                      borderRadius: BorderRadius.circular(AppRadius.md + 2),
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.md + 2),
+                      borderRadius: BorderRadius.circular(AppRadius.md + 2),
                       borderSide: BorderSide(
-                          color: context.colors.brand, width: 1.5),
+                        color: context.colors.brand,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                   validator: (v) {

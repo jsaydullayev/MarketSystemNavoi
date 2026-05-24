@@ -73,7 +73,9 @@ class GreetingCard extends StatelessWidget {
       child: Text(
         _initial,
         style: AppTextStyles.titleMedium().copyWith(
-            color: context.colors.brand, fontWeight: FontWeight.w800),
+          color: context.colors.brand,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
     if (!hasImage) return letterTile;
@@ -149,8 +151,10 @@ class GreetingCard extends StatelessWidget {
               children: [
                 Text(
                   '${AppLocalizations.of(context)!.greetingHello}, $fullName',
-                  style: AppTextStyles.bodyLarge()
-                      .copyWith(fontWeight: FontWeight.w700, fontSize: 16),
+                  style: AppTextStyles.bodyLarge().copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -167,7 +171,9 @@ class GreetingCard extends StatelessWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: rs.bg,
                         borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -194,10 +200,7 @@ class GreetingCard extends StatelessWidget {
             onTap: onNotificationTap,
           ),
           const SizedBox(width: AppSpacing.md),
-          _IconCircle(
-            icon: Icons.settings_outlined,
-            onTap: onSettingsTap,
-          ),
+          _IconCircle(icon: Icons.settings_outlined, onTap: onSettingsTap),
         ],
       ),
     );
@@ -205,11 +208,7 @@ class GreetingCard extends StatelessWidget {
 }
 
 class _IconCircle extends StatelessWidget {
-  const _IconCircle({
-    required this.icon,
-    this.badgeCount = 0,
-    this.onTap,
-  });
+  const _IconCircle({required this.icon, this.badgeCount = 0, this.onTap});
 
   final IconData icon;
   final int badgeCount;
@@ -339,9 +338,7 @@ class SalesHeroCard extends StatelessWidget {
             Text(
               '${deltaIsPositive ? '↑' : '↓'} $delta',
               style: AppTextStyles.bodySmall().copyWith(
-                color: deltaIsPositive
-                    ? AppColors.success
-                    : AppColors.danger,
+                color: deltaIsPositive ? AppColors.success : AppColors.danger,
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
               ),
@@ -349,10 +346,7 @@ class SalesHeroCard extends StatelessWidget {
           ],
           if (stats.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            Container(
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
+            Container(height: 1, color: Colors.white.withValues(alpha: 0.12)),
             const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
@@ -558,8 +552,10 @@ class AlertCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     description,
-                    style: AppTextStyles.bodySmall()
-                        .copyWith(color: c.desc, fontSize: 12),
+                    style: AppTextStyles.bodySmall().copyWith(
+                      color: c.desc,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -593,6 +589,7 @@ class ChartCard extends StatelessWidget {
   final String period;
   final List<double> bars;
   final String footerValue;
+
   /// Already-formatted delta string (e.g. "5%"). The card adds the sign
   /// arrow ("↑" or "↓") based on [deltaIsPositive]; do NOT include an arrow
   /// in [footerDelta] yourself or you'll get a double arrow.
@@ -626,16 +623,17 @@ class ChartCard extends StatelessWidget {
                 style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
                   period,
-                  style: AppTextStyles.caption()
-                      .copyWith(fontSize: 10, letterSpacing: 0.4),
+                  style: AppTextStyles.caption().copyWith(
+                    fontSize: 10,
+                    letterSpacing: 0.4,
+                  ),
                 ),
               ),
             ],
@@ -653,16 +651,14 @@ class ChartCard extends StatelessWidget {
                       // to hint at the axis) so the card isn't visually
                       // dominated by full-height orange columns when there's
                       // no real data behind them.
-                      heightFactor: isEmpty
-                          ? 0.08
-                          : bars[i].clamp(0.05, 1.0),
+                      heightFactor: isEmpty ? 0.08 : bars[i].clamp(0.05, 1.0),
                       child: Container(
                         decoration: BoxDecoration(
                           color: isEmpty
                               ? context.colors.borderSoft
                               : (i == bars.length - 1
-                                  ? context.colors.brandDark
-                                  : context.colors.brand),
+                                    ? context.colors.brandDark
+                                    : context.colors.brand),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(6),
                           ),
@@ -767,16 +763,17 @@ class TopSellersCard extends StatelessWidget {
                 style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
                   period,
-                  style: AppTextStyles.caption()
-                      .copyWith(fontSize: 10, letterSpacing: 0.4),
+                  style: AppTextStyles.caption().copyWith(
+                    fontSize: 10,
+                    letterSpacing: 0.4,
+                  ),
                 ),
               ),
             ],
@@ -798,8 +795,7 @@ class TopSellersCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(entries[i].emoji,
-                      style: const TextStyle(fontSize: 16)),
+                  Text(entries[i].emoji, style: const TextStyle(fontSize: 16)),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
@@ -1007,8 +1003,10 @@ class SellerStatsRow extends StatelessWidget {
                 children: [
                   Text(
                     stats[i].value,
-                    style: AppTextStyles.titleMedium()
-                        .copyWith(fontWeight: FontWeight.w800, fontSize: 18),
+                    style: AppTextStyles.titleMedium().copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -1023,11 +1021,7 @@ class SellerStatsRow extends StatelessWidget {
               ),
             ),
             if (i != stats.length - 1)
-              Container(
-                width: 1,
-                height: 30,
-                color: context.colors.border,
-              ),
+              Container(width: 1, height: 30, color: context.colors.border),
           ],
         ],
       ),

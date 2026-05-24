@@ -28,9 +28,12 @@ class SaleMetaCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _row(context, l10n.seller,
-              sale['sellerName']?.toString() ?? l10n.unknown,
-              context.colors.text),
+          _row(
+            context,
+            l10n.seller,
+            sale['sellerName']?.toString() ?? l10n.unknown,
+            context.colors.text,
+          ),
           _divider(context),
           _row(
             context,
@@ -44,13 +47,21 @@ class SaleMetaCard extends StatelessWidget {
           ),
           if (paymentType != null && paymentType.isNotEmpty) ...[
             _divider(context),
-            _row(context, l10n.paymentType, _paymentLabel(paymentType, l10n),
-                context.colors.text),
+            _row(
+              context,
+              l10n.paymentType,
+              _paymentLabel(paymentType, l10n),
+              context.colors.text,
+            ),
           ],
           if (sale['customerName'] != null) ...[
             _divider(context),
-            _row(context, l10n.customer, sale['customerName'].toString(),
-                context.colors.text),
+            _row(
+              context,
+              l10n.customer,
+              sale['customerName'].toString(),
+              context.colors.text,
+            ),
           ],
           _divider(context),
           _row(
@@ -65,16 +76,24 @@ class SaleMetaCard extends StatelessWidget {
     );
   }
 
-  Widget _row(BuildContext context, String label, String value, Color valueColor,
-      {FontWeight? valueWeight}) {
+  Widget _row(
+    BuildContext context,
+    String label,
+    String value,
+    Color valueColor, {
+    FontWeight? valueWeight,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Row(
         children: [
           Expanded(
-            child: Text(label,
-                style: AppTextStyles.bodySmall()
-                    .copyWith(color: context.colors.textSecondary)),
+            child: Text(
+              label,
+              style: AppTextStyles.bodySmall().copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
           ),
           Flexible(
             child: Text(
@@ -91,10 +110,8 @@ class SaleMetaCard extends StatelessWidget {
     );
   }
 
-  Widget _divider(BuildContext context) => Container(
-        height: 1,
-        color: context.colors.border.withValues(alpha: 0.6),
-      );
+  Widget _divider(BuildContext context) =>
+      Container(height: 1, color: context.colors.border.withValues(alpha: 0.6));
 
   static Color _statusColor(String status, BuildContext context) {
     switch (status.toLowerCase()) {

@@ -14,12 +14,10 @@ class ExternalProductSheet extends StatefulWidget {
     double qty,
     double salePrice,
     String? comment,
-  ) onConfirm;
+  )
+  onConfirm;
 
-  const ExternalProductSheet({
-    super.key,
-    required this.onConfirm,
-  });
+  const ExternalProductSheet({super.key, required this.onConfirm});
 
   static void show(
     BuildContext context, {
@@ -29,7 +27,8 @@ class ExternalProductSheet extends StatefulWidget {
       double qty,
       double salePrice,
       String? comment,
-    ) onConfirm,
+    )
+    onConfirm,
   }) {
     showModalBottomSheet(
       context: context,
@@ -79,8 +78,7 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
     final name = _nameController.text.trim();
     final costPrice =
         double.tryParse(_costPriceController.text.replaceAll(',', '.')) ?? 0;
-    final qty =
-        double.tryParse(_qtyController.text.replaceAll(',', '.')) ?? 0;
+    final qty = double.tryParse(_qtyController.text.replaceAll(',', '.')) ?? 0;
     final salePrice =
         double.tryParse(_salePriceController.text.replaceAll(',', '.')) ?? 0;
 
@@ -140,7 +138,8 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
         decoration: BoxDecoration(
           color: context.colors.surface,
           borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl2)),
+            top: Radius.circular(AppRadius.xl2),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -376,10 +375,7 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              borderSide: BorderSide(
-                color: context.colors.brand,
-                width: 1.5,
-              ),
+              borderSide: BorderSide(color: context.colors.brand, width: 1.5),
             ),
             contentPadding: const EdgeInsets.all(AppSpacing.xl),
           ),

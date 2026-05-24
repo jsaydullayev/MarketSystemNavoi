@@ -16,18 +16,19 @@ CustomerEntity _$CustomerEntityFromJson(Map<String, dynamic> json) =>
           ? 0
           : const FlexibleDoubleConverter().fromJson(json['totalDebt']),
       createdAt: const IsoDateTimeConverter().fromJson(json['createdAt']),
-      updatedAt:
-          const NullableIsoDateTimeConverter().fromJson(json['updatedAt']),
+      updatedAt: const NullableIsoDateTimeConverter().fromJson(
+        json['updatedAt'],
+      ),
     );
 
-Map<String, dynamic> _$CustomerEntityToJson(CustomerEntity instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'phone': instance.phone,
-      'fullName': instance.fullName,
-      'comment': instance.comment,
-      'totalDebt': const FlexibleDoubleConverter().toJson(instance.totalDebt),
-      'createdAt': const IsoDateTimeConverter().toJson(instance.createdAt),
-      'updatedAt':
-          const NullableIsoDateTimeConverter().toJson(instance.updatedAt),
-    };
+Map<String, dynamic> _$CustomerEntityToJson(
+  CustomerEntity instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'phone': instance.phone,
+  'fullName': instance.fullName,
+  'comment': instance.comment,
+  'totalDebt': const FlexibleDoubleConverter().toJson(instance.totalDebt),
+  'createdAt': const IsoDateTimeConverter().toJson(instance.createdAt),
+  'updatedAt': const NullableIsoDateTimeConverter().toJson(instance.updatedAt),
+};

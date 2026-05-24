@@ -157,7 +157,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       // SOZLASH / НАСТРОЙКИ — language + theme.
                       ProfileSettingsCard(
-                        header: ProfileSectionTitle(title: l10n.settingsSection),
+                        header: ProfileSectionTitle(
+                          title: l10n.settingsSection,
+                        ),
                         children: [
                           _buildLanguageRow(context),
                           _buildThemeRow(context),
@@ -220,8 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showLanguageSheet(BuildContext context) async {
-    final localeProvider =
-        Provider.of<LocaleProvider>(context, listen: false);
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
     final current = localeProvider.locale.languageCode;
     final selected = await showModalBottomSheet<String>(
       context: context,
@@ -230,8 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Container(
           decoration: BoxDecoration(
             color: context.colors.surface,
-            borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl,
@@ -316,7 +316,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color: context.colors.surface,
               borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24)),
+                top: Radius.circular(24),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -369,7 +370,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _changePassword(
-      void Function(void Function()) setModalState, AppLocalizations l10n) async {
+    void Function(void Function()) setModalState,
+    AppLocalizations l10n,
+  ) async {
     if (_currentPasswordController.text.isEmpty ||
         _newPasswordController.text.isEmpty) {
       return;
@@ -413,10 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final raw = e.toString();
         final extracted = _extractServerMessage(raw) ?? raw;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(extracted),
-            backgroundColor: AppColors.danger,
-          ),
+          SnackBar(content: Text(extracted), backgroundColor: AppColors.danger),
         );
       }
     } finally {
@@ -453,9 +453,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       decoration: BoxDecoration(
         color: context.colors.bg,
-        border: Border(
-          top: BorderSide(color: context.colors.border),
-        ),
+        border: Border(top: BorderSide(color: context.colors.border)),
       ),
       child: AppPrimaryButton(
         label: l10n.save,
@@ -470,8 +468,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isSaving = true);
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      await UserService(authProvider: auth)
-          .updateProfile(fullName: _fullNameController.text.trim());
+      await UserService(
+        authProvider: auth,
+      ).updateProfile(fullName: _fullNameController.text.trim());
       await auth.fetchUserProfile();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -499,25 +498,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         title: Text(l10n.logout, style: AppTextStyles.titleMedium()),
-        content: Text(
-          l10n.logoutConfirm,
-          style: AppTextStyles.bodyMedium(),
-        ),
+        content: Text(l10n.logoutConfirm, style: AppTextStyles.bodyMedium()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
               l10n.no,
-              style: AppTextStyles.labelLarge()
-                  .copyWith(color: context.colors.textSecondary),
+              style: AppTextStyles.labelLarge().copyWith(
+                color: context.colors.textSecondary,
+              ),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               l10n.yes,
-              style:
-                  AppTextStyles.labelLarge().copyWith(color: AppColors.danger),
+              style: AppTextStyles.labelLarge().copyWith(
+                color: AppColors.danger,
+              ),
             ),
           ),
         ],
@@ -527,9 +525,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await Provider.of<AuthProvider>(context, listen: false).logout();
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (r) => false);
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (r) => false,
+      );
     }
   }
 }
@@ -552,8 +551,7 @@ class _LanguageOption extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Material(
-        color:
-            selected ? context.colors.brandLight : context.colors.inputFill,
+        color: selected ? context.colors.brandLight : context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: InkWell(
           onTap: onTap,

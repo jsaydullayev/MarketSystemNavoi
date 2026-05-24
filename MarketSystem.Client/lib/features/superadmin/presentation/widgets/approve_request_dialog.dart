@@ -105,8 +105,10 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       return;
     }
     setState(() => _usernameState = _CheckState.checking);
-    _usernameTimer =
-        Timer(_debounce, () => _checkAvailability(usernameQuery: value));
+    _usernameTimer = Timer(
+      _debounce,
+      () => _checkAvailability(usernameQuery: value),
+    );
   }
 
   void _onMarketChanged() {
@@ -117,8 +119,10 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       return;
     }
     setState(() => _marketState = _CheckState.checking);
-    _marketTimer =
-        Timer(_debounce, () => _checkAvailability(marketQuery: value));
+    _marketTimer = Timer(
+      _debounce,
+      () => _checkAvailability(marketQuery: value),
+    );
   }
 
   void _onSubdomainChanged() {
@@ -137,8 +141,10 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       return;
     }
     setState(() => _subdomainState = _CheckState.checking);
-    _subdomainTimer =
-        Timer(_debounce, () => _checkAvailability(subdomainQuery: value));
+    _subdomainTimer = Timer(
+      _debounce,
+      () => _checkAvailability(subdomainQuery: value),
+    );
   }
 
   Future<void> _checkAvailability({
@@ -155,13 +161,13 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
 
     // The user may have typed more characters while we were waiting —
     // discard a stale response so the indicator never contradicts the field.
-    final stillCurrent = (usernameQuery == null ||
+    final stillCurrent =
+        (usernameQuery == null ||
             _usernameController.text.trim() == usernameQuery) &&
         (marketQuery == null ||
             _marketNameController.text.trim() == marketQuery) &&
         (subdomainQuery == null ||
-            _subdomainController.text.trim().toLowerCase() ==
-                subdomainQuery);
+            _subdomainController.text.trim().toLowerCase() == subdomainQuery);
     if (!stillCurrent) return;
 
     // Snapshot before the guard so flow analysis can promote it.
@@ -252,8 +258,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
         color: context.colors.textMuted,
         fontSize: 15,
       ),
-      prefixIcon:
-          Icon(prefix, size: 20, color: context.colors.textSecondary),
+      prefixIcon: Icon(prefix, size: 20, color: context.colors.textSecondary),
       suffixIcon: suffixIcon,
       errorText: errorText,
       helperText: helper,
@@ -298,10 +303,12 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
     // their own value we echo it back; otherwise we fall back to the
     // server-suggested auto-generated one.
     final typedSubdomain = _subdomainController.text.trim().toLowerCase();
-    final previewSubdomain =
-        typedSubdomain.isNotEmpty ? typedSubdomain : _suggestedSubdomain;
+    final previewSubdomain = typedSubdomain.isNotEmpty
+        ? typedSubdomain
+        : _suggestedSubdomain;
 
-    final disabled = _usernameState == _CheckState.taken ||
+    final disabled =
+        _usernameState == _CheckState.taken ||
         _marketState == _CheckState.taken ||
         _subdomainState == _CheckState.taken;
 
@@ -419,7 +426,8 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                           size: 20,
                         ),
                         onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword),
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                     ),
                     // G2 — SuperAdmin-minted Owner passwords go through the
@@ -475,8 +483,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                   ),
                   // Live preview of the resolved subdomain — shows what URL the
                   // owner will actually log in at, even if the field is empty.
-                  if (previewSubdomain != null &&
-                      previewSubdomain.isNotEmpty)
+                  if (previewSubdomain != null && previewSubdomain.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8, left: 4),
                       child: Row(

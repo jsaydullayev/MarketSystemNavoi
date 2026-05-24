@@ -48,8 +48,22 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
   // type any other emoji (or any unicode glyph) in the custom-emoji input
   // below the grid; that value becomes the 17th slot and is auto-selected.
   static const List<String> _defaultEmojis = [
-    '📦', '🥤', '🥖', '🚬', '🧴', '🍎', '🥩', '🥛',
-    '🍬', '🍞', '🧃', '🍫', '🥚', '🧀', '🧂', '🛒',
+    '📦',
+    '🥤',
+    '🥖',
+    '🚬',
+    '🧴',
+    '🍎',
+    '🥩',
+    '🥛',
+    '🍬',
+    '🍞',
+    '🧃',
+    '🍫',
+    '🥚',
+    '🧀',
+    '🧂',
+    '🛒',
   ];
 
   final _formKey = GlobalKey<FormState>();
@@ -157,15 +171,17 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: AppColors.danger,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg - 2),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg - 2),
+            ),
+            margin: const EdgeInsets.all(AppSpacing.xl),
           ),
-          margin: const EdgeInsets.all(AppSpacing.xl),
-        ));
+        );
       }
     }
   }
@@ -381,10 +397,7 @@ class _CustomEmojiField extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                borderSide: BorderSide(
-                  color: context.colors.brand,
-                  width: 1.5,
-                ),
+                borderSide: BorderSide(color: context.colors.brand, width: 1.5),
               ),
             ),
             onSubmitted: (_) => onApply(),
@@ -402,9 +415,7 @@ class _CustomEmojiField extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md + 2),
               ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             ),
             child: const Icon(Icons.add_rounded, size: 20),
           ),
@@ -481,8 +492,7 @@ class _ActiveToggle extends StatelessWidget {
           vertical: AppSpacing.lg + 1,
         ),
         decoration: BoxDecoration(
-          color:
-              isActive ? AppColors.successLight : context.colors.inputFill,
+          color: isActive ? AppColors.successLight : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
             color: isActive
@@ -517,8 +527,7 @@ class _ActiveToggle extends StatelessWidget {
               height: 24,
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color:
-                    isActive ? AppColors.success : context.colors.border,
+                color: isActive ? AppColors.success : context.colors.border,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
               ),
               child: AnimatedAlign(

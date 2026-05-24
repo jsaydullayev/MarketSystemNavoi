@@ -58,8 +58,7 @@ class OwnerDashboardBody extends StatelessWidget {
             SectionHeader(
               title: l10n.statisticsSectionLabel,
               actionLabel: l10n.viewAll,
-              onAction: () =>
-                  Navigator.pushNamed(context, AppRoutes.reports),
+              onAction: () => Navigator.pushNamed(context, AppRoutes.reports),
             ),
             const SizedBox(height: AppSpacing.md),
             _KpiGrid(summary: summary),
@@ -71,8 +70,7 @@ class OwnerDashboardBody extends StatelessWidget {
             SectionHeader(
               title: l10n.analysisSectionLabel,
               actionLabel: l10n.reportsActionLabel,
-              onAction: () =>
-                  Navigator.pushNamed(context, AppRoutes.reports),
+              onAction: () => Navigator.pushNamed(context, AppRoutes.reports),
             ),
             const SizedBox(height: AppSpacing.md),
             _buildChartCard(context, summary, l10n),
@@ -106,43 +104,48 @@ class OwnerDashboardBody extends StatelessWidget {
     final cards = <Widget>[];
 
     if (summary.overdueDebtsCount > 0) {
-      cards.add(AlertCard(
-        emoji: '⚠️',
-        title: l10n.alertPreviewOverdueDebts(summary.overdueDebtsCount),
-        description: l10n.alertPreviewOverdueDebtsDesc,
-        tone: AlertTone.danger,
-        onTap: () =>
-            Navigator.pushNamed(context, AppRoutes.notifications),
-      ));
+      cards.add(
+        AlertCard(
+          emoji: '⚠️',
+          title: l10n.alertPreviewOverdueDebts(summary.overdueDebtsCount),
+          description: l10n.alertPreviewOverdueDebtsDesc,
+          tone: AlertTone.danger,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.notifications),
+        ),
+      );
     }
 
     final nonOverdueActive =
         summary.pendingDebtsCount - summary.overdueDebtsCount;
     if (nonOverdueActive > 0) {
-      cards.add(AlertCard(
-        emoji: '💸',
-        title: l10n.alertPreviewActiveDebts(nonOverdueActive),
-        description: l10n.alertPreviewActiveDebtsDesc(
-          NumberFormatter.format(summary.pendingDebtsTotal),
+      cards.add(
+        AlertCard(
+          emoji: '💸',
+          title: l10n.alertPreviewActiveDebts(nonOverdueActive),
+          description: l10n.alertPreviewActiveDebtsDesc(
+            NumberFormatter.format(summary.pendingDebtsTotal),
+          ),
+          tone: AlertTone.warning,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
         ),
-        tone: AlertTone.warning,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
-      ));
+      );
     }
 
     if (summary.lowStockCount > 0) {
-      cards.add(AlertCard(
-        emoji: '📦',
-        title: l10n.alertPreviewLowStock(summary.lowStockCount),
-        description: l10n.alertPreviewLowStockDesc,
-        tone: AlertTone.warning,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const ProductsScreen(isReadOnly: false),
+      cards.add(
+        AlertCard(
+          emoji: '📦',
+          title: l10n.alertPreviewLowStock(summary.lowStockCount),
+          description: l10n.alertPreviewLowStockDesc,
+          tone: AlertTone.warning,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ProductsScreen(isReadOnly: false),
+            ),
           ),
         ),
-      ));
+      );
     }
 
     if (cards.isEmpty) {
@@ -175,12 +178,11 @@ class OwnerDashboardBody extends StatelessWidget {
     final maxRev = series.fold<double>(0, (m, p) => max(m, p.revenue));
     final bars = series.isEmpty
         ? const <double>[0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
-        : series
-            .map((p) => maxRev == 0 ? 0.0 : p.revenue / maxRev)
-            .toList();
+        : series.map((p) => maxRev == 0 ? 0.0 : p.revenue / maxRev).toList();
     final totalWeek = series.fold<double>(0, (sum, p) => sum + p.revenue);
-    final footerValue =
-        totalWeek > 0 ? '${NumberFormatter.format(totalWeek)} UZS' : '— UZS';
+    final footerValue = totalWeek > 0
+        ? '${NumberFormatter.format(totalWeek)} UZS'
+        : '— UZS';
 
     final delta = summary.weeklyDeltaPercent;
     String footerDelta = '';
@@ -326,7 +328,9 @@ class _OwnerBodySkeleton extends StatelessWidget {
               crossAxisSpacing: AppSpacing.md,
               childAspectRatio: 1.3,
               children: List.generate(
-                  4, (_) => const _SkeletonBox(height: 100)),
+                4,
+                (_) => const _SkeletonBox(height: 100),
+              ),
             );
           },
         ),
@@ -374,14 +378,19 @@ class _RetryBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 20, color: AppColors.danger),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 20,
+            color: AppColors.danger,
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               l10n.pullToRefresh,
-              style: AppTextStyles.bodySmall()
-                  .copyWith(color: AppColors.danger, fontSize: 12),
+              style: AppTextStyles.bodySmall().copyWith(
+                color: AppColors.danger,
+                fontSize: 12,
+              ),
             ),
           ),
         ],

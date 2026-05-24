@@ -35,7 +35,7 @@ class CreateSaleEvent extends SalesEvent {
 class AddSaleItemEvent extends SalesEvent {
   final String saleId;
   final String productId;
-  final double quantity;  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
+  final double quantity; // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
   final double salePrice;
   final double minSalePrice;
   final String? comment;
@@ -50,7 +50,14 @@ class AddSaleItemEvent extends SalesEvent {
   });
 
   @override
-  List<Object?> get props => [saleId, productId, quantity, salePrice, minSalePrice, comment];
+  List<Object?> get props => [
+    saleId,
+    productId,
+    quantity,
+    salePrice,
+    minSalePrice,
+    comment,
+  ];
 }
 
 /// Add payment event
@@ -107,4 +114,3 @@ class ReturnSaleItemEvent extends SalesEvent {
   @override
   List<Object?> get props => [saleId, saleItemId, quantity, comment];
 }
-

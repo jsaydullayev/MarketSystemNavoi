@@ -96,10 +96,7 @@ class BalanceCard extends StatelessWidget {
           ],
           if (cashBalance > 0 || clickBalance > 0) ...[
             const SizedBox(height: AppSpacing.xl2),
-            Container(
-              height: 1,
-              color: Colors.white.withValues(alpha: 0.20),
-            ),
+            Container(height: 1, color: Colors.white.withValues(alpha: 0.20)),
             const SizedBox(height: AppSpacing.xl),
             Row(
               children: [

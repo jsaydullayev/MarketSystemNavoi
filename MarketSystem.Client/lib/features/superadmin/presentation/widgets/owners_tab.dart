@@ -88,8 +88,7 @@ class OwnersTab extends StatelessWidget {
                   Expanded(
                     child: TextField(
                       controller: searchCtrl,
-                      style:
-                          AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+                      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
                       decoration: InputDecoration(
                         hintText: l10n.ownerSearchHint,
                         hintStyle: AppTextStyles.bodyMedium().copyWith(
@@ -147,8 +146,7 @@ class OwnersTab extends StatelessWidget {
             else
               ...filtered.map(
                 (o) => Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: AppSpacing.md + 2),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md + 2),
                   child: OwnerCard(owner: o, onTap: () => onTap(o)),
                 ),
               ),

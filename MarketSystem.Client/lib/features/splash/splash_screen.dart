@@ -44,8 +44,9 @@ class _SplashScreenState extends State<SplashScreen> {
     // /privacy and other public routes should stay where they are.
     // /splash should check auth and redirect.
     final currentRoute = RouteStateManager.instance.currentRoute ?? '';
-    final shouldSkipAutoNav =
-        PublicRoutes.shouldSkipAutoNavigation(currentRoute);
+    final shouldSkipAutoNav = PublicRoutes.shouldSkipAutoNavigation(
+      currentRoute,
+    );
 
     if (shouldSkipAutoNav) {
       debugPrint('🛑 Splash: Route should skip auto-navigation: $currentRoute');
@@ -70,7 +71,8 @@ class _SplashScreenState extends State<SplashScreen> {
     final bool isFirstTime = prefs.getBool('is_first_time') ?? true;
     final accessToken = prefs.getString('access_token');
     final cachedRole = prefs.getString('user_role');
-    final hasSession = (accessToken != null && accessToken.isNotEmpty) &&
+    final hasSession =
+        (accessToken != null && accessToken.isNotEmpty) &&
         (cachedRole != null && cachedRole.isNotEmpty);
 
     if (hasSession && mounted) {
@@ -139,59 +141,60 @@ class _SplashScreenState extends State<SplashScreen> {
       child: Scaffold(
         backgroundColor: context.colors.surface,
         body: DecoratedBox(
-        // Same gradient as the auth screens for a consistent first impression.
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [context.colors.surface, context.colors.brandLight],
+          // Same gradient as the auth screens for a consistent first impression.
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [context.colors.surface, context.colors.brandLight],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Existing orange logo asset (kept per user preference).
-                Image.asset(
-                  'assets/images/orangeLogo.png',
-                  width: 140,
-                  height: 140,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: AppSpacing.xl3),
-                Text(
-                  'Strotech',
-                  style: AppTextStyles.displayLarge().copyWith(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                    color: context.colors.text,
-                    letterSpacing: -0.5,
+          child: SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Existing orange logo asset (kept per user preference).
+                  Image.asset(
+                    'assets/images/orangeLogo.png',
+                    width: 140,
+                    height: 140,
+                    fit: BoxFit.contain,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  "Kichik do'konlar uchun savdo tizimi",
-                  style: AppTextStyles.bodyMedium().copyWith(
-                    color: context.colors.textSecondary,
+                  const SizedBox(height: AppSpacing.xl3),
+                  Text(
+                    'Strotech',
+                    style: AppTextStyles.displayLarge().copyWith(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      color: context.colors.text,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xl4),
-                // Subtle loading indicator below the brand block.
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(context.colors.brand),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    "Kichik do'konlar uchun savdo tizimi",
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      color: context.colors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.xl4),
+                  // Subtle loading indicator below the brand block.
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        context.colors.brand,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

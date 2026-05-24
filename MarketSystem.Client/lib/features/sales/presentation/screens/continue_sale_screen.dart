@@ -67,16 +67,16 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       _filteredProducts = query.isEmpty
           ? _products
           : _products
-              .where((p) => (p['name'] ?? '').toLowerCase().contains(query))
-              .toList();
+                .where((p) => (p['name'] ?? '').toLowerCase().contains(query))
+                .toList();
     });
   }
 
   double get _totalAmount => _cartItems.fold(0.0, (sum, item) {
-        final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
-        final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
-        return sum + (price * qty);
-      });
+    final price = (item['salePrice'] as num?)?.toDouble() ?? 0.0;
+    final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+    return sum + (price * qty);
+  });
 
   /// Pass `silent: true` for in-place refreshes (after an item add / remove
   /// / edit) so the entire screen doesn't collapse into a CircularProgress
@@ -102,24 +102,25 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       final items = sale['items'] as List<dynamic>? ?? [];
 
       final cartItems = items
-          .map<Map<String, dynamic>>((item) => {
-                'saleItemId': item['id'],
-                'productId': item['productId'],
-                'productName': item['productName'],
-                'salePrice': (item['salePrice'] as num?)?.toDouble() ?? 0.0,
-                'minSalePrice':
-                    (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-                'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
-                'quantity': (item['quantity'] as num?)?.toDouble() ?? 0.0,
-                'comment': item['comment'] ?? '',
-                // External-product fields — without these, _updateQuantity
-                // can't tell an external item apart from an ordinary one
-                // and would call addSaleItem with productId=null → 400.
-                'isExternal': item['isExternal'] == true,
-                'externalProductName': item['externalProductName'],
-                'externalCostPrice':
-                    (item['externalCostPrice'] as num?)?.toDouble(),
-              })
+          .map<Map<String, dynamic>>(
+            (item) => {
+              'saleItemId': item['id'],
+              'productId': item['productId'],
+              'productName': item['productName'],
+              'salePrice': (item['salePrice'] as num?)?.toDouble() ?? 0.0,
+              'minSalePrice': (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+              'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
+              'quantity': (item['quantity'] as num?)?.toDouble() ?? 0.0,
+              'comment': item['comment'] ?? '',
+              // External-product fields — without these, _updateQuantity
+              // can't tell an external item apart from an ordinary one
+              // and would call addSaleItem with productId=null → 400.
+              'isExternal': item['isExternal'] == true,
+              'externalProductName': item['externalProductName'],
+              'externalCostPrice': (item['externalCostPrice'] as num?)
+                  ?.toDouble(),
+            },
+          )
           .toList();
 
       setState(() {
@@ -148,20 +149,24 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       context,
       product: product,
       onConfirm: (price, qty, comment) async {
-        setState(() => _cartItems.add({
-              'productId': product['id'],
-              'productName': product['name'],
-              'salePrice': price,
-              'minSalePrice':
-                  (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
-              'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
-              'quantity': qty,
-              'comment': comment ?? '',
-            }));
+        setState(
+          () => _cartItems.add({
+            'productId': product['id'],
+            'productName': product['name'],
+            'salePrice': price,
+            'minSalePrice':
+                (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+            'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
+            'quantity': qty,
+            'comment': comment ?? '',
+          }),
+        );
 
         try {
-          final authProvider =
-              Provider.of<AuthProvider>(context, listen: false);
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
           final salesService = SalesService(authProvider: authProvider);
           await salesService.addSaleItem(
             saleId: widget.saleId,
@@ -173,8 +178,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           );
           await _loadData(silent: true);
           if (mounted) {
-            _showSnack(l10n.productAddedToCart(product['name']),
-                isError: false);
+            _showSnack(
+              l10n.productAddedToCart(product['name']),
+              isError: false,
+            );
           }
         } catch (e) {
           await _loadData(silent: true); // keep the screen on-screen
@@ -235,7 +242,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           await salesService.addSaleItem(
             saleId: widget.saleId,
             isExternal: true,
-            externalProductName: (item['externalProductName'] as String?) ??
+            externalProductName:
+                (item['externalProductName'] as String?) ??
                 (item['productName'] as String?) ??
                 '',
             externalCostPrice:
@@ -298,8 +306,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         if (!item.containsKey('saleItemId')) return;
 
         try {
-          final authProvider =
-              Provider.of<AuthProvider>(context, listen: false);
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
           final salesService = SalesService(authProvider: authProvider);
           final diff = newQty - currentQty;
 
@@ -321,8 +331,8 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 isExternal: true,
                 externalProductName:
                     (item['externalProductName'] as String?) ??
-                        (item['productName'] as String?) ??
-                        '',
+                    (item['productName'] as String?) ??
+                    '',
                 externalCostPrice:
                     (item['externalCostPrice'] as num?)?.toDouble() ?? 0.0,
                 quantity: diff,
@@ -336,8 +346,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 productId: item['productId'],
                 quantity: diff,
                 salePrice: newPrice,
-                minSalePrice:
-                    (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+                minSalePrice: (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
                 comment: comment ?? '',
               );
             }
@@ -405,8 +414,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       selectedCustomer: _selectedCustomer,
       onConfirm: (payments, useDebt) async {
         try {
-          final authProvider =
-              Provider.of<AuthProvider>(context, listen: false);
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
           final salesService = SalesService(authProvider: authProvider);
           for (var payment in payments) {
             await salesService.addPayment(
@@ -436,8 +447,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       context,
       onConfirm: (name, costPrice, qty, salePrice, comment) async {
         try {
-          final authProvider =
-              Provider.of<AuthProvider>(context, listen: false);
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
           final salesService = SalesService(authProvider: authProvider);
           await salesService.addSaleItem(
             saleId: widget.saleId,
@@ -515,7 +528,6 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     final status = _sale?['status'] as String?;
     final canEditPrice = status == 'Draft' || status == 'Debt';
 
-
     return NetworkWrapper(
       onRetry: _loadData,
       child: Scaffold(
@@ -542,14 +554,14 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                     onEditPrice: () => _updateItemPrice(index),
                     onReturn: () => _returnItem(index),
                     onDecrement: () async {
-                      final qty = (_cartItems[index]['quantity'] as num?)
-                              ?.toDouble() ??
+                      final qty =
+                          (_cartItems[index]['quantity'] as num?)?.toDouble() ??
                           0.0;
                       await _updateQuantity(index, qty - 1);
                     },
                     onIncrement: () async {
-                      final qty = (_cartItems[index]['quantity'] as num?)
-                              ?.toDouble() ??
+                      final qty =
+                          (_cartItems[index]['quantity'] as num?)?.toDouble() ??
                           0.0;
                       await _updateQuantity(index, qty + 1);
                     },
@@ -592,18 +604,18 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                             ),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              childAspectRatio: 1.45,
-                              crossAxisSpacing: AppSpacing.md,
-                              mainAxisSpacing: AppSpacing.md,
-                            ),
+                                  crossAxisCount: 3,
+                                  childAspectRatio: 1.45,
+                                  crossAxisSpacing: AppSpacing.md,
+                                  mainAxisSpacing: AppSpacing.md,
+                                ),
                             itemCount: _filteredProducts.length,
                             itemBuilder: (context, index) =>
                                 ContinueSaleProductCard(
-                              product: _filteredProducts[index],
-                              onTap: () =>
-                                  _addToCart(_filteredProducts[index]),
-                            ),
+                                  product: _filteredProducts[index],
+                                  onTap: () =>
+                                      _addToCart(_filteredProducts[index]),
+                                ),
                           ),
                   ),
                 ],
@@ -625,7 +637,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
   /// left, customer chip on the right. Mirrors `NewSaleScreen` so the
   /// "continue" experience visually picks up where "new" left off.
   PreferredSizeWidget _buildAppBar(
-      BuildContext context, AppLocalizations l10n) {
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(64),
       child: Container(
@@ -681,9 +695,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                 _CustomerChip(
                   customer: _selectedCustomer,
                   fallbackLabel: l10n.customerNotSelected,
-                  enabled: _sale == null
-                      ? false
-                      : _sale?['status'] != 'Closed',
+                  enabled: _sale == null ? false : _sale?['status'] != 'Closed',
                   onTap: _selectOrChangeCustomer,
                 ),
               ],
@@ -746,8 +758,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide:
-              BorderSide(color: context.colors.brand, width: 1.5),
+          borderSide: BorderSide(color: context.colors.brand, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
@@ -923,10 +934,7 @@ class _InitialAvatar extends StatelessWidget {
 /// 44×44 brand-orange tile that opens the external-product sheet. Replaces
 /// the legacy gradient + custom shadow with the design-system brand color.
 class _ExternalProductButton extends StatelessWidget {
-  const _ExternalProductButton({
-    required this.tooltip,
-    required this.onTap,
-  });
+  const _ExternalProductButton({required this.tooltip, required this.onTap});
 
   final String tooltip;
   final VoidCallback onTap;

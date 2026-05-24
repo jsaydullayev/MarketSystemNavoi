@@ -94,19 +94,21 @@ void _initServices() {
 
   // Auth Provider - needs AuthService (register after AuthService)
   sl.registerLazySingleton<AuthProvider>(
-      () => AuthProvider(authService: sl<AuthService>()));
+    () => AuthProvider(authService: sl<AuthService>()),
+  );
 
   // Customer Service - needs AuthProvider + shared HttpService
   sl.registerFactory<CustomerService>(
-      () => CustomerService(authProvider: sl(), httpService: sl()));
+    () => CustomerService(authProvider: sl(), httpService: sl()),
+  );
 
   // Sales Service - needs AuthProvider (HttpService is wired from AuthProvider)
-  sl.registerFactory<SalesService>(
-      () => SalesService(authProvider: sl()));
+  sl.registerFactory<SalesService>(() => SalesService(authProvider: sl()));
 
   // Zakup Service - needs AuthProvider + shared HttpService
   sl.registerFactory<ZakupService>(
-      () => ZakupService(authProvider: sl(), httpService: sl()));
+    () => ZakupService(authProvider: sl(), httpService: sl()),
+  );
 }
 
 /// Initialize Sales Feature (Clean Architecture)
@@ -114,9 +116,7 @@ void _initSalesFeature() {
   // Repository
   sl.registerFactory<SaleRepositoryInterface>(
     () => SaleRepositoryImpl(
-      remoteDataSource: SaleRemoteDataSource(
-        salesService: sl(),
-      ),
+      remoteDataSource: SaleRemoteDataSource(salesService: sl()),
     ),
   );
 
@@ -150,9 +150,7 @@ void _initCustomersFeature() {
   // Repository
   sl.registerFactory<CustomerRepositoryInterface>(
     () => CustomerRepositoryImpl(
-      remoteDataSource: CustomerRemoteDataSource(
-        customerService: sl(),
-      ),
+      remoteDataSource: CustomerRemoteDataSource(customerService: sl()),
     ),
   );
 
@@ -182,9 +180,7 @@ void _initZakupFeature() {
   // Repository
   sl.registerFactory<ZakupRepositoryInterface>(
     () => ZakupRepositoryImpl(
-      remoteDataSource: ZakupRemoteDataSource(
-        zakupService: sl(),
-      ),
+      remoteDataSource: ZakupRemoteDataSource(zakupService: sl()),
     ),
   );
 

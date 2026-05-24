@@ -33,7 +33,8 @@ class FlexibleDoubleConverter implements JsonConverter<double, dynamic> {
 }
 
 /// Nullable variant: returns null instead of 0.0 for missing values.
-class FlexibleNullableDoubleConverter implements JsonConverter<double?, dynamic> {
+class FlexibleNullableDoubleConverter
+    implements JsonConverter<double?, dynamic> {
   const FlexibleNullableDoubleConverter();
 
   @override
@@ -65,7 +66,8 @@ class IsoDateTimeConverter implements JsonConverter<DateTime, dynamic> {
 }
 
 /// Nullable DateTime: returns null for absent/null values.
-class NullableIsoDateTimeConverter implements JsonConverter<DateTime?, dynamic> {
+class NullableIsoDateTimeConverter
+    implements JsonConverter<DateTime?, dynamic> {
   const NullableIsoDateTimeConverter();
 
   @override
@@ -95,4 +97,3 @@ class UtcIsoDateTimeConverter implements JsonConverter<DateTime, dynamic> {
   @override
   dynamic toJson(DateTime value) => value.toIso8601String();
 }
-

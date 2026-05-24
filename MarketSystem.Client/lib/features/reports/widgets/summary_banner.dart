@@ -38,7 +38,11 @@ class DailySummaryBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl2, AppSpacing.xl, AppSpacing.xl2, AppSpacing.xl2),
+        AppSpacing.xl2,
+        AppSpacing.xl,
+        AppSpacing.xl2,
+        AppSpacing.xl2,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [_heroStart, _heroEnd],
@@ -75,7 +79,9 @@ class DailySummaryBanner extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs + 2),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: 3),
+                    horizontal: AppSpacing.md,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -98,8 +104,7 @@ class DailySummaryBanner extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                border:
-                    Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,

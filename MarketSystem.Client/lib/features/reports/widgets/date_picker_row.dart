@@ -24,14 +24,17 @@ class DatePickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final isToday = selectedDate.year == now.year &&
+    final isToday =
+        selectedDate.year == now.year &&
         selectedDate.month == now.month &&
         selectedDate.day == now.day;
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -45,8 +48,11 @@ class DatePickerRow extends StatelessWidget {
               color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(Icons.calendar_today_rounded,
-                color: context.colors.brand, size: 18),
+            child: Icon(
+              Icons.calendar_today_rounded,
+              color: context.colors.brand,
+              size: 18,
+            ),
           ),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
@@ -92,7 +98,9 @@ class DatePickerRow extends StatelessWidget {
             },
             child: Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg - 2, vertical: AppSpacing.sm),
+                horizontal: AppSpacing.lg - 2,
+                vertical: AppSpacing.sm,
+              ),
               decoration: BoxDecoration(
                 color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.md - 2),

@@ -51,7 +51,9 @@ class DailySummaryCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.xl2, horizontal: AppSpacing.xl2),
+        vertical: AppSpacing.xl2,
+        horizontal: AppSpacing.xl2,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [context.colors.brand, context.colors.brandDark],
@@ -90,8 +92,9 @@ class DailySummaryCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             DateFormat('dd MMMM, yyyy').format(data.date),
-            style: AppTextStyles.bodySmall()
-                .copyWith(color: Colors.white.withValues(alpha: 0.85)),
+            style: AppTextStyles.bodySmall().copyWith(
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
           ),
         ],
       ),
@@ -168,7 +171,9 @@ class _MiniStat extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.lg, horizontal: AppSpacing.md),
+            vertical: AppSpacing.lg,
+            horizontal: AppSpacing.md,
+          ),
           decoration: BoxDecoration(
             color: isSelected
                 ? color.withValues(alpha: 0.10)

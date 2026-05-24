@@ -79,8 +79,8 @@ class DueDateBadge extends StatelessWidget {
     final tone = delta < 0
         ? _DueTone.danger
         : delta <= 2
-            ? _DueTone.warning
-            : _DueTone.neutral;
+        ? _DueTone.warning
+        : _DueTone.neutral;
 
     final color = switch (tone) {
       _DueTone.danger => AppColors.danger,
@@ -89,8 +89,9 @@ class DueDateBadge extends StatelessWidget {
     };
 
     final label = _label(l10n, delta);
-    final formatted =
-        showAbsoluteDate && !compact ? DateFormat('dd.MM.yyyy').format(parsed) : null;
+    final formatted = showAbsoluteDate && !compact
+        ? DateFormat('dd.MM.yyyy').format(parsed)
+        : null;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -124,8 +125,10 @@ class DueDateBadge extends StatelessWidget {
             ),
             Text(
               ' · ',
-              style: AppTextStyles.bodyMedium()
-                  .copyWith(fontSize: 12, color: color),
+              style: AppTextStyles.bodyMedium().copyWith(
+                fontSize: 12,
+                color: color,
+              ),
             ),
           ],
           Text(

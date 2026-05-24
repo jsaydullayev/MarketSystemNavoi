@@ -10,26 +10,16 @@ class ApiResult<T> extends Equatable {
   final String? error;
   final bool isSuccess;
 
-  const ApiResult._({
-    this.data,
-    this.error,
-    required this.isSuccess,
-  });
+  const ApiResult._({this.data, this.error, required this.isSuccess});
 
   /// Success constructor
   factory ApiResult.success(T data) {
-    return ApiResult._(
-      data: data,
-      isSuccess: true,
-    );
+    return ApiResult._(data: data, isSuccess: true);
   }
 
   /// Failure constructor
   factory ApiResult.failure(String error) {
-    return ApiResult._(
-      error: error,
-      isSuccess: false,
-    );
+    return ApiResult._(error: error, isSuccess: false);
   }
 
   /// Check if result has data

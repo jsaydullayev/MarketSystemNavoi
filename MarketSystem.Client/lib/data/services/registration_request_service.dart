@@ -24,7 +24,11 @@ enum RegistrationRequestStatus {
 }
 
 class RegistrationRequestResult {
-  RegistrationRequestResult(this.status, {this.message, this.retryAfterSeconds});
+  RegistrationRequestResult(
+    this.status, {
+    this.message,
+    this.retryAfterSeconds,
+  });
 
   final RegistrationRequestStatus status;
   final String? message;
@@ -45,10 +49,7 @@ class RegistrationRequestService {
     try {
       final response = await _http.post(
         ApiConstants.registrationRequests,
-        body: {
-          'fullName': fullName,
-          'phone': phone,
-        },
+        body: {'fullName': fullName, 'phone': phone},
       );
 
       if (response.statusCode == 200) {
@@ -90,7 +91,8 @@ class RegistrationRequestService {
   int _extractRetryAfter(String body, Map<String, String> headers) {
     try {
       final decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic> && decoded['retryAfterSeconds'] is num) {
+      if (decoded is Map<String, dynamic> &&
+          decoded['retryAfterSeconds'] is num) {
         return (decoded['retryAfterSeconds'] as num).toInt();
       }
     } catch (_) {

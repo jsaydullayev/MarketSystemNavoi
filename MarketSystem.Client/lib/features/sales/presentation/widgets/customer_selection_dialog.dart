@@ -54,8 +54,11 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
   }
 
   String _initials(String name) {
-    final parts =
-        name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts.first.characters.first.toUpperCase();
     return (parts.first.characters.first + parts[1].characters.first)
@@ -147,286 +150,310 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
               key: ValueKey(_listVersion),
               future: customerService.getAllCustomers(),
               builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return SizedBox(
-              width: 400,
-              height: 200,
-              child: Center(
-                child:
-                    CircularProgressIndicator(color: context.colors.brand),
-              ),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return Padding(
-              padding: const EdgeInsets.all(AppSpacing.xl3),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l10n.error, style: AppTextStyles.titleMedium()),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    '${snapshot.error}',
-                    style: AppTextStyles.bodyMedium().copyWith(
-                      color: context.colors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl2),
-                  AppSecondaryButton(
-                    label: l10n.closed,
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final customersData = snapshot.data ?? [];
-
-          return Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl2),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: context.colors.brandLight,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Icon(
-                        Icons.person_search_rounded,
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return SizedBox(
+                    width: 400,
+                    height: 200,
+                    child: Center(
+                      child: CircularProgressIndicator(
                         color: context.colors.brand,
-                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: Text(
-                        l10n.selectCustomer,
-                        style: AppTextStyles.titleMedium(),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close,
-                        color: context.colors.textSecondary,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                // "Add new customer" tile at the top of the list. Opens the
-                // inline mini form instead of navigating to /customers — the
-                // sale-in-progress context is preserved.
-                _AddCustomerTile(
-                  label: l10n.addNewCustomer,
-                  onTap: () => setState(() => _isAddMode = true),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  width: 400,
-                  height: 320,
-                  child: customersData.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.person_outline,
-                                size: 64,
-                                color: context.colors.textMuted,
-                              ),
-                              const SizedBox(height: AppSpacing.xl),
-                              Text(
-                                l10n.noCustomersFound,
-                                style: AppTextStyles.bodyMedium().copyWith(
-                                  color: context.colors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: customersData.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppSpacing.md),
-                          itemBuilder: (context, index) {
-                            final customer = customersData[index];
-                            final customerName =
-                                customer['fullName'] ?? l10n.unknown;
-                            final customerPhone = customer['phone'] ?? '';
-                            final customerId =
-                                customer['id']?.toString() ?? '';
-                            final debt = (customer['totalDebt'] ??
-                                    customer['debt'] ??
-                                    0)
-                                .toString();
+                  );
+                }
 
-                            return Material(
-                              color: context.colors.surface,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.lg),
-                              child: InkWell(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.lg),
-                                onTap: () async {
-                                  Navigator.pop(context);
-                                  final messenger =
-                                      ScaffoldMessenger.of(context);
-                                  try {
-                                    final salesService = SalesService(
-                                        authProvider: authProvider);
-                                    await salesService.updateSaleCustomer(
-                                      saleId: widget.saleId,
-                                      customerId: customerId,
-                                    );
-                                    messenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            '${l10n.customerAdded}: $customerName'),
-                                        backgroundColor: AppColors.success,
-                                      ),
-                                    );
-                                    widget.onCustomerSelected();
-                                  } catch (e) {
-                                    messenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text('${l10n.error}: $e'),
-                                        backgroundColor: AppColors.danger,
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  padding:
-                                      const EdgeInsets.all(AppSpacing.lg),
-                                  decoration: BoxDecoration(
-                                    color: context.colors.bg,
-                                    borderRadius: BorderRadius.circular(
-                                        AppRadius.lg),
-                                    border: Border.all(
-                                      color: context.colors.borderSoft,
+                if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(AppSpacing.xl3),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.error, style: AppTextStyles.titleMedium()),
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          '${snapshot.error}',
+                          style: AppTextStyles.bodyMedium().copyWith(
+                            color: context.colors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl2),
+                        AppSecondaryButton(
+                          label: l10n.closed,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final customersData = snapshot.data ?? [];
+
+                return Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl2),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            decoration: BoxDecoration(
+                              color: context.colors.brandLight,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                            child: Icon(
+                              Icons.person_search_rounded,
+                              color: context.colors.brand,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.lg),
+                          Expanded(
+                            child: Text(
+                              l10n.selectCustomer,
+                              style: AppTextStyles.titleMedium(),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              color: context.colors.textSecondary,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      // "Add new customer" tile at the top of the list. Opens the
+                      // inline mini form instead of navigating to /customers — the
+                      // sale-in-progress context is preserved.
+                      _AddCustomerTile(
+                        label: l10n.addNewCustomer,
+                        onTap: () => setState(() => _isAddMode = true),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      SizedBox(
+                        width: 400,
+                        height: 320,
+                        child: customersData.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.person_outline,
+                                      size: 64,
+                                      color: context.colors.textMuted,
                                     ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          color: context.colors.inputFill,
-                                          shape: BoxShape.circle,
+                                    const SizedBox(height: AppSpacing.xl),
+                                    Text(
+                                      l10n.noCustomersFound,
+                                      style: AppTextStyles.bodyMedium()
+                                          .copyWith(
+                                            color: context.colors.textSecondary,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: customersData.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: AppSpacing.md),
+                                itemBuilder: (context, index) {
+                                  final customer = customersData[index];
+                                  final customerName =
+                                      customer['fullName'] ?? l10n.unknown;
+                                  final customerPhone = customer['phone'] ?? '';
+                                  final customerId =
+                                      customer['id']?.toString() ?? '';
+                                  final debt =
+                                      (customer['totalDebt'] ??
+                                              customer['debt'] ??
+                                              0)
+                                          .toString();
+
+                                  return Material(
+                                    color: context.colors.surface,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.lg,
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.lg,
+                                      ),
+                                      onTap: () async {
+                                        Navigator.pop(context);
+                                        final messenger = ScaffoldMessenger.of(
+                                          context,
+                                        );
+                                        try {
+                                          final salesService = SalesService(
+                                            authProvider: authProvider,
+                                          );
+                                          await salesService.updateSaleCustomer(
+                                            saleId: widget.saleId,
+                                            customerId: customerId,
+                                          );
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '${l10n.customerAdded}: $customerName',
+                                              ),
+                                              backgroundColor:
+                                                  AppColors.success,
+                                            ),
+                                          );
+                                          widget.onCustomerSelected();
+                                        } catch (e) {
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '${l10n.error}: $e',
+                                              ),
+                                              backgroundColor: AppColors.danger,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(
+                                          AppSpacing.lg,
                                         ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          _initials(customerName),
-                                          style: AppTextStyles.labelLarge()
-                                              .copyWith(
-                                            color:
-                                                context.colors.textSecondary,
+                                        decoration: BoxDecoration(
+                                          color: context.colors.bg,
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.lg,
+                                          ),
+                                          border: Border.all(
+                                            color: context.colors.borderSoft,
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: AppSpacing.lg),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                        child: Row(
                                           children: [
-                                            Text(
-                                              customerName,
-                                              style: AppTextStyles
-                                                  .bodyLarge()
-                                                  .copyWith(
-                                                fontWeight: FontWeight.w700,
+                                            Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: context.colors.inputFill,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              alignment: Alignment.center,
+                                              child: Text(
+                                                _initials(customerName),
+                                                style:
+                                                    AppTextStyles.labelLarge()
+                                                        .copyWith(
+                                                          color: context
+                                                              .colors
+                                                              .textSecondary,
+                                                        ),
                                               ),
                                             ),
-                                            if (customerPhone
-                                                .toString()
-                                                .isNotEmpty) ...[
-                                              const SizedBox(
-                                                  height: AppSpacing.xs),
-                                              Text(
-                                                customerPhone,
-                                                style: AppTextStyles
-                                                    .bodySmall(),
+                                            const SizedBox(
+                                              width: AppSpacing.lg,
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    customerName,
+                                                    style:
+                                                        AppTextStyles.bodyLarge()
+                                                            .copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                            ),
+                                                  ),
+                                                  if (customerPhone
+                                                      .toString()
+                                                      .isNotEmpty) ...[
+                                                    const SizedBox(
+                                                      height: AppSpacing.xs,
+                                                    ),
+                                                    Text(
+                                                      customerPhone,
+                                                      style:
+                                                          AppTextStyles.bodySmall(),
+                                                    ),
+                                                  ],
+                                                ],
                                               ),
-                                            ],
+                                            ),
+                                            if (debt != '0' && debt.isNotEmpty)
+                                              Text(
+                                                debt,
+                                                style:
+                                                    AppTextStyles.labelLarge()
+                                                        .copyWith(
+                                                          color: context
+                                                              .colors
+                                                              .brand,
+                                                        ),
+                                              ),
                                           ],
                                         ),
                                       ),
-                                      if (debt != '0' && debt.isNotEmpty)
-                                        Text(
-                                          debt,
-                                          style: AppTextStyles.labelLarge()
-                                              .copyWith(
-                                            color: context.colors.brand,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppDangerButton(
-                        label: l10n.removeCustomer,
-                        onPressed: () async {
-                          Navigator.pop(context);
-                          final messenger = ScaffoldMessenger.of(context);
-                          try {
-                            final salesService =
-                                SalesService(authProvider: authProvider);
-                            await salesService.updateSaleCustomer(
-                              saleId: widget.saleId,
-                              customerId: null,
-                            );
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(l10n.customerRemoved),
-                                backgroundColor: AppColors.warning,
-                              ),
-                            );
-                            widget.onCustomerSelected();
-                          } catch (e) {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text('${l10n.error}: $e'),
-                                backgroundColor: AppColors.danger,
-                              ),
-                            );
-                          }
-                        },
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: AppSecondaryButton(
-                        label: l10n.cancel,
-                        onPressed: () => Navigator.pop(context),
+                      const SizedBox(height: AppSpacing.xl),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppDangerButton(
+                              label: l10n.removeCustomer,
+                              onPressed: () async {
+                                Navigator.pop(context);
+                                final messenger = ScaffoldMessenger.of(context);
+                                try {
+                                  final salesService = SalesService(
+                                    authProvider: authProvider,
+                                  );
+                                  await salesService.updateSaleCustomer(
+                                    saleId: widget.saleId,
+                                    customerId: null,
+                                  );
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.customerRemoved),
+                                      backgroundColor: AppColors.warning,
+                                    ),
+                                  );
+                                  widget.onCustomerSelected();
+                                } catch (e) {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text('${l10n.error}: $e'),
+                                      backgroundColor: AppColors.danger,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.lg),
+                          Expanded(
+                            child: AppSecondaryButton(
+                              label: l10n.cancel,
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 
@@ -463,10 +490,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                 ),
               ),
               IconButton(
-                icon: Icon(
-                  Icons.close,
-                  color: context.colors.textSecondary,
-                ),
+                icon: Icon(Icons.close, color: context.colors.textSecondary),
                 onPressed: () => setState(() => _isAddMode = false),
               ),
             ],
@@ -509,8 +533,9 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
                 child: AppPrimaryButton(
                   label: l10n.save,
                   isLoading: _isCreating,
-                  onPressed:
-                      _isCreating ? null : () => _createCustomer(context),
+                  onPressed: _isCreating
+                      ? null
+                      : () => _createCustomer(context),
                 ),
               ),
             ],

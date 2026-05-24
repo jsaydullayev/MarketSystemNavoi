@@ -16,6 +16,7 @@ class OwnerSummary {
   final bool isActive;
   final int? marketId;
   final String? marketName;
+
   /// True when the SuperAdmin has administratively blocked this owner's
   /// market (e.g. non-payment). Defaulted false so older API responses
   /// without the field decode safely.

@@ -74,7 +74,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       _filteredProducts = _products.where((product) {
         final name = (product['name'] ?? '').toString().toLowerCase();
         final matchesSearch = query.isEmpty || name.contains(query);
-        final matchesCategory = _selectedCategoryName == null ||
+        final matchesCategory =
+            _selectedCategoryName == null ||
             product['categoryName'] == _selectedCategoryName;
         return matchesSearch && matchesCategory;
       }).toList();
@@ -193,34 +194,36 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         ? (item['quantity'] as num).toDouble()
         : 1.0;
 
-    PriceInputSheet.show(context, product: {
-      'name': item['productName'] ?? l10n.unknownProduct,
-      'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
-      'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
-      'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
-      'id': item['productId'] ?? '',
-      'unitName': (item['unitName'] ?? 'dona'),
-      'initialQuantity': currentQuantity,
-    }, onConfirm: (newPrice, newQuantity, comment) {
-      setState(() {
-        _cartItems[index]['salePrice'] = newPrice;
-        _cartItems[index]['quantity'] = newQuantity;
-        if (comment != null && comment.isNotEmpty) {
-          _cartItems[index]['comment'] = comment;
-        }
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${item['productName']} ${l10n.itemUpdated}',
+    PriceInputSheet.show(
+      context,
+      product: {
+        'name': item['productName'] ?? l10n.unknownProduct,
+        'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
+        'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
+        'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
+        'id': item['productId'] ?? '',
+        'unitName': (item['unitName'] ?? 'dona'),
+        'initialQuantity': currentQuantity,
+      },
+      onConfirm: (newPrice, newQuantity, comment) {
+        setState(() {
+          _cartItems[index]['salePrice'] = newPrice;
+          _cartItems[index]['quantity'] = newQuantity;
+          if (comment != null && comment.isNotEmpty) {
+            _cartItems[index]['comment'] = comment;
+          }
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item['productName']} ${l10n.itemUpdated}'),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 1),
             ),
-            backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      }
-    });
+          );
+        }
+      },
+    );
   }
 
   void _showCustomerDialog() {
@@ -250,8 +253,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           final navigator = Navigator.of(context);
 
           try {
-            final authProvider =
-                Provider.of<AuthProvider>(context, listen: false);
+            final authProvider = Provider.of<AuthProvider>(
+              context,
+              listen: false,
+            );
             final salesService = SalesService(authProvider: authProvider);
 
             // Use the customer the dialog returns — it may be one the
@@ -308,18 +313,22 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             });
 
             navigator.pop();
-            scaffoldMessenger.showSnackBar(SnackBar(
-              content: Text(useDebt ? l10n.saleAsDebt : l10n.saleSuccess),
-              backgroundColor: AppColors.success,
-            ));
+            scaffoldMessenger.showSnackBar(
+              SnackBar(
+                content: Text(useDebt ? l10n.saleAsDebt : l10n.saleSuccess),
+                backgroundColor: AppColors.success,
+              ),
+            );
             navigator.pop(true);
           } catch (e) {
             if (!mounted) return;
             navigator.pop();
-            scaffoldMessenger.showSnackBar(SnackBar(
-              content: Text('${l10n.error}: $e'),
-              backgroundColor: AppColors.danger,
-            ));
+            scaffoldMessenger.showSnackBar(
+              SnackBar(
+                content: Text('${l10n.error}: $e'),
+                backgroundColor: AppColors.danger,
+              ),
+            );
           }
         },
       ),
@@ -461,8 +470,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         actions: [
           TextButton.icon(
             onPressed: () => Navigator.pop(dialogCtx, 'discard'),
-            icon: const Icon(Icons.delete_outline_rounded,
-                size: 18, color: AppColors.danger),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              size: 18,
+              color: AppColors.danger,
+            ),
             label: Text(
               l10n.discardSale,
               style: AppTextStyles.bodySmall().copyWith(
@@ -487,8 +499,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               backgroundColor: context.colors.brand,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
@@ -551,7 +562,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   /// Sticky POS header — back button, title with meta-line, customer chip.
   /// White surface, bottom soft border, matches the demo's `.pos-header`.
   PreferredSizeWidget _buildAppBar(
-      BuildContext context, AppLocalizations l10n) {
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(64),
       child: Container(
@@ -565,12 +578,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           bottom: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+            ),
             child: Row(
               children: [
-                PosBackButton(
-                  onTap: () => Navigator.maybePop(context),
-                ),
+                PosBackButton(onTap: () => Navigator.maybePop(context)),
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
@@ -641,8 +656,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
-        border: Border(
-            top: BorderSide(color: context.colors.border, width: 2)),
+        border: Border(top: BorderSide(color: context.colors.border, width: 2)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0F000000),
@@ -655,7 +669,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.lg),
+            AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.lg,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -672,8 +690,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               AppPrimaryButton(
                 label: hasItems
                     ? '${l10n.processReturn.replaceAll(l10n.returnText, l10n.saleText)} · ${NumberFormatter.format(_totalAmount)}'
-                    : l10n.processReturn
-                        .replaceAll(l10n.returnText, l10n.saleText),
+                    : l10n.processReturn.replaceAll(
+                        l10n.returnText,
+                        l10n.saleText,
+                      ),
                 icon: Icons.credit_card_rounded,
                 onPressed: hasItems ? _completeSale : null,
               ),

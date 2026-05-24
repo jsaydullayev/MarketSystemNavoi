@@ -51,7 +51,9 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         await _httpService.saveTokens(
-            data['accessToken'] as String, data['refreshToken'] as String);
+          data['accessToken'] as String,
+          data['refreshToken'] as String,
+        );
         return LoginResult(LoginOutcome.success, user: data);
       }
 
@@ -66,7 +68,9 @@ class AuthService {
           if (body['blockedAt'] is String) {
             blockedAt = DateTime.tryParse(body['blockedAt'] as String);
           }
-        } catch (_) {/* malformed body — fall through with nulls */}
+        } catch (_) {
+          /* malformed body — fall through with nulls */
+        }
         return LoginResult(
           LoginOutcome.marketBlocked,
           blockReason: reason,
@@ -74,8 +78,12 @@ class AuthService {
         );
       }
 
-      if (response.statusCode == 429) return LoginResult(LoginOutcome.rateLimited);
-      if (response.statusCode == 401) return LoginResult(LoginOutcome.invalidCredentials);
+      if (response.statusCode == 429) {
+        return LoginResult(LoginOutcome.rateLimited);
+      }
+      if (response.statusCode == 401) {
+        return LoginResult(LoginOutcome.invalidCredentials);
+      }
       return LoginResult(LoginOutcome.unknown);
     } catch (e, st) {
       debugPrint('AuthService.login error: $e\n$st');
@@ -107,7 +115,10 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await _httpService.saveTokens(data['accessToken'], data['refreshToken']);
+        await _httpService.saveTokens(
+          data['accessToken'],
+          data['refreshToken'],
+        );
         return data;
       }
       return null;
@@ -159,8 +170,9 @@ class AuthService {
       final parts = token.split('.');
       if (parts.length != 3) return true;
 
-      final payload =
-          utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final payload = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
       final data = jsonDecode(payload);
       final exp = data['exp'] as int;
 
@@ -198,7 +210,10 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await _httpService.saveTokens(data['accessToken'], data['refreshToken']);
+        await _httpService.saveTokens(
+          data['accessToken'],
+          data['refreshToken'],
+        );
         return data;
       } else {
         await _httpService.clearTokens();

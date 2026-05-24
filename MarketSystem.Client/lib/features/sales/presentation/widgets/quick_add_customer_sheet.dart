@@ -74,9 +74,7 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
       if (created is Map) {
         final result = <String, dynamic>{
           'id': created['id']?.toString() ?? '',
-          'fullName': (created['fullName'] ??
-                  _nameCtrl.text.trim())
-              .toString(),
+          'fullName': (created['fullName'] ?? _nameCtrl.text.trim()).toString(),
           'phone': (created['phone'] ?? phone).toString(),
         };
         if (result['id']!.toString().isEmpty) {
@@ -110,7 +108,8 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
         decoration: BoxDecoration(
           color: context.colors.surface,
           borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl2)),
+            top: Radius.circular(AppRadius.xl2),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -156,8 +155,9 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
                 ),
                 IconButton(
                   icon: Icon(Icons.close, color: context.colors.textSecondary),
-                  onPressed:
-                      _isCreating ? null : () => Navigator.pop(context, null),
+                  onPressed: _isCreating
+                      ? null
+                      : () => Navigator.pop(context, null),
                 ),
               ],
             ),
@@ -180,8 +180,9 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
                 Expanded(
                   child: AppSecondaryButton(
                     label: l10n.cancel,
-                    onPressed:
-                        _isCreating ? null : () => Navigator.pop(context, null),
+                    onPressed: _isCreating
+                        ? null
+                        : () => Navigator.pop(context, null),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -206,8 +207,7 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
 /// created customer Map (`{id, fullName, phone}`), or null if the cashier
 /// cancelled. Caller is responsible for whatever attaches the customer to a
 /// sale.
-Future<Map<String, dynamic>?> showQuickAddCustomerSheet(
-    BuildContext context) {
+Future<Map<String, dynamic>?> showQuickAddCustomerSheet(BuildContext context) {
   return showModalBottomSheet<Map<String, dynamic>>(
     context: context,
     isScrollControlled: true,

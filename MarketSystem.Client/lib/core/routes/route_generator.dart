@@ -43,7 +43,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   // This is the "Impenetrable Wall" - public routes bypass ALL other logic
   // /privacy route must return here without ANY further processing
   if (PublicRoutes.isPublic(routeName) || PublicRoutes.isSplash(routeName)) {
-    debugPrint('🔒 Public route detected: $routeName - RETURNING IMMEDIATELY (no auth check, no redirect)');
+    debugPrint(
+      '🔒 Public route detected: $routeName - RETURNING IMMEDIATELY (no auth check, no redirect)',
+    );
 
     switch (routeName) {
       case AppRoutes.splash:
@@ -72,9 +74,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       // (login_screen.dart) is the gate that decides who reaches this route —
       // we intentionally don't redirect non-SuperAdmin users from here, since
       // the route is supposed to be unreachable from the UI.
-      return MaterialPageRoute(
-        builder: (_) => const SuperAdminConsoleScreen(),
-      );
+      return MaterialPageRoute(builder: (_) => const SuperAdminConsoleScreen());
     case AppRoutes.dashboard:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -123,9 +123,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     default:
       return MaterialPageRoute(
         builder: (_) => Scaffold(
-          body: Center(
-            child: Text('Route not found: ${settings.name}'),
-          ),
+          body: Center(child: Text('Route not found: ${settings.name}')),
         ),
       );
   }

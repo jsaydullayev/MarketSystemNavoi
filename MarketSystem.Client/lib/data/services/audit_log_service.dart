@@ -55,19 +55,21 @@ class AuditLogEntry {
   final DateTime createdAt;
 
   factory AuditLogEntry.fromJson(Map<String, dynamic> json) => AuditLogEntry(
-        id: (json['id'] ?? '').toString(),
-        entityType: (json['entityType'] ?? '').toString(),
-        entityId: (json['entityId'] ?? '').toString(),
-        action: (json['action'] ?? '').toString(),
-        userId: json['userId']?.toString(),
-        userName: json['userName'] as String?,
-        payload: (json['payload'] ?? '').toString(),
-        ipAddress: json['ipAddress'] as String?,
-        marketId: json['marketId'] is num ? (json['marketId'] as num).toInt() : null,
-        createdAt: DateTime.tryParse((json['createdAt'] ?? '').toString())
-            ?.toLocal() ??
-            DateTime.now(),
-      );
+    id: (json['id'] ?? '').toString(),
+    entityType: (json['entityType'] ?? '').toString(),
+    entityId: (json['entityId'] ?? '').toString(),
+    action: (json['action'] ?? '').toString(),
+    userId: json['userId']?.toString(),
+    userName: json['userName'] as String?,
+    payload: (json['payload'] ?? '').toString(),
+    ipAddress: json['ipAddress'] as String?,
+    marketId: json['marketId'] is num
+        ? (json['marketId'] as num).toInt()
+        : null,
+    createdAt:
+        DateTime.tryParse((json['createdAt'] ?? '').toString())?.toLocal() ??
+        DateTime.now(),
+  );
 }
 
 /// Standard paging envelope shared with the backend (PagedResult<T>).
@@ -89,20 +91,20 @@ class PagedAuditLogs {
   bool get hasMore => page < totalPages;
 
   factory PagedAuditLogs.empty({int page = 1, int size = 50}) => PagedAuditLogs(
-        items: const [],
-        page: page,
-        size: size,
-        total: 0,
-        totalPages: 0,
-      );
+    items: const [],
+    page: page,
+    size: size,
+    total: 0,
+    totalPages: 0,
+  );
 
   factory PagedAuditLogs.fromJson(Map<String, dynamic> json) {
     final raw = json['items'];
     final items = raw is List
         ? raw
-            .whereType<Map>()
-            .map((m) => AuditLogEntry.fromJson(m.cast<String, dynamic>()))
-            .toList()
+              .whereType<Map>()
+              .map((m) => AuditLogEntry.fromJson(m.cast<String, dynamic>()))
+              .toList()
         : <AuditLogEntry>[];
     return PagedAuditLogs(
       items: items,
@@ -135,11 +137,15 @@ class FailedLoginBurst {
     return FailedLoginBurst(
       username: (json['username'] ?? '').toString(),
       count: (json['count'] as num?)?.toInt() ?? 0,
-      firstSeenUtc: DateTime.tryParse((json['firstSeenUtc'] ?? '').toString())
-              ?.toLocal() ??
+      firstSeenUtc:
+          DateTime.tryParse(
+            (json['firstSeenUtc'] ?? '').toString(),
+          )?.toLocal() ??
           DateTime.now(),
-      lastSeenUtc: DateTime.tryParse((json['lastSeenUtc'] ?? '').toString())
-              ?.toLocal() ??
+      lastSeenUtc:
+          DateTime.tryParse(
+            (json['lastSeenUtc'] ?? '').toString(),
+          )?.toLocal() ??
           DateTime.now(),
       ipAddresses: ips is List
           ? ips.whereType<String>().toList(growable: false)
@@ -172,11 +178,15 @@ class BulkDeleteBurst {
       userId: (json['userId'] ?? '').toString(),
       userName: json['userName'] as String?,
       count: (json['count'] as num?)?.toInt() ?? 0,
-      firstSeenUtc: DateTime.tryParse((json['firstSeenUtc'] ?? '').toString())
-              ?.toLocal() ??
+      firstSeenUtc:
+          DateTime.tryParse(
+            (json['firstSeenUtc'] ?? '').toString(),
+          )?.toLocal() ??
           DateTime.now(),
-      lastSeenUtc: DateTime.tryParse((json['lastSeenUtc'] ?? '').toString())
-              ?.toLocal() ??
+      lastSeenUtc:
+          DateTime.tryParse(
+            (json['lastSeenUtc'] ?? '').toString(),
+          )?.toLocal() ??
           DateTime.now(),
       entityTypes: types is List
           ? types.whereType<String>().toList(growable: false)
@@ -206,15 +216,17 @@ class SuspiciousReport {
     return SuspiciousReport(
       failedLoginBursts: fl is List
           ? fl
-              .whereType<Map>()
-              .map((m) => FailedLoginBurst.fromJson(m.cast<String, dynamic>()))
-              .toList()
+                .whereType<Map>()
+                .map(
+                  (m) => FailedLoginBurst.fromJson(m.cast<String, dynamic>()),
+                )
+                .toList()
           : const [],
       bulkDeleteBursts: bd is List
           ? bd
-              .whereType<Map>()
-              .map((m) => BulkDeleteBurst.fromJson(m.cast<String, dynamic>()))
-              .toList()
+                .whereType<Map>()
+                .map((m) => BulkDeleteBurst.fromJson(m.cast<String, dynamic>()))
+                .toList()
           : const [],
     );
   }
@@ -222,7 +234,7 @@ class SuspiciousReport {
 
 class AuditLogService {
   AuditLogService({HttpService? httpService})
-      : _http = httpService ?? HttpService();
+    : _http = httpService ?? HttpService();
 
   final HttpService _http;
 
@@ -296,8 +308,10 @@ class AuditLogService {
   String _buildUri(String path, Map<String, String> params) {
     if (params.isEmpty) return path;
     final qs = params.entries
-        .map((e) =>
-            '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
         .join('&');
     return '$path?$qs';
   }

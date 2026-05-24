@@ -40,7 +40,9 @@ class SaleListRow extends StatelessWidget {
                 border: Border.all(color: context.colors.border),
               ),
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               child: Row(
                 children: [
                   _TimeBadge(time: sale.createdAt),
@@ -181,18 +183,17 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Text(
         status.toUpperCase(),
-        style: AppTextStyles.caption().copyWith(
-          color: color,
-          fontSize: 10,
-        ),
+        style: AppTextStyles.caption().copyWith(color: color, fontSize: 10),
       ),
     );
   }

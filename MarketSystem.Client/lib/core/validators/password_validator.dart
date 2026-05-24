@@ -39,8 +39,8 @@ class PasswordValidator {
       return l10n?.passwordRequired ?? 'Parol majburiy';
     }
     if (!_isStrong(value)) {
-      return l10n?.passwordMinLength
-          ?? "Parol kamida 8 belgi, 1 harf va 1 raqam o'z ichiga olishi kerak";
+      return l10n?.passwordMinLength ??
+          "Parol kamida 8 belgi, 1 harf va 1 raqam o'z ichiga olishi kerak";
     }
     return null;
   }

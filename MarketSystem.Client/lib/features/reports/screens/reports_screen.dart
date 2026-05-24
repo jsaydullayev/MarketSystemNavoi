@@ -189,14 +189,17 @@ class _ReportsScreenState extends State<ReportsScreen>
 
   void _showSnack(String msg, {required bool isError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? AppColors.danger : AppColors.success,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg)),
-      margin: const EdgeInsets.all(AppSpacing.xl),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
+      ),
+    );
   }
 
   // Hero band figures — all read from _heroReport, the period report for the
@@ -254,8 +257,7 @@ class _ReportsScreenState extends State<ReportsScreen>
         ),
         body: _isLoading
             ? Center(
-                child:
-                    CircularProgressIndicator(color: context.colors.brand),
+                child: CircularProgressIndicator(color: context.colors.brand),
               )
             : RefreshIndicator(
                 color: context.colors.brand,

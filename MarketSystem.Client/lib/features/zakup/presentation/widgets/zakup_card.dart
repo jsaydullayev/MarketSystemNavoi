@@ -35,8 +35,9 @@ class ZakupCard extends StatelessWidget {
     final canViewCostPrice = authProvider.can(Permissions.dataCostPrice);
 
     final qty = (zakup['quantity'] as num?)?.toDouble() ?? 0.0;
-    final qtyStr =
-        qty == qty.truncateToDouble() ? qty.toInt().toString() : qty.toString();
+    final qtyStr = qty == qty.truncateToDouble()
+        ? qty.toInt().toString()
+        : qty.toString();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md + 2),
@@ -87,7 +88,9 @@ class ZakupCard extends StatelessWidget {
                       if (canViewCostPrice) ...[
                         const SizedBox(width: AppSpacing.sm),
                         _Chip(
-                          label: NumberFormatter.format(zakup['costPrice'] ?? 0),
+                          label: NumberFormatter.format(
+                            zakup['costPrice'] ?? 0,
+                          ),
                           icon: Icons.payments_rounded,
                           isAccent: true,
                         ),
@@ -142,16 +145,13 @@ class _Chip extends StatelessWidget {
   final IconData icon;
   final bool isAccent;
 
-  const _Chip({
-    required this.label,
-    required this.icon,
-    this.isAccent = false,
-  });
+  const _Chip({required this.label, required this.icon, this.isAccent = false});
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isAccent ? context.colors.brand : context.colors.textSecondary;
+    final color = isAccent
+        ? context.colors.brand
+        : context.colors.textSecondary;
 
     return Container(
       padding: const EdgeInsets.symmetric(

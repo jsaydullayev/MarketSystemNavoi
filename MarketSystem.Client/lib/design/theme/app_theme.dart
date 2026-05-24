@@ -7,34 +7,40 @@ import '../tokens/app_typography.dart';
 
 class AppTheme {
   static ThemeData get light {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.brand,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.brand,
-      onPrimary: Colors.white,
-      secondary: AppColors.brandDark,
-      surface: AppColors.surface,
-      onSurface: AppColors.text,
-      error: AppColors.danger,
-      onError: Colors.white,
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.brand,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.brand,
+          onPrimary: Colors.white,
+          secondary: AppColors.brandDark,
+          surface: AppColors.surface,
+          onSurface: AppColors.text,
+          error: AppColors.danger,
+          onError: Colors.white,
+        );
 
     // AppTextStyles no longer carry a colour — apply the light-theme text
     // colours here so the textTheme is the single source of truth.
     final textTheme = TextTheme(
-      displayLarge: AppTextStyles.displayLarge().copyWith(color: AppColors.text),
-      displayMedium:
-          AppTextStyles.displayMedium().copyWith(color: AppColors.text),
+      displayLarge: AppTextStyles.displayLarge().copyWith(
+        color: AppColors.text,
+      ),
+      displayMedium: AppTextStyles.displayMedium().copyWith(
+        color: AppColors.text,
+      ),
       titleLarge: AppTextStyles.titleLarge().copyWith(color: AppColors.text),
       titleMedium: AppTextStyles.titleMedium().copyWith(color: AppColors.text),
       bodyLarge: AppTextStyles.bodyLarge().copyWith(color: AppColors.text),
       bodyMedium: AppTextStyles.bodyMedium().copyWith(color: AppColors.text),
-      bodySmall:
-          AppTextStyles.bodySmall().copyWith(color: AppColors.textSecondary),
+      bodySmall: AppTextStyles.bodySmall().copyWith(
+        color: AppColors.textSecondary,
+      ),
       labelLarge: AppTextStyles.labelLarge().copyWith(color: AppColors.text),
-      labelSmall:
-          AppTextStyles.labelSmall().copyWith(color: AppColors.textSecondary),
+      labelSmall: AppTextStyles.labelSmall().copyWith(
+        color: AppColors.textSecondary,
+      ),
     );
 
     return ThemeData(
@@ -140,33 +146,50 @@ class AppTheme {
   /// recognise it; backgrounds use slate so the orange brand still works
   /// as an accent (e.g. for destructive secondary highlights).
   static ThemeData get dark {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.darkPrimaryLight,
-      brightness: Brightness.dark,
-    ).copyWith(
-      // Primary = light "sky" blue. Buttons / accents in dark mode read as
-      // light blue on the deep-navy background. onPrimary is the dark navy
-      // so text on a light-blue button stays high-contrast (white would
-      // fail WCAG against #60A5FA).
-      primary: AppColors.darkPrimaryLight,
-      onPrimary: AppColors.darkBg,
-      secondary: AppColors.darkPrimaryLight,
-      surface: AppColors.darkSurface,
-      onSurface: AppColors.darkText,
-      error: AppColors.danger,
-      onError: Colors.white,
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.darkPrimaryLight,
+          brightness: Brightness.dark,
+        ).copyWith(
+          // Primary = light "sky" blue. Buttons / accents in dark mode read as
+          // light blue on the deep-navy background. onPrimary is the dark navy
+          // so text on a light-blue button stays high-contrast (white would
+          // fail WCAG against #60A5FA).
+          primary: AppColors.darkPrimaryLight,
+          onPrimary: AppColors.darkBg,
+          secondary: AppColors.darkPrimaryLight,
+          surface: AppColors.darkSurface,
+          onSurface: AppColors.darkText,
+          error: AppColors.danger,
+          onError: Colors.white,
+        );
 
     final textTheme = TextTheme(
-      displayLarge: AppTextStyles.displayLarge().copyWith(color: AppColors.darkText),
-      displayMedium: AppTextStyles.displayMedium().copyWith(color: AppColors.darkText),
-      titleLarge: AppTextStyles.titleLarge().copyWith(color: AppColors.darkText),
-      titleMedium: AppTextStyles.titleMedium().copyWith(color: AppColors.darkText),
+      displayLarge: AppTextStyles.displayLarge().copyWith(
+        color: AppColors.darkText,
+      ),
+      displayMedium: AppTextStyles.displayMedium().copyWith(
+        color: AppColors.darkText,
+      ),
+      titleLarge: AppTextStyles.titleLarge().copyWith(
+        color: AppColors.darkText,
+      ),
+      titleMedium: AppTextStyles.titleMedium().copyWith(
+        color: AppColors.darkText,
+      ),
       bodyLarge: AppTextStyles.bodyLarge().copyWith(color: AppColors.darkText),
-      bodyMedium: AppTextStyles.bodyMedium().copyWith(color: AppColors.darkTextSecondary),
-      bodySmall: AppTextStyles.bodySmall().copyWith(color: AppColors.darkTextMuted),
-      labelLarge: AppTextStyles.labelLarge().copyWith(color: AppColors.darkText),
-      labelSmall: AppTextStyles.labelSmall().copyWith(color: AppColors.darkTextMuted),
+      bodyMedium: AppTextStyles.bodyMedium().copyWith(
+        color: AppColors.darkTextSecondary,
+      ),
+      bodySmall: AppTextStyles.bodySmall().copyWith(
+        color: AppColors.darkTextMuted,
+      ),
+      labelLarge: AppTextStyles.labelLarge().copyWith(
+        color: AppColors.darkText,
+      ),
+      labelSmall: AppTextStyles.labelSmall().copyWith(
+        color: AppColors.darkTextMuted,
+      ),
     );
 
     return ThemeData(
@@ -183,7 +206,9 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: AppTextStyles.titleMedium().copyWith(color: AppColors.darkText),
+        titleTextStyle: AppTextStyles.titleMedium().copyWith(
+          color: AppColors.darkText,
+        ),
         iconTheme: const IconThemeData(color: AppColors.darkText),
       ),
       cardTheme: CardThemeData(
@@ -205,7 +230,9 @@ class AppTheme {
         hintStyle: AppTextStyles.bodyMedium().copyWith(
           color: AppColors.darkTextMuted,
         ),
-        labelStyle: AppTextStyles.labelSmall().copyWith(color: AppColors.darkTextSecondary),
+        labelStyle: AppTextStyles.labelSmall().copyWith(
+          color: AppColors.darkTextSecondary,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
           borderSide: BorderSide.none,
@@ -216,7 +243,10 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: const BorderSide(color: AppColors.darkPrimaryLight, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.darkPrimaryLight,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -241,8 +271,9 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
-          textStyle:
-              AppTextStyles.labelLarge().copyWith(color: AppColors.darkBg),
+          textStyle: AppTextStyles.labelLarge().copyWith(
+            color: AppColors.darkBg,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -256,7 +287,9 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
-          textStyle: AppTextStyles.labelLarge().copyWith(color: AppColors.darkText),
+          textStyle: AppTextStyles.labelLarge().copyWith(
+            color: AppColors.darkText,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(

@@ -51,16 +51,18 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
 
     _priceController = TextEditingController(text: _formatNumber(currentPrice));
     _qtyController = TextEditingController(text: _formatNumber(initialQty));
-    _commentController =
-        TextEditingController(text: widget.product['comment'] ?? '');
+    _commentController = TextEditingController(
+      text: widget.product['comment'] ?? '',
+    );
 
     _showMinPrice = _minPrice > 0 && currentPrice < _minPrice;
     _priceController.addListener(_onPriceChanged);
   }
 
   String _formatNumber(double value) {
-    final unitName =
-        (widget.product['unitName'] ?? '').toString().toLowerCase();
+    final unitName = (widget.product['unitName'] ?? '')
+        .toString()
+        .toLowerCase();
     const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
     final isWeight = weightUnits.contains(unitName);
 
@@ -94,8 +96,9 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     final cleanPriceText = _priceController.text
         .replaceAll(RegExp(r'\s+'), '')
         .replaceAll(',', '.');
-    final cleanQtyText =
-        _qtyController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+    final cleanQtyText = _qtyController.text
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(',', '.');
 
     final price = double.tryParse(cleanPriceText) ?? 0;
     final rawQty = double.tryParse(cleanQtyText) ?? 1;
@@ -120,7 +123,8 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
         decoration: BoxDecoration(
           color: context.colors.surface,
           borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl2)),
+            top: Radius.circular(AppRadius.xl2),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -262,10 +266,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   flex: 2,
-                  child: AppPrimaryButton(
-                    label: l10n.add,
-                    onPressed: _submit,
-                  ),
+                  child: AppPrimaryButton(label: l10n.add, onPressed: _submit),
                 ),
               ],
             ),
@@ -323,10 +324,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              borderSide: BorderSide(
-                color: context.colors.brand,
-                width: 1.5,
-              ),
+              borderSide: BorderSide(color: context.colors.brand, width: 1.5),
             ),
             contentPadding: const EdgeInsets.all(AppSpacing.xl),
           ),

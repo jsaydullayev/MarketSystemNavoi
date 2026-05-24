@@ -66,13 +66,14 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
     });
     try {
       final data = await _userService.getUserPermissions(widget.userId);
-      final effective = (data['effectivePermissions'] as List?)
+      final effective =
+          (data['effectivePermissions'] as List?)
               ?.whereType<String>()
               .toList() ??
           const [];
       _roleDefaults =
           (data['roleDefaults'] as List?)?.whereType<String>().toList() ??
-              const [];
+          const [];
       _isCustomized = data['isCustomized'] == true;
       _selected
         ..clear()
@@ -93,7 +94,9 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
     final l10n = AppLocalizations.of(context)!;
     try {
       await _userService.updateUserPermissions(
-          widget.userId, _selected.toList());
+        widget.userId,
+        _selected.toList(),
+      );
       if (!mounted) return;
       setState(() {
         _saving = false;
@@ -117,14 +120,17 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
   }
 
   void _snack(String msg, {required bool isError}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? AppColors.danger : AppColors.success,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg - 2)),
-      margin: const EdgeInsets.all(AppSpacing.xl),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg - 2),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
+      ),
+    );
   }
 
   @override
@@ -140,8 +146,8 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? _buildError(context, l10n)
-                : _buildBody(context, l10n, lang),
+            ? _buildError(context, l10n)
+            : _buildBody(context, l10n, lang),
         bottomNavigationBar: _loading || _error != null
             ? null
             : _buildSaveBar(context, l10n),
@@ -150,19 +156,24 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
   }
 
   Widget _buildError(BuildContext context, AppLocalizations l10n) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Text('${l10n.error}: $_error',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium()),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Text(
+        '${l10n.error}: $_error',
+        textAlign: TextAlign.center,
+        style: AppTextStyles.bodyMedium(),
+      ),
+    ),
+  );
 
-  Widget _buildBody(
-      BuildContext context, AppLocalizations l10n, String lang) {
+  Widget _buildBody(BuildContext context, AppLocalizations l10n, String lang) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xl4),
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.xl4,
+      ),
       children: [
         _buildHeader(context, l10n),
         const SizedBox(height: AppSpacing.lg),
@@ -185,14 +196,20 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.userName,
-                    style: AppTextStyles.bodyLarge()
-                        .copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  widget.userName,
+                  style: AppTextStyles.bodyLarge().copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text('${widget.userRole} · '
-                    '${_isCustomized ? l10n.permissionsCustomized : l10n.permissionsUsingRoleDefaults}',
-                    style: AppTextStyles.caption()
-                        .copyWith(color: context.colors.textSecondary)),
+                Text(
+                  '${widget.userRole} · '
+                  '${_isCustomized ? l10n.permissionsCustomized : l10n.permissionsUsingRoleDefaults}',
+                  style: AppTextStyles.caption().copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -214,35 +231,44 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded,
-              size: 18, color: AppColors.warning),
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: AppColors.warning,
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Text(l10n.permissionsNextLoginNote,
-                style: AppTextStyles.caption()
-                    .copyWith(color: AppColors.warning)),
+            child: Text(
+              l10n.permissionsNextLoginNote,
+              style: AppTextStyles.caption().copyWith(color: AppColors.warning),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGroup(
-      BuildContext context, PermissionGroup group, String lang) {
+  Widget _buildGroup(BuildContext context, PermissionGroup group, String lang) {
     return AppCard(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.md,
-                AppSpacing.xl, AppSpacing.xs),
-            child: Text(group.title(lang).toUpperCase(),
-                style: AppTextStyles.caption().copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.6,
-                  color: context.colors.textSecondary,
-                )),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.xs,
+            ),
+            child: Text(
+              group.title(lang).toUpperCase(),
+              style: AppTextStyles.caption().copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+                color: context.colors.textSecondary,
+              ),
+            ),
           ),
           for (final entry in group.entries)
             SwitchListTile(
@@ -254,12 +280,12 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
                   _selected.remove(entry.key);
                 }
               }),
-              title: Text(entry.label(lang),
-                  style: AppTextStyles.bodyMedium()),
+              title: Text(entry.label(lang), style: AppTextStyles.bodyMedium()),
               activeTrackColor: context.colors.brand,
               dense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl,
+              ),
             ),
         ],
       ),

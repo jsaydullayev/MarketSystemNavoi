@@ -54,8 +54,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     });
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final list =
-          await CategoryService(authProvider: auth).getAllCategories();
+      final list = await CategoryService(authProvider: auth).getAllCategories();
       if (mounted) {
         setState(() {
           _categories = list;
@@ -97,15 +96,17 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
 
   void _snack(String msg, {required bool isError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? AppColors.danger : AppColors.success,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg - 2),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg - 2),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
       ),
-      margin: const EdgeInsets.all(AppSpacing.xl),
-    ));
+    );
   }
 
   @override
@@ -158,13 +159,15 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
         children: [
           const _ReorderHint(),
           const SizedBox(height: AppSpacing.lg),
-          ...active.map((c) => CategoryCard(
-                category: c,
-                l10n: l10n,
-                isDark: false,
-                onEdit: (_) => _openForm(category: c),
-                onDelete: (_) => _delete(c),
-              )),
+          ...active.map(
+            (c) => CategoryCard(
+              category: c,
+              l10n: l10n,
+              isDark: false,
+              onEdit: (_) => _openForm(category: c),
+              onDelete: (_) => _delete(c),
+            ),
+          ),
           if (inactive.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
@@ -174,13 +177,15 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            ...inactive.map((c) => CategoryCard(
-                  category: c,
-                  l10n: l10n,
-                  isDark: false,
-                  onEdit: (_) => _openForm(category: c),
-                  onDelete: (_) => _delete(c),
-                )),
+            ...inactive.map(
+              (c) => CategoryCard(
+                category: c,
+                l10n: l10n,
+                isDark: false,
+                onEdit: (_) => _openForm(category: c),
+                onDelete: (_) => _delete(c),
+              ),
+            ),
           ],
           const SizedBox(height: AppSpacing.md),
           _AddCategoryButton(
@@ -315,10 +320,7 @@ class _DashedBorderPainter extends CustomPainter {
       double distance = 0;
       while (distance < metric.length) {
         final next = (distance + dash).clamp(0.0, metric.length);
-        canvas.drawPath(
-          metric.extractPath(distance, next),
-          paint,
-        );
+        canvas.drawPath(metric.extractPath(distance, next), paint);
         distance = next + gap;
       }
     }
@@ -358,14 +360,16 @@ class _EmptyView extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl2),
             Text(
               l10n.noData,
-              style: AppTextStyles.titleMedium()
-                  .copyWith(color: context.colors.textSecondary),
+              style: AppTextStyles.titleMedium().copyWith(
+                color: context.colors.textSecondary,
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               l10n.addFirstCategory,
-              style: AppTextStyles.bodySmall()
-                  .copyWith(color: context.colors.textMuted),
+              style: AppTextStyles.bodySmall().copyWith(
+                color: context.colors.textMuted,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl3),

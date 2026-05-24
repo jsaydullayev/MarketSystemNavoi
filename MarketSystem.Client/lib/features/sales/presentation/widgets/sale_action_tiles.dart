@@ -17,31 +17,39 @@ class SaleActionTiles extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _tile(context,
-              icon: Icons.print_outlined,
-              label: l10n.printAction,
-              onTap: onDownloadPdf),
+          child: _tile(
+            context,
+            icon: Icons.print_outlined,
+            label: l10n.printAction,
+            onTap: onDownloadPdf,
+          ),
         ),
         const SizedBox(width: AppSpacing.lg),
         Expanded(
-          child: _tile(context,
-              icon: Icons.sms_outlined,
-              label: l10n.sendSms,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          child: _tile(
+            context,
+            icon: Icons.sms_outlined,
+            label: l10n.sendSms,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
                   content: Text(l10n.comingSoon),
                   backgroundColor: AppColors.warning,
-                ));
-              }),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
   }
 
-  Widget _tile(BuildContext context,
-      {required IconData icon,
-      required String label,
-      required VoidCallback onTap}) {
+  Widget _tile(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -49,14 +57,18 @@ class SaleActionTiles extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: AppCard(
           padding: const EdgeInsets.symmetric(
-              vertical: AppSpacing.xl, horizontal: AppSpacing.lg),
+            vertical: AppSpacing.xl,
+            horizontal: AppSpacing.lg,
+          ),
           child: Column(
             children: [
               Icon(icon, color: context.colors.brand, size: 22),
               const SizedBox(height: 6),
-              Text(label,
-                  style: AppTextStyles.labelLarge().copyWith(fontSize: 13),
-                  textAlign: TextAlign.center),
+              Text(
+                label,
+                style: AppTextStyles.labelLarge().copyWith(fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),

@@ -19,8 +19,10 @@ class DebtCard extends StatelessWidget {
     final saleItems = debt['saleItems'] as List<dynamic>?;
     final l10n = AppLocalizations.of(context)!;
 
-    final formattedDate =
-        NumberFormatter.formatDateTime(createdAt, showTime: true);
+    final formattedDate = NumberFormatter.formatDateTime(
+      createdAt,
+      showTime: true,
+    );
 
     final isOpen = status.toLowerCase() == 'open';
     final hasProducts = saleItems != null && saleItems.isNotEmpty;
@@ -30,10 +32,7 @@ class DebtCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.25),
-          width: 1,
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.25), width: 1),
       ),
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
@@ -44,12 +43,16 @@ class DebtCard extends StatelessWidget {
             children: [
               Text(
                 formattedDate,
-                style: AppTextStyles.bodySmall()
-                    .copyWith(color: context.colors.textSecondary, fontSize: 13),
+                style: AppTextStyles.bodySmall().copyWith(
+                  color: context.colors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg, vertical: AppSpacing.xs + 2),
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.xs + 2,
+                ),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppRadius.full),
@@ -114,8 +117,11 @@ class DebtCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                Icon(Icons.shopping_cart,
-                    size: 16, color: context.colors.textSecondary),
+                Icon(
+                  Icons.shopping_cart,
+                  size: 16,
+                  color: context.colors.textSecondary,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   '${l10n.products} (${saleItems.length})',
@@ -125,8 +131,11 @@ class DebtCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Icon(Icons.access_time,
-                    size: 14, color: context.colors.textMuted),
+                Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: context.colors.textMuted,
+                ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   NumberFormatter.formatTime(createdAt),
@@ -207,7 +216,9 @@ class _BuildSaleItem extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm, vertical: 2),
+                        horizontal: AppSpacing.sm,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.successLight,
                         borderRadius: BorderRadius.circular(4),
