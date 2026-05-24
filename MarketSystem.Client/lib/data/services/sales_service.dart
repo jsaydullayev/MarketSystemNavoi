@@ -31,7 +31,10 @@ class SalesService {
       }
       return [];
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load sales');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load sales',
+      );
     }
   }
 
@@ -54,7 +57,10 @@ class SalesService {
     } else if (response.statusCode == 404) {
       throw ApiException(statusCode: 404, message: 'Sotuv topilmadi');
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load sale');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load sale',
+      );
     }
   }
 
@@ -69,13 +75,18 @@ class SalesService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data ?? []);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load draft sales');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load draft sales',
+      );
     }
   }
 
   // Mening tugatilmagan sotuvlarim (Draft + Debt)
   Future<List<dynamic>> getMyUnfinishedSales() async {
-    final response = await _httpService.get('${ApiConstants.sales}/my-unfinished');
+    final response = await _httpService.get(
+      '${ApiConstants.sales}/my-unfinished',
+    );
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
@@ -84,7 +95,10 @@ class SalesService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data ?? []);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load unfinished sales');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load unfinished sales',
+      );
     }
   }
 
@@ -92,15 +106,16 @@ class SalesService {
   Future<dynamic> createSale({String? customerId}) async {
     final response = await _httpService.post(
       ApiConstants.sales,
-      body: {
-        if (customerId != null) 'customerId': customerId,
-      },
+      body: {if (customerId != null) 'customerId': customerId},
     );
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to create sale');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to create sale',
+      );
     }
   }
 
@@ -116,9 +131,7 @@ class SalesService {
 
     final response = await _httpService.patch(
       '${ApiConstants.sales}/$saleId/customer',
-      body: {
-        if (customerId != null) 'customerId': customerId,
-      },
+      body: {if (customerId != null) 'customerId': customerId},
     );
 
     debugPrint('Response Status: ${response.statusCode}');
@@ -130,20 +143,24 @@ class SalesService {
     }
     // ApiException.fromResponse already surfaces the `message` field from
     // 4xx JSON bodies, so the previous 400-special-case is redundant.
-    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to update sale customer');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to update sale customer',
+    );
   }
 
   // Sotuvga mahsulot qo'shish
   Future<dynamic> addSaleItem({
     required String saleId,
-    String? productId,  // ✅ Nullable - tashqi mahsulot uchun bo'sh bo'lishi mumkin
+    String?
+    productId, // ✅ Nullable - tashqi mahsulot uchun bo'sh bo'lishi mumkin
     required double quantity,
     required double salePrice,
     required double minSalePrice,
     String? comment,
-    bool isExternal = false,  // ✅ Tashqi mahsulot flag
-    String? externalProductName,  // ✅ Tashqi mahsulot nomi
-    double? externalCostPrice,  // ✅ Tashqi tannarx
+    bool isExternal = false, // ✅ Tashqi mahsulot flag
+    String? externalProductName, // ✅ Tashqi mahsulot nomi
+    double? externalCostPrice, // ✅ Tashqi tannarx
   }) async {
     debugPrint('=== ADD SALE ITEM DEBUG ===');
     debugPrint('Sale ID: $saleId');
@@ -160,14 +177,17 @@ class SalesService {
     final response = await _httpService.post(
       '${ApiConstants.sales}/$saleId/items',
       body: {
-        if (productId != null && !isExternal) 'productId': productId,  // ✅ Faqat oddiy mahsulot uchun
-        'isExternal': isExternal,  // ✅ Tashqi mahsulot flag
+        if (productId != null && !isExternal)
+          'productId': productId, // ✅ Faqat oddiy mahsulot uchun
+        'isExternal': isExternal, // ✅ Tashqi mahsulot flag
         'quantity': quantity,
         'salePrice': salePrice,
         'minSalePrice': minSalePrice,
         'comment': comment ?? '',
-        if (isExternal) 'externalProductName': externalProductName,  // ✅ Tashqi mahsulot nomi
-        if (isExternal) 'externalCostPrice': externalCostPrice,  // ✅ Tashqi tannarx
+        if (isExternal)
+          'externalProductName': externalProductName, // ✅ Tashqi mahsulot nomi
+        if (isExternal)
+          'externalCostPrice': externalCostPrice, // ✅ Tashqi tannarx
       },
     );
 
@@ -177,7 +197,10 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     }
-    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to add sale item');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to add sale item',
+    );
   }
 
   // Sotuvdan mahsulot o'chirish yoki miqdorni kamaytirish
@@ -197,10 +220,7 @@ class SalesService {
 
     final response = await _httpService.post(
       url,
-      body: {
-        'saleItemId': saleItemId,
-        'quantity': quantity,
-      },
+      body: {'saleItemId': saleItemId, 'quantity': quantity},
     );
 
     debugPrint('Response Status: ${response.statusCode}');
@@ -209,7 +229,10 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     }
-    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to remove sale item');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to remove sale item',
+    );
   }
 
   // To'lov qo'shish
@@ -220,10 +243,7 @@ class SalesService {
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.sales}/$saleId/payments',
-      body: {
-        'paymentType': paymentType,
-        'amount': amount,
-      },
+      body: {'paymentType': paymentType, 'amount': amount},
     );
 
     debugPrint('=== ADD PAYMENT RESPONSE ===');
@@ -234,7 +254,10 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to add payment');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to add payment',
+      );
     }
   }
 
@@ -248,7 +271,10 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to mark sale as debt');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to mark sale as debt',
+      );
     }
   }
 
@@ -272,7 +298,10 @@ class SalesService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
-    throw ApiException.fromResponse(response, fallbackMessage: 'Failed to cancel sale');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to cancel sale',
+    );
   }
 
   // Savdo item narxini o'zgartirish
@@ -307,10 +336,12 @@ class SalesService {
     // domain validation, …) and the 403 status surfaces as `statusCode: 403` so
     // a caller can branch on it without parsing the body again. Fallback string
     // applies only when the body isn't JSON.
-    throw ApiException.fromResponse(response,
-        fallbackMessage: response.statusCode == 403
-            ? 'Ruxsat yo\'q: Bu amalni bajarish huquqingiz yo\'q'
-            : 'Narxni yangilashda xatolik');
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: response.statusCode == 403
+          ? 'Ruxsat yo\'q: Bu amalni bajarish huquqingiz yo\'q'
+          : 'Narxni yangilashda xatolik',
+    );
   }
 
   // Tovarni qaytarish (vozvrat)
@@ -345,22 +376,21 @@ class SalesService {
     } else if (response.statusCode == 404) {
       return null;
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to return sale item');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to return sale item',
+      );
     }
   }
 
   // Savdoni o'chirish
-  Future<dynamic> deleteSale({
-    required String saleId,
-  }) async {
+  Future<dynamic> deleteSale({required String saleId}) async {
     debugPrint('=== DELETE SALE ===');
     debugPrint('Sale ID: $saleId');
     debugPrint('URL: ${ApiConstants.sales}/$saleId');
     debugPrint('==================');
 
-    final response = await _httpService.delete(
-      '${ApiConstants.sales}/$saleId',
-    );
+    final response = await _httpService.delete('${ApiConstants.sales}/$saleId');
 
     debugPrint('Response Status: ${response.statusCode}');
     debugPrint('Response Body: ${response.body}');
@@ -369,7 +399,10 @@ class SalesService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to delete sale');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to delete sale',
+      );
     }
   }
 
@@ -389,17 +422,25 @@ class SalesService {
       debugPrint('Debtors count: ${data?.length ?? 0}');
       return List<dynamic>.from(data ?? []);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to get debtors');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to get debtors',
+      );
     }
   }
 
   Future<List<int>?> downloadSalesExcel({String lang = 'uz'}) async {
-    return await _httpService
-        .downloadBytes('${ApiConstants.sales}/export?lang=$lang');
+    return await _httpService.downloadBytes(
+      '${ApiConstants.sales}/export?lang=$lang',
+    );
   }
 
   // Barcha sotuvlarni PDF formatda yuklab olish
-  Future<List<int>?> downloadSalesPdf({DateTime? startDate, DateTime? endDate, String lang = 'uz'}) async {
+  Future<List<int>?> downloadSalesPdf({
+    DateTime? startDate,
+    DateTime? endDate,
+    String lang = 'uz',
+  }) async {
     debugPrint('=== DOWNLOAD SALES PDF ===');
     String url = '${ApiConstants.sales}/export-pdf';
     List<String> queryParams = ['lang=$lang'];
@@ -417,12 +458,17 @@ class SalesService {
   }
 
   // Savdo uchun faktura (PDF) yuklab olish
-  Future<List<int>?> downloadInvoice(String saleId, {String lang = 'uz'}) async {
+  Future<List<int>?> downloadInvoice(
+    String saleId, {
+    String lang = 'uz',
+  }) async {
     debugPrint('=== DOWNLOAD INVOICE ===');
     debugPrint('Sale ID: $saleId');
     debugPrint('URL: ${ApiConstants.sales}/$saleId/invoice?lang=$lang');
     debugPrint('=======================');
 
-    return await _httpService.downloadBytes('${ApiConstants.sales}/$saleId/invoice?lang=$lang');
+    return await _httpService.downloadBytes(
+      '${ApiConstants.sales}/$saleId/invoice?lang=$lang',
+    );
   }
 }

@@ -94,9 +94,7 @@ class _ProductsBodyState extends State<ProductsBody> {
     if (filter == _filterOut) {
       return widget.products.where(_isOut).toList();
     }
-    return widget.products
-        .where((p) => p['categoryName'] == filter)
-        .toList();
+    return widget.products.where((p) => p['categoryName'] == filter).toList();
   }
 
   @override
@@ -116,14 +114,16 @@ class _ProductsBodyState extends State<ProductsBody> {
               child: widget.isLoading && widget.products.isEmpty
                   ? Center(
                       child: CircularProgressIndicator(
-                          color: context.colors.brand))
+                        color: context.colors.brand,
+                      ),
+                    )
                   : errorMessage != null
-                      ? _ErrorView(
-                          message: errorMessage,
-                          onRetry: widget.onRefresh,
-                          l10n: l10n,
-                        )
-                      : _buildList(l10n),
+                  ? _ErrorView(
+                      message: errorMessage,
+                      onRetry: widget.onRefresh,
+                      l10n: l10n,
+                    )
+                  : _buildList(l10n),
             ),
           ],
         ),
@@ -138,7 +138,11 @@ class _ProductsBodyState extends State<ProductsBody> {
       color: context.colors.brand,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl4),
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          AppSpacing.xl4,
+        ),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           _SummaryCard(
@@ -191,7 +195,11 @@ class _SearchBar extends StatelessWidget {
     return Container(
       color: context.colors.surface,
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg),
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
       child: TextField(
         controller: controller,
         style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
@@ -210,7 +218,9 @@ class _SearchBar extends StatelessWidget {
           fillColor: context.colors.inputFill,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: AppSpacing.lg + 2),
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.lg + 2,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
             borderSide: BorderSide.none,
@@ -330,11 +340,7 @@ class _SummaryDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 32,
-      color: context.colors.border,
-    );
+    return Container(width: 1, height: 32, color: context.colors.border);
   }
 }
 
@@ -375,11 +381,7 @@ class _FilterChipsRow extends StatelessWidget {
         color: AppColors.danger,
       ),
       ...categories.map(
-        (c) => _FilterChipData(
-          label: c,
-          value: c,
-          color: context.colors.brand,
-        ),
+        (c) => _FilterChipData(label: c, value: c, color: context.colors.brand),
       ),
     ];
 
@@ -453,7 +455,9 @@ class _FilterChip extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg + 2, vertical: 6),
+            horizontal: AppSpacing.lg + 2,
+            vertical: 6,
+          ),
           decoration: BoxDecoration(
             color: color.withValues(alpha: isSelected ? 0.22 : 0.12),
             borderRadius: BorderRadius.circular(AppRadius.full),
@@ -511,18 +515,18 @@ class _ProductRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final canZakup = authProvider.user?['role'] == 'Admin' ||
+    final canZakup =
+        authProvider.user?['role'] == 'Admin' ||
         authProvider.user?['role'] == 'Owner';
 
     final qty = (product['quantity'] as num?)?.toDouble() ?? 0.0;
-    final minThreshold =
-        (product['minThreshold'] as num?)?.toDouble() ?? 0.0;
+    final minThreshold = (product['minThreshold'] as num?)?.toDouble() ?? 0.0;
     final isOut = qty <= 0;
     final isLow = !isOut && qty <= minThreshold;
-    final isPopular = product['isPopular'] == true ||
+    final isPopular =
+        product['isPopular'] == true ||
         product['popular'] == true ||
-        (product['salesCount'] is num &&
-            (product['salesCount'] as num) > 50);
+        (product['salesCount'] is num && (product['salesCount'] as num) > 50);
 
     Widget row = Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -708,7 +712,8 @@ class _ProductRow extends StatelessWidget {
           context: context,
           builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.xl)),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+            ),
             title: Text(l10n.confirmDelete),
             actions: [
               TextButton(
@@ -885,17 +890,12 @@ class _ErrorView extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMedium().copyWith(
-              color: AppColors.danger,
-            ),
+            style: AppTextStyles.bodyMedium().copyWith(color: AppColors.danger),
           ),
           24.height,
           SizedBox(
             width: 200,
-            child: AppPrimaryButton(
-              label: l10n.loading,
-              onPressed: onRetry,
-            ),
+            child: AppPrimaryButton(label: l10n.loading, onPressed: onRetry),
           ),
         ],
       ),

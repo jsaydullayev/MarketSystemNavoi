@@ -30,8 +30,6 @@ class ApiConstants {
     return _productionApiUrl;
   }
 
-
-
   // Endpoints (Controller names must match)
   static const String auth = '/Auth';
   static const String products = '/Products';
@@ -84,8 +82,7 @@ class ApiConstants {
   // `/api/Users/api/Users/...` typo.
   static String deactivateUser(dynamic id) =>
       '$users/DeactivateUser/$id/deactivate';
-  static String activateUser(dynamic id) =>
-      '$users/ActivateUser/$id/activate';
+  static String activateUser(dynamic id) => '$users/ActivateUser/$id/activate';
 
   // Zakups — date-range list (ISO 8601 query) and Excel export.
   static String zakupsByDateRange(DateTime start, DateTime end) =>

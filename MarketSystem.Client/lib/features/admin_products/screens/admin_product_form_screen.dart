@@ -67,10 +67,10 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     if (widget.product != null) {
       _nameController.text = widget.product['name'] ?? '';
       _salePriceController.text = (widget.product['salePrice'] ?? 0).toString();
-      _minSalePriceController.text =
-          (widget.product['minSalePrice'] ?? 0).toString();
-      _minThresholdController.text =
-          (widget.product['minThreshold'] ?? 0).toString();
+      _minSalePriceController.text = (widget.product['minSalePrice'] ?? 0)
+          .toString();
+      _minThresholdController.text = (widget.product['minThreshold'] ?? 0)
+          .toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
       _selectedCategory = widget.product['categoryId'];
       _selectedUnit = widget.product['unit'] ?? 1;
@@ -116,10 +116,12 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final productService = ProductService(authProvider: authProvider);
 
-      final salePrice =
-          double.parse(_salePriceController.text.replaceAll(',', '.'));
-      final minSalePrice =
-          double.parse(_minSalePriceController.text.replaceAll(',', '.'));
+      final salePrice = double.parse(
+        _salePriceController.text.replaceAll(',', '.'),
+      );
+      final minSalePrice = double.parse(
+        _minSalePriceController.text.replaceAll(',', '.'),
+      );
       final minThreshold = int.parse(_minThresholdController.text);
 
       if (widget.product == null) {
@@ -281,8 +283,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                 AppTextInput(
                   label: l10n.salePriceField,
                   controller: _salePriceController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return l10n.enterSalePrice;
@@ -301,8 +304,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                 AppTextInput(
                   label: l10n.minSalePriceField,
                   controller: _minSalePriceController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return l10n.enterMinSalePrice;

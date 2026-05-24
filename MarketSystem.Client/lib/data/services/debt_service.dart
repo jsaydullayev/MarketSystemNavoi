@@ -10,8 +10,7 @@ class DebtService {
   final HttpService _httpService;
 
   DebtService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   // Get all debts
   Future<List<dynamic>> getAllDebts({String? status}) async {
@@ -30,7 +29,10 @@ class DebtService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data ?? []);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load debts');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load debts',
+      );
     }
   }
 
@@ -48,7 +50,10 @@ class DebtService {
       if (data == null) return [];
       return List<dynamic>.from(data);
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load customer debts');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load customer debts',
+      );
     }
   }
 
@@ -64,7 +69,10 @@ class DebtService {
       }
       return double.tryParse(response.body) ?? 0.0;
     } else {
-      throw ApiException.fromResponse(response, fallbackMessage: 'Failed to load customer total debt');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load customer total debt',
+      );
     }
   }
 
@@ -76,10 +84,7 @@ class DebtService {
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.debts}/$debtId/pay',
-      body: {
-        'paymentType': paymentType,
-        'amount': amount,
-      },
+      body: {'paymentType': paymentType, 'amount': amount},
     );
 
     if (response.statusCode == 200) {

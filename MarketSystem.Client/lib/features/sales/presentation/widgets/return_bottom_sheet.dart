@@ -14,7 +14,10 @@ import '../bloc/sales_bloc.dart';
 /// Picker sheet: lets the user choose which item to return.
 /// After selection, opens [showReturnBottomSheet] for that item.
 void showRefundPicker(
-    BuildContext context, List<dynamic> items, String saleId) {
+  BuildContext context,
+  List<dynamic> items,
+  String saleId,
+) {
   final l10n = AppLocalizations.of(context)!;
   showModalBottomSheet(
     context: context,
@@ -23,10 +26,15 @@ void showRefundPicker(
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl)),
+          top: Radius.circular(AppRadius.xl),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xl2),
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xl2,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,22 +82,26 @@ void showRefundPicker(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item['productName']?.toString() ??
-                                    l10n.unknown,
-                                style: AppTextStyles.labelLarge()
-                                    .copyWith(fontSize: 14),
+                                item['productName']?.toString() ?? l10n.unknown,
+                                style: AppTextStyles.labelLarge().copyWith(
+                                  fontSize: 14,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                l10n.soldQtyFormat(item['quantity'],
-                                    NumberFormatter.format(item['salePrice'])),
+                                l10n.soldQtyFormat(
+                                  item['quantity'],
+                                  NumberFormatter.format(item['salePrice']),
+                                ),
                                 style: AppTextStyles.bodySmall(),
                               ),
                             ],
                           ),
                         ),
-                        Icon(Icons.chevron_right_rounded,
-                            color: context.colors.textMuted),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: context.colors.textMuted,
+                        ),
                       ],
                     ),
                   ),
@@ -105,7 +117,10 @@ void showRefundPicker(
 
 /// Full return form: quantity, reason pills, refund method, confirmation.
 void showReturnBottomSheet(
-    BuildContext context, Map<String, dynamic> item, String saleId) {
+  BuildContext context,
+  Map<String, dynamic> item,
+  String saleId,
+) {
   final l10n = AppLocalizations.of(context)!;
   final productName = item['productName'] ?? l10n.unknownProduct;
   final saleItemId = item['id']?.toString() ?? '';
@@ -139,7 +154,8 @@ void showReturnBottomSheet(
           decoration: BoxDecoration(
             color: context.colors.surface,
             borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppRadius.xl)),
+              top: Radius.circular(AppRadius.xl),
+            ),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -159,22 +175,32 @@ void showReturnBottomSheet(
                 20.height,
                 Row(
                   children: [
-                    const Icon(Icons.keyboard_return_rounded,
-                        color: AppColors.danger, size: 24),
+                    const Icon(
+                      Icons.keyboard_return_rounded,
+                      color: AppColors.danger,
+                      size: 24,
+                    ),
                     const SizedBox(width: AppSpacing.lg),
-                    Text(l10n.processReturn,
-                        style: AppTextStyles.titleMedium()),
+                    Text(
+                      l10n.processReturn,
+                      style: AppTextStyles.titleMedium(),
+                    ),
                   ],
                 ),
                 16.height,
                 _warningBanner(context, l10n.returnWarning),
                 16.height,
-                Text(productName,
-                    style: AppTextStyles.labelLarge().copyWith(fontSize: 14)),
+                Text(
+                  productName,
+                  style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
+                ),
                 4.height,
-                Text('${l10n.maxReturn}: $maxQuantity ${l10n.piece}',
-                    style: AppTextStyles.bodySmall()
-                        .copyWith(color: AppColors.warning)),
+                Text(
+                  '${l10n.maxReturn}: $maxQuantity ${l10n.piece}',
+                  style: AppTextStyles.bodySmall().copyWith(
+                    color: AppColors.warning,
+                  ),
+                ),
                 16.height,
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,16 +208,20 @@ void showReturnBottomSheet(
                     Expanded(
                       flex: 2,
                       child: _fieldLabel(
-                          l10n.amount,
-                          TextField(
-                            controller: quantityController,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
-                                    decimal: true),
-                            onChanged: (_) => setSheetState(() {}),
-                            decoration: _inputStyle(context, '1',
-                                suffix: l10n.piece),
-                          )),
+                        l10n.amount,
+                        TextField(
+                          controller: quantityController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          onChanged: (_) => setSheetState(() {}),
+                          decoration: _inputStyle(
+                            context,
+                            '1',
+                            suffix: l10n.piece,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -201,46 +231,47 @@ void showReturnBottomSheet(
                 Wrap(
                   spacing: AppSpacing.md,
                   runSpacing: AppSpacing.md,
-                  children: [
-                    l10n.returnReasonBad,
-                    l10n.returnReasonExpired,
-                    l10n.returnReasonDisliked,
-                    l10n.returnReasonOther,
-                  ].map((reason) {
-                    final sel = selectedReason == reason;
-                    return GestureDetector(
-                      onTap: () =>
-                          setSheetState(() => selectedReason = reason),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg,
-                            vertical: AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: sel
-                              ? context.colors.text
-                              : context.colors.inputFill,
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.full),
-                        ),
-                        child: Text(
-                          reason,
-                          style: AppTextStyles.labelSmall().copyWith(
-                            color:
-                                sel ? Colors.white : context.colors.text,
-                            fontSize: 12,
-                            letterSpacing: 0,
+                  children:
+                      [
+                        l10n.returnReasonBad,
+                        l10n.returnReasonExpired,
+                        l10n.returnReasonDisliked,
+                        l10n.returnReasonOther,
+                      ].map((reason) {
+                        final sel = selectedReason == reason;
+                        return GestureDetector(
+                          onTap: () =>
+                              setSheetState(() => selectedReason = reason),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.md,
+                            ),
+                            decoration: BoxDecoration(
+                              color: sel
+                                  ? context.colors.text
+                                  : context.colors.inputFill,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.full,
+                              ),
+                            ),
+                            child: Text(
+                              reason,
+                              style: AppTextStyles.labelSmall().copyWith(
+                                color: sel ? Colors.white : context.colors.text,
+                                fontSize: 12,
+                                letterSpacing: 0,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      }).toList(),
                 ),
                 16.height,
                 TextField(
                   controller: commentController,
                   maxLines: 2,
-                  decoration:
-                      _inputStyle(context, l10n.additionalCommentHint),
+                  decoration: _inputStyle(context, l10n.additionalCommentHint),
                 ),
                 16.height,
                 Text(l10n.returnMethodLabel, style: AppTextStyles.caption()),
@@ -248,23 +279,27 @@ void showReturnBottomSheet(
                 Row(
                   children: [
                     Expanded(
-                      child: _methodTile(context,
-                          icon: Icons.payments_outlined,
-                          title: l10n.cashReturn,
-                          subtitle: l10n.toCustomerHere,
-                          selected: selectedMethod == 'cash',
-                          onTap: () => setSheetState(
-                              () => selectedMethod = 'cash')),
+                      child: _methodTile(
+                        context,
+                        icon: Icons.payments_outlined,
+                        title: l10n.cashReturn,
+                        subtitle: l10n.toCustomerHere,
+                        selected: selectedMethod == 'cash',
+                        onTap: () =>
+                            setSheetState(() => selectedMethod = 'cash'),
+                      ),
                     ),
                     const SizedBox(width: AppSpacing.lg),
                     Expanded(
-                      child: _methodTile(context,
-                          icon: Icons.assignment_outlined,
-                          title: l10n.toBalance,
-                          subtitle: l10n.forNextSale,
-                          selected: selectedMethod == 'balance',
-                          onTap: () => setSheetState(
-                              () => selectedMethod = 'balance')),
+                      child: _methodTile(
+                        context,
+                        icon: Icons.assignment_outlined,
+                        title: l10n.toBalance,
+                        subtitle: l10n.forNextSale,
+                        selected: selectedMethod == 'balance',
+                        onTap: () =>
+                            setSheetState(() => selectedMethod = 'balance'),
+                      ),
                     ),
                   ],
                 ),
@@ -275,18 +310,23 @@ void showReturnBottomSheet(
                     color: AppColors.dangerLight,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                     border: Border.all(
-                        color: AppColors.danger.withValues(alpha: 0.3)),
+                      color: AppColors.danger.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Column(
                     children: [
-                      Text(l10n.toReturnLabel,
-                          style: AppTextStyles.caption()
-                              .copyWith(color: AppColors.danger)),
+                      Text(
+                        l10n.toReturnLabel,
+                        style: AppTextStyles.caption().copyWith(
+                          color: AppColors.danger,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         '${NumberFormatter.format(returnSum)} UZS',
-                        style: AppTextStyles.displayMedium()
-                            .copyWith(color: AppColors.danger),
+                        style: AppTextStyles.displayMedium().copyWith(
+                          color: AppColors.danger,
+                        ),
                       ),
                     ],
                   ),
@@ -297,12 +337,13 @@ void showReturnBottomSheet(
                   icon: Icons.keyboard_return_rounded,
                   onPressed: () {
                     final parsed = double.tryParse(qtyText);
-                    if (parsed == null ||
-                        parsed <= 0 ||
-                        parsed > maxQuantity) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                    if (parsed == null || parsed <= 0 || parsed > maxQuantity) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
                           content: Text(l10n.invalidQuantity),
-                          backgroundColor: AppColors.danger));
+                          backgroundColor: AppColors.danger,
+                        ),
+                      );
                       return;
                     }
                     Navigator.pop(ctx);
@@ -310,12 +351,14 @@ void showReturnBottomSheet(
                     final combined = note.isEmpty
                         ? selectedReason
                         : '$selectedReason — $note';
-                    context.read<SalesBloc>().add(ReturnSaleItemEvent(
-                          saleId: saleId,
-                          saleItemId: saleItemId,
-                          quantity: parsed,
-                          comment: combined,
-                        ));
+                    context.read<SalesBloc>().add(
+                      ReturnSaleItemEvent(
+                        saleId: saleId,
+                        saleItemId: saleItemId,
+                        quantity: parsed,
+                        comment: combined,
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -339,16 +382,22 @@ Widget _warningBanner(BuildContext context, String message) {
       color: AppColors.warningLight,
       borderRadius: BorderRadius.circular(AppRadius.md),
       border: const Border(
-          left: BorderSide(color: AppColors.warning, width: 3)),
+        left: BorderSide(color: AppColors.warning, width: 3),
+      ),
     ),
     child: Row(
       children: [
-        const Icon(Icons.warning_amber_rounded,
-            color: AppColors.warning, size: 18),
+        const Icon(
+          Icons.warning_amber_rounded,
+          color: AppColors.warning,
+          size: 18,
+        ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: Text(message,
-              style: AppTextStyles.bodySmall().copyWith(fontSize: 12)),
+          child: Text(
+            message,
+            style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
+          ),
         ),
       ],
     ),
@@ -368,12 +417,10 @@ Widget _methodTile(
     child: Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color:
-            selected ? context.colors.brandLight : context.colors.surface,
+        color: selected ? context.colors.brandLight : context.colors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color:
-              selected ? context.colors.brand : context.colors.border,
+          color: selected ? context.colors.brand : context.colors.border,
           width: selected ? 1.5 : 1,
         ),
       ),
@@ -382,8 +429,7 @@ Widget _methodTile(
         children: [
           Icon(icon, color: context.colors.brand, size: 22),
           const SizedBox(height: AppSpacing.md),
-          Text(title,
-              style: AppTextStyles.labelLarge().copyWith(fontSize: 13)),
+          Text(title, style: AppTextStyles.labelLarge().copyWith(fontSize: 13)),
           const SizedBox(height: 2),
           Text(subtitle, style: AppTextStyles.bodySmall()),
         ],
@@ -403,12 +449,16 @@ Widget _fieldLabel(String label, Widget child) {
   );
 }
 
-InputDecoration _inputStyle(BuildContext context, String hint,
-    {String? suffix}) {
+InputDecoration _inputStyle(
+  BuildContext context,
+  String hint, {
+  String? suffix,
+}) {
   return InputDecoration(
     hintText: hint,
-    hintStyle:
-        AppTextStyles.bodyMedium().copyWith(color: context.colors.textMuted),
+    hintStyle: AppTextStyles.bodyMedium().copyWith(
+      color: context.colors.textMuted,
+    ),
     suffixText: suffix,
     suffixStyle: AppTextStyles.bodySmall(),
     filled: true,
@@ -418,6 +468,8 @@ InputDecoration _inputStyle(BuildContext context, String hint,
       borderSide: BorderSide.none,
     ),
     contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
+      horizontal: AppSpacing.xl,
+      vertical: AppSpacing.lg,
+    ),
   );
 }

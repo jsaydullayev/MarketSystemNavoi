@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
@@ -13,11 +13,7 @@ class NetworkWrapper extends StatefulWidget {
   final Widget child;
   final VoidCallback? onRetry;
 
-  const NetworkWrapper({
-    super.key,
-    required this.child,
-    this.onRetry,
-  });
+  const NetworkWrapper({super.key, required this.child, this.onRetry});
 
   @override
   State<NetworkWrapper> createState() => _NetworkWrapperState();
@@ -54,13 +50,14 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
         // API serverga test qilamiz - /health endpoint'ini ishlatamiz
         try {
           final healthUrl = ApiConstants.baseUrl == '/api'
-              ? '/health'  // Production: relative URL
-              : '${ApiConstants.baseUrl}/health';  // Dev: full URL
-          final response = await http.get(
-            Uri.parse(healthUrl),
-          ).timeout(const Duration(seconds: 5));  // 5 sekund timeout
+              ? '/health' // Production: relative URL
+              : '${ApiConstants.baseUrl}/health'; // Dev: full URL
+          final response = await http
+              .get(Uri.parse(healthUrl))
+              .timeout(const Duration(seconds: 5)); // 5 sekund timeout
           // 200, 401, 403, 404 - bularning barchasi server ishlayapti degani
-          final apiConnected = response.statusCode >= 200 && response.statusCode < 500;
+          final apiConnected =
+              response.statusCode >= 200 && response.statusCode < 500;
 
           if (mounted) setState(() => _isConnected = apiConnected);
         } catch (apiError) {
@@ -99,10 +96,8 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.8, end: 1.0),
                 duration: const Duration(seconds: 1),
-                builder: (context, value, child) => Transform.scale(
-                  scale: value,
-                  child: child,
-                ),
+                builder: (context, value, child) =>
+                    Transform.scale(scale: value, child: child),
                 child: Container(
                   width: 120,
                   height: 120,

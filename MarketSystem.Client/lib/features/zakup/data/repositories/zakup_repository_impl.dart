@@ -18,8 +18,10 @@ class ZakupRepositoryImpl implements ZakupRepositoryInterface {
       final data = await remoteDataSource.getAllZakups();
 
       final zakups = data
-          .map((zakupJson) =>
-              ZakupEntity.fromJson(zakupJson as Map<String, dynamic>))
+          .map(
+            (zakupJson) =>
+                ZakupEntity.fromJson(zakupJson as Map<String, dynamic>),
+          )
           .toList();
 
       return ApiResult.success(zakups);
@@ -37,13 +39,17 @@ class ZakupRepositoryImpl implements ZakupRepositoryInterface {
       final data = await remoteDataSource.getZakupsByDateRange(start, end);
 
       final zakups = data
-          .map((zakupJson) =>
-              ZakupEntity.fromJson(zakupJson as Map<String, dynamic>))
+          .map(
+            (zakupJson) =>
+                ZakupEntity.fromJson(zakupJson as Map<String, dynamic>),
+          )
           .toList();
 
       return ApiResult.success(zakups);
     } catch (e) {
-      return ApiResult.failure('Sana bo\'yicha xaridlarni yuklashda xatolik: $e');
+      return ApiResult.failure(
+        'Sana bo\'yicha xaridlarni yuklashda xatolik: $e',
+      );
     }
   }
 

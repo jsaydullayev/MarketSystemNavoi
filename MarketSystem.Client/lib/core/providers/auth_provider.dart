@@ -11,7 +11,8 @@ class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
   StreamSubscription<SessionEndedInfo>? _sessionEndedSub;
 
-  AuthProvider({required AuthService authService}) : _authService = authService {
+  AuthProvider({required AuthService authService})
+    : _authService = authService {
     // G1 — listen for forced session-end events (refresh-token expired or
     // revoked by the server). The HttpService has already cleared local
     // tokens by the time this fires; here we drop the in-memory user object

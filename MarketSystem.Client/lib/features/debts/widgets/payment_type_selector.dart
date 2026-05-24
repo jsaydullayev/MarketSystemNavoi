@@ -19,8 +19,16 @@ class PaymentTypeSelector extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final types = <Map<String, dynamic>>[
       {'value': 'Cash', 'label': l10n.cash, 'icon': Icons.payments_rounded},
-      {'value': 'Terminal', 'label': l10n.card, 'icon': Icons.credit_card_rounded},
-      {'value': 'Transfer', 'label': 'Transfer', 'icon': Icons.swap_horiz_rounded},
+      {
+        'value': 'Terminal',
+        'label': l10n.card,
+        'icon': Icons.credit_card_rounded,
+      },
+      {
+        'value': 'Transfer',
+        'label': 'Transfer',
+        'icon': Icons.swap_horiz_rounded,
+      },
     ];
 
     return Row(
@@ -77,8 +85,7 @@ class _PaymentTypeOption extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color:
-                  isSelected ? context.colors.onBrand : context.colors.brand,
+              color: isSelected ? context.colors.onBrand : context.colors.brand,
             ),
             const SizedBox(height: AppSpacing.xs + 2),
             Text(
@@ -86,8 +93,9 @@ class _PaymentTypeOption extends StatelessWidget {
               style: AppTextStyles.bodyMedium().copyWith(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color:
-                  isSelected ? context.colors.onBrand : context.colors.brand,
+                color: isSelected
+                    ? context.colors.onBrand
+                    : context.colors.brand,
               ),
             ),
           ],

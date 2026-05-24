@@ -35,8 +35,7 @@ class AppThemeColors {
   Color get surface2 => isDark ? AppColors.darkSurface2 : AppColors.brandLight;
 
   /// Auxiliary input / secondary-button fill.
-  Color get inputFill =>
-      isDark ? AppColors.darkInputFill : AppColors.inputFill;
+  Color get inputFill => isDark ? AppColors.darkInputFill : AppColors.inputFill;
 
   // ── Borders ─────────────────────────────────────────────────
   Color get border => isDark ? AppColors.darkBorder : AppColors.border;
@@ -47,8 +46,7 @@ class AppThemeColors {
   Color get text => isDark ? AppColors.darkText : AppColors.text;
   Color get textSecondary =>
       isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
-  Color get textMuted =>
-      isDark ? AppColors.darkTextMuted : AppColors.textMuted;
+  Color get textMuted => isDark ? AppColors.darkTextMuted : AppColors.textMuted;
 
   // ── Accent ──────────────────────────────────────────────────
   /// Primary accent — brand orange in light, light "sky" blue in dark.

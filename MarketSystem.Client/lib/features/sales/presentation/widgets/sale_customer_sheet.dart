@@ -26,8 +26,7 @@ void showCustomerSelectionSheet(
       height: MediaQuery.of(ctx).size.height * 0.7,
       decoration: BoxDecoration(
         color: context.colors.surface,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
@@ -51,8 +50,7 @@ void showCustomerSelectionSheet(
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(ctx),
-                  icon: Icon(Icons.close,
-                      color: context.colors.textSecondary),
+                  icon: Icon(Icons.close, color: context.colors.textSecondary),
                 ),
               ],
             ),
@@ -69,15 +67,14 @@ void showCustomerSelectionSheet(
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xl),
+                      horizontal: AppSpacing.xl,
+                    ),
                     itemCount: customers.length,
                     separatorBuilder: (_, __) =>
                         const SizedBox(height: AppSpacing.md),
                     itemBuilder: (_, index) {
-                      final customer =
-                          customers[index] as Map<String, dynamic>;
-                      final name =
-                          customer['fullName'] ?? l10n.unknown;
+                      final customer = customers[index] as Map<String, dynamic>;
+                      final name = customer['fullName'] ?? l10n.unknown;
                       final phone = customer['phone'] ?? '';
                       final isSelected =
                           selectedId == customer['id']?.toString();
@@ -87,17 +84,14 @@ void showCustomerSelectionSheet(
                           Navigator.pop(ctx);
                           onSelected(customer);
                         },
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.lg),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
                         child: Container(
-                          padding:
-                              const EdgeInsets.all(AppSpacing.xl),
+                          padding: const EdgeInsets.all(AppSpacing.xl),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? context.colors.brandLight
                                 : context.colors.inputFill,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.lg),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             border: Border.all(
                               color: isSelected
                                   ? context.colors.brand
@@ -113,9 +107,7 @@ void showCustomerSelectionSheet(
                                     : context.colors.textMuted,
                                 child: Text(
                                   name.toString().isNotEmpty
-                                      ? name
-                                          .toString()[0]
-                                          .toUpperCase()
+                                      ? name.toString()[0].toUpperCase()
                                       : '?',
                                   style: const TextStyle(
                                     color: Colors.white,
@@ -126,8 +118,7 @@ void showCustomerSelectionSheet(
                               const SizedBox(width: AppSpacing.xl),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       name.toString(),
@@ -138,16 +129,18 @@ void showCustomerSelectionSheet(
                                         phone.toString(),
                                         style: AppTextStyles.bodySmall()
                                             .copyWith(
-                                          color: context
-                                              .colors.textSecondary,
-                                        ),
+                                              color:
+                                                  context.colors.textSecondary,
+                                            ),
                                       ),
                                   ],
                                 ),
                               ),
                               if (isSelected)
-                                Icon(Icons.check_circle,
-                                    color: context.colors.brand),
+                                Icon(
+                                  Icons.check_circle,
+                                  color: context.colors.brand,
+                                ),
                             ],
                           ),
                         ),

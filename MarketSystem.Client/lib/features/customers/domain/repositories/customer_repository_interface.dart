@@ -31,5 +31,7 @@ abstract class CustomerRepositoryInterface {
   Future<ApiResult<void>> deleteCustomer(String id);
 
   /// Mijoz qarzlarini olish
-  Future<ApiResult<List<Map<String, dynamic>>>> getCustomerDebts(String customerId);
+  Future<ApiResult<List<Map<String, dynamic>>>> getCustomerDebts(
+    String customerId,
+  );
 }

@@ -113,7 +113,9 @@ class _DebtAmountRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg + 2, vertical: AppSpacing.lg),
+        horizontal: AppSpacing.lg + 2,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         color: context.colors.bg,
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -187,11 +189,13 @@ class _CardHeader extends StatelessWidget {
         ),
         Container(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md + 2,
-              vertical: AppSpacing.xs + 1),
+            horizontal: AppSpacing.md + 2,
+            vertical: AppSpacing.xs + 1,
+          ),
           decoration: BoxDecoration(
-            color: (hasDebt ? AppColors.danger : AppColors.success)
-                .withValues(alpha: 0.1),
+            color: (hasDebt ? AppColors.danger : AppColors.success).withValues(
+              alpha: 0.1,
+            ),
             borderRadius: BorderRadius.circular(AppRadius.full),
           ),
           child: Text(
@@ -231,8 +235,7 @@ class _AmountItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: align,
       children: [
-        Text(label,
-            style: AppTextStyles.caption().copyWith(fontSize: 11)),
+        Text(label, style: AppTextStyles.caption().copyWith(fontSize: 11)),
         const SizedBox(height: 3),
         Text(
           '${NumberFormatter.format(amount)} ${l10n.currencySom}',
@@ -273,7 +276,8 @@ class _PayButton extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md + 2)),
+            borderRadius: BorderRadius.circular(AppRadius.md + 2),
+          ),
         ),
       ),
     );

@@ -14,7 +14,11 @@ class FileHelper {
     try {
       if (kIsWeb) {
         // Web muhiti - browser download orqali
-        return _downloadWeb(bytes, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        return _downloadWeb(
+          bytes,
+          fileName,
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
       } else {
         // Mobile/Desktop muhiti - fayl tizimiga yozish
         return await _saveMobileDesktop(bytes, fileName);
@@ -47,10 +51,7 @@ class FileHelper {
   static bool _downloadWeb(List<int> bytes, String fileName, String mimeType) {
     try {
       // Blob yaratish
-      final blob = html.Blob(
-        [bytes],
-        mimeType,
-      );
+      final blob = html.Blob([bytes], mimeType);
 
       // Download URL yaratish
       final url = html.Url.createObjectUrlFromBlob(blob);
@@ -78,17 +79,20 @@ class FileHelper {
   }
 
   /// Mobile/Desktop muhiti uchun faylni saqlash va ochish
-  static Future<bool> _saveMobileDesktop(List<int> bytes, String fileName) async {
+  static Future<bool> _saveMobileDesktop(
+    List<int> bytes,
+    String fileName,
+  ) async {
     try {
       final path = await _getFilePath(fileName);
       if (path == null) return false;
 
       final file = File(path);
       await file.writeAsBytes(bytes, flush: true);
-      
+
       // Faylni ochish - OS automatic ravishda default app bilan ochadi
       final result = await OpenFilex.open(path);
-      
+
       debugPrint('File saved: $path, Open result: ${result.type}');
       return true;
     } catch (e) {
@@ -102,9 +106,9 @@ class FileHelper {
   static Future<String?> _getFilePath(String fileName) async {
     // Web'da fayl tizimi yo'q, shuning uchun null qaytaramiz
     if (kIsWeb) return null;
-    
+
     Directory? directory;
-    
+
     try {
       if (Platform.isAndroid) {
         // Android da Downloads papkasiga saqlaymiz, topolmasa External Storage
@@ -125,7 +129,7 @@ class FileHelper {
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final nameWithoutExtension = fileName.split('.').first;
         final extension = fileName.split('.').last;
-        
+
         return '${directory.path}/${nameWithoutExtension}_$timestamp.$extension';
       }
     } catch (e) {
@@ -139,7 +143,7 @@ class FileHelper {
         return null;
       }
     }
-    
+
     return null;
   }
 }

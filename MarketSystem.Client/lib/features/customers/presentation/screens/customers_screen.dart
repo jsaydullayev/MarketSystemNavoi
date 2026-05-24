@@ -54,7 +54,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
   }
 
   List<Map<String, dynamic>> _applyFilters(
-      List<Map<String, dynamic>> customers) {
+    List<Map<String, dynamic>> customers,
+  ) {
     final query = _searchController.text.toLowerCase().trim();
     return customers.where((c) {
       final debt = (c['totalDebt'] as num?)?.toDouble() ?? 0.0;
@@ -103,8 +104,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
         } else if (state is CustomersError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.danger),
+              content: Text(state.message),
+              backgroundColor: AppColors.danger,
+            ),
           );
         }
       },
@@ -126,19 +128,18 @@ class _CustomersScreenState extends State<CustomersScreen> {
               if (state is CustomersError) {
                 return _ErrorView(
                   message: state.message,
-                  onRetry: () => context
-                      .read<CustomersBloc>()
-                      .add(const GetCustomersEvent()),
+                  onRetry: () => context.read<CustomersBloc>().add(
+                    const GetCustomersEvent(),
+                  ),
                 );
               }
               if (state is CustomersLoaded) {
-                final all =
-                    state.customers.map((e) => e.toJson()).toList();
+                final all = state.customers.map((e) => e.toJson()).toList();
                 final filtered = _applyFilters(all);
                 return RefreshIndicator(
-                  onRefresh: () async => context
-                      .read<CustomersBloc>()
-                      .add(const GetCustomersEvent()),
+                  onRefresh: () async => context.read<CustomersBloc>().add(
+                    const GetCustomersEvent(),
+                  ),
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.xl,
@@ -158,12 +159,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       const SizedBox(height: AppSpacing.lg),
                       if (filtered.isEmpty)
                         _EmptyView(
-                          isSearching: _searchController.text.isNotEmpty ||
+                          isSearching:
+                              _searchController.text.isNotEmpty ||
                               _filter != _CustomerFilter.all,
                         )
                       else
-                        ...filtered
-                            .map((c) => CustomersCard(customer: c)),
+                        ...filtered.map((c) => CustomersCard(customer: c)),
                     ],
                   ),
                 );
@@ -210,7 +211,9 @@ class _SearchBar extends StatelessWidget {
         filled: true,
         fillColor: context.colors.inputFill,
         contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl, vertical: AppSpacing.lg + 2),
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.lg + 2,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md + 2),
           borderSide: BorderSide.none,
@@ -241,8 +244,9 @@ class _CustomersHero extends StatelessWidget {
       0,
       (sum, c) => sum + ((c['totalDebt'] as num?)?.toDouble() ?? 0.0),
     );
-    final debtors =
-        customers.where((c) => ((c['totalDebt'] as num?) ?? 0) > 0).length;
+    final debtors = customers
+        .where((c) => ((c['totalDebt'] as num?) ?? 0) > 0)
+        .length;
     final clean = customers.length - debtors;
 
     return Container(
@@ -306,8 +310,9 @@ class _CustomersHero extends StatelessWidget {
               _HeroStat(value: '$clean', label: l10n.noDebt.toLowerCase()),
               const SizedBox(width: AppSpacing.xl),
               _HeroStat(
-                  value: '${customers.length}',
-                  label: l10n.total.toLowerCase()),
+                value: '${customers.length}',
+                label: l10n.total.toLowerCase(),
+              ),
             ],
           ),
         ],
@@ -382,8 +387,11 @@ class _FilterChips extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip(
-      {required this.label, required this.isActive, required this.onTap});
+  const _Chip({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
   final String label;
   final bool isActive;
   final VoidCallback onTap;
@@ -395,7 +403,9 @@ class _Chip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           color: isActive ? context.colors.brand : context.colors.inputFill,
           borderRadius: BorderRadius.circular(AppRadius.full),
@@ -438,27 +448,34 @@ class _ErrorView extends StatelessWidget {
                 color: AppColors.dangerLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.cloud_off_rounded,
-                  color: AppColors.danger, size: 40),
+              child: const Icon(
+                Icons.cloud_off_rounded,
+                color: AppColors.danger,
+                size: 40,
+              ),
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
               message,
-              style: AppTextStyles.bodyMedium()
-                  .copyWith(color: AppColors.danger),
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: AppColors.danger,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              label: Text(l10n.retry,
-                  style: const TextStyle(color: Colors.white)),
+              label: Text(
+                l10n.retry,
+                style: const TextStyle(color: Colors.white),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.brand,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xl3,
-                    vertical: AppSpacing.lg),
+                  horizontal: AppSpacing.xl3,
+                  vertical: AppSpacing.lg,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 ),
@@ -489,14 +506,18 @@ class _EmptyView extends StatelessWidget {
               color: context.colors.inputFill,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.people_outline,
-                size: 56, color: context.colors.textMuted),
+            child: Icon(
+              Icons.people_outline,
+              size: 56,
+              color: context.colors.textMuted,
+            ),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
             isSearching ? l10n.customerNotFound : l10n.noCustomers,
-            style: AppTextStyles.titleMedium()
-                .copyWith(color: context.colors.textSecondary),
+            style: AppTextStyles.titleMedium().copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
         ],
       ),

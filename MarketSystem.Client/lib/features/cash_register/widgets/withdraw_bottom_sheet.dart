@@ -47,7 +47,8 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl2)),
+          top: Radius.circular(AppRadius.xl2),
+        ),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl3,
@@ -92,10 +93,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l10n.withdrawCash,
-                      style: AppTextStyles.titleMedium(),
-                    ),
+                    Text(l10n.withdrawCash, style: AppTextStyles.titleMedium()),
                     Text(
                       l10n.selectPaymentTypeAndAmount,
                       style: AppTextStyles.bodySmall().copyWith(fontSize: 12),
@@ -210,7 +208,9 @@ class _TypeChip extends StatelessWidget {
             horizontal: AppSpacing.lg,
           ),
           decoration: BoxDecoration(
-            color: selected ? context.colors.brandLight : context.colors.inputFill,
+            color: selected
+                ? context.colors.brandLight
+                : context.colors.inputFill,
             borderRadius: BorderRadius.circular(AppRadius.lg - 2),
             border: Border.all(
               color: selected ? context.colors.brand : Colors.transparent,
@@ -222,7 +222,9 @@ class _TypeChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: selected ? context.colors.brand : context.colors.textMuted,
+                color: selected
+                    ? context.colors.brand
+                    : context.colors.textMuted,
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
@@ -230,7 +232,9 @@ class _TypeChip extends StatelessWidget {
                 style: AppTextStyles.bodyMedium().copyWith(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: selected ? context.colors.brand : context.colors.textSecondary,
+                  color: selected
+                      ? context.colors.brand
+                      : context.colors.textSecondary,
                 ),
               ),
               Text(

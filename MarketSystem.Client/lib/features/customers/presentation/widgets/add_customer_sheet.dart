@@ -40,21 +40,22 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
 
     final initialDebt = _hasDebt
         ? double.tryParse(
-            _debtAmountController.text.trim().replaceAll(',', '.'))
+            _debtAmountController.text.trim().replaceAll(',', '.'),
+          )
         : null;
 
     context.read<CustomersBloc>().add(
-          CreateCustomerEvent(
-            phone: _phoneController.text.trim(),
-            fullName: _fullNameController.text.trim().isEmpty
-                ? null
-                : _fullNameController.text.trim(),
-            comment: _commentController.text.trim().isEmpty
-                ? null
-                : _commentController.text.trim(),
-            initialDebt: initialDebt,
-          ),
-        );
+      CreateCustomerEvent(
+        phone: _phoneController.text.trim(),
+        fullName: _fullNameController.text.trim().isEmpty
+            ? null
+            : _fullNameController.text.trim(),
+        comment: _commentController.text.trim().isEmpty
+            ? null
+            : _commentController.text.trim(),
+        initialDebt: initialDebt,
+      ),
+    );
     Navigator.pop(context);
   }
 
@@ -99,12 +100,14 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                       color: context.colors.brandLight,
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
-                    child: Icon(Icons.person_add_rounded,
-                        color: context.colors.brand, size: 22),
+                    child: Icon(
+                      Icons.person_add_rounded,
+                      color: context.colors.brand,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.lg),
-                  Text(l10n.addNewCustomer,
-                      style: AppTextStyles.titleMedium()),
+                  Text(l10n.addNewCustomer, style: AppTextStyles.titleMedium()),
                 ],
               ),
               const SizedBox(height: AppSpacing.xl2),
@@ -172,12 +175,16 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                     color: AppColors.warningLight,
                     borderRadius: BorderRadius.circular(AppRadius.md + 2),
                     border: Border.all(
-                        color: AppColors.warning.withValues(alpha: 0.4)),
+                      color: AppColors.warning.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline,
-                          size: 16, color: AppColors.warning),
+                      const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: AppColors.warning,
+                      ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
@@ -202,8 +209,11 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lightbulb_outline,
-                        color: context.colors.brandDark, size: 18),
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: context.colors.brandDark,
+                      size: 18,
+                    ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(

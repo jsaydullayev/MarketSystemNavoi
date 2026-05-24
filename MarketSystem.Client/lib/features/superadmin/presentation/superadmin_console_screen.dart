@@ -334,9 +334,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
       scrolledUnderElevation: 0,
       backgroundColor: context.colors.surface,
       foregroundColor: context.colors.text,
-      shape: Border(
-        bottom: BorderSide(color: context.colors.border, width: 1),
-      ),
+      shape: Border(bottom: BorderSide(color: context.colors.border, width: 1)),
       title: Row(
         children: [
           Container(
@@ -387,8 +385,9 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
                   indicatorColor: context.colors.brand,
                   indicatorWeight: 2.5,
                   labelStyle: AppTextStyles.labelLarge(),
-                  unselectedLabelStyle: AppTextStyles.labelLarge()
-                      .copyWith(color: context.colors.textSecondary),
+                  unselectedLabelStyle: AppTextStyles.labelLarge().copyWith(
+                    color: context.colors.textSecondary,
+                  ),
                   tabs: [
                     Tab(
                       child: TabLabelBadge(
@@ -415,4 +414,3 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
     );
   }
 }
-

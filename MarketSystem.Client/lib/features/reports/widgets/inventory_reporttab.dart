@@ -43,13 +43,18 @@ class InventoryReportTab extends StatelessWidget {
         (report!['totalInventorySaleValue'] as num?)?.toDouble() ?? 0.0;
     final potentialProfit = totalSaleVal - totalCost;
 
-    final isOwner = inventory.isNotEmpty &&
+    final isOwner =
+        inventory.isNotEmpty &&
         inventory.first is Map<String, dynamic> &&
         (inventory.first as Map<String, dynamic>)['potentialProfit'] != null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xl4),
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.xl4,
+      ),
       children: [
         DatePickerRow(selectedDate: selectedDate, onChanged: onDateChanged),
         const SizedBox(height: AppSpacing.xl),
@@ -108,7 +113,9 @@ class InventoryReportTab extends StatelessWidget {
             SectionTitle(title: l10n.productList),
             Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md + 2, vertical: AppSpacing.xs),
+                horizontal: AppSpacing.md + 2,
+                vertical: AppSpacing.xs,
+              ),
               decoration: BoxDecoration(
                 color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.md - 2),

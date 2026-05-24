@@ -106,7 +106,11 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
     if (result.data case final data? when result.isSuccess) {
       emit(CustomerUpdated(data));
     } else {
-      emit(CustomersError(result.error ?? 'Mijoz ma\'lumotlarini yangilashda xatolik'));
+      emit(
+        CustomersError(
+          result.error ?? 'Mijoz ma\'lumotlarini yangilashda xatolik',
+        ),
+      );
     }
   }
 
@@ -136,7 +140,9 @@ class CustomersBloc extends Bloc<CustomersEvent, CustomersState> {
     if (result.data case final data? when result.isSuccess) {
       emit(CustomerDebtsLoaded(data));
     } else {
-      emit(CustomersError(result.error ?? 'Mijoz qarzlarini yuklashda xatolik'));
+      emit(
+        CustomersError(result.error ?? 'Mijoz qarzlarini yuklashda xatolik'),
+      );
     }
   }
 }

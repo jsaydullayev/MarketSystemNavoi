@@ -46,12 +46,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (role == 'Owner') {
       _summaryFuture = DashboardService(authProvider: auth).loadOwnerSummary();
     } else if (role == 'Seller') {
-      _sellerSummaryFuture =
-          DashboardService(authProvider: auth).loadSellerSummary();
+      _sellerSummaryFuture = DashboardService(
+        authProvider: auth,
+      ).loadSellerSummary();
     }
     if (role == 'Owner' || role == 'Admin') {
-      _unreadFuture =
-          NotificationService(authProvider: auth).loadUnreadCount();
+      _unreadFuture = NotificationService(authProvider: auth).loadUnreadCount();
     }
   }
 
@@ -60,15 +60,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final role = (auth.user?['role'] ?? 'Seller') as String;
     setState(() {
       if (role == 'Owner') {
-        _summaryFuture =
-            DashboardService(authProvider: auth).loadOwnerSummary();
+        _summaryFuture = DashboardService(
+          authProvider: auth,
+        ).loadOwnerSummary();
       } else if (role == 'Seller') {
-        _sellerSummaryFuture =
-            DashboardService(authProvider: auth).loadSellerSummary();
+        _sellerSummaryFuture = DashboardService(
+          authProvider: auth,
+        ).loadSellerSummary();
       }
       if (role == 'Owner' || role == 'Admin') {
-        _unreadFuture =
-            NotificationService(authProvider: auth).loadUnreadCount();
+        _unreadFuture = NotificationService(
+          authProvider: auth,
+        ).loadUnreadCount();
       }
     });
     // D1 — wait for all fetches to finish but DO NOT collapse their
@@ -79,8 +82,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // .onRefresh contract complete cleanly without an uncaught error.
     try {
       await Future.wait([
-        if (_summaryFuture case final f?) f.catchError((_) => const DashboardSummary()),
-        if (_sellerSummaryFuture case final f?) f.catchError((_) => const SellerDashboardSummary()),
+        if (_summaryFuture case final f?)
+          f.catchError((_) => const DashboardSummary()),
+        if (_sellerSummaryFuture case final f?)
+          f.catchError((_) => const SellerDashboardSummary()),
         if (_unreadFuture case final f?) f.catchError((_) => 0),
       ]);
     } catch (_) {
@@ -114,8 +119,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           title: Text(
             'STROTECH',
-            style: AppTextStyles.titleMedium()
-                .copyWith(letterSpacing: 2, color: context.colors.text),
+            style: AppTextStyles.titleMedium().copyWith(
+              letterSpacing: 2,
+              color: context.colors.text,
+            ),
           ),
         ),
         body: RefreshIndicator(
@@ -158,12 +165,32 @@ class _DashboardBody extends StatelessWidget {
 
   String _dateLabel(BuildContext context) {
     const monthsUz = [
-      'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
-      'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr',
+      'yanvar',
+      'fevral',
+      'mart',
+      'aprel',
+      'may',
+      'iyun',
+      'iyul',
+      'avgust',
+      'sentabr',
+      'oktabr',
+      'noyabr',
+      'dekabr',
     ];
     const monthsRu = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+      'января',
+      'февраля',
+      'марта',
+      'апреля',
+      'мая',
+      'июня',
+      'июля',
+      'августа',
+      'сентября',
+      'октября',
+      'ноября',
+      'декабря',
     ];
     final code = Localizations.localeOf(context).languageCode;
     final months = code == 'ru' ? monthsRu : monthsUz;
@@ -197,12 +224,13 @@ class _DashboardBody extends StatelessWidget {
                   profileImage: user?['profileImage'] as String?,
                   onNotificationTap: (role == 'Owner' || role == 'Admin')
                       ? () => Navigator.pushNamed(
-                            context, AppRoutes.notifications)
+                          context,
+                          AppRoutes.notifications,
+                        )
                       : null,
                   onSettingsTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const ProfileScreen()),
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
                   ),
                 );
               },
@@ -212,11 +240,12 @@ class _DashboardBody extends StatelessWidget {
               OwnerDashboardBody(summaryFuture: summaryFuture)
             else
               SellerDashboardBody(
-                  role: role, summaryFuture: sellerSummaryFuture),
+                role: role,
+                summaryFuture: sellerSummaryFuture,
+              ),
           ],
         ),
       ),
     );
   }
 }
-

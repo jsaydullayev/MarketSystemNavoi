@@ -154,7 +154,9 @@ class SuperAdminService {
     }
     try {
       final params = <String, String>{};
-      if (username != null && username.isNotEmpty) params['username'] = username;
+      if (username != null && username.isNotEmpty) {
+        params['username'] = username;
+      }
       if (marketName != null && marketName.isNotEmpty) {
         params['marketName'] = marketName;
       }
@@ -168,8 +170,10 @@ class SuperAdminService {
         );
       }
       final query = params.entries
-          .map((e) =>
-              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+          .map(
+            (e) =>
+                '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+          )
           .join('&');
       final response = await _http.get('$_basePath/check-availability?$query');
       if (response.statusCode == 200) {
@@ -232,7 +236,10 @@ class SuperAdminService {
           data: OwnerDetail.fromJson(decoded),
         );
       }
-      return _mapNonSuccess<OwnerDetail>(response.statusCode, body: response.body);
+      return _mapNonSuccess<OwnerDetail>(
+        response.statusCode,
+        body: response.body,
+      );
     } catch (e) {
       // Logged so an Owner debugging "the approve button does nothing" gets
       // the underlying cause (DNS / parse / auth) in `flutter logs`; release
@@ -322,7 +329,8 @@ class SuperAdminService {
           if (description != null) 'description': description,
           if (ownerActive != null) 'ownerActive': ownerActive,
           if (marketActive != null) 'marketActive': marketActive,
-          if (expiresAt != null) 'expiresAt': expiresAt.toUtc().toIso8601String(),
+          if (expiresAt != null)
+            'expiresAt': expiresAt.toUtc().toIso8601String(),
         },
       );
       if (response.statusCode == 200) {
@@ -332,7 +340,10 @@ class SuperAdminService {
           data: OwnerDetail.fromJson(decoded),
         );
       }
-      return _mapNonSuccess<OwnerDetail>(response.statusCode, body: response.body);
+      return _mapNonSuccess<OwnerDetail>(
+        response.statusCode,
+        body: response.body,
+      );
     } catch (e) {
       // Logged so an Owner debugging "the approve button does nothing" gets
       // the underlying cause (DNS / parse / auth) in `flutter logs`; release
@@ -359,10 +370,7 @@ class SuperAdminService {
     try {
       final response = await _http.delete(
         '$_basePath/owners/$userId',
-        body: {
-          'confirmMarketName': confirmMarketName,
-          'reason': reason,
-        },
+        body: {'confirmMarketName': confirmMarketName, 'reason': reason},
       );
       if (response.statusCode == 200) {
         return SuperAdminOpResult(SuperAdminOpStatus.success);
@@ -425,9 +433,7 @@ class SuperAdminService {
       );
     }
     try {
-      final response = await _http.post(
-        '$_basePath/markets/$marketId/unblock',
-      );
+      final response = await _http.post('$_basePath/markets/$marketId/unblock');
       if (response.statusCode == 200) {
         return SuperAdminOpResult(
           SuperAdminOpStatus.success,

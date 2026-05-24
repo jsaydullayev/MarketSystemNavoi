@@ -65,7 +65,9 @@ class CustomerChip extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 140),
           child: Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg, vertical: 6),
+              horizontal: AppSpacing.lg,
+              vertical: 6,
+            ),
             decoration: BoxDecoration(
               color: hasCustomer
                   ? context.colors.brandLight
@@ -182,8 +184,7 @@ class CartSummaryRow extends StatelessWidget {
                         fontSize: 13,
                       ),
                     ),
-                    if (itemNames.isNotEmpty)
-                      TextSpan(text: ' · $itemNames'),
+                    if (itemNames.isNotEmpty) TextSpan(text: ' · $itemNames'),
                   ],
                 ),
               ),

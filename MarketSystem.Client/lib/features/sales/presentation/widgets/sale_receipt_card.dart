@@ -45,15 +45,18 @@ class SaleReceiptCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.inventory_2_outlined,
-                      size: 18, color: context.colors.textSecondary),
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 18,
+                    color: context.colors.textSecondary,
+                  ),
                   8.width,
-                  Text(l10n.products,
-                      style:
-                          AppTextStyles.labelLarge().copyWith(fontSize: 14)),
+                  Text(
+                    l10n.products,
+                    style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
+                  ),
                   const Spacer(),
-                  Text('${items.length}',
-                      style: AppTextStyles.labelSmall()),
+                  Text('${items.length}', style: AppTextStyles.labelSmall()),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -61,16 +64,29 @@ class SaleReceiptCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               Container(height: 1, color: context.colors.border),
               const SizedBox(height: AppSpacing.lg),
-              _totalsRow(context, l10n.totalSum, NumberFormatter.format(total),
-                  emphasize: false),
+              _totalsRow(
+                context,
+                l10n.totalSum,
+                NumberFormatter.format(total),
+                emphasize: false,
+              ),
               const SizedBox(height: AppSpacing.md),
-              _totalsRow(context, l10n.paid, NumberFormatter.format(paid),
-                  emphasize: true, valueColor: AppColors.success),
+              _totalsRow(
+                context,
+                l10n.paid,
+                NumberFormatter.format(paid),
+                emphasize: true,
+                valueColor: AppColors.success,
+              ),
               if (remaining > 0) ...[
                 const SizedBox(height: AppSpacing.md),
-                _totalsRow(context, l10n.debt,
-                    NumberFormatter.format(remaining),
-                    emphasize: false, valueColor: AppColors.danger),
+                _totalsRow(
+                  context,
+                  l10n.debt,
+                  NumberFormatter.format(remaining),
+                  emphasize: false,
+                  valueColor: AppColors.danger,
+                ),
               ],
             ],
           ),
@@ -79,8 +95,11 @@ class SaleReceiptCard extends StatelessWidget {
     );
   }
 
-  Widget _line(BuildContext context, Map<String, dynamic> item,
-      AppLocalizations l10n) {
+  Widget _line(
+    BuildContext context,
+    Map<String, dynamic> item,
+    AppLocalizations l10n,
+  ) {
     final qty = (item['quantity'] as num).toDouble();
     final price = (item['salePrice'] as num).toDouble();
     final isExternal = item['isExternal'] == true;
@@ -109,8 +128,9 @@ class SaleReceiptCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             item['productName'] ?? l10n.unknown,
-                            style: AppTextStyles.labelLarge()
-                                .copyWith(fontSize: 14),
+                            style: AppTextStyles.labelLarge().copyWith(
+                              fontSize: 14,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -119,17 +139,22 @@ class SaleReceiptCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.brandTint,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.full),
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.full,
+                              ),
                             ),
-                            child: Text(l10n.externalTag,
-                                style: AppTextStyles.caption().copyWith(
-                                  color: context.colors.brandDark,
-                                  fontSize: 9,
-                                )),
+                            child: Text(
+                              l10n.externalTag,
+                              style: AppTextStyles.caption().copyWith(
+                                color: context.colors.brandDark,
+                                fontSize: 9,
+                              ),
+                            ),
                           ),
                         ],
                       ],
@@ -143,8 +168,10 @@ class SaleReceiptCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
-              Text(NumberFormatter.format(item['totalPrice']),
-                  style: AppTextStyles.labelLarge().copyWith(fontSize: 14)),
+              Text(
+                NumberFormatter.format(item['totalPrice']),
+                style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
+              ),
             ],
           ),
           if (comment.isNotEmpty) ...[
@@ -152,7 +179,9 @@ class SaleReceiptCard extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: 6),
+                horizontal: AppSpacing.md,
+                vertical: 6,
+              ),
               decoration: BoxDecoration(
                 color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -160,15 +189,20 @@ class SaleReceiptCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.notes_rounded,
-                      size: 13, color: context.colors.brandDark),
+                  Icon(
+                    Icons.notes_rounded,
+                    size: 13,
+                    color: context.colors.brandDark,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(comment,
-                        style: AppTextStyles.bodySmall().copyWith(
-                          fontSize: 12,
-                          color: context.colors.text,
-                        )),
+                    child: Text(
+                      comment,
+                      style: AppTextStyles.bodySmall().copyWith(
+                        fontSize: 12,
+                        color: context.colors.text,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -179,12 +213,18 @@ class SaleReceiptCard extends StatelessWidget {
     );
   }
 
-  Widget _totalsRow(BuildContext context, String label, String value,
-      {required bool emphasize, Color? valueColor}) {
+  Widget _totalsRow(
+    BuildContext context,
+    String label,
+    String value, {
+    required bool emphasize,
+    Color? valueColor,
+  }) {
     final labelStyle = emphasize
         ? AppTextStyles.labelLarge()
-        : AppTextStyles.bodyMedium()
-            .copyWith(color: context.colors.textSecondary);
+        : AppTextStyles.bodyMedium().copyWith(
+            color: context.colors.textSecondary,
+          );
     final valueStyle = emphasize
         ? AppTextStyles.titleMedium().copyWith(
             color: valueColor ?? context.colors.text,

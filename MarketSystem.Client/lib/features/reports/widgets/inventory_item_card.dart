@@ -39,8 +39,8 @@ class InventoryItemCard extends StatelessWidget {
     final stockColor = qty > 10
         ? AppColors.success
         : qty > 0
-            ? AppColors.warning
-            : AppColors.danger;
+        ? AppColors.warning
+        : AppColors.danger;
 
     final qtyStr = qty % 1 == 0
         ? '${qty.toInt()} ${l10n.piece}'
@@ -68,7 +68,9 @@ class InventoryItemCard extends StatelessWidget {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 9, vertical: AppSpacing.xs),
+                  horizontal: 9,
+                  vertical: AppSpacing.xs,
+                ),
                 decoration: BoxDecoration(
                   color: stockColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.md - 2),
@@ -80,7 +82,9 @@ class InventoryItemCard extends StatelessWidget {
                       width: 6,
                       height: 6,
                       decoration: BoxDecoration(
-                          color: stockColor, shape: BoxShape.circle),
+                        color: stockColor,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     const SizedBox(width: 5),
                     Text(
@@ -148,7 +152,9 @@ class InventoryItemCard extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               decoration: BoxDecoration(
                 color: potentialProfit > 0
                     ? AppColors.successLight
@@ -205,10 +211,7 @@ class _InfoTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: align,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
-        ),
+        Text(label, style: AppTextStyles.bodySmall().copyWith(fontSize: 11)),
         Text(
           value,
           style: AppTextStyles.bodySmall().copyWith(

@@ -73,11 +73,16 @@ class StatCard extends StatelessWidget {
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: color),
+                        strokeWidth: 2,
+                        color: color,
+                      ),
                     )
                   else if (isClickable)
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        size: 13, color: color),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 13,
+                      color: color,
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md + 2),

@@ -5,11 +5,7 @@ import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtToggle extends StatelessWidget {
-  const DebtToggle({
-    super.key,
-    required this.hasDebt,
-    required this.onChanged,
-  });
+  const DebtToggle({super.key, required this.hasDebt, required this.onChanged});
 
   final bool hasDebt;
   final ValueChanged<bool> onChanged;
@@ -76,9 +72,11 @@ class _DebtOption extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon,
-                  color: isSelected ? activeColor : context.colors.textMuted,
-                  size: 18),
+              Icon(
+                icon,
+                color: isSelected ? activeColor : context.colors.textMuted,
+                size: 18,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 label,

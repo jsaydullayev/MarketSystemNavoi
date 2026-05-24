@@ -41,8 +41,9 @@ class MiniStatCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTextStyles.caption()
-                .copyWith(color: context.colors.textSecondary),
+            style: AppTextStyles.caption().copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
           Text(
             value,
@@ -110,8 +111,7 @@ class ConsoleEmptyState extends StatelessWidget {
                 color: context.colors.inputFill,
                 borderRadius: BorderRadius.circular(AppRadius.xl),
               ),
-              child:
-                  Icon(icon, size: 32, color: context.colors.textMuted),
+              child: Icon(icon, size: 32, color: context.colors.textMuted),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(text, style: AppTextStyles.bodyMedium()),
@@ -145,11 +145,7 @@ class ConsoleErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outline,
-              color: AppColors.danger,
-              size: 48,
-            ),
+            const Icon(Icons.error_outline, color: AppColors.danger, size: 48),
             const SizedBox(height: AppSpacing.lg),
             Text(
               message,
@@ -189,8 +185,9 @@ class TabLabelBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        selected ? context.colors.brand : context.colors.textSecondary;
+    final color = selected
+        ? context.colors.brand
+        : context.colors.textSecondary;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -199,12 +196,9 @@ class TabLabelBadge extends StatelessWidget {
         Text(label),
         const SizedBox(width: AppSpacing.md),
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
           decoration: BoxDecoration(
-            color: selected
-                ? context.colors.brand
-                : context.colors.brandLight,
+            color: selected ? context.colors.brand : context.colors.brandLight,
             borderRadius: BorderRadius.circular(AppRadius.full),
           ),
           child: Text(
@@ -212,9 +206,7 @@ class TabLabelBadge extends StatelessWidget {
             style: AppTextStyles.bodySmall().copyWith(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: selected
-                  ? context.colors.onBrand
-                  : context.colors.brand,
+              color: selected ? context.colors.onBrand : context.colors.brand,
             ),
           ),
         ),

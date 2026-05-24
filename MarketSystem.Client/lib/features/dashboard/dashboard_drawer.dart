@@ -47,9 +47,7 @@ class DashboardDrawer extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 children: [
                   ..._menuTiles(context, role),
                   const SizedBox(height: AppSpacing.lg),
@@ -92,13 +90,16 @@ class DashboardDrawer extends StatelessWidget {
               ),
             ),
             Divider(
-                color: context.colors.border,
-                indent: AppSpacing.xl,
-                endIndent: AppSpacing.xl,
-                height: 1),
+              color: context.colors.border,
+              indent: AppSpacing.xl,
+              endIndent: AppSpacing.xl,
+              height: 1,
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               child: _SettingsTile(
                 icon: Icons.logout_rounded,
                 label: l10n.logout,
@@ -120,8 +121,9 @@ class DashboardDrawer extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                ProductsScreen(isReadOnly: !context.can(Permissions.productsEdit)),
+            builder: (_) => ProductsScreen(
+              isReadOnly: !context.can(Permissions.productsEdit),
+            ),
           ),
         ),
       ),
@@ -130,8 +132,7 @@ class DashboardDrawer extends StatelessWidget {
         label: l10n.categories,
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
-              builder: (_) => const CategoryManagementScreen()),
+          MaterialPageRoute(builder: (_) => const CategoryManagementScreen()),
         ),
       ),
       _DrawerItem(
@@ -164,8 +165,7 @@ class DashboardDrawer extends StatelessWidget {
         _DrawerItem(
           icon: Icons.account_balance_wallet_rounded,
           label: l10n.cashRegister,
-          onTap: () =>
-              Navigator.pushNamed(context, AppRoutes.cashRegister),
+          onTap: () => Navigator.pushNamed(context, AppRoutes.cashRegister),
         ),
         _DrawerItem(
           icon: Icons.bar_chart_rounded,
@@ -186,12 +186,13 @@ class DashboardDrawer extends StatelessWidget {
     }
 
     if (context.can(Permissions.dataAuditLog)) {
-      items.add(_DrawerItem(
-        icon: Icons.shield_outlined,
-        label: l10n.securityJournal,
-        onTap: () =>
-            Navigator.pushNamed(context, AppRoutes.securityJournal),
-      ));
+      items.add(
+        _DrawerItem(
+          icon: Icons.shield_outlined,
+          label: l10n.securityJournal,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.securityJournal),
+        ),
+      );
     }
 
     return [
@@ -263,9 +264,7 @@ class DashboardDrawer extends StatelessWidget {
               isSelected
                   ? Icons.radio_button_checked_rounded
                   : Icons.radio_button_unchecked_rounded,
-              color: isSelected
-                  ? ctx.colors.brand
-                  : ctx.colors.textSecondary,
+              color: isSelected ? ctx.colors.brand : ctx.colors.textSecondary,
               size: 22,
             ),
             const SizedBox(width: AppSpacing.lg),
@@ -316,8 +315,9 @@ class DashboardDrawer extends StatelessWidget {
             Expanded(
               child: Text(
                 l10n.logout,
-                style: AppTextStyles.titleMedium()
-                    .copyWith(fontWeight: FontWeight.w700),
+                style: AppTextStyles.titleMedium().copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -325,8 +325,9 @@ class DashboardDrawer extends StatelessWidget {
         contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
         content: Text(
           l10n.logoutConfirm,
-          style: AppTextStyles.bodyMedium()
-              .copyWith(color: ctx.colors.textSecondary),
+          style: AppTextStyles.bodyMedium().copyWith(
+            color: ctx.colors.textSecondary,
+          ),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         actions: [
@@ -349,7 +350,9 @@ class DashboardDrawer extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+                horizontal: AppSpacing.xl,
+                vertical: AppSpacing.md,
+              ),
             ),
             child: Text(
               l10n.yes,
@@ -407,8 +410,11 @@ class _DrawerHeader extends StatelessWidget {
         child: Row(
           children: [
             ClipOval(
-              child:
-                  _buildAvatar(context, user?['profileImage'] as String?, initial),
+              child: _buildAvatar(
+                context,
+                user?['profileImage'] as String?,
+                initial,
+              ),
             ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
@@ -436,8 +442,11 @@ class _DrawerHeader extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.edit_note_rounded,
-                color: context.colors.brand, size: 26),
+            Icon(
+              Icons.edit_note_rounded,
+              color: context.colors.brand,
+              size: 26,
+            ),
           ],
         ),
       ),
@@ -477,19 +486,21 @@ class _DrawerHeader extends StatelessWidget {
   }
 
   Widget _fallback(BuildContext context, String initial) => Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          color: context.colors.brand,
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          initial,
-          style: AppTextStyles.titleMedium()
-              .copyWith(color: Colors.white, fontWeight: FontWeight.w800),
-        ),
-      );
+    width: 50,
+    height: 50,
+    decoration: BoxDecoration(
+      color: context.colors.brand,
+      shape: BoxShape.circle,
+    ),
+    alignment: Alignment.center,
+    child: Text(
+      initial,
+      style: AppTextStyles.titleMedium().copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+  );
 }
 
 class _SettingsTile extends StatelessWidget {
@@ -518,7 +529,9 @@ class _SettingsTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: AppSpacing.lg),
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.lg,
+          ),
           child: Row(
             children: [
               Icon(icon, color: color, size: 22),
@@ -526,8 +539,10 @@ class _SettingsTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: AppTextStyles.bodyMedium()
-                      .copyWith(color: color, fontWeight: FontWeight.w600),
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               if (trailing case final t?) t,

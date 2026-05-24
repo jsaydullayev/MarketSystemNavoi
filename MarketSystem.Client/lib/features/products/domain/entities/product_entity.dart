@@ -12,9 +12,9 @@ class ProductEntity extends Equatable {
   final double costPrice;
   final double salePrice;
   final double minSalePrice;
-  final double quantity;      // ✅ DECIMAL - 1.5 kg bo'lishi mumkin
-  final double minThreshold;  // ✅ DECIMAL
-  final int unit;             // ✅ UNIT: 1=dona, 2=kg, 3=m
+  final double quantity; // ✅ DECIMAL - 1.5 kg bo'lishi mumkin
+  final double minThreshold; // ✅ DECIMAL
+  final int unit; // ✅ UNIT: 1=dona, 2=kg, 3=m
 
   const ProductEntity({
     required this.id,
@@ -25,21 +25,21 @@ class ProductEntity extends Equatable {
     required this.minSalePrice,
     required this.quantity,
     required this.minThreshold,
-    required this.unit,        // ✅ NEW
+    required this.unit, // ✅ NEW
   });
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        isTemporary,
-        costPrice,
-        salePrice,
-        minSalePrice,
-        quantity,
-        minThreshold,
-        unit,  // ✅ NEW
-      ];
+    id,
+    name,
+    isTemporary,
+    costPrice,
+    salePrice,
+    minSalePrice,
+    quantity,
+    minThreshold,
+    unit, // ✅ NEW
+  ];
 
   /// Check if product is in low stock
   bool get isLowStock => quantity <= minThreshold;

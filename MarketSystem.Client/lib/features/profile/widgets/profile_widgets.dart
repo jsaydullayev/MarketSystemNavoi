@@ -52,22 +52,16 @@ class ProfileSectionTitle extends StatelessWidget {
 class ProfileSettingsCard extends StatelessWidget {
   final List<Widget> children;
   final Widget? header;
-  const ProfileSettingsCard({
-    super.key,
-    required this.children,
-    this.header,
-  });
+  const ProfileSettingsCard({super.key, required this.children, this.header});
 
   @override
   Widget build(BuildContext context) {
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
-        rows.add(Divider(
-          height: 1,
-          thickness: 1,
-          color: context.colors.border,
-        ));
+        rows.add(
+          Divider(height: 1, thickness: 1, color: context.colors.border),
+        );
       }
       rows.add(children[i]);
     }
@@ -83,10 +77,7 @@ class ProfileSettingsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (header case final h?)
-              Container(
-                color: context.colors.bg,
-                child: h,
-              ),
+              Container(color: context.colors.bg, child: h),
             ...rows,
           ],
         ),

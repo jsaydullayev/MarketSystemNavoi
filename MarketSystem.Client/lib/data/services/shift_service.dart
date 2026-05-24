@@ -35,21 +35,23 @@ class Shift {
   final int durationMinutes;
 
   factory Shift.fromJson(Map<String, dynamic> j) => Shift(
-        id: (j['id'] ?? '').toString(),
-        openedAt: DateTime.tryParse(j['openedAt']?.toString() ?? '')?.toLocal() ??
-            DateTime.now(),
-        closedAt: j['closedAt'] == null
-            ? null
-            : DateTime.tryParse(j['closedAt'].toString())?.toLocal(),
-        isOpen: j['isOpen'] == true,
-        durationMinutes:
-            j['durationMinutes'] is num ? (j['durationMinutes'] as num).toInt() : 0,
-      );
+    id: (j['id'] ?? '').toString(),
+    openedAt:
+        DateTime.tryParse(j['openedAt']?.toString() ?? '')?.toLocal() ??
+        DateTime.now(),
+    closedAt: j['closedAt'] == null
+        ? null
+        : DateTime.tryParse(j['closedAt'].toString())?.toLocal(),
+    isOpen: j['isOpen'] == true,
+    durationMinutes: j['durationMinutes'] is num
+        ? (j['durationMinutes'] as num).toInt()
+        : 0,
+  );
 }
 
 class ShiftService {
   ShiftService({HttpService? httpService, AuthProvider? authProvider})
-      : _http = httpService ?? authProvider?.httpService ?? HttpService();
+    : _http = httpService ?? authProvider?.httpService ?? HttpService();
 
   final HttpService _http;
 

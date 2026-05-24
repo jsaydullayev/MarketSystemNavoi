@@ -32,7 +32,11 @@ class DebtSummaryHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl2, AppSpacing.xl, AppSpacing.xl2, AppSpacing.xl2),
+        AppSpacing.xl2,
+        AppSpacing.xl,
+        AppSpacing.xl2,
+        AppSpacing.xl2,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
         border: Border(bottom: BorderSide(color: context.colors.border)),
@@ -46,7 +50,9 @@ class DebtSummaryHeader extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                    color: avatarColor, shape: BoxShape.circle),
+                  color: avatarColor,
+                  shape: BoxShape.circle,
+                ),
                 alignment: Alignment.center,
                 child: Text(
                   initial,
@@ -57,10 +63,7 @@ class DebtSummaryHeader extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.lg),
               Expanded(
-                child: Text(
-                  customerName,
-                  style: AppTextStyles.titleMedium(),
-                ),
+                child: Text(customerName, style: AppTextStyles.titleMedium()),
               ),
               _StatusBadge(isOpen: isOpen),
             ],
@@ -115,7 +118,9 @@ class _StatusBadge extends StatelessWidget {
     final color = isOpen ? AppColors.success : context.colors.textMuted;
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md + 2, vertical: AppSpacing.xs + 1),
+        horizontal: AppSpacing.md + 2,
+        vertical: AppSpacing.xs + 1,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.full),
@@ -161,7 +166,9 @@ class _SummaryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg + 2, vertical: AppSpacing.md + 2),
+        horizontal: AppSpacing.lg + 2,
+        vertical: AppSpacing.md + 2,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -170,8 +177,7 @@ class _SummaryChip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: AppTextStyles.caption().copyWith(fontSize: 11)),
+          Text(label, style: AppTextStyles.caption().copyWith(fontSize: 11)),
           const SizedBox(height: 3),
           Text(
             value,

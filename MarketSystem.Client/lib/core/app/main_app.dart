@@ -67,10 +67,9 @@ class _MainAppState extends State<MainApp> {
     // navigation by attaching to the new scaffold via ScaffoldMessenger.
     final messenger = ScaffoldMessenger.maybeOf(ctx);
     messenger?.clearSnackBars();
-    messenger?.showSnackBar(SnackBar(
-      content: Text(message),
-      duration: const Duration(seconds: 4),
-    ));
+    messenger?.showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
+    );
 
     NavigationHandler.navigateToAndClear(AppRoutes.login);
   }
@@ -87,7 +86,8 @@ class _MainAppState extends State<MainApp> {
       providers: [
         // Auth Provider - must be first, others may depend on it
         ChangeNotifierProvider(
-            create: (_) => AuthProvider(authService: sl<AuthService>())),
+          create: (_) => AuthProvider(authService: sl<AuthService>()),
+        ),
         // Theme Provider
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         // Locale Provider

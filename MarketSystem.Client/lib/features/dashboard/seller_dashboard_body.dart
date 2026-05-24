@@ -63,15 +63,13 @@ class SellerDashboardBody extends StatelessWidget {
         if (!isAdmin) ...[
           const SizedBox(height: AppSpacing.lg),
           ShiftControlCard(
-            authProvider:
-                Provider.of<AuthProvider>(context, listen: false),
+            authProvider: Provider.of<AuthProvider>(context, listen: false),
           ),
           const SizedBox(height: AppSpacing.lg),
           FutureBuilder<SellerDashboardSummary>(
             future: summaryFuture,
             builder: (context, snapshot) {
-              final summary =
-                  snapshot.data ?? const SellerDashboardSummary();
+              final summary = snapshot.data ?? const SellerDashboardSummary();
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -87,7 +85,8 @@ class SellerDashboardBody extends StatelessWidget {
                   if (summary.pendingDraft case final d?)
                     PendingSaleCard(
                       title: l10n.oneSaleInProgress,
-                      subtitle: '${d.itemCount} ${l10n.unitPiece} · '
+                      subtitle:
+                          '${d.itemCount} ${l10n.unitPiece} · '
                           '${_grouped(d.totalAmount)} UZS',
                       onTap: () =>
                           Navigator.pushNamed(context, AppRoutes.sales),
@@ -105,8 +104,7 @@ class SellerDashboardBody extends StatelessWidget {
                         label: l10n.revenueLabel,
                       ),
                       SalesHeroStat(
-                        value:
-                            '${summary.myShiftDurationHours} ${l10n.hour}',
+                        value: '${summary.myShiftDurationHours} ${l10n.hour}',
                         label: l10n.shiftLabel,
                       ),
                     ],
@@ -127,8 +125,7 @@ class SellerDashboardBody extends StatelessWidget {
                 value: l10n.debt,
                 label: l10n.debtPayments,
                 tone: KpiTone.orange,
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.debts),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -138,8 +135,7 @@ class SellerDashboardBody extends StatelessWidget {
                 value: l10n.refundLabel,
                 label: l10n.refundActionDesc,
                 tone: KpiTone.blue,
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.sales),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
               ),
             ),
           ],
@@ -156,8 +152,7 @@ class SellerDashboardBody extends StatelessWidget {
                   value: l10n.reportLabel,
                   label: l10n.reportsActionLabel,
                   tone: KpiTone.green,
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.reports),
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.reports),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -167,8 +162,8 @@ class SellerDashboardBody extends StatelessWidget {
                   value: l10n.cashRegisterShort,
                   label: l10n.cashRegister,
                   tone: KpiTone.purple,
-                  onTap: () => Navigator.pushNamed(
-                      context, AppRoutes.cashRegister),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.cashRegister),
                 ),
               ),
             ],
@@ -198,14 +193,19 @@ class _RetryBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 20, color: AppColors.danger),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 20,
+            color: AppColors.danger,
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               l10n.pullToRefresh,
-              style: AppTextStyles.bodySmall()
-                  .copyWith(color: AppColors.danger, fontSize: 12),
+              style: AppTextStyles.bodySmall().copyWith(
+                color: AppColors.danger,
+                fontSize: 12,
+              ),
             ),
           ),
         ],

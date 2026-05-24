@@ -67,8 +67,8 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
                 child: _isUploading
                     ? _buildLoadingOverlay()
                     : (profileImage != null && profileImage.isNotEmpty)
-                        ? _buildSmartImage(profileImage)
-                        : _buildDefaultPlaceholder(user),
+                    ? _buildSmartImage(profileImage)
+                    : _buildDefaultPlaceholder(user),
               ),
             ),
             _buildEditBadge(),
@@ -83,8 +83,9 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
       return Image.network(imageStr, fit: BoxFit.cover);
     } else if (imageStr.startsWith('data:image') || imageStr.length > 100) {
       try {
-        final base64Str =
-            imageStr.contains(',') ? imageStr.split(',').last : imageStr;
+        final base64Str = imageStr.contains(',')
+            ? imageStr.split(',').last
+            : imageStr;
         return Image.memory(base64Decode(base64Str), fit: BoxFit.cover);
       } catch (_) {
         return Icon(
@@ -160,8 +161,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
       builder: (ctx) => Container(
         decoration: BoxDecoration(
           color: context.colors.surface,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl,
@@ -181,10 +181,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text(
-              'Rasm tanlang',
-              style: AppTextStyles.titleMedium(),
-            ),
+            Text('Rasm tanlang', style: AppTextStyles.titleMedium()),
             const SizedBox(height: AppSpacing.xl),
             _SourceTile(
               icon: Icons.photo_camera_rounded,
@@ -212,8 +209,10 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     final messenger = ScaffoldMessenger.of(context);
 
     final ImagePicker picker = ImagePicker();
-    final XFile? image =
-        await picker.pickImage(source: source, imageQuality: 50);
+    final XFile? image = await picker.pickImage(
+      source: source,
+      imageQuality: 50,
+    );
 
     if (image == null) return;
 
@@ -221,8 +220,9 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
 
     try {
       final imageBytes = await image.readAsBytes();
-      final result = await UserService(authProvider: auth)
-          .uploadProfileImage(imageBytes, image.name);
+      final result = await UserService(
+        authProvider: auth,
+      ).uploadProfileImage(imageBytes, image.name);
 
       if (widget.onImageUpdated != null && result != null) {
         widget.onImageUpdated!(result['profileImage']);

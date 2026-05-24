@@ -12,11 +12,7 @@ import 'auth_service.dart';
 /// [HttpService.marketBlockedStream] so the app shell can show a dedicated
 /// "contact admin" screen on top of whichever route the user was on.
 class MarketBlockedInfo {
-  MarketBlockedInfo({
-    required this.message,
-    this.reason,
-    this.blockedAt,
-  });
+  MarketBlockedInfo({required this.message, this.reason, this.blockedAt});
 
   final String message;
   final String? reason;
@@ -156,14 +152,17 @@ class HttpService {
       final parts = token.split('.');
       if (parts.length != 3) return false;
       final payload = jsonDecode(
-          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      );
       final exp = payload is Map ? payload['exp'] : null;
       if (exp is! int) return false;
-      final expiry =
-          DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
-      return DateTime.now()
-          .toUtc()
-          .isAfter(expiry.subtract(const Duration(seconds: 15)));
+      final expiry = DateTime.fromMillisecondsSinceEpoch(
+        exp * 1000,
+        isUtc: true,
+      );
+      return DateTime.now().toUtc().isAfter(
+        expiry.subtract(const Duration(seconds: 15)),
+      );
     } catch (_) {
       return false;
     }
@@ -196,8 +195,11 @@ class HttpService {
 
   // ✅ 401 xatolikni qayta ishlash va token refresh
   Future<http.Response> _handleResponse(
-      http.Response response, String method, String endpoint,
-      {Object? body}) async {
+    http.Response response,
+    String method,
+    String endpoint, {
+    Object? body,
+  }) async {
     // 423 Locked = market was blocked by a SuperAdmin. The session is now
     // unusable — wipe tokens so the user can't keep retrying on a doomed
     // JWT, and emit the reason so the app shell can pop to a block screen.
@@ -208,7 +210,8 @@ class HttpService {
       try {
         final decoded = jsonDecode(response.body) as Map<String, dynamic>;
         info = MarketBlockedInfo(
-          message: decoded['message'] as String? ??
+          message:
+              decoded['message'] as String? ??
               'Do\'kon administrator tomonidan bloklangan.',
           reason: decoded['reason'] as String?,
           blockedAt: decoded['blockedAt'] is String
@@ -285,7 +288,10 @@ class HttpService {
 
   // So'rovni qayta yuborish
   Future<http.Response> _retryRequest(
-      String method, String endpoint, Object? body) async {
+    String method,
+    String endpoint,
+    Object? body,
+  ) async {
     final token = await getAccessToken();
 
     switch (method.toUpperCase()) {
@@ -352,21 +358,24 @@ class HttpService {
     debugPrint('=== HTTP GET ===');
     debugPrint('URL: $baseUrl$endpoint');
     debugPrint(
-        'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}');
+      'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}',
+    );
     debugPrint('================');
 
-    return http.get(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
-    ).timeout(
-      const Duration(seconds: 30),
-      onTimeout: () {
-        throw Exception('Request timeout after 30 seconds');
-      },
-    );
+    return http
+        .get(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        )
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Request timeout after 30 seconds');
+          },
+        );
   }
 
   // POST request
@@ -382,23 +391,26 @@ class HttpService {
     debugPrint('=== HTTP POST ===');
     debugPrint('URL: $baseUrl$endpoint');
     debugPrint(
-        'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}');
+      'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}',
+    );
     debugPrint('Body: $encodedBody');
     debugPrint('================');
 
-    return http.post(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
-      body: encodedBody,
-    ).timeout(
-      const Duration(seconds: 30),
-      onTimeout: () {
-        throw Exception('Request timeout after 30 seconds');
-      },
-    );
+    return http
+        .post(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: encodedBody,
+        )
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Request timeout after 30 seconds');
+          },
+        );
   }
 
   // PUT request
@@ -419,7 +431,8 @@ class HttpService {
       debugPrint('Body: $encodedBody');
     } else if (body != null) {
       debugPrint(
-          'Body length: ${encodedBody?.length ?? 0} bytes (too large to display)');
+        'Body length: ${encodedBody?.length ?? 0} bytes (too large to display)',
+      );
     }
     debugPrint('================');
 
@@ -434,12 +447,14 @@ class HttpService {
         });
         request.body = encodedBody;
 
-        final streamedResponse = await client.send(request).timeout(
-          const Duration(seconds: 60),
-          onTimeout: () {
-            throw Exception('Request timeout after 60 seconds');
-          },
-        );
+        final streamedResponse = await client
+            .send(request)
+            .timeout(
+              const Duration(seconds: 60),
+              onTimeout: () {
+                throw Exception('Request timeout after 60 seconds');
+              },
+            );
         final response = await http.Response.fromStream(streamedResponse);
         return response;
       } finally {
@@ -447,19 +462,21 @@ class HttpService {
       }
     }
 
-    return http.put(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
-      body: encodedBody,
-    ).timeout(
-      const Duration(seconds: 60),
-      onTimeout: () {
-        throw Exception('Request timeout after 60 seconds');
-      },
-    );
+    return http
+        .put(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: encodedBody,
+        )
+        .timeout(
+          const Duration(seconds: 60),
+          onTimeout: () {
+            throw Exception('Request timeout after 60 seconds');
+          },
+        );
   }
 
   // DELETE request (optionally with a JSON body — used by the SuperAdmin
@@ -541,9 +558,7 @@ class HttpService {
     );
 
     // Add headers - use addAll instead of direct assignment
-    request.headers.addAll({
-      'Authorization': 'Bearer $token',
-    });
+    request.headers.addAll({'Authorization': 'Bearer $token'});
 
     // Add file
     final fileStream = http.ByteStream(file.openRead());
@@ -587,9 +602,7 @@ class HttpService {
 
       final response = await http.get(
         Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 
       // 401 xatolikni handle qilish

@@ -80,12 +80,12 @@ class RegisterMarketRequestModel {
 class RegisterMarketResponseModel {
   final MarketModel market;
   final UserMarketModel owner;
-  final String? accessToken;  // ✅ NEW: New JWT token with updated marketId
+  final String? accessToken; // ✅ NEW: New JWT token with updated marketId
 
   RegisterMarketResponseModel({
     required this.market,
     required this.owner,
-    this.accessToken,  // ✅ NEW: Optional accessToken
+    this.accessToken, // ✅ NEW: Optional accessToken
   });
 
   /// Create from JSON
@@ -93,7 +93,7 @@ class RegisterMarketResponseModel {
     return RegisterMarketResponseModel(
       market: MarketModel.fromJson(json['market']),
       owner: UserMarketModel.fromJson(json['owner']),
-      accessToken: json['accessToken'] as String?,  // ✅ NEW: Parse accessToken
+      accessToken: json['accessToken'] as String?, // ✅ NEW: Parse accessToken
     );
   }
 }
@@ -140,16 +140,10 @@ class UpdateMyMarketRequestModel {
   final String name;
   final String? description;
 
-  UpdateMyMarketRequestModel({
-    required this.name,
-    this.description,
-  });
+  UpdateMyMarketRequestModel({required this.name, this.description});
 
   /// Convert to JSON
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'description': description,
-    };
+    return {'name': name, 'description': description};
   }
 }

@@ -15,8 +15,9 @@ class OwnerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final initial =
-        owner.fullName.isNotEmpty ? owner.fullName[0].toUpperCase() : '?';
+    final initial = owner.fullName.isNotEmpty
+        ? owner.fullName[0].toUpperCase()
+        : '?';
     final avatarColor = _avatarColor(context, owner.userId);
 
     Color statusColor;
@@ -63,8 +64,10 @@ class OwnerCard extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   initial,
-                  style: AppTextStyles.labelLarge()
-                      .copyWith(color: Colors.white, fontSize: 17),
+                  style: AppTextStyles.labelLarge().copyWith(
+                    color: Colors.white,
+                    fontSize: 17,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.lg),
@@ -96,8 +99,9 @@ class OwnerCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             owner.phone ?? '',
-                            style: AppTextStyles.bodySmall()
-                                .copyWith(fontSize: 12),
+                            style: AppTextStyles.bodySmall().copyWith(
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -169,10 +173,7 @@ class OwnerCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(width: AppSpacing.md),
-              Icon(
-                Icons.chevron_right,
-                color: context.colors.textSecondary,
-              ),
+              Icon(Icons.chevron_right, color: context.colors.textSecondary),
             ],
           ),
         ),

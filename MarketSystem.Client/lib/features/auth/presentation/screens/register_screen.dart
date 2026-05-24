@@ -26,8 +26,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final RegistrationRequestService _service =
-      RegistrationRequestService(HttpService());
+  final RegistrationRequestService _service = RegistrationRequestService(
+    HttpService(),
+  );
 
   bool _submitting = false;
   final _phoneFormatter = _PhoneMaskFormatter();
@@ -91,8 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor:
-            isError ? AppColors.danger : AppColors.success,
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(AppSpacing.xl),
         shape: RoundedRectangleBorder(

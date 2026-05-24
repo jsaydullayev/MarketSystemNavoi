@@ -9,7 +9,7 @@ class SaleRemoteDataSource {
   final SalesService _salesService;
 
   const SaleRemoteDataSource({required SalesService salesService})
-      : _salesService = salesService;
+    : _salesService = salesService;
 
   /// Barcha sotuvlarni olish
   Future<List<dynamic>> getAllSales() async {
@@ -35,7 +35,7 @@ class SaleRemoteDataSource {
   Future<dynamic> addSaleItem({
     required String saleId,
     required String productId,
-    required double quantity,  // ✅ DECIMAL
+    required double quantity, // ✅ DECIMAL
     required double salePrice,
     required double minSalePrice,
     String? comment,

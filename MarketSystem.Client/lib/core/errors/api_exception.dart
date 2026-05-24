@@ -47,7 +47,10 @@ class ApiException implements Exception {
   /// Convert an HTTP response into a structured exception. Defensively
   /// parses the body — a proxy returning a non-JSON 502 doesn't crash the
   /// client; we fall back to a generic message and pass the raw text on.
-  factory ApiException.fromResponse(http.Response res, {String? fallbackMessage}) {
+  factory ApiException.fromResponse(
+    http.Response res, {
+    String? fallbackMessage,
+  }) {
     String message = fallbackMessage ?? 'Xatolik (${res.statusCode})';
     String? code;
     Map<String, dynamic>? payload;
@@ -82,5 +85,6 @@ class ApiException implements Exception {
   bool get isConflict => statusCode == 409;
 
   @override
-  String toString() => 'ApiException($statusCode${code != null ? ' / $code' : ''}): $message';
+  String toString() =>
+      'ApiException($statusCode${code != null ? ' / $code' : ''}): $message';
 }

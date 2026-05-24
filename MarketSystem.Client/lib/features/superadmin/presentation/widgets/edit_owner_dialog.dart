@@ -180,8 +180,9 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                     label: l10n.fullNameLabel,
                     controller: _fullName,
                     prefixIcon: Icons.person_outline,
-                    validator: (v) =>
-                        (v ?? '').trim().length < 2 ? l10n.nameRequiredShort : null,
+                    validator: (v) => (v ?? '').trim().length < 2
+                        ? l10n.nameRequiredShort
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Row(
@@ -298,8 +299,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
-              borderSide:
-                  BorderSide(color: context.colors.brand, width: 1.5),
+              borderSide: BorderSide(color: context.colors.brand, width: 1.5),
             ),
           ),
           items: const [

@@ -7,7 +7,9 @@ class NumberFormatter {
 
     num number;
     if (value is String) {
-      final cleanVal = value.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+      final cleanVal = value
+          .replaceAll(RegExp(r'\s+'), '')
+          .replaceAll(',', '.');
       number = num.tryParse(cleanVal) ?? 0;
     } else if (value is num) {
       number = value;
@@ -15,7 +17,8 @@ class NumberFormatter {
       number = 0;
     }
 
-    final bool hasDecimals = number is double && number != number.truncateToDouble();
+    final bool hasDecimals =
+        number is double && number != number.truncateToDouble();
 
     // Use NumberFormat.currency with custom symbol to get space separator
     final formatter = NumberFormat.currency(
@@ -33,7 +36,9 @@ class NumberFormatter {
 
     num number;
     if (value is String) {
-      final cleanVal = value.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+      final cleanVal = value
+          .replaceAll(RegExp(r'\s+'), '')
+          .replaceAll(',', '.');
       number = num.tryParse(cleanVal) ?? 0;
     } else if (value is num) {
       number = value;

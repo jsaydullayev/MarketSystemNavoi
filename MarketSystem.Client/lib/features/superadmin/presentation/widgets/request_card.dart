@@ -54,8 +54,10 @@ class RequestCard extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   initial,
-                  style: AppTextStyles.labelLarge()
-                      .copyWith(color: Colors.white, fontSize: 16),
+                  style: AppTextStyles.labelLarge().copyWith(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.lg),
@@ -65,8 +67,7 @@ class RequestCard extends StatelessWidget {
                   children: [
                     Text(
                       request.fullName,
-                      style:
-                          AppTextStyles.labelLarge().copyWith(fontSize: 15),
+                      style: AppTextStyles.labelLarge().copyWith(fontSize: 15),
                     ),
                     const SizedBox(height: 3),
                     Row(
@@ -77,10 +78,7 @@ class RequestCard extends StatelessWidget {
                           color: context.colors.textSecondary,
                         ),
                         const SizedBox(width: 5),
-                        Text(
-                          request.phone,
-                          style: AppTextStyles.bodySmall(),
-                        ),
+                        Text(request.phone, style: AppTextStyles.bodySmall()),
                       ],
                     ),
                   ],
@@ -121,8 +119,7 @@ class RequestCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     _formatDate(request.createdAt),
-                    style:
-                        AppTextStyles.bodySmall().copyWith(fontSize: 11),
+                    style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
                   ),
                 ],
               ),

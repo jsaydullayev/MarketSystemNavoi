@@ -18,7 +18,7 @@ class PaymentDialog extends StatefulWidget {
   /// created one inline from the debt row, so the caller MUST use this value
   /// (not its own snapshot) when creating the sale.
   final Function(List<Map<String, dynamic>>, bool, Map<String, dynamic>?)
-      onConfirm;
+  onConfirm;
   final VoidCallback? onCancel;
 
   const PaymentDialog({
@@ -125,7 +125,8 @@ class PaymentDialogState extends State<PaymentDialog> {
         decoration: BoxDecoration(
           color: context.colors.surface,
           borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl2)),
+            top: Radius.circular(AppRadius.xl2),
+          ),
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -143,10 +144,7 @@ class PaymentDialogState extends State<PaymentDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    l10n.paymentMethods,
-                    style: AppTextStyles.titleMedium(),
-                  ),
+                  Text(l10n.paymentMethods, style: AppTextStyles.titleMedium()),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg,
@@ -259,10 +257,7 @@ class PaymentDialogState extends State<PaymentDialog> {
         ),
         if (value)
           Padding(
-            padding: const EdgeInsets.only(
-              left: 40,
-              bottom: AppSpacing.md,
-            ),
+            padding: const EdgeInsets.only(left: 40, bottom: AppSpacing.md),
             child: TextField(
               controller: controller,
               keyboardType: TextInputType.number,
@@ -334,10 +329,7 @@ class PaymentDialogState extends State<PaymentDialog> {
           // the payment dialog.
           if (_customer != null)
             CheckboxListTile(
-              title: Text(
-                l10n.takeAsDebt,
-                style: AppTextStyles.bodyMedium(),
-              ),
+              title: Text(l10n.takeAsDebt, style: AppTextStyles.bodyMedium()),
               subtitle: Text(
                 _customer!['fullName']?.toString().isNotEmpty == true
                     ? _customer!['fullName'].toString()

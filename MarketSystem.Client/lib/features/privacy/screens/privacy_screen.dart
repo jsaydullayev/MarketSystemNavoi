@@ -91,12 +91,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        Text(
-          content,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            height: 1.6,
-          ),
-        ),
+        Text(content, style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
       ],
     );
   }
@@ -139,7 +134,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         '• Export your data';
   }
 
-  Widget _buildContactSection(BuildContext context, ThemeData theme, AppLocalizations? l10n) {
+  Widget _buildContactSection(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations? l10n,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -152,13 +151,16 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          l10n?.privacyContactPrompt ?? 'If you have questions about this Privacy Policy or your data, please contact us at:',
+          l10n?.privacyContactPrompt ??
+              'If you have questions about this Privacy Policy or your data, please contact us at:',
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Text(l10n?.emailLabel ?? 'Email: ',
-                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6)),
+            Text(
+              l10n?.emailLabel ?? 'Email: ',
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+            ),
             SelectableText(
               'saydullayev.jahongir7170@gmail.com',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -182,7 +184,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     );
   }
 
-  Widget _buildFooter(BuildContext context, ThemeData theme, AppLocalizations? l10n) {
+  Widget _buildFooter(
+    BuildContext context,
+    ThemeData theme,
+    AppLocalizations? l10n,
+  ) {
     return Center(
       child: RichText(
         textAlign: TextAlign.center,

@@ -106,24 +106,30 @@ class _SalesScreenState extends State<SalesScreen> {
       if (bytes != null && bytes.isNotEmpty) {
         final fileName = lang == 'ru' ? 'Prodazhi.xlsx' : 'Sotuvlar.xlsx';
         final success = await core_file_helper.FileHelper.saveAndOpenExcel(
-            bytes, fileName);
+          bytes,
+          fileName,
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(
-                  kIsWeb && success
-                      ? 'Excel fayli yuklanmoqda...'
-                      : (success ? 'Excel saqlandi va ochildi' : 'Error'),
-                ),
-                backgroundColor:
-                    success ? AppColors.success : AppColors.danger),
+              content: Text(
+                kIsWeb && success
+                    ? 'Excel fayli yuklanmoqda...'
+                    : (success ? 'Excel saqlandi va ochildi' : 'Error'),
+              ),
+              backgroundColor: success ? AppColors.success : AppColors.danger,
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Error: $e'), backgroundColor: AppColors.danger));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isExporting = false);
@@ -140,19 +146,21 @@ class _SalesScreenState extends State<SalesScreen> {
 
       if (bytes != null && bytes.isNotEmpty) {
         final success = await core_file_helper.FileHelper.saveAndOpenPdf(
-            bytes, 'Sotuvlar.pdf');
+          bytes,
+          'Sotuvlar.pdf',
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(
-                  kIsWeb && success
-                      ? 'PDF fayli yuklanmoqda...'
-                      : (success
+              content: Text(
+                kIsWeb && success
+                    ? 'PDF fayli yuklanmoqda...'
+                    : (success
                           ? 'PDF saqlandi va ochildi'
                           : 'PDF saqlashda xatolik'),
-                ),
-                backgroundColor:
-                    success ? AppColors.success : AppColors.danger),
+              ),
+              backgroundColor: success ? AppColors.success : AppColors.danger,
+            ),
           );
         }
       } else {
@@ -167,9 +175,12 @@ class _SalesScreenState extends State<SalesScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text('Xatolik: $e'),
-            backgroundColor: AppColors.danger));
+            backgroundColor: AppColors.danger,
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -185,9 +196,12 @@ class _SalesScreenState extends State<SalesScreen> {
     return BlocListener<SalesBloc, SalesState>(
       listener: (context, state) {
         if (state is SalesError) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
               content: Text(state.message),
-              backgroundColor: AppColors.danger));
+              backgroundColor: AppColors.danger,
+            ),
+          );
         }
       },
       child: NetworkWrapper(
@@ -202,14 +216,16 @@ class _SalesScreenState extends State<SalesScreen> {
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.lg),
+                          horizontal: AppSpacing.lg,
+                        ),
                         child: SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                context.colors.brand),
+                              context.colors.brand,
+                            ),
                           ),
                         ),
                       ),
@@ -234,11 +250,16 @@ class _SalesScreenState extends State<SalesScreen> {
                           value: 'excel',
                           child: Row(
                             children: [
-                              const Icon(Icons.table_view,
-                                  size: 20, color: AppColors.success),
+                              const Icon(
+                                Icons.table_view,
+                                size: 20,
+                                color: AppColors.success,
+                              ),
                               const SizedBox(width: AppSpacing.lg),
-                              Text('Excel export',
-                                  style: AppTextStyles.bodyMedium()),
+                              Text(
+                                'Excel export',
+                                style: AppTextStyles.bodyMedium(),
+                              ),
                             ],
                           ),
                         ),
@@ -246,11 +267,16 @@ class _SalesScreenState extends State<SalesScreen> {
                           value: 'pdf',
                           child: Row(
                             children: [
-                              const Icon(Icons.picture_as_pdf,
-                                  size: 20, color: AppColors.danger),
+                              const Icon(
+                                Icons.picture_as_pdf,
+                                size: 20,
+                                color: AppColors.danger,
+                              ),
                               const SizedBox(width: AppSpacing.lg),
-                              Text('PDF export',
-                                  style: AppTextStyles.bodyMedium()),
+                              Text(
+                                'PDF export',
+                                style: AppTextStyles.bodyMedium(),
+                              ),
                             ],
                           ),
                         ),
@@ -265,9 +291,12 @@ class _SalesScreenState extends State<SalesScreen> {
                 builder: (context, state) {
                   if (state is SalesLoading) {
                     return Center(
-                        child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                context.colors.brand)));
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          context.colors.brand,
+                        ),
+                      ),
+                    );
                   }
 
                   if (state is SalesLoaded) {
@@ -284,11 +313,15 @@ class _SalesScreenState extends State<SalesScreen> {
                                 ? _buildEmptyState(context, l10n)
                                 : ListView.builder(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.xl),
+                                      horizontal: AppSpacing.xl,
+                                    ),
                                     itemCount: filteredSales.length,
                                     itemBuilder: (context, index) =>
-                                        _buildSaleItem(context,
-                                            filteredSales[index], l10n),
+                                        _buildSaleItem(
+                                          context,
+                                          filteredSales[index],
+                                          l10n,
+                                        ),
                                   ),
                           ),
                         ),
@@ -319,19 +352,25 @@ class _SalesScreenState extends State<SalesScreen> {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () async {
               final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => BlocProvider.value(
-                          value: context.read<SalesBloc>(),
-                          child: const NewSaleScreen())));
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: context.read<SalesBloc>(),
+                    child: const NewSaleScreen(),
+                  ),
+                ),
+              );
               if (result == true && mounted) _loadSales();
             },
             backgroundColor: context.colors.brand,
-            icon: const Icon(Icons.add_shopping_cart_rounded,
-                color: Colors.white),
-            label: Text(l10n.newSale,
-                style: AppTextStyles.labelLarge()
-                    .copyWith(color: Colors.white)),
+            icon: const Icon(
+              Icons.add_shopping_cart_rounded,
+              color: Colors.white,
+            ),
+            label: Text(
+              l10n.newSale,
+              style: AppTextStyles.labelLarge().copyWith(color: Colors.white),
+            ),
           ),
         ),
       ),
@@ -340,25 +379,37 @@ class _SalesScreenState extends State<SalesScreen> {
 
   /// Orange gradient hero card — matches demo's "BUGUN JAMI" tile.
   Widget _buildHeroSummary(
-      BuildContext context, List<SaleEntity> sales, AppLocalizations l10n) {
+    BuildContext context,
+    List<SaleEntity> sales,
+    AppLocalizations l10n,
+  ) {
     final today = DateTime.now();
-    final todaySales = sales.where((s) =>
-        s.createdAt.year == today.year &&
-        s.createdAt.month == today.month &&
-        s.createdAt.day == today.day);
+    final todaySales = sales.where(
+      (s) =>
+          s.createdAt.year == today.year &&
+          s.createdAt.month == today.month &&
+          s.createdAt.day == today.day,
+    );
 
-    final totalToday =
-        todaySales.fold<double>(0, (sum, s) => sum + s.totalAmount);
+    final totalToday = todaySales.fold<double>(
+      0,
+      (sum, s) => sum + s.totalAmount,
+    );
     final countToday = todaySales.length;
-    final debtCount =
-        todaySales.where((s) => s.getStatusText().toLowerCase() == 'debt').length;
+    final debtCount = todaySales
+        .where((s) => s.getStatusText().toLowerCase() == 'debt')
+        .length;
     final ongoing = todaySales
         .where((s) => s.getStatusText().toLowerCase() == 'draft')
         .length;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.md),
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.md,
+      ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -385,13 +436,15 @@ class _SalesScreenState extends State<SalesScreen> {
               children: [
                 Text(
                   'BUGUN JAMI',
-                  style: AppTextStyles.caption()
-                      .copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                  style: AppTextStyles.caption().copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
                 ),
                 Text(
                   DateFormat('dd MMM').format(today),
-                  style: AppTextStyles.labelSmall()
-                      .copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                  style: AppTextStyles.labelSmall().copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
                 ),
               ],
             ),
@@ -401,8 +454,9 @@ class _SalesScreenState extends State<SalesScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 '${NumberFormatter.format(totalToday)} UZS',
-                style: AppTextStyles.displayMedium()
-                    .copyWith(color: Colors.white),
+                style: AppTextStyles.displayMedium().copyWith(
+                  color: Colors.white,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -425,27 +479,37 @@ class _SalesScreenState extends State<SalesScreen> {
     return Expanded(
       child: Column(
         children: [
-          Text(value,
-              style: AppTextStyles.titleMedium()
-                  .copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+          Text(
+            value,
+            style: AppTextStyles.titleMedium().copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label,
-              style: AppTextStyles.labelSmall()
-                  .copyWith(color: Colors.white.withValues(alpha: 0.85)),
-              textAlign: TextAlign.center),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall().copyWith(
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
   }
 
   Widget _heroDivider() => Container(
-        width: 1,
-        height: 28,
-        color: Colors.white.withValues(alpha: 0.25),
-      );
+    width: 1,
+    height: 28,
+    color: Colors.white.withValues(alpha: 0.25),
+  );
 
   Widget _buildStatusChips(
-      BuildContext context, List<SaleEntity> sales, AppLocalizations l10n) {
+    BuildContext context,
+    List<SaleEntity> sales,
+    AppLocalizations l10n,
+  ) {
     final List<Map<String, dynamic>> statuses = [
       {'id': 'all', 'label': l10n.all},
       // Status is still 'Draft' on the backend; only the user-facing
@@ -470,8 +534,8 @@ class _SalesScreenState extends State<SalesScreen> {
           final int count = id == 'all'
               ? sales.length
               : sales
-                  .where((item) => item.getStatusText().toLowerCase() == id)
-                  .length;
+                    .where((item) => item.getStatusText().toLowerCase() == id)
+                    .length;
           // Each status carries a logical colour (see _getStatusColor); the
           // "all" chip stays a neutral grey. Chips wear the colour as a soft
           // tint — the selected one deepens the fill and gains a ring.
@@ -486,7 +550,9 @@ class _SalesScreenState extends State<SalesScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: isSelected ? 0.22 : 0.12),
                   borderRadius: BorderRadius.circular(AppRadius.full),
@@ -502,8 +568,9 @@ class _SalesScreenState extends State<SalesScreen> {
                       s['label'] as String,
                       style: AppTextStyles.labelSmall().copyWith(
                         color: color,
-                        fontWeight:
-                            isSelected ? FontWeight.w800 : FontWeight.w700,
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w700,
                         letterSpacing: 0,
                         fontSize: 13,
                       ),
@@ -511,10 +578,13 @@ class _SalesScreenState extends State<SalesScreen> {
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 1),
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: color.withValues(
-                            alpha: isSelected ? 0.30 : 0.18),
+                          alpha: isSelected ? 0.30 : 0.18,
+                        ),
                         borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                       child: Text(
@@ -538,7 +608,10 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Widget _buildSaleItem(
-      BuildContext context, SaleEntity sale, AppLocalizations l10n) {
+    BuildContext context,
+    SaleEntity sale,
+    AppLocalizations l10n,
+  ) {
     final statusText = sale.getStatusText().toLowerCase();
     final statusColor = _getStatusColor(context, statusText);
     final dateStr = DateFormat('HH:mm').format(sale.createdAt);
@@ -563,12 +636,14 @@ class _SalesScreenState extends State<SalesScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                        value: context.read<SalesBloc>(),
-                        child: SaleDetailScreen(saleId: sale.id),
-                      ))),
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlocProvider.value(
+                value: context.read<SalesBloc>(),
+                child: SaleDetailScreen(saleId: sale.id),
+              ),
+            ),
+          ),
           borderRadius: BorderRadius.circular(AppRadius.lg),
           child: Opacity(
             opacity: isCancelled ? 0.65 : 1,
@@ -597,8 +672,9 @@ class _SalesScreenState extends State<SalesScreen> {
                             Expanded(
                               child: Text(
                                 sale.customerName ?? l10n.noCustomer,
-                                style: AppTextStyles.labelLarge()
-                                    .copyWith(fontSize: 14),
+                                style: AppTextStyles.labelLarge().copyWith(
+                                  fontSize: 14,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -609,11 +685,14 @@ class _SalesScreenState extends State<SalesScreen> {
                               // in the demo's refunded sale rows.
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.dangerLight,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.sm),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
                                 ),
                                 child: Text(
                                   l10n.returnAction.toUpperCase(),
@@ -625,10 +704,7 @@ class _SalesScreenState extends State<SalesScreen> {
                               ),
                             ],
                             const SizedBox(width: AppSpacing.md),
-                            Text(
-                              dateStr,
-                              style: AppTextStyles.bodySmall(),
-                            ),
+                            Text(dateStr, style: AppTextStyles.bodySmall()),
                           ],
                         ),
                         const SizedBox(height: 2),
@@ -667,15 +743,20 @@ class _SalesScreenState extends State<SalesScreen> {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: statusColor.withValues(alpha: 0.12),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.full),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.full,
+                                ),
                               ),
                               child: Text(
-                                _getStatusName(sale.getStatusText(), l10n)
-                                    .toUpperCase(),
+                                _getStatusName(
+                                  sale.getStatusText(),
+                                  l10n,
+                                ).toUpperCase(),
                                 style: AppTextStyles.caption().copyWith(
                                   color: statusColor,
                                   fontSize: 10,
@@ -705,14 +786,18 @@ class _SalesScreenState extends State<SalesScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.receipt_long_outlined,
-                  size: 64,
-                  color:
-                      context.colors.textMuted.withValues(alpha: 0.5)),
+              Icon(
+                Icons.receipt_long_outlined,
+                size: 64,
+                color: context.colors.textMuted.withValues(alpha: 0.5),
+              ),
               const SizedBox(height: AppSpacing.xl),
-              Text(l10n.noData,
-                  style: AppTextStyles.bodyMedium()
-                      .copyWith(color: context.colors.textSecondary)),
+              Text(
+                l10n.noData,
+                style: AppTextStyles.bodyMedium().copyWith(
+                  color: context.colors.textSecondary,
+                ),
+              ),
             ],
           ),
         ),
