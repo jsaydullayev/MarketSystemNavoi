@@ -23,20 +23,13 @@ class AppRoutes {
 
   // Features
   static const String products = '/products';
-  static const String productsForm = '/products-form';
   static const String sales = '/sales';
-  static const String salesForm = '/sales-form';
-  static const String dailySales = '/daily-sales';
   static const String customers = '/customers';
-  static const String customersForm = '/customers-form';
   static const String zakup = '/zakup';
-  static const String zakupForm = '/zakup-form';
   static const String reports = '/reports';
   static const String debts = '/debts';
   static const String users = '/users';
-  static const String usersForm = '/users-form';
   static const String adminProducts = '/admin-products';
-  static const String adminProductsForm = '/admin-products-form';
   static const String profile = '/profile';
   static const String privacy = '/privacy';
   static const String cashRegister = '/cash-register';
@@ -44,19 +37,12 @@ class AppRoutes {
   // Owner / SuperAdmin (or Admin granted data.auditLog) — audit-log review.
   // Plan 07 Bosqich 4.
   static const String securityJournal = '/security-journal';
-
-  // Sub-routes
-  static const String productDetail = '/products/:id';
-  static const String customerDetail = '/customers/:id';
-  static const String saleDetail = '/sales/:id';
-  static const String userDetail = '/users/:id';
-}
-
-/// Route arguments keys
-class RouteArguments {
-  static const String productId = 'product_id';
-  static const String customerId = 'customer_id';
-  static const String saleId = 'sale_id';
-  static const String userId = 'user_id';
-  static const String zakupId = 'zakup_id';
+  // AUDIT-3 — dropped 7 orphan form-route constants (productsForm,
+  // salesForm, customersForm, zakupForm, usersForm, adminProductsForm,
+  // dailySales) and 4 sub-route patterns (productDetail, customerDetail,
+  // saleDetail, userDetail). None had callers; route_generator.dart had
+  // no handlers for them either. Form screens are opened via
+  // MaterialPageRoute directly, so the named routes added nothing.
+  // Also dropped the empty RouteArguments class — no consumer ever
+  // read those keys.
 }
