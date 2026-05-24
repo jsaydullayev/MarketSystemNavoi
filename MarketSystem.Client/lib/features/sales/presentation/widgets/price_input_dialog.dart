@@ -92,6 +92,13 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     super.dispose();
   }
 
+  /// AUDIT-3 — upper bound on price/qty so a paste like `999999999999.99`
+  /// can't reach the backend's `decimal(18,2)` column and overflow, and
+  /// so a fat-finger `100000000` doesn't show up as the sale total in
+  /// the daily report. 999_999_999 covers any realistic UZS line item
+  /// (~$80k USD at 2026 rates); larger values are almost certainly typos.
+  static const double _maxAmount = 999999999;
+
   void _submit() {
     final cleanPriceText = _priceController.text
         .replaceAll(RegExp(r'\s+'), '')
@@ -102,6 +109,26 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
 
     final price = double.tryParse(cleanPriceText) ?? 0;
     final rawQty = double.tryParse(cleanQtyText) ?? 1;
+
+    // AUDIT-3 — refuse out-of-range / non-finite values before they
+    // leave the widget. The product-edit chip used to surface a raw
+    // FormatException; now we just keep the sheet open so the user can
+    // correct the input.
+    if (price < 0 ||
+        price > _maxAmount ||
+        rawQty <= 0 ||
+        rawQty > _maxAmount ||
+        !price.isFinite ||
+        !rawQty.isFinite) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.errorOccurred),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
 
     // BUG FIX: Remove truncation - allow decimal quantities for all units.
     final double qty = rawQty;
