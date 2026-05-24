@@ -271,12 +271,23 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
 
     if (confirmed == true) {
+      // AUDIT-1 — the inline zakup dialog has no Form/validator, so
+      // `double.parse` could blow up on empty / "abc" / "10,5,5" input
+      // and bubble a FormatException into the user-facing snackbar as
+      // "FormatException: Invalid double". Branch on tryParse first so
+      // we can surface a localized "wrong input" message instead.
+      final qty = double.tryParse(qtyController.text.trim().replaceAll(',', '.'));
+      final cost = double.tryParse(costController.text.trim().replaceAll(',', '.'));
+      if (qty == null || qty <= 0 || cost == null || cost <= 0) {
+        _showSnackBar(l10n.errorOccurred, AppColors.danger);
+        return;
+      }
       setState(() => _isLoading = true);
       try {
         await ZakupService(authProvider: authProvider).createZakup(
           productId: product['id'],
-          quantity: double.parse(qtyController.text),
-          costPrice: double.parse(costController.text),
+          quantity: qty,
+          costPrice: cost,
         );
         _loadProducts();
         _showSnackBar(l10n.zakupSuccess, AppColors.success);
