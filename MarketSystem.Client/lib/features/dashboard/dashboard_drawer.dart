@@ -463,6 +463,11 @@ class _DrawerHeader extends StatelessWidget {
         img,
         width: 50,
         height: 50,
+        // AUDIT-2 — downscale source rasters to ~3× display size before
+        // decoding. Without this, a camera-quality 1024×1024 avatar gets
+        // decoded at native resolution and wastes ~12 MB of GPU memory.
+        cacheWidth: 144,
+        cacheHeight: 144,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => fallback,
         loadingBuilder: (_, child, progress) =>
@@ -475,6 +480,8 @@ class _DrawerHeader extends StatelessWidget {
           base64Decode(b64),
           width: 50,
           height: 50,
+          cacheWidth: 144,
+          cacheHeight: 144,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => fallback,
         );
