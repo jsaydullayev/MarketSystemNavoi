@@ -909,6 +909,24 @@ class AppLocalizationsRu extends AppLocalizations {
       'Пожалуйста, проверьте подключение к интернету и повторите попытку';
 
   @override
+  String get debtDueLabel => 'Срок';
+
+  @override
+  String get debtOverdueBadge => 'Просрочен';
+
+  @override
+  String get debtDueToday => 'Сегодня срок';
+
+  @override
+  String get debtDueTomorrow => 'Завтра срок';
+
+  @override
+  String debtDueInDays(Object n) => 'Осталось $n дн.';
+
+  @override
+  String debtOverdueByDays(Object n) => 'Просрочка $n дн.';
+
+  @override
   String get customerDeleted => 'Клиент успешно удален';
 
   @override

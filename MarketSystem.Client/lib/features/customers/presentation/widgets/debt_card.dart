@@ -3,6 +3,7 @@ import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/features/debts/widgets/due_date_badge.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtCard extends StatelessWidget {
@@ -96,6 +97,17 @@ class DebtCard extends StatelessWidget {
               ),
             ],
           ),
+          // GAP-1 — surface the backend's nullable Debt.DueDate. We only
+          // render the chip when a real value came back; the heuristic
+          // overdue classification on the dashboard is unrelated and uses
+          // its own threshold logic.
+          if (DueDateBadge.parse(debt['dueDate']) != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: DueDateBadge(dueDate: debt['dueDate']),
+            ),
+          ],
           if (hasProducts) ...[
             const SizedBox(height: AppSpacing.lg),
             Divider(color: context.colors.borderSoft, height: 1),
