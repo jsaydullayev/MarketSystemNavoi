@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/core/widgets/error_retry_view.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -292,6 +293,22 @@ class _SalesScreenState extends State<SalesScreen> {
                           ),
                         ),
                       ],
+                    );
+                  }
+                  // D1 — explicit Error state branch. Previously the
+                  // BlocBuilder fell through to SizedBox.shrink() leaving a
+                  // blank screen after a load failure (the listener fired a
+                  // one-shot snackbar then the body had nothing to render
+                  // and no way to retry — RefreshIndicator only works when
+                  // a list is on screen).
+                  if (state is SalesError) {
+                    return RefreshIndicator(
+                      color: context.colors.brand,
+                      onRefresh: () async => _loadSales(),
+                      child: ErrorRetryView(
+                        message: state.message,
+                        onRetry: _loadSales,
+                      ),
                     );
                   }
                   return const SizedBox.shrink();

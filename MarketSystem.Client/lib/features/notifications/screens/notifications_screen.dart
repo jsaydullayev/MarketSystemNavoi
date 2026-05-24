@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/common_app_bar.dart';
+import '../../../core/widgets/error_retry_view.dart';
 import '../../../data/services/debt_service.dart';
 import '../../../data/services/notification_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
@@ -57,7 +58,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() {
       _feedFuture = _load();
     });
-    await _feedFuture.catchError((_) => const AlertFeed());
+    // D1 — keep the await tolerant so the RefreshIndicator stops
+    // spinning even on a failed fetch, but DO NOT swallow the error
+    // value back into _feedFuture — the FutureBuilder below needs the
+    // raw error to surface ErrorRetryView. This catchError builds a
+    // throwaway Future just to await on; _feedFuture itself still
+    // carries the original failure.
+    try {
+      await _feedFuture;
+    } catch (_) {
+      // surfaced by the FutureBuilder's snapshot.hasError branch
+    }
   }
 
   /// Debt alert tapped — resolve the debt by id and open its detail screen.
@@ -130,6 +141,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(
                 child: CircularProgressIndicator(color: context.colors.brand),
+              );
+            }
+            // D1 — distinguish "we couldn't load" from "you have nothing
+            // new" so the owner knows when to retry vs when to relax.
+            if (snapshot.hasError) {
+              return ErrorRetryView(
+                message: snapshot.error?.toString(),
+                onRetry: _refresh,
               );
             }
             final feed = snapshot.data ?? const AlertFeed();
