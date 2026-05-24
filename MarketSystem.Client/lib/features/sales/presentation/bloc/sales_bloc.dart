@@ -126,7 +126,12 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     );
 
     if (result.isSuccess) {
-      emit(const PaymentAdded());
+      final listResult = await getSalesUseCase();
+      if (listResult.data case final data? when listResult.isSuccess) {
+        emit(SalesLoaded(data));
+      } else {
+        emit(const PaymentAdded());
+      }
     } else {
       emit(SalesError(result.error ?? 'To\'lov qo\'shishda xatolik'));
     }
