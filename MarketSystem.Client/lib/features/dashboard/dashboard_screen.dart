@@ -70,13 +70,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             NotificationService(authProvider: auth).loadUnreadCount();
       }
     });
-    await Future.wait([
-      if (_summaryFuture case final f?)
-        f.catchError((_) => const DashboardSummary()),
-      if (_sellerSummaryFuture case final f?)
-        f.catchError((_) => const SellerDashboardSummary()),
-      if (_unreadFuture case final f?) f.catchError((_) => 0),
-    ]);
+    // D1 — wait for all fetches to finish but DO NOT collapse their
+    // results into safe empty values. Each future stays in state with
+    // its original error so the child FutureBuilders can show
+    // ErrorRetryView / _RetryBanner. The .catchError below produces
+    // throwaway Futures used only to let the RefreshIndicator's
+    // .onRefresh contract complete cleanly without an uncaught error.
+    try {
+      await Future.wait([
+        if (_summaryFuture case final f?) f.catchError((_) => const DashboardSummary()),
+        if (_sellerSummaryFuture case final f?) f.catchError((_) => const SellerDashboardSummary()),
+        if (_unreadFuture case final f?) f.catchError((_) => 0),
+      ]);
+    } catch (_) {
+      // already surfaced by the per-future builders
+    }
   }
 
   @override

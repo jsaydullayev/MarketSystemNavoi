@@ -895,6 +895,13 @@ class AppLocalizationsUz extends AppLocalizations {
   String get retry => 'Qayta urinish';
 
   @override
+  String get loadFailedTitle => 'Ma\'lumotni yuklab bo\'lmadi';
+
+  @override
+  String get loadFailedDescription =>
+      'Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog\'laning.';
+
+  @override
   String get customerDeleted => 'Mijoz muvaffaqiyatli o\'chirildi';
 
   @override

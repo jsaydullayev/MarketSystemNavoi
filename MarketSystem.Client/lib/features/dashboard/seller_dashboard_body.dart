@@ -5,6 +5,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/routes/app_routes.dart';
 import '../../data/services/dashboard_service.dart';
 import '../../design/tokens/app_tokens.dart';
+import '../../design/tokens/app_typography.dart';
 import '../../l10n/app_localizations.dart';
 import 'dashboard_widgets.dart';
 import 'shift_control_card.dart';
@@ -74,6 +75,15 @@ class SellerDashboardBody extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // D1 — surface fetch failures instead of silently
+                  // rendering an empty SellerDashboardSummary. The
+                  // RefreshIndicator's onRefresh re-runs the future, so
+                  // the banner doubles as a hint to pull-to-retry.
+                  if (snapshot.hasError)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _RetryBanner(),
+                    ),
                   if (summary.pendingDraft case final d?)
                     PendingSaleCard(
                       title: l10n.oneSaleInProgress,
@@ -166,6 +176,40 @@ class SellerDashboardBody extends StatelessWidget {
         ],
         const SizedBox(height: AppSpacing.xl2),
       ],
+    );
+  }
+}
+
+/// D1 — danger-tinted "we couldn't refresh — pull down to retry" banner.
+/// Mirrors the owner dashboard's banner so the visual language stays
+/// consistent across both roles.
+class _RetryBanner extends StatelessWidget {
+  const _RetryBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.dangerLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded,
+              size: 20, color: AppColors.danger),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              l10n.pullToRefresh,
+              style: AppTextStyles.bodySmall()
+                  .copyWith(color: AppColors.danger, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

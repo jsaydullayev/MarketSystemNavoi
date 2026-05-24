@@ -1838,6 +1838,20 @@ abstract class AppLocalizations {
   /// **'Qayta urinish'**
   String get retry;
 
+  /// D1 — shared "could not load" headline shown by `ErrorRetryView`
+  /// on any screen whose fetch failed.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotni yuklab bo\'lmadi'**
+  String get loadFailedTitle;
+
+  /// D1 — fallback subtitle when the backend didn't supply a `message`
+  /// field. Surfaces an actionable hint instead of empty space.
+  ///
+  /// In uz, this message translates to:
+  /// **'Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog\'laning.'**
+  String get loadFailedDescription;
+
   /// No description provided for @customerDeleted.
   ///
   /// In uz, this message translates to:
