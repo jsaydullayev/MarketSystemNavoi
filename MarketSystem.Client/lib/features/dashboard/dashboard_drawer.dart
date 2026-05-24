@@ -13,7 +13,6 @@ import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../l10n/app_localizations.dart';
-import '../auth/presentation/screens/login_screen.dart';
 import '../categories/screens/category_management_screen.dart';
 import '../daily_sales/screens/daily_sales_screen.dart';
 import '../products/presentation/screens/products_screen.dart';
@@ -279,12 +278,89 @@ class DashboardDrawer extends StatelessWidget {
     );
   }
 
+  /// D3 — gate the destructive logout behind a confirmation dialog so an
+  /// accidental drawer tap doesn't kick a seller out mid-shift. After the
+  /// user confirms, we call `AuthProvider.logout()` and reset the back
+  /// stack with `pushNamedAndRemoveUntil` — `pushReplacement` only swaps
+  /// the top route, so a backswipe could still land on a stale
+  /// authenticated screen with a now-cleared auth provider.
   Future<void> _handleLogout(BuildContext context) async {
+    final confirmed = await _confirmLogout(context);
+    if (confirmed != true) return;
+    if (!context.mounted) return;
     await Provider.of<AuthProvider>(context, listen: false).logout();
     if (!context.mounted) return;
-    Navigator.pushReplacement(
+    Navigator.pushNamedAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      AppRoutes.login,
+      (route) => false,
+    );
+  }
+
+  /// Returns `true` only when the user explicitly taps the danger-styled
+  /// "Tizimdan chiqish" / "Выйти" button. Tap-outside, cancel, or back
+  /// gesture all resolve to `null` and abort the logout.
+  Future<bool?> _confirmLogout(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ctx.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        title: Row(
+          children: [
+            const Icon(Icons.logout_rounded, color: AppColors.danger),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: Text(
+                l10n.logout,
+                style: AppTextStyles.titleMedium()
+                    .copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+        content: Text(
+          l10n.logoutConfirm,
+          style: AppTextStyles.bodyMedium()
+              .copyWith(color: ctx.colors.textSecondary),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              l10n.cancel,
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: ctx.colors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+            ),
+            child: Text(
+              l10n.yes,
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
