@@ -55,6 +55,18 @@ public class TenantResolutionMiddleware
             return;
         }
 
+        // SuperAdmin is cross-tenant: their JWT has no MarketId claim by design
+        // (they manage all markets, not one). Let the request pass through without
+        // tenant resolution — the controllers they're allowed to call either use
+        // the SuperAdmin console path (/api/_sa/) already skipped above, or are
+        // user-scoped operations like /Users/MyProfile that work off the JWT claims alone.
+        var roleClaim = context.User?.FindFirst(ClaimTypes.Role)?.Value;
+        if (roleClaim == "SuperAdmin")
+        {
+            await _next(context);
+            return;
+        }
+
         // Avval JWT token'dan MarketId claim ni olamiz (birinchi prioritet)
         var marketIdClaim = context.User?.FindFirst("MarketId")?.Value;
 
