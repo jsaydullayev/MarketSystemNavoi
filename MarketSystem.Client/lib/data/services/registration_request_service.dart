@@ -98,11 +98,12 @@ class RegistrationRequestService {
     } catch (_) {
       // body wasn't JSON — fall through
     }
+    // AUDIT-1 — collapse the two-pass parse into a single tryParse so an
+    // upstream change in `header` content doesn't reintroduce a race
+    // where the guard succeeds and the second parse fails.
     final header = headers['retry-after'];
-    if (header != null && int.tryParse(header) != null) {
-      return int.parse(header);
-    }
-    return 60;
+    final parsed = header != null ? int.tryParse(header) : null;
+    return parsed ?? 60;
   }
 
   String? _maybeExtractMessage(String body) {

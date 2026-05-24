@@ -22,17 +22,22 @@ class MarketModel {
 
   /// Create from JSON
   factory MarketModel.fromJson(Map<String, dynamic> json) {
+    // AUDIT-1 — same null-safety issue as ProductCategoryModel: a missing
+    // or non-numeric `id`, or a malformed `expiresAt`, would throw
+    // FormatException and crash whichever screen was deserialising the
+    // market list (SuperAdmin console).
+    final rawId = json['id'];
     return MarketModel(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      id: rawId is int ? rawId : (int.tryParse(rawId?.toString() ?? '') ?? 0),
       name: json['name'] ?? '',
       subdomain: json['subdomain'],
       description: json['description'],
       isActive: json['isActive'] ?? false,
       expiresAt: json['expiresAt'] != null
-          ? DateTime.parse(json['expiresAt'])
+          ? DateTime.tryParse(json['expiresAt'].toString())
           : null,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+          ? (DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now())
           : DateTime.now(),
     );
   }

@@ -69,8 +69,13 @@ class ProductModel {
 
   /// Convert to entity
   ProductEntity toEntity() {
+    // AUDIT-1 — `id` is stored as a String to survive Guid/non-numeric ids
+    // from the backend, but ProductEntity legacy field is int. Use tryParse
+    // with a 0 fallback so an unexpected payload (empty string from
+    // fromJson's `?? ''` fallback, or a non-numeric tenant id) doesn't
+    // crash the whole detail-screen build.
     return ProductEntity(
-      id: int.parse(id),
+      id: int.tryParse(id) ?? 0,
       name: name,
       isTemporary: isTemporary,
       costPrice: costPrice,

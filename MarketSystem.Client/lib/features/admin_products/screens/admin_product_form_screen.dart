@@ -110,19 +110,32 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       return;
     }
 
+    // AUDIT-1 — defence-in-depth tryParse. The Form validators already
+    // refuse empty / non-numeric input, but a future refactor that
+    // forgets one of the three checks would let a raw double.parse /
+    // int.parse throw a FormatException here, popping the form back to
+    // the user with no submission attempt. Re-parsing with tryParse +
+    // explicit bail-out keeps the failure mode "stay on screen with
+    // validation errors" instead of "snackbar with raw exception text".
+    final salePrice = double.tryParse(
+      _salePriceController.text.replaceAll(',', '.'),
+    );
+    final minSalePrice = double.tryParse(
+      _minSalePriceController.text.replaceAll(',', '.'),
+    );
+    final minThreshold = int.tryParse(_minThresholdController.text);
+    if (salePrice == null || minSalePrice == null || minThreshold == null) {
+      // The validator should have caught this; if we somehow got here,
+      // re-trigger validation so the user sees field-level errors.
+      _formKey.currentState!.validate();
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final productService = ProductService(authProvider: authProvider);
-
-      final salePrice = double.parse(
-        _salePriceController.text.replaceAll(',', '.'),
-      );
-      final minSalePrice = double.parse(
-        _minSalePriceController.text.replaceAll(',', '.'),
-      );
-      final minThreshold = int.parse(_minThresholdController.text);
 
       if (widget.product == null) {
         // Create new product — Admin cannot set costPrice or quantity.
@@ -346,10 +359,15 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                       if (value == null || value.trim().isEmpty) {
                         return l10n.enterMinThreshold;
                       }
-                      if (int.tryParse(value) == null) {
+                      // AUDIT-1 — call tryParse once and reuse. The old
+                      // tryParse-then-parse pattern would have crashed if
+                      // the input changed between the two calls (e.g. a
+                      // very fast paste-and-clear race).
+                      final parsed = int.tryParse(value);
+                      if (parsed == null) {
                         return l10n.enterValidNumber;
                       }
-                      if (int.parse(value) < 0) {
+                      if (parsed < 0) {
                         return l10n.numberNonNegative;
                       }
                       return null;
