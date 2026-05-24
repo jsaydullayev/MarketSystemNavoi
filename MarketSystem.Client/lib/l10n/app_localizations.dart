@@ -1866,6 +1866,49 @@ abstract class AppLocalizations {
   /// **'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring'**
   String get noInternetDescription;
 
+  /// GAP-1 — "Muddat" label rendered next to a debt's optional due date in
+  /// the detail header and customer list card. Backend exposes
+  /// `Debt.DueDate` (nullable timestamptz); when null the line is hidden.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muddat'**
+  String get debtDueLabel;
+
+  /// GAP-1 — pill rendered on a debt card when DateTime.now() has passed
+  /// the stored dueDate by 24h+ (we treat "today" as still on time).
+  ///
+  /// In uz, this message translates to:
+  /// **'Muddat o\'tgan'**
+  String get debtOverdueBadge;
+
+  /// GAP-1 — variant of [debtDueInDays] for the same-day case so the user
+  /// doesn't see a misleading "0 kun qoldi".
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun muddat'**
+  String get debtDueToday;
+
+  /// GAP-1 — variant of [debtDueInDays] for the next-day case so we render
+  /// a friendlier "Ertaga muddat" instead of "1 kun qoldi".
+  ///
+  /// In uz, this message translates to:
+  /// **'Ertaga muddat'**
+  String get debtDueTomorrow;
+
+  /// GAP-1 — "kun qoldi" countdown chip. {n} is the integer day delta
+  /// (always 2+) between today and the dueDate.
+  ///
+  /// In uz, this message translates to:
+  /// **'{n} kun qoldi'**
+  String debtDueInDays(Object n);
+
+  /// GAP-1 — overdue-by-days subtitle paired with [debtOverdueBadge] so
+  /// the owner sees how stale the debt is, not just that it's late.
+  ///
+  /// In uz, this message translates to:
+  /// **'{n} kun kechikkan'**
+  String debtOverdueByDays(Object n);
+
   /// No description provided for @customerDeleted.
   ///
   /// In uz, this message translates to:

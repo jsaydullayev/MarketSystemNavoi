@@ -4,6 +4,7 @@ import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
+import 'package:market_system_client/features/debts/widgets/due_date_badge.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class DebtSummaryHeader extends StatelessWidget {
@@ -87,6 +88,17 @@ class DebtSummaryHeader extends StatelessWidget {
               ),
             ],
           ),
+          // GAP-1 — when the backend supplied a dueDate, drop the badge
+          // directly below the chips. The widget renders nothing when the
+          // field is null (legacy debts), so the header height stays the
+          // same for any debt created before the column existed.
+          if (DueDateBadge.parse(debt['dueDate']) != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: DueDateBadge(dueDate: debt['dueDate']),
+            ),
+          ],
         ],
       ),
     );

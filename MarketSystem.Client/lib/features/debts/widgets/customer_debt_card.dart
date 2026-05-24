@@ -4,6 +4,7 @@ import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
+import 'package:market_system_client/features/debts/widgets/due_date_badge.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 class CustomerDebtCard extends StatelessWidget {
@@ -24,9 +25,30 @@ class CustomerDebtCard extends StatelessWidget {
     required this.onPay,
   });
 
+  /// GAP-1 — pick the soonest dueDate across this customer's open debts.
+  /// Returns the raw value (String or DateTime) so DueDateBadge can render
+  /// it directly. Skips closed debts since they no longer pressure the
+  /// owner to chase a payment.
+  dynamic _earliestDueDate() {
+    dynamic earliestRaw;
+    DateTime? earliestParsed;
+    for (final d in customerDebts) {
+      if (d is! Map<String, dynamic>) continue;
+      if ((d['status']?.toString() ?? '').toLowerCase() != 'open') continue;
+      final parsed = DueDateBadge.parse(d['dueDate']);
+      if (parsed == null) continue;
+      if (earliestParsed == null || parsed.isBefore(earliestParsed)) {
+        earliestParsed = parsed;
+        earliestRaw = d['dueDate'];
+      }
+    }
+    return earliestRaw;
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasDebt = remainingDebt > 0;
+    final dueRaw = _earliestDueDate();
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
@@ -56,6 +78,16 @@ class CustomerDebtCard extends StatelessWidget {
                   totalDebt: totalDebt,
                   remainingDebt: remainingDebt,
                 ),
+                // GAP-1 — single chip aggregating "soonest deadline among
+                // this customer's open debts". Hidden when no debt carries
+                // a dueDate (legacy rows or pre-feature data).
+                if (dueRaw != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: DueDateBadge(dueDate: dueRaw),
+                  ),
+                ],
                 if (hasDebt) ...[
                   const SizedBox(height: AppSpacing.lg),
                   _PayButton(onTap: onPay),

@@ -909,6 +909,24 @@ class AppLocalizationsUz extends AppLocalizations {
       'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring';
 
   @override
+  String get debtDueLabel => 'Muddat';
+
+  @override
+  String get debtOverdueBadge => 'Muddat o\'tgan';
+
+  @override
+  String get debtDueToday => 'Bugun muddat';
+
+  @override
+  String get debtDueTomorrow => 'Ertaga muddat';
+
+  @override
+  String debtDueInDays(Object n) => '$n kun qoldi';
+
+  @override
+  String debtOverdueByDays(Object n) => '$n kun kechikkan';
+
+  @override
   String get customerDeleted => 'Mijoz muvaffaqiyatli o\'chirildi';
 
   @override
