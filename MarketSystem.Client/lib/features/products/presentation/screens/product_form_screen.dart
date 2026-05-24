@@ -405,7 +405,10 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
       validator: validator,
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      style: AppTextStyles.bodyMedium().copyWith(
+        fontSize: 14,
+        color: context.colors.text,
+      ),
       decoration: _inputDecoration(hint: hint),
     );
   }
@@ -425,7 +428,10 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           : TextInputType.text,
       validator: validator,
       onChanged: (_) => setState(() {}),
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      style: AppTextStyles.bodyMedium().copyWith(
+        fontSize: 14,
+        color: context.colors.text,
+      ),
       decoration: _inputDecoration().copyWith(
         suffixText: suffix,
         suffixStyle: AppTextStyles.caption().copyWith(
@@ -490,7 +496,11 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       initialValue: safeCategory,
       isExpanded: true,
       decoration: _inputDecoration(),
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      dropdownColor: context.colors.surface,
+      style: AppTextStyles.bodyMedium().copyWith(
+        fontSize: 14,
+        color: context.colors.text,
+      ),
       icon: Icon(
         Icons.keyboard_arrow_down_rounded,
         color: context.colors.textSecondary,
@@ -529,7 +539,11 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       initialValue: safeValue,
       isExpanded: true,
       decoration: _inputDecoration(),
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      dropdownColor: context.colors.surface,
+      style: AppTextStyles.bodyMedium().copyWith(
+        fontSize: 14,
+        color: context.colors.text,
+      ),
       icon: Icon(
         Icons.keyboard_arrow_down_rounded,
         color: context.colors.textSecondary,
