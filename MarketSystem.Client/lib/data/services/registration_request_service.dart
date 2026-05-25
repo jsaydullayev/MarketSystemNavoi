@@ -24,7 +24,11 @@ enum RegistrationRequestStatus {
 }
 
 class RegistrationRequestResult {
-  RegistrationRequestResult(this.status, {this.message, this.retryAfterSeconds});
+  RegistrationRequestResult(
+    this.status, {
+    this.message,
+    this.retryAfterSeconds,
+  });
 
   final RegistrationRequestStatus status;
   final String? message;
@@ -45,10 +49,7 @@ class RegistrationRequestService {
     try {
       final response = await _http.post(
         ApiConstants.registrationRequests,
-        body: {
-          'fullName': fullName,
-          'phone': phone,
-        },
+        body: {'fullName': fullName, 'phone': phone},
       );
 
       if (response.statusCode == 200) {
@@ -90,17 +91,19 @@ class RegistrationRequestService {
   int _extractRetryAfter(String body, Map<String, String> headers) {
     try {
       final decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic> && decoded['retryAfterSeconds'] is num) {
+      if (decoded is Map<String, dynamic> &&
+          decoded['retryAfterSeconds'] is num) {
         return (decoded['retryAfterSeconds'] as num).toInt();
       }
     } catch (_) {
       // body wasn't JSON — fall through
     }
+    // AUDIT-1 — collapse the two-pass parse into a single tryParse so an
+    // upstream change in `header` content doesn't reintroduce a race
+    // where the guard succeeds and the second parse fails.
     final header = headers['retry-after'];
-    if (header != null && int.tryParse(header) != null) {
-      return int.parse(header);
-    }
-    return 60;
+    final parsed = header != null ? int.tryParse(header) : null;
+    return parsed ?? 60;
   }
 
   String? _maybeExtractMessage(String body) {

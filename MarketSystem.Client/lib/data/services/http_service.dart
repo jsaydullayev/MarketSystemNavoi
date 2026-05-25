@@ -3,24 +3,44 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/api_constants.dart';
+import '../../core/storage/token_storage.dart';
 import 'auth_service.dart';
 
 /// Carries the reason a market was administratively blocked. Surfaced through
 /// [HttpService.marketBlockedStream] so the app shell can show a dedicated
 /// "contact admin" screen on top of whichever route the user was on.
 class MarketBlockedInfo {
-  MarketBlockedInfo({
-    required this.message,
-    this.reason,
-    this.blockedAt,
-  });
+  MarketBlockedInfo({required this.message, this.reason, this.blockedAt});
 
   final String message;
   final String? reason;
   final DateTime? blockedAt;
+}
+
+/// Reasons the local session was terminated. Surfaced through
+/// [HttpService.sessionEndedStream] so the app shell can show the right
+/// recovery UX (snackbar + redirect to login) instead of dumping the user on
+/// an empty screen full of failed requests.
+enum SessionEndedReason {
+  /// Refresh-token call returned an error (or 401). Could mean the token was
+  /// rotated by the backend's reuse detector (S1 — a stolen copy was used
+  /// somewhere) OR the refresh-token row was invalidated by the K1 deploy
+  /// (every plaintext token in the DB became unreachable after we switched
+  /// to SHA-256-hashed lookups). Either way the user has to log in again.
+  refreshFailed,
+
+  /// Explicit user-initiated logout. Provided so listeners can route to
+  /// /login without distinguishing the cause.
+  loggedOut,
+}
+
+/// Emitted when local auth state must be discarded. See [SessionEndedReason].
+class SessionEndedInfo {
+  SessionEndedInfo({required this.reason});
+
+  final SessionEndedReason reason;
 }
 
 class HttpService {
@@ -50,6 +70,21 @@ class HttpService {
   static Stream<MarketBlockedInfo> get marketBlockedStream =>
       _marketBlockedController.stream;
 
+  /// G1 — broadcast when the local session ends. Fires from the 401-refresh
+  /// path when the refresh attempt itself fails (either the backend rotated
+  /// the token under us — see S1 / reuse detection — or the K1 deploy
+  /// invalidated every plaintext refresh-token row in the database, which
+  /// will happen ONCE per user the moment the backend ships).
+  ///
+  /// The app shell listens to this and routes to /login with a localized
+  /// "session ended" snackbar instead of leaving the user on whatever
+  /// dashboard / report they were viewing while every parallel request
+  /// silently 401s.
+  static final StreamController<SessionEndedInfo> _sessionEndedController =
+      StreamController<SessionEndedInfo>.broadcast();
+  static Stream<SessionEndedInfo> get sessionEndedStream =>
+      _sessionEndedController.stream;
+
   String get baseUrl => ApiConstants.baseUrl;
 
   // ── Singleton ───────────────────────────────────────────────
@@ -77,45 +112,34 @@ class HttpService {
   }
 
   // Tokenlarni saqlash
+  //
+  // FAZA 2 — both tokens now live in platform-secure storage (Keychain /
+  // EncryptedSharedPreferences) via TokenStorage. The previous version
+  // wrote them in plain SharedPreferences AND logged the first 20 chars
+  // of each — a rooted device or a stray logcat dump on dev hardware
+  // surfaced enough of the token to be a real risk. The "saved YES/NO"
+  // confirmation read was theatre (the write above had just completed
+  // synchronously); it's removed along with the token-prefix logs.
   Future<void> saveTokens(String accessToken, String refreshToken) async {
-    debugPrint('=== SAVING TOKENS ===');
-    debugPrint('Access Token: ${accessToken.substring(0, 20)}...');
-    debugPrint('Refresh Token: ${refreshToken.substring(0, 20)}...');
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', accessToken);
-    await prefs.setString('refresh_token', refreshToken);
+    await TokenStorage.instance.save(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
     _accessToken = accessToken;
-
-    // Tekshirish: saqlanganni o'qib ko'ramiz
-    final saved = prefs.getString('access_token');
-    debugPrint('Token saved: ${saved != null ? "YES" : "NO"}');
-    debugPrint('====================');
   }
 
   Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    _accessToken = prefs.getString('access_token');
-
-    if (_accessToken != null) {
-      debugPrint(
-          '✅ Token from SharedPreferences: ${_accessToken!.substring(0, 20)}...');
-    } else {
-      debugPrint('❌ NO TOKEN FOUND!');
-    }
+    _accessToken = await TokenStorage.instance.readAccess();
     return _accessToken;
   }
 
   Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('refresh_token');
+    return TokenStorage.instance.readRefresh();
   }
 
   // Tokenlarni tozalash
   Future<void> clearTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
-    await prefs.remove('refresh_token');
+    await TokenStorage.instance.clear();
     _accessToken = null;
   }
 
@@ -128,14 +152,17 @@ class HttpService {
       final parts = token.split('.');
       if (parts.length != 3) return false;
       final payload = jsonDecode(
-          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      );
       final exp = payload is Map ? payload['exp'] : null;
       if (exp is! int) return false;
-      final expiry =
-          DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
-      return DateTime.now()
-          .toUtc()
-          .isAfter(expiry.subtract(const Duration(seconds: 15)));
+      final expiry = DateTime.fromMillisecondsSinceEpoch(
+        exp * 1000,
+        isUtc: true,
+      );
+      return DateTime.now().toUtc().isAfter(
+        expiry.subtract(const Duration(seconds: 15)),
+      );
     } catch (_) {
       return false;
     }
@@ -168,8 +195,11 @@ class HttpService {
 
   // ✅ 401 xatolikni qayta ishlash va token refresh
   Future<http.Response> _handleResponse(
-      http.Response response, String method, String endpoint,
-      {Object? body}) async {
+    http.Response response,
+    String method,
+    String endpoint, {
+    Object? body,
+  }) async {
     // 423 Locked = market was blocked by a SuperAdmin. The session is now
     // unusable — wipe tokens so the user can't keep retrying on a doomed
     // JWT, and emit the reason so the app shell can pop to a block screen.
@@ -180,7 +210,8 @@ class HttpService {
       try {
         final decoded = jsonDecode(response.body) as Map<String, dynamic>;
         info = MarketBlockedInfo(
-          message: decoded['message'] as String? ??
+          message:
+              decoded['message'] as String? ??
               'Do\'kon administrator tomonidan bloklangan.',
           reason: decoded['reason'] as String?,
           blockedAt: decoded['blockedAt'] is String
@@ -227,21 +258,40 @@ class HttpService {
   }
 
   Future<bool> _doRefresh() async {
+    bool succeeded = false;
     try {
       final refreshed = await _authService?.refreshToken();
-      return refreshed != null;
+      succeeded = refreshed != null;
+      return succeeded;
     } catch (e) {
       debugPrint('HttpService._doRefresh error: $e');
       return false;
     } finally {
       // Clear so a later (post-batch) expiry can trigger a fresh refresh.
       _refreshInFlight = null;
+      // G1 — emit ONCE per failed refresh, not once per waiting request. The
+      // single-flight gate above means every concurrent 401 awaited THIS
+      // Future, so firing the event here keeps listeners from receiving a
+      // duplicate "session ended" event for every parallel call. The first
+      // listener (AuthProvider) navigates to /login and clears state;
+      // subsequent listeners are idempotent.
+      if (!succeeded) {
+        // Wipe any stale local copies so a navigator pop back to a protected
+        // route can't re-authorize with the dead token.
+        await clearTokens();
+        _sessionEndedController.add(
+          SessionEndedInfo(reason: SessionEndedReason.refreshFailed),
+        );
+      }
     }
   }
 
   // So'rovni qayta yuborish
   Future<http.Response> _retryRequest(
-      String method, String endpoint, Object? body) async {
+    String method,
+    String endpoint,
+    Object? body,
+  ) async {
     final token = await getAccessToken();
 
     switch (method.toUpperCase()) {
@@ -308,21 +358,24 @@ class HttpService {
     debugPrint('=== HTTP GET ===');
     debugPrint('URL: $baseUrl$endpoint');
     debugPrint(
-        'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}');
+      'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}',
+    );
     debugPrint('================');
 
-    return http.get(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
-    ).timeout(
-      const Duration(seconds: 30),
-      onTimeout: () {
-        throw Exception('Request timeout after 30 seconds');
-      },
-    );
+    return http
+        .get(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        )
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Request timeout after 30 seconds');
+          },
+        );
   }
 
   // POST request
@@ -338,23 +391,26 @@ class HttpService {
     debugPrint('=== HTTP POST ===');
     debugPrint('URL: $baseUrl$endpoint');
     debugPrint(
-        'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}');
+      'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}',
+    );
     debugPrint('Body: $encodedBody');
     debugPrint('================');
 
-    return http.post(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
-      body: encodedBody,
-    ).timeout(
-      const Duration(seconds: 30),
-      onTimeout: () {
-        throw Exception('Request timeout after 30 seconds');
-      },
-    );
+    return http
+        .post(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: encodedBody,
+        )
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Request timeout after 30 seconds');
+          },
+        );
   }
 
   // PUT request
@@ -375,7 +431,8 @@ class HttpService {
       debugPrint('Body: $encodedBody');
     } else if (body != null) {
       debugPrint(
-          'Body length: ${encodedBody?.length ?? 0} bytes (too large to display)');
+        'Body length: ${encodedBody?.length ?? 0} bytes (too large to display)',
+      );
     }
     debugPrint('================');
 
@@ -390,12 +447,14 @@ class HttpService {
         });
         request.body = encodedBody;
 
-        final streamedResponse = await client.send(request).timeout(
-          const Duration(seconds: 60),
-          onTimeout: () {
-            throw Exception('Request timeout after 60 seconds');
-          },
-        );
+        final streamedResponse = await client
+            .send(request)
+            .timeout(
+              const Duration(seconds: 60),
+              onTimeout: () {
+                throw Exception('Request timeout after 60 seconds');
+              },
+            );
         final response = await http.Response.fromStream(streamedResponse);
         return response;
       } finally {
@@ -403,19 +462,21 @@ class HttpService {
       }
     }
 
-    return http.put(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      },
-      body: encodedBody,
-    ).timeout(
-      const Duration(seconds: 60),
-      onTimeout: () {
-        throw Exception('Request timeout after 60 seconds');
-      },
-    );
+    return http
+        .put(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+          body: encodedBody,
+        )
+        .timeout(
+          const Duration(seconds: 60),
+          onTimeout: () {
+            throw Exception('Request timeout after 60 seconds');
+          },
+        );
   }
 
   // DELETE request (optionally with a JSON body — used by the SuperAdmin
@@ -497,9 +558,7 @@ class HttpService {
     );
 
     // Add headers - use addAll instead of direct assignment
-    request.headers.addAll({
-      'Authorization': 'Bearer $token',
-    });
+    request.headers.addAll({'Authorization': 'Bearer $token'});
 
     // Add file
     final fileStream = http.ByteStream(file.openRead());
@@ -543,9 +602,7 @@ class HttpService {
 
       final response = await http.get(
         Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
+        headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );
 
       // 401 xatolikni handle qilish

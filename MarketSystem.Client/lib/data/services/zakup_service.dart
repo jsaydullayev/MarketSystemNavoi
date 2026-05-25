@@ -1,25 +1,30 @@
 import 'dart:convert';
 
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class ZakupService {
   final AuthProvider authProvider;
   final HttpService _httpService;
 
   ZakupService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   Future<List<dynamic>> getAllZakups() async {
-    final response = await _httpService.get('${ApiConstants.zakups}/GetAllZakups');
+    final response = await _httpService.get(
+      '${ApiConstants.zakups}/GetAllZakups',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load zakups: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load zakups',
+      );
     }
   }
 
@@ -34,21 +39,29 @@ class ZakupService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to load zakups: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load zakups',
+      );
     }
   }
 
-  Future<List<dynamic>> getZakupsByDateRange(DateTime start, DateTime end) async {
-    // TODO: hoist into ApiConstants as `zakupsByDateRange(start, end)` helper.
+  Future<List<dynamic>> getZakupsByDateRange(
+    DateTime start,
+    DateTime end,
+  ) async {
     final response = await _httpService.get(
-      '${ApiConstants.zakups}/GetZakupsByDateRange/by-date?start=${start.toIso8601String()}&end=${end.toIso8601String()}',
+      ApiConstants.zakupsByDateRange(start, end),
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load zakups by date: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load zakups by date',
+      );
     }
   }
 
@@ -69,13 +82,14 @@ class ZakupService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to create zakup: ${response.body}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to create zakup',
+      );
     }
   }
 
   Future<List<int>?> downloadZakupsExcel() async {
-    // TODO: hoist into ApiConstants as `zakupsExportExcel` constant.
-    return await _httpService
-        .downloadBytes('${ApiConstants.zakups}/ExportZakupsToExcel/export');
+    return await _httpService.downloadBytes(ApiConstants.zakupsExportExcel);
   }
 }

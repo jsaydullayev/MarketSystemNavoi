@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
+import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
 import 'http_service.dart';
-import '../../core/constants/api_constants.dart';
 import '../models/profit_model.dart';
 
 class ReportService {
@@ -11,8 +12,7 @@ class ReportService {
   final HttpService _httpService;
 
   ReportService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   // Get comprehensive report
   Future<Map<String, dynamic>> getComprehensiveReport(DateTime date) async {
@@ -24,20 +24,10 @@ class ReportService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load report: ${response.statusCode}');
-    }
-  }
-
-  // Export comprehensive report to Excel
-  Future<void> exportComprehensiveToExcel(DateTime date) async {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-    final response = await _httpService.get(
-      '${ApiConstants.reports}/comprehensive/export?date=$formattedDate',
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to export report: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load report',
+      );
     }
   }
 
@@ -51,7 +41,10 @@ class ReportService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load daily report: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load daily report',
+      );
     }
   }
 
@@ -67,21 +60,10 @@ class ReportService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load period report: ${response.statusCode}');
-    }
-  }
-
-  // Export period report to Excel
-  Future<void> exportPeriodReportToExcel(DateTime start, DateTime end) async {
-    final startDate = DateFormat('yyyy-MM-dd').format(start);
-    final endDate = DateFormat('yyyy-MM-dd').format(end);
-
-    final response = await _httpService.get(
-      '${ApiConstants.reports}/period/export?start=$startDate&end=$endDate',
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to export report: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load period report',
+      );
     }
   }
 
@@ -102,11 +84,13 @@ class ReportService {
         throw Exception('Null response body');
       }
       return ProfitSummaryModel.fromJson(decoded as Map<String, dynamic>);
-    } else if (response.statusCode == 403) {
-      throw Exception('Sizga bu ma\'lumotni ko\'rish huquqi yo\'q');
-    } else {
-      throw Exception('Failed to load profit summary: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: response.statusCode == 403
+          ? 'Sizga bu ma\'lumotni ko\'rish huquqi yo\'q'
+          : 'Failed to load profit summary',
+    );
   }
 
   // Get cash balance - Owner only
@@ -117,11 +101,13 @@ class ReportService {
 
     if (response.statusCode == 200) {
       return CashBalanceModel.fromJson(jsonDecode(response.body));
-    } else if (response.statusCode == 403) {
-      throw Exception('Sizga bu ma\'lumotni ko\'rish huquqi yo\'q');
-    } else {
-      throw Exception('Failed to load cash balance: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: response.statusCode == 403
+          ? 'Sizga bu ma\'lumotni ko\'rish huquqi yo\'q'
+          : 'Failed to load cash balance',
+    );
   }
 
   // Get daily sales list - Role-based filtering
@@ -134,7 +120,10 @@ class ReportService {
     if (response.statusCode == 200) {
       return DailySalesListModel.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to load daily sales list: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load daily sales list',
+      );
     }
   }
 
@@ -153,26 +142,16 @@ class ReportService {
       if (data == null) return [];
       final items = data['saleItems'] as List<dynamic>? ?? [];
       return items.map((item) => item as Map<String, dynamic>).toList();
-    } else if (response.statusCode == 403) {
-      throw Exception('Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin');
-    } else if (response.statusCode == 401) {
-      throw Exception('Avtorizatsiya xatosi: Tizimga qayta kiring');
-    } else {
-      throw Exception('Kunlik savdo detallarini yuklashda xatolik: ${response.statusCode}');
     }
-  }
-
-  // Kunlik hisobotni Excel ga export qilish (kunlik hisobot + sotuvlar ro'yxati + mahsulotlar bo'yicha)
-  Future<void> exportDailyReportToExcel(DateTime date) async {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-    final response = await _httpService.get(
-      '${ApiConstants.reports}/daily/export?date=$formattedDate',
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: switch (response.statusCode) {
+        403 =>
+          'Ruxsat yo\'q: Faqat Admin va Owner foydalanuvchilari hisobotlarni ko\'rishi mumkin',
+        401 => 'Avtorizatsiya xatosi: Tizimga qayta kiring',
+        _ => 'Kunlik savdo detallarini yuklashda xatolik',
+      },
     );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to export daily report: ${response.statusCode}');
-    }
   }
 
   /// Download the daily report as raw Excel bytes so the caller can save/open
@@ -182,19 +161,6 @@ class ReportService {
     return await _httpService.downloadBytes(
       '${ApiConstants.reports}/daily/export?date=$formattedDate',
     );
-  }
-
-  // Ombor hisobotini Excel ga export qilish
-  Future<void> exportInventoryReportToExcel(DateTime date) async {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-    final response = await _httpService.get(
-      '${ApiConstants.reports}/inventory/export?date=$formattedDate',
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to export inventory report: ${response.statusCode}');
-    }
   }
 
   // ---------------------------------------------------------------------------
@@ -214,7 +180,10 @@ class ReportService {
   /// the equally-sized window immediately before the current one. The
   /// ChartCard footer uses it to display a "↑/↓ X% vs last week" delta
   /// without a second round-trip.
-  Future<WeeklySeries> getWeeklySeries({int days = 7, bool compare = false}) async {
+  Future<WeeklySeries> getWeeklySeries({
+    int days = 7,
+    bool compare = false,
+  }) async {
     final response = await _httpService.get(
       '${ApiConstants.reports}/weekly-series?days=$days&compare=$compare',
     );
@@ -224,12 +193,15 @@ class ReportService {
         return const WeeklySeries(points: [], currentTotal: 0);
       }
       return WeeklySeries.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>);
-    } else if (response.statusCode == 403) {
-      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
-    } else {
-      throw Exception('Failed to load weekly series: ${response.statusCode}');
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: response.statusCode == 403
+          ? "Sizga bu ma'lumotni ko'rish huquqi yo'q"
+          : 'Failed to load weekly series',
+    );
   }
 
   /// Top-N products in the selected period, ranked by quantity / revenue /
@@ -250,12 +222,15 @@ class ReportService {
         return TopProducts(period: period, sortBy: sortBy, items: const []);
       }
       return TopProducts.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>);
-    } else if (response.statusCode == 403) {
-      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
-    } else {
-      throw Exception('Failed to load top products: ${response.statusCode}');
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: response.statusCode == 403
+          ? "Sizga bu ma'lumotni ko'rish huquqi yo'q"
+          : 'Failed to load top products',
+    );
   }
 
   /// Per-staff sales metrics for the period. Backs the Users list "BUGUN
@@ -271,13 +246,15 @@ class ReportService {
         return StaffPerformance(period: period, staff: const []);
       }
       return StaffPerformance.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>);
-    } else if (response.statusCode == 403) {
-      throw Exception("Sizga bu ma'lumotni ko'rish huquqi yo'q");
-    } else {
-      throw Exception(
-          'Failed to load staff performance: ${response.statusCode}');
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: response.statusCode == 403
+          ? "Sizga bu ma'lumotni ko'rish huquqi yo'q"
+          : 'Failed to load staff performance',
+    );
   }
 
   /// Current user's own sales metrics for the period. Backs the Seller
@@ -293,11 +270,13 @@ class ReportService {
         return MyPerformance.empty(period);
       }
       return MyPerformance.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>);
-    } else {
-      throw Exception(
-          'Failed to load my performance: ${response.statusCode}');
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to load my performance',
+    );
   }
 }
 
@@ -359,8 +338,11 @@ class WeeklySeries {
   /// higher). Returns null when there's no previous-period data, or when the
   /// previous total is zero (division-by-zero would yield ±infinity).
   double? get deltaPercent {
-    if (previousTotal == null || previousTotal == 0) return null;
-    return ((currentTotal - previousTotal!) / previousTotal!) * 100;
+    // Snapshot once — `previousTotal` is a nullable field on this class,
+    // so reading it twice would re-fetch (and not promote).
+    final prev = previousTotal;
+    if (prev == null || prev == 0) return null;
+    return ((currentTotal - prev) / prev) * 100;
   }
 
   factory WeeklySeries.fromJson(Map<String, dynamic> json) {
@@ -392,11 +374,11 @@ class DailyPoint {
   final int checkCount;
 
   factory DailyPoint.fromJson(Map<String, dynamic> json) => DailyPoint(
-        date: _asDate(json['date']),
-        revenue: _asDouble(json['revenue']),
-        profit: _asDouble(json['profit']),
-        checkCount: _asInt(json['checkCount']),
-      );
+    date: _asDate(json['date']),
+    revenue: _asDouble(json['revenue']),
+    profit: _asDouble(json['profit']),
+    checkCount: _asInt(json['checkCount']),
+  );
 }
 
 /// Mirrors `TopProductsDto { string Period, string SortBy, List<TopProductRow> Items }`.
@@ -449,15 +431,15 @@ class TopProductRow {
   final double? profit;
 
   factory TopProductRow.fromJson(Map<String, dynamic> json) => TopProductRow(
-        rank: _asInt(json['rank']),
-        productId: (json['productId'] ?? '').toString(),
-        name: (json['name'] ?? '').toString(),
-        category: (json['category'] ?? '').toString(),
-        sellers: _asInt(json['sellers']),
-        quantity: _asDouble(json['quantity']),
-        revenue: _asDouble(json['revenue']),
-        profit: _asDoubleOrNull(json['profit']),
-      );
+    rank: _asInt(json['rank']),
+    productId: (json['productId'] ?? '').toString(),
+    name: (json['name'] ?? '').toString(),
+    category: (json['category'] ?? '').toString(),
+    sellers: _asInt(json['sellers']),
+    quantity: _asDouble(json['quantity']),
+    revenue: _asDouble(json['revenue']),
+    profit: _asDoubleOrNull(json['profit']),
+  );
 }
 
 /// Mirrors `StaffPerformanceDto { string Period, List<StaffRow> Staff }`.
@@ -506,16 +488,16 @@ class StaffRow {
   final bool isActiveShift;
 
   factory StaffRow.fromJson(Map<String, dynamic> json) => StaffRow(
-        rank: _asInt(json['rank']),
-        userId: (json['userId'] ?? '').toString(),
-        fullName: (json['fullName'] ?? '').toString(),
-        role: (json['role'] ?? '').toString(),
-        saleCount: _asInt(json['saleCount']),
-        revenue: _asDouble(json['revenue']),
-        averageCheck: _asDouble(json['averageCheck']),
-        shiftCount: _asInt(json['shiftCount']),
-        isActiveShift: json['isActiveShift'] == true,
-      );
+    rank: _asInt(json['rank']),
+    userId: (json['userId'] ?? '').toString(),
+    fullName: (json['fullName'] ?? '').toString(),
+    role: (json['role'] ?? '').toString(),
+    saleCount: _asInt(json['saleCount']),
+    revenue: _asDouble(json['revenue']),
+    averageCheck: _asDouble(json['averageCheck']),
+    shiftCount: _asInt(json['shiftCount']),
+    isActiveShift: json['isActiveShift'] == true,
+  );
 }
 
 /// Mirrors `MyPerformanceDto { string Period, string UserId, string FullName,
@@ -534,15 +516,15 @@ class MyPerformance {
   });
 
   factory MyPerformance.empty(String period) => MyPerformance(
-        period: period,
-        userId: '',
-        fullName: '',
-        saleCount: 0,
-        revenue: 0,
-        averageCheck: 0,
-        firstSaleAt: null,
-        shiftDurationMinutes: 0,
-      );
+    period: period,
+    userId: '',
+    fullName: '',
+    saleCount: 0,
+    revenue: 0,
+    averageCheck: 0,
+    firstSaleAt: null,
+    shiftDurationMinutes: 0,
+  );
 
   final String period;
   final String userId;

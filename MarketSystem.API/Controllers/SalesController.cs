@@ -18,13 +18,15 @@ public class SalesController : ControllerBase
     private readonly ILogger<SalesController> _logger;
     private readonly IReportService _reportService;
     private readonly IExcelService _excelService;
+    private readonly ITashkentClock _clock;
 
-    public SalesController(ISaleService saleService, ILogger<SalesController> logger, IReportService reportService, IExcelService excelService)
+    public SalesController(ISaleService saleService, ILogger<SalesController> logger, IReportService reportService, IExcelService excelService, ITashkentClock clock)
     {
         _saleService = saleService;
         _logger = logger;
         _reportService = reportService;
         _excelService = excelService;
+        _clock = clock;
     }
 
     [HttpGet("{id}")]
@@ -211,13 +213,21 @@ public class SalesController : ControllerBase
 
     [HttpPost("{saleId}/cancel")]
     [RequirePermission(PermissionKeys.SalesDelete)]
-    public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, [FromBody] CancelSaleDto request, CancellationToken ct = default)
+    public async Task<ActionResult<SaleDto>> CancelSale(Guid saleId, CancellationToken ct = default)
     {
+        // CRITICAL: the actor on the audit row MUST be the authenticated
+        // caller — taken from the JWT, never from a client-supplied body.
+        // The previous version accepted `{ adminId }` and trusted it
+        // verbatim, so anyone with sales.delete could forge another admin's
+        // id into the audit chain. We read the claim and drop the DTO.
+        if (!Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var adminId))
+            return Unauthorized();
+
         try
         {
-            _logger.LogInformation("CancelSale called - Sale ID: {SaleId}, Admin ID: {AdminId}", saleId, request.AdminId);
+            _logger.LogInformation("CancelSale called - Sale ID: {SaleId}, Admin ID: {AdminId}", saleId, adminId);
 
-            var sale = await _saleService.CancelSaleAsync(saleId, request.AdminId);
+            var sale = await _saleService.CancelSaleAsync(saleId, adminId, ct);
             if (sale is null)
                 return NotFound();
 
@@ -389,7 +399,7 @@ public class SalesController : ControllerBase
             return File(
                 fileContent,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                $"{sheetName}_{_clock.NowLocal:yyyyMMdd_HHmmss}.xlsx"
             );
         }
         catch (Exception ex)
@@ -418,7 +428,7 @@ public class SalesController : ControllerBase
             return File(
                 pdfBytes,
                 "application/pdf",
-                $"Sotuvlar_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+                $"Sotuvlar_{_clock.NowLocal:yyyyMMdd_HHmmss}.pdf"
             );
         }
         catch (InvalidOperationException ex)
@@ -479,7 +489,7 @@ public class SalesController : ControllerBase
             var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole, lang);
 
             var sale = await _saleService.GetSaleByIdAsync(id);
-            var fileName = $"Faktura_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            var fileName = $"Faktura_{id}_{_clock.NowLocal:yyyyMMdd_HHmmss}.pdf";
 
             _logger.LogInformation("Invoice generated successfully for sale {SaleId}", id);
 

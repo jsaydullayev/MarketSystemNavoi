@@ -108,7 +108,7 @@ public class RbacEnforcementTests
             typeof(CustomersController), typeof(ProductCategoriesController),
             typeof(ZakupsController), typeof(UsersController),
             typeof(DebtsController), typeof(CashRegisterController),
-            typeof(ReportsController),
+            typeof(ReportsController), typeof(AuditLogsController),
         };
 
         var ungated = new List<string>();

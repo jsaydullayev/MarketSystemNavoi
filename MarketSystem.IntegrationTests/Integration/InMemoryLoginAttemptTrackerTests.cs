@@ -1,0 +1,138 @@
+using MarketSystem.Application.Interfaces;
+using MarketSystem.Application.Services;
+using FluentAssertions;
+using Xunit;
+
+namespace MarketSystem.IntegrationTests.Integration;
+
+/// <summary>
+/// Unit tests for the brute-force tracker (Plan 05 Bosqich 3). No DbContext
+/// or DI — the tracker is pure in-memory state, so each test gets a fresh
+/// instance.
+/// </summary>
+public class InMemoryLoginAttemptTrackerTests
+{
+    private const int Threshold = 5; // mirror the constant inside the impl
+
+    [Fact]
+    public void GetLockedUntilUtc_UnknownUsername_ReturnsNull()
+    {
+        var tracker = new InMemoryLoginAttemptTracker();
+
+        tracker.GetLockedUntilUtc("nobody").Should().BeNull();
+    }
+
+    [Fact]
+    public void RecordFailure_BelowThreshold_DoesNotLock()
+    {
+        var tracker = new InMemoryLoginAttemptTracker();
+
+        for (var i = 1; i < Threshold; i++)
+        {
+            var result = tracker.RecordFailure("bob");
+            result.FailureCount.Should().Be(i);
+            result.LockedUntilUtc.Should().BeNull();
+        }
+
+        tracker.GetLockedUntilUtc("bob").Should().BeNull();
+    }
+
+    [Fact]
+    public void RecordFailure_AtThreshold_LocksAccount()
+    {
+        var tracker = new InMemoryLoginAttemptTracker();
+
+        LoginFailureResult? last = null;
+        for (var i = 0; i < Threshold; i++)
+            last = tracker.RecordFailure("alice");
+
+        last!.FailureCount.Should().Be(Threshold);
+        last.LockedUntilUtc.Should().NotBeNull();
+        last.LockedUntilUtc.Should().BeAfter(DateTime.UtcNow);
+
+        // Subsequent IsLocked call must agree.
+        tracker.GetLockedUntilUtc("alice").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void RecordFailure_AfterLock_DoesNotExtendIt()
+    {
+        var tracker = new InMemoryLoginAttemptTracker();
+
+        for (var i = 0; i < Threshold; i++)
+            tracker.RecordFailure("carol");
+        var firstLockUntil = tracker.GetLockedUntilUtc("carol")!.Value;
+
+        // Hammer the account — would-be attacker keeps trying.
+        for (var i = 0; i < 10; i++)
+            tracker.RecordFailure("carol");
+
+        // The lock end time must NOT have advanced. Otherwise an attacker
+        // could keep a legitimate user permanently locked out.
+        var lockAfterAbuse = tracker.GetLockedUntilUtc("carol")!.Value;
+        lockAfterAbuse.Should().Be(firstLockUntil);
+
+        // And the threshold-triggering "just locked" signal is one-shot:
+        // re-firing RecordFailure on an already-locked account must NOT
+        // resurface LockedUntilUtc (otherwise the caller would re-throw on
+        // every attempt, not just the one that tripped the lock).
+        var followUp = tracker.RecordFailure("carol");
+        followUp.LockedUntilUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void RecordSuccess_ClearsFailureHistory()
+    {
+        var tracker = new InMemoryLoginAttemptTracker();
+
+        // One typo doesn't deserve a slow march toward lockout.
+        for (var i = 0; i < Threshold - 1; i++)
+            tracker.RecordFailure("dave");
+
+        tracker.RecordSuccess("dave");
+
+        // A fresh failure starts from 1, not from Threshold-1 + 1 = Threshold.
+        var afterReset = tracker.RecordFailure("dave");
+        afterReset.FailureCount.Should().Be(1);
+        afterReset.LockedUntilUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetLockedUntilUtc_UsernameCasing_IsCaseInsensitive()
+    {
+        // The auth stack stores usernames lowercase — the tracker key must
+        // collapse the same way so "Bob"/"bob" can't bypass the lock.
+        var tracker = new InMemoryLoginAttemptTracker();
+        for (var i = 0; i < Threshold; i++)
+            tracker.RecordFailure("MixedCase");
+
+        tracker.GetLockedUntilUtc("mixedcase").Should().NotBeNull();
+        tracker.GetLockedUntilUtc("MIXEDCASE").Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void RecordFailure_EmptyUsername_IsNoOp(string? username)
+    {
+        var tracker = new InMemoryLoginAttemptTracker();
+
+        var result = tracker.RecordFailure(username!);
+
+        result.FailureCount.Should().Be(0);
+        result.LockedUntilUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void OneUsernameLocked_DoesNotAffectAnother()
+    {
+        var tracker = new InMemoryLoginAttemptTracker();
+
+        for (var i = 0; i < Threshold; i++)
+            tracker.RecordFailure("victim");
+
+        tracker.GetLockedUntilUtc("victim").Should().NotBeNull();
+        tracker.GetLockedUntilUtc("bystander").Should().BeNull();
+    }
+}

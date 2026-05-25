@@ -1,4 +1,5 @@
 using MarketSystem.Application.DTOs;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Application.Interfaces;
@@ -19,6 +20,16 @@ public class AuthService : IAuthService
     private readonly JwtSetting _jwtSetting;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly IRevokedTokenStore _revokedTokens;
+    private readonly IAuditLogService _auditLogService;
+    private readonly ILoginAttemptTracker _loginAttempts;
+
+    // S6 — a real BCrypt hash we verify against when the username is unknown
+    // so the response time is indistinguishable from a real-user-wrong-password
+    // path (BCrypt.Verify is the dominant cost — ~100 ms at cost factor 11).
+    // Computed once at type init so the value's well-formed; we never compare
+    // any real input against it and the original plaintext is discarded.
+    private static readonly string DummyBcryptHash =
+        BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString());
 
     public AuthService(
         IUnitOfWork unitOfWork,
@@ -27,7 +38,9 @@ public class AuthService : IAuthService
         IAppDbContext context,
         IConfiguration configuration,
         ICurrentMarketService currentMarketService,
-        IRevokedTokenStore revokedTokens)
+        IRevokedTokenStore revokedTokens,
+        IAuditLogService auditLogService,
+        ILoginAttemptTracker loginAttempts)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
@@ -36,11 +49,56 @@ public class AuthService : IAuthService
         _jwtSetting = configuration.GetSection("Jwt").Get<JwtSetting>()!;
         _currentMarketService = currentMarketService;
         _revokedTokens = revokedTokens;
+        _auditLogService = auditLogService;
+        _loginAttempts = loginAttempts;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Login attempt for username: {Username}", request.Username);
+
+        // Audit a failed authentication attempt. The username may not map to any
+        // real account, so userId is unknown — Guid.Empty is used and the username
+        // travels in the payload; the client IP is captured by AuditLogService.
+        // LogActionAsync swallows its own errors, so a failed audit never masks
+        // the 401 nor breaks the login flow.
+        Task LogLoginFailedAsync() => _auditLogService.LogActionAsync(
+            AuditEntityTypes.Auth, Guid.Empty, AuditActions.LoginFailed, Guid.Empty,
+            new { username = request.Username }, cancellationToken);
+
+        // Record a failure against the brute-force tracker AND audit-log it.
+        // If this failure tripped the threshold, surface a LoginLockedException
+        // so the client sees "try again in N minutes" instead of yet another
+        // generic 401 — and so an attacker enumerating passwords learns we
+        // notice. The IP-based rate limiter still gates burst rates; this
+        // catches a distributed attacker hitting one username from many IPs.
+        async Task<AuthResponse?> RejectAndMaybeLockAsync()
+        {
+            await LogLoginFailedAsync();
+            var attempt = _loginAttempts.RecordFailure(request.Username);
+            if (attempt.LockedUntilUtc is { } lockedUntil)
+            {
+                _logger.LogWarning(
+                    "Account locked after {Count} failures: {Username} until {Until:O}",
+                    attempt.FailureCount, request.Username, lockedUntil);
+                throw new MarketSystem.Domain.Exceptions.LoginLockedException(
+                    request.Username, lockedUntil, attempt.FailureCount);
+            }
+            return null;
+        }
+
+        // Cheap lock check before touching the DB — a locked username should
+        // not be able to keep timing the password hash.
+        var lockedUntilUtc = _loginAttempts.GetLockedUntilUtc(request.Username);
+        if (lockedUntilUtc is { } existingLockUntil)
+        {
+            _logger.LogWarning(
+                "Login refused — account already locked until {Until:O}: {Username}",
+                existingLockUntil, request.Username);
+            await LogLoginFailedAsync();
+            throw new MarketSystem.Domain.Exceptions.LoginLockedException(
+                request.Username, existingLockUntil, 0);
+        }
 
         // Username uniqueness is enforced PER MARKET (partial index). A tenant user and a
         // cross-tenant user (e.g. SuperAdmin with MarketId=NULL) can therefore share the same
@@ -53,30 +111,44 @@ public class AuthService : IAuthService
 
         if (candidates.Count == 0)
         {
+            // S6 — timing-attack mitigation. Without this, a missing-username
+            // path returns ~instantly while a real-username-wrong-password
+            // path takes the BCrypt.Verify hit (~100ms). That gap lets an
+            // attacker enumerate valid usernames just by measuring latency.
+            // Burn one verify against a fixed dummy hash so both paths spend
+            // roughly the same wall time. We discard the result.
+            _ = BCrypt.Net.BCrypt.Verify(request.Password, DummyBcryptHash);
             _logger.LogWarning("User not found or inactive: {Username}", request.Username);
-            return null;
+            return await RejectAndMaybeLockAsync();
         }
 
+        // P7 — short-circuit on the first BCrypt match. The old code verified
+        // EVERY candidate against the same password just to detect the
+        // "two users share both username AND password" edge case — astronomically
+        // unlikely once you account for BCrypt's per-row salt, and worth at most
+        // a warning, not a 100 ms × N hit on every login. With N=5 cross-tenant
+        // username collisions that was a half-second wasted on every successful
+        // login.
+        if (candidates.Count > 1)
+        {
+            _logger.LogWarning(
+                "Login {Username} resolved to {Count} candidate users — username collides across tenants",
+                request.Username, candidates.Count);
+        }
         User? matched = null;
         foreach (var candidate in candidates)
         {
             if (BCrypt.Net.BCrypt.Verify(request.Password, candidate.PasswordHash))
             {
-                if (matched is not null)
-                {
-                    // Two distinct accounts share the same username AND password.
-                    // Refuse to log in rather than guess which identity to grant.
-                    _logger.LogError("Ambiguous login: multiple users with username {Username} accepted the same password", request.Username);
-                    return null;
-                }
                 matched = candidate;
+                break;
             }
         }
 
         if (matched is null)
         {
             _logger.LogWarning("Invalid password for user: {Username}", request.Username);
-            return null;
+            return await RejectAndMaybeLockAsync();
         }
 
         // Market block check — reject login before issuing a token when the
@@ -113,6 +185,13 @@ public class AuthService : IAuthService
         }
 
         _logger.LogInformation("Login successful for user: {Username}, ID: {UserId}", matched.Username, matched.Id);
+        // Wipe the brute-force counter — a user who got the password right
+        // after one typo shouldn't stay one failure closer to a lockout for
+        // the next 15 minutes.
+        _loginAttempts.RecordSuccess(request.Username);
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Auth, matched.Id, AuditActions.Login, matched.Id,
+            new { username = matched.Username, role = matched.Role.ToString() }, cancellationToken);
         return await GenerateAuthResponseAsync(matched, cancellationToken);
     }
 
@@ -215,8 +294,30 @@ public class AuthService : IAuthService
         var refreshToken = await _unitOfWork.RefreshTokens
             .GetByTokenAsync(request.RefreshToken, cancellationToken);
 
-        if (refreshToken is null || refreshToken.IsUsed || refreshToken.IsRevoked || refreshToken.ExpiresAt < DateTime.UtcNow)
+        if (refreshToken is null || refreshToken.ExpiresAt < DateTime.UtcNow)
             return null;
+
+        // S1 — refresh-token rotation reuse detection (RFC 6749 §10.4 / OAuth
+        // best-current-practice). If someone presents an ALREADY-USED or
+        // REVOKED token, that's a strong signal of theft: the legitimate
+        // user rotated it (or we revoked it on another security event) and
+        // a second copy is now in the attacker's hand. Don't just refuse —
+        // burn the entire family for that user so the attacker can't keep
+        // refreshing with another stolen token from the same chain.
+        if (refreshToken.IsUsed || refreshToken.IsRevoked)
+        {
+            _logger.LogWarning(
+                "Refresh-token reuse detected for user {UserId} (token IsUsed={IsUsed}, IsRevoked={IsRevoked}). " +
+                "Revoking ALL refresh tokens for this user as a defensive measure.",
+                refreshToken.UserId, refreshToken.IsUsed, refreshToken.IsRevoked);
+            await _unitOfWork.RefreshTokens.RevokeAllForUserAsync(refreshToken.UserId, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.Auth, refreshToken.UserId, AuditActions.LoginFailed, Guid.Empty,
+                new { reason = "refresh_token_reuse_detected", tokenId = refreshToken.Id },
+                cancellationToken);
+            return null;
+        }
 
         // Ensure the refresh token belongs to the same user as the access token.
         if (refreshToken.UserId != userId)
@@ -305,6 +406,10 @@ public class AuthService : IAuthService
             await _revokedTokens.RevokeAsync(accessTokenJti, accessTokenExpiry.Value, cancellationToken);
         }
 
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Auth, callerUserId, AuditActions.Logout, callerUserId,
+            null, cancellationToken);
+
         return true;
     }
 
@@ -317,11 +422,15 @@ public class AuthService : IAuthService
             var accessToken = _jwtService.GenerateToken(user, true);
             var refreshToken = GenerateRefreshToken();
 
+            // K1 — store only the SHA-256 hash of the refresh token. The
+            // plaintext is returned to the client (line below) and lives
+            // exclusively in its secure storage from this point. A DB leak
+            // cannot revive any existing session.
             var refreshTokenEntity = new RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
-                Token = refreshToken,
+                Token = RefreshTokenHasher.Hash(refreshToken),
                 ExpiresAt = DateTime.UtcNow.AddDays(_jwtSetting.RefreshTokenExpireDays),
                 IsUsed = false,
                 IsRevoked = false

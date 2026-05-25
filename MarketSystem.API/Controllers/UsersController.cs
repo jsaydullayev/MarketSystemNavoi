@@ -18,12 +18,22 @@ public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IAuditLogService _auditLogService;
 
-    public UsersController(IUserService userService, ICurrentMarketService currentMarketService)
+    public UsersController(
+        IUserService userService,
+        ICurrentMarketService currentMarketService,
+        IAuditLogService auditLogService)
     {
         _userService = userService;
         _currentMarketService = currentMarketService;
+        _auditLogService = auditLogService;
     }
+
+    /// <summary>The authenticated caller's user id, taken from the JWT — recorded
+    /// as the actor on audit entries. Guid.Empty if the claim is somehow absent.</summary>
+    private Guid CurrentUserId() =>
+        Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : Guid.Empty;
 
     [HttpGet("{id}")]
     [RequirePermission(PermissionKeys.UsersAccess)]
@@ -81,6 +91,9 @@ public class UsersController : ControllerBase
         try
         {
             var user = await _userService.CreateUserAsync(request);
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, user.Id, AuditActions.Create, CurrentUserId(),
+                new { user.Username, user.Role, user.FullName });
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
         catch (InvalidOperationException ex)
@@ -102,6 +115,10 @@ public class UsersController : ControllerBase
             if (user is null)
                 return NotFound();
 
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, user.Id, AuditActions.Update, CurrentUserId(),
+                new { user.Username, user.Role, user.IsActive });
+
             return Ok(user);
         }
         catch (InvalidOperationException ex)
@@ -122,6 +139,18 @@ public class UsersController : ControllerBase
             var user = await _userService.UpdateProfileAsync(userId, request);
             if (user is null)
                 return NotFound();
+
+            // Y1 — audit-log profile updates. PasswordChange is the
+            // security-critical case (a successful change of password is a
+            // forensic event); FullName-only edits are still recorded but
+            // tagged distinctly so review queries can filter.
+            var passwordChanged = !string.IsNullOrWhiteSpace(request.CurrentPassword)
+                                  && !string.IsNullOrWhiteSpace(request.NewPassword);
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, userId,
+                passwordChanged ? AuditActions.PasswordChange : AuditActions.Update,
+                CurrentUserId(),
+                new { user.Username, fullNameChanged = !string.IsNullOrWhiteSpace(request.FullName), passwordChanged });
 
             return Ok(user);
         }
@@ -217,6 +246,14 @@ public class UsersController : ControllerBase
             if (user is null)
                 return NotFound();
 
+            // Y1 — profile image change is a low-risk event but still a
+            // user-initiated mutation; include it in the journal so the
+            // timeline of every "what changed on this account" is complete.
+            // Payload is intentionally just a flag — never log the base64.
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, userId, AuditActions.ProfileImageUpdate, userId,
+                new { imageSet = !string.IsNullOrEmpty(request.ProfileImage) });
+
             return Ok(user);
         }
         catch (UnauthorizedAccessException ex)
@@ -244,6 +281,9 @@ public class UsersController : ControllerBase
         if (!result)
             return NotFound();
 
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.User, id, AuditActions.Delete, CurrentUserId());
+
         return NoContent();
     }
 
@@ -255,6 +295,9 @@ public class UsersController : ControllerBase
         if (!result)
             return NotFound();
 
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.User, id, AuditActions.Deactivate, CurrentUserId());
+
         return Ok(new { message = "User deactivated" });
     }
 
@@ -265,6 +308,9 @@ public class UsersController : ControllerBase
         var result = await _userService.ActivateUserAsync(id);
         if (!result)
             return NotFound();
+
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.User, id, AuditActions.Activate, CurrentUserId());
 
         return Ok(new { message = "User activated" });
     }
@@ -282,6 +328,13 @@ public class UsersController : ControllerBase
             var user = await _userService.UpdateShiftAsync(id, request);
             if (user is null)
                 return NotFound();
+
+            // Y1 — shift status changes are an admin-restricted operation that
+            // gates a seller's ability to log in at all. Audit so the journal
+            // shows who blocked / unblocked whom and when.
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.User, id, AuditActions.ShiftChange, CurrentUserId(),
+                new { request.Status, request.StartUtc, request.EndUtc });
 
             return Ok(user);
         }
@@ -318,9 +371,23 @@ public class UsersController : ControllerBase
     {
         try
         {
+            // Snapshot the effective set BEFORE the change so the audit record
+            // shows exactly what was granted/revoked, not merely the final state.
+            var before = await _userService.GetUserPermissionsAsync(id);
+
             var permissions = await _userService.UpdateUserPermissionsAsync(id, request);
             if (permissions is null)
                 return NotFound();
+
+            await _auditLogService.LogActionAsync(
+                AuditEntityTypes.Permission, id, AuditActions.PermissionChange, CurrentUserId(),
+                new
+                {
+                    targetUserId = id,
+                    before = before?.EffectivePermissions,
+                    after = permissions.EffectivePermissions,
+                    isCustomized = permissions.IsCustomized
+                });
 
             return Ok(permissions);
         }

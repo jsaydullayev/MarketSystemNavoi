@@ -65,10 +65,17 @@ public abstract class TestBase : IDisposable
     {
         var services = new ServiceCollection();
 
-        // In-memory database
+        // In-memory database — share ONE store across every DbContext
+        // resolved from this TestBase's ServiceProvider. The previous form
+        // (`$"...{Guid.NewGuid()}"` inline) re-evaluated inside the options
+        // callback each time a DbContext was constructed, so a sub-scope
+        // (e.g. one opened by DbRevokedTokenStore via IServiceScopeFactory)
+        // ended up talking to a completely different in-memory store than
+        // the test fixture's DbContext.
+        var databaseName = $"MarketSystemTest_{Guid.NewGuid()}";
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseInMemoryDatabase(databaseName: $"MarketSystemTest_{Guid.NewGuid()}");
+            options.UseInMemoryDatabase(databaseName: databaseName);
             options.EnableSensitiveDataLogging();
             options.EnableDetailedErrors();
             // InMemory has no real transactions; the service code uses
@@ -92,6 +99,10 @@ public abstract class TestBase : IDisposable
         services.AddScoped(_ => CashRegisterServiceLoggerMock.Object);
         services.AddScoped(_ => CurrentMarketServiceMock.Object);
         services.AddScoped(_ => AuditLogServiceMock.Object);
+        // AppDbContext is registered by AddDbContext above; expose it under
+        // the IAppDbContext interface too so services that resolve via
+        // IServiceScopeFactory (e.g. DbRevokedTokenStore) can find it.
+        services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
         ServiceProvider = services.BuildServiceProvider();
 
@@ -106,7 +117,7 @@ public abstract class TestBase : IDisposable
         var clock = new TashkentClock(SharedTashkentTimeZone);
         CustomerService = new CustomerService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, httpContextAccessorMock.Object);
         SaleService = new SaleService(unitOfWork, AuditLogServiceMock.Object, DbContext, SaleServiceLoggerMock.Object, CurrentMarketServiceMock.Object, CustomerService);
-        CashRegisterService = new CashRegisterService(unitOfWork, CashRegisterServiceLoggerMock.Object, DbContext, CurrentMarketServiceMock.Object, clock);
+        CashRegisterService = new CashRegisterService(unitOfWork, CashRegisterServiceLoggerMock.Object, DbContext, CurrentMarketServiceMock.Object, clock, AuditLogServiceMock.Object);
 
         // Seed test data
         SeedTestData();

@@ -57,7 +57,11 @@ class CustomTextField extends StatelessWidget {
           inputFormatters: inputFormatters,
           style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20, color: context.colors.textSecondary),
+            prefixIcon: Icon(
+              icon,
+              size: 20,
+              color: context.colors.textSecondary,
+            ),
             filled: true,
             fillColor: context.colors.inputFill,
             contentPadding: const EdgeInsets.symmetric(
@@ -74,8 +78,7 @@ class CustomTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
-              borderSide:
-                  BorderSide(color: context.colors.brand, width: 1.5),
+              borderSide: BorderSide(color: context.colors.brand, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
@@ -87,10 +90,10 @@ class CustomTextField extends StatelessWidget {
             ),
           ),
         ),
-        if (helperText != null) ...[
+        if (helperText case final helper?) ...[
           const SizedBox(height: AppSpacing.xs + 2),
           Text(
-            helperText!,
+            helper,
             style: AppTextStyles.bodySmall().copyWith(
               color: context.colors.textMuted,
               fontSize: 12,

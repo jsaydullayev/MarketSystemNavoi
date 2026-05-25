@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:market_system_client/core/errors/api_exception.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
@@ -37,14 +38,18 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
 
   double get _remaining => (widget.debt['remainingDebt'] as num).toDouble();
   double get _entered =>
-      double.tryParse(_amountController.text.replaceAll(',', '.').replaceAll(' ', '')) ?? 0;
+      double.tryParse(
+        _amountController.text.replaceAll(',', '.').replaceAll(' ', ''),
+      ) ??
+      0;
 
   @override
   void initState() {
     super.initState();
     final val = _remaining;
-    _amountController.text =
-        val == val.truncateToDouble() ? val.toInt().toString() : val.toString();
+    _amountController.text = val == val.truncateToDouble()
+        ? val.toInt().toString()
+        : val.toString();
     _amountController.addListener(() {
       if (_errorMessage != null) {
         setState(() => _errorMessage = null);
@@ -101,11 +106,28 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
           ),
         );
       }
+    } on ApiException catch (e) {
+      // G5 — branch on the structured envelope. K3 added Xmin on
+      // Debt.RemainingDebt; a parallel payment by another seller now lands
+      // here as 409 ConflictException. Show the dedicated "data was changed"
+      // message and trigger a refresh up the tree so the user sees the
+      // current RemainingDebt before they retry.
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.isConflict
+              ? l10n.concurrentChangeError
+              : (e.message.isNotEmpty ? e.message : l10n.error);
+        });
+        if (e.isConflict) widget.onSuccess(); // triggers refresh of parent list
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = ErrorParser.parse(e.toString());
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = ErrorParser.parse(e.toString());
+        });
+      }
     }
   }
 
@@ -115,7 +137,9 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
     final remaining = _remaining;
     final entered = _entered;
     final isOverpay = entered > remaining && entered > 0;
-    final newBalance = (remaining - entered).clamp(0, double.infinity).toDouble();
+    final newBalance = (remaining - entered)
+        .clamp(0, double.infinity)
+        .toDouble();
 
     return Container(
       decoration: BoxDecoration(
@@ -164,31 +188,40 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
               const SizedBox(height: AppSpacing.md),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.warningLight,
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                  border:
-                      Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded,
-                        color: AppColors.warning, size: 16),
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      color: AppColors.warning,
+                      size: 16,
+                    ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         l10n.payingTooMuchWarning(
-                            NumberFormatter.format(entered - remaining)),
-                        style: AppTextStyles.bodySmall()
-                            .copyWith(color: AppColors.warning, fontSize: 12),
+                          NumberFormatter.format(entered - remaining),
+                        ),
+                        style: AppTextStyles.bodySmall().copyWith(
+                          color: AppColors.warning,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-            if (_errorMessage != null) ...[
+            if (_errorMessage case final msg?) ...[
               const SizedBox(height: AppSpacing.md),
               Container(
                 width: double.infinity,
@@ -200,12 +233,15 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.error_outline_rounded,
-                        color: AppColors.danger, size: 18),
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: AppColors.danger,
+                      size: 18,
+                    ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
-                        _errorMessage!,
+                        msg,
                         style: AppTextStyles.bodySmall().copyWith(
                           color: AppColors.danger,
                           fontWeight: FontWeight.w500,
@@ -214,8 +250,11 @@ class _PayDebtBottomSheetState extends State<PayDebtBottomSheet> {
                     ),
                     GestureDetector(
                       onTap: () => setState(() => _errorMessage = null),
-                      child: const Icon(Icons.close_rounded,
-                          color: AppColors.danger, size: 16),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.danger,
+                        size: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -275,8 +314,7 @@ class _CustomerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = CustomerAvatarPalette.pick(name);
-    final initial =
-        name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
+    final initial = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -339,7 +377,11 @@ class _BalanceCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _Row(label: l10n.totalDebt, value: NumberFormatter.format(remaining), currency: l10n.currencySom),
+          _Row(
+            label: l10n.totalDebt,
+            value: NumberFormatter.format(remaining),
+            currency: l10n.currencySom,
+          ),
           const SizedBox(height: AppSpacing.sm),
           Container(height: 1, color: Colors.white.withValues(alpha: 0.2)),
           const SizedBox(height: AppSpacing.sm),
@@ -381,14 +423,13 @@ class _Row extends StatelessWidget {
         ),
         Text(
           '$value $currency',
-          style: (isBig
-                  ? AppTextStyles.titleLarge()
-                  : AppTextStyles.bodyMedium())
-              .copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.4,
-          ),
+          style:
+              (isBig ? AppTextStyles.titleLarge() : AppTextStyles.bodyMedium())
+                  .copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
         ),
       ],
     );
@@ -396,8 +437,10 @@ class _Row extends StatelessWidget {
 }
 
 class _PayAmountInput extends StatelessWidget {
-  const _PayAmountInput(
-      {required this.controller, required this.currencyLabel});
+  const _PayAmountInput({
+    required this.controller,
+    required this.currencyLabel,
+  });
   final TextEditingController controller;
   final String currencyLabel;
 
@@ -405,7 +448,9 @@ class _PayAmountInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         color: context.colors.brandLight,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -428,8 +473,9 @@ class _PayAmountInput extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                   ],
@@ -513,7 +559,9 @@ class _QuickButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(AppRadius.md + 2),

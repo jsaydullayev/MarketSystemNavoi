@@ -109,7 +109,7 @@ class AlertFeed {
 
 class NotificationService {
   NotificationService({HttpService? httpService, AuthProvider? authProvider})
-      : _http = httpService ?? authProvider?.httpService ?? HttpService();
+    : _http = httpService ?? authProvider?.httpService ?? HttpService();
 
   final HttpService _http;
 
@@ -158,8 +158,8 @@ class NotificationService {
       } else {
         // Hide debts older than the recent window so the "recent" bucket
         // doesn't double-count with overdue — overdue items only.
-        if (d.createdAt != null) {
-          final age = now.difference(d.createdAt!).inDays;
+        if (d.createdAt case final createdAt?) {
+          final age = now.difference(createdAt).inDays;
           if (age <= _recentWindowDays) recent.add(d);
         } else {
           recent.add(d);
@@ -228,30 +228,31 @@ class NotificationService {
       final created = _parseDate(d['createdAt']);
       final dueDate = _parseDate(d['dueDate']);
       final customerName = (d['customerName'] ?? '').toString().trim();
-      final ageDays =
-          created == null ? 0 : now.difference(created).inDays;
+      final ageDays = created == null ? 0 : now.difference(created).inDays;
 
       // Prefer the explicit dueDate from the backend; fall back to the
       // 14-day heuristic for legacy debts that predate the migration.
       final isOverdue = dueDate != null
           ? now.isAfter(dueDate)
           : ageDays >= _overdueAfterDays;
-      items.add(AlertItem(
-        category: isOverdue
-            ? AlertCategory.overduePayment
-            : AlertCategory.recentDebt,
-        // Customer fallback ("Mijoz" / "Клиент") will be filled by the UI
-        // layer when title is empty — keeping it untranslated here.
-        title: customerName.isEmpty ? '' : customerName,
-        subjectId: (d['id'] ?? '').toString(),
-        amount: remaining.toDouble(),
-        createdAt: created,
-        // Age in days — the UI uses it for both the recent ("Bugun · …" /
-        // "Сегодня · …" when fresh) and the overdue ("Qarz N kunda" /
-        // "Долг N дней назад") description lines, picking the right
-        // wording in the active locale.
-        ageDays: ageDays,
-      ));
+      items.add(
+        AlertItem(
+          category: isOverdue
+              ? AlertCategory.overduePayment
+              : AlertCategory.recentDebt,
+          // Customer fallback ("Mijoz" / "Клиент") will be filled by the UI
+          // layer when title is empty — keeping it untranslated here.
+          title: customerName.isEmpty ? '' : customerName,
+          subjectId: (d['id'] ?? '').toString(),
+          amount: remaining.toDouble(),
+          createdAt: created,
+          // Age in days — the UI uses it for both the recent ("Bugun · …" /
+          // "Сегодня · …" when fresh) and the overdue ("Qarz N kunda" /
+          // "Долг N дней назад") description lines, picking the right
+          // wording in the active locale.
+          ageDays: ageDays,
+        ),
+      );
     }
     // Newest first for recent, oldest first for overdue.
     items.sort((a, b) {
@@ -274,7 +275,9 @@ class NotificationService {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  Future<List<AlertItem>> _safeList(Future<List<AlertItem>> Function() fn) async {
+  Future<List<AlertItem>> _safeList(
+    Future<List<AlertItem>> Function() fn,
+  ) async {
     try {
       return await fn();
     } catch (e) {

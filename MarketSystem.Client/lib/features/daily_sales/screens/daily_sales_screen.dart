@@ -39,19 +39,22 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
   /// service) — the rule is tiny and the user expects this to react instantly
   /// without refetching from the API.
   List<DailySalesListItemModel> get _visibleSales {
-    if (_dailySales == null) return const [];
+    // Snapshot the field so Dart can promote it to non-null below; field
+    // accesses don't survive the early-return guard otherwise.
+    final dailySales = _dailySales;
+    if (dailySales == null) return const [];
     switch (_filter) {
       case DailySaleFilter.all:
-        return _dailySales!.sales;
+        return dailySales.sales;
       case DailySaleFilter.paid:
         // "Paid" in the UI bucket means any fully-paid sale, including a
         // debt-on-record that was later closed by the customer.
-        return _dailySales!.sales.where((s) {
+        return dailySales.sales.where((s) {
           final st = s.status.toLowerCase();
           return st == 'paid' || st == 'closed';
         }).toList();
       case DailySaleFilter.debt:
-        return _dailySales!.sales
+        return dailySales.sales
             .where((s) => s.status.toLowerCase() == 'debt')
             .toList();
     }
@@ -95,9 +98,9 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: context.colors.brand,
-                ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: context.colors.brand),
           ),
           child: child!,
         );
@@ -119,14 +122,22 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       builder: (sheetCtx) => SafeArea(
         child: Container(
           margin: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xl),
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
           decoration: BoxDecoration(
             color: context.colors.surface,
             borderRadius: BorderRadius.circular(AppRadius.xl),
             border: Border.all(color: context.colors.border),
           ),
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.lg),
+            AppSpacing.xl,
+            AppSpacing.xl,
+            AppSpacing.xl,
+            AppSpacing.lg,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,9 +190,18 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       // PDF endpoint accepts a date range; collapse it to a single day.
       final bytes = await salesService.downloadSalesPdf(
         startDate: DateTime(
-            _selectedDate.year, _selectedDate.month, _selectedDate.day),
-        endDate: DateTime(_selectedDate.year, _selectedDate.month,
-            _selectedDate.day, 23, 59, 59),
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+        ),
+        endDate: DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          23,
+          59,
+          59,
+        ),
         lang: lang,
       );
       if (!mounted) return;
@@ -224,7 +244,9 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       if (!mounted) return;
       _toast(
         ok
-            ? (kIsWeb ? 'Excel fayli yuklanmoqda...' : 'Excel saqlandi va ochildi')
+            ? (kIsWeb
+                  ? 'Excel fayli yuklanmoqda...'
+                  : 'Excel saqlandi va ochildi')
             : 'Excel saqlashda xatolik',
         success: ok,
       );
@@ -256,9 +278,10 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
       builder: (_) => SizedBox(
         height: 200,
         child: Center(
-            child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand),
-        )),
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand),
+          ),
+        ),
       ),
     );
 
@@ -281,8 +304,9 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Xatolik: $e'),
-              backgroundColor: AppColors.danger),
+            content: Text('Xatolik: $e'),
+            backgroundColor: AppColors.danger,
+          ),
         );
       }
     }
@@ -310,20 +334,22 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(context.colors.brand),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          context.colors.brand,
+                        ),
                       ),
                     )
-                  : Icon(Icons.ios_share_rounded,
-                      color: context.colors.brand),
+                  : Icon(Icons.ios_share_rounded, color: context.colors.brand),
               onPressed: (_isExporting || _dailySales == null)
                   ? null
                   : _showExportSheet,
             ),
             IconButton(
               tooltip: 'Kalendar',
-              icon: Icon(Icons.calendar_month_rounded,
-                  color: context.colors.brand),
+              icon: Icon(
+                Icons.calendar_month_rounded,
+                color: context.colors.brand,
+              ),
               onPressed: _selectDate,
             ),
           ],
@@ -347,18 +373,17 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.lg, horizontal: AppSpacing.xl),
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.xl,
+      ),
       decoration: BoxDecoration(
         color: context.colors.surface,
-        border: Border(
-          bottom: BorderSide(color: context.colors.borderSoft),
-        ),
+        border: Border(bottom: BorderSide(color: context.colors.borderSoft)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.event_available,
-              size: 18, color: context.colors.brand),
+          Icon(Icons.event_available, size: 18, color: context.colors.brand),
           const SizedBox(width: AppSpacing.md),
           Text(
             DateFormat('dd MMMM, yyyy').format(_selectedDate),
@@ -372,43 +397,63 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
   Widget _buildBody(BuildContext context, AppLocalizations l10n) {
     if (_isLoading) {
       return Center(
-          child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand)));
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand),
+        ),
+      );
     }
 
-    if (_error != null) {
+    // Snapshot the nullable state fields into locals so every later branch
+    // is type-checked as non-null without `!` round-trips.
+    final error = _error;
+    if (error != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_off_rounded,
-                size: 60, color: context.colors.textMuted),
+            Icon(
+              Icons.cloud_off_rounded,
+              size: 60,
+              color: context.colors.textMuted,
+            ),
             const SizedBox(height: AppSpacing.xl),
-            Text(_error!,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium()),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium(),
+            ),
             TextButton(
-                onPressed: _loadDailySales,
-                child: Text(l10n.loading,
-                    style: AppTextStyles.labelLarge()
-                        .copyWith(color: context.colors.brand))),
+              onPressed: _loadDailySales,
+              child: Text(
+                l10n.loading,
+                style: AppTextStyles.labelLarge().copyWith(
+                  color: context.colors.brand,
+                ),
+              ),
+            ),
           ],
         ),
       );
     }
 
-    if (_dailySales == null || _dailySales!.sales.isEmpty) {
+    final dailySales = _dailySales;
+    if (dailySales == null || dailySales.sales.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.receipt_long_outlined,
-                size: 80,
-                color: context.colors.textMuted.withValues(alpha: 0.4)),
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 80,
+              color: context.colors.textMuted.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: AppSpacing.xl),
-            Text(l10n.noData,
-                style: AppTextStyles.bodyMedium()
-                    .copyWith(color: context.colors.textSecondary)),
+            Text(
+              l10n.noData,
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
           ],
         ),
       );
@@ -424,12 +469,12 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
         padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
           DailySummaryCard(
-            data: _dailySales!,
+            data: dailySales,
             selectedFilter: _filter,
             onFilterChanged: (f) => setState(() => _filter = f),
           ),
           const SizedBox(height: AppSpacing.lg),
-          HourlyChart(sales: _dailySales!.sales),
+          HourlyChart(sales: dailySales.sales),
           const SizedBox(height: AppSpacing.xl),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -447,12 +492,15 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                           setState(() => _filter = DailySaleFilter.all),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md, vertical: 3),
+                          horizontal: AppSpacing.md,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: _filterColor(context, _filter)
-                              .withValues(alpha: 0.14),
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.full),
+                          color: _filterColor(
+                            context,
+                            _filter,
+                          ).withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -465,9 +513,11 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            Icon(Icons.close_rounded,
-                                size: 12,
-                                color: _filterColor(context, _filter)),
+                            Icon(
+                              Icons.close_rounded,
+                              size: 12,
+                              color: _filterColor(context, _filter),
+                            ),
                           ],
                         ),
                       ),
@@ -477,7 +527,9 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: 4),
+                  horizontal: AppSpacing.md,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: context.colors.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.full),
@@ -498,18 +550,13 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl3),
               child: Center(
-                child: Text(
-                  l10n.noData,
-                  style: AppTextStyles.bodySmall(),
-                ),
+                child: Text(l10n.noData, style: AppTextStyles.bodySmall()),
               ),
             )
           else
             ...visible.map(
-              (sale) => SaleListRow(
-                sale: sale,
-                onTap: () => _showSaleDetails(sale),
-              ),
+              (sale) =>
+                  SaleListRow(sale: sale, onTap: () => _showSaleDetails(sale)),
             ),
           const SizedBox(height: 100),
         ],
@@ -564,7 +611,9 @@ class _ExportOption extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.lg,
+          ),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -589,8 +638,7 @@ class _ExportOption extends StatelessWidget {
                   children: [
                     Text(
                       label,
-                      style:
-                          AppTextStyles.labelLarge().copyWith(fontSize: 14),
+                      style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
                     ),
                     const SizedBox(height: 2),
                     Text(

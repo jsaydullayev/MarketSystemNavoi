@@ -44,11 +44,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       foregroundColor: fg,
       surfaceTintColor: Colors.transparent,
       leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 20,
-          color: fg,
-        ),
+        icon: Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: fg),
         // maybePop respects any PopScope registered upstream (e.g. the
         // "save as draft?" prompt in Yangi sotuv). Navigator.pop bypasses
         // those guards and would silently lose in-progress work.
@@ -58,7 +54,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       scrolledUnderElevation: 0,
       bottom: bottom,
       actions: [
-        if (extraActions != null) ...extraActions!,
+        if (extraActions case final actions?) ...actions,
         if (onRefresh != null)
           IconButton(
             icon: Icon(Icons.refresh, color: fg),

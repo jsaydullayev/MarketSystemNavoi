@@ -18,8 +18,10 @@ class CustomerRepositoryImpl implements CustomerRepositoryInterface {
       final data = await remoteDataSource.getAllCustomers();
 
       final customers = data
-          .map((customerJson) =>
-              CustomerEntity.fromJson(customerJson as Map<String, dynamic>))
+          .map(
+            (customerJson) =>
+                CustomerEntity.fromJson(customerJson as Map<String, dynamic>),
+          )
           .toList();
 
       return ApiResult.success(customers);
@@ -95,7 +97,9 @@ class CustomerRepositoryImpl implements CustomerRepositoryInterface {
   }
 
   @override
-  Future<ApiResult<List<Map<String, dynamic>>>> getCustomerDebts(String customerId) async {
+  Future<ApiResult<List<Map<String, dynamic>>>> getCustomerDebts(
+    String customerId,
+  ) async {
     try {
       final data = await remoteDataSource.getCustomerDebts(customerId);
       return ApiResult.success(data);

@@ -17,7 +17,8 @@ class LocaleProvider with ChangeNotifier {
     final languageCode = prefs.getString(_localeKey) ?? 'uz';
 
     // Validate and fix invalid language codes
-    final validLanguageCode = (languageCode == 'uz' || languageCode == 'ru' || languageCode == 'en')
+    final validLanguageCode =
+        (languageCode == 'uz' || languageCode == 'ru' || languageCode == 'en')
         ? languageCode
         : 'uz';
 
@@ -27,7 +28,10 @@ class LocaleProvider with ChangeNotifier {
 
   Future<void> setLocale(String languageCode) async {
     // Validate and fix invalid language codes
-    if (languageCode.isEmpty || (languageCode != 'uz' && languageCode != 'ru' && languageCode != 'en')) {
+    if (languageCode.isEmpty ||
+        (languageCode != 'uz' &&
+            languageCode != 'ru' &&
+            languageCode != 'en')) {
       languageCode = 'uz'; // Default to Uzbek if invalid
     }
 

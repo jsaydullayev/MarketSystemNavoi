@@ -1,7 +1,17 @@
+import 'package:json_annotation/json_annotation.dart';
+import 'package:market_system_client/core/utils/json_converters.dart';
+
+part 'profit_model.g.dart';
+
+@JsonSerializable()
 class ProfitSummaryModel {
+  @FlexibleDoubleConverter()
   final double todayProfit;
+  @FlexibleDoubleConverter()
   final double weekProfit;
+  @FlexibleDoubleConverter()
   final double monthProfit;
+  @FlexibleDoubleConverter()
   final double totalProfit;
 
   ProfitSummaryModel({
@@ -11,35 +21,19 @@ class ProfitSummaryModel {
     required this.totalProfit,
   });
 
-  factory ProfitSummaryModel.fromJson(Map<String, dynamic> json) {
-    return ProfitSummaryModel(
-      todayProfit: json['todayProfit'] != null
-          ? (json['todayProfit'] is num
-              ? (json['todayProfit'] as num).toDouble()
-              : double.tryParse(json['todayProfit'].toString()) ?? 0.0)
-          : 0.0,
-      weekProfit: json['weekProfit'] != null
-          ? (json['weekProfit'] is num
-              ? (json['weekProfit'] as num).toDouble()
-              : double.tryParse(json['weekProfit'].toString()) ?? 0.0)
-          : 0.0,
-      monthProfit: json['monthProfit'] != null
-          ? (json['monthProfit'] is num
-              ? (json['monthProfit'] as num).toDouble()
-              : double.tryParse(json['monthProfit'].toString()) ?? 0.0)
-          : 0.0,
-      totalProfit: json['totalProfit'] != null
-          ? (json['totalProfit'] is num
-              ? (json['totalProfit'] as num).toDouble()
-              : double.tryParse(json['totalProfit'].toString()) ?? 0.0)
-          : 0.0,
-    );
-  }
+  factory ProfitSummaryModel.fromJson(Map<String, dynamic> json) =>
+      _$ProfitSummaryModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ProfitSummaryModelToJson(this);
 }
 
+@JsonSerializable()
 class CashBalanceModel {
+  @FlexibleDoubleConverter()
   final double cashInRegister;
+  @FlexibleDoubleConverter()
   final double cardPayments;
+  @FlexibleDoubleConverter()
   final double totalBalance;
 
   CashBalanceModel({
@@ -48,34 +42,27 @@ class CashBalanceModel {
     required this.totalBalance,
   });
 
-  factory CashBalanceModel.fromJson(Map<String, dynamic> json) {
-    return CashBalanceModel(
-      cashInRegister: json['cashInRegister'] != null
-          ? (json['cashInRegister'] is num
-              ? (json['cashInRegister'] as num).toDouble()
-              : double.tryParse(json['cashInRegister'].toString()) ?? 0.0)
-          : 0.0,
-      cardPayments: json['cardPayments'] != null
-          ? (json['cardPayments'] is num
-              ? (json['cardPayments'] as num).toDouble()
-              : double.tryParse(json['cardPayments'].toString()) ?? 0.0)
-          : 0.0,
-      totalBalance: json['totalBalance'] != null
-          ? (json['totalBalance'] is num
-              ? (json['totalBalance'] as num).toDouble()
-              : double.tryParse(json['totalBalance'].toString()) ?? 0.0)
-          : 0.0,
-    );
-  }
+  factory CashBalanceModel.fromJson(Map<String, dynamic> json) =>
+      _$CashBalanceModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CashBalanceModelToJson(this);
 }
 
+@JsonSerializable()
 class DailySalesListItemModel {
+  @JsonKey(defaultValue: '')
   final String id;
+  @IsoDateTimeConverter()
   final DateTime createdAt;
+  @JsonKey(defaultValue: 'Unknown')
   final String sellerName;
+  @FlexibleDoubleConverter()
   final double totalAmount;
+  @JsonKey(defaultValue: 'Cash')
   final String paymentType;
+  @JsonKey(defaultValue: 'Draft')
   final String status;
+  @FlexibleNullableDoubleConverter()
   final double? profit;
   final String? customerName;
 
@@ -90,39 +77,27 @@ class DailySalesListItemModel {
     this.customerName,
   });
 
-  factory DailySalesListItemModel.fromJson(Map<String, dynamic> json) {
-    return DailySalesListItemModel(
-      id: json['id'] ?? '',
-      createdAt: json['createdAt'] != null
-          ? (json['createdAt'] is DateTime
-              ? json['createdAt'] as DateTime
-              : DateTime.parse(json['createdAt'].toString()))
-          : DateTime.now(),
-      sellerName: json['sellerName'] ?? 'Unknown',
-      totalAmount: json['totalAmount'] != null
-          ? (json['totalAmount'] is num
-              ? (json['totalAmount'] as num).toDouble()
-              : double.tryParse(json['totalAmount'].toString()) ?? 0.0)
-          : 0.0,
-      paymentType: json['paymentType'] ?? 'Cash',
-      status: json['status'] ?? 'Draft',
-      profit: json['profit'] != null
-          ? (json['profit'] is num
-              ? (json['profit'] as num).toDouble()
-              : double.tryParse(json['profit'].toString()))
-          : null,
-      customerName: json['customerName'],
-    );
-  }
+  factory DailySalesListItemModel.fromJson(Map<String, dynamic> json) =>
+      _$DailySalesListItemModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DailySalesListItemModelToJson(this);
 }
 
+@JsonSerializable()
 class DailySalesListModel {
+  @IsoDateTimeConverter()
   final DateTime date;
+  @JsonKey(defaultValue: [])
   final List<DailySalesListItemModel> sales;
-  final double totalSales;       // Jami savdo (paid + debt)
-  final double totalPaidSales;   // To'langan savdolar ✅ NEW
-  final double totalDebtSales;   // Qarzga sotilgan ✅ NEW
+  @FlexibleDoubleConverter()
+  final double totalSales;
+  @FlexibleDoubleConverter()
+  final double totalPaidSales;
+  @FlexibleDoubleConverter()
+  final double totalDebtSales;
+  @JsonKey(defaultValue: 0)
   final int totalTransactions;
+  @FlexibleNullableDoubleConverter()
   final double? summaryProfit;
 
   DailySalesListModel({
@@ -135,42 +110,8 @@ class DailySalesListModel {
     this.summaryProfit,
   });
 
-  factory DailySalesListModel.fromJson(Map<String, dynamic> json) {
-    var salesList = <DailySalesListItemModel>[];
-    if (json['sales'] != null) {
-      salesList = (json['sales'] as List)
-          .map((i) => DailySalesListItemModel.fromJson(i))
-          .toList();
-    }
+  factory DailySalesListModel.fromJson(Map<String, dynamic> json) =>
+      _$DailySalesListModelFromJson(json);
 
-    return DailySalesListModel(
-      date: json['date'] != null
-          ? (json['date'] is DateTime
-              ? json['date'] as DateTime
-              : DateTime.parse(json['date'].toString()))
-          : DateTime.now(),
-      sales: salesList,
-      totalSales: json['totalSales'] != null
-          ? (json['totalSales'] is num
-              ? (json['totalSales'] as num).toDouble()
-              : double.tryParse(json['totalSales'].toString()) ?? 0.0)
-          : 0.0,
-      totalPaidSales: json['totalPaidSales'] != null
-          ? (json['totalPaidSales'] is num
-              ? (json['totalPaidSales'] as num).toDouble()
-              : double.tryParse(json['totalPaidSales'].toString()) ?? 0.0)
-          : 0.0,
-      totalDebtSales: json['totalDebtSales'] != null
-          ? (json['totalDebtSales'] is num
-              ? (json['totalDebtSales'] as num).toDouble()
-              : double.tryParse(json['totalDebtSales'].toString()) ?? 0.0)
-          : 0.0,
-      totalTransactions: json['totalTransactions'] ?? 0,
-      summaryProfit: json['summaryProfit'] != null
-          ? (json['summaryProfit'] is num
-              ? (json['summaryProfit'] as num).toDouble()
-              : double.tryParse(json['summaryProfit'].toString()))
-          : null,
-    );
-  }
+  Map<String, dynamic> toJson() => _$DailySalesListModelToJson(this);
 }

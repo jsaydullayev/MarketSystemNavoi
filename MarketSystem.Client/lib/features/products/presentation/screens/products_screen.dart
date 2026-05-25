@@ -30,7 +30,11 @@ class ProductsScreen extends StatefulWidget {
   /// (e.g. from a low-stock notification).
   final String? initialSearch;
 
-  const ProductsScreen({super.key, this.isReadOnly = false, this.initialSearch});
+  const ProductsScreen({
+    super.key,
+    this.isReadOnly = false,
+    this.initialSearch,
+  });
 
   @override
   State<ProductsScreen> createState() => _ProductsScreenState();
@@ -48,8 +52,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
     super.initState();
     // Seed the search box before wiring the listener so a deep-linked
     // product is filtered in as soon as the list finishes loading.
-    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
-      _searchController.text = widget.initialSearch!;
+    final initialSearch = widget.initialSearch;
+    if (initialSearch != null && initialSearch.isNotEmpty) {
+      _searchController.text = initialSearch;
     }
     _loadProducts();
     _searchController.addListener(_filterProducts);
@@ -67,8 +72,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
       _filteredProducts = query.isEmpty
           ? _products
           : _products
-              .where((p) => (p['name'] ?? '').toLowerCase().contains(query))
-              .toList();
+                .where((p) => (p['name'] ?? '').toLowerCase().contains(query))
+                .toList();
     });
   }
 
@@ -121,8 +126,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await ProductService(authProvider: authProvider)
-          .deleteProduct(product['id']);
+      await ProductService(
+        authProvider: authProvider,
+      ).deleteProduct(product['id']);
     } catch (e) {
       setState(() {
         _products.add(product);
@@ -142,8 +148,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Future<void> _quickZakup(dynamic product) async {
     final l10n = AppLocalizations.of(context)!;
     final qtyController = TextEditingController();
-    final costController =
-        TextEditingController(text: (product['costPrice'] ?? 0).toString());
+    final costController = TextEditingController(
+      text: (product['costPrice'] ?? 0).toString(),
+    );
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final confirmed = await showModalBottomSheet<bool>(
@@ -167,7 +174,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
           decoration: BoxDecoration(
             color: context.colors.surface,
             borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppRadius.xl2)),
+              top: Radius.circular(AppRadius.xl2),
+            ),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -211,8 +219,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           ),
                           Text(
                             product['name']?.toString() ?? '',
-                            style: AppTextStyles.titleMedium()
-                                .copyWith(fontSize: 16),
+                            style: AppTextStyles.titleMedium().copyWith(
+                              fontSize: 16,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -222,11 +231,19 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xl3),
-                _buildDialogField(qtyController, l10n.quantity,
-                    Icons.add_shopping_cart, true),
+                _buildDialogField(
+                  qtyController,
+                  l10n.quantity,
+                  Icons.add_shopping_cart,
+                  true,
+                ),
                 const SizedBox(height: AppSpacing.lg),
-                _buildDialogField(costController, l10n.costPrice,
-                    Icons.monetization_on_outlined, true),
+                _buildDialogField(
+                  costController,
+                  l10n.costPrice,
+                  Icons.monetization_on_outlined,
+                  true,
+                ),
                 const SizedBox(height: AppSpacing.xl3),
                 Row(
                   children: [
@@ -254,12 +271,23 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
 
     if (confirmed == true) {
+      // AUDIT-1 — the inline zakup dialog has no Form/validator, so
+      // `double.parse` could blow up on empty / "abc" / "10,5,5" input
+      // and bubble a FormatException into the user-facing snackbar as
+      // "FormatException: Invalid double". Branch on tryParse first so
+      // we can surface a localized "wrong input" message instead.
+      final qty = double.tryParse(qtyController.text.trim().replaceAll(',', '.'));
+      final cost = double.tryParse(costController.text.trim().replaceAll(',', '.'));
+      if (qty == null || qty <= 0 || cost == null || cost <= 0) {
+        _showSnackBar(l10n.errorOccurred, AppColors.danger);
+        return;
+      }
       setState(() => _isLoading = true);
       try {
         await ZakupService(authProvider: authProvider).createZakup(
           productId: product['id'],
-          quantity: double.parse(qtyController.text),
-          costPrice: double.parse(costController.text),
+          quantity: qty,
+          costPrice: cost,
         );
         _loadProducts();
         _showSnackBar(l10n.zakupSuccess, AppColors.success);
@@ -270,8 +298,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
-  Widget _buildDialogField(TextEditingController controller, String label,
-      IconData icon, bool isNum) {
+  Widget _buildDialogField(
+    TextEditingController controller,
+    String label,
+    IconData icon,
+    bool isNum,
+  ) {
     return TextField(
       controller: controller,
       keyboardType: isNum
@@ -308,8 +340,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
       // headers ("Nomi" vs "Название") match the language the user sees
       // in the app.
       final lang = Localizations.localeOf(context).languageCode;
-      final bytes = await ProductService(authProvider: authProvider)
-          .downloadProductsExcel(lang: lang);
+      final bytes = await ProductService(
+        authProvider: authProvider,
+      ).downloadProductsExcel(lang: lang);
       if (bytes != null && bytes.isNotEmpty) {
         final fileName = lang == 'ru' ? 'Tovary.xlsx' : 'Mahsulotlar.xlsx';
         await core_file_helper.FileHelper.saveAndOpenExcel(bytes, fileName);
@@ -323,8 +356,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   void _showSnackBar(String m, Color c) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(m), backgroundColor: c));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(m), backgroundColor: c));
   }
 
   void _openProductForm({dynamic product}) {

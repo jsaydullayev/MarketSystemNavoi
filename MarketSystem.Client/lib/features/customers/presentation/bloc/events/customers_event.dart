@@ -49,10 +49,7 @@ class UpdateCustomerEvent extends CustomersEvent {
   final String phone;
   final String? fullName;
 
-  const UpdateCustomerEvent({
-    required this.phone,
-    this.fullName,
-  });
+  const UpdateCustomerEvent({required this.phone, this.fullName});
 
   @override
   List<Object?> get props => [phone, fullName];

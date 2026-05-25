@@ -9,7 +9,7 @@ class CustomerRemoteDataSource {
   final CustomerService _customerService;
 
   const CustomerRemoteDataSource({required CustomerService customerService})
-      : _customerService = customerService;
+    : _customerService = customerService;
 
   /// Barcha mijozlarni olish
   Future<List<dynamic>> getAllCustomers() async {
@@ -41,10 +41,7 @@ class CustomerRemoteDataSource {
     required String phone,
     String? fullName,
   }) async {
-    return _customerService.updateCustomer(
-      phone: phone,
-      fullName: fullName,
-    );
+    return _customerService.updateCustomer(phone: phone, fullName: fullName);
   }
 
   /// Mijozni o'chirish

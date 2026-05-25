@@ -37,21 +37,21 @@ class AppTextInput extends StatelessWidget {
     // focus border follows the theme accent: brand orange in light, the
     // light-blue dark-primary in dark.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final labelColor =
-        isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+    final labelColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.textSecondary;
     final hintColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
     final fillColor = isDark ? AppColors.darkInputFill : AppColors.inputFill;
     final textColor = isDark ? AppColors.darkText : AppColors.text;
-    final focusColor =
-        isDark ? AppColors.darkPrimaryLight : AppColors.brand;
+    final focusColor = isDark ? AppColors.darkPrimaryLight : AppColors.brand;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (label != null) ...[
+        if (label case final lbl?) ...[
           Text(
-            label!.toUpperCase(),
+            lbl.toUpperCase(),
             style: AppTextStyles.caption().copyWith(
               color: labelColor,
               letterSpacing: 0.8,
@@ -66,8 +66,10 @@ class AppTextInput extends StatelessWidget {
           validator: validator,
           onChanged: onChanged,
           enabled: enabled,
-          style: AppTextStyles.bodyMedium()
-              .copyWith(fontSize: 15, color: textColor),
+          style: AppTextStyles.bodyMedium().copyWith(
+            fontSize: 15,
+            color: textColor,
+          ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.bodyMedium().copyWith(

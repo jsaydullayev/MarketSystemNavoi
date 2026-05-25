@@ -20,10 +20,13 @@ namespace MarketSystem.Domain.Constants;
 /// </summary>
 public static class PermissionDefaults
 {
-    /// <summary>Admin = everything except the Owner-only financial views
-    /// (profit summary, cash-balance report) — mirrors the old OwnerOnly gate.</summary>
+    /// <summary>Admin = everything except the Owner-only sensitive views:
+    /// profit summary, cash-balance report (legacy OwnerOnly gate), and the
+    /// audit log (Plan 07 Bosqich 2 — Owner can grant it to a trusted Admin).</summary>
     public static readonly IReadOnlyList<string> Admin = PermissionKeys.All
-        .Where(k => k != PermissionKeys.DataProfit && k != PermissionKeys.DataCashBalance)
+        .Where(k => k != PermissionKeys.DataProfit
+                 && k != PermissionKeys.DataCashBalance
+                 && k != PermissionKeys.DataAuditLog)
         .ToArray();
 
     /// <summary>Seller = view access + create-sale + customer create/edit +

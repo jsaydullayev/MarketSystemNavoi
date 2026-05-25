@@ -9,7 +9,7 @@ class ZakupRemoteDataSource {
   final ZakupService _zakupService;
 
   const ZakupRemoteDataSource({required ZakupService zakupService})
-      : _zakupService = zakupService;
+    : _zakupService = zakupService;
 
   /// Barcha xaridlarni olish
   Future<List<dynamic>> getAllZakups() async {
@@ -17,7 +17,10 @@ class ZakupRemoteDataSource {
   }
 
   /// Sana bo'yicha xaridlarni olish
-  Future<List<dynamic>> getZakupsByDateRange(DateTime start, DateTime end) async {
+  Future<List<dynamic>> getZakupsByDateRange(
+    DateTime start,
+    DateTime end,
+  ) async {
     return _zakupService.getZakupsByDateRange(start, end);
   }
 

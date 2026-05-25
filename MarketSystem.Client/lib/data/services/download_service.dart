@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:open_filex/open_filex.dart';
 
+import '../../core/constants/api_constants.dart';
 import 'http_service.dart';
 
 class DownloadService {
@@ -14,8 +15,10 @@ class DownloadService {
   DownloadService._internal(this._httpService);
 
   static DownloadService getInstance(HttpService httpService) {
-    _instance ??= DownloadService._internal(httpService);
-    return _instance!;
+    // Lazy singleton — the `??` returns the existing instance if any,
+    // otherwise the assignment expression produces (and stores) a new
+    // one. Whichever branch wins, the result is non-null.
+    return _instance ?? (_instance = DownloadService._internal(httpService));
   }
 
   /// DateTime ni yyyy-MM-dd formatida query parametr uchun formatlash
@@ -24,11 +27,11 @@ class DownloadService {
   }
 
   /// Kategoriyalarni Excel formatida yuklab olish
-  // TODO: hoist into ApiConstants as `categoriesExportExcel` constant.
   Future<void> downloadCategories({String lang = 'uz'}) async {
     try {
-      final response = await _httpService
-          .get('/ProductCategories/ExportCategoriesToExcel?lang=$lang');
+      final response = await _httpService.get(
+        '${ApiConstants.productCategoriesExportExcel}?lang=$lang',
+      );
 
       if (response.statusCode == 200) {
         final filename = lang == 'ru'
@@ -41,7 +44,8 @@ class DownloadService {
         }
       } else {
         throw Exception(
-            'Kategoriyalarni yuklab olishda xatolik: ${response.statusCode}');
+          'Kategoriyalarni yuklab olishda xatolik: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Kategoriyalarni yuklab olishda xatolik: $e');
@@ -49,11 +53,9 @@ class DownloadService {
   }
 
   /// Mahsulotlarni Excel formatida yuklab olish
-  // TODO: hoist into ApiConstants as `productsExportExcel` constant.
   Future<void> downloadProducts() async {
     try {
-      final response =
-          await _httpService.get('/Products/ExportProductsToExcel/export');
+      final response = await _httpService.get(ApiConstants.productsExportExcel);
 
       if (response.statusCode == 200) {
         final filename =
@@ -65,51 +67,19 @@ class DownloadService {
         }
       } else {
         throw Exception(
-            'Mahsulotlarni yuklab olishda xatolik: ${response.statusCode}');
+          'Mahsulotlarni yuklab olishda xatolik: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Mahsulotlarni yuklab olishda xatolik: $e');
     }
   }
 
-  /// Sotuvlarni Excel formatida yuklab olish
-  Future<void> downloadSales({
-    DateTime? startDate,
-    DateTime? endDate,
+  /// Umumiy hisobotni Excel formatida yuklab olish
+  Future<void> downloadComprehensiveReport({
+    DateTime? date,
     String lang = 'uz',
   }) async {
-    try {
-      String url = '/Reports/sales/export?lang=$lang';
-
-      // Qo'shimcha parametrlarni qo'shish
-      if (startDate != null) {
-        url += '&startDate=${_formatDateForQuery(startDate)}';
-      }
-      if (endDate != null) {
-        url += '&endDate=${_formatDateForQuery(endDate)}';
-      }
-
-      final response = await _httpService.get(url);
-
-      if (response.statusCode == 200) {
-        final filename =
-            'sotuvlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-        if (kIsWeb) {
-          _downloadWeb(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-            'Sotuvlarni yuklab olishda xatolik: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Sotuvlarni yuklab olishda xatolik: $e');
-    }
-  }
-
-  /// Umumiy hisobotni Excel formatida yuklab olish
-  Future<void> downloadComprehensiveReport({DateTime? date, String lang = 'uz'}) async {
     try {
       final params = <String, String>{'lang': lang};
       if (date != null) params['date'] = _formatDateForQuery(date);
@@ -129,7 +99,8 @@ class DownloadService {
         }
       } else {
         throw Exception(
-            'Hisobotlarni yuklab olishda xatolik: ${response.statusCode}');
+          'Hisobotlarni yuklab olishda xatolik: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Hisobotlarni yuklab olishda xatolik: $e');
@@ -142,8 +113,9 @@ class DownloadService {
   /// download flow handles both files).
   Future<void> downloadCustomers({String lang = 'uz'}) async {
     try {
-      final response = await _httpService
-          .get('/Customers/ExportCustomersToExcel/export?lang=$lang');
+      final response = await _httpService.get(
+        '/Customers/ExportCustomersToExcel/export?lang=$lang',
+      );
 
       if (response.statusCode == 200) {
         final filename =
@@ -155,7 +127,8 @@ class DownloadService {
         }
       } else {
         throw Exception(
-            'Mijozlarni yuklab olishda xatolik: ${response.statusCode}');
+          'Mijozlarni yuklab olishda xatolik: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Mijozlarni yuklab olishda xatolik: $e');
@@ -189,8 +162,9 @@ class DownloadService {
   void _downloadWeb(List<int> bytes, String filename) {
     try {
       // Blob yaratish
-      final blob = html.Blob([bytes],
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      final blob = html.Blob([
+        bytes,
+      ], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
       // Download URL yaratish
       final url = html.Url.createObjectUrlFromBlob(blob);
@@ -241,14 +215,19 @@ class DownloadService {
   }
 
   /// Kunlik hisobotni PDF formatida yuklab olish
-  Future<void> downloadDailyReportToPdf(DateTime date, {String lang = 'uz'}) async {
+  Future<void> downloadDailyReportToPdf(
+    DateTime date, {
+    String lang = 'uz',
+  }) async {
     try {
-      String url = '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
+      String url =
+          '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
 
       final response = await _httpService.get(url);
 
       if (response.statusCode == 200) {
-        final filename = 'daily_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final filename =
+            'daily_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
         if (kIsWeb) {
           _downloadWebPdf(response.bodyBytes, filename);
         } else {
@@ -256,22 +235,31 @@ class DownloadService {
         }
       } else {
         throw Exception(
-            'Kunlik hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}');
+          'Kunlik hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}',
+        );
       }
     } catch (e) {
-      throw Exception('Kunlik hisobotni PDF formatida yuklab olishda xatolik: $e');
+      throw Exception(
+        'Kunlik hisobotni PDF formatida yuklab olishda xatolik: $e',
+      );
     }
   }
 
   /// Davr hisobotni PDF formatida yuklab olish
-  Future<void> downloadPeriodReportToPdf(DateTime start, DateTime end, {String lang = 'uz'}) async {
+  Future<void> downloadPeriodReportToPdf(
+    DateTime start,
+    DateTime end, {
+    String lang = 'uz',
+  }) async {
     try {
-      String url = '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}&lang=$lang';
+      String url =
+          '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}&lang=$lang';
 
       final response = await _httpService.get(url);
 
       if (response.statusCode == 200) {
-        final filename = 'period_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final filename =
+            'period_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
         if (kIsWeb) {
           _downloadWebPdf(response.bodyBytes, filename);
         } else {
@@ -279,22 +267,30 @@ class DownloadService {
         }
       } else {
         throw Exception(
-            'Davriy hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}');
+          'Davriy hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}',
+        );
       }
     } catch (e) {
-      throw Exception('Davriy hisobotni PDF formatida yuklab olishda xatolik: $e');
+      throw Exception(
+        'Davriy hisobotni PDF formatida yuklab olishda xatolik: $e',
+      );
     }
   }
 
   /// Umumiy hisobotni PDF formatida yuklab olish
-  Future<void> downloadComprehensiveReportToPdf(DateTime date, {String lang = 'uz'}) async {
+  Future<void> downloadComprehensiveReportToPdf(
+    DateTime date, {
+    String lang = 'uz',
+  }) async {
     try {
-      String url = '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
+      String url =
+          '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
 
       final response = await _httpService.get(url);
 
       if (response.statusCode == 200) {
-        final filename = 'comprehensive_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final filename =
+            'comprehensive_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
         if (kIsWeb) {
           _downloadWebPdf(response.bodyBytes, filename);
         } else {
@@ -302,10 +298,13 @@ class DownloadService {
         }
       } else {
         throw Exception(
-            'Umumiy hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}');
+          'Umumiy hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}',
+        );
       }
     } catch (e) {
-      throw Exception('Umumiy hisobotni PDF formatida yuklab olishda xatolik: $e');
+      throw Exception(
+        'Umumiy hisobotni PDF formatida yuklab olishda xatolik: $e',
+      );
     }
   }
 }

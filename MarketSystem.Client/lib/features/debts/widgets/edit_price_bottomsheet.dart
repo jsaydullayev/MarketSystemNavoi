@@ -88,7 +88,8 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.xl)),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
         title: Text(l10n.confirm, style: AppTextStyles.titleMedium()),
         content: Text(
           l10n.confirmPriceChangeDesc(NumberFormatter.formatDecimal(newPrice)),
@@ -105,7 +106,8 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
               backgroundColor: AppColors.danger,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md)),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
             ),
             child: Text(l10n.yesConfirm),
           ),
@@ -157,8 +159,11 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                     color: context.colors.brandLight,
                     borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   ),
-                  child: Icon(Icons.edit_rounded,
-                      color: context.colors.brand, size: 20),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    color: context.colors.brand,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
                 Text(l10n.editPriceTitle, style: AppTextStyles.titleMedium()),
@@ -180,21 +185,29 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                       color: context.colors.brandLight,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: Icon(Icons.inventory_2_rounded,
-                        color: context.colors.brand, size: 18),
+                    child: Icon(
+                      Icons.inventory_2_rounded,
+                      color: context.colors.brand,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md + 2),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(productName,
-                            style: AppTextStyles.bodyMedium()
-                                .copyWith(fontWeight: FontWeight.w600)),
+                        Text(
+                          productName,
+                          style: AppTextStyles.bodyMedium().copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 2),
                         Text(
-                          l10n.productQuantityAndOldPrice(quantity,
-                              NumberFormatter.formatDecimal(oldPrice)),
+                          l10n.productQuantityAndOldPrice(
+                            quantity,
+                            NumberFormatter.formatDecimal(oldPrice),
+                          ),
                           style: AppTextStyles.bodySmall().copyWith(
                             fontSize: 12,
                             color: context.colors.textMuted,
@@ -217,7 +230,9 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _priceController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
               onChanged: (_) => setState(() => _errorMessage = null),
               decoration: InputDecoration(
@@ -226,8 +241,10 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                   color: context.colors.textMuted,
                   fontSize: 15,
                 ),
-                prefixIcon:
-                    Icon(Icons.money_rounded, color: context.colors.brand),
+                prefixIcon: Icon(
+                  Icons.money_rounded,
+                  color: context.colors.brand,
+                ),
                 suffixText: l10n.currencySom,
                 filled: true,
                 fillColor: context.colors.inputFill,
@@ -241,8 +258,10 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                  borderSide:
-                      BorderSide(color: context.colors.brand, width: 1.5),
+                  borderSide: BorderSide(
+                    color: context.colors.brand,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -279,8 +298,10 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                  borderSide:
-                      BorderSide(color: context.colors.brand, width: 1.5),
+                  borderSide: BorderSide(
+                    color: context.colors.brand,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -292,12 +313,16 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                   color: AppColors.warningLight,
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   border: Border.all(
-                      color: AppColors.warning.withValues(alpha: 0.3)),
+                    color: AppColors.warning.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded,
-                        color: AppColors.warning, size: 18),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.warning,
+                      size: 18,
+                    ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
@@ -312,7 +337,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 ),
               ),
             ],
-            if (_errorMessage != null) ...[
+            if (_errorMessage case final msg?) ...[
               const SizedBox(height: AppSpacing.lg),
               Container(
                 width: double.infinity,
@@ -324,12 +349,15 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.error_outline_rounded,
-                        color: AppColors.danger, size: 18),
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: AppColors.danger,
+                      size: 18,
+                    ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
-                        _errorMessage!,
+                        msg,
                         style: AppTextStyles.bodySmall().copyWith(
                           color: AppColors.danger,
                           fontWeight: FontWeight.w500,
@@ -338,8 +366,11 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
                     ),
                     GestureDetector(
                       onTap: () => setState(() => _errorMessage = null),
-                      child: const Icon(Icons.close_rounded,
-                          color: AppColors.danger, size: 16),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.danger,
+                        size: 16,
+                      ),
                     ),
                   ],
                 ),

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
@@ -176,43 +177,8 @@ public partial class SaleService : ISaleService
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
-        return sales.Select(s => new SaleDto(
-            s.Id,
-            s.SellerId,
-            s.Seller?.FullName ?? "Unknown",
-            s.CustomerId,
-            s.Customer?.FullName,
-            s.Customer?.Phone,
-            s.Status.ToString(),
-            s.TotalAmount,
-            s.PaidAmount,
-            s.TotalAmount - s.PaidAmount,
-            s.CreatedAt,
-            s.SaleItems.Select(si => {
-                // ✅ ISEXTERNAL SHARTI - Product name olish
-                string productName;
-                string unit = "";
-                if (!si.IsExternal)
-                {
-                    productName = si.Product?.Name ?? "Unknown";
-                    unit = si.Product?.GetUnitName() ?? "";
-                }
-                else
-                {
-                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
-                }
-                return MapSaleItemToDto(si, productName, unit);
-            }).ToList(),
-            s.Payments.Select(p => new PaymentDto(
-                p.Id,
-                p.PaymentType.ToString().ToLowerInvariant(),
-                p.Amount,
-                p.CreatedAt,
-                null,
-                null,
-                null
-            )).ToList()
-        ));
+        // M7 — was an inline duplicate of MapSaleToDto; consolidated.
+        return sales.Select(MapSaleToDto);
     }
 
     public async Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
@@ -231,43 +197,8 @@ public partial class SaleService : ISaleService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return sales.Select(s => new SaleDto(
-            s.Id,
-            s.SellerId,
-            s.Seller?.FullName ?? "Unknown",
-            s.CustomerId,
-            s.Customer?.FullName,
-            s.Customer?.Phone,
-            s.Status.ToString(),
-            s.TotalAmount,
-            s.PaidAmount,
-            s.TotalAmount - s.PaidAmount,
-            s.CreatedAt,
-            s.SaleItems.Select(si => {
-                // ✅ ISEXTERNAL SHARTI - Product name olish
-                string productName;
-                string unit = "";
-                if (!si.IsExternal)
-                {
-                    productName = si.Product?.Name ?? "Unknown";
-                    unit = si.Product?.GetUnitName() ?? "";
-                }
-                else
-                {
-                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
-                }
-                return MapSaleItemToDto(si, productName, unit);
-            }).ToList(),
-            s.Payments.Select(p => new PaymentDto(
-                p.Id,
-                p.PaymentType.ToString().ToLowerInvariant(),
-                p.Amount,
-                p.CreatedAt,
-                null,
-                null,
-                null
-            )).ToList()
-        ));
+        // M7 — was an inline duplicate of MapSaleToDto; consolidated.
+        return sales.Select(MapSaleToDto);
     }
 
     public async Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
@@ -287,43 +218,8 @@ public partial class SaleService : ISaleService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return sales.Select(s => new SaleDto(
-            s.Id,
-            s.SellerId,
-            s.Seller?.FullName ?? "Unknown",
-            s.CustomerId,
-            s.Customer?.FullName,
-            s.Customer?.Phone,
-            s.Status.ToString(),
-            s.TotalAmount,
-            s.PaidAmount,
-            s.TotalAmount - s.PaidAmount,
-            s.CreatedAt,
-            s.SaleItems.Select(si => {
-                // ✅ ISEXTERNAL SHARTI - Product name olish
-                string productName;
-                string unit = "";
-                if (!si.IsExternal)
-                {
-                    productName = si.Product?.Name ?? "Unknown";
-                    unit = si.Product?.GetUnitName() ?? "";
-                }
-                else
-                {
-                    productName = si.ExternalProductName ?? "Tashqi mahsulot";
-                }
-                return MapSaleItemToDto(si, productName, unit);
-            }).ToList(),
-            s.Payments.Select(p => new PaymentDto(
-                p.Id,
-                p.PaymentType.ToString().ToLowerInvariant(),
-                p.Amount,
-                p.CreatedAt,
-                null,
-                null,
-                null
-            )).ToList()
-        ));
+        // M7 — was an inline duplicate of MapSaleToDto; consolidated.
+        return sales.Select(MapSaleToDto);
     }
 
     public async Task<SaleDto> CreateSaleAsync(CreateSaleDto request, Guid sellerId, CancellationToken cancellationToken = default)
@@ -529,11 +425,26 @@ public partial class SaleService : ISaleService
                     resultSaleItem = saleItem;
                 }
 
-                // Persist the SaleItem change first, then recompute Sale.TotalAmount
-                // from the authoritative SUM over SaleItems. Replacing the old
-                // arithmetic `sale.TotalAmount = old - x + new` with a fresh SUM kills
-                // a race where two concurrent AddSaleItem calls each read a stale
-                // in-memory total and overwrite each other's increment.
+                // M9 — the two SaveChanges below are intentional and BOTH
+                // required for correctness:
+                //
+                //   1st SaveChanges: persists the new/updated SaleItem +
+                //      Product stock change to the DB so the row(s) become
+                //      visible to subsequent DB-side queries in this txn.
+                //   RecalculateSaleTotalAsync: runs a SERVER-side SUM over
+                //      SaleItems (not the in-memory tracked set), so it
+                //      sees the row we just persisted plus anything
+                //      another concurrent transaction has already committed.
+                //   2nd SaveChanges: writes the authoritative TotalAmount.
+                //
+                // The old "math" approach (`sale.TotalAmount += newQty * newPrice`)
+                // collapsed under concurrency because two callers could each
+                // read the same stale total and overwrite each other's delta.
+                // The Sale.Xmin concurrency token would catch the conflict on
+                // commit, but recovery requires reloading the entity and
+                // re-running the math — which the DB-SUM approach gives us
+                // for free. Net: 1 extra round trip in exchange for race-free
+                // totals.
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await RecalculateSaleTotalAsync(sale, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -977,16 +888,13 @@ public partial class SaleService : ISaleService
     /// ✅ ISEXTERNAL SHARTI - TASHQI MAHSULOT
     /// ============================================
     /// </summary>
-    public async Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default)
+    public async Task<SaleDto?> CancelSaleAsync(Guid saleId, Guid adminId, CancellationToken cancellationToken = default)
     {
-        // Parse adminId from string to Guid
-        if (!Guid.TryParse(adminId, out var adminGuid))
-        {
-            _logger.LogWarning("Invalid Admin ID format: {AdminId}", adminId);
-            throw new InvalidOperationException("Invalid Admin ID format");
-        }
-
-        _logger.LogInformation("Admin ID (parsed): {AdminGuid}", adminGuid);
+        // adminId is the JWT-extracted caller identity (controller pulls it
+        // from ClaimTypes.NameIdentifier). It used to be a string parsed
+        // from a client-supplied request body, which let any caller with
+        // sales.delete forge another admin's id into the audit row.
+        _logger.LogInformation("CancelSale by Admin {AdminId}", adminId);
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -1006,33 +914,38 @@ public partial class SaleService : ISaleService
             if (sale.Status == SaleStatus.Cancelled)
                 throw new InvalidOperationException("Sale is already cancelled");
 
-            // Restore stock for all items
-            var saleItems = await _unitOfWork.SaleItems.FindAsync(si => si.SaleId == saleId, cancellationToken);
-            foreach (var item in saleItems)
-            {
-                /// <summary>
-                /// ============================================
-                /// ✅ ISEXTERNAL SHARTI - STOKNI QAYTARISH
-                /// ============================================
-                /// </summary>
-                if (!item.IsExternal && item.ProductId.HasValue)
-                {
-                    // ---- ORDINARY PRODUCT (Oddiy mahsulot) ----
-                    var productId = item.ProductId.Value;
-                    var products = await _unitOfWork.Products.FindAsync(
-                        p => p.Id == productId && p.MarketId == marketId,
-                        cancellationToken);
-                    var product = products.FirstOrDefault();
+            // Restore stock for all items.
+            // P4 — fetch every affected Product in ONE round trip instead of
+            // one-per-item. A cancelled sale with 50 ordinary items used to
+            // fire 50 separate `Products WHERE Id = ?` queries; now we issue
+            // a single `Products WHERE Id IN (...)`. External items have no
+            // ProductId so they're filtered out upfront.
+            var saleItems = (await _unitOfWork.SaleItems.FindAsync(
+                si => si.SaleId == saleId, cancellationToken)).ToList();
 
-                    if (product != null)
+            var ordinaryProductIds = saleItems
+                .Where(i => !i.IsExternal && i.ProductId.HasValue)
+                .Select(i => i.ProductId!.Value)
+                .Distinct()
+                .ToList();
+
+            if (ordinaryProductIds.Count > 0)
+            {
+                var products = await _context.Products
+                    .Where(p => ordinaryProductIds.Contains(p.Id) && p.MarketId == marketId)
+                    .ToDictionaryAsync(p => p.Id, cancellationToken);
+
+                foreach (var item in saleItems)
+                {
+                    if (item.IsExternal || !item.ProductId.HasValue) continue;
+                    if (products.TryGetValue(item.ProductId.Value, out var product))
                     {
                         product.Quantity += item.Quantity;
                         _unitOfWork.Products.Update(product);
                     }
                 }
-                // ---- EXTERNAL PRODUCT (Tashqi mahsulot) ----
-                // ✅ Tashqi mahsulotlar - stokni o'zgarmaslik
             }
+            // External items (IsExternal == true) have no stock to restore.
 
             // Refund cash payments back to the till. Card / Click / Terminal payments
             // flow through external rails (POS / payment processor) so they don't touch
@@ -1053,6 +966,10 @@ public partial class SaleService : ISaleService
                     _logger.LogInformation(
                         "Sale {SaleId} cancelled — refunded {Amount} cash to market {MarketId} till",
                         saleId, cashRefund, sale.MarketId);
+                    if (cashRegister.CurrentBalance < 0)
+                        _logger.LogWarning(
+                            "CashRegister balance went negative after cancelling sale {SaleId}: Balance={Balance}. Manual reconciliation may be needed.",
+                            saleId, cashRegister.CurrentBalance);
                 }
             }
 
@@ -1060,17 +977,44 @@ public partial class SaleService : ISaleService
             sale.Status = SaleStatus.Cancelled;
             _unitOfWork.Sales.Update(sale);
 
-            // Close associated debt if exists
-            if (sale.Debt != null && sale.Debt.Status == DebtStatus.Open)
+            // S4 — close the associated debt cleanly. The previous code
+            // relied on `sale.Debt` being eagerly loaded; the query above
+            // does NOT include it, so `sale.Debt` was always null and the
+            // debt never closed when the sale was cancelled. The customer's
+            // total outstanding balance kept showing the cancelled sale's
+            // RemainingDebt — a real financial-correctness bug. Look the
+            // debt up directly, mark it Closed AND zero RemainingDebt so
+            // the customer's running total stays consistent.
+            var openDebts = await _unitOfWork.Debts.FindAsync(
+                d => d.SaleId == saleId && d.Status == DebtStatus.Open,
+                cancellationToken);
+            foreach (var debt in openDebts)
             {
-                sale.Debt.Status = DebtStatus.Closed;
-                _unitOfWork.Debts.Update(sale.Debt);
+                debt.Status = DebtStatus.Closed;
+                debt.RemainingDebt = 0;
+                _unitOfWork.Debts.Update(debt);
             }
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // P6 — stage the audit row on the same DbContext BEFORE the
+            // single SaveChanges so business state + audit INSERT batch into
+            // one round trip instead of two. The audit row will now commit /
+            // rollback with the surrounding business transaction (which is
+            // the stronger guarantee here — if the cancel rolls back we
+            // don't want a "Cancel" audit row lingering).
+            await _auditLogService.EnqueueActionAsync(
+                AuditEntityTypes.Sale, saleId, AuditActions.Cancel, adminId,
+                new
+                {
+                    SaleId = saleId,
+                    sale.SellerId,
+                    sale.CustomerId,
+                    Status = sale.Status.ToString(),
+                    sale.TotalAmount,
+                    sale.PaidAmount,
+                },
+                cancellationToken);
 
-            // Audit log
-            await _auditLogService.LogSaleActionAsync(saleId, "Cancel", adminGuid, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return await MapToDtoAsync(sale, cancellationToken);
         }, cancellationToken);
@@ -1173,6 +1117,17 @@ public partial class SaleService : ISaleService
 
         sale.PaidAmount += creditToApply;
         _context.Sales.Update(sale);
+
+        var debtForCredit = await _context.Debts
+            .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId, cancellationToken);
+        if (debtForCredit != null)
+        {
+            debtForCredit.RemainingDebt = Math.Max(0, debtForCredit.RemainingDebt - creditToApply);
+            if (debtForCredit.RemainingDebt <= 0)
+                debtForCredit.Status = DebtStatus.Closed;
+            _context.Debts.Update(debtForCredit);
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Credit applied successfully: SaleId={SaleId}, NewPaidAmount={NewPaidAmount}",
@@ -1420,6 +1375,10 @@ public partial class SaleService : ISaleService
                     _logger.LogInformation(
                         "Cash reversed on sale delete: SaleId={SaleId} NetCash={Amount} NewBalance={Balance}",
                         saleId, netCashOnSale, cashRegister.CurrentBalance);
+                    if (cashRegister.CurrentBalance < 0)
+                        _logger.LogWarning(
+                            "CashRegister balance went negative after deleting sale {SaleId}: Balance={Balance}. Manual reconciliation may be needed.",
+                            saleId, cashRegister.CurrentBalance);
                 }
                 else
                 {
@@ -1556,6 +1515,12 @@ public partial class SaleService : ISaleService
     /// </summary>
     public async Task<SaleItemDto?> UpdateSaleItemPriceAsync(Guid saleItemId, UpdateSaleItemPriceDto request, CancellationToken cancellationToken = default)
     {
+        // S2 — guard against negative prices at the entry point. The
+        // recalculated Sale.TotalAmount would otherwise silently go negative
+        // and break every downstream report that sums TotalAmount.
+        if (request.NewPrice < 0)
+            throw new InvalidOperationException("Narx manfiy bo'lmasin");
+
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -1573,24 +1538,43 @@ public partial class SaleService : ISaleService
             if (sale == null || sale.MarketId != marketId)
                 throw new InvalidOperationException("Sotuv topilmadi");
 
+            // S2 — refuse to mutate prices on a finalised sale. Previously the
+            // method would happily overwrite SalePrice on a Paid / Debt /
+            // Cancelled sale, corrupting the historic financial total even
+            // though Sale.Xmin would block the eventual save — that's a
+            // 500 to the user instead of a clean 400. Status check first.
+            if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Debt)
+                throw new InvalidOperationException(
+                    "Narxni faqat Draft yoki Qarz holatidagi sotuvlarda o'zgartirish mumkin");
+
             // Update SaleItem price
-            var oldPrice = saleItem.SalePrice;
             saleItem.SalePrice = request.NewPrice;
             _unitOfWork.SaleItems.Update(saleItem);
 
-            // Recalculate Sale.TotalAmount
-            var allSaleItems = await _unitOfWork.SaleItems.FindAsync(
-                si => si.SaleId == sale.Id,
-                cancellationToken);
-            var newTotalAmount = 0m;
-            foreach (var item in allSaleItems)
-            {
-                newTotalAmount += item.SalePrice * item.Quantity;
-            }
-            sale.TotalAmount = newTotalAmount;
-            _unitOfWork.Sales.Update(sale);
-
+            // S2 — persist the SaleItem change first, then SUM straight from
+            // the DB. The old code walked tracked entities in memory which
+            // depended on EF identity-resolution semantics; aligning with
+            // AddSaleItem's pattern (SaveChanges → RecalculateSaleTotalAsync
+            // via SUM → SaveChanges) makes the result deterministic and
+            // race-protected by Sale.Xmin.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await RecalculateSaleTotalAsync(sale, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            if (sale.Status == SaleStatus.Debt)
+            {
+                var debtForPrice = await _context.Debts
+                    .FirstOrDefaultAsync(d => d.SaleId == sale.Id && d.MarketId == marketId, cancellationToken);
+                if (debtForPrice != null)
+                {
+                    debtForPrice.TotalDebt = sale.TotalAmount;
+                    debtForPrice.RemainingDebt = Math.Max(0, sale.TotalAmount - sale.PaidAmount);
+                    if (debtForPrice.RemainingDebt <= 0)
+                        debtForPrice.Status = DebtStatus.Closed;
+                    _context.Debts.Update(debtForPrice);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+            }
 
             // Get product name for response
             string productName;

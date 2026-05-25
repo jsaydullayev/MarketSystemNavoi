@@ -33,8 +33,8 @@ class ContinueSaleProductCard extends StatelessWidget {
     final stockColor = !isInStock
         ? context.colors.textMuted
         : isLow
-            ? AppColors.warning
-            : context.colors.brand;
+        ? AppColors.warning
+        : context.colors.brand;
 
     return Material(
       color: Colors.transparent,

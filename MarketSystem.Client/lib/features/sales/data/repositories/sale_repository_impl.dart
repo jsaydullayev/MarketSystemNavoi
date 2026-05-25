@@ -18,7 +18,9 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
       final data = await remoteDataSource.getAllSales();
 
       final sales = data
-          .map((saleJson) => SaleEntity.fromJson(saleJson as Map<String, dynamic>))
+          .map(
+            (saleJson) => SaleEntity.fromJson(saleJson as Map<String, dynamic>),
+          )
           .toList();
 
       return ApiResult.success(sales);
@@ -43,7 +45,9 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
       final data = await remoteDataSource.getMyDraftSales();
 
       final sales = data
-          .map((saleJson) => SaleEntity.fromJson(saleJson as Map<String, dynamic>))
+          .map(
+            (saleJson) => SaleEntity.fromJson(saleJson as Map<String, dynamic>),
+          )
           .toList();
 
       return ApiResult.success(sales);
@@ -69,9 +73,9 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
   Future<ApiResult<void>> addSaleItem({
     required String saleId,
     required String productId,
-    required double quantity,  // ✅ DECIMAL
+    required double quantity, // ✅ DECIMAL
     required double salePrice,
-    required double minSalePrice,  // ✅ Yangi: minPrice parametri qo'shildi
+    required double minSalePrice, // ✅ Yangi: minPrice parametri qo'shildi
     String? comment,
   }) async {
     try {
@@ -80,7 +84,7 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
         productId: productId,
         quantity: quantity,
         salePrice: salePrice,
-        minSalePrice: minSalePrice,  // ✅ Backendga minPrice yuborish
+        minSalePrice: minSalePrice, // ✅ Backendga minPrice yuborish
         comment: comment,
       );
 
@@ -110,15 +114,9 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
   }
 
   @override
-  Future<ApiResult<void>> cancelSale({
-    required String saleId,
-    required String adminId,
-  }) async {
+  Future<ApiResult<void>> cancelSale({required String saleId}) async {
     try {
-      await remoteDataSource.cancelSale(
-        saleId: saleId,
-        adminId: adminId,
-      );
+      await remoteDataSource.cancelSale(saleId: saleId);
 
       return ApiResult.success(null);
     } catch (e) {

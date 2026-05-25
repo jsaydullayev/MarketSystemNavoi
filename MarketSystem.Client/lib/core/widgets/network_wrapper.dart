@@ -1,18 +1,19 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
+import '../../design/tokens/app_theme_colors.dart';
+import '../../design/tokens/app_tokens.dart';
+import '../../design/tokens/app_typography.dart';
+import '../../design/widgets/app_button.dart';
+import '../../l10n/app_localizations.dart';
 import '../constants/api_constants.dart';
 
 class NetworkWrapper extends StatefulWidget {
   final Widget child;
   final VoidCallback? onRetry;
 
-  const NetworkWrapper({
-    super.key,
-    required this.child,
-    this.onRetry,
-  });
+  const NetworkWrapper({super.key, required this.child, this.onRetry});
 
   @override
   State<NetworkWrapper> createState() => _NetworkWrapperState();
@@ -49,13 +50,14 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
         // API serverga test qilamiz - /health endpoint'ini ishlatamiz
         try {
           final healthUrl = ApiConstants.baseUrl == '/api'
-              ? '/health'  // Production: relative URL
-              : '${ApiConstants.baseUrl}/health';  // Dev: full URL
-          final response = await http.get(
-            Uri.parse(healthUrl),
-          ).timeout(const Duration(seconds: 5));  // 5 sekund timeout
+              ? '/health' // Production: relative URL
+              : '${ApiConstants.baseUrl}/health'; // Dev: full URL
+          final response = await http
+              .get(Uri.parse(healthUrl))
+              .timeout(const Duration(seconds: 5)); // 5 sekund timeout
           // 200, 401, 403, 404 - bularning barchasi server ishlayapti degani
-          final apiConnected = response.statusCode >= 200 && response.statusCode < 500;
+          final apiConnected =
+              response.statusCode >= 200 && response.statusCode < 500;
 
           if (mounted) setState(() => _isConnected = apiConnected);
         } catch (apiError) {
@@ -78,78 +80,65 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
   }
 
   Widget _buildNoInternet() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // D2 — replace the hardcoded #1A1A2E / #F5F5F5 / Colors.red / Colors.blue
+    // palette with the design-system tokens so this screen tracks the active
+    // theme correctly and matches every other "we couldn't load" surface
+    // (ErrorRetryView, dashboard _RetryBanner, etc.).
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF5F5F5),
+      backgroundColor: context.colors.bg,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(AppSpacing.xl2),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.8, end: 1.0),
                 duration: const Duration(seconds: 1),
-                builder: (context, value, child) => Transform.scale(
-                  scale: value,
-                  child: child,
-                ),
+                builder: (context, value, child) =>
+                    Transform.scale(scale: value, child: child),
                 child: Container(
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: AppColors.danger.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.wifi_off_rounded,
                     size: 60,
-                    color: Colors.red,
+                    color: AppColors.danger,
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xl2),
               Text(
-                'Internet aloqasi yo\'q',
+                l10n.noInternetTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+                style: AppTextStyles.titleLarge().copyWith(
+                  color: context.colors.text,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Text(
-                'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring',
+                l10n.noInternetDescription,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white54 : Colors.black45,
+                style: AppTextStyles.bodySmall().copyWith(
+                  color: context.colors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 40),
-              ElevatedButton.icon(
+              const SizedBox(height: AppSpacing.xl2),
+              AppPrimaryButton(
+                label: l10n.retry,
+                icon: Icons.refresh_rounded,
                 onPressed: () async {
                   await _checkConnection();
                   if (_isConnected) {
                     widget.onRetry?.call();
                   }
                 },
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text(
-                  'Qayta urinish',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 55),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
               ),
             ],
           ),

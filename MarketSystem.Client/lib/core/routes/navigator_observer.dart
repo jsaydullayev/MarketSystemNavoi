@@ -22,7 +22,11 @@ class RouteProtectionObserver extends NavigatorObserver {
   @override
   void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
     super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
-    _logRouteChange('REPLACE', newRoute?.settings.name, oldRoute?.settings.name);
+    _logRouteChange(
+      'REPLACE',
+      newRoute?.settings.name,
+      oldRoute?.settings.name,
+    );
 
     // CRITICAL: Detect and warn about unwanted redirects on public routes
     if (oldRoute != null && newRoute != null) {

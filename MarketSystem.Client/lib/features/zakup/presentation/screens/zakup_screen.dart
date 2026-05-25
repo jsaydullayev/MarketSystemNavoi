@@ -41,8 +41,9 @@ class _ZakupScreenState extends State<ZakupScreen> {
   Future<void> _loadProducts() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final products =
-          await ProductService(authProvider: authProvider).getAllProducts();
+      final products = await ProductService(
+        authProvider: authProvider,
+      ).getAllProducts();
       if (mounted) setState(() => _products = products);
     } catch (e, st) {
       debugPrint('ZakupScreen._loadProducts error: $e\n$st');
@@ -73,17 +74,17 @@ class _ZakupScreenState extends State<ZakupScreen> {
     setState(() => _isExporting = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final bytes =
-          await ZakupService(authProvider: authProvider).downloadZakupsExcel();
+      final bytes = await ZakupService(
+        authProvider: authProvider,
+      ).downloadZakupsExcel();
 
       if (bytes != null && bytes.isNotEmpty) {
         final ok = await core_file_helper.FileHelper.saveAndOpenExcel(
-            bytes, 'Xaridlar.xlsx');
+          bytes,
+          'Xaridlar.xlsx',
+        );
         if (mounted) {
-          _showSnack(
-            ok ? l10n.fileSaved : l10n.fileSaveError,
-            isError: !ok,
-          );
+          _showSnack(ok ? l10n.fileSaved : l10n.fileSaveError, isError: !ok);
         }
       } else {
         if (mounted) {
@@ -99,16 +100,19 @@ class _ZakupScreenState extends State<ZakupScreen> {
     }
   }
 
-  void _showSnack(String message,
-      {bool isError = false, bool warning = false}) {
+  void _showSnack(
+    String message, {
+    bool isError = false,
+    bool warning = false,
+  }) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError
             ? AppColors.danger
             : warning
-                ? AppColors.warning
-                : AppColors.success,
+            ? AppColors.warning
+            : AppColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -148,8 +152,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
             extraActions: [
               _isExporting
                   ? const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                       child: Center(
                         child: SizedBox(
                           width: 20,
@@ -285,10 +288,7 @@ class _ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),
-            AppPrimaryButton(
-              label: l10n.retry,
-              onPressed: onRetry,
-            ),
+            AppPrimaryButton(label: l10n.retry, onPressed: onRetry),
           ],
         ),
       ),

@@ -173,7 +173,7 @@
   "welcomeScreenSubtitle": "Sizning biznes boshqaruv yechimingiz",
   "lightMode": "Yorqin",
   "usernameMinLength": "Username kamida 3 ta belgi",
-  "passwordMinLength": "Parol kamida 6 ta belgi",
+  "passwordMinLength": "Parol kamida 8 belgi, 1 harf va 1 raqam o'z ichiga olishi kerak",
   "passwordConfirm": "Parolni tasdiqlash",
   "passwordConfirmRequired": "Parolni tasdiqlash shart",
   "passwordMismatch": "Parollar mos emas",
@@ -299,6 +299,16 @@
   "noDebts": "Qarzlar yo'q",
   "debtHistory": "Qarzlar tarixi",
   "retry": "Qayta urinish",
+  "loadFailedTitle": "Ma'lumotni yuklab bo'lmadi",
+  "loadFailedDescription": "Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog'laning.",
+  "noInternetTitle": "Internet aloqasi yo'q",
+  "noInternetDescription": "Iltimos, internet aloqasini tekshiring va qayta urinib ko'ring",
+  "debtDueLabel": "Muddat",
+  "debtOverdueBadge": "Muddat o'tgan",
+  "debtDueToday": "Bugun muddat",
+  "debtDueTomorrow": "Ertaga muddat",
+  "debtDueInDays": "{n} kun qoldi",
+  "debtOverdueByDays": "{n} kun kechikkan",
   "customerDeleted": "Mijoz muvaffaqiyatli o'chirildi",
   "customerAdded": "Mijoz muvaffaqiyatli qo'shildi",
   "addNewCustomer": "Yangi mijoz qo'shish",
@@ -911,9 +921,26 @@
   "openShift": "Smenani ochish",
   "closeShift": "Smenani yopish",
   "shiftStartedAt": "Boshlangan: {time}",
+  "shiftNotOpenError": "Ochiq smena topilmadi. Avval smenani oching.",
+  "concurrentChangeError": "Ma'lumot boshqa foydalanuvchi tomonidan o'zgartirildi. Sahifani yangilang va qaytadan urinib ko'ring.",
   "@shiftStartedAt": {
     "placeholders": {
       "time": { "type": "String" }
     }
-  }
+  },
+  "securityJournal": "Xavfsizlik jurnali",
+  "securityJournalAllTab": "Hammasi",
+  "securityJournalSuspiciousTab": "Shubhali",
+  "securityJournalFilterEntityType": "Hodisa turi",
+  "securityJournalFilterAction": "Amal",
+  "securityJournalFilterAll": "Barchasi",
+  "securityJournalEmptyAll": "Hozircha audit yozuvlari yo'q.",
+  "securityJournalNoSuspicious": "Hozircha shubhali faollik aniqlanmadi.",
+  "securityJournalAnonymousActor": "Anonim",
+  "securityJournalFailedLoginBursts": "Xato login urinishlari",
+  "securityJournalBulkDeleteBursts": "Ko'p o'chirish urinishlari",
+  "securityJournalFirstSeen": "Boshlangan",
+  "securityJournalLastSeen": "Oxirgi",
+  "securityJournalSourceIps": "Manba IP",
+  "securityJournalEntityTypes": "Obyektlar"
 }

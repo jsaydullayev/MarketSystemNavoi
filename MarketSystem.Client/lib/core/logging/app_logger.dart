@@ -25,8 +25,8 @@ class LogEntry {
 
     buf.write(': $message');
 
-    if (context != null && context!.isNotEmpty) {
-      buf.write(' | context: $context');
+    if (context case final ctx? when ctx.isNotEmpty) {
+      buf.write(' | context: $ctx');
     }
 
     return buf.toString();

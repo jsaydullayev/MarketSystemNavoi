@@ -532,7 +532,8 @@ class AppLocalizationsUz extends AppLocalizations {
   String get usernameMinLength => 'Username kamida 3 ta belgi';
 
   @override
-  String get passwordMinLength => 'Parol kamida 6 ta belgi';
+  String get passwordMinLength =>
+      'Parol kamida 8 belgi, 1 harf va 1 raqam o\'z ichiga olishi kerak';
 
   @override
   String get passwordConfirm => 'Parolni tasdiqlash';
@@ -892,6 +893,42 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get retry => 'Qayta urinish';
+
+  @override
+  String get loadFailedTitle => 'Ma\'lumotni yuklab bo\'lmadi';
+
+  @override
+  String get loadFailedDescription =>
+      'Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog\'laning.';
+
+  @override
+  String get noInternetTitle => 'Internet aloqasi yo\'q';
+
+  @override
+  String get noInternetDescription =>
+      'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring';
+
+  @override
+  String get debtDueLabel => 'Muddat';
+
+  @override
+  String get debtOverdueBadge => 'Muddat o\'tgan';
+
+  @override
+  String get debtDueToday => 'Bugun muddat';
+
+  @override
+  String get debtDueTomorrow => 'Ertaga muddat';
+
+  @override
+  String debtDueInDays(Object n) {
+    return '$n kun qoldi';
+  }
+
+  @override
+  String debtOverdueByDays(Object n) {
+    return '$n kun kechikkan';
+  }
 
   @override
   String get customerDeleted => 'Mijoz muvaffaqiyatli o\'chirildi';
@@ -2652,4 +2689,58 @@ class AppLocalizationsUz extends AppLocalizations {
   String shiftStartedAt(String time) {
     return 'Boshlangan: $time';
   }
+
+  @override
+  String get shiftNotOpenError =>
+      'Ochiq smena topilmadi. Avval smenani oching.';
+
+  @override
+  String get concurrentChangeError =>
+      'Ma\'lumot boshqa foydalanuvchi tomonidan o\'zgartirildi. Sahifani yangilang va qaytadan urinib ko\'ring.';
+
+  @override
+  String get securityJournal => 'Xavfsizlik jurnali';
+
+  @override
+  String get securityJournalAllTab => 'Hammasi';
+
+  @override
+  String get securityJournalSuspiciousTab => 'Shubhali';
+
+  @override
+  String get securityJournalFilterEntityType => 'Hodisa turi';
+
+  @override
+  String get securityJournalFilterAction => 'Amal';
+
+  @override
+  String get securityJournalFilterAll => 'Barchasi';
+
+  @override
+  String get securityJournalEmptyAll => 'Hozircha audit yozuvlari yo\'q.';
+
+  @override
+  String get securityJournalNoSuspicious =>
+      'Hozircha shubhali faollik aniqlanmadi.';
+
+  @override
+  String get securityJournalAnonymousActor => 'Anonim';
+
+  @override
+  String get securityJournalFailedLoginBursts => 'Xato login urinishlari';
+
+  @override
+  String get securityJournalBulkDeleteBursts => 'Ko\'p o\'chirish urinishlari';
+
+  @override
+  String get securityJournalFirstSeen => 'Boshlangan';
+
+  @override
+  String get securityJournalLastSeen => 'Oxirgi';
+
+  @override
+  String get securityJournalSourceIps => 'Manba IP';
+
+  @override
+  String get securityJournalEntityTypes => 'Obyektlar';
 }

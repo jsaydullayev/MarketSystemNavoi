@@ -73,11 +73,16 @@ class StatCard extends StatelessWidget {
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: color),
+                        strokeWidth: 2,
+                        color: color,
+                      ),
                     )
                   else if (isClickable)
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        size: 13, color: color),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 13,
+                      color: color,
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md + 2),
@@ -94,10 +99,10 @@ class StatCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (subtitle != null) ...[
+              if (subtitle case final sub?) ...[
                 const SizedBox(height: 3),
                 Text(
-                  subtitle!,
+                  sub,
                   style: AppTextStyles.bodySmall().copyWith(fontSize: 11),
                 ),
               ],

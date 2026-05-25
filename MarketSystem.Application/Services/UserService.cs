@@ -23,7 +23,11 @@ public class UserService : IUserService
 
     public async Task<UserDto?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var marketId = _currentMarketService.GetCurrentMarketId();
+        // TryGetCurrentMarketId returns null for SuperAdmin (cross-tenant, no MarketId
+        // in JWT). For regular tenant users it returns the scoped market id. EF Core
+        // translates `u.MarketId == null` to `WHERE MarketId IS NULL`, which correctly
+        // matches the SuperAdmin row in the database.
+        var marketId = _currentMarketService.TryGetCurrentMarketId();
 
         var users = await _unitOfWork.Users.FindAsync(
             u => u.Id == id && u.MarketId == marketId,
@@ -72,12 +76,19 @@ public class UserService : IUserService
         if (role is not (Role.Admin or Role.Seller))
             throw new InvalidOperationException("Faqat Admin yoki Seller foydalanuvchi yaratish mumkin.");
 
-        if (await _unitOfWork.Users.AnyAsync(u => u.Username == request.Username, cancellationToken))
-            throw new InvalidOperationException($"Username '{request.Username}' already exists");
-
         var currentMarketId = _currentMarketService.TryGetCurrentMarketId();
         if (!currentMarketId.HasValue)
             throw new InvalidOperationException("Market topilmadi. Iltimos, qaytadan tizimga kiring.");
+
+        // M3 — username uniqueness is enforced PER MARKET via the partial
+        // unique index "IX_Users_MarketId_Username_Unique" (see AppDbContext).
+        // The previous check was global, which would reject "ahmad" in
+        // market B just because some other tenant already had an "ahmad".
+        // Scope the precheck so it matches the DB constraint shape.
+        if (await _unitOfWork.Users.AnyAsync(
+                u => u.Username == request.Username && u.MarketId == currentMarketId,
+                cancellationToken))
+            throw new InvalidOperationException($"Username '{request.Username}' already exists");
 
         var user = new User
         {
@@ -164,9 +175,20 @@ public class UserService : IUserService
 
     public async Task<UserDto?> UpdateProfileImageAsync(Guid userId, UpdateProfileImageDto request, CancellationToken cancellationToken = default)
     {
-        // Profile image update uchun faqat ID bo'yicha qidiramiz - foydalanuvchi o'z profil rasmini o'zgartira oladi
-        // MarketId tekshiruvi shart emas, chunki JWT token'dan userId olinmoqda
-        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        // S3 — scope the user lookup to the caller's current market. The old
+        // code trusted "the userId comes from the JWT, that's enough" — true
+        // for the request body, but every other UserService method also
+        // verifies the looked-up user lives in the caller's market. A token
+        // replayed onto the wrong subdomain (e.g. a stolen Owner-A token
+        // hitting tenant-B's host) would otherwise still let the attacker
+        // mutate their OWN profile image while running under tenant B's
+        // context. SuperAdmin (MarketId NULL) keeps working: we use
+        // TryGetCurrentMarketId so the null case matches user.MarketId IS NULL.
+        var currentMarketId = _currentMarketService.TryGetCurrentMarketId();
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == userId && u.MarketId == currentMarketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
 
         if (user is null)
             return null;
@@ -230,7 +252,14 @@ public class UserService : IUserService
         if (user.Role == Role.SuperAdmin)
             return false;
 
-        _unitOfWork.Users.Delete(user);
+        // Soft-delete — mirrors the SuperAdmin owner-delete flow and preserves
+        // audit history. A hard delete would either fail (FK RESTRICT against
+        // AuditLogs.UserId, per Plan 07 Bosqich 5) or rewrite history if we
+        // ever relaxed the FK — soft-delete sidesteps both. The user becomes
+        // hidden by the global IsDeleted query filter.
+        user.IsActive = false;
+        user.IsDeleted = true;
+        _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
     }

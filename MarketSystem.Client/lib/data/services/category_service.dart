@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
 import 'http_service.dart';
 import '../models/product_category_model.dart';
@@ -8,12 +9,14 @@ class CategoryService {
   final HttpService _httpService;
 
   CategoryService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
+    : _httpService = httpService ?? HttpService();
 
   /// Get all categories
   Future<List<ProductCategoryModel>> getAllCategories() async {
     try {
-      final response = await _httpService.get('/ProductCategories/GetAllCategories');
+      final response = await _httpService.get(
+        '/ProductCategories/GetAllCategories',
+      );
 
       if (response.statusCode == 200) {
         // Bo'sh yoki whitespace-only javoblarni tekshirish
@@ -25,16 +28,19 @@ class CategoryService {
         // JSON ni parse qilish
         final List<dynamic> data = jsonDecode(trimmedBody);
         return data.map((json) => ProductCategoryModel.fromJson(json)).toList();
-      } else if (response.statusCode == 401) {
-        throw Exception('Avtorizatsiya xatosi: Iltimos, qayta tizimga kiring');
-      } else if (response.statusCode == 403) {
-        throw Exception('Ruxsat yo\'q: Faqat Admin va Owner kategoriyalarni ko\'rishi mumkin');
-      } else if (response.statusCode == 404) {
-        throw Exception('Endpoint topilmadi. Backend ishga tushganini tekshiring');
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['message'] ?? 'Failed to load categories: ${response.statusCode}');
       }
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: switch (response.statusCode) {
+          401 => 'Avtorizatsiya xatosi: Iltimos, qayta tizimga kiring',
+          403 =>
+            'Ruxsat yo\'q: Faqat Admin va Owner kategoriyalarni ko\'rishi mumkin',
+          404 => 'Endpoint topilmadi. Backend ishga tushganini tekshiring',
+          _ => 'Failed to load categories',
+        },
+      );
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('Kategoriyalarni yuklashda xatolik: $e');
     }
@@ -42,7 +48,9 @@ class CategoryService {
 
   /// Get category by ID
   Future<ProductCategoryModel?> getCategoryById(int id) async {
-    final response = await _httpService.get('/ProductCategories/GetCategoryById/$id');
+    final response = await _httpService.get(
+      '/ProductCategories/GetCategoryById/$id',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -50,7 +58,10 @@ class CategoryService {
     } else if (response.statusCode == 404) {
       return null;
     } else {
-      throw Exception('Failed to load category: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load category',
+      );
     }
   }
 
@@ -74,10 +85,11 @@ class CategoryService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return ProductCategoryModel.fromJson(data);
-    } else {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Category creation failed');
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Category creation failed',
+    );
   }
 
   /// Update category
@@ -106,25 +118,27 @@ class CategoryService {
       return ProductCategoryModel.fromJson(data);
     } else if (response.statusCode == 404) {
       return null;
-    } else {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Category update failed');
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Category update failed',
+    );
   }
 
   /// Delete category
   Future<bool> deleteCategory(int id) async {
-    final response = await _httpService.delete('/ProductCategories/DeleteCategory/$id');
+    final response = await _httpService.delete(
+      '/ProductCategories/DeleteCategory/$id',
+    );
 
     if (response.statusCode == 200) {
       return true;
     } else if (response.statusCode == 404) {
       return false;
-    } else if (response.statusCode == 400) {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Category deletion failed: Bad Request');
-    } else {
-      throw Exception('Failed to delete category: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to delete category',
+    );
   }
 }

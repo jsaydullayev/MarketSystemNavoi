@@ -45,6 +45,10 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<int?>("MarketId")
                         .HasColumnType("integer");
 
@@ -52,13 +56,14 @@ namespace MarketSystem.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MarketId")
-                        .HasDatabaseName("IX_AuditLog_MarketId");
+                    b.HasIndex("MarketId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_AuditLog_Market_CreatedAt_Desc");
 
                     b.HasIndex("UserId", "CreatedAt")
                         .HasDatabaseName("IX_AuditLog_User_CreatedAt");
@@ -87,6 +92,12 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.Property<int>("MarketId")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -118,6 +129,9 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("MarketId")
+                        .HasColumnType("integer");
+
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
@@ -133,6 +147,8 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.HasIndex("WithdrawalDate");
+
+                    b.HasIndex("MarketId", "WithdrawalDate");
 
                     b.ToTable("CashWithdrawals");
                 });
@@ -206,6 +222,12 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<decimal>("TotalDebt")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -672,7 +694,9 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasIndex("CustomerId")
                         .HasDatabaseName("IX_Sale_CustomerId");
 
-                    b.HasIndex("MarketId");
+                    b.HasIndex("MarketId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_Sale_Market_CreatedAt_Desc");
 
                     b.HasIndex("SellerId", "Status")
                         .HasDatabaseName("IX_Sale_Seller_Status");
@@ -895,8 +919,7 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.HasOne("MarketSystem.Domain.Entities.User", "User")
                         .WithMany("AuditLogs")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Market");
 
@@ -922,9 +945,17 @@ namespace MarketSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.CashWithdrawal", b =>
                 {
+                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
+                        .WithMany()
+                        .HasForeignKey("MarketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MarketSystem.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
+
+                    b.Navigation("Market");
 
                     b.Navigation("User");
                 });

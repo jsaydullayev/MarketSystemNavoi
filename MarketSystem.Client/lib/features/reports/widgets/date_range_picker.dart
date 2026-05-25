@@ -44,7 +44,9 @@ class DateRangeRow extends StatelessWidget {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.lg,
+        ),
         decoration: BoxDecoration(
           color: context.colors.surface,
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -58,8 +60,11 @@ class DateRangeRow extends StatelessWidget {
                 color: context.colors.brandLight,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: Icon(Icons.date_range_rounded,
-                  color: context.colors.brand, size: 18),
+              child: Icon(
+                Icons.date_range_rounded,
+                color: context.colors.brand,
+                size: 18,
+              ),
             ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
@@ -68,16 +73,23 @@ class DateRangeRow extends StatelessWidget {
                   _DateChip(label: l10n.from, date: startDate),
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg - 2),
-                    child: Icon(Icons.arrow_forward_rounded,
-                        size: 16, color: context.colors.textMuted),
+                      horizontal: AppSpacing.lg - 2,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: context.colors.textMuted,
+                    ),
                   ),
                   _DateChip(label: l10n.to, date: endDate),
                 ],
               ),
             ),
-            Icon(Icons.edit_calendar_rounded,
-                size: 18, color: context.colors.textMuted),
+            Icon(
+              Icons.edit_calendar_rounded,
+              size: 18,
+              color: context.colors.textMuted,
+            ),
           ],
         ),
       ),
@@ -96,10 +108,7 @@ class _DateChip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.bodySmall().copyWith(fontSize: 10),
-        ),
+        Text(label, style: AppTextStyles.bodySmall().copyWith(fontSize: 10)),
         Text(
           DateFormat('dd.MM.yyyy').format(date),
           style: AppTextStyles.bodyMedium().copyWith(

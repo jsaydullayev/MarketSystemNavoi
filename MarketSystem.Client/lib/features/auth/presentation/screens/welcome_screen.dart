@@ -29,10 +29,9 @@ class WelcomeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.white,
-              context.colors.brandLight,
-            ],
+            colors: isDark
+                ? [AppColors.darkSurface2, AppColors.darkBg]
+                : [Colors.white, context.colors.brandLight],
           ),
         ),
         child: SafeArea(
@@ -311,7 +310,9 @@ class _LanguageChip extends StatelessWidget {
       context: context,
       backgroundColor: context.colors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl2)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl2),
+        ),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -328,7 +329,10 @@ class _LanguageChip extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text(AppLocalizations.of(context)!.selectLanguage, style: AppTextStyles.titleMedium()),
+              Text(
+                AppLocalizations.of(context)!.selectLanguage,
+                style: AppTextStyles.titleMedium(),
+              ),
               const SizedBox(height: AppSpacing.lg),
               for (final option in _options)
                 ListTile(
@@ -373,9 +377,7 @@ class _ThemeToggleButton extends StatelessWidget {
         icon: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: Icon(
-            isDark
-                ? Icons.wb_sunny_outlined
-                : Icons.nightlight_round_outlined,
+            isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round_outlined,
             key: ValueKey(isDark),
             color: isDark ? Colors.amber : context.colors.text,
             size: 20,

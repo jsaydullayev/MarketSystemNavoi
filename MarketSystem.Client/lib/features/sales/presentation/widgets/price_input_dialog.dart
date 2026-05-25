@@ -51,16 +51,18 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
 
     _priceController = TextEditingController(text: _formatNumber(currentPrice));
     _qtyController = TextEditingController(text: _formatNumber(initialQty));
-    _commentController =
-        TextEditingController(text: widget.product['comment'] ?? '');
+    _commentController = TextEditingController(
+      text: widget.product['comment'] ?? '',
+    );
 
     _showMinPrice = _minPrice > 0 && currentPrice < _minPrice;
     _priceController.addListener(_onPriceChanged);
   }
 
   String _formatNumber(double value) {
-    final unitName =
-        (widget.product['unitName'] ?? '').toString().toLowerCase();
+    final unitName = (widget.product['unitName'] ?? '')
+        .toString()
+        .toLowerCase();
     const weightUnits = ['kg', 'кг', 'kilogram', 'g', 'gr', 'litr', 'l', 'л'];
     final isWeight = weightUnits.contains(unitName);
 
@@ -90,15 +92,43 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     super.dispose();
   }
 
+  /// AUDIT-3 — upper bound on price/qty so a paste like `999999999999.99`
+  /// can't reach the backend's `decimal(18,2)` column and overflow, and
+  /// so a fat-finger `100000000` doesn't show up as the sale total in
+  /// the daily report. 999_999_999 covers any realistic UZS line item
+  /// (~$80k USD at 2026 rates); larger values are almost certainly typos.
+  static const double _maxAmount = 999999999;
+
   void _submit() {
     final cleanPriceText = _priceController.text
         .replaceAll(RegExp(r'\s+'), '')
         .replaceAll(',', '.');
-    final cleanQtyText =
-        _qtyController.text.replaceAll(RegExp(r'\s+'), '').replaceAll(',', '.');
+    final cleanQtyText = _qtyController.text
+        .replaceAll(RegExp(r'\s+'), '')
+        .replaceAll(',', '.');
 
     final price = double.tryParse(cleanPriceText) ?? 0;
     final rawQty = double.tryParse(cleanQtyText) ?? 1;
+
+    // AUDIT-3 — refuse out-of-range / non-finite values before they
+    // leave the widget. The product-edit chip used to surface a raw
+    // FormatException; now we just keep the sheet open so the user can
+    // correct the input.
+    if (price < 0 ||
+        price > _maxAmount ||
+        rawQty <= 0 ||
+        rawQty > _maxAmount ||
+        !price.isFinite ||
+        !rawQty.isFinite) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.errorOccurred),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
 
     // BUG FIX: Remove truncation - allow decimal quantities for all units.
     final double qty = rawQty;
@@ -120,7 +150,8 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
         decoration: BoxDecoration(
           color: context.colors.surface,
           borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl2)),
+            top: Radius.circular(AppRadius.xl2),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -262,10 +293,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   flex: 2,
-                  child: AppPrimaryButton(
-                    label: l10n.add,
-                    onPressed: _submit,
-                  ),
+                  child: AppPrimaryButton(label: l10n.add, onPressed: _submit),
                 ),
               ],
             ),
@@ -323,10 +351,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              borderSide: BorderSide(
-                color: context.colors.brand,
-                width: 1.5,
-              ),
+              borderSide: BorderSide(color: context.colors.brand, width: 1.5),
             ),
             contentPadding: const EdgeInsets.all(AppSpacing.xl),
           ),

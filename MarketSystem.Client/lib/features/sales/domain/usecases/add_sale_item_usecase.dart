@@ -14,9 +14,9 @@ class AddSaleItemUseCase {
   Future<ApiResult<void>> call({
     required String saleId,
     required String productId,
-    required double quantity,  // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
+    required double quantity, // ✅ DECIMAL - 22.5 m, 15.5 kg bo'lishi mumkin
     required double salePrice,
-    required double minSalePrice,  // ✅ Yangi: minPrice qo'shildi
+    required double minSalePrice, // ✅ Yangi: minPrice qo'shildi
     String? comment,
   }) async {
     // Biznes validatsiyalar
@@ -38,7 +38,9 @@ class AddSaleItemUseCase {
 
     // ✅ Yangi: Minimum narxdan past sotib bo'lishi mumkin emas!
     if (salePrice < minSalePrice) {
-      return ApiResult.failure('Narx minimum sotish narxdan ($minSalePrice so\'m) past bo\'lishi mumkin emas');
+      return ApiResult.failure(
+        'Narx minimum sotish narxdan ($minSalePrice so\'m) past bo\'lishi mumkin emas',
+      );
     }
 
     return repository.addSaleItem(

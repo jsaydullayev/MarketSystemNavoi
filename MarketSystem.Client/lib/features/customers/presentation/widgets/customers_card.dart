@@ -45,8 +45,11 @@ class CustomersCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.delete_forever_rounded,
-                color: Colors.white, size: 26),
+            const Icon(
+              Icons.delete_forever_rounded,
+              color: Colors.white,
+              size: 26,
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               l10n.delete,
@@ -144,11 +147,15 @@ class CustomersCard extends StatelessWidget {
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: context.colors.inputFill,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.md - 2),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.md - 2,
+                            ),
                           ),
-                          child: Icon(Icons.info_outline_rounded,
-                              size: 18, color: context.colors.textMuted),
+                          child: Icon(
+                            Icons.info_outline_rounded,
+                            size: 18,
+                            color: context.colors.textMuted,
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -176,8 +183,9 @@ class CustomersCard extends StatelessWidget {
     );
 
     try {
-      final deleteInfo =
-          await customerService.getCustomerDeleteInfo(customer['id']);
+      final deleteInfo = await customerService.getCustomerDeleteInfo(
+        customer['id'],
+      );
       if (context.mounted) Navigator.pop(context);
 
       if (!context.mounted) return false;
@@ -186,7 +194,8 @@ class CustomersCard extends StatelessWidget {
         context: context,
         builder: (dialogContext) => AlertDialog(
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.xl)),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+          ),
           title: Text(l10n.deleteCustomer, style: AppTextStyles.titleMedium()),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -201,8 +210,9 @@ class CustomersCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: AppSpacing.lg),
                   child: Text(
                     deleteInfo['warningMessage'],
-                    style: AppTextStyles.bodySmall()
-                        .copyWith(color: AppColors.warning),
+                    style: AppTextStyles.bodySmall().copyWith(
+                      color: AppColors.warning,
+                    ),
                   ),
                 ),
             ],
@@ -237,7 +247,8 @@ class CustomersCard extends StatelessWidget {
         context: context,
         builder: (dialogContext) => AlertDialog(
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.xl)),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+          ),
           title: Text(l10n.deleteCustomer, style: AppTextStyles.titleMedium()),
           content: Text(
             '${customer['fullName'] ?? customer['phone']} ${l10n.deleteCustomerConfirm(customer['fullName'] ?? customer['phone'])}',
@@ -291,25 +302,27 @@ class CustomersCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl2),
             _InfoRow(
-                icon: Icons.person_rounded,
-                label: l10n.fullName,
-                value: customer['fullName'] ?? l10n.unknown),
+              icon: Icons.person_rounded,
+              label: l10n.fullName,
+              value: customer['fullName'] ?? l10n.unknown,
+            ),
             _InfoRow(
-                icon: Icons.phone_rounded,
-                label: l10n.phoneNumber,
-                value: customer['phone'] ?? l10n.unknown),
+              icon: Icons.phone_rounded,
+              label: l10n.phoneNumber,
+              value: customer['phone'] ?? l10n.unknown,
+            ),
             _InfoRow(
               icon: Icons.monetization_on_rounded,
               label: l10n.debt,
-              value:
-                  hasDebt ? NumberFormatter.format(totalDebt) : l10n.noDebt,
+              value: hasDebt ? NumberFormatter.format(totalDebt) : l10n.noDebt,
               valueColor: hasDebt ? AppColors.danger : AppColors.success,
             ),
             if ((customer['comment']?.toString() ?? '').isNotEmpty)
               _InfoRow(
-                  icon: Icons.comment_rounded,
-                  label: l10n.comment,
-                  value: customer['comment']),
+                icon: Icons.comment_rounded,
+                label: l10n.comment,
+                value: customer['comment'],
+              ),
             const SizedBox(height: AppSpacing.md),
           ],
         ),
@@ -353,7 +366,9 @@ class _DebtBadge extends StatelessWidget {
     final color = hasDebt ? AppColors.danger : AppColors.success;
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md + 2, vertical: AppSpacing.xs + 1),
+        horizontal: AppSpacing.md + 2,
+        vertical: AppSpacing.xs + 1,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.md - 2),
@@ -390,9 +405,12 @@ class _InfoRow extends StatelessWidget {
         children: [
           Icon(icon, size: 20, color: context.colors.textMuted),
           const SizedBox(width: AppSpacing.lg),
-          Text(label,
-              style: AppTextStyles.bodyMedium()
-                  .copyWith(color: context.colors.textSecondary)),
+          Text(
+            label,
+            style: AppTextStyles.bodyMedium().copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
           const Spacer(),
           Text(
             value,

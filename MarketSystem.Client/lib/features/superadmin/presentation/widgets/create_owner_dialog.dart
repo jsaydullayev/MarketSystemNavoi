@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/validators/password_validator.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
@@ -135,24 +136,28 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
     if (!mounted) return;
     final stillCurrent =
         (usernameQ == null || _username.text.trim() == usernameQ) &&
-            (marketQ == null || _marketName.text.trim() == marketQ) &&
-            (subdomainQ == null ||
-                _subdomain.text.trim().toLowerCase() == subdomainQ);
+        (marketQ == null || _marketName.text.trim() == marketQ) &&
+        (subdomainQ == null ||
+            _subdomain.text.trim().toLowerCase() == subdomainQ);
     if (!stillCurrent) return;
-    if (res.status != SuperAdminOpStatus.success || res.data == null) return;
+    // Snapshot before the guard so flow analysis can promote it.
+    final d = res.data;
+    if (res.status != SuperAdminOpStatus.success || d == null) return;
     setState(() {
-      final d = res.data!;
       if (usernameQ != null && d['usernameAvailable'] is bool) {
-        _userState =
-            (d['usernameAvailable'] as bool) ? _Check.free : _Check.taken;
+        _userState = (d['usernameAvailable'] as bool)
+            ? _Check.free
+            : _Check.taken;
       }
       if (marketQ != null && d['marketNameAvailable'] is bool) {
-        _marketState =
-            (d['marketNameAvailable'] as bool) ? _Check.free : _Check.taken;
+        _marketState = (d['marketNameAvailable'] as bool)
+            ? _Check.free
+            : _Check.taken;
       }
       if (subdomainQ != null && d['subdomainAvailable'] is bool) {
-        _subdomainState =
-            (d['subdomainAvailable'] as bool) ? _Check.free : _Check.taken;
+        _subdomainState = (d['subdomainAvailable'] as bool)
+            ? _Check.free
+            : _Check.taken;
       }
       if (d['suggestedSubdomain'] is String) {
         _suggestedSubdomain = d['suggestedSubdomain'] as String;
@@ -215,8 +220,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
       );
     } else {
       final l10n = AppLocalizations.of(context)!;
-      setState(
-          () => _errorMessage = res.message ?? l10n.createOwnerFailed);
+      setState(() => _errorMessage = res.message ?? l10n.createOwnerFailed);
     }
   }
 
@@ -295,9 +299,11 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final typedSubdomain = _subdomain.text.trim().toLowerCase();
-    final previewSubdomain =
-        typedSubdomain.isNotEmpty ? typedSubdomain : _suggestedSubdomain;
-    final disabled = _submitting ||
+    final previewSubdomain = typedSubdomain.isNotEmpty
+        ? typedSubdomain
+        : _suggestedSubdomain;
+    final disabled =
+        _submitting ||
         _userState == _Check.taken ||
         _marketState == _Check.taken ||
         _subdomainState == _Check.taken;
@@ -355,7 +361,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                     style: AppTextStyles.bodySmall(),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  if (_errorMessage != null) ...[
+                  if (_errorMessage case final msg?) ...[
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md + 2),
                       decoration: BoxDecoration(
@@ -363,7 +369,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Text(
-                        _errorMessage!,
+                        msg,
                         style: AppTextStyles.bodySmall().copyWith(
                           color: AppColors.danger,
                         ),
@@ -381,8 +387,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                       prefix: Icons.person_outline,
                       hint: l10n.fullNameRequired,
                     ),
-                    validator: (v) =>
-                        (v ?? '').trim().length < 2 ? l10n.nameRequiredShort : null,
+                    validator: (v) => (v ?? '').trim().length < 2
+                        ? l10n.nameRequiredShort
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.md + 2),
                   Row(
@@ -390,8 +397,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                       Expanded(
                         child: TextFormField(
                           controller: _phone,
-                          style: AppTextStyles.bodyMedium()
-                              .copyWith(fontSize: 15),
+                          style: AppTextStyles.bodyMedium().copyWith(
+                            fontSize: 15,
+                          ),
                           keyboardType: TextInputType.phone,
                           decoration: _decoration(
                             context,
@@ -418,8 +426,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                       Expanded(
                         child: TextFormField(
                           controller: _username,
-                          style: AppTextStyles.bodyMedium()
-                              .copyWith(fontSize: 15),
+                          style: AppTextStyles.bodyMedium().copyWith(
+                            fontSize: 15,
+                          ),
                           decoration: _decoration(
                             context,
                             prefix: Icons.alternate_email,
@@ -430,8 +439,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                                 : null,
                             helper: l10n.minCharsShort,
                           ),
-                          validator: (v) =>
-                              (v ?? '').trim().length < 3 ? l10n.minThreeCharsShort : null,
+                          validator: (v) => (v ?? '').trim().length < 3
+                              ? l10n.minThreeCharsShort
+                              : null,
                         ),
                       ),
                       const SizedBox(width: AppSpacing.lg),
@@ -439,8 +449,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                         child: TextFormField(
                           controller: _password,
                           obscureText: _obscurePassword,
-                          style: AppTextStyles.bodyMedium()
-                              .copyWith(fontSize: 15),
+                          style: AppTextStyles.bodyMedium().copyWith(
+                            fontSize: 15,
+                          ),
                           decoration: _decoration(
                             context,
                             prefix: Icons.lock_outline,
@@ -456,8 +467,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                                     color: context.colors.textSecondary,
                                     size: 20,
                                   ),
-                                  onPressed: () => setState(() =>
-                                      _obscurePassword = !_obscurePassword),
+                                  onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  ),
                                   tooltip: l10n.show,
                                 ),
                                 IconButton(
@@ -473,8 +485,13 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                             ),
                             helper: l10n.minEightCharsHelper,
                           ),
+                          // G2 — was length-only; now enforces the full
+                          // StrongPassword policy (8+ chars AND ≥1 letter
+                          // AND ≥1 digit) so a SuperAdmin-minted Owner
+                          // password can't be silently rejected by the
+                          // backend on the next save.
                           validator: (v) =>
-                              (v ?? '').length < 8 ? l10n.minEightChars : null,
+                              PasswordValidator.validateNew(v, context),
                         ),
                       ),
                     ],
@@ -494,8 +511,9 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                           ? l10n.marketNameTaken(_marketName.text.trim())
                           : null,
                     ),
-                    validator: (v) =>
-                        (v ?? '').trim().length < 3 ? l10n.minThreeCharsShort : null,
+                    validator: (v) => (v ?? '').trim().length < 3
+                        ? l10n.minThreeCharsShort
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.md + 2),
                   TextFormField(
@@ -512,8 +530,7 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                           : null,
                     ),
                   ),
-                  if (previewSubdomain != null &&
-                      previewSubdomain.isNotEmpty)
+                  if (previewSubdomain != null && previewSubdomain.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 6, left: 4),
                       child: Row(
@@ -525,9 +542,12 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            typedSubdomain.isEmpty ? l10n.autoLabel : l10n.urlLabel,
-                            style: AppTextStyles.bodySmall()
-                                .copyWith(fontSize: 12),
+                            typedSubdomain.isEmpty
+                                ? l10n.autoLabel
+                                : l10n.urlLabel,
+                            style: AppTextStyles.bodySmall().copyWith(
+                              fontSize: 12,
+                            ),
                           ),
                           Text(
                             '$previewSubdomain.strotech.uz',
@@ -619,9 +639,9 @@ class _Section extends StatelessWidget {
   final String title;
   @override
   Widget build(BuildContext context) => Text(
-        title.toUpperCase(),
-        style: AppTextStyles.caption().copyWith(
-          color: context.colors.textSecondary,
-        ),
-      );
+    title.toUpperCase(),
+    style: AppTextStyles.caption().copyWith(
+      color: context.colors.textSecondary,
+    ),
+  );
 }

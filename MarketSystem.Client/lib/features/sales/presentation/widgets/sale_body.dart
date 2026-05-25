@@ -71,7 +71,11 @@ class SaleBody extends StatelessWidget {
     return Container(
       color: context.colors.surface,
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.lg),
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -93,7 +97,9 @@ class SaleBody extends StatelessWidget {
                 fillColor: context.colors.inputFill,
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: AppSpacing.lg + 2),
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.lg + 2,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   borderSide: BorderSide.none,
@@ -104,8 +110,10 @@ class SaleBody extends StatelessWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  borderSide:
-                      BorderSide(color: context.colors.brand, width: 1.5),
+                  borderSide: BorderSide(
+                    color: context.colors.brand,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -120,7 +128,9 @@ class SaleBody extends StatelessWidget {
   /// Orange add-external-product button — the same affordance as before
   /// but with the new brand color.
   Widget _buildExternalProductButton(
-      BuildContext context, AppLocalizations l10n) {
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
     return Tooltip(
       message: l10n.addExternalProduct,
       child: Material(
@@ -140,16 +150,8 @@ class SaleBody extends StatelessWidget {
                 alignment: Alignment.center,
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(
-                    Icons.storefront_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: _PlusBadge(),
-                  ),
+                  Icon(Icons.storefront_rounded, color: Colors.white, size: 22),
+                  Positioned(top: 4, right: 4, child: _PlusBadge()),
                 ],
               ),
             ),
@@ -185,7 +187,9 @@ class SaleBody extends StatelessWidget {
                     onCategorySelected(isAll ? null : categories[i - 1]),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg + 2, vertical: 6),
+                    horizontal: AppSpacing.lg + 2,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? context.colors.brand
@@ -254,7 +258,11 @@ class SaleBody extends StatelessWidget {
 
         return GridView.builder(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.lg),
+            AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.lg,
+          ),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             childAspectRatio: 1.05,
@@ -264,10 +272,7 @@ class SaleBody extends StatelessWidget {
           itemCount: filteredProducts.length,
           itemBuilder: (context, index) {
             final p = filteredProducts[index];
-            return _ProductTile(
-              product: p,
-              onAdd: () => onAddToCart(p),
-            );
+            return _ProductTile(product: p, onAdd: () => onAddToCart(p));
           },
         );
       },
@@ -289,10 +294,10 @@ class _ProductTile extends StatelessWidget {
     final stock = (product['quantity'] ?? 0).toDouble();
     final isInStock = stock > 0;
     final isLow = stock > 0 && stock <= 5;
-    final isPopular = product['isPopular'] == true ||
+    final isPopular =
+        product['isPopular'] == true ||
         product['popular'] == true ||
-        (product['salesCount'] is num &&
-            (product['salesCount'] as num) > 50);
+        (product['salesCount'] is num && (product['salesCount'] as num) > 50);
 
     return Opacity(
       opacity: isInStock ? 1.0 : 0.55,
@@ -305,10 +310,7 @@ class _ProductTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: context.colors.surface,
               borderRadius: BorderRadius.circular(AppRadius.lg - 2),
-              border: Border.all(
-                color: context.colors.borderSoft,
-                width: 1,
-              ),
+              border: Border.all(color: context.colors.borderSoft, width: 1),
             ),
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -342,11 +344,8 @@ class _ProductTile extends StatelessWidget {
                   style: AppTextStyles.caption().copyWith(
                     fontSize: 11,
                     letterSpacing: 0,
-                    color: isLow
-                        ? AppColors.warning
-                        : context.colors.textMuted,
-                    fontWeight:
-                        isLow ? FontWeight.w600 : FontWeight.w400,
+                    color: isLow ? AppColors.warning : context.colors.textMuted,
+                    fontWeight: isLow ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
                 const Spacer(),
@@ -360,7 +359,9 @@ class _ProductTile extends StatelessWidget {
   }
 
   String _stockLabel(double stock, bool isLow, bool isInStock) {
-    final qty = stock == stock.toInt() ? stock.toInt().toString() : stock.toStringAsFixed(2);
+    final qty = stock == stock.toInt()
+        ? stock.toInt().toString()
+        : stock.toStringAsFixed(2);
     if (!isInStock) return 'Stok: 0';
     if (isLow) return '⚠ Stok: $qty';
     return 'Stok: $qty';
@@ -413,11 +414,7 @@ class _PlusBadge extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(
-        Icons.add_rounded,
-        color: context.colors.brand,
-        size: 11,
-      ),
+      child: Icon(Icons.add_rounded, color: context.colors.brand, size: 11),
     );
   }
 }

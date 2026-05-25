@@ -61,11 +61,11 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       _nameController.text = widget.product['name'] ?? '';
       _costPriceController.text = (widget.product['costPrice'] ?? 0).toString();
       _salePriceController.text = (widget.product['salePrice'] ?? 0).toString();
-      _minSalePriceController.text =
-          (widget.product['minSalePrice'] ?? 0).toString();
+      _minSalePriceController.text = (widget.product['minSalePrice'] ?? 0)
+          .toString();
       _stockController.text = (widget.product['quantity'] ?? 0).toString();
-      _minThresholdController.text =
-          (widget.product['minThreshold'] ?? 0).toString();
+      _minThresholdController.text = (widget.product['minThreshold'] ?? 0)
+          .toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
       _selectedCategory = widget.product['categoryId'];
       _selectedUnit = widget.product['unit'] ?? 1;
@@ -109,10 +109,10 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       final String name = _nameController.text.trim();
       final double salePrice =
           double.tryParse(_salePriceController.text.replaceAll(',', '.')) ??
-              0.0;
+          0.0;
       final double minSalePrice =
           double.tryParse(_minSalePriceController.text.replaceAll(',', '.')) ??
-              0.0;
+          0.0;
       final int minThreshold = int.tryParse(_minThresholdController.text) ?? 0;
       final bool tempStatus = _isTemporary;
 
@@ -159,14 +159,17 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isWeb = screenWidth > 600;
-    final unitName = _units.firstWhere(
-      (u) => u['value'] == _selectedUnit,
-      orElse: () => _units.first,
-    )['name'] as String;
+    final unitName =
+        _units.firstWhere(
+              (u) => u['value'] == _selectedUnit,
+              orElse: () => _units.first,
+            )['name']
+            as String;
 
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         alignment: Alignment.bottomCenter,
         child: Container(
@@ -177,7 +180,8 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           decoration: BoxDecoration(
             color: context.colors.surface,
             borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppRadius.xl2)),
+              top: Radius.circular(AppRadius.xl2),
+            ),
           ),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -209,8 +213,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                   Center(
                     child: Text(
                       _isEditing ? l10n.editProduct : l10n.addProduct,
-                      style: AppTextStyles.titleLarge()
-                          .copyWith(fontSize: 19),
+                      style: AppTextStyles.titleLarge().copyWith(fontSize: 19),
                     ),
                   ),
                   6.height,
@@ -374,9 +377,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
                   24.height,
                   AppPrimaryButton(
-                    label: _isEditing
-                        ? l10n.save
-                        : "Mahsulotni qo'shish",
+                    label: _isEditing ? l10n.save : "Mahsulotni qo'shish",
                     icon: _isEditing ? Icons.check_rounded : Icons.add_rounded,
                     onPressed: _isLoading ? null : _saveProduct,
                     isLoading: _isLoading,
@@ -404,7 +405,10 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
       validator: validator,
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      style: AppTextStyles.bodyMedium().copyWith(
+        fontSize: 14,
+        color: context.colors.text,
+      ),
       decoration: _inputDecoration(hint: hint),
     );
   }
@@ -424,7 +428,10 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           : TextInputType.text,
       validator: validator,
       onChanged: (_) => setState(() {}),
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
+      style: AppTextStyles.bodyMedium().copyWith(
+        fontSize: 14,
+        color: context.colors.text,
+      ),
       decoration: _inputDecoration().copyWith(
         suffixText: suffix,
         suffixStyle: AppTextStyles.caption().copyWith(
@@ -475,33 +482,38 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
   Widget _buildCategoryDropdown(AppLocalizations l10n) {
     final uniqueCategories = _categories
-        .fold<Map<int, ProductCategoryModel>>(
-          {},
-          (map, c) => map..[c.id] = c,
-        )
+        .fold<Map<int, ProductCategoryModel>>({}, (map, c) => map..[c.id] = c)
         .values
         .toList();
 
     final validIds = uniqueCategories.map((c) => c.id).toSet();
     final safeCategory =
         (_selectedCategory != null && validIds.contains(_selectedCategory))
-            ? _selectedCategory
-            : null;
+        ? _selectedCategory
+        : null;
 
     return DropdownButtonFormField<int?>(
       initialValue: safeCategory,
       isExpanded: true,
       decoration: _inputDecoration(),
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
-      icon: Icon(Icons.keyboard_arrow_down_rounded,
-          color: context.colors.textSecondary),
+      dropdownColor: context.colors.surface,
+      style: AppTextStyles.bodyMedium().copyWith(
+        fontSize: 14,
+        color: context.colors.text,
+      ),
+      icon: Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: context.colors.textSecondary,
+      ),
       items: [
         DropdownMenuItem(
           value: null,
           child: Text(
             l10n.no,
-            style: AppTextStyles.bodyMedium()
-                .copyWith(fontSize: 14, color: context.colors.textMuted),
+            style: AppTextStyles.bodyMedium().copyWith(
+              fontSize: 14,
+              color: context.colors.textMuted,
+            ),
           ),
         ),
         ...uniqueCategories.map(
@@ -527,9 +539,15 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       initialValue: safeValue,
       isExpanded: true,
       decoration: _inputDecoration(),
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
-      icon: Icon(Icons.keyboard_arrow_down_rounded,
-          color: context.colors.textSecondary),
+      dropdownColor: context.colors.surface,
+      style: AppTextStyles.bodyMedium().copyWith(
+        fontSize: 14,
+        color: context.colors.text,
+      ),
+      icon: Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: context.colors.textSecondary,
+      ),
       items: _units
           .map(
             (u) => DropdownMenuItem(
@@ -541,7 +559,12 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
             ),
           )
           .toList(),
-      onChanged: (v) => setState(() => _selectedUnit = v!),
+      onChanged: (v) {
+        // Dropdown.onChanged's `v` is nullable per the framework signature;
+        // ignore the null call (no items would ever produce one) rather
+        // than assert with `!`.
+        if (v != null) setState(() => _selectedUnit = v);
+      },
     );
   }
 }
@@ -612,11 +635,11 @@ class _LabeledField extends StatelessWidget {
                   ),
                 ),
               ),
-            if (optional != null)
+            if (optional case final opt?)
               Padding(
                 padding: const EdgeInsets.only(left: 3),
                 child: Text(
-                  optional!,
+                  opt,
                   style: AppTextStyles.caption().copyWith(
                     fontSize: compact ? 10 : 11,
                     letterSpacing: 0,
@@ -688,7 +711,9 @@ class _PriceTip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + 2,
+      ),
       decoration: BoxDecoration(
         color: AppColors.warningLight,
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -732,7 +757,9 @@ class _TempToggle extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg, vertical: AppSpacing.md - 2),
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md - 2,
+      ),
       decoration: BoxDecoration(
         color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.lg),

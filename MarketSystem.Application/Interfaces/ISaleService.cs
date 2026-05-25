@@ -22,7 +22,13 @@ public interface ISaleService
     Task<SaleItemDto?> RemoveSaleItemAsync(Guid saleId, RemoveSaleItemDto request, CancellationToken cancellationToken = default);
     Task<PaymentDto?> AddPaymentAsync(Guid saleId, AddPaymentDto request, CancellationToken cancellationToken = default);
     Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default);
-    Task<SaleDto?> CancelSaleAsync(Guid saleId, string adminId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Cancel a paid sale. <paramref name="adminId"/> MUST be the
+    /// authenticated caller's id taken from the JWT claim — NEVER trust a
+    /// client-supplied value here, otherwise the resulting audit row can
+    /// be forged to blame another admin.
+    /// </summary>
+    Task<SaleDto?> CancelSaleAsync(Guid saleId, Guid adminId, CancellationToken cancellationToken = default);
     Task<bool> ValidateSalePriceAsync(Guid saleItemId, CancellationToken cancellationToken = default);
 
     // Customer credit application

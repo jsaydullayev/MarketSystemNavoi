@@ -52,22 +52,16 @@ class ProfileSectionTitle extends StatelessWidget {
 class ProfileSettingsCard extends StatelessWidget {
   final List<Widget> children;
   final Widget? header;
-  const ProfileSettingsCard({
-    super.key,
-    required this.children,
-    this.header,
-  });
+  const ProfileSettingsCard({super.key, required this.children, this.header});
 
   @override
   Widget build(BuildContext context) {
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       if (i > 0) {
-        rows.add(Divider(
-          height: 1,
-          thickness: 1,
-          color: context.colors.border,
-        ));
+        rows.add(
+          Divider(height: 1, thickness: 1, color: context.colors.border),
+        );
       }
       rows.add(children[i]);
     }
@@ -82,11 +76,8 @@ class ProfileSettingsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (header != null)
-              Container(
-                color: context.colors.bg,
-                child: header!,
-              ),
+            if (header case final h?)
+              Container(color: context.colors.bg, child: h),
             ...rows,
           ],
         ),
@@ -180,10 +171,10 @@ class ProfileSettingsRow extends StatelessWidget {
                         color: titleColor,
                       ),
                     ),
-                    if (meta != null) ...[
+                    if (meta case final m?) ...[
                       const SizedBox(height: 2),
                       Text(
-                        meta!,
+                        m,
                         style: AppTextStyles.caption().copyWith(
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
@@ -195,10 +186,10 @@ class ProfileSettingsRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (value != null) ...[
+              if (value case final v?) ...[
                 const SizedBox(width: AppSpacing.md),
                 Text(
-                  value!,
+                  v,
                   style: AppTextStyles.caption().copyWith(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -207,9 +198,9 @@ class ProfileSettingsRow extends StatelessWidget {
                   ),
                 ),
               ],
-              if (trailing != null) ...[
+              if (trailing case final t?) ...[
                 const SizedBox(width: AppSpacing.sm),
-                trailing!,
+                t,
               ] else if (onTap != null && !danger) ...[
                 const SizedBox(width: AppSpacing.sm),
                 Icon(

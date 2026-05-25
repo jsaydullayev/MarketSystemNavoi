@@ -11,6 +11,7 @@ import 'package:market_system_client/features/customers/presentation/widgets/ava
 import 'package:market_system_client/features/customers/presentation/widgets/debt_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+import '../../../../core/routes/app_routes.dart';
 import '../bloc/customers_bloc.dart';
 import '../bloc/events/customers_event.dart';
 import '../bloc/states/customers_state.dart';
@@ -45,16 +46,16 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return NetworkWrapper(
-      onRetry: () => context
-          .read<CustomersBloc>()
-          .add(GetCustomerDebtsEvent(widget.customerId)),
+      onRetry: () => context.read<CustomersBloc>().add(
+        GetCustomerDebtsEvent(widget.customerId),
+      ),
       child: Scaffold(
         backgroundColor: context.colors.bg,
         appBar: CommonAppBar(
           title: _displayLabel,
-          onRefresh: () => context
-              .read<CustomersBloc>()
-              .add(GetCustomerDebtsEvent(widget.customerId)),
+          onRefresh: () => context.read<CustomersBloc>().add(
+            GetCustomerDebtsEvent(widget.customerId),
+          ),
         ),
         body: BlocConsumer<CustomersBloc, CustomersState>(
           listener: (context, state) {
@@ -65,7 +66,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   backgroundColor: AppColors.danger,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg)),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
                   margin: const EdgeInsets.all(AppSpacing.xl),
                 ),
               );
@@ -79,9 +81,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             } else if (state is CustomersError) {
               return _ErrorView(
                 message: state.message,
-                onRetry: () => context
-                    .read<CustomersBloc>()
-                    .add(GetCustomerDebtsEvent(widget.customerId)),
+                onRetry: () => context.read<CustomersBloc>().add(
+                  GetCustomerDebtsEvent(widget.customerId),
+                ),
               );
             }
             return const Center(child: CircularProgressIndicator());
@@ -96,9 +98,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
     if (debts.isEmpty) {
       return RefreshIndicator(
-        onRefresh: () async => context
-            .read<CustomersBloc>()
-            .add(GetCustomerDebtsEvent(widget.customerId)),
+        onRefresh: () async => context.read<CustomersBloc>().add(
+          GetCustomerDebtsEvent(widget.customerId),
+        ),
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.xl),
           children: [
@@ -118,17 +120,20 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
     final totalRemainingDebt = debts.fold<double>(
       0,
-      (sum, debt) =>
-          sum + ((debt['remainingDebt'] as num?)?.toDouble() ?? 0.0),
+      (sum, debt) => sum + ((debt['remainingDebt'] as num?)?.toDouble() ?? 0.0),
     );
 
     return RefreshIndicator(
-      onRefresh: () async => context
-          .read<CustomersBloc>()
-          .add(GetCustomerDebtsEvent(widget.customerId)),
+      onRefresh: () async => context.read<CustomersBloc>().add(
+        GetCustomerDebtsEvent(widget.customerId),
+      ),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
-            AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xl4),
+          AppSpacing.xl,
+          AppSpacing.xl,
+          AppSpacing.xl,
+          AppSpacing.xl4,
+        ),
         children: [
           _CustomerHero(
             name: widget.customerName,
@@ -149,8 +154,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
               Text(l10n.debtHistory, style: AppTextStyles.titleMedium()),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md + 2,
-                    vertical: AppSpacing.xs + 1),
+                  horizontal: AppSpacing.md + 2,
+                  vertical: AppSpacing.xs + 1,
+                ),
                 decoration: BoxDecoration(
                   color: context.colors.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.md),
@@ -166,10 +172,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          ...debts.map((debt) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                child: DebtCard(debt: debt),
-              )),
+          ...debts.map(
+            (debt) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              child: DebtCard(debt: debt),
+            ),
+          ),
         ],
       ),
     );
@@ -192,19 +200,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   }
 
   void _onPay() {
-    // The pay sheet lives on the debts feature; for the detail screen we
-    // surface the action but routing into the existing flow is left to the
-    // caller (debts_screen handles it). When called here we open a simple
-    // hint snackbar — wiring deeper would require importing the debts feature
-    // and crossing layer boundaries we don't want from customers.
-    final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.payDebt),
-        backgroundColor: context.colors.brand,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    Navigator.of(context).pushNamed(AppRoutes.debts);
   }
 
   void _onSendSms() {
@@ -256,8 +252,10 @@ class _CustomerHero extends StatelessWidget {
           Container(
             width: 72,
             height: 72,
-            decoration:
-                BoxDecoration(color: avatarColor, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: avatarColor,
+              shape: BoxShape.circle,
+            ),
             alignment: Alignment.center,
             child: Text(
               initial,
@@ -278,13 +276,17 @@ class _CustomerHero extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.phone_outlined,
-                  size: 14, color: context.colors.textMuted),
+              Icon(
+                Icons.phone_outlined,
+                size: 14,
+                color: context.colors.textMuted,
+              ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 phone,
-                style: AppTextStyles.bodySmall()
-                    .copyWith(color: context.colors.textMuted),
+                style: AppTextStyles.bodySmall().copyWith(
+                  color: context.colors.textMuted,
+                ),
               ),
             ],
           ),
@@ -292,10 +294,7 @@ class _CustomerHero extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _HeroStat(
-                  value: '$salesCount',
-                  label: l10n.sales,
-                ),
+                child: _HeroStat(value: '$salesCount', label: l10n.sales),
               ),
               _Divider(),
               Expanded(
@@ -307,10 +306,7 @@ class _CustomerHero extends StatelessWidget {
               ),
               _Divider(),
               Expanded(
-                child: _HeroStat(
-                  value: lastActivity ?? '—',
-                  label: 'Oxirgi',
-                ),
+                child: _HeroStat(value: lastActivity ?? '—', label: 'Oxirgi'),
               ),
             ],
           ),
@@ -340,10 +336,7 @@ class _HeroStat extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          label.toUpperCase(),
-          style: AppTextStyles.caption(),
-        ),
+        Text(label.toUpperCase(), style: AppTextStyles.caption()),
       ],
     );
   }
@@ -401,8 +394,11 @@ class _EmptyDebtsView extends StatelessWidget {
             color: AppColors.successLight,
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.check_circle_outline_rounded,
-              size: 48, color: AppColors.success),
+          child: const Icon(
+            Icons.check_circle_outline_rounded,
+            size: 48,
+            color: AppColors.success,
+          ),
         ),
         const SizedBox(height: AppSpacing.xl),
         Text(
@@ -411,10 +407,7 @@ class _EmptyDebtsView extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          displayLabel,
-          style: AppTextStyles.bodySmall(),
-        ),
+        Text(displayLabel, style: AppTextStyles.bodySmall()),
       ],
     );
   }
@@ -440,14 +433,20 @@ class _ErrorView extends StatelessWidget {
                 color: AppColors.dangerLight,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.cloud_off_rounded,
-                  color: AppColors.danger, size: 36),
+              child: const Icon(
+                Icons.cloud_off_rounded,
+                color: AppColors.danger,
+                size: 36,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(message,
-                style: AppTextStyles.bodyMedium()
-                    .copyWith(color: AppColors.danger),
-                textAlign: TextAlign.center),
+            Text(
+              message,
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: AppColors.danger,
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSpacing.xl),
             AppPrimaryButton(
               label: l10n.retry,

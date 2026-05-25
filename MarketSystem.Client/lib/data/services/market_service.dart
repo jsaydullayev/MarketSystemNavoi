@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 import '../models/market_model.dart';
 
 class MarketService {
@@ -9,8 +10,7 @@ class MarketService {
   final HttpService _httpService;
 
   MarketService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   /// Register market for Owner
   /// Owner creates a new market and gets linked to it
@@ -30,20 +30,19 @@ class MarketService {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return RegisterMarketResponseModel.fromJson(jsonDecode(response.body));
-    } else {
-      String msg = 'Market registratsiyada xatolik';
-      try {
-        final err = jsonDecode(response.body);
-        msg = err['message'] ?? msg;
-      } catch (_) {}
-      throw Exception(msg);
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Market registratsiyada xatolik',
+    );
   }
 
   /// Get current Owner's market
   Future<MarketModel?> getMyMarket() async {
     try {
-      final response = await _httpService.get('${ApiConstants.markets}/GetMyMarket');
+      final response = await _httpService.get(
+        '${ApiConstants.markets}/GetMyMarket',
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -51,9 +50,13 @@ class MarketService {
       } else if (response.statusCode == 404) {
         // Market not found - Owner hasn't registered a market yet
         return null;
-      } else {
-        throw Exception('Marketni olishda xatolik: ${response.statusCode}');
       }
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Marketni olishda xatolik',
+      );
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw Exception('Marketni olishda xatolik: $e');
     }
@@ -66,46 +69,49 @@ class MarketService {
   }) async {
     final response = await _httpService.put(
       '${ApiConstants.markets}/UpdateMyMarket',
-      body: {
-        'name': name,
-        if (description != null) 'description': description,
-      },
+      body: {'name': name, if (description != null) 'description': description},
     );
 
     if (response.statusCode != 200) {
-      String msg = 'Marketni yangilashda xatolik';
-      try {
-        final err = jsonDecode(response.body);
-        msg = err['message'] ?? msg;
-      } catch (_) {}
-      throw Exception(msg);
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Marketni yangilashda xatolik',
+      );
     }
   }
 
   /// Get all markets (SuperAdmin only)
   Future<List<MarketModel>> getAllMarkets() async {
-    final response = await _httpService.get('${ApiConstants.markets}/GetAllMarkets');
+    final response = await _httpService.get(
+      '${ApiConstants.markets}/GetAllMarkets',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is! List) throw Exception('Noto\'g\'ri server javobi');
       return data.map((item) => MarketModel.fromJson(item)).toList();
-    } else {
-      throw Exception('Marketlarni olishda xatolik: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Marketlarni olishda xatolik',
+    );
   }
 
   /// Get market by ID (SuperAdmin only)
   Future<MarketModel?> getMarketById(int id) async {
-    final response = await _httpService.get('${ApiConstants.markets}/GetMarketById/$id');
+    final response = await _httpService.get(
+      '${ApiConstants.markets}/GetMarketById/$id',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return MarketModel.fromJson(data);
     } else if (response.statusCode == 404) {
       return null;
-    } else {
-      throw Exception('Marketni olishda xatolik: ${response.statusCode}');
     }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Marketni olishda xatolik',
+    );
   }
 }

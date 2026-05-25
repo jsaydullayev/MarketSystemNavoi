@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -6,9 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.4" />
-  </ItemGroup>
+  <!--
+    K4 — Domain is a pure model layer. It must not reference any infrastructure
+    package (EF Core, ASP.NET Core, etc.) — those live in Application and
+    Infrastructure. The IAppDbContext abstraction that used to force Domain to
+    take Microsoft.EntityFrameworkCore now lives in MarketSystem.Application.
+  -->
 
 </Project>

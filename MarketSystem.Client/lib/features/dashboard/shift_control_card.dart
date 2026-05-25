@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../data/services/shift_service.dart';
 import '../../design/tokens/app_theme_colors.dart';
@@ -26,8 +27,9 @@ class ShiftControlCard extends StatefulWidget {
 }
 
 class _ShiftControlCardState extends State<ShiftControlCard> {
-  late final ShiftService _service =
-      ShiftService(authProvider: widget.authProvider);
+  late final ShiftService _service = ShiftService(
+    authProvider: widget.authProvider,
+  );
 
   Shift? _shift;
   bool _loading = true;
@@ -53,18 +55,51 @@ class _ShiftControlCardState extends State<ShiftControlCard> {
     try {
       // Open when none is running, otherwise close. The close response has
       // isOpen=false, so it collapses back to the "closed" state.
-      final result =
-          _shift == null ? await _service.openShift() : await _service.closeShift();
+      final result = _shift == null
+          ? await _service.openShift()
+          : await _service.closeShift();
       if (!mounted) return;
       setState(() => _shift = result.isOpen ? result : null);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      // G4 — branch on the structured error code. The most common case here
+      // is `closeShift` on a state where no shift is open (e.g. another
+      // tab already closed it, or the local cache was stale). The backend
+      // returns 409 + SHIFT_NOT_OPEN; show the dedicated message and
+      // reload so the toggle flips back to "open" state.
+      if (e.isShiftNotOpen) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.shiftNotOpenError),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        await _load();
+        return;
+      }
+      // Fall through to a generic localized snackbar for every other
+      // status / code (rate-limit, market blocked, 5xx, …). We still use
+      // the backend's `message` when present because it's already in the
+      // user's locale.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message.isNotEmpty ? e.message : l10n.errorOccurred),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(l10n.errorOccurred),
-        backgroundColor: AppColors.danger,
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.errorOccurred),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -89,7 +124,11 @@ class _ShiftControlCardState extends State<ShiftControlCard> {
       );
     }
 
-    final isOpen = _shift != null;
+    // Snapshot the nullable field so the "started at" line below can read
+    // it without `!` — `isOpen` is just a boolean and doesn't promote
+    // `_shift` for Dart's flow analysis.
+    final shift = _shift;
+    final isOpen = shift != null;
     final accent = isOpen ? AppColors.success : context.colors.textSecondary;
 
     return AppCard(
@@ -118,14 +157,17 @@ class _ShiftControlCardState extends State<ShiftControlCard> {
                   children: [
                     Text(
                       isOpen ? l10n.shiftOpen : l10n.shiftClosed,
-                      style: AppTextStyles.titleMedium()
-                          .copyWith(fontWeight: FontWeight.w700, fontSize: 15),
+                      style: AppTextStyles.titleMedium().copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
                     ),
-                    if (isOpen) ...[
+                    if (shift != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         l10n.shiftStartedAt(
-                            DateFormat('HH:mm').format(_shift!.openedAt)),
+                          DateFormat('HH:mm').format(shift.openedAt),
+                        ),
                         style: AppTextStyles.caption().copyWith(
                           fontSize: 11,
                           color: context.colors.textSecondary,

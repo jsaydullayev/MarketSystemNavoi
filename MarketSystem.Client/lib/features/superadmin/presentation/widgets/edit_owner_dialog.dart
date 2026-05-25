@@ -146,7 +146,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                     style: AppTextStyles.bodySmall(),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  if (_errorMessage != null) ...[
+                  if (_errorMessage case final msg?) ...[
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md + 2),
                       decoration: BoxDecoration(
@@ -163,7 +163,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: Text(
-                              _errorMessage!,
+                              msg,
                               style: AppTextStyles.bodySmall().copyWith(
                                 color: AppColors.danger,
                               ),
@@ -180,8 +180,9 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
                     label: l10n.fullNameLabel,
                     controller: _fullName,
                     prefixIcon: Icons.person_outline,
-                    validator: (v) =>
-                        (v ?? '').trim().length < 2 ? l10n.nameRequiredShort : null,
+                    validator: (v) => (v ?? '').trim().length < 2
+                        ? l10n.nameRequiredShort
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Row(
@@ -298,8 +299,7 @@ class _EditOwnerDialogState extends State<EditOwnerDialog> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md + 2),
-              borderSide:
-                  BorderSide(color: context.colors.brand, width: 1.5),
+              borderSide: BorderSide(color: context.colors.brand, width: 1.5),
             ),
           ),
           items: const [

@@ -38,8 +38,9 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        // P3 — DTO-only path; skip change tracking.
         var customer = await _context.Customers
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id && c.MarketId == marketId && !c.IsDeleted, cancellationToken);
 
         if (customer is null)
@@ -52,8 +53,9 @@ public class CustomerService : ICustomerService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ⭐ CRITICAL FIX: Use direct database query instead of UnitOfWork.FindAsync
+        // P3 — DTO-only path; skip change tracking.
         var customer = await _context.Customers
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Phone == phone && c.MarketId == marketId && !c.IsDeleted, cancellationToken);
 
         if (customer is null)
@@ -148,6 +150,21 @@ public class CustomerService : ICustomerService
         if (await _context.Customers.AnyAsync(c => c.Phone == request.Phone && c.MarketId == marketId, cancellationToken))
             throw new InvalidOperationException($"Customer with phone '{request.Phone}' already exists");
 
+        // Y5 — the previous flow issued up to THREE separate SaveChanges
+        // calls (Customer, dummy Sale, Debt) with no surrounding transaction.
+        // A transient failure between any of them left the DB in an
+        // inconsistent state: orphan Customer + Sale with no Debt row, or
+        // worse, a customer the operator believes "has no debt" while the
+        // initial-debt amount silently never persisted. Wrap the whole flow
+        // in one transaction so either every row lands or none do.
+        var currentUserId = GetCurrentUserId();
+        var hasInitialDebt = request.InitialDebt.HasValue && request.InitialDebt.Value > 0;
+
+        if (hasInitialDebt && !currentUserId.HasValue)
+        {
+            throw new UnauthorizedAccessException("Foydalanuvchi identifikatsiyasi aniqlashmadi. Iltimos, qayta tiling.");
+        }
+
         var customer = new Customer
         {
             Id = Guid.NewGuid(),
@@ -158,52 +175,45 @@ public class CustomerService : ICustomerService
             MarketId = marketId
         };
 
-        await _context.Customers.AddAsync(customer, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        // Agar initial debt bor bo'lsa, dummy Sale va Debt yozuvlarini yaratamiz
-        if (request.InitialDebt.HasValue && request.InitialDebt.Value > 0)
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var currentUserId = GetCurrentUserId();
+            await _context.Customers.AddAsync(customer, cancellationToken);
 
-            if (!currentUserId.HasValue)
+            if (hasInitialDebt)
             {
-                throw new UnauthorizedAccessException("Foydalanuvchi identifikatsiyasi aniqlashmadi. Iltimos, qayta tiling.");
+                // Dummy sale yaratamiz (mahsulotsiz, faqat qarz uchun)
+                var dummySale = new MarketSystem.Domain.Entities.Sale
+                {
+                    Id = Guid.NewGuid(),
+                    SellerId = currentUserId!.Value,
+                    CustomerId = customer.Id,
+                    TotalAmount = request.InitialDebt!.Value,
+                    PaidAmount = 0,
+                    Status = MarketSystem.Domain.Enums.SaleStatus.Debt,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    MarketId = marketId
+                };
+                await _context.Sales.AddAsync(dummySale, cancellationToken);
+
+                var debt = new MarketSystem.Domain.Entities.Debt
+                {
+                    Id = Guid.NewGuid(),
+                    SaleId = dummySale.Id,
+                    CustomerId = customer.Id,
+                    TotalDebt = request.InitialDebt.Value,
+                    RemainingDebt = request.InitialDebt.Value,
+                    Status = DebtStatus.Open,
+                    CreatedAt = DateTime.UtcNow,
+                    MarketId = marketId
+                };
+                await _context.Debts.AddAsync(debt, cancellationToken);
             }
 
-            // Dummy sale yaratamiz (mahsulotsiz, faqat qarz uchun)
-            var dummySale = new MarketSystem.Domain.Entities.Sale
-            {
-                Id = Guid.NewGuid(),
-                SellerId = currentUserId.Value,  // Hozirgi foydalanuvchi
-                CustomerId = customer.Id,
-                TotalAmount = request.InitialDebt.Value,
-                PaidAmount = 0,
-                Status = MarketSystem.Domain.Enums.SaleStatus.Debt,
-                IsDeleted = false,
-                CreatedAt = DateTime.UtcNow,
-                MarketId = marketId
-            };
-
-            await _context.Sales.AddAsync(dummySale, cancellationToken);
+            // One SaveChanges flushes the customer + (optionally) the
+            // dummy sale + the debt row atomically.
             await _context.SaveChangesAsync(cancellationToken);
-
-            // Debt yozuvini yaratamiz
-            var debt = new MarketSystem.Domain.Entities.Debt
-            {
-                Id = Guid.NewGuid(),
-                SaleId = dummySale.Id,  // Dummy sale ga bog'laymiz
-                CustomerId = customer.Id,
-                TotalDebt = request.InitialDebt.Value,
-                RemainingDebt = request.InitialDebt.Value,
-                Status = DebtStatus.Open,
-                CreatedAt = DateTime.UtcNow,
-                MarketId = marketId
-            };
-
-            await _context.Debts.AddAsync(debt, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+        }, cancellationToken);
 
         return await MapToDtoAsync(customer, cancellationToken);
     }

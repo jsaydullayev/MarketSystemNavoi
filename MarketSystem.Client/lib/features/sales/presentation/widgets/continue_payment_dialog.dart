@@ -76,10 +76,9 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
     if (id.isEmpty) return;
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      await SalesService(authProvider: auth).updateSaleCustomer(
-        saleId: widget.saleId,
-        customerId: id,
-      );
+      await SalesService(
+        authProvider: auth,
+      ).updateSaleCustomer(saleId: widget.saleId, customerId: id);
       if (!mounted) return;
       setState(() {
         _customer = created;
@@ -157,7 +156,8 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
       decoration: BoxDecoration(
         color: context.colors.surface,
         borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl2)),
+          top: Radius.circular(AppRadius.xl2),
+        ),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl3,
@@ -304,9 +304,7 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                       : context.colors.inputFill,
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   border: Border.all(
-                    color: _useDebt
-                        ? context.colors.brand
-                        : Colors.transparent,
+                    color: _useDebt ? context.colors.brand : Colors.transparent,
                     width: 1,
                   ),
                 ),
@@ -340,11 +338,11 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                             _customer == null
                                 ? l10n.addCustomerForDebtHint
                                 : (_customer!['fullName']
-                                            ?.toString()
-                                            .isNotEmpty ==
-                                        true
-                                    ? _customer!['fullName'].toString()
-                                    : _customer!['phone']?.toString() ?? ''),
+                                              ?.toString()
+                                              .isNotEmpty ==
+                                          true
+                                      ? _customer!['fullName'].toString()
+                                      : _customer!['phone']?.toString() ?? ''),
                             style: AppTextStyles.bodySmall().copyWith(
                               color: _customer == null
                                   ? context.colors.brand
@@ -410,9 +408,9 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: AppSpacing.md),
-                    child: Divider(
-                        height: 1, color: context.colors.border),
+                      vertical: AppSpacing.md,
+                    ),
+                    child: Divider(height: 1, color: context.colors.border),
                   ),
                   _SummaryRow(
                     label: _hasDebt ? l10n.onDebt : l10n.remaining,
@@ -421,8 +419,8 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                     valueColor: _hasDebt
                         ? context.colors.brand
                         : (_remaining <= 0
-                            ? AppColors.success
-                            : AppColors.danger),
+                              ? AppColors.success
+                              : AppColors.danger),
                     bold: true,
                   ),
                 ],
@@ -436,8 +434,9 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                 Expanded(
                   child: AppSecondaryButton(
                     label: l10n.cancel,
-                    onPressed:
-                        _isProcessing ? null : () => Navigator.pop(context),
+                    onPressed: _isProcessing
+                        ? null
+                        : () => Navigator.pop(context),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -446,8 +445,9 @@ class _ContinuePaymentSheetState extends State<ContinuePaymentSheet> {
                   child: AppPrimaryButton(
                     label: _hasDebt ? l10n.takeAsDebt : l10n.confirm,
                     isLoading: _isProcessing,
-                    onPressed:
-                        (_isProcessing || !_canConfirm) ? null : _onConfirm,
+                    onPressed: (_isProcessing || !_canConfirm)
+                        ? null
+                        : _onConfirm,
                   ),
                 ),
               ],
@@ -500,8 +500,7 @@ class _PaymentMethodRow extends StatelessWidget {
                     : context.colors.inputFill,
                 borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 border: Border.all(
-                  color:
-                      isActive ? context.colors.brand : Colors.transparent,
+                  color: isActive ? context.colors.brand : Colors.transparent,
                   width: 1,
                 ),
               ),

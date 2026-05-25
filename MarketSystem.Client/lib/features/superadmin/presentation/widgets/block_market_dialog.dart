@@ -39,8 +39,9 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
   @override
   void initState() {
     super.initState();
-    if (widget.currentReason != null) {
-      _reason.text = widget.currentReason!;
+    final reason = widget.currentReason;
+    if (reason != null) {
+      _reason.text = reason;
     }
   }
 
@@ -67,8 +68,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
       Navigator.of(context).pop(true);
     } else {
       final l10n = AppLocalizations.of(context)!;
-      setState(() =>
-          _errorMessage = res.message ?? l10n.blockFailed);
+      setState(() => _errorMessage = res.message ?? l10n.blockFailed);
     }
   }
 
@@ -85,8 +85,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
       Navigator.of(context).pop(true);
     } else {
       final l10n = AppLocalizations.of(context)!;
-      setState(() => _errorMessage =
-          res.message ?? l10n.unblockFailed);
+      setState(() => _errorMessage = res.message ?? l10n.unblockFailed);
     }
   }
 
@@ -127,10 +126,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     ),
                     const SizedBox(width: AppSpacing.lg),
                     Expanded(
-                      child: Text(
-                        title,
-                        style: AppTextStyles.titleMedium(),
-                      ),
+                      child: Text(title, style: AppTextStyles.titleMedium()),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, size: 20),
@@ -147,9 +143,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                     style: AppTextStyles.bodySmall(),
                     children: [
                       TextSpan(
-                        text: blocking
-                            ? l10n.blocking
-                            : l10n.unblocking,
+                        text: blocking ? l10n.blocking : l10n.unblocking,
                       ),
                       TextSpan(
                         text: widget.marketName,
@@ -216,20 +210,19 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                         vertical: AppSpacing.lg + 2,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.md + 2),
+                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
                         borderSide: BorderSide.none,
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.md + 2),
+                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
                         borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.md + 2),
+                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
                         borderSide: BorderSide(
-                            color: context.colors.brand, width: 1.5),
+                          color: context.colors.brand,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                     validator: (v) => (v ?? '').trim().length < 3
@@ -267,7 +260,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                       ],
                     ),
                   ),
-                  if (widget.currentReason != null) ...[
+                  if (widget.currentReason case final previousReason?) ...[
                     const SizedBox(height: AppSpacing.lg),
                     Text(
                       l10n.previousBlockReason,
@@ -276,13 +269,10 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      widget.currentReason!,
-                      style: AppTextStyles.bodyMedium(),
-                    ),
+                    Text(previousReason, style: AppTextStyles.bodyMedium()),
                   ],
                 ],
-                if (_errorMessage != null) ...[
+                if (_errorMessage case final msg?) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md + 2),
@@ -291,7 +281,7 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Text(
-                      _errorMessage!,
+                      msg,
                       style: AppTextStyles.bodySmall().copyWith(
                         color: AppColors.danger,
                       ),

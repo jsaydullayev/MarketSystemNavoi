@@ -154,15 +154,17 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
   void _showSnack(String msg, {required bool isError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? AppColors.danger : AppColors.success,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
       ),
-      margin: const EdgeInsets.all(AppSpacing.xl),
-    ));
+    );
   }
 
   Future<void> _openForm({dynamic product}) async {
@@ -182,6 +184,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final userRole = authProvider.user?['role'];
     final l10n = AppLocalizations.of(context)!;
+    // Snapshot the nullable state field so the inline ternary below can use
+    // the local (which promotes through `!= null`) instead of `!`.
+    final errorMessage = _errorMessage;
 
     return NetworkWrapper(
       onRetry: _loadProducts,
@@ -301,44 +306,43 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                         color: context.colors.brand,
                       ),
                     )
-                  : _errorMessage != null
-                      ? _ErrorState(
-                          message: _errorMessage!,
-                          onRetry: _loadProducts,
-                          l10n: l10n,
-                        )
-                      : _filteredProducts.isEmpty
-                          ? _EmptyState(
-                              isSearching:
-                                  _searchController.text.isNotEmpty,
-                              l10n: l10n,
-                            )
-                          : RefreshIndicator(
-                              color: context.colors.brand,
-                              onRefresh: _loadProducts,
-                              child: ListView.separated(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.fromLTRB(
-                                  AppSpacing.xl,
-                                  AppSpacing.lg,
-                                  AppSpacing.xl,
-                                  AppSpacing.xl4 * 2,
-                                ),
-                                itemCount: _filteredProducts.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: AppSpacing.md),
-                                itemBuilder: (context, index) {
-                                  final product = _filteredProducts[index];
-                                  return _ProductRow(
-                                    product: product,
-                                    userRole: userRole,
-                                    l10n: l10n,
-                                    onEdit: () => _openForm(product: product),
-                                    onDelete: () => _deleteProduct(product),
-                                  );
-                                },
-                              ),
-                            ),
+                  : errorMessage != null
+                  ? _ErrorState(
+                      message: errorMessage,
+                      onRetry: _loadProducts,
+                      l10n: l10n,
+                    )
+                  : _filteredProducts.isEmpty
+                  ? _EmptyState(
+                      isSearching: _searchController.text.isNotEmpty,
+                      l10n: l10n,
+                    )
+                  : RefreshIndicator(
+                      color: context.colors.brand,
+                      onRefresh: _loadProducts,
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.xl,
+                          AppSpacing.lg,
+                          AppSpacing.xl,
+                          AppSpacing.xl4 * 2,
+                        ),
+                        itemCount: _filteredProducts.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: AppSpacing.md),
+                        itemBuilder: (context, index) {
+                          final product = _filteredProducts[index];
+                          return _ProductRow(
+                            product: product,
+                            userRole: userRole,
+                            l10n: l10n,
+                            onEdit: () => _openForm(product: product),
+                            onDelete: () => _deleteProduct(product),
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
@@ -479,8 +483,7 @@ class _ProductRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final qty = (product['quantity'] as num?)?.toDouble() ?? 0;
-    final minThreshold =
-        (product['minThreshold'] as num?)?.toDouble() ?? 0;
+    final minThreshold = (product['minThreshold'] as num?)?.toDouble() ?? 0;
     final isOut = qty <= 0;
     final isLow = !isOut && qty <= minThreshold;
     final unitName = product['unitName'] ?? l10n.piece;
@@ -550,9 +553,7 @@ class _ProductRow extends StatelessWidget {
                   ),
                 if (isLow)
                   _Pill(
-                    label: l10n.lowStockWarning(
-                      product['minThreshold'] ?? 0,
-                    ),
+                    label: l10n.lowStockWarning(product['minThreshold'] ?? 0),
                     color: AppColors.warning,
                     bg: AppColors.warningLight,
                     icon: Icons.warning_amber_rounded,
@@ -567,7 +568,8 @@ class _ProductRow extends StatelessWidget {
             children: [
               Text(
                 NumberFormatter.format(
-                    (product['salePrice'] as num?)?.toDouble() ?? 0),
+                  (product['salePrice'] as num?)?.toDouble() ?? 0,
+                ),
                 style: AppTextStyles.bodyLarge().copyWith(
                   fontWeight: FontWeight.w800,
                   color: context.colors.brand,
@@ -585,8 +587,8 @@ class _ProductRow extends StatelessWidget {
                   color: isOut
                       ? AppColors.danger
                       : (isLow
-                          ? AppColors.warning
-                          : context.colors.textSecondary),
+                            ? AppColors.warning
+                            : context.colors.textSecondary),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),

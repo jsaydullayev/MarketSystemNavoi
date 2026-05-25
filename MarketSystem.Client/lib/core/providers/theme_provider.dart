@@ -32,9 +32,7 @@ class ThemeProvider with ChangeNotifier {
         color: Colors.white,
         elevation: 8,
         shadowColor: Colors.black.withValues(alpha: 0.08),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
       // Elevated Button - gradient effect
@@ -47,10 +45,7 @@ class ThemeProvider with ChangeNotifier {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
 
@@ -80,14 +75,8 @@ class ThemeProvider with ChangeNotifier {
           fontWeight: FontWeight.bold,
           color: Color(0xFF1E293B),
         ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          color: Color(0xFF334155),
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: Color(0xFF64748B),
-        ),
+        bodyLarge: TextStyle(fontSize: 16, color: Color(0xFF334155)),
+        bodyMedium: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
       ),
 
       colorScheme: const ColorScheme.light(
@@ -144,10 +133,7 @@ class ThemeProvider with ChangeNotifier {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
 
@@ -177,14 +163,8 @@ class ThemeProvider with ChangeNotifier {
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          color: Color(0xFFE2E8F0),
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          color: Color(0xFF94A3B8),
-        ),
+        bodyLarge: TextStyle(fontSize: 16, color: Color(0xFFE2E8F0)),
+        bodyMedium: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
       ),
 
       colorScheme: const ColorScheme.dark(

@@ -23,8 +23,15 @@ class ProductCategoryModel {
 
   /// Create from JSON
   factory ProductCategoryModel.fromJson(Map<String, dynamic> json) {
+    // AUDIT-1 — `id` is non-nullable in the entity, but the backend has
+    // sent stringified ints historically. Earlier `int.parse(json['id'].toString())`
+    // crashed on `null` (legacy migration rows) and on the string "null".
+    // `tryParse` with a 0 fallback keeps the list rendering and lets the
+    // caller decide whether 0 is a sentinel (the API rejects writes against
+    // id=0 anyway, so we won't silently corrupt data).
+    final rawId = json['id'];
     return ProductCategoryModel(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      id: rawId is int ? rawId : (int.tryParse(rawId?.toString() ?? '') ?? 0),
       name: json['name'] ?? '',
       description: json['description'],
       icon: json['icon'] as String?,
@@ -52,11 +59,7 @@ class CreateCategoryRequestModel {
   final String? description;
   final String? icon;
 
-  CreateCategoryRequestModel({
-    required this.name,
-    this.description,
-    this.icon,
-  });
+  CreateCategoryRequestModel({required this.name, this.description, this.icon});
 
   /// Convert to JSON
   Map<String, dynamic> toJson() {

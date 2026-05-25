@@ -10,6 +10,8 @@ import '../../core/constants/public_routes.dart';
 import '../../core/managers/route_state_manager.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/storage/token_storage.dart';
+import '../../core/widgets/network_wrapper.dart';
 import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
@@ -43,8 +45,9 @@ class _SplashScreenState extends State<SplashScreen> {
     // /privacy and other public routes should stay where they are.
     // /splash should check auth and redirect.
     final currentRoute = RouteStateManager.instance.currentRoute ?? '';
-    final shouldSkipAutoNav =
-        PublicRoutes.shouldSkipAutoNavigation(currentRoute);
+    final shouldSkipAutoNav = PublicRoutes.shouldSkipAutoNavigation(
+      currentRoute,
+    );
 
     if (shouldSkipAutoNav) {
       debugPrint('🛑 Splash: Route should skip auto-navigation: $currentRoute');
@@ -67,9 +70,13 @@ class _SplashScreenState extends State<SplashScreen> {
     // (no network wait) and survives transient backend outages.
     final prefs = await SharedPreferences.getInstance();
     final bool isFirstTime = prefs.getBool('is_first_time') ?? true;
-    final accessToken = prefs.getString('access_token');
+    // Read from TokenStorage (secure/localStorage) — the legacy SharedPrefs
+    // key 'access_token' is wiped by TokenStorage.migration on first run, so
+    // reading it here always returned null and caused a re-login on refresh.
+    final accessToken = await TokenStorage.instance.readAccess();
     final cachedRole = prefs.getString('user_role');
-    final hasSession = (accessToken != null && accessToken.isNotEmpty) &&
+    final hasSession =
+        (accessToken != null && accessToken.isNotEmpty) &&
         (cachedRole != null && cachedRole.isNotEmpty);
 
     if (hasSession && mounted) {
@@ -125,58 +132,70 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.colors.surface,
-      body: DecoratedBox(
-        // Same gradient as the auth screens for a consistent first impression.
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [context.colors.surface, context.colors.brandLight],
+    // D2 — wrap so the very first frame on a cold boot without internet
+    // shows the localized no-internet panel instead of a spinner that
+    // never resolves. onRetry re-runs the auth-restore + navigation
+    // flow so the splash recovers automatically when the connection
+    // comes back.
+    return NetworkWrapper(
+      onRetry: () {
+        _isNavigating = false;
+        _initializeAndNavigate();
+      },
+      child: Scaffold(
+        backgroundColor: context.colors.surface,
+        body: DecoratedBox(
+          // Same gradient as the auth screens for a consistent first impression.
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [context.colors.surface, context.colors.brandLight],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Existing orange logo asset (kept per user preference).
-                Image.asset(
-                  'assets/images/orangeLogo.png',
-                  width: 140,
-                  height: 140,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: AppSpacing.xl3),
-                Text(
-                  'Strotech',
-                  style: AppTextStyles.displayLarge().copyWith(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                    color: context.colors.text,
-                    letterSpacing: -0.5,
+          child: SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Existing orange logo asset (kept per user preference).
+                  Image.asset(
+                    'assets/images/orangeLogo.png',
+                    width: 140,
+                    height: 140,
+                    fit: BoxFit.contain,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  "Kichik do'konlar uchun savdo tizimi",
-                  style: AppTextStyles.bodyMedium().copyWith(
-                    color: context.colors.textSecondary,
+                  const SizedBox(height: AppSpacing.xl3),
+                  Text(
+                    'Strotech',
+                    style: AppTextStyles.displayLarge().copyWith(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      color: context.colors.text,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xl4),
-                // Subtle loading indicator below the brand block.
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(context.colors.brand),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    "Kichik do'konlar uchun savdo tizimi",
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      color: context.colors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.xl4),
+                  // Subtle loading indicator below the brand block.
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        context.colors.brand,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

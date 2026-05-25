@@ -8,6 +8,7 @@ import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/design/widgets/app_text_input.dart';
+import 'package:market_system_client/features/customers/presentation/widgets/phone_validator.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 /// Minimal "create a customer right now" bottom sheet.
@@ -61,6 +62,17 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
       return;
     }
 
+    final normalizedPhone = phone.startsWith('+') ? phone.substring(1) : phone;
+    if (!PhoneValidator.isValid(normalizedPhone)) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.phoneFormatHint),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isCreating = true);
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -74,12 +86,10 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
       if (created is Map) {
         final result = <String, dynamic>{
           'id': created['id']?.toString() ?? '',
-          'fullName': (created['fullName'] ??
-                  _nameCtrl.text.trim())
-              .toString(),
+          'fullName': (created['fullName'] ?? _nameCtrl.text.trim()).toString(),
           'phone': (created['phone'] ?? phone).toString(),
         };
-        if (result['id']!.toString().isEmpty) {
+        if (result['id'].toString().isEmpty) {
           throw Exception('Customer created without an id');
         }
         navigator.pop(result);
@@ -110,7 +120,8 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
         decoration: BoxDecoration(
           color: context.colors.surface,
           borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl2)),
+            top: Radius.circular(AppRadius.xl2),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -156,8 +167,9 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
                 ),
                 IconButton(
                   icon: Icon(Icons.close, color: context.colors.textSecondary),
-                  onPressed:
-                      _isCreating ? null : () => Navigator.pop(context, null),
+                  onPressed: _isCreating
+                      ? null
+                      : () => Navigator.pop(context, null),
                 ),
               ],
             ),
@@ -180,8 +192,9 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
                 Expanded(
                   child: AppSecondaryButton(
                     label: l10n.cancel,
-                    onPressed:
-                        _isCreating ? null : () => Navigator.pop(context, null),
+                    onPressed: _isCreating
+                        ? null
+                        : () => Navigator.pop(context, null),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -206,8 +219,7 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
 /// created customer Map (`{id, fullName, phone}`), or null if the cashier
 /// cancelled. Caller is responsible for whatever attaches the customer to a
 /// sale.
-Future<Map<String, dynamic>?> showQuickAddCustomerSheet(
-    BuildContext context) {
+Future<Map<String, dynamic>?> showQuickAddCustomerSheet(BuildContext context) {
   return showModalBottomSheet<Map<String, dynamic>>(
     context: context,
     isScrollControlled: true,

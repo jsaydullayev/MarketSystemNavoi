@@ -73,8 +73,8 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
       _filtered = q.isEmpty
           ? widget.products
           : widget.products
-              .where((p) => (p['name'] ?? '').toLowerCase().contains(q))
-              .toList();
+                .where((p) => (p['name'] ?? '').toLowerCase().contains(q))
+                .toList();
     });
   }
 
@@ -92,13 +92,18 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
 
   double get _liveTotal {
     final qty = double.tryParse(_qtyController.text.replaceAll(',', '.')) ?? 0;
-    final price = double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0;
+    final price =
+        double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0;
     return qty * price;
   }
 
   void _submit() {
-    final qty = int.tryParse(_qtyController.text.trim());
-    final price = double.tryParse(_priceController.text.trim().replaceAll(',', '.'));
+    final qty = double.tryParse(
+      _qtyController.text.trim().replaceAll(',', '.'),
+    );
+    final price = double.tryParse(
+      _priceController.text.trim().replaceAll(',', '.'),
+    );
     final l10n = AppLocalizations.of(context)!;
 
     if (qty == null || qty <= 0 || price == null || price <= 0) {
@@ -116,19 +121,22 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
       return;
     }
 
-    context.read<ZakupBloc>().add(CreateZakupEvent(
-          productId: _selectedProduct['id'],
-          quantity: qty.toDouble(),
-          costPrice: price,
-        ));
+    context.read<ZakupBloc>().add(
+      CreateZakupEvent(
+        productId: _selectedProduct['id'],
+        quantity: qty,
+        costPrice: price,
+      ),
+    );
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.82,
         decoration: BoxDecoration(
@@ -212,8 +220,9 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                               height: 38,
                               decoration: BoxDecoration(
                                 color: context.colors.brandLight,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
                               ),
                               child: Icon(
                                 Icons.inventory_2_rounded,
@@ -308,8 +317,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                             height: 40,
                             decoration: BoxDecoration(
                               color: context.colors.brandLight,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
                             ),
                             child: Icon(
                               Icons.shopping_bag_rounded,
@@ -341,8 +349,8 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                               controller: _qtyController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                                    decimal: true,
+                                  ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
@@ -353,8 +361,8 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
                               controller: _priceController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                                    decimal: true,
+                                  ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
@@ -437,11 +445,7 @@ class _SheetHeader extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback? onBack;
 
-  const _SheetHeader({
-    required this.title,
-    required this.onClose,
-    this.onBack,
-  });
+  const _SheetHeader({required this.title, required this.onClose, this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -465,17 +469,11 @@ class _SheetHeader extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.md + 2),
           ],
-          Text(
-            title,
-            style: AppTextStyles.titleMedium(),
-          ),
+          Text(title, style: AppTextStyles.titleMedium()),
           const Spacer(),
           IconButton(
             onPressed: onClose,
-            icon: Icon(
-              Icons.close_rounded,
-              color: context.colors.textMuted,
-            ),
+            icon: Icon(Icons.close_rounded, color: context.colors.textMuted),
           ),
         ],
       ),

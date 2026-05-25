@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/widgets/common_app_bar.dart';
+import '../../../core/widgets/error_retry_view.dart';
 import '../../../data/services/debt_service.dart';
 import '../../../data/services/notification_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
@@ -25,7 +26,8 @@ import '../../../design/tokens/app_tokens.dart';
 import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_card.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../dashboard/dashboard_widgets.dart' show AlertCard, AlertTone, SectionHeader;
+import '../../dashboard/dashboard_widgets.dart'
+    show AlertCard, AlertTone, SectionHeader;
 import '../../debts/screens/debt_details_screen.dart';
 import '../../products/presentation/screens/products_screen.dart';
 
@@ -57,7 +59,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() {
       _feedFuture = _load();
     });
-    await _feedFuture.catchError((_) => const AlertFeed());
+    // D1 — keep the await tolerant so the RefreshIndicator stops
+    // spinning even on a failed fetch, but DO NOT swallow the error
+    // value back into _feedFuture — the FutureBuilder below needs the
+    // raw error to surface ErrorRetryView. This catchError builds a
+    // throwaway Future just to await on; _feedFuture itself still
+    // carries the original failure.
+    try {
+      await _feedFuture;
+    } catch (_) {
+      // surfaced by the FutureBuilder's snapshot.hasError branch
+    }
   }
 
   /// Debt alert tapped — resolve the debt by id and open its detail screen.
@@ -78,10 +90,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final debts = await DebtService(authProvider: auth).getAllDebts();
-      final match = debts
-          .whereType<Map<String, dynamic>>()
-          .firstWhere((d) => d['id']?.toString() == id,
-              orElse: () => const <String, dynamic>{});
+      final match = debts.whereType<Map<String, dynamic>>().firstWhere(
+        (d) => d['id']?.toString() == id,
+        orElse: () => const <String, dynamic>{},
+      );
       if (!mounted) return;
       Navigator.pop(context); // dismiss the loader
       if (match.isNotEmpty) {
@@ -130,6 +142,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(
                 child: CircularProgressIndicator(color: context.colors.brand),
+              );
+            }
+            // D1 — distinguish "we couldn't load" from "you have nothing
+            // new" so the owner knows when to retry vs when to relax.
+            if (snapshot.hasError) {
+              return ErrorRetryView(
+                message: snapshot.error?.toString(),
+                onRetry: _refresh,
               );
             }
             final feed = snapshot.data ?? const AlertFeed();
@@ -227,11 +247,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         final unit = (item.unit ?? '').trim();
         final threshold = item.threshold ?? 0;
         if (threshold > 0) {
-          return l10n.alertDescLowStock(
-            qty,
-            unit,
-            _fmtNum(threshold),
-          );
+          return l10n.alertDescLowStock(qty, unit, _fmtNum(threshold));
         }
         return l10n.alertDescLowStockNoMin(qty, unit);
       case AlertCategory.recentDebt:
@@ -287,15 +303,17 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             l10n.notificationsEmptyTitle,
-            style: AppTextStyles.titleMedium()
-                .copyWith(fontWeight: FontWeight.w700),
+            style: AppTextStyles.titleMedium().copyWith(
+              fontWeight: FontWeight.w700,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.notificationsEmptyDescription,
-            style: AppTextStyles.bodySmall()
-                .copyWith(color: context.colors.textSecondary),
+            style: AppTextStyles.bodySmall().copyWith(
+              color: context.colors.textSecondary,
+            ),
             textAlign: TextAlign.center,
           ),
         ],

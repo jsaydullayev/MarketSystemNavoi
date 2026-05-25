@@ -2,6 +2,8 @@
 /// Central app configuration with DI setup
 library;
 
+import 'dart:async';
+
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -12,8 +14,10 @@ import '../../l10n/app_localizations.dart';
 import '../utils/di.dart';
 import '../constants/app_strings.dart';
 import '../handlers/navigation_handler.dart';
+import '../routes/app_routes.dart';
 import '../routes/route_generator.dart';
 import '../routes/navigator_observer.dart';
+import '../../data/services/http_service.dart';
 import '../../features/sales/presentation/bloc/sales_bloc.dart';
 import '../../features/customers/presentation/bloc/customers_bloc.dart';
 import '../../features/zakup/presentation/bloc/zakup_bloc.dart';
@@ -23,20 +27,94 @@ import '../providers/auth_provider.dart';
 import '../../data/services/auth_service.dart';
 
 /// Main App Widget
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   final AdaptiveThemeMode? savedThemeMode;
   const MainApp({super.key, this.savedThemeMode});
 
   @override
-  Widget build(BuildContext context) {
-    // Route protection observer for debugging unwanted redirects
-    final routeObserver = RouteProtectionObserver();
+  State<MainApp> createState() => _MainAppState();
+}
 
+class _MainAppState extends State<MainApp> {
+  // Route protection observer for debugging unwanted redirects
+  final RouteProtectionObserver _routeObserver = RouteProtectionObserver();
+
+  /// G1 — single global listener for "the backend kicked us out". Fires once
+  /// per failed refresh (see HttpService._doRefresh). We route the user to
+  /// /login and surface a one-shot "session ended" snackbar. Lives in the
+  /// shell rather than per-screen because the failure can hit ANY screen
+  /// (dashboard mid-load, reports tab, …) and we want the same recovery
+  /// everywhere.
+  StreamSubscription<SessionEndedInfo>? _sessionEndedSub;
+  StreamSubscription<MarketBlockedInfo>? _marketBlockedSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionEndedSub = HttpService.sessionEndedStream.listen(_onSessionEnded);
+    _marketBlockedSub = HttpService.marketBlockedStream.listen(_onMarketBlocked);
+  }
+
+  void _onMarketBlocked(MarketBlockedInfo info) {
+    final ctx = NavigationHandler.navigatorKey.currentContext;
+    if (ctx == null) return;
+
+    final l10n = AppLocalizations.of(ctx);
+    showDialog<void>(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(l10n?.statusBlocked ?? 'Bloklangan'),
+        content: Text(info.message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              NavigationHandler.navigateToAndClear(AppRoutes.login);
+            },
+            child: Text(l10n?.ok ?? 'OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onSessionEnded(SessionEndedInfo info) {
+    final ctx = NavigationHandler.navigatorKey.currentContext;
+    // If the navigator hasn't mounted yet (very early in startup) just bail
+    // — the splash screen will route to /login on its own once the user is
+    // unauthenticated.
+    if (ctx == null) return;
+
+    final l10n = AppLocalizations.of(ctx);
+    final message = l10n?.sessionExpired ?? 'Sessiya tugadi, qayta kiring';
+
+    // Best-effort snackbar BEFORE the route swap so it survives the
+    // navigation by attaching to the new scaffold via ScaffoldMessenger.
+    final messenger = ScaffoldMessenger.maybeOf(ctx);
+    messenger?.clearSnackBars();
+    messenger?.showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
+    );
+
+    NavigationHandler.navigateToAndClear(AppRoutes.login);
+  }
+
+  @override
+  void dispose() {
+    _sessionEndedSub?.cancel();
+    _marketBlockedSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         // Auth Provider - must be first, others may depend on it
         ChangeNotifierProvider(
-            create: (_) => AuthProvider(authService: sl<AuthService>())),
+          create: (_) => AuthProvider(authService: sl<AuthService>()),
+        ),
         // Theme Provider
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         // Locale Provider
@@ -52,7 +130,7 @@ class MainApp extends StatelessWidget {
           // Users can switch via the dashboard drawer or welcome-screen toggle.
           light: AppTheme.light,
           dark: AppTheme.dark,
-          initial: savedThemeMode ?? AdaptiveThemeMode.light,
+          initial: widget.savedThemeMode ?? AdaptiveThemeMode.light,
           builder: (theme, darkTheme) => MaterialApp(
             title: AppStrings.appName,
             debugShowCheckedModeBanner: false,
@@ -67,7 +145,7 @@ class MainApp extends StatelessWidget {
             navigatorKey: NavigationHandler.navigatorKey,
             onGenerateRoute: generateRoute,
             // Add navigator observer to track and warn about unwanted redirects
-            navigatorObservers: [routeObserver],
+            navigatorObservers: [_routeObserver],
             // CRITICAL: Don't set initialRoute - let usePathUrlStrategy() handle it
             // This way /privacy will work directly without going through splash
             locale:

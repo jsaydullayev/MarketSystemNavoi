@@ -9,6 +9,7 @@ using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Infrastructure.Data;
 using MarketSystem.Infrastructure.Repositories;
+using MarketSystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -79,7 +80,25 @@ try
             "Set it via environment variable (ConnectionStrings__DefaultConnection) or appsettings.Development.json.");
     }
 
-    builder.Host.UseSerilog();
+    builder.Host.UseSerilog((ctx, _, cfg) => cfg
+        .MinimumLevel.Debug()
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+        .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Information)
+        .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+        .MinimumLevel.Override("System", LogEventLevel.Warning)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "MarketSystem")
+        .WriteTo.Console(
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+            restrictedToMinimumLevel: LogEventLevel.Information
+        )
+        .WriteTo.PostgreSQL(
+            connectionString: ctx.Configuration.GetConnectionString("DefaultConnection")!,
+            tableName: "app_logs",
+            needAutoCreateTable: true,
+            restrictedToMinimumLevel: LogEventLevel.Warning
+        )
+    );
 
     // Re-use the already-resolved Tashkent zone (handles Windows-ID vs IANA + fallback).
     builder.Services.AddSingleton(tashkentTimeZone);
@@ -102,11 +121,12 @@ try
             warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 
-    // Application-layer services depend on IAppDbContext (Domain abstraction)
+    // Application-layer services depend on IAppDbContext (Application abstraction)
     // rather than the concrete AppDbContext. Both resolutions share the same
     // scoped instance — without this binding, DI throws "Unable to resolve
     // service for type 'IAppDbContext'" on every service that wants the abstraction.
-    builder.Services.AddScoped<MarketSystem.Domain.Interfaces.IAppDbContext>(
+    // K4: IAppDbContext moved from Domain → Application so Domain stays EF-free.
+    builder.Services.AddScoped<MarketSystem.Application.Interfaces.IAppDbContext>(
         sp => sp.GetRequiredService<AppDbContext>());
 
     var port = Environment.GetEnvironmentVariable("PORT") ??
@@ -476,7 +496,12 @@ try
     builder.Services.AddScoped<ISaleService, SaleService>();
     builder.Services.AddScoped<IZakupService, ZakupService>();
     builder.Services.AddScoped<IReportService, ReportService>();
-    builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+    // One AuditLogService instance per scope satisfies both the write
+    // (Domain) and read (Application) interfaces — forward them so the
+    // container doesn't materialise two copies per request.
+    builder.Services.AddScoped<AuditLogService>();
+    builder.Services.AddScoped<IAuditLogService>(sp => sp.GetRequiredService<AuditLogService>());
+    builder.Services.AddScoped<IAuditLogQueryService>(sp => sp.GetRequiredService<AuditLogService>());
     builder.Services.AddScoped<ICashRegisterService, CashRegisterService>();
     builder.Services.AddScoped<IMarketService, MarketService>();
     builder.Services.AddScoped<ICurrentMarketService, CurrentMarketService>();
@@ -485,8 +510,20 @@ try
     builder.Services.AddScoped<IRegistrationRequestService, RegistrationRequestService>();
     builder.Services.AddScoped<IDebtService, DebtService>();
     builder.Services.AddScoped<IShiftService, ShiftService>();
-    // Singleton — the process-local revocation map must outlive any single request.
-    builder.Services.AddSingleton<IRevokedTokenStore, InMemoryRevokedTokenStore>();
+    // Singleton — the revocation map must outlive any single request.
+    // DbRevokedTokenStore caches entries in memory for O(1) IsRevoked() on
+    // the auth hot path, but persists each RevokeAsync write to PostgreSQL
+    // so revocations survive restarts and propagate across replicas. The
+    // cache is rehydrated from the DB once during startup (below).
+    builder.Services.AddSingleton<DbRevokedTokenStore>();
+    builder.Services.AddSingleton<IRevokedTokenStore>(
+        sp => sp.GetRequiredService<DbRevokedTokenStore>());
+    // Brute-force lockout (Plan 05 Bosqich 3). Singleton — the failure
+    // counter must outlive any single request scope. Process-local; the IP
+    // rate limiter and this username tracker are the two complementary
+    // defences (one stops a single IP from probing fast, the other stops a
+    // distributed attacker from probing one username at a normal pace).
+    builder.Services.AddSingleton<ILoginAttemptTracker, InMemoryLoginAttemptTracker>();
 
     var app = builder.Build();
 
@@ -524,6 +561,17 @@ try
     await MarketSystem.API.Bootstrap.SuperAdminSeeder.SeedFromConfigAsync(
         app.Services,
         app.Services.GetRequiredService<ILogger<Program>>());
+
+    // Hydrate the in-memory revocation cache from the RevokedTokens table.
+    // Without this, every restart would forget which JWTs were revoked and
+    // every still-valid leaked token would work again until its natural
+    // 30-minute expiry. The store also prunes expired DB rows here so the
+    // table stays bounded.
+    {
+        using var scope = app.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<DbRevokedTokenStore>();
+        await store.LoadFromDbAsync();
+    }
 
     // Trust X-Forwarded-* headers from the reverse proxy (nginx) so HttpContext.Request.Scheme
     // reflects the real HTTPS scheme, RemoteIpAddress is the original client, and

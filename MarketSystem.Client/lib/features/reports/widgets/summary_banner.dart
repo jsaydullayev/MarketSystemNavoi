@@ -38,7 +38,11 @@ class DailySummaryBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl2, AppSpacing.xl, AppSpacing.xl2, AppSpacing.xl2),
+        AppSpacing.xl2,
+        AppSpacing.xl,
+        AppSpacing.xl2,
+        AppSpacing.xl2,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [_heroStart, _heroEnd],
@@ -75,7 +79,9 @@ class DailySummaryBanner extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs + 2),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: 3),
+                    horizontal: AppSpacing.md,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -91,15 +97,14 @@ class DailySummaryBanner extends StatelessWidget {
               ],
             ),
           ),
-          if (totalProfit != null) ...[
+          if (totalProfit case final profit?) ...[
             const SizedBox(width: AppSpacing.lg),
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg + 2),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                border:
-                    Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -114,7 +119,7 @@ class DailySummaryBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    '${NumberFormatter.formatDecimal(totalProfit!)} ${l10n.currencySom}',
+                    '${NumberFormatter.formatDecimal(profit)} ${l10n.currencySom}',
                     style: AppTextStyles.titleMedium().copyWith(
                       color: Colors.white,
                       fontSize: 16,

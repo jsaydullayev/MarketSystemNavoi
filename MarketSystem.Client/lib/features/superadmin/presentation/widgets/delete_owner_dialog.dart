@@ -64,8 +64,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
       Navigator.of(context).pop(true);
     } else {
       final l10n = AppLocalizations.of(context)!;
-      setState(() =>
-          _errorMessage = res.message ?? l10n.deleteFailed);
+      setState(() => _errorMessage = res.message ?? l10n.deleteFailed);
     }
   }
 
@@ -162,10 +161,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text(
-                    l10n.cannotUndoAction,
-                    style: AppTextStyles.bodySmall(),
-                  ),
+                  Text(l10n.cannotUndoAction, style: AppTextStyles.bodySmall()),
                   const SizedBox(height: AppSpacing.lg),
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.lg),
@@ -267,7 +263,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  if (_errorMessage != null) ...[
+                  if (_errorMessage case final msg?) ...[
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md + 2),
                       decoration: BoxDecoration(
@@ -275,7 +271,7 @@ class _DeleteOwnerDialogState extends State<DeleteOwnerDialog> {
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: Text(
-                        _errorMessage!,
+                        msg,
                         style: AppTextStyles.bodySmall().copyWith(
                           color: AppColors.danger,
                         ),
@@ -384,7 +380,9 @@ class _CascadeRow extends StatelessWidget {
           ),
           Text(
             label,
-            style: AppTextStyles.bodySmall().copyWith(color: context.colors.text),
+            style: AppTextStyles.bodySmall().copyWith(
+              color: context.colors.text,
+            ),
           ),
         ],
       ),

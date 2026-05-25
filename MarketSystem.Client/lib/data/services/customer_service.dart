@@ -1,26 +1,30 @@
 import 'dart:convert';
 
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class CustomerService {
   final AuthProvider authProvider;
   final HttpService _httpService;
 
   CustomerService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   Future<List<dynamic>> getAllCustomers() async {
-    final response =
-        await _httpService.get('${ApiConstants.customers}/GetAllCustomers');
+    final response = await _httpService.get(
+      '${ApiConstants.customers}/GetAllCustomers',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load customers: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load customers',
+      );
     }
   }
 
@@ -29,29 +33,38 @@ class CustomerService {
     int size = 50,
     String? search,
   }) async {
-    var url = '${ApiConstants.customers}/GetCustomersPaged?page=$page&size=$size';
-    if (search != null && search.isNotEmpty) url += '&search=${Uri.encodeComponent(search)}';
+    var url =
+        '${ApiConstants.customers}/GetCustomersPaged?page=$page&size=$size';
+    if (search != null && search.isNotEmpty) {
+      url += '&search=${Uri.encodeComponent(search)}';
+    }
     final response = await _httpService.get(url);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to load customers: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load customers',
+      );
     }
   }
 
   // Telefon bo'yicha mijoz topish
-  // TODO: hoist into ApiConstants as `customerByPhone(phone)` helper.
   Future<dynamic> getCustomerByPhone(String phone) async {
-    final response = await _httpService
-        .get('${ApiConstants.customers}/GetCustomerByPhone/phone/$phone');
+    final response = await _httpService.get(
+      ApiConstants.customerByPhone(phone),
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else if (response.statusCode == 404) {
       return null;
     } else {
-      throw Exception('Failed to load customer: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load customer',
+      );
     }
   }
 
@@ -75,7 +88,10 @@ class CustomerService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to create customer: ${response.body}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to create customer',
+      );
     }
   }
 
@@ -86,52 +102,63 @@ class CustomerService {
   }) async {
     final response = await _httpService.put(
       '${ApiConstants.customers}/UpdateCustomer',
-      body: {
-        'phone': phone,
-        if (fullName != null) 'fullName': fullName,
-      },
+      body: {'phone': phone, if (fullName != null) 'fullName': fullName},
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to update customer: ${response.body}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to update customer',
+      );
     }
   }
 
   // Mijozni o'chirish
   Future<void> deleteCustomer(String id) async {
-    final response = await _httpService
-        .delete('${ApiConstants.customers}/DeleteCustomer/$id');
+    final response = await _httpService.delete(
+      '${ApiConstants.customers}/DeleteCustomer/$id',
+    );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete customer: ${response.body}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to delete customer',
+      );
     }
   }
 
   // Mijoz o'chirish ma'lumotlarini olish
-  // TODO: hoist into ApiConstants as `customerDeleteInfo(id)` helper.
   Future<Map<String, dynamic>> getCustomerDeleteInfo(String id) async {
-    final response = await _httpService
-        .get('${ApiConstants.customers}/GetCustomerDeleteInfo/$id/delete-info');
+    final response = await _httpService.get(
+      ApiConstants.customerDeleteInfo(id),
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to get customer delete info: ${response.body}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to get customer delete info',
+      );
     }
   }
 
   // Mijoz qarzlarini olish
   Future<List<Map<String, dynamic>>> getCustomerDebts(String customerId) async {
-    final response = await _httpService
-        .get('${ApiConstants.debts}/GetCustomerDebts/$customerId');
+    final response = await _httpService.get(
+      '${ApiConstants.debts}/GetCustomerDebts/$customerId',
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return List<Map<String, dynamic>>.from(data);
     } else {
-      throw Exception('Failed to load customer debts: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load customer debts',
+      );
     }
   }
 }

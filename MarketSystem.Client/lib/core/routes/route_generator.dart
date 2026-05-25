@@ -26,6 +26,7 @@ import '../../features/reports/screens/reports_screen.dart';
 import '../../features/debts/screens/debts_screen.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
 import '../../features/privacy/screens/privacy_screen.dart';
+import '../../features/security_journal/screens/security_journal_screen.dart';
 import '../../features/superadmin/presentation/superadmin_console_screen.dart';
 
 /// Generate route
@@ -42,7 +43,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   // This is the "Impenetrable Wall" - public routes bypass ALL other logic
   // /privacy route must return here without ANY further processing
   if (PublicRoutes.isPublic(routeName) || PublicRoutes.isSplash(routeName)) {
-    debugPrint('🔒 Public route detected: $routeName - RETURNING IMMEDIATELY (no auth check, no redirect)');
+    debugPrint(
+      '🔒 Public route detected: $routeName - RETURNING IMMEDIATELY (no auth check, no redirect)',
+    );
 
     switch (routeName) {
       case AppRoutes.splash:
@@ -71,9 +74,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       // (login_screen.dart) is the gate that decides who reaches this route —
       // we intentionally don't redirect non-SuperAdmin users from here, since
       // the route is supposed to be unreachable from the UI.
-      return MaterialPageRoute(
-        builder: (_) => const SuperAdminConsoleScreen(),
-      );
+      return MaterialPageRoute(builder: (_) => const SuperAdminConsoleScreen());
     case AppRoutes.dashboard:
       return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
@@ -116,12 +117,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case AppRoutes.notifications:
       return MaterialPageRoute(builder: (_) => const NotificationsScreen());
 
+    case AppRoutes.securityJournal:
+      return MaterialPageRoute(builder: (_) => const SecurityJournalScreen());
+
     default:
       return MaterialPageRoute(
         builder: (_) => Scaffold(
-          body: Center(
-            child: Text('Route not found: ${settings.name}'),
-          ),
+          body: Center(child: Text('Route not found: ${settings.name}')),
         ),
       );
   }

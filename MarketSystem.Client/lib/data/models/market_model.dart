@@ -22,17 +22,22 @@ class MarketModel {
 
   /// Create from JSON
   factory MarketModel.fromJson(Map<String, dynamic> json) {
+    // AUDIT-1 — same null-safety issue as ProductCategoryModel: a missing
+    // or non-numeric `id`, or a malformed `expiresAt`, would throw
+    // FormatException and crash whichever screen was deserialising the
+    // market list (SuperAdmin console).
+    final rawId = json['id'];
     return MarketModel(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      id: rawId is int ? rawId : (int.tryParse(rawId?.toString() ?? '') ?? 0),
       name: json['name'] ?? '',
       subdomain: json['subdomain'],
       description: json['description'],
       isActive: json['isActive'] ?? false,
       expiresAt: json['expiresAt'] != null
-          ? DateTime.parse(json['expiresAt'])
+          ? DateTime.tryParse(json['expiresAt'].toString())
           : null,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+          ? (DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now())
           : DateTime.now(),
     );
   }
@@ -80,12 +85,12 @@ class RegisterMarketRequestModel {
 class RegisterMarketResponseModel {
   final MarketModel market;
   final UserMarketModel owner;
-  final String? accessToken;  // ✅ NEW: New JWT token with updated marketId
+  final String? accessToken; // ✅ NEW: New JWT token with updated marketId
 
   RegisterMarketResponseModel({
     required this.market,
     required this.owner,
-    this.accessToken,  // ✅ NEW: Optional accessToken
+    this.accessToken, // ✅ NEW: Optional accessToken
   });
 
   /// Create from JSON
@@ -93,7 +98,7 @@ class RegisterMarketResponseModel {
     return RegisterMarketResponseModel(
       market: MarketModel.fromJson(json['market']),
       owner: UserMarketModel.fromJson(json['owner']),
-      accessToken: json['accessToken'] as String?,  // ✅ NEW: Parse accessToken
+      accessToken: json['accessToken'] as String?, // ✅ NEW: Parse accessToken
     );
   }
 }
@@ -140,16 +145,10 @@ class UpdateMyMarketRequestModel {
   final String name;
   final String? description;
 
-  UpdateMyMarketRequestModel({
-    required this.name,
-    this.description,
-  });
+  UpdateMyMarketRequestModel({required this.name, this.description});
 
   /// Convert to JSON
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'description': description,
-    };
+    return {'name': name, 'description': description};
   }
 }

@@ -1,15 +1,16 @@
 import 'dart:convert';
+
+import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
 import 'http_service.dart';
-import '../../core/constants/api_constants.dart';
 
 class DebtService {
   final AuthProvider authProvider;
   final HttpService _httpService;
 
   DebtService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   // Get all debts
   Future<List<dynamic>> getAllDebts({String? status}) async {
@@ -28,7 +29,10 @@ class DebtService {
       final data = jsonDecode(response.body);
       return List<dynamic>.from(data ?? []);
     } else {
-      throw Exception('Failed to load debts: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load debts',
+      );
     }
   }
 
@@ -46,7 +50,10 @@ class DebtService {
       if (data == null) return [];
       return List<dynamic>.from(data);
     } else {
-      throw Exception('Failed to load customer debts: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load customer debts',
+      );
     }
   }
 
@@ -62,7 +69,10 @@ class DebtService {
       }
       return double.tryParse(response.body) ?? 0.0;
     } else {
-      throw Exception('Failed to load customer total debt: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load customer total debt',
+      );
     }
   }
 
@@ -74,16 +84,20 @@ class DebtService {
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.debts}/$debtId/pay',
-      body: {
-        'paymentType': paymentType,
-        'amount': amount,
-      },
+      body: {'paymentType': paymentType, 'amount': amount},
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to pay debt: ${response.body}');
     }
+    // G5 — K3 added Xmin on Debt.RemainingDebt; two callers paying the same
+    // debt concurrently see the loser as 409. Surface the structured envelope
+    // so the bottomsheet can branch on `isConflict` and render
+    // `concurrentChangeError` with a quiet refresh, instead of dumping
+    // `Exception: Failed to pay debt: {"message":"..."}` into a snackbar.
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to pay debt',
+    );
   }
 }

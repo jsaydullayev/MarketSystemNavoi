@@ -18,7 +18,9 @@ class GetZakupsByDateRangeUseCase {
   ) async {
     // Biznes validatsiya
     if (start.isAfter(end)) {
-      return ApiResult.failure('Boshlanish sanasi tugash sanasidan keyinda bo\'lishi mumkin emas');
+      return ApiResult.failure(
+        'Boshlanish sanasi tugash sanasidan keyinda bo\'lishi mumkin emas',
+      );
     }
 
     return repository.getZakupsByDateRange(start, end);

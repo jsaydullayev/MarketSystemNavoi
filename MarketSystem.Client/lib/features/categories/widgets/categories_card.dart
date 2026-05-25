@@ -59,8 +59,9 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isActive = category.isActive;
     // Prefer the user-picked icon; fall back to a name guess for legacy rows.
-    final emoji = (category.icon != null && category.icon!.isNotEmpty)
-        ? category.icon!
+    final categoryIcon = category.icon;
+    final emoji = (categoryIcon != null && categoryIcon.isNotEmpty)
+        ? categoryIcon
         : _emojiFor(category.name);
 
     return Padding(
@@ -115,10 +116,7 @@ class CategoryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  emoji,
-                  style: const TextStyle(fontSize: 22),
-                ),
+                child: Text(emoji, style: const TextStyle(fontSize: 22)),
               ),
               const SizedBox(width: AppSpacing.lg),
 
@@ -188,10 +186,7 @@ class CategoryCard extends StatelessWidget {
   Future<bool> _showDeleteDialog(BuildContext context) async {
     return await showDialog<bool>(
           context: context,
-          builder: (_) => _DeleteDialog(
-            name: category.name,
-            l10n: l10n,
-          ),
+          builder: (_) => _DeleteDialog(name: category.name, l10n: l10n),
         ) ??
         false;
   }
@@ -251,25 +246,36 @@ class _MenuButton extends StatelessWidget {
         itemBuilder: (_) => [
           PopupMenuItem<String>(
             value: 'edit',
-            child: Row(children: [
-              Icon(Icons.edit_rounded,
-                  size: 16, color: context.colors.textSecondary),
-              const SizedBox(width: AppSpacing.md),
-              Text(l10n.edit, style: AppTextStyles.bodyMedium()),
-            ]),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_rounded,
+                  size: 16,
+                  color: context.colors.textSecondary,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Text(l10n.edit, style: AppTextStyles.bodyMedium()),
+              ],
+            ),
           ),
           PopupMenuItem<String>(
             value: 'delete',
-            child: Row(children: [
-              const Icon(Icons.delete_outline_rounded,
-                  size: 16, color: AppColors.danger),
-              const SizedBox(width: AppSpacing.md),
-              Text(
-                l10n.delete,
-                style:
-                    AppTextStyles.bodyMedium().copyWith(color: AppColors.danger),
-              ),
-            ]),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 16,
+                  color: AppColors.danger,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Text(
+                  l10n.delete,
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    color: AppColors.danger,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -333,8 +339,7 @@ class _DeleteDialog extends StatelessWidget {
                         vertical: AppSpacing.lg + 1,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.md + 2),
+                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
                       ),
                       side: BorderSide(color: context.colors.border),
                     ),
@@ -358,14 +363,14 @@ class _DeleteDialog extends StatelessWidget {
                       ),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.md + 2),
+                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
                       ),
                     ),
                     child: Text(
                       l10n.delete,
-                      style: AppTextStyles.labelLarge()
-                          .copyWith(color: Colors.white),
+                      style: AppTextStyles.labelLarge().copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),

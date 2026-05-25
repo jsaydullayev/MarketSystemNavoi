@@ -26,8 +26,11 @@ class EmptyItems extends StatelessWidget {
               color: context.colors.inputFill,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.receipt_long_outlined,
-                size: 48, color: context.colors.textMuted),
+            child: Icon(
+              Icons.receipt_long_outlined,
+              size: 48,
+              color: context.colors.textMuted,
+            ),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(

@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
@@ -9,7 +10,20 @@ using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
 
-public class RegistrationRequestService : IRegistrationRequestService
+/// <summary>
+/// M6 — RegistrationRequestService is <c>partial</c> so a future PR can lift
+/// its three natural sub-modules into their own files without renaming the
+/// type or touching call-sites:
+///   • <c>RegistrationRequestService.Submit.cs</c> — public sign-up flow
+///     (SubmitAsync, validation rules, dedup).
+///   • <c>RegistrationRequestService.Review.cs</c> — SuperAdmin review
+///     actions (ApproveAsync, RejectAsync, listing).
+///   • <c>RegistrationRequestService.cs</c> (this file) — shared helpers
+///     and the constructor.
+/// The partial declaration is preparation only — no code moved yet — but
+/// it unblocks an incremental split without a single big rename PR.
+/// </summary>
+public partial class RegistrationRequestService : IRegistrationRequestService
 {
     private readonly IAppDbContext _context;
     private readonly ILogger<RegistrationRequestService> _logger;
@@ -148,12 +162,13 @@ public class RegistrationRequestService : IRegistrationRequestService
             await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Re-read the request INSIDE the transaction with a row lock so a
-                // concurrent SuperAdmin can't pass the same Pending check. xmin
-                // adds a second layer of protection at SaveChanges time.
-                var request = await _context.RegistrationRequests
-                    .FromSqlInterpolated($"SELECT *, xmin FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
-                    .FirstOrDefaultAsync(cancellationToken)
+                // Y6 — Re-read INSIDE the transaction with a row lock so a
+                // concurrent SuperAdmin can't pass the same Pending check.
+                // FOR UPDATE is PostgreSQL-only; the InMemory test provider
+                // falls back to a plain query. xmin on the row still catches
+                // concurrent SaveChanges in both providers, so correctness is
+                // preserved.
+                var request = await LoadRequestForUpdateAsync(requestId, cancellationToken)
                     ?? throw new KeyNotFoundException("So'rov topilmadi.");
 
                 if (request.Status != RegistrationRequestStatus.Pending)
@@ -263,9 +278,10 @@ public class RegistrationRequestService : IRegistrationRequestService
             await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var request = await _context.RegistrationRequests
-                    .FromSqlInterpolated($"SELECT *, xmin FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
-                    .FirstOrDefaultAsync(cancellationToken);
+                // Y6 — FOR UPDATE on PostgreSQL, fall back to a plain read on
+                // the InMemory test provider. See ApproveAsync for the full
+                // rationale.
+                var request = await LoadRequestForUpdateAsync(requestId, cancellationToken);
                 if (request == null) return false;
 
                 if (request.Status == RegistrationRequestStatus.Rejected) return true; // idempotent
@@ -727,9 +743,9 @@ public class RegistrationRequestService : IRegistrationRequestService
             market.Id, market.Name, superAdminUserId, market.BlockedReason);
 
         await _auditLog.LogActionAsync(
-            entityType: "Market",
+            entityType: AuditEntityTypes.Market,
             entityId: Guid.Empty,                       // Market.Id is an int, not a Guid.
-            action: "Blocked",
+            action: AuditActions.Block,
             userId: superAdminUserId,
             payload: new { MarketId = market.Id, MarketName = market.Name, market.BlockedReason },
             cancellationToken);
@@ -757,9 +773,9 @@ public class RegistrationRequestService : IRegistrationRequestService
                 market.Id, market.Name, superAdminUserId);
 
             await _auditLog.LogActionAsync(
-                entityType: "Market",
+                entityType: AuditEntityTypes.Market,
                 entityId: Guid.Empty,
-                action: "Unblocked",
+                action: AuditActions.Unblock,
                 userId: superAdminUserId,
                 payload: new { MarketId = market.Id, MarketName = market.Name },
                 cancellationToken);
@@ -831,6 +847,28 @@ public class RegistrationRequestService : IRegistrationRequestService
     /// confusing for operators and ambiguous for tenant lookup. EF Core
     /// translates `string.ToLower()` to PostgreSQL `LOWER(...)`, which is
     /// indexable; the unique constraint at the DB level is still
+    /// <summary>
+    /// Y6 — Re-read a RegistrationRequest inside the surrounding transaction.
+    /// On PostgreSQL the query uses <c>SELECT … FOR UPDATE</c> so a parallel
+    /// SuperAdmin review on the same row blocks until we commit. On the
+    /// EF Core InMemory provider (test suite) raw SQL isn't supported, so
+    /// we fall back to a plain query — xmin on the row catches the
+    /// concurrent SaveChanges either way, but in tests we get the simpler
+    /// "second write fails and retries" semantic instead of a real row lock.
+    /// </summary>
+    private async Task<RegistrationRequest?> LoadRequestForUpdateAsync(Guid requestId, CancellationToken ct)
+    {
+        var isPostgres = _context.Database.ProviderName?.Contains("InMemory") == false;
+        if (isPostgres)
+        {
+            return await _context.RegistrationRequests
+                .FromSqlInterpolated($"SELECT *, xmin FROM \"RegistrationRequests\" WHERE \"Id\" = {requestId} FOR UPDATE")
+                .FirstOrDefaultAsync(ct);
+        }
+        return await _context.RegistrationRequests.FirstOrDefaultAsync(r => r.Id == requestId, ct);
+    }
+
+    /// <summary>
     /// case-sensitive but the application-layer check catches the
     /// case-only collision before INSERT.
     /// </summary>

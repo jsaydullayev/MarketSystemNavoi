@@ -1,6 +1,8 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
+using MarketSystem.Domain.Exceptions;
 using MarketSystem.Domain.Interfaces;
 
 namespace MarketSystem.Application.Services;
@@ -10,11 +12,16 @@ public class ShiftService : IShiftService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IAuditLogService _auditLogService;
 
-    public ShiftService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService)
+    public ShiftService(
+        IUnitOfWork unitOfWork,
+        ICurrentMarketService currentMarketService,
+        IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
+        _auditLogService = auditLogService;
     }
 
     public async Task<ShiftDto?> GetCurrentShiftAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -40,17 +47,31 @@ public class ShiftService : IShiftService
         };
         await _unitOfWork.Shifts.AddAsync(shift, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Shift, shift.Id, AuditActions.Open, userId,
+            new { shift.OpenedAt }, cancellationToken);
+
         return ToDto(shift);
     }
 
     public async Task<ShiftDto> CloseShiftAsync(Guid userId, CancellationToken cancellationToken = default)
     {
+        // M4 — typed exception so the global handler can return 409 Conflict
+        // with a stable `code` instead of a generic 400. The Flutter client
+        // pivots on the code to surface "Avval smenani oching" instead of
+        // a generic error toast.
         var open = await FindOpenShiftAsync(userId, cancellationToken)
-            ?? throw new InvalidOperationException("Ochiq smena topilmadi.");
+            ?? throw new ShiftNotOpenException(userId);
 
         open.ClosedAt = DateTime.UtcNow;
         _unitOfWork.Shifts.Update(open);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Shift, open.Id, AuditActions.Close, userId,
+            new { open.OpenedAt, open.ClosedAt, open.DurationMinutes }, cancellationToken);
+
         return ToDto(open);
     }
 

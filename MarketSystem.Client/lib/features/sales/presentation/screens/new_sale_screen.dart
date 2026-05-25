@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/extensions/app_extensions.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -15,6 +14,9 @@ import '../../../../data/services/sales_service.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../data/services/customer_service.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../widgets/sale_pos_widgets.dart';
+import '../widgets/sale_customer_sheet.dart';
+import '../widgets/sale_cart_sheet.dart';
 
 class NewSaleScreen extends StatefulWidget {
   const NewSaleScreen({super.key});
@@ -72,7 +74,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       _filteredProducts = _products.where((product) {
         final name = (product['name'] ?? '').toString().toLowerCase();
         final matchesSearch = query.isEmpty || name.contains(query);
-        final matchesCategory = _selectedCategoryName == null ||
+        final matchesCategory =
+            _selectedCategoryName == null ||
             product['categoryName'] == _selectedCategoryName;
         return matchesSearch && matchesCategory;
       }).toList();
@@ -191,176 +194,44 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         ? (item['quantity'] as num).toDouble()
         : 1.0;
 
-    PriceInputSheet.show(context, product: {
-      'name': item['productName'] ?? l10n.unknownProduct,
-      'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
-      'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
-      'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
-      'id': item['productId'] ?? '',
-      'unitName': (item['unitName'] ?? 'dona'),
-      'initialQuantity': currentQuantity,
-    }, onConfirm: (newPrice, newQuantity, comment) {
-      setState(() {
-        _cartItems[index]['salePrice'] = newPrice;
-        _cartItems[index]['quantity'] = newQuantity;
-        if (comment != null && comment.isNotEmpty) {
-          _cartItems[index]['comment'] = comment;
-        }
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${item['productName']} ${l10n.itemUpdated}',
+    PriceInputSheet.show(
+      context,
+      product: {
+        'name': item['productName'] ?? l10n.unknownProduct,
+        'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
+        'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
+        'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
+        'id': item['productId'] ?? '',
+        'unitName': (item['unitName'] ?? 'dona'),
+        'initialQuantity': currentQuantity,
+      },
+      onConfirm: (newPrice, newQuantity, comment) {
+        setState(() {
+          _cartItems[index]['salePrice'] = newPrice;
+          _cartItems[index]['quantity'] = newQuantity;
+          if (comment != null && comment.isNotEmpty) {
+            _cartItems[index]['comment'] = comment;
+          }
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item['productName']} ${l10n.itemUpdated}'),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 1),
             ),
-            backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      }
-    });
+          );
+        }
+      },
+    );
   }
 
   void _showCustomerDialog() {
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.colors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.xl2),
-              child: Row(
-                children: [
-                  Text(
-                    l10n.selectCustomerTitle,
-                    style: AppTextStyles.titleMedium(),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close,
-                        color: context.colors.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: _customers.isEmpty
-                  ? Center(
-                      child: Text(
-                        l10n.noCustomersFound,
-                        style: AppTextStyles.bodyMedium().copyWith(
-                          color: context.colors.textSecondary,
-                        ),
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xl),
-                      itemCount: _customers.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: AppSpacing.md),
-                      itemBuilder: (context, index) {
-                        final customer = _customers[index];
-                        final name = customer['fullName'] ?? l10n.unknown;
-                        final phone = customer['phone'] ?? '';
-                        final isSelected =
-                            _selectedCustomer?['id'] == customer['id'];
-
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              _selectedCustomer = customer;
-                            });
-                            Navigator.pop(context);
-                          },
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          child: Container(
-                            padding: const EdgeInsets.all(AppSpacing.xl),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? context.colors.brandLight
-                                  : context.colors.inputFill,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.lg),
-                              border: Border.all(
-                                color: isSelected
-                                    ? context.colors.brand
-                                    : Colors.transparent,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: isSelected
-                                      ? context.colors.brand
-                                      : context.colors.textMuted,
-                                  child: Text(
-                                    name.toString().isNotEmpty
-                                        ? name.toString()[0].toUpperCase()
-                                        : '?',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.xl),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        name,
-                                        style: AppTextStyles.labelLarge(),
-                                      ),
-                                      if (phone.isNotEmpty)
-                                        Text(
-                                          phone,
-                                          style:
-                                              AppTextStyles.bodySmall().copyWith(
-                                            color:
-                                                context.colors.textSecondary,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                if (isSelected)
-                                  Icon(Icons.check_circle,
-                                      color: context.colors.brand),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-            const SizedBox(height: AppSpacing.xl2),
-          ],
-        ),
-      ),
+    showCustomerSelectionSheet(
+      context,
+      customers: _customers,
+      selectedId: _selectedCustomer?['id']?.toString(),
+      onSelected: (c) => setState(() => _selectedCustomer = c),
     );
   }
 
@@ -381,10 +252,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           final scaffoldMessenger = ScaffoldMessenger.of(context);
           final navigator = Navigator.of(context);
 
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final salesService = SalesService(authProvider: authProvider);
+          String? finalSaleId;
           try {
-            final authProvider =
-                Provider.of<AuthProvider>(context, listen: false);
-            final salesService = SalesService(authProvider: authProvider);
 
             // Use the customer the dialog returns — it may be one the
             // cashier created inline from the debt row, which the
@@ -392,44 +263,50 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             final sale = await salesService.createSale(
               customerId: customer?['id'],
             );
-            final finalSaleId = sale['id'];
+            final saleId = sale['id'] as String;
+            finalSaleId = saleId;
 
-            for (var item in cartSnapshot) {
-              if (item['isExternal'] == true) {
-                // External product - add through external endpoint
-                await salesService.addSaleItem(
-                  saleId: finalSaleId,
-                  isExternal: true,
-                  externalProductName: item['productName'],
-                  externalCostPrice: item['externalCostPrice'] ?? 0.0,
-                  quantity: item['quantity'],
-                  salePrice: item['salePrice'],
-                  minSalePrice: 0.0,
-                  comment: item['comment'],
-                );
-              } else {
-                // Regular product
-                await salesService.addSaleItem(
-                  saleId: finalSaleId,
-                  productId: item['productId'],
-                  quantity: item['quantity'],
-                  salePrice: item['salePrice'],
-                  minSalePrice: item['minSalePrice'] ?? 0.0,
-                  comment: item['comment'],
-                );
-              }
-            }
+            // Add all items in parallel — each addSaleItem is independent
+            // once the saleId is known. Reduces N sequential round-trips to 1.
+            await Future.wait(
+              cartSnapshot.map((item) {
+                if (item['isExternal'] == true) {
+                  return salesService.addSaleItem(
+                    saleId: saleId,
+                    isExternal: true,
+                    externalProductName: item['productName'],
+                    externalCostPrice: item['externalCostPrice'] ?? 0.0,
+                    quantity: item['quantity'],
+                    salePrice: item['salePrice'],
+                    minSalePrice: 0.0,
+                    comment: item['comment'],
+                  );
+                } else {
+                  return salesService.addSaleItem(
+                    saleId: saleId,
+                    productId: item['productId'],
+                    quantity: item['quantity'],
+                    salePrice: item['salePrice'],
+                    minSalePrice: item['minSalePrice'] ?? 0.0,
+                    comment: item['comment'],
+                  );
+                }
+              }),
+            );
 
-            for (var payment in payments) {
-              await salesService.addPayment(
-                saleId: finalSaleId,
-                paymentType: payment['paymentType'],
-                amount: payment['amount'],
-              );
-            }
+            // Add all payments in parallel as well.
+            await Future.wait(
+              payments.map(
+                (payment) => salesService.addPayment(
+                  saleId: saleId,
+                  paymentType: payment['paymentType'],
+                  amount: payment['amount'],
+                ),
+              ),
+            );
 
             if (useDebt && payments.isEmpty) {
-              await salesService.markSaleAsDebt(finalSaleId);
+              await salesService.markSaleAsDebt(saleId);
             }
 
             if (!mounted) return;
@@ -440,18 +317,27 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             });
 
             navigator.pop();
-            scaffoldMessenger.showSnackBar(SnackBar(
-              content: Text(useDebt ? l10n.saleAsDebt : l10n.saleSuccess),
-              backgroundColor: AppColors.success,
-            ));
+            scaffoldMessenger.showSnackBar(
+              SnackBar(
+                content: Text(useDebt ? l10n.saleAsDebt : l10n.saleSuccess),
+                backgroundColor: AppColors.success,
+              ),
+            );
             navigator.pop(true);
           } catch (e) {
             if (!mounted) return;
+            if (finalSaleId != null) {
+              try {
+                await salesService.cancelSale(saleId: finalSaleId);
+              } catch (_) {}
+            }
             navigator.pop();
-            scaffoldMessenger.showSnackBar(SnackBar(
-              content: Text('${l10n.error}: $e'),
-              backgroundColor: AppColors.danger,
-            ));
+            scaffoldMessenger.showSnackBar(
+              SnackBar(
+                content: Text('${l10n.error}: $e'),
+                backgroundColor: AppColors.danger,
+              ),
+            );
           }
         },
       ),
@@ -593,8 +479,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         actions: [
           TextButton.icon(
             onPressed: () => Navigator.pop(dialogCtx, 'discard'),
-            icon: const Icon(Icons.delete_outline_rounded,
-                size: 18, color: AppColors.danger),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              size: 18,
+              color: AppColors.danger,
+            ),
             label: Text(
               l10n.discardSale,
               style: AppTextStyles.bodySmall().copyWith(
@@ -619,8 +508,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               backgroundColor: context.colors.brand,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
@@ -683,7 +571,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   /// Sticky POS header — back button, title with meta-line, customer chip.
   /// White surface, bottom soft border, matches the demo's `.pos-header`.
   PreferredSizeWidget _buildAppBar(
-      BuildContext context, AppLocalizations l10n) {
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(64),
       child: Container(
@@ -697,12 +587,14 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           bottom: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+            ),
             child: Row(
               children: [
-                _PosBackButton(
-                  onTap: () => Navigator.maybePop(context),
-                ),
+                PosBackButton(onTap: () => Navigator.maybePop(context)),
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
@@ -734,7 +626,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                _CustomerChip(
+                CustomerChip(
                   customer: _selectedCustomer,
                   fallbackLabel: l10n.customer,
                   onTap: _showCustomerDialog,
@@ -773,8 +665,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
-        border: Border(
-            top: BorderSide(color: context.colors.border, width: 2)),
+        border: Border(top: BorderSide(color: context.colors.border, width: 2)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0F000000),
@@ -787,12 +678,16 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.lg),
+            AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.lg,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (hasItems) ...[
-                _CartSummaryRow(
+                CartSummaryRow(
                   itemCount: _cartItems.length,
                   itemNames: itemNames,
                   total: _totalAmount,
@@ -804,8 +699,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               AppPrimaryButton(
                 label: hasItems
                     ? '${l10n.processReturn.replaceAll(l10n.returnText, l10n.saleText)} · ${NumberFormatter.format(_totalAmount)}'
-                    : l10n.processReturn
-                        .replaceAll(l10n.returnText, l10n.saleText),
+                    : l10n.processReturn.replaceAll(
+                        l10n.returnText,
+                        l10n.saleText,
+                      ),
                 icon: Icons.credit_card_rounded,
                 onPressed: hasItems ? _completeSale : null,
               ),
@@ -817,567 +714,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   }
 
   void _showCartSheet() {
-    final l10n = AppLocalizations.of(context)!;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheet) {
-            return DraggableScrollableSheet(
-              initialChildSize: 0.7,
-              minChildSize: 0.4,
-              maxChildSize: 0.92,
-              expand: false,
-              builder: (ctx, scrollController) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: context.colors.surface,
-                    borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(24)),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: context.colors.border,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      Padding(
-                        padding:
-                            const EdgeInsets.fromLTRB(20, 16, 12, 8),
-                        child: Row(
-                          children: [
-                            Text(
-                              l10n.cartTitle,
-                              style: AppTextStyles.titleMedium(),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: context.colors.brandLight,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.lg),
-                              ),
-                              child: Text(
-                                '${_cartItems.length}',
-                                style: AppTextStyles.labelSmall().copyWith(
-                                  color: context.colors.brand,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            IconButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              icon: Icon(Icons.close,
-                                  color: context.colors.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: _cartItems.isEmpty
-                            ? Center(
-                                child: Text(
-                                  l10n.cartEmptyWarning,
-                                  style:
-                                      AppTextStyles.bodySmall().copyWith(
-                                    color: context.colors.textMuted,
-                                  ),
-                                ),
-                              )
-                            : ListView.separated(
-                                controller: scrollController,
-                                padding: const EdgeInsets.fromLTRB(
-                                    16, 4, 16, 16),
-                                itemCount: _cartItems.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: AppSpacing.md),
-                                itemBuilder: (context, index) =>
-                                    _buildCartSheetItem(
-                                  context,
-                                  index,
-                                  _cartItems[index],
-                                  l10n,
-                                  () => setSheet(() {}),
-                                ),
-                              ),
-                      ),
-                      _buildCartSheetFooter(
-                        ctx,
-                        l10n,
-                        () {
-                          Navigator.pop(ctx);
-                          _completeSale();
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildCartSheetItem(
-    BuildContext context,
-    int index,
-    Map<String, dynamic> item,
-    AppLocalizations l10n,
-    VoidCallback refreshSheet,
-  ) {
-    final isExternal = item['isExternal'] ?? false;
-    final qty = (item['quantity'] as num).toDouble();
-    final price = (item['salePrice'] as num).toDouble();
-    final subtotal = qty * price;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color:
-            isExternal ? context.colors.brandLight : context.colors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: isExternal ? AppColors.brandTint : context.colors.border,
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: isExternal
-                      ? AppColors.brandTint
-                      : context.colors.inputFill,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Icon(
-                  isExternal
-                      ? Icons.add_business_rounded
-                      : Icons.inventory_2_rounded,
-                  color: isExternal
-                      ? context.colors.brand
-                      : context.colors.textSecondary,
-                  size: 18,
-                ),
-              ),
-              10.width,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['productName'] ?? '',
-                      style: AppTextStyles.bodySmall().copyWith(
-                        color: isExternal
-                            ? context.colors.brandDark
-                            : context.colors.text,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    2.height,
-                    Text(
-                      '${qty % 1 == 0 ? qty.toInt() : qty} × ${NumberFormatter.format(price)}',
-                      style: AppTextStyles.caption().copyWith(
-                        letterSpacing: 0,
-                        color: context.colors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                NumberFormatter.format(subtotal),
-                style: AppTextStyles.bodySmall().copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                  color: context.colors.brand,
-                ),
-              ),
-            ],
-          ),
-          10.height,
-          Row(
-            children: [
-              _SheetQtyBtn(
-                icon: Icons.remove_rounded,
-                onTap: () {
-                  _updateQuantity(index, qty - 1);
-                  refreshSheet();
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  qty % 1 == 0 ? qty.toInt().toString() : qty.toString(),
-                  style: AppTextStyles.labelLarge().copyWith(fontSize: 14),
-                ),
-              ),
-              _SheetQtyBtn(
-                icon: Icons.add_rounded,
-                onTap: () {
-                  _updateQuantity(index, qty + 1);
-                  refreshSheet();
-                },
-              ),
-              const Spacer(),
-              _SheetActionBtn(
-                icon: Icons.edit_rounded,
-                color: context.colors.brand,
-                onTap: () {
-                  Navigator.pop(context);
-                  _editItemPrice(index, item);
-                },
-              ),
-              8.width,
-              _SheetActionBtn(
-                icon: Icons.delete_outline_rounded,
-                color: AppColors.danger,
-                onTap: () {
-                  _removeFromCart(index);
-                  refreshSheet();
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCartSheetFooter(
-    BuildContext context,
-    AppLocalizations l10n,
-    VoidCallback onCheckout,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        border: Border(
-            top: BorderSide(color: context.colors.borderSoft)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.lg + 2),
-              decoration: BoxDecoration(
-                color: context.colors.brandLight,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: AppColors.brandTint),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.totalSum,
-                    style: AppTextStyles.bodyMedium().copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    NumberFormatter.format(_totalAmount),
-                    style: AppTextStyles.titleLarge().copyWith(
-                      color: context.colors.brand,
-                      fontSize: 20,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            12.height,
-            AppPrimaryButton(
-              label: l10n.processReturn
-                  .replaceAll(l10n.returnText, l10n.saleText),
-              icon: Icons.check_circle_outline,
-              onPressed: _cartItems.isEmpty ? null : onCheckout,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Round back button for the POS header — 36×36, grey-fill, matches
-/// the demo's `.pos-back` element.
-class _PosBackButton extends StatelessWidget {
-  const _PosBackButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: context.colors.bg,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
-          child: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 16,
-            color: context.colors.text,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Customer chip — pill button shown in the POS header. When no customer is
-/// selected, shows the fallback "Mijoz" label with a person glyph. When
-/// selected, shows an orange-initial avatar followed by the customer name.
-class _CustomerChip extends StatelessWidget {
-  const _CustomerChip({
-    required this.customer,
-    required this.fallbackLabel,
-    required this.onTap,
-  });
-
-  final Map<String, dynamic>? customer;
-  final String fallbackLabel;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasCustomer = customer != null;
-    final name = hasCustomer
-        ? (customer!['fullName']?.toString() ?? fallbackLabel)
-        : fallbackLabel;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 140),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg, vertical: 6),
-            decoration: BoxDecoration(
-              color: hasCustomer
-                  ? context.colors.brandLight
-                  : context.colors.inputFill,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (hasCustomer)
-                  _InitialAvatar(name: name)
-                else
-                  Icon(
-                    Icons.person_outline_rounded,
-                    size: 14,
-                    color: context.colors.textSecondary,
-                  ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.labelSmall().copyWith(
-                      fontSize: 12,
-                      letterSpacing: 0,
-                      fontWeight: FontWeight.w600,
-                      color: hasCustomer
-                          ? context.colors.brand
-                          : context.colors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 18×18 orange-tinted circle showing the customer's first initial. Used by
-/// the header customer chip when a customer is selected.
-class _InitialAvatar extends StatelessWidget {
-  const _InitialAvatar({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    return Container(
-      width: 18,
-      height: 18,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: context.colors.brand,
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        letter,
-        style: AppTextStyles.caption().copyWith(
-          fontSize: 10,
-          color: Colors.white,
-          letterSpacing: 0,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-/// Tappable summary row above the pay button — "3 ta mahsulot · Coca-Cola,
-/// Non, Pepsi" on the left and the running total on the right. Tapping it
-/// opens the editable cart sheet.
-class _CartSummaryRow extends StatelessWidget {
-  const _CartSummaryRow({
-    required this.itemCount,
-    required this.itemNames,
-    required this.total,
-    required this.onTap,
-    required this.productsSuffix,
-  });
-
-  final int itemCount;
-  final String itemNames;
-  final double total;
-  final VoidCallback onTap;
-  final String productsSuffix;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Row(
-          children: [
-            Expanded(
-              child: RichText(
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  style: AppTextStyles.bodySmall().copyWith(
-                    color: context.colors.textSecondary,
-                    fontSize: 13,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: '$itemCount $productsSuffix',
-                      style: AppTextStyles.bodySmall().copyWith(
-                        color: context.colors.text,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                    if (itemNames.isNotEmpty)
-                      TextSpan(text: ' · $itemNames'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Text(
-              NumberFormatter.format(total),
-              style: AppTextStyles.titleLarge().copyWith(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: context.colors.text,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 32×32 minus/plus quantity button used inside the cart sheet rows. Orange
-/// tint matches the brand accent.
-class _SheetQtyBtn extends StatelessWidget {
-  const _SheetQtyBtn({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: context.colors.brandLight,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Icon(icon, size: 16, color: context.colors.brand),
-      ),
-    );
-  }
-}
-
-/// 32×32 action button (edit / delete) for cart sheet rows. Color comes from
-/// the caller so we can flex it between brand-orange and danger-red.
-class _SheetActionBtn extends StatelessWidget {
-  const _SheetActionBtn({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Icon(icon, size: 16, color: color),
-      ),
+    showCartSheet(
+      context,
+      cartItems: _cartItems,
+      onUpdateQuantity: _updateQuantity,
+      onEditItemPrice: _editItemPrice,
+      onRemoveFromCart: _removeFromCart,
+      onCheckout: _completeSale,
     );
   }
 }

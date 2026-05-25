@@ -69,10 +69,12 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
       if (pdfData == null || pdfData.isEmpty) {
         if (mounted) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l10n.errorOccurred),
-            backgroundColor: AppColors.danger,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.errorOccurred),
+              backgroundColor: AppColors.danger,
+            ),
+          );
         }
         return;
       }
@@ -81,8 +83,8 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
 
       final createdAt = widget.debt['createdAt'] != null
           ? (widget.debt['createdAt'] is DateTime
-              ? widget.debt['createdAt'] as DateTime
-              : DateTime.parse(widget.debt['createdAt'].toString()))
+                ? widget.debt['createdAt'] as DateTime
+                : DateTime.parse(widget.debt['createdAt'].toString()))
           : DateTime.now();
       final dateStr = DateFormat('dd.MM.yyyy').format(createdAt);
       final fileName = 'faktura_${saleId}_$dateStr.pdf';
@@ -124,17 +126,21 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
           final result = await OpenFilex.open(path);
           if (result.type != ResultType.done) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('${l10n.errorOccurred}: ${result.message}'),
-                backgroundColor: AppColors.warning,
-              ));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${l10n.errorOccurred}: ${result.message}'),
+                  backgroundColor: AppColors.warning,
+                ),
+              );
             }
           } else {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(l10n.pdfDownloaded),
-                backgroundColor: AppColors.success,
-              ));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l10n.pdfDownloaded),
+                  backgroundColor: AppColors.success,
+                ),
+              );
             }
           }
         }
@@ -144,18 +150,22 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(l10n.pdfDownloaded),
-          backgroundColor: AppColors.success,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.pdfDownloaded),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) Navigator.pop(context);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${l10n.errorOccurred}: $e'),
-          backgroundColor: AppColors.danger,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.errorOccurred}: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
       }
     }
   }
@@ -206,7 +216,10 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
   }
 
   Future<void> _updatePrice(
-      dynamic saleItem, double newPrice, String comment) async {
+    dynamic saleItem,
+    double newPrice,
+    String comment,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoading = true);
     try {
@@ -265,21 +278,25 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _saleItems.isEmpty
-                      ? const _EmptySaleItemsView()
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(AppSpacing.xl,
-                              AppSpacing.xl, AppSpacing.xl, AppSpacing.xl3),
-                          itemCount: _saleItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _saleItems[index];
-                            return _SaleItemCard(
-                              item: item,
-                              userRole: userRole,
-                              debtStatus: debtStatus,
-                              onEdit: () => _openEditSheet(item),
-                            );
-                          },
-                        ),
+                  ? const _EmptySaleItemsView()
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xl,
+                        AppSpacing.xl,
+                        AppSpacing.xl,
+                        AppSpacing.xl3,
+                      ),
+                      itemCount: _saleItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _saleItems[index];
+                        return _SaleItemCard(
+                          item: item,
+                          userRole: userRole,
+                          debtStatus: debtStatus,
+                          onEdit: () => _openEditSheet(item),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -340,15 +357,18 @@ class _SaleItemCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md + 2),
                 decoration: BoxDecoration(
-                  color: (isExternal ? context.colors.brand : context.colors.text)
-                      .withValues(alpha: 0.08),
+                  color:
+                      (isExternal ? context.colors.brand : context.colors.text)
+                          .withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(AppRadius.md + 2),
                 ),
                 child: Icon(
                   isExternal
                       ? Icons.storefront_rounded
                       : Icons.inventory_2_rounded,
-                  color: isExternal ? context.colors.brand : context.colors.text,
+                  color: isExternal
+                      ? context.colors.brand
+                      : context.colors.text,
                   size: 22,
                 ),
               ),
@@ -375,11 +395,16 @@ class _SaleItemCard extends StatelessWidget {
                           const SizedBox(width: AppSpacing.sm),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm, vertical: 2),
+                              horizontal: AppSpacing.sm,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: context.colors.brand.withValues(alpha: 0.15),
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.full),
+                              color: context.colors.brand.withValues(
+                                alpha: 0.15,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.full,
+                              ),
                             ),
                             child: Text(
                               'tashqi',
@@ -397,8 +422,10 @@ class _SaleItemCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${quantity.toStringAsFixed(0)} ${l10n.piece} × ${NumberFormatter.format(salePrice)} ${l10n.currencySom}',
-                      style: AppTextStyles.bodySmall()
-                          .copyWith(fontSize: 12, color: context.colors.textMuted),
+                      style: AppTextStyles.bodySmall().copyWith(
+                        fontSize: 12,
+                        color: context.colors.textMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -421,8 +448,9 @@ class _SaleItemCard extends StatelessWidget {
                       onTap: onEdit,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md + 2,
-                            vertical: AppSpacing.xs),
+                          horizontal: AppSpacing.md + 2,
+                          vertical: AppSpacing.xs,
+                        ),
                         decoration: BoxDecoration(
                           color: context.colors.brandLight,
                           borderRadius: BorderRadius.circular(AppRadius.md - 2),
@@ -430,8 +458,11 @@ class _SaleItemCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.edit_rounded,
-                                size: 12, color: context.colors.brand),
+                            Icon(
+                              Icons.edit_rounded,
+                              size: 12,
+                              color: context.colors.brand,
+                            ),
                             const SizedBox(width: AppSpacing.xs),
                             Text(
                               l10n.edit,
@@ -454,7 +485,9 @@ class _SaleItemCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md + 2),
             Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md + 2, vertical: 7),
+                horizontal: AppSpacing.md + 2,
+                vertical: 7,
+              ),
               decoration: BoxDecoration(
                 color: context.colors.borderSoft,
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -462,8 +495,11 @@ class _SaleItemCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.notes_rounded,
-                      size: 14, color: context.colors.textSecondary),
+                  Icon(
+                    Icons.notes_rounded,
+                    size: 14,
+                    color: context.colors.textSecondary,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
@@ -495,12 +531,18 @@ class _EmptySaleItemsView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inventory_2_rounded,
-              size: 52, color: context.colors.textMuted),
+          Icon(
+            Icons.inventory_2_rounded,
+            size: 52,
+            color: context.colors.textMuted,
+          ),
           const SizedBox(height: AppSpacing.lg),
-          Text(l10n.noProducts,
-              style: AppTextStyles.titleMedium()
-                  .copyWith(color: context.colors.textSecondary)),
+          Text(
+            l10n.noProducts,
+            style: AppTextStyles.titleMedium().copyWith(
+              color: context.colors.textSecondary,
+            ),
+          ),
         ],
       ),
     );

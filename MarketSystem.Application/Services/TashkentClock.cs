@@ -13,7 +13,9 @@ public sealed class TashkentClock : ITashkentClock
 
     public DateTime UtcNow => DateTime.UtcNow;
 
-    public DateTime TodayLocal => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _tz).Date;
+    public DateTime NowLocal => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _tz);
+
+    public DateTime TodayLocal => NowLocal.Date;
 
     public (DateTime UtcStart, DateTime UtcEnd) LocalDayToUtcRange(DateTime localDate)
     {

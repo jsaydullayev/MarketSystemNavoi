@@ -26,8 +26,9 @@ class SaleItemCard extends StatelessWidget {
     final name = item['productName'] as String? ?? l10n.unknownProduct;
     final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
     final revenue = (item['totalRevenue'] as num?)?.toDouble() ?? 0.0;
-    final profit =
-        item['profit'] is num ? (item['profit'] as num).toDouble() : null;
+    final profit = item['profit'] is num
+        ? (item['profit'] as num).toDouble()
+        : null;
 
     final qtyStr = qty % 1 == 0
         ? '${qty.toInt()} ${l10n.piece}'
@@ -71,7 +72,9 @@ class SaleItemCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg - 2, vertical: 5),
+                  horizontal: AppSpacing.lg - 2,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: context.colors.brandLight,
                   borderRadius: BorderRadius.circular(AppRadius.md - 2),
@@ -79,8 +82,11 @@ class SaleItemCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.inventory_2_outlined,
-                        size: 13, color: context.colors.brand),
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 13,
+                      color: context.colors.brand,
+                    ),
                     const SizedBox(width: 5),
                     Text(
                       qtyStr,
@@ -99,7 +105,9 @@ class SaleItemCard extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.md + 2),
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md + 2,
+              ),
               decoration: BoxDecoration(
                 color: profit >= 0
                     ? AppColors.successLight
@@ -120,8 +128,9 @@ class SaleItemCard extends StatelessWidget {
                             ? Icons.trending_up_rounded
                             : Icons.trending_down_rounded,
                         size: 16,
-                        color:
-                            profit >= 0 ? AppColors.success : AppColors.danger,
+                        color: profit >= 0
+                            ? AppColors.success
+                            : AppColors.danger,
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -139,8 +148,7 @@ class SaleItemCard extends StatelessWidget {
                     '${NumberFormatter.formatDecimal(profit)} ${l10n.currencySom}',
                     style: AppTextStyles.bodyMedium().copyWith(
                       fontWeight: FontWeight.w700,
-                      color:
-                          profit >= 0 ? AppColors.success : AppColors.danger,
+                      color: profit >= 0 ? AppColors.success : AppColors.danger,
                     ),
                   ),
                 ],

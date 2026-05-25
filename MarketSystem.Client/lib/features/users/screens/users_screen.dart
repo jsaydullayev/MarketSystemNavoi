@@ -101,8 +101,9 @@ class _UsersScreenState extends State<UsersScreen> {
       final usersFuture = UsersService(authProvider: auth).getAllUsers();
       final perfFuture = ReportService(authProvider: auth)
           .getStaffPerformance(period: 'today')
-          .then((perf) =>
-              perf.staff.fold<double>(0, (sum, s) => sum + s.revenue))
+          .then(
+            (perf) => perf.staff.fold<double>(0, (sum, s) => sum + s.revenue),
+          )
           // Endpoint is AdminOrOwner-gated; for Sellers (and on network errors)
           // we'd rather show 0 UZS than block the whole page.
           .catchError((_) => 0.0);
@@ -138,17 +139,21 @@ class _UsersScreenState extends State<UsersScreen> {
       }
       await _loadUsers();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(isActive ? l10n.deactivated : l10n.activated),
-          backgroundColor: AppColors.success,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isActive ? l10n.deactivated : l10n.activated),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${l10n.error}: $e'),
-          backgroundColor: AppColors.danger,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.error}: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
       }
     }
   }
@@ -157,10 +162,12 @@ class _UsersScreenState extends State<UsersScreen> {
     final l10n = AppLocalizations.of(context)!;
     final auth = Provider.of<AuthProvider>(context, listen: false);
     if (user['id'] == auth.user?['userId']) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(l10n.cannotDeleteSelf),
-        backgroundColor: AppColors.danger,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.cannotDeleteSelf),
+          backgroundColor: AppColors.danger,
+        ),
+      );
       return;
     }
     final confirmed = await showDialog<bool>(
@@ -180,8 +187,9 @@ class _UsersScreenState extends State<UsersScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               l10n.no,
-              style: AppTextStyles.labelLarge()
-                  .copyWith(color: context.colors.textSecondary),
+              style: AppTextStyles.labelLarge().copyWith(
+                color: context.colors.textSecondary,
+              ),
             ),
           ),
           TextButton(
@@ -189,8 +197,9 @@ class _UsersScreenState extends State<UsersScreen> {
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
             child: Text(
               l10n.yesDelete,
-              style:
-                  AppTextStyles.labelLarge().copyWith(color: AppColors.danger),
+              style: AppTextStyles.labelLarge().copyWith(
+                color: AppColors.danger,
+              ),
             ),
           ),
         ],
@@ -201,17 +210,21 @@ class _UsersScreenState extends State<UsersScreen> {
         await UsersService(authProvider: auth).deleteUser(user['id']);
         await _loadUsers();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l10n.deleteSuccess),
-            backgroundColor: AppColors.success,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.deleteSuccess),
+              backgroundColor: AppColors.success,
+            ),
+          );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${l10n.error}: $e'),
-            backgroundColor: AppColors.danger,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${l10n.error}: $e'),
+              backgroundColor: AppColors.danger,
+            ),
+          );
         }
       }
     }
@@ -245,8 +258,8 @@ class _UsersScreenState extends State<UsersScreen> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null) {
-      return _ErrorView(message: _error!, onRetry: _loadUsers);
+    if (_error case final err?) {
+      return _ErrorView(message: err, onRetry: _loadUsers);
     }
 
     final filtered = _applyFilters(_users);
@@ -280,20 +293,23 @@ class _UsersScreenState extends State<UsersScreen> {
               const SizedBox(height: AppSpacing.lg),
               if (filtered.isEmpty)
                 _EmptyView(
-                  isSearching: _searchCtrl.text.isNotEmpty ||
+                  isSearching:
+                      _searchCtrl.text.isNotEmpty ||
                       _filter != _UsersFilter.all,
                 )
               else
-                ...filtered.map((u) => UserCard(
+                ...filtered.map(
+                  (u) => UserCard(
+                    user: u,
+                    onTap: () => UserInfoSheet.show(
+                      context,
                       user: u,
-                      onTap: () => UserInfoSheet.show(
-                        context,
-                        user: u,
-                        onChanged: _loadUsers,
-                      ),
-                      onToggleStatus: () => _toggleStatus(u),
-                      onDelete: () => _deleteUser(u),
-                    )),
+                      onChanged: _loadUsers,
+                    ),
+                    onToggleStatus: () => _toggleStatus(u),
+                    onDelete: () => _deleteUser(u),
+                  ),
+                ),
             ],
           ),
         ),
@@ -366,24 +382,28 @@ class _StaffSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final total = users.length;
-    final onShift =
-        users.where((u) => (u['isShiftActive'] ?? false) == true).length;
+    final onShift = users
+        .where((u) => (u['isShiftActive'] ?? false) == true)
+        .length;
 
     // Compact a big number (450 000 → 450K, 12.4M → 12.4M) for the stat
     // tile so it stays on one line even on narrow screens.
     String revenueLabel;
-    if (todayRevenue == null) {
+    // Snapshot the parameter into a non-nullable local so the formatter
+    // doesn't need `!` on every arithmetic call.
+    final revenue = todayRevenue;
+    if (revenue == null) {
       revenueLabel = '…';
     } else {
-      final v = todayRevenue!.abs();
+      final v = revenue.abs();
       if (v >= 1000000) {
-        final m = todayRevenue! / 1000000;
+        final m = revenue / 1000000;
         revenueLabel = '${m.toStringAsFixed(m >= 10 ? 0 : 1)}M';
       } else if (v >= 1000) {
-        final k = todayRevenue! / 1000;
+        final k = revenue / 1000;
         revenueLabel = '${k.toStringAsFixed(k >= 100 ? 0 : 1)}K';
       } else {
-        revenueLabel = NumberFormatter.format(todayRevenue!);
+        revenueLabel = NumberFormatter.format(revenue);
       }
     }
 
@@ -433,11 +453,7 @@ class _Divider extends StatelessWidget {
   const _Divider();
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 32,
-      color: context.colors.borderSoft,
-    );
+    return Container(width: 1, height: 32, color: context.colors.borderSoft);
   }
 }
 
@@ -624,8 +640,9 @@ class _EmptyView extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           Text(
             isSearching ? l10n.userNotFound : l10n.noUsersFound,
-            style: AppTextStyles.titleMedium()
-                .copyWith(color: context.colors.textSecondary),
+            style: AppTextStyles.titleMedium().copyWith(
+              color: context.colors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -662,8 +679,9 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Text(
               message,
-              style: AppTextStyles.bodyMedium()
-                  .copyWith(color: AppColors.danger),
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: AppColors.danger,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),

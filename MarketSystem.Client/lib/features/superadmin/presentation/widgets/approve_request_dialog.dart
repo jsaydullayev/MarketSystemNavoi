@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/validators/password_validator.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
@@ -104,8 +105,10 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       return;
     }
     setState(() => _usernameState = _CheckState.checking);
-    _usernameTimer =
-        Timer(_debounce, () => _checkAvailability(usernameQuery: value));
+    _usernameTimer = Timer(
+      _debounce,
+      () => _checkAvailability(usernameQuery: value),
+    );
   }
 
   void _onMarketChanged() {
@@ -116,8 +119,10 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       return;
     }
     setState(() => _marketState = _CheckState.checking);
-    _marketTimer =
-        Timer(_debounce, () => _checkAvailability(marketQuery: value));
+    _marketTimer = Timer(
+      _debounce,
+      () => _checkAvailability(marketQuery: value),
+    );
   }
 
   void _onSubdomainChanged() {
@@ -136,8 +141,10 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
       return;
     }
     setState(() => _subdomainState = _CheckState.checking);
-    _subdomainTimer =
-        Timer(_debounce, () => _checkAvailability(subdomainQuery: value));
+    _subdomainTimer = Timer(
+      _debounce,
+      () => _checkAvailability(subdomainQuery: value),
+    );
   }
 
   Future<void> _checkAvailability({
@@ -154,16 +161,18 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
 
     // The user may have typed more characters while we were waiting —
     // discard a stale response so the indicator never contradicts the field.
-    final stillCurrent = (usernameQuery == null ||
+    final stillCurrent =
+        (usernameQuery == null ||
             _usernameController.text.trim() == usernameQuery) &&
         (marketQuery == null ||
             _marketNameController.text.trim() == marketQuery) &&
         (subdomainQuery == null ||
-            _subdomainController.text.trim().toLowerCase() ==
-                subdomainQuery);
+            _subdomainController.text.trim().toLowerCase() == subdomainQuery);
     if (!stillCurrent) return;
 
-    if (result.status != SuperAdminOpStatus.success || result.data == null) {
+    // Snapshot before the guard so flow analysis can promote it.
+    final data = result.data;
+    if (result.status != SuperAdminOpStatus.success || data == null) {
       setState(() {
         if (usernameQuery != null) _usernameState = _CheckState.idle;
         if (marketQuery != null) _marketState = _CheckState.idle;
@@ -173,7 +182,6 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
     }
 
     setState(() {
-      final data = result.data!;
       if (usernameQuery != null && data['usernameAvailable'] is bool) {
         _usernameState = (data['usernameAvailable'] as bool)
             ? _CheckState.free
@@ -250,8 +258,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
         color: context.colors.textMuted,
         fontSize: 15,
       ),
-      prefixIcon:
-          Icon(prefix, size: 20, color: context.colors.textSecondary),
+      prefixIcon: Icon(prefix, size: 20, color: context.colors.textSecondary),
       suffixIcon: suffixIcon,
       errorText: errorText,
       helperText: helper,
@@ -296,10 +303,12 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
     // their own value we echo it back; otherwise we fall back to the
     // server-suggested auto-generated one.
     final typedSubdomain = _subdomainController.text.trim().toLowerCase();
-    final previewSubdomain =
-        typedSubdomain.isNotEmpty ? typedSubdomain : _suggestedSubdomain;
+    final previewSubdomain = typedSubdomain.isNotEmpty
+        ? typedSubdomain
+        : _suggestedSubdomain;
 
-    final disabled = _usernameState == _CheckState.taken ||
+    final disabled =
+        _usernameState == _CheckState.taken ||
         _marketState == _CheckState.taken ||
         _subdomainState == _CheckState.taken;
 
@@ -417,16 +426,15 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                           size: 20,
                         ),
                         onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword),
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return l10n.enterPassword;
-                      if (v.length < 8) {
-                        return l10n.superAdminPasswordMinLength;
-                      }
-                      return null;
-                    },
+                    // G2 — SuperAdmin-minted Owner passwords go through the
+                    // same backend StrongPasswordAttribute. The legacy
+                    // "length ≥ 8" check let the SuperAdmin mint a password
+                    // like "12345678" that the server now rejects.
+                    validator: (v) => PasswordValidator.validateNew(v, context),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   _Label(l10n.marketName),
@@ -475,8 +483,7 @@ class _ApproveRequestDialogState extends State<ApproveRequestDialog> {
                   ),
                   // Live preview of the resolved subdomain — shows what URL the
                   // owner will actually log in at, even if the field is empty.
-                  if (previewSubdomain != null &&
-                      previewSubdomain.isNotEmpty)
+                  if (previewSubdomain != null && previewSubdomain.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8, left: 4),
                       child: Row(

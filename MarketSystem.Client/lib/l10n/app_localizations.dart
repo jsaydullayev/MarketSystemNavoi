@@ -63,7 +63,7 @@ import 'app_localizations_uz.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ru'),
-    Locale('uz')
+    Locale('uz'),
   ];
 
   /// No description provided for @appTitle.
@@ -1133,7 +1133,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordMinLength.
   ///
   /// In uz, this message translates to:
-  /// **'Parol kamida 6 ta belgi'**
+  /// **'Parol kamida 8 belgi, 1 harf va 1 raqam o\'z ichiga olishi kerak'**
   String get passwordMinLength;
 
   /// No description provided for @passwordConfirm.
@@ -1837,6 +1837,66 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Qayta urinish'**
   String get retry;
+
+  /// No description provided for @loadFailedTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumotni yuklab bo\'lmadi'**
+  String get loadFailedTitle;
+
+  /// No description provided for @loadFailedDescription.
+  ///
+  /// In uz, this message translates to:
+  /// **'Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog\'laning.'**
+  String get loadFailedDescription;
+
+  /// No description provided for @noInternetTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Internet aloqasi yo\'q'**
+  String get noInternetTitle;
+
+  /// No description provided for @noInternetDescription.
+  ///
+  /// In uz, this message translates to:
+  /// **'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring'**
+  String get noInternetDescription;
+
+  /// No description provided for @debtDueLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muddat'**
+  String get debtDueLabel;
+
+  /// No description provided for @debtOverdueBadge.
+  ///
+  /// In uz, this message translates to:
+  /// **'Muddat o\'tgan'**
+  String get debtOverdueBadge;
+
+  /// No description provided for @debtDueToday.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun muddat'**
+  String get debtDueToday;
+
+  /// No description provided for @debtDueTomorrow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ertaga muddat'**
+  String get debtDueTomorrow;
+
+  /// No description provided for @debtDueInDays.
+  ///
+  /// In uz, this message translates to:
+  /// **'{n} kun qoldi'**
+  String debtDueInDays(Object n);
+
+  /// No description provided for @debtOverdueByDays.
+  ///
+  /// In uz, this message translates to:
+  /// **'{n} kun kechikkan'**
+  String debtOverdueByDays(Object n);
 
   /// No description provided for @customerDeleted.
   ///
@@ -5071,6 +5131,108 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Boshlangan: {time}'**
   String shiftStartedAt(String time);
+
+  /// No description provided for @shiftNotOpenError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ochiq smena topilmadi. Avval smenani oching.'**
+  String get shiftNotOpenError;
+
+  /// No description provided for @concurrentChangeError.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ma\'lumot boshqa foydalanuvchi tomonidan o\'zgartirildi. Sahifani yangilang va qaytadan urinib ko\'ring.'**
+  String get concurrentChangeError;
+
+  /// No description provided for @securityJournal.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xavfsizlik jurnali'**
+  String get securityJournal;
+
+  /// No description provided for @securityJournalAllTab.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasi'**
+  String get securityJournalAllTab;
+
+  /// No description provided for @securityJournalSuspiciousTab.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shubhali'**
+  String get securityJournalSuspiciousTab;
+
+  /// No description provided for @securityJournalFilterEntityType.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hodisa turi'**
+  String get securityJournalFilterEntityType;
+
+  /// No description provided for @securityJournalFilterAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Amal'**
+  String get securityJournalFilterAction;
+
+  /// No description provided for @securityJournalFilterAll.
+  ///
+  /// In uz, this message translates to:
+  /// **'Barchasi'**
+  String get securityJournalFilterAll;
+
+  /// No description provided for @securityJournalEmptyAll.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha audit yozuvlari yo\'q.'**
+  String get securityJournalEmptyAll;
+
+  /// No description provided for @securityJournalNoSuspicious.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha shubhali faollik aniqlanmadi.'**
+  String get securityJournalNoSuspicious;
+
+  /// No description provided for @securityJournalAnonymousActor.
+  ///
+  /// In uz, this message translates to:
+  /// **'Anonim'**
+  String get securityJournalAnonymousActor;
+
+  /// No description provided for @securityJournalFailedLoginBursts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xato login urinishlari'**
+  String get securityJournalFailedLoginBursts;
+
+  /// No description provided for @securityJournalBulkDeleteBursts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ko\'p o\'chirish urinishlari'**
+  String get securityJournalBulkDeleteBursts;
+
+  /// No description provided for @securityJournalFirstSeen.
+  ///
+  /// In uz, this message translates to:
+  /// **'Boshlangan'**
+  String get securityJournalFirstSeen;
+
+  /// No description provided for @securityJournalLastSeen.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oxirgi'**
+  String get securityJournalLastSeen;
+
+  /// No description provided for @securityJournalSourceIps.
+  ///
+  /// In uz, this message translates to:
+  /// **'Manba IP'**
+  String get securityJournalSourceIps;
+
+  /// No description provided for @securityJournalEntityTypes.
+  ///
+  /// In uz, this message translates to:
+  /// **'Obyektlar'**
+  String get securityJournalEntityTypes;
 }
 
 class _AppLocalizationsDelegate
@@ -5100,8 +5262,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
+import '../../../core/validators/password_validator.dart';
 import '../../../core/widgets/common_app_bar.dart';
 import '../../../data/services/user_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
@@ -156,7 +157,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       // SOZLASH / НАСТРОЙКИ — language + theme.
                       ProfileSettingsCard(
-                        header: ProfileSectionTitle(title: l10n.settingsSection),
+                        header: ProfileSectionTitle(
+                          title: l10n.settingsSection,
+                        ),
                         children: [
                           _buildLanguageRow(context),
                           _buildThemeRow(context),
@@ -219,8 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showLanguageSheet(BuildContext context) async {
-    final localeProvider =
-        Provider.of<LocaleProvider>(context, listen: false);
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
     final current = localeProvider.locale.languageCode;
     final selected = await showModalBottomSheet<String>(
       context: context,
@@ -229,8 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Container(
           decoration: BoxDecoration(
             color: context.colors.surface,
-            borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl,
@@ -279,14 +280,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildThemeRow(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final mode = AdaptiveTheme.of(context).mode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ProfileSettingsRow(
       icon: Icons.palette_outlined,
       tone: ProfileRowIconTone.gray,
       title: l10n.themeLabel,
-      value: mode.isDark ? l10n.themeDark : l10n.themeLight,
+      value: isDark ? l10n.themeDark : l10n.themeLight,
       onTap: () {
-        AdaptiveTheme.of(context).toggleThemeMode();
+        if (isDark) {
+          AdaptiveTheme.of(context).setLight();
+        } else {
+          AdaptiveTheme.of(context).setDark();
+        }
       },
     );
   }
@@ -315,7 +320,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color: context.colors.surface,
               borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24)),
+                top: Radius.circular(24),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -368,9 +374,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _changePassword(
-      void Function(void Function()) setModalState, AppLocalizations l10n) async {
+    void Function(void Function()) setModalState,
+    AppLocalizations l10n,
+  ) async {
     if (_currentPasswordController.text.isEmpty ||
         _newPasswordController.text.isEmpty) {
+      return;
+    }
+
+    // G2 — client-side gate before round-tripping to the server. The backend's
+    // StrongPasswordAttribute now refuses anything below 8 chars / no letter
+    // / no digit with a 400 — catch it here so the user sees a localized
+    // hint inline instead of a translated server-error snackbar later.
+    if (!PasswordValidator.isStrong(_newPasswordController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.passwordMinLength),
+          backgroundColor: AppColors.danger,
+        ),
+      );
       return;
     }
 
@@ -392,11 +414,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        // G2 — try to surface the backend's "Parol kamida 8 belgi…" message
+        // cleanly. The service layer throws Exception('...{"message":"..."}')
+        // for unexpected statuses; pull the human-readable text out.
+        final raw = e.toString();
+        final extracted = _extractServerMessage(raw) ?? raw;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: AppColors.danger,
-          ),
+          SnackBar(content: Text(extracted), backgroundColor: AppColors.danger),
         );
       }
     } finally {
@@ -404,6 +428,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _currentPasswordController.clear();
       _newPasswordController.clear();
     }
+  }
+
+  /// Pull the `message` field out of a structured backend error payload,
+  /// stripping the verbose `Exception: ...` prefix the service layer wraps
+  /// it in. Returns null when the input doesn't look like a structured
+  /// error so callers can fall back to the raw string.
+  String? _extractServerMessage(String raw) {
+    final start = raw.indexOf('"message":"');
+    if (start < 0) return null;
+    final from = start + '"message":"'.length;
+    final end = raw.indexOf('"', from);
+    if (end < 0) return null;
+    return raw.substring(from, end);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -420,9 +457,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       decoration: BoxDecoration(
         color: context.colors.bg,
-        border: Border(
-          top: BorderSide(color: context.colors.border),
-        ),
+        border: Border(top: BorderSide(color: context.colors.border)),
       ),
       child: AppPrimaryButton(
         label: l10n.save,
@@ -437,8 +472,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isSaving = true);
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      await UserService(authProvider: auth)
-          .updateProfile(fullName: _fullNameController.text.trim());
+      await UserService(
+        authProvider: auth,
+      ).updateProfile(fullName: _fullNameController.text.trim());
       await auth.fetchUserProfile();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -466,25 +502,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         title: Text(l10n.logout, style: AppTextStyles.titleMedium()),
-        content: Text(
-          l10n.logoutConfirm,
-          style: AppTextStyles.bodyMedium(),
-        ),
+        content: Text(l10n.logoutConfirm, style: AppTextStyles.bodyMedium()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
               l10n.no,
-              style: AppTextStyles.labelLarge()
-                  .copyWith(color: context.colors.textSecondary),
+              style: AppTextStyles.labelLarge().copyWith(
+                color: context.colors.textSecondary,
+              ),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               l10n.yes,
-              style:
-                  AppTextStyles.labelLarge().copyWith(color: AppColors.danger),
+              style: AppTextStyles.labelLarge().copyWith(
+                color: AppColors.danger,
+              ),
             ),
           ),
         ],
@@ -494,9 +529,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await Provider.of<AuthProvider>(context, listen: false).logout();
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (r) => false);
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (r) => false,
+      );
     }
   }
 }
@@ -519,8 +555,7 @@ class _LanguageOption extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Material(
-        color:
-            selected ? context.colors.brandLight : context.colors.inputFill,
+        color: selected ? context.colors.brandLight : context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: InkWell(
           onTap: onTap,

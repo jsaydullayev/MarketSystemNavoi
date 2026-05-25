@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/widgets/network_wrapper.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
@@ -43,95 +44,106 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.colors.surface,
-      body: DecoratedBox(
-        // Subtle white -> brandLight gradient, matching the demo's auth-screen
-        // background.
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [context.colors.surface, context.colors.brandLight],
+    // D2 — wrap login so the user sees the localized no-internet panel
+    // up front instead of typing a password and watching the submit
+    // call hang. There's no auto-retry here (login is user-initiated);
+    // restoring the connection just dismisses the panel.
+    return NetworkWrapper(
+      child: Scaffold(
+        backgroundColor: context.colors.surface,
+        body: DecoratedBox(
+          // Subtle white -> brandLight gradient, matching the demo's auth-screen
+          // background.
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [context.colors.surface, context.colors.brandLight],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(
-                top: 40,
-                left: AppSpacing.xl3,
-                right: AppSpacing.xl3,
-                bottom: AppSpacing.xl3,
-              ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: AutofillGroup(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildBrand(),
-                        const SizedBox(height: AppSpacing.xl4),
-                        _buildTitleBlock(),
-                        const SizedBox(height: 22),
-                        Builder(builder: (ctx) {
-                          final l10n = AppLocalizations.of(ctx)!;
-                          return AppTextInput(
-                            label: l10n.loginLabel,
-                            hint: l10n.loginLabel,
-                            prefixIcon: Icons.person_outline_rounded,
-                            controller: _usernameController,
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? l10n.loginHint
-                                : null,
-                          );
-                        }),
-                        const SizedBox(height: AppSpacing.lg),
-                        Builder(builder: (ctx) {
-                          final l10n = AppLocalizations.of(ctx)!;
-                          return AppTextInput(
-                            label: l10n.password,
-                            hint: l10n.password,
-                            prefixIcon: Icons.lock_outline_rounded,
-                            obscureText: _obscurePassword,
-                            controller: _passwordController,
-                            validator: (v) => (v == null || v.isEmpty)
-                                ? l10n.passwordHint
-                                : null,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                size: 20,
-                                color: context.colors.textSecondary,
-                              ),
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                            ),
-                          );
-                        }),
-                        const SizedBox(height: AppSpacing.xl2),
-                        _buildHelperRow(),
-                        const SizedBox(height: AppSpacing.lg),
-                        Consumer<AuthProvider>(
-                          builder: (_, auth, __) {
-                            final l10n = AppLocalizations.of(context)!;
-                            return AppPrimaryButton(
-                              label: l10n.loginButton,
-                              isLoading: auth.isLoading,
-                              onPressed: auth.isLoading ? null : _login,
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 22),
-                        _buildDivider(),
-                        const SizedBox(height: AppSpacing.xl2),
-                        _buildBottomLink(),
-                      ],
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  top: 40,
+                  left: AppSpacing.xl3,
+                  right: AppSpacing.xl3,
+                  bottom: AppSpacing.xl3,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: AutofillGroup(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildBrand(),
+                          const SizedBox(height: AppSpacing.xl4),
+                          _buildTitleBlock(),
+                          const SizedBox(height: 22),
+                          Builder(
+                            builder: (ctx) {
+                              final l10n = AppLocalizations.of(ctx)!;
+                              return AppTextInput(
+                                label: l10n.loginLabel,
+                                hint: l10n.loginLabel,
+                                prefixIcon: Icons.person_outline_rounded,
+                                controller: _usernameController,
+                                validator: (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                    ? l10n.loginHint
+                                    : null,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          Builder(
+                            builder: (ctx) {
+                              final l10n = AppLocalizations.of(ctx)!;
+                              return AppTextInput(
+                                label: l10n.password,
+                                hint: l10n.password,
+                                prefixIcon: Icons.lock_outline_rounded,
+                                obscureText: _obscurePassword,
+                                controller: _passwordController,
+                                validator: (v) => (v == null || v.isEmpty)
+                                    ? l10n.passwordHint
+                                    : null,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    size: 20,
+                                    color: context.colors.textSecondary,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: AppSpacing.xl2),
+                          _buildHelperRow(),
+                          const SizedBox(height: AppSpacing.lg),
+                          Consumer<AuthProvider>(
+                            builder: (_, auth, __) {
+                              final l10n = AppLocalizations.of(context)!;
+                              return AppPrimaryButton(
+                                label: l10n.loginButton,
+                                isLoading: auth.isLoading,
+                                onPressed: auth.isLoading ? null : _login,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 22),
+                          _buildDivider(),
+                          const SizedBox(height: AppSpacing.xl2),
+                          _buildBottomLink(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -232,11 +244,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 18,
                   child: Checkbox(
                     value: _rememberMe,
-                    onChanged: (v) =>
-                        setState(() => _rememberMe = v ?? false),
+                    onChanged: (v) => setState(() => _rememberMe = v ?? false),
                     visualDensity: VisualDensity.compact,
-                    materialTapTargetSize:
-                        MaterialTapTargetSize.shrinkWrap,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     activeColor: context.colors.brand,
                     side: BorderSide(color: context.colors.border, width: 1.5),
                     shape: RoundedRectangleBorder(
@@ -280,8 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
-        Expanded(
-            child: Divider(color: context.colors.border, height: 1)),
+        Expanded(child: Divider(color: context.colors.border, height: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Text(
@@ -293,8 +302,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        Expanded(
-            child: Divider(color: context.colors.border, height: 1)),
+        Expanded(child: Divider(color: context.colors.border, height: 1)),
       ],
     );
   }
@@ -313,8 +321,7 @@ class _LoginScreenState extends State<LoginScreen> {
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: GestureDetector(
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.register),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.register),
                 child: Text(
                   l10n.createNewShop,
                   style: AppTextStyles.bodySmall().copyWith(
@@ -351,8 +358,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final localeProvider =
-        Provider.of<LocaleProvider>(context, listen: false);
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
 
     final success = await authProvider.login(
       _usernameController.text.trim(),
@@ -382,10 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // hidden console; every other role goes to the normal dashboard.
       final isSuperAdmin = (user?['role'] as String?) == 'SuperAdmin';
       if (isSuperAdmin) {
-        Navigator.pushReplacementNamed(
-          context,
-          AppRoutes.superAdminConsole,
-        );
+        Navigator.pushReplacementNamed(context, AppRoutes.superAdminConsole);
       } else {
         Navigator.pushReplacement(
           context,

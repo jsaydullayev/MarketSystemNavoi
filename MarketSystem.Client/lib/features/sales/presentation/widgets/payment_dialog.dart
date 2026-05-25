@@ -18,7 +18,7 @@ class PaymentDialog extends StatefulWidget {
   /// created one inline from the debt row, so the caller MUST use this value
   /// (not its own snapshot) when creating the sale.
   final Function(List<Map<String, dynamic>>, bool, Map<String, dynamic>?)
-      onConfirm;
+  onConfirm;
   final VoidCallback? onCancel;
 
   const PaymentDialog({
@@ -82,29 +82,37 @@ class PaymentDialogState extends State<PaymentDialog> {
     }
   }
 
+  /// AUDIT-3 — sum the individual payment-method amounts. Each field is
+  /// parsed defensively: `tryParse` falls back to 0 on garbage input,
+  /// non-finite values (NaN, +/-Infinity from a paste of "1e9999") fold
+  /// to 0 as well so they can't poison the total or the can-confirm
+  /// check below.
   double get _totalPaid {
     double total = 0;
-    if (_useCash) {
-      total += double.tryParse(_cashController.text.replaceAll(',', '.')) ?? 0;
-    }
-    if (_useTerminal) {
-      total +=
-          double.tryParse(_terminalController.text.replaceAll(',', '.')) ?? 0;
-    }
-    if (_useTransfer) {
-      total +=
-          double.tryParse(_transferController.text.replaceAll(',', '.')) ?? 0;
-    }
-    if (_useClick) {
-      total += double.tryParse(_clickController.text.replaceAll(',', '.')) ?? 0;
-    }
+    if (_useCash) total += _parseField(_cashController.text);
+    if (_useTerminal) total += _parseField(_terminalController.text);
+    if (_useTransfer) total += _parseField(_transferController.text);
+    if (_useClick) total += _parseField(_clickController.text);
     return total;
+  }
+
+  /// Parse a single payment field. Out-of-range and non-finite inputs
+  /// resolve to 0 so the confirm guard treats them as "not paid yet"
+  /// instead of letting an `Infinity` slip through to the backend.
+  double _parseField(String raw) {
+    final v = double.tryParse(raw.replaceAll(',', '.')) ?? 0;
+    if (!v.isFinite || v < 0) return 0;
+    return v;
   }
 
   double get _remainingAmount => widget.totalAmount - _totalPaid;
   bool get _hasDebt => _useDebt && _remainingAmount > 0.01;
 
   bool _canConfirm() {
+    // AUDIT-3 — explicit finite check belt-and-braces: if a future
+    // refactor of _totalPaid ever surfaces a non-finite value, refuse
+    // to enable the confirm button instead of crashing the backend.
+    if (!_totalPaid.isFinite || _totalPaid < 0) return false;
     if (_hasDebt) return _customer != null;
     return _totalPaid > 0 && _remainingAmount <= 0.01;
   }
@@ -125,7 +133,8 @@ class PaymentDialogState extends State<PaymentDialog> {
         decoration: BoxDecoration(
           color: context.colors.surface,
           borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl2)),
+            top: Radius.circular(AppRadius.xl2),
+          ),
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -143,10 +152,7 @@ class PaymentDialogState extends State<PaymentDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    l10n.paymentMethods,
-                    style: AppTextStyles.titleMedium(),
-                  ),
+                  Text(l10n.paymentMethods, style: AppTextStyles.titleMedium()),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg,
@@ -170,7 +176,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                 context,
                 l10n.cash,
                 _useCash,
-                (v) => setState(() => _useCash = v!),
+                (v) => setState(() => _useCash = v ?? false),
                 _cashController,
                 Icons.money,
                 AppColors.success,
@@ -179,7 +185,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                 context,
                 l10n.bankCard,
                 _useTerminal,
-                (v) => setState(() => _useTerminal = v!),
+                (v) => setState(() => _useTerminal = v ?? false),
                 _terminalController,
                 Icons.credit_card,
                 context.colors.brand,
@@ -188,7 +194,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                 context,
                 l10n.transfer,
                 _useTransfer,
-                (v) => setState(() => _useTransfer = v!),
+                (v) => setState(() => _useTransfer = v ?? false),
                 _transferController,
                 Icons.account_balance,
                 AppColors.warning,
@@ -197,7 +203,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                 context,
                 l10n.click,
                 _useClick,
-                (v) => setState(() => _useClick = v!),
+                (v) => setState(() => _useClick = v ?? false),
                 _clickController,
                 Icons.phone_android,
                 context.colors.brand,
@@ -259,10 +265,7 @@ class PaymentDialogState extends State<PaymentDialog> {
         ),
         if (value)
           Padding(
-            padding: const EdgeInsets.only(
-              left: 40,
-              bottom: AppSpacing.md,
-            ),
+            padding: const EdgeInsets.only(left: 40, bottom: AppSpacing.md),
             child: TextField(
               controller: controller,
               keyboardType: TextInputType.number,
@@ -334,10 +337,7 @@ class PaymentDialogState extends State<PaymentDialog> {
           // the payment dialog.
           if (_customer != null)
             CheckboxListTile(
-              title: Text(
-                l10n.takeAsDebt,
-                style: AppTextStyles.bodyMedium(),
-              ),
+              title: Text(l10n.takeAsDebt, style: AppTextStyles.bodyMedium()),
               subtitle: Text(
                 _customer!['fullName']?.toString().isNotEmpty == true
                     ? _customer!['fullName'].toString()
@@ -345,7 +345,7 @@ class PaymentDialogState extends State<PaymentDialog> {
                 style: AppTextStyles.bodySmall(),
               ),
               value: _useDebt,
-              onChanged: (v) => setState(() => _useDebt = v!),
+              onChanged: (v) => setState(() => _useDebt = v ?? false),
               contentPadding: EdgeInsets.zero,
               activeColor: context.colors.brand,
             )

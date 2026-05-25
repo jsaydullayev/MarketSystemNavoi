@@ -17,13 +17,12 @@ class NavigationHandler {
   static BuildContext? get _context => navigatorKey.currentContext;
 
   /// Navigate to new route
-  static Future<T?> navigateTo<T>(
-    String routeName, {
-    Object? arguments,
-  }) {
+  static Future<T?> navigateTo<T>(String routeName, {Object? arguments}) {
     final state = _state;
     if (state == null) {
-      debugPrint('NavigationHandler: state unavailable for navigateTo($routeName)');
+      debugPrint(
+        'NavigationHandler: state unavailable for navigateTo($routeName)',
+      );
       return Future.value(null);
     }
     return state.pushNamed<T>(routeName, arguments: arguments);
@@ -36,10 +35,15 @@ class NavigationHandler {
   }) {
     final state = _state;
     if (state == null) {
-      debugPrint('NavigationHandler: state unavailable for navigateToReplacement($routeName)');
+      debugPrint(
+        'NavigationHandler: state unavailable for navigateToReplacement($routeName)',
+      );
       return Future.value(null);
     }
-    return state.pushReplacementNamed<T, Object?>(routeName, arguments: arguments);
+    return state.pushReplacementNamed<T, Object?>(
+      routeName,
+      arguments: arguments,
+    );
   }
 
   /// Navigate to new route and clear all previous routes
@@ -49,7 +53,9 @@ class NavigationHandler {
   }) {
     final state = _state;
     if (state == null) {
-      debugPrint('NavigationHandler: state unavailable for navigateToAndClear($routeName)');
+      debugPrint(
+        'NavigationHandler: state unavailable for navigateToAndClear($routeName)',
+      );
       return Future.value(null);
     }
     return state.pushNamedAndRemoveUntil<T>(
@@ -75,7 +81,9 @@ class NavigationHandler {
   static void popUntil(String routeName) {
     final state = _state;
     if (state == null) {
-      debugPrint('NavigationHandler: state unavailable for popUntil($routeName)');
+      debugPrint(
+        'NavigationHandler: state unavailable for popUntil($routeName)',
+      );
       return;
     }
     state.popUntil(ModalRoute.withName(routeName));

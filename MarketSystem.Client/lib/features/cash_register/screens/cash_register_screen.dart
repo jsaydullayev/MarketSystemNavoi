@@ -11,6 +11,7 @@ import 'package:market_system_client/features/cash_register/widgets/withdraw_but
 import 'package:market_system_client/features/cash_register/widgets/withdrawal_history_list.dart';
 import 'package:provider/provider.dart';
 import '../../../core/auth/permissions.dart';
+import '../../../core/errors/api_exception.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/models/cash_register_model.dart';
 import '../../../data/services/cash_register_service.dart';
@@ -110,24 +111,42 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
 
     setState(() => _isWithdrawing = true);
 
-    final success = await _cashRegisterService.withdrawCash(
-      amount,
-      _commentController.text.trim(),
-      withdrawType,
-    );
+    try {
+      await _cashRegisterService.withdrawCash(
+        amount,
+        _commentController.text.trim(),
+        withdrawType,
+      );
 
-    setState(() => _isWithdrawing = false);
-    if (!mounted) return;
-
-    if (success) {
+      if (!mounted) return;
       _showSnack(
         l10n.withdrawalSuccessType(
-            withdrawType == 'cash' ? l10n.cash : l10n.click),
+          withdrawType == 'cash' ? l10n.cash : l10n.click,
+        ),
         isError: false,
       );
       _loadCashRegister();
-    } else {
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      // G5 — K2 added Xmin on CashRegister.CurrentBalance, so two parallel
+      // withdrawals will now surface the loser as 409. Show a refresh-and-
+      // retry hint AND reload the till so the user sees the current balance
+      // before they try again. Falls back to the server message (already
+      // localised) for non-409 errors.
+      if (e.isConflict) {
+        _showSnack(l10n.concurrentChangeError, isError: true);
+        _loadCashRegister();
+      } else {
+        _showSnack(
+          e.message.isNotEmpty ? e.message : l10n.error,
+          isError: true,
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
       _showSnack(l10n.error, isError: true);
+    } finally {
+      if (mounted) setState(() => _isWithdrawing = false);
     }
   }
 
@@ -208,59 +227,61 @@ class _CashRegisterScreenState extends State<CashRegisterScreen> {
                 ),
               )
             : _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                    onRefresh: _loadCashRegister,
-                    color: context.colors.brand,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.xl,
-                        AppSpacing.md,
-                        AppSpacing.xl,
-                        AppSpacing.xl4,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          BalanceCard(
-                            cashBalance: _cashRegister?.currentBalance ?? 0,
-                            clickBalance: _todaySales?.clickPaid ?? 0,
-                            lastUpdated: _cashRegister?.lastUpdated,
-                          ),
-                          const SizedBox(height: AppSpacing.xl),
-                          if (_todaySales != null) ...[
-                            TodaySalesCard(todaySales: _todaySales!),
-                            const SizedBox(height: AppSpacing.xl),
-                          ],
-                          if (_todaySales != null &&
-                              (_todaySales!.cashPaid > 0 ||
-                                  _todaySales!.cardPaid > 0 ||
-                                  _todaySales!.clickPaid > 0)) ...[
-                            PaymentBreakdownCard(todaySales: _todaySales!),
-                            const SizedBox(height: AppSpacing.xl2),
-                          ],
-                          WithdrawButton(
-                            isWithdrawing: _isWithdrawing,
-                            onTap: _showWithdrawDialog,
-                            label: l10n.withdrawCash,
-                          ),
-                          const SizedBox(height: AppSpacing.xl3 + AppSpacing.xs),
-                          Text(
-                            l10n.withdrawalHistory.toUpperCase(),
-                            style: AppTextStyles.labelSmall().copyWith(
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                          WithdrawalHistoryList(
-                            withdrawals: _cashRegister?.withdrawals ?? [],
-                            l10n: l10n,
-                          ),
-                        ],
-                      ),
-                    ),
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _loadCashRegister,
+                color: context.colors.brand,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.md,
+                    AppSpacing.xl,
+                    AppSpacing.xl4,
                   ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BalanceCard(
+                        cashBalance: _cashRegister?.currentBalance ?? 0,
+                        clickBalance: _todaySales?.clickPaid ?? 0,
+                        lastUpdated: _cashRegister?.lastUpdated,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      // Dart-3 non-null pattern: matches when _todaySales
+                      // is non-null and binds it as a non-nullable `s` so
+                      // the cards below use it without `!` round-trips.
+                      if (_todaySales case final s?) ...[
+                        TodaySalesCard(todaySales: s),
+                        const SizedBox(height: AppSpacing.xl),
+                        if (s.cashPaid > 0 ||
+                            s.cardPaid > 0 ||
+                            s.clickPaid > 0) ...[
+                          PaymentBreakdownCard(todaySales: s),
+                          const SizedBox(height: AppSpacing.xl2),
+                        ],
+                      ],
+                      WithdrawButton(
+                        isWithdrawing: _isWithdrawing,
+                        onTap: _showWithdrawDialog,
+                        label: l10n.withdrawCash,
+                      ),
+                      const SizedBox(height: AppSpacing.xl3 + AppSpacing.xs),
+                      Text(
+                        l10n.withdrawalHistory.toUpperCase(),
+                        style: AppTextStyles.labelSmall().copyWith(
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      WithdrawalHistoryList(
+                        withdrawals: _cashRegister?.withdrawals ?? [],
+                        l10n: l10n,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }

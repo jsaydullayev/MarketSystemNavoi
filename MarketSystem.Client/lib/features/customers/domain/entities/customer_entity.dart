@@ -1,16 +1,21 @@
-// Customer Entity
-// Mijoz obyekti - biznes mantik uchun asosiy model
-
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:market_system_client/core/utils/json_converters.dart';
+
+part 'customer_entity.g.dart';
 
 /// Customer Entity - mijoz obyekti
+@JsonSerializable()
 class CustomerEntity extends Equatable {
   final String id;
   final String phone;
   final String? fullName;
   final String? comment;
+  @FlexibleDoubleConverter()
   final double totalDebt;
+  @IsoDateTimeConverter()
   final DateTime createdAt;
+  @NullableIsoDateTimeConverter()
   final DateTime? updatedAt;
 
   const CustomerEntity({
@@ -23,30 +28,10 @@ class CustomerEntity extends Equatable {
     this.updatedAt,
   });
 
-  /// JSON dan CustomerEntity yaratish
-  factory CustomerEntity.fromJson(Map<String, dynamic> json) {
-    return CustomerEntity(
-      id: json['id']?.toString() ?? '',
-      phone: json['phone']?.toString() ?? '',
-      fullName: json['fullName']?.toString(),
-      comment: json['comment']?.toString(),
-      totalDebt: json['totalDebt'] != null
-          ? (json['totalDebt'] is num
-              ? (json['totalDebt'] as num).toDouble()
-              : double.tryParse(json['totalDebt'].toString()) ?? 0.0)
-          : 0.0,
-      createdAt: json['createdAt'] != null
-          ? (json['createdAt'] is DateTime
-              ? json['createdAt'] as DateTime
-              : DateTime.parse(json['createdAt'].toString()))
-          : DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? (json['updatedAt'] is DateTime
-              ? json['updatedAt'] as DateTime
-              : DateTime.parse(json['updatedAt'].toString()))
-          : null,
-    );
-  }
+  factory CustomerEntity.fromJson(Map<String, dynamic> json) =>
+      _$CustomerEntityFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CustomerEntityToJson(this);
 
   /// Telefon raqamini formatlash
   String getFormattedPhone() {
@@ -61,19 +46,14 @@ class CustomerEntity extends Equatable {
     return fullName?.isNotEmpty == true ? fullName! : getFormattedPhone();
   }
 
-  /// CustomerEntity ni JSON ga aylantirish
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'phone': phone,
-      'fullName': fullName,
-      'comment': comment,
-      'totalDebt': totalDebt,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
-    };
-  }
-
   @override
-  List<Object?> get props => [id, phone, fullName, comment, totalDebt, createdAt, updatedAt];
+  List<Object?> get props => [
+    id,
+    phone,
+    fullName,
+    comment,
+    totalDebt,
+    createdAt,
+    updatedAt,
+  ];
 }

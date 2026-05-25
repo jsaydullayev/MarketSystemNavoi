@@ -146,13 +146,17 @@ class _ReportsScreenState extends State<ReportsScreen>
       final saleItems = await _reportsService.getDailySaleItems(_selectedDate);
       if (!mounted) return;
       setState(() => _isLoadingDetails = false);
-      if (mounted) {
+      // Snapshot AFTER the setState so the latest report value is captured;
+      // if it's still null (e.g. the page opened before _loadReports finished)
+      // we silently bail instead of crashing on `_dailyReport!`.
+      final report = _dailyReport;
+      if (mounted && report != null) {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => DailySalesDetailsScreen(
               date: _selectedDate,
-              dailyReport: _dailyReport!,
+              dailyReport: report,
               saleItems: saleItems,
             ),
           ),
@@ -185,14 +189,17 @@ class _ReportsScreenState extends State<ReportsScreen>
 
   void _showSnack(String msg, {required bool isError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? AppColors.danger : AppColors.success,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg)),
-      margin: const EdgeInsets.all(AppSpacing.xl),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        margin: const EdgeInsets.all(AppSpacing.xl),
+      ),
+    );
   }
 
   // Hero band figures — all read from _heroReport, the period report for the
@@ -250,8 +257,7 @@ class _ReportsScreenState extends State<ReportsScreen>
         ),
         body: _isLoading
             ? Center(
-                child:
-                    CircularProgressIndicator(color: context.colors.brand),
+                child: CircularProgressIndicator(color: context.colors.brand),
               )
             : RefreshIndicator(
                 color: context.colors.brand,

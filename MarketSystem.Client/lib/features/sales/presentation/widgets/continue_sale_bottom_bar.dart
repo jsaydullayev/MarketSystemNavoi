@@ -35,8 +35,7 @@ class ContinueSaleBottomBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
-        border: Border(
-            top: BorderSide(color: context.colors.border, width: 2)),
+        border: Border(top: BorderSide(color: context.colors.border, width: 2)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0F000000),

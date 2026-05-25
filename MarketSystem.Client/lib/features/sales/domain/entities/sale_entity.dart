@@ -1,28 +1,55 @@
-// Sale Entity
-// Sotuv obyekti - biznes mantik uchun asosiy model
-
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:market_system_client/core/utils/json_converters.dart';
 
-/// Sale holatlari
-enum SaleStatus {
-  draft,
-  paid,
-  debt,
-  closed,
-  cancelled,
+part 'sale_entity.g.dart';
+
+enum SaleStatus { draft, paid, debt, closed, cancelled }
+
+// SaleStatusConverter lives here (not in json_converters.dart) to avoid a
+// circular import: json_converters ↔ sale_entity.
+class SaleStatusConverter implements JsonConverter<SaleStatus, dynamic> {
+  const SaleStatusConverter();
+
+  @override
+  SaleStatus fromJson(dynamic value) {
+    // Backend sends PascalCase ("Draft"); toLowerCase() keeps us safe if
+    // that ever changes to ALL_CAPS or camelCase.
+    switch (value?.toString().toLowerCase()) {
+      case 'paid':
+        return SaleStatus.paid;
+      case 'debt':
+        return SaleStatus.debt;
+      case 'closed':
+        return SaleStatus.closed;
+      case 'cancelled':
+        return SaleStatus.cancelled;
+      default:
+        return SaleStatus.draft;
+    }
+  }
+
+  @override
+  dynamic toJson(SaleStatus value) => value.name;
 }
 
 /// Sale Entity - asosiy sotuv obyekti
+@JsonSerializable()
 class SaleEntity extends Equatable {
   final String id;
   final String? customerId;
   final String sellerId;
   final String? customerName;
   final String? customerPhone;
+  @FlexibleDoubleConverter()
   final double totalAmount;
+  @FlexibleDoubleConverter()
   final double paidAmount;
+  @FlexibleDoubleConverter()
   final double remainingAmount;
+  @SaleStatusConverter()
   final SaleStatus status;
+  @IsoDateTimeConverter()
   final DateTime createdAt;
   final String? sellerName;
 
@@ -40,108 +67,29 @@ class SaleEntity extends Equatable {
     this.sellerName,
   });
 
-  /// JSON dan SaleEntity yaratish
-  factory SaleEntity.fromJson(Map<String, dynamic> json) {
-    return SaleEntity(
-      id: json['id']?.toString() ?? '',
-      customerId: json['customerId']?.toString(),
-      sellerId: json['sellerId']?.toString() ?? '',
-      customerName: json['customerName']?.toString(),
-      customerPhone: json['customerPhone']?.toString(),
-      totalAmount: json['totalAmount'] != null
-          ? (json['totalAmount'] is num
-              ? (json['totalAmount'] as num).toDouble()
-              : double.tryParse(json['totalAmount'].toString()) ?? 0.0)
-          : 0.0,
-      paidAmount: json['paidAmount'] != null
-          ? (json['paidAmount'] is num
-              ? (json['paidAmount'] as num).toDouble()
-              : double.tryParse(json['paidAmount'].toString()) ?? 0.0)
-          : 0.0,
-      remainingAmount: json['remainingAmount'] != null
-          ? (json['remainingAmount'] is num
-              ? (json['remainingAmount'] as num).toDouble()
-              : double.tryParse(json['remainingAmount'].toString()) ?? 0.0)
-          : 0.0,
-      status: _parseStatus(json['status']?.toString()),
-      createdAt: json['createdAt'] != null
-          ? (json['createdAt'] is DateTime
-              ? json['createdAt'] as DateTime
-              : DateTime.parse(json['createdAt'].toString()))
-          : DateTime.now(),
-      sellerName: json['sellerName']?.toString(),
-    );
-  }
+  factory SaleEntity.fromJson(Map<String, dynamic> json) =>
+      _$SaleEntityFromJson(json);
 
-  /// Status string dan enum ga o'tkazish
-  static SaleStatus _parseStatus(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'draft':
-        return SaleStatus.draft;
-      case 'paid':
-        return SaleStatus.paid;
-      case 'debt':
-        return SaleStatus.debt;
-      case 'closed':
-        return SaleStatus.closed;
-      case 'cancelled':
-        return SaleStatus.cancelled;
-      default:
-        return SaleStatus.draft;
-    }
-  }
+  Map<String, dynamic> toJson() => _$SaleEntityToJson(this);
 
-  /// Status enum dan string ga o'tkazish
-  String getStatusText() {
-    switch (status) {
-      case SaleStatus.draft:
-        return 'draft';
-      case SaleStatus.paid:
-        return 'paid';
-      case SaleStatus.debt:
-        return 'debt';
-      case SaleStatus.closed:
-        return 'closed';
-      case SaleStatus.cancelled:
-        return 'cancelled';
-    }
-  }
-
-  /// Qarzdorlik borligini tekshirish
   bool hasDebt() => remainingAmount > 0;
 
-  /// To'liq to'langanligini tekshirish
   bool isFullyPaid() => remainingAmount <= 0;
 
-  /// SaleEntity ni JSON ga aylantirish
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'customerId': customerId,
-      'sellerId': sellerId,
-      'customerName': customerName,
-      'customerPhone': customerPhone,
-      'totalAmount': totalAmount,
-      'paidAmount': paidAmount,
-      'remainingAmount': remainingAmount,
-      'status': getStatusText(),
-      'createdAt': createdAt.toIso8601String(),
-      'sellerName': sellerName,
-    };
-  }
+  String getStatusText() => status.name;
 
   @override
   List<Object?> get props => [
-        id,
-        customerId,
-        sellerId,
-        customerName,
-        customerPhone,
-        totalAmount,
-        paidAmount,
-        remainingAmount,
-        status,
-        createdAt,
-        sellerName,
-      ];
+    id,
+    customerId,
+    sellerId,
+    customerName,
+    customerPhone,
+    totalAmount,
+    paidAmount,
+    remainingAmount,
+    status,
+    createdAt,
+    sellerName,
+  ];
 }

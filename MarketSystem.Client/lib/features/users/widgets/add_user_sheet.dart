@@ -10,6 +10,7 @@
 // call, same success/error snackbars, same role gating from AuthProvider.
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/validators/password_validator.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
@@ -92,10 +93,12 @@ class _AddUserSheetState extends State<AddUserSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('${l10n.error}: $e'),
-        backgroundColor: AppColors.danger,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: $e'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
     }
   }
 
@@ -177,13 +180,13 @@ class _AddUserSheetState extends State<AddUserSheet> {
                         icon: Icons.lock_rounded,
                         obscure: _obscPass,
                         onToggle: () => setState(() => _obscPass = !_obscPass),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return l10n.passwordRequired;
-                          }
-                          if (v.length < 6) return l10n.passwordMinLength;
-                          return null;
-                        },
+                        // G2 — share the policy with the backend's
+                        // StrongPasswordAttribute (8+ chars, ≥1 letter,
+                        // ≥1 digit). The old check (length ≥ 6, no
+                        // complexity) accepted passwords the server now
+                        // rejects.
+                        validator: (v) =>
+                            PasswordValidator.validateNew(v, context),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       _SheetField(
@@ -285,31 +288,33 @@ class _SuccessSheet extends StatelessWidget {
   final dynamic user;
 
   Widget _row(BuildContext context, String label, String value) => Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl,
-          vertical: AppSpacing.lg,
-        ),
-        decoration: BoxDecoration(
-          color: context.colors.inputFill,
-          borderRadius: BorderRadius.circular(AppRadius.md + 2),
-        ),
-        child: Row(children: [
-          Text(
-            label,
-            style: AppTextStyles.bodySmall().copyWith(
-              color: context.colors.textSecondary,
-            ),
+    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.xl,
+      vertical: AppSpacing.lg,
+    ),
+    decoration: BoxDecoration(
+      color: context.colors.inputFill,
+      borderRadius: BorderRadius.circular(AppRadius.md + 2),
+    ),
+    child: Row(
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodySmall().copyWith(
+            color: context.colors.textSecondary,
           ),
-          const Spacer(),
-          Text(
-            value,
-            style: AppTextStyles.bodyMedium().copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: AppTextStyles.bodyMedium().copyWith(
+            fontWeight: FontWeight.w600,
           ),
-        ]),
-      );
+        ),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -377,23 +382,25 @@ class _SuccessSheet extends StatelessWidget {
                     color: AppColors.warning.withValues(alpha: 0.4),
                   ),
                 ),
-                child: Row(children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    color: AppColors.warning,
-                    size: 16,
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Text(
-                      l10n.giveCredentialsToUser,
-                      style: AppTextStyles.bodySmall().copyWith(
-                        color: AppColors.warning,
-                        fontSize: 12,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      color: AppColors.warning,
+                      size: 16,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        l10n.giveCredentialsToUser,
+                        style: AppTextStyles.bodySmall().copyWith(
+                          color: AppColors.warning,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               AppPrimaryButton(
@@ -412,21 +419,18 @@ class _Handle extends StatelessWidget {
   const _Handle();
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(
-          top: AppSpacing.lg,
-          bottom: AppSpacing.xs,
+    padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.xs),
+    child: Center(
+      child: Container(
+        width: 40,
+        height: 4,
+        decoration: BoxDecoration(
+          color: context.colors.border,
+          borderRadius: BorderRadius.circular(2),
         ),
-        child: Center(
-          child: Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: context.colors.border,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
-      );
+      ),
+    ),
+  );
 }
 
 class _Header extends StatelessWidget {
@@ -448,26 +452,25 @@ class _Header extends StatelessWidget {
         AppSpacing.md,
         AppSpacing.md,
       ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: context.colors.brandLight,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: context.colors.brandLight,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(icon, color: context.colors.brand, size: 20),
           ),
-          child: Icon(icon, color: context.colors.brand, size: 20),
-        ),
-        const SizedBox(width: AppSpacing.lg),
-        Text(title, style: AppTextStyles.titleMedium()),
-        const Spacer(),
-        IconButton(
-          onPressed: onClose,
-          icon: Icon(
-            Icons.close_rounded,
-            color: context.colors.textMuted,
+          const SizedBox(width: AppSpacing.lg),
+          Text(title, style: AppTextStyles.titleMedium()),
+          const Spacer(),
+          IconButton(
+            onPressed: onClose,
+            icon: Icon(Icons.close_rounded, color: context.colors.textMuted),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -512,8 +515,11 @@ class _SheetField extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
           decoration: InputDecoration(
-            prefixIcon:
-                Icon(icon, size: 18, color: context.colors.textSecondary),
+            prefixIcon: Icon(
+              icon,
+              size: 18,
+              color: context.colors.textSecondary,
+            ),
             suffixIcon: onToggle != null
                 ? IconButton(
                     icon: Icon(

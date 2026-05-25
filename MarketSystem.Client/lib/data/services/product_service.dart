@@ -1,36 +1,44 @@
 import 'dart:convert';
 
 import 'http_service.dart';
-import '../../core/providers/auth_provider.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
+import '../../core/providers/auth_provider.dart';
 
 class ProductService {
   final AuthProvider authProvider;
   final HttpService _httpService;
 
   ProductService({required this.authProvider, HttpService? httpService})
-      : _httpService = httpService ?? HttpService();
-
+    : _httpService = httpService ?? HttpService();
 
   Future<List<dynamic>> getAllProducts() async {
-    final response =
-        await _httpService.get('${ApiConstants.products}/GetAllProducts');
+    final response = await _httpService.get(
+      '${ApiConstants.products}/GetAllProducts',
+    );
 
     if (response.statusCode == 200) {
       return List<dynamic>.from(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to load products: ${response.statusCode}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load products',
+      );
     }
   }
 
   Future<dynamic> getProductById(String id) async {
-    final response =
-        await _httpService.get('${ApiConstants.products}/GetProduct/$id');
+    final response = await _httpService.get(
+      '${ApiConstants.products}/GetProduct/$id',
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to load product');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to load product',
+      );
     }
   }
 
@@ -59,7 +67,10 @@ class ProductService {
     if (response.statusCode == 201 || response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to create product: ${response.body}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to create product',
+      );
     }
   }
 
@@ -90,25 +101,31 @@ class ProductService {
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to update product: ${response.body}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to update product',
+      );
     }
   }
 
   Future<void> deleteProduct(String id) async {
-    final response = await _httpService
-        .delete('${ApiConstants.products}/DeleteProduct/$id');
+    final response = await _httpService.delete(
+      '${ApiConstants.products}/DeleteProduct/$id',
+    );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
-      throw Exception('Failed to delete product: ${response.body}');
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to delete product',
+      );
     }
   }
 
   /// Downloads the products workbook. Pass `lang: 'ru'` to get
   /// Russian column headers; defaults to Uzbek when omitted.
   Future<List<int>?> downloadProductsExcel({String lang = 'uz'}) async {
-    // TODO: hoist into ApiConstants as `productsExportExcel` constant.
     return await _httpService.downloadBytes(
-      '${ApiConstants.products}/ExportProductsToExcel/export?lang=$lang',
+      '${ApiConstants.productsExportExcel}?lang=$lang',
     );
   }
 }

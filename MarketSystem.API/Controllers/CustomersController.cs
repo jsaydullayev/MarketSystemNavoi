@@ -14,11 +14,13 @@ public class CustomersController : ControllerBase
 {
     private readonly ICustomerService _customerService;
     private readonly IExcelService _excelService;
+    private readonly ITashkentClock _clock;
 
-    public CustomersController(ICustomerService customerService, IExcelService excelService)
+    public CustomersController(ICustomerService customerService, IExcelService excelService, ITashkentClock clock)
     {
         _customerService = customerService;
         _excelService = excelService;
+        _clock = clock;
     }
 
     [HttpGet("{id}")]
@@ -164,7 +166,7 @@ public class CustomersController : ControllerBase
         return File(
             fileContent,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            $"{sheetName}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            $"{sheetName}_{_clock.NowLocal:yyyyMMdd_HHmmss}.xlsx"
         );
     }
 }

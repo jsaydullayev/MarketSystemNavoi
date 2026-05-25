@@ -9,16 +9,33 @@ using MarketSystem.Domain.Extensions;
 using MarketSystem.Domain.Interfaces;
 using MarketSystem.Application.Interfaces;
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace MarketSystem.Application.Services;
 
-public class ReportService : IReportService
+/// <summary>
+/// M5 — ReportService is intentionally <c>partial</c> so future PRs can lift
+/// its three natural sub-modules into separate files without renaming the
+/// type or touching every call-site:
+///   • <c>ReportService.Pdf.cs</c> — the static PDF renderers and the
+///     <c>PdfTheme</c> palette (~700 lines, pure rendering, already
+///     unit-tested in isolation via PdfExportTests).
+///   • <c>ReportService.Dashboard.cs</c> — GetWeeklySeriesAsync,
+///     GetTopProductsAsync, GetStaffPerformanceAsync, GetMyPerformanceAsync.
+///   • <c>ReportService.cs</c> (this file) — the report-data fetchers
+///     (daily, period, comprehensive, profit summary, cash balance).
+/// The split is deferred — a 2200-line file move is high-touch and the
+/// current organisation is workable. The partial declaration unblocks
+/// incremental moves whenever someone has a quiet PR.
+/// </summary>
+public partial class ReportService : IReportService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentMarketService _currentMarketService;
     private readonly ILogger<ReportService> _logger;
     private readonly ITashkentClock _clock;
+    private readonly IAppDbContext _context;
 
     // License setup lives in the STATIC constructor so it runs before any
     // Excel/PDF is produced — including via the static PDF renderers
@@ -29,12 +46,18 @@ public class ReportService : IReportService
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
-    public ReportService(IUnitOfWork unitOfWork, ICurrentMarketService currentMarketService, ILogger<ReportService> logger, ITashkentClock clock)
+    public ReportService(
+        IUnitOfWork unitOfWork,
+        ICurrentMarketService currentMarketService,
+        ILogger<ReportService> logger,
+        ITashkentClock clock,
+        IAppDbContext context)
     {
         _unitOfWork = unitOfWork;
         _currentMarketService = currentMarketService;
         _logger = logger;
         _clock = clock;
+        _context = context;
     }
 
     public async Task<DailyReportDto> GetDailyReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
@@ -190,121 +213,6 @@ public class ReportService : IReportService
         );
     }
 
-    public async Task<byte[]> ExportToExcelAsync(PeriodReportRequest request, string? userRole = null, CancellationToken cancellationToken = default)
-    {
-        var marketId = _currentMarketService.GetCurrentMarketId();
-        // Profit is an Owner-only figure (mirrors the profit-summary gate).
-        // The period/export endpoint is also reachable by Admin, so the
-        // Profit column must be masked for everyone except the Owner.
-        var includeProfit = userRole == Role.Owner.ToString();
-
-        // Use < instead of <= to include the entire end day (up to 23:59:59.999)
-        var endDateTime = request.EndDate.AddDays(1);
-
-        var sales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= request.StartDate && s.CreatedAt < endDateTime && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems,Payments");
-
-        var zakups = await _unitOfWork.Zakups.FindAsync(
-            z => z.CreatedAt >= request.StartDate && z.CreatedAt < endDateTime && z.MarketId == marketId,
-            cancellationToken);
-
-        using var workbook = new XLWorkbook();
-        var worksheet = workbook.Worksheets.Add("Report");
-
-        worksheet.Cell(1, 1).Value = "Date";
-        worksheet.Cell(1, 2).Value = "Type";
-        worksheet.Cell(1, 3).Value = "Product";
-        worksheet.Cell(1, 4).Value = "Quantity";
-        worksheet.Cell(1, 5).Value = "Amount";
-        worksheet.Cell(1, 6).Value = "Cost";
-        worksheet.Cell(1, 7).Value = "Profit";
-
-        var headerRange = worksheet.Range(1, 1, 1, 7);
-        headerRange.Style.Font.Bold = true;
-        headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
-
-        // Barcha kerakli productlarni bir marta batch yuklash (N+1 oldini olish)
-        var saleProductIds = sales
-            .SelectMany(s => s.SaleItems)
-            .Where(si => !si.IsExternal && si.ProductId.HasValue)
-            .Select(si => si.ProductId!.Value)
-            .Union(zakups.Select(z => z.ProductId))
-            .Distinct()
-            .ToList();
-
-        var productMap = saleProductIds.Count > 0
-            ? (await _unitOfWork.Products.FindAsync(p => saleProductIds.Contains(p.Id), cancellationToken))
-                .ToDictionary(p => p.Id)
-            : new Dictionary<Guid, Product>();
-
-        int row = 2;
-        foreach (var sale in sales)
-        {
-            foreach (var item in sale.SaleItems)
-            {
-                string productName;
-                Product? product = null;
-
-                if (!item.IsExternal)
-                {
-                    product = item.ProductId.HasValue
-                        ? productMap.GetValueOrDefault(item.ProductId.Value)
-                        : null;
-                    productName = product?.Name ?? "Unknown";
-                }
-                else
-                {
-                    productName = item.ExternalProductName ?? "Tashqi mahsulot";
-                }
-
-                // Anchor the date to the Tashkent business day — a raw UTC
-                // date shifts late-evening sales onto the following day.
-                var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
-                worksheet.Cell(row, 1).Value = _clock.ToLocal(sale.CreatedAt).ToString("yyyy-MM-dd");
-                worksheet.Cell(row, 2).Value = "Sale";
-                worksheet.Cell(row, 3).Value = productName;
-                worksheet.Cell(row, 4).Value = item.Quantity;
-                worksheet.Cell(row, 5).Value = item.SalePrice * item.Quantity;
-                worksheet.Cell(row, 6).Value = costPrice * item.Quantity;
-                // Compute profit inline from the stored CostPrice column. The
-                // SaleItem.Profit computed property reads Product?.CostPrice,
-                // but Product isn't loaded here (includeProperties omits it),
-                // so for non-external items it would resolve cost to 0 and
-                // report the full sale price as profit.
-                if (includeProfit)
-                    worksheet.Cell(row, 7).Value = (item.SalePrice - costPrice) * item.Quantity;
-                else
-                    worksheet.Cell(row, 7).Value = "—";
-                row++;
-            }
-        }
-
-        foreach (var zakup in zakups)
-        {
-            var product = productMap.GetValueOrDefault(zakup.ProductId);
-
-            worksheet.Cell(row, 1).Value = _clock.ToLocal(zakup.CreatedAt).ToString("yyyy-MM-dd");
-            worksheet.Cell(row, 2).Value = "Zakup";
-            worksheet.Cell(row, 3).Value = product?.Name ?? "Unknown";
-            worksheet.Cell(row, 4).Value = zakup.Quantity;
-            worksheet.Cell(row, 5).Value = zakup.Quantity * zakup.CostPrice;
-            worksheet.Cell(row, 6).Value = zakup.Quantity * zakup.CostPrice;
-            if (includeProfit)
-                worksheet.Cell(row, 7).Value = 0m;
-            else
-                worksheet.Cell(row, 7).Value = "—";
-            row++;
-        }
-
-        worksheet.Columns().AdjustToContents();
-
-        using var stream = new MemoryStream();
-        workbook.SaveAs(stream);
-        return stream.ToArray();
-    }
-
     public async Task<ComprehensiveReportDto> GetComprehensiveReportAsync(DateTime date, string? userRole = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
@@ -421,87 +329,6 @@ public class ReportService : IReportService
             lowStockCount,
             outOfStockCount
         );
-    }
-
-    public async Task<byte[]> ExportComprehensiveToExcelAsync(DateTime date, string lang = "uz", CancellationToken cancellationToken = default)
-    {
-        // Export to Excel is Owner-only feature, so pass Role.Owner.ToString() as the role
-        var report = await GetComprehensiveReportAsync(date, Role.Owner.ToString(), cancellationToken);
-        var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
-
-        using var workbook = new XLWorkbook();
-
-        // 1. Summary Sheet
-        var summarySheet = workbook.Worksheets.Add(isRu ? "Сводка" : "Summary");
-        summarySheet.Cell(1, 1).Value = isRu ? "Дата отчёта:" : "Hisobot sanasi:";
-        summarySheet.Cell(1, 2).Value = date.ToString("yyyy-MM-dd");
-        summarySheet.Cell(2, 1).Value = isRu ? "Общая выручка:" : "Jami savdo:";
-        summarySheet.Cell(2, 2).Value = report.DailyReport.TotalSales;
-        summarySheet.Cell(3, 1).Value = isRu ? "Общая прибыль:" : "Jami foyda:";
-        summarySheet.Cell(3, 2).Value = report.DailyReport.Profit;
-        summarySheet.Cell(4, 1).Value = isRu ? "Число транзакций:" : "Jami tranzaksiyalar:";
-        summarySheet.Cell(4, 2).Value = report.DailyReport.TotalTransactions;
-        summarySheet.Cell(5, 1).Value = isRu ? "Стоимость склада (закупка):" : "Skladdagi tovarlar qiymati (xarid narxi):";
-        summarySheet.Cell(5, 2).Value = report.TotalInventoryCost;
-        summarySheet.Cell(6, 1).Value = isRu ? "Стоимость склада (продажа):" : "Skladdagi tovarlar qiymati (sotuv narxi):";
-        summarySheet.Cell(6, 2).Value = report.TotalInventorySaleValue;
-        summarySheet.Range(1, 1, 6, 2).Style.Font.Bold = true;
-
-        // 2. Seller Reports Sheet
-        var sellerSheet = workbook.Worksheets.Add(isRu ? "Продавцы" : "Sotuvchilar");
-        sellerSheet.Cell(1, 1).Value = isRu ? "Продавец" : "Sotuvchi";
-        sellerSheet.Cell(1, 2).Value = isRu ? "Общие продажи" : "Jami savdo";
-        sellerSheet.Cell(1, 3).Value = isRu ? "Прибыль" : "Foyda";
-        sellerSheet.Cell(1, 4).Value = isRu ? "Число транзакций" : "Tranzaksiyalar soni";
-        var sellerHeader = sellerSheet.Range(1, 1, 1, 4);
-        sellerHeader.Style.Font.Bold = true;
-        sellerHeader.Style.Fill.BackgroundColor = XLColor.LightBlue;
-
-        int row = 2;
-        foreach (var seller in report.SellerReports)
-        {
-            sellerSheet.Cell(row, 1).Value = seller.SellerName;
-            sellerSheet.Cell(row, 2).Value = seller.TotalSales;
-            sellerSheet.Cell(row, 3).Value = seller.TotalProfit;
-            sellerSheet.Cell(row, 4).Value = seller.TransactionCount;
-            row++;
-        }
-
-        sellerSheet.Columns().AdjustToContents();
-
-        // 3. Inventory Sheet
-        var inventorySheet = workbook.Worksheets.Add(isRu ? "Склад" : "Sklad");
-        inventorySheet.Cell(1, 1).Value = isRu ? "Товар" : "Mahsulot";
-        inventorySheet.Cell(1, 2).Value = isRu ? "Количество" : "Miqdor";
-        inventorySheet.Cell(1, 3).Value = isRu ? "Цена покупки" : "Xarid narxi";
-        inventorySheet.Cell(1, 4).Value = isRu ? "Цена продажи" : "Sotuv narxi";
-        inventorySheet.Cell(1, 5).Value = isRu ? "Минимальная цена" : "Minimal narx";
-        inventorySheet.Cell(1, 6).Value = isRu ? "Общая закупочная стоимость" : "Jami xarid qiymati";
-        inventorySheet.Cell(1, 7).Value = isRu ? "Общая стоимость продажи" : "Jami sotuv qiymati";
-        inventorySheet.Cell(1, 8).Value = isRu ? "Потенциальная прибыль" : "Potensial foyda";
-        var invHeader = inventorySheet.Range(1, 1, 1, 8);
-        invHeader.Style.Font.Bold = true;
-        invHeader.Style.Fill.BackgroundColor = XLColor.LightGreen;
-
-        row = 2;
-        foreach (var item in report.InventoryReport)
-        {
-            inventorySheet.Cell(row, 1).Value = item.ProductName;
-            inventorySheet.Cell(row, 2).Value = item.Quantity;
-            inventorySheet.Cell(row, 3).Value = item.CostPrice;
-            inventorySheet.Cell(row, 4).Value = item.SalePrice;
-            inventorySheet.Cell(row, 5).Value = item.MinSalePrice;
-            inventorySheet.Cell(row, 6).Value = item.TotalCostValue;
-            inventorySheet.Cell(row, 7).Value = item.TotalSaleValue;
-            inventorySheet.Cell(row, 8).Value = item.PotentialProfit;
-            row++;
-        }
-
-        inventorySheet.Columns().AdjustToContents();
-
-        using var stream = new MemoryStream();
-        workbook.SaveAs(stream);
-        return stream.ToArray();
     }
 
     private static DailyReportDto CalculateReport(
@@ -640,43 +467,56 @@ public class ReportService : IReportService
         var (todayStart, todayEnd) = GetUtcDateRange(todayLocal);
 
         // Week = rolling 7-day window (last 7 days including today), anchored to
-        // Tashkent local midnight. Previously this anchored to the most recent
-        // Sunday, which meant the "weekProfit" KPI would reset to ~0 every
-        // Sunday/Monday morning even if business had been steady — confusing
-        // for owners. Rolling-7d matches user intuition: "shu hafta = oxirgi
-        // 7 kun".
+        // Tashkent local midnight. Rolling-7d matches user intuition
+        // ("shu hafta = oxirgi 7 kun") and avoids the Sunday/Monday reset that
+        // an ISO-week anchor causes.
         var weekStart = ToUtcDate(todayLocal.AddDays(-6));
-
-        // Month (anchored to Tashkent local month)
         var monthStart = ToUtcDate(new DateTime(todayLocal.Year, todayLocal.Month, 1));
 
-        var todaySales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= todayStart && s.CreatedAt < todayEnd &&
-                 s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems");
-
-        var weekSales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= weekStart && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems");
-
-        var monthSales = await _unitOfWork.Sales.FindAsync(
-            s => s.CreatedAt >= monthStart && s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems");
-
-        var allSales = await _unitOfWork.Sales.FindAsync(
-            s => s.Status != SaleStatus.Cancelled && s.Status != SaleStatus.Draft && s.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "SaleItems");
+        // P2 — the previous version loaded every Sale + SaleItem for today,
+        // week, month, AND all-time into memory (the all-time fetch is
+        // O(history) — fatal once a market has a year of data) just to sum
+        // profit. Replace with one DB-side aggregation that emits a single
+        // SQL statement with four conditional SUMs.
+        //
+        // EF translates the CASE WHEN into PG's FILTER clause. Profit per
+        // item = (SalePrice − effectiveCost) × Quantity, where effectiveCost
+        // is ExternalCostPrice for tashqi mahsulot and CostPrice for normal
+        // products. allTime always passes the date filter (constant true).
+        var summary = await _context.SaleItems
+            .AsNoTracking()
+            .Where(si => si.Sale.MarketId == marketId
+                      && si.Sale.Status != SaleStatus.Cancelled
+                      && si.Sale.Status != SaleStatus.Draft)
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Today = g.Sum(si =>
+                    si.Sale.CreatedAt >= todayStart && si.Sale.CreatedAt < todayEnd
+                        ? ((si.IsExternal ? si.SalePrice - si.ExternalCostPrice
+                                          : si.SalePrice - si.CostPrice) * si.Quantity)
+                        : 0m),
+                Week = g.Sum(si =>
+                    si.Sale.CreatedAt >= weekStart
+                        ? ((si.IsExternal ? si.SalePrice - si.ExternalCostPrice
+                                          : si.SalePrice - si.CostPrice) * si.Quantity)
+                        : 0m),
+                Month = g.Sum(si =>
+                    si.Sale.CreatedAt >= monthStart
+                        ? ((si.IsExternal ? si.SalePrice - si.ExternalCostPrice
+                                          : si.SalePrice - si.CostPrice) * si.Quantity)
+                        : 0m),
+                All = g.Sum(si =>
+                    (si.IsExternal ? si.SalePrice - si.ExternalCostPrice
+                                   : si.SalePrice - si.CostPrice) * si.Quantity),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
         return new ProfitSummaryDto(
-            CalculateProfitFromSales(todaySales),
-            CalculateProfitFromSales(weekSales),
-            CalculateProfitFromSales(monthSales),
-            CalculateProfitFromSales(allSales)
-        );
+            summary?.Today ?? 0m,
+            summary?.Week ?? 0m,
+            summary?.Month ?? 0m,
+            summary?.All ?? 0m);
     }
 
     public async Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default)
@@ -1170,7 +1010,7 @@ public class ReportService : IReportService
         try
         {
             _logger.LogInformation($"[ExportSalesListToPdfAsync] Starting PDF generation for {reportItems.Count} items");
-            return RenderSalesListPdf(reportItems, startDate, endDate, includeProfit, includeCost, totalSales, totalProfit, lang);
+            return RenderSalesListPdf(reportItems, startDate, endDate, includeProfit, includeCost, totalSales, totalProfit, _clock.NowLocal, lang);
         }
         catch (Exception ex)
         {
@@ -1191,6 +1031,7 @@ public class ReportService : IReportService
         bool includeCost,
         decimal totalSales,
         decimal totalProfit,
+        DateTime generatedAtLocal,
         string lang = "uz")
     {
         bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
@@ -1217,7 +1058,7 @@ public class ReportService : IReportService
                         col.Item().PaddingTop(2).Text(period).FontSize(9).FontColor(PdfTheme.BrandTint);
                     });
                     row.ConstantItem(180).AlignRight().AlignBottom()
-                        .Text($"{L("Yaratilgan: ", "Создан: ")}{DateTime.Now:dd.MM.yyyy HH:mm}")
+                        .Text($"{L("Yaratilgan: ", "Создан: ")}{generatedAtLocal:dd.MM.yyyy HH:mm}")
                         .FontSize(8).FontColor(PdfTheme.BrandTint);
                 });
 
@@ -1344,7 +1185,7 @@ public class ReportService : IReportService
                 report.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger));
 
         return RenderSummaryReportPdf(L("KUNLIK HISOBOT", "ДНЕВНОЙ ОТЧЁТ"), date.ToString("dd.MM.yyyy"),
-            kpis, report.PaymentBreakdown, lang);
+            kpis, report.PaymentBreakdown, _clock.NowLocal, lang);
     }
 
     public async Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
@@ -1367,13 +1208,13 @@ public class ReportService : IReportService
                 report.Profit.Value >= 0 ? PdfTheme.Success : PdfTheme.Danger));
 
         var period = $"{request.StartDate:dd.MM.yyyy} — {request.EndDate:dd.MM.yyyy}";
-        return RenderSummaryReportPdf(L("DAVRIY HISOBOT", "ОТЧЁТ ЗА ПЕРИОД"), period, kpis, report.PaymentBreakdown, lang);
+        return RenderSummaryReportPdf(L("DAVRIY HISOBOT", "ОТЧЁТ ЗА ПЕРИОД"), period, kpis, report.PaymentBreakdown, _clock.NowLocal, lang);
     }
 
     public async Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
     {
         var report = await GetComprehensiveReportAsync(date, userRole, cancellationToken);
-        return RenderComprehensiveReportPdf(report, date.ToString("dd.MM.yyyy"), lang);
+        return RenderComprehensiveReportPdf(report, date.ToString("dd.MM.yyyy"), _clock.NowLocal, lang);
     }
 
     /// <summary>
@@ -1384,6 +1225,7 @@ public class ReportService : IReportService
         string title, string period,
         IReadOnlyList<(string Label, string Value, string Accent)> kpis,
         IReadOnlyList<PaymentBreakdownDto> payments,
+        DateTime generatedAtLocal,
         string lang = "uz")
     {
         bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
@@ -1397,7 +1239,7 @@ public class ReportService : IReportService
                 page.Margin(0);
                 page.DefaultTextStyle(x => x.FontSize(10).FontColor(PdfTheme.Ink));
 
-                page.Header().Element(h => ReportHeaderBand(h, title, period, isRu));
+                page.Header().Element(h => ReportHeaderBand(h, title, period, isRu, generatedAtLocal));
 
                 page.Content().PaddingHorizontal(32).PaddingTop(22).Column(column =>
                 {
@@ -1431,7 +1273,7 @@ public class ReportService : IReportService
     /// Renders the comprehensive report — daily summary KPIs, per-seller table
     /// and an inventory overview. Pure rendering; unit-testable.
     /// </summary>
-    internal static byte[] RenderComprehensiveReportPdf(ComprehensiveReportDto report, string dateLabel, string lang = "uz")
+    internal static byte[] RenderComprehensiveReportPdf(ComprehensiveReportDto report, string dateLabel, DateTime generatedAtLocal, string lang = "uz")
     {
         bool isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
         string L(string uz, string ru) => isRu ? ru : uz;
@@ -1446,7 +1288,7 @@ public class ReportService : IReportService
                 page.Margin(0);
                 page.DefaultTextStyle(x => x.FontSize(9.5f).FontColor(PdfTheme.Ink));
 
-                page.Header().Element(h => ReportHeaderBand(h, L("TO'LIQ HISOBOT", "ПОЛНЫЙ ОТЧЁТ"), dateLabel, isRu));
+                page.Header().Element(h => ReportHeaderBand(h, L("TO'LIQ HISOBOT", "ПОЛНЫЙ ОТЧЁТ"), dateLabel, isRu, generatedAtLocal));
 
                 page.Content().PaddingHorizontal(32).PaddingTop(20).Column(column =>
                 {
@@ -1520,7 +1362,7 @@ public class ReportService : IReportService
     }
 
     // ── Report rendering helpers ──
-    private static void ReportHeaderBand(IContainer header, string title, string subtitle, bool isRu)
+    private static void ReportHeaderBand(IContainer header, string title, string subtitle, bool isRu, DateTime generatedAtLocal)
     {
         header.Background(PdfTheme.Brand).PaddingVertical(16).PaddingHorizontal(32).Row(row =>
         {
@@ -1530,7 +1372,7 @@ public class ReportService : IReportService
                 col.Item().PaddingTop(2).Text(subtitle).FontSize(10).FontColor(PdfTheme.BrandTint);
             });
             row.ConstantItem(170).AlignRight().AlignBottom()
-                .Text($"{(isRu ? "Создан: " : "Yaratilgan: ")}{DateTime.Now:dd.MM.yyyy HH:mm}")
+                .Text($"{(isRu ? "Создан: " : "Yaratilgan: ")}{generatedAtLocal:dd.MM.yyyy HH:mm}")
                 .FontSize(8).FontColor(PdfTheme.BrandTint);
         });
     }
@@ -2232,8 +2074,10 @@ public class ReportService : IReportService
     /// <summary>
     /// Per-staff sales metrics for the period. Includes staff with zero sales
     /// so the page can show the whole team (otherwise a quiet seller would
-    /// silently disappear from the leaderboard).
-    /// Shift fields are placeholders (0 / false) until a Shift entity lands.
+    /// silently disappear from the leaderboard). Shift counts come from the
+    /// Shift entity — sessions opened inside the period count; the
+    /// <c>IsActiveShift</c> flag also catches sessions that opened earlier
+    /// and are still open right now.
     /// </summary>
     public async Task<StaffPerformanceDto> GetStaffPerformanceAsync(
         string period, CancellationToken cancellationToken = default)
@@ -2256,6 +2100,27 @@ public class ReportService : IReportService
             .GroupBy(s => s.SellerId)
             .ToDictionary(g => g.Key, g => (count: g.Count(), revenue: g.Sum(s => s.TotalAmount)));
 
+        // Pull the shifts in one round-trip and bucket them by user. The
+        // predicate keeps it cheap: "either opened in this period, or still
+        // open right now". A seller who clocked in last week and never
+        // closed shows IsActiveShift=true even if ShiftCount stays 0 for
+        // the current week.
+        var shifts = (await _unitOfWork.Shifts.FindAsync(
+            sh => sh.MarketId == marketId &&
+                  ((sh.OpenedAt >= rangeStartUtc && sh.OpenedAt < rangeEndUtc)
+                   || sh.ClosedAt == null),
+            cancellationToken)).ToList();
+
+        var shiftCountByUser = shifts
+            .Where(sh => sh.OpenedAt >= rangeStartUtc && sh.OpenedAt < rangeEndUtc)
+            .GroupBy(sh => sh.UserId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var activeShiftUsers = shifts
+            .Where(sh => sh.ClosedAt == null)
+            .Select(sh => sh.UserId)
+            .ToHashSet();
+
         var rows = new List<StaffRow>();
         foreach (var u in users)
         {
@@ -2268,8 +2133,8 @@ public class ReportService : IReportService
                 SaleCount: stats.Item1,
                 Revenue: stats.Item2,
                 AverageCheck: stats.Item1 == 0 ? 0m : stats.Item2 / stats.Item1,
-                ShiftCount: 0,        // TODO: wire when Shift entity exists
-                IsActiveShift: false  // TODO: wire when Shift entity exists
+                ShiftCount: shiftCountByUser.TryGetValue(u.Id, out var sc) ? sc : 0,
+                IsActiveShift: activeShiftUsers.Contains(u.Id)
             ));
         }
 
