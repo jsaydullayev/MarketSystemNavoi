@@ -172,6 +172,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     ReturnSaleItemEvent event,
     Emitter<SalesState> emit,
   ) async {
+    emit(const SalesLoading());
     final result = await returnSaleItemUseCase(
       saleId: event.saleId,
       saleItemId: event.saleItemId,

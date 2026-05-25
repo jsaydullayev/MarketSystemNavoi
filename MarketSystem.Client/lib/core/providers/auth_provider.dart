@@ -103,9 +103,10 @@ class AuthProvider extends ChangeNotifier {
 
       if (result.outcome == LoginOutcome.success && result.user != null) {
         _user = result.user;
-        if (_user?['language'] != null) {
+        final loginLang = _user?['language'] as String?;
+        if (loginLang != null) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('app_locale', _user!['language']);
+          await prefs.setString('app_locale', loginLang);
         }
         _isLoading = false;
         notifyListeners();
@@ -176,9 +177,10 @@ class AuthProvider extends ChangeNotifier {
       if (result != null) {
         _user = result;
         // Save language preference
-        if (_user?['language'] != null) {
+        final profileLang = _user?['language'] as String?;
+        if (profileLang != null) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('app_locale', _user!['language']);
+          await prefs.setString('app_locale', profileLang);
         }
         _isLoading = false;
         notifyListeners();

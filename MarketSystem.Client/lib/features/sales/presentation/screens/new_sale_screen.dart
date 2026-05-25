@@ -252,12 +252,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           final scaffoldMessenger = ScaffoldMessenger.of(context);
           final navigator = Navigator.of(context);
 
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final salesService = SalesService(authProvider: authProvider);
+          String? finalSaleId;
           try {
-            final authProvider = Provider.of<AuthProvider>(
-              context,
-              listen: false,
-            );
-            final salesService = SalesService(authProvider: authProvider);
 
             // Use the customer the dialog returns — it may be one the
             // cashier created inline from the debt row, which the
@@ -265,7 +263,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             final sale = await salesService.createSale(
               customerId: customer?['id'],
             );
-            final finalSaleId = sale['id'];
+            final saleId = sale['id'] as String;
+            finalSaleId = saleId;
 
             // Add all items in parallel — each addSaleItem is independent
             // once the saleId is known. Reduces N sequential round-trips to 1.
@@ -273,7 +272,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               cartSnapshot.map((item) {
                 if (item['isExternal'] == true) {
                   return salesService.addSaleItem(
-                    saleId: finalSaleId,
+                    saleId: saleId,
                     isExternal: true,
                     externalProductName: item['productName'],
                     externalCostPrice: item['externalCostPrice'] ?? 0.0,
@@ -284,7 +283,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   );
                 } else {
                   return salesService.addSaleItem(
-                    saleId: finalSaleId,
+                    saleId: saleId,
                     productId: item['productId'],
                     quantity: item['quantity'],
                     salePrice: item['salePrice'],
@@ -299,7 +298,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             await Future.wait(
               payments.map(
                 (payment) => salesService.addPayment(
-                  saleId: finalSaleId,
+                  saleId: saleId,
                   paymentType: payment['paymentType'],
                   amount: payment['amount'],
                 ),
@@ -307,7 +306,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             );
 
             if (useDebt && payments.isEmpty) {
-              await salesService.markSaleAsDebt(finalSaleId);
+              await salesService.markSaleAsDebt(saleId);
             }
 
             if (!mounted) return;
@@ -327,6 +326,11 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             navigator.pop(true);
           } catch (e) {
             if (!mounted) return;
+            if (finalSaleId != null) {
+              try {
+                await salesService.cancelSale(saleId: finalSaleId);
+              } catch (_) {}
+            }
             navigator.pop();
             scaffoldMessenger.showSnackBar(
               SnackBar(

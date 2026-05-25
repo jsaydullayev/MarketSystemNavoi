@@ -966,6 +966,10 @@ public partial class SaleService : ISaleService
                     _logger.LogInformation(
                         "Sale {SaleId} cancelled — refunded {Amount} cash to market {MarketId} till",
                         saleId, cashRefund, sale.MarketId);
+                    if (cashRegister.CurrentBalance < 0)
+                        _logger.LogWarning(
+                            "CashRegister balance went negative after cancelling sale {SaleId}: Balance={Balance}. Manual reconciliation may be needed.",
+                            saleId, cashRegister.CurrentBalance);
                 }
             }
 
@@ -1371,6 +1375,10 @@ public partial class SaleService : ISaleService
                     _logger.LogInformation(
                         "Cash reversed on sale delete: SaleId={SaleId} NetCash={Amount} NewBalance={Balance}",
                         saleId, netCashOnSale, cashRegister.CurrentBalance);
+                    if (cashRegister.CurrentBalance < 0)
+                        _logger.LogWarning(
+                            "CashRegister balance went negative after deleting sale {SaleId}: Balance={Balance}. Manual reconciliation may be needed.",
+                            saleId, cashRegister.CurrentBalance);
                 }
                 else
                 {

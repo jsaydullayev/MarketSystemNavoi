@@ -529,6 +529,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     // the backend now rejects.)
     final status = _sale?['status'] as String?;
     final canEditPrice = status == 'Draft' || status == 'Debt';
+    final canReturn = Provider.of<AuthProvider>(context, listen: false).can('sales.edit');
 
     return NetworkWrapper(
       onRetry: _loadData,
@@ -553,6 +554,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                     item: _cartItems[index],
                     isClosed: isClosed,
                     canEditPrice: canEditPrice,
+                    canReturn: canReturn,
                     onEditPrice: () => _updateItemPrice(index),
                     onReturn: () => _returnItem(index),
                     onDecrement: () async {
