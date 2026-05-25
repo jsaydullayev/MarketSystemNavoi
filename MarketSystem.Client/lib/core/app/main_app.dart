@@ -46,11 +46,37 @@ class _MainAppState extends State<MainApp> {
   /// (dashboard mid-load, reports tab, …) and we want the same recovery
   /// everywhere.
   StreamSubscription<SessionEndedInfo>? _sessionEndedSub;
+  StreamSubscription<MarketBlockedInfo>? _marketBlockedSub;
 
   @override
   void initState() {
     super.initState();
     _sessionEndedSub = HttpService.sessionEndedStream.listen(_onSessionEnded);
+    _marketBlockedSub = HttpService.marketBlockedStream.listen(_onMarketBlocked);
+  }
+
+  void _onMarketBlocked(MarketBlockedInfo info) {
+    final ctx = NavigationHandler.navigatorKey.currentContext;
+    if (ctx == null) return;
+
+    final l10n = AppLocalizations.of(ctx);
+    showDialog<void>(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(l10n?.statusBlocked ?? 'Bloklangan'),
+        content: Text(info.message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              NavigationHandler.navigateToAndClear(AppRoutes.login);
+            },
+            child: Text(l10n?.ok ?? 'OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onSessionEnded(SessionEndedInfo info) {
@@ -77,6 +103,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void dispose() {
     _sessionEndedSub?.cancel();
+    _marketBlockedSub?.cancel();
     super.dispose();
   }
 

@@ -9,6 +9,7 @@
 // - Bottom sheet with two options: Galereya / Kamera (driven by image_picker)
 
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -80,7 +81,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
 
   Widget _buildSmartImage(String imageStr) {
     if (imageStr.startsWith('http')) {
-      return Image.network(imageStr, fit: BoxFit.cover);
+      return CachedNetworkImage(imageUrl: imageStr, fit: BoxFit.cover);
     } else if (imageStr.startsWith('data:image') || imageStr.length > 100) {
       try {
         final base64Str = imageStr.contains(',')

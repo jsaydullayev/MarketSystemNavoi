@@ -1,6 +1,7 @@
 import 'dart:convert' show base64Decode;
 
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -353,19 +354,13 @@ class _DrawerHeader extends StatelessWidget {
 
     Widget? imgWidget;
     if (img.startsWith('http')) {
-      imgWidget = Image.network(
-        img,
+      imgWidget = CachedNetworkImage(
+        imageUrl: img,
         width: 50,
         height: 50,
-        // AUDIT-2 — downscale source rasters to ~3× display size before
-        // decoding. Without this, a camera-quality 1024×1024 avatar gets
-        // decoded at native resolution and wastes ~12 MB of GPU memory.
-        cacheWidth: 144,
-        cacheHeight: 144,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallback,
-        loadingBuilder: (_, child, progress) =>
-            progress == null ? child : fallback,
+        errorWidget: (_, __, ___) => fallback,
+        placeholder: (_, __) => fallback,
       );
     } else if (img.startsWith('data:image') || img.length > 100) {
       try {

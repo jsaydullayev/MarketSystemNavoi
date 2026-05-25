@@ -80,7 +80,25 @@ try
             "Set it via environment variable (ConnectionStrings__DefaultConnection) or appsettings.Development.json.");
     }
 
-    builder.Host.UseSerilog();
+    builder.Host.UseSerilog((ctx, _, cfg) => cfg
+        .MinimumLevel.Debug()
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+        .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Information)
+        .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+        .MinimumLevel.Override("System", LogEventLevel.Warning)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "MarketSystem")
+        .WriteTo.Console(
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+            restrictedToMinimumLevel: LogEventLevel.Information
+        )
+        .WriteTo.PostgreSQL(
+            connectionString: ctx.Configuration.GetConnectionString("DefaultConnection")!,
+            tableName: "app_logs",
+            needAutoCreateTable: true,
+            restrictedToMinimumLevel: LogEventLevel.Warning
+        )
+    );
 
     // Re-use the already-resolved Tashkent zone (handles Windows-ID vs IANA + fallback).
     builder.Services.AddSingleton(tashkentTimeZone);

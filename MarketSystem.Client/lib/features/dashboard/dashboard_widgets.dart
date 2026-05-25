@@ -9,6 +9,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../design/tokens/app_theme_colors.dart';
@@ -1069,18 +1070,13 @@ class _AvatarTileState extends State<_AvatarTile> {
 
     Widget? imgWidget;
     if (img != null && img.startsWith('http')) {
-      imgWidget = Image.network(
-        img,
+      imgWidget = CachedNetworkImage(
+        imageUrl: img,
         width: 44,
         height: 44,
-        // AUDIT-2 — downscale before raster. The dashboard renders the
-        // avatar at 44 logical px; without these hints Flutter decodes
-        // the full source (often 1024×1024 from camera) and wastes
-        // ~12 MB per dashboard mount.
-        cacheWidth: 128,
-        cacheHeight: 128,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => letterTile,
+        errorWidget: (_, __, ___) => letterTile,
+        placeholder: (_, __) => letterTile,
       );
     } else if (_bytes != null) {
       imgWidget = Image.memory(
