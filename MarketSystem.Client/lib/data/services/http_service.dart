@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
 import '../../core/storage/token_storage.dart';
 import 'auth_service.dart';
 
@@ -342,7 +343,11 @@ class HttpService {
           body: encodedBody,
         );
       default:
-        throw Exception('Unsupported method: $method');
+        // ApiException-2 — programmer error (the switch only covers GET /
+        // POST / PUT / PATCH / DELETE; any other verb is a coding mistake
+        // upstream). Surface as ArgumentError so a future static analyser
+        // can flag it separately from network failures.
+        throw ArgumentError('Unsupported method: $method');
     }
   }
 
@@ -372,8 +377,15 @@ class HttpService {
         )
         .timeout(
           const Duration(seconds: 30),
+          // ApiException-2 — surface timeouts as typed ApiException with
+          // statusCode 0 so callers can branch on `e is ApiException`
+          // without a separate catch arm for raw Exception.
           onTimeout: () {
-            throw Exception('Request timeout after 30 seconds');
+            throw ApiException(
+              statusCode: 0,
+              message: 'Request timeout after 30 seconds',
+              code: 'TIMEOUT',
+            );
           },
         );
   }
@@ -407,8 +419,15 @@ class HttpService {
         )
         .timeout(
           const Duration(seconds: 30),
+          // ApiException-2 — surface timeouts as typed ApiException with
+          // statusCode 0 so callers can branch on `e is ApiException`
+          // without a separate catch arm for raw Exception.
           onTimeout: () {
-            throw Exception('Request timeout after 30 seconds');
+            throw ApiException(
+              statusCode: 0,
+              message: 'Request timeout after 30 seconds',
+              code: 'TIMEOUT',
+            );
           },
         );
   }
@@ -452,7 +471,11 @@ class HttpService {
             .timeout(
               const Duration(seconds: 60),
               onTimeout: () {
-                throw Exception('Request timeout after 60 seconds');
+                throw ApiException(
+                  statusCode: 0,
+                  message: 'Request timeout after 60 seconds',
+                  code: 'TIMEOUT',
+                );
               },
             );
         final response = await http.Response.fromStream(streamedResponse);
@@ -474,7 +497,11 @@ class HttpService {
         .timeout(
           const Duration(seconds: 60),
           onTimeout: () {
-            throw Exception('Request timeout after 60 seconds');
+            throw ApiException(
+              statusCode: 0,
+              message: 'Request timeout after 60 seconds',
+              code: 'TIMEOUT',
+            );
           },
         );
   }

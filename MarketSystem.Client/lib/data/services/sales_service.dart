@@ -47,13 +47,19 @@ class SalesService {
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
-        throw Exception('Empty response from server');
+        throw ApiException(
+          statusCode: 200,
+          message: 'Empty response from server',
+        );
       }
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) {
         return decoded;
       }
-      throw Exception('Invalid response format: expected Map');
+      throw ApiException(
+        statusCode: 200,
+        message: 'Invalid response format: expected Map',
+      );
     } else if (response.statusCode == 404) {
       throw ApiException(statusCode: 404, message: 'Sotuv topilmadi');
     } else {

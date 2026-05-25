@@ -77,11 +77,20 @@ class ReportService {
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
-        throw Exception('Empty response body');
+        // 200 with empty body — backend bug or a proxy stripping the body.
+        // Surface as a typed exception so the screen renders a real error
+        // instead of a hard cast crash.
+        throw ApiException(
+          statusCode: 200,
+          message: 'Empty response body',
+        );
       }
       final decoded = jsonDecode(response.body);
       if (decoded == null) {
-        throw Exception('Null response body');
+        throw ApiException(
+          statusCode: 200,
+          message: 'Null response body',
+        );
       }
       return ProfitSummaryModel.fromJson(decoded as Map<String, dynamic>);
     }

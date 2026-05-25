@@ -58,7 +58,10 @@ class MarketService {
     } on ApiException {
       rethrow;
     } catch (e) {
-      throw Exception('Marketni olishda xatolik: $e');
+      throw ApiException(
+        statusCode: 0,
+        message: 'Marketni olishda xatolik: $e',
+      );
     }
   }
 
@@ -88,7 +91,12 @@ class MarketService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      if (data is! List) throw Exception('Noto\'g\'ri server javobi');
+      if (data is! List) {
+        throw ApiException(
+          statusCode: response.statusCode,
+          message: 'Noto\'g\'ri server javobi',
+        );
+      }
       return data.map((item) => MarketModel.fromJson(item)).toList();
     }
     throw ApiException.fromResponse(

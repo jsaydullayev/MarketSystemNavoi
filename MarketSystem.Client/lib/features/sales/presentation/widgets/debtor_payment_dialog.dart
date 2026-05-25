@@ -111,20 +111,25 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
       return;
     }
 
+    // ApiException-2 — guard non-API failure modes BEFORE entering the
+    // try/catch. The old code threw Exception(l10n.noDebtSalesFound) inside
+    // the try block, which the catch then surfaced via toString() as
+    // "Xato: Exception: …". Now we show the localised snackbar directly
+    // and don't enter the loading state at all when there's nothing to pay.
+    final customerId = widget.debtor['customerId'];
+    final debtorSales = widget.debtSales
+        .where((sale) => sale['customerId'] == customerId)
+        .toList();
+    if (debtorSales.isEmpty) {
+      _showSnack(messenger, l10n.noDebtSalesFound, isError: true);
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final salesService = SalesService(authProvider: authProvider);
-      final customerId = widget.debtor['customerId'];
-
-      final debtorSales = widget.debtSales
-          .where((sale) => sale['customerId'] == customerId)
-          .toList();
-
-      if (debtorSales.isEmpty) {
-        throw Exception(l10n.noDebtSalesFound);
-      }
 
       await salesService.addPayment(
         saleId: debtorSales[0]['id'],
