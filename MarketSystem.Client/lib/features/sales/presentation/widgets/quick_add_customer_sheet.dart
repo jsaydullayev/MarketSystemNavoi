@@ -89,7 +89,7 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
           'fullName': (created['fullName'] ?? _nameCtrl.text.trim()).toString(),
           'phone': (created['phone'] ?? phone).toString(),
         };
-        if (result['id']!.toString().isEmpty) {
+        if (result['id'].toString().isEmpty) {
           throw Exception('Customer created without an id');
         }
         navigator.pop(result);

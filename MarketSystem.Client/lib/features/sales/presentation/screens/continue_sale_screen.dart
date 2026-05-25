@@ -405,7 +405,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
 
   void _showPaymentSheet() {
     final l10n = AppLocalizations.of(context)!;
-    final totalAmount = (_sale!['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final totalAmount = (_sale?['totalAmount'] as num?)?.toDouble() ?? 0.0;
 
     showContinuePaymentSheet(
       context,
