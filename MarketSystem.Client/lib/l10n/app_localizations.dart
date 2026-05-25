@@ -1838,72 +1838,61 @@ abstract class AppLocalizations {
   /// **'Qayta urinish'**
   String get retry;
 
-  /// D1 — shared "could not load" headline shown by `ErrorRetryView`
-  /// on any screen whose fetch failed.
+  /// No description provided for @loadFailedTitle.
   ///
   /// In uz, this message translates to:
   /// **'Ma\'lumotni yuklab bo\'lmadi'**
   String get loadFailedTitle;
 
-  /// D1 — fallback subtitle when the backend didn't supply a `message`
-  /// field. Surfaces an actionable hint instead of empty space.
+  /// No description provided for @loadFailedDescription.
   ///
   /// In uz, this message translates to:
   /// **'Internetni tekshiring va qayta urining. Muammo davom etsa, administrator bilan bog\'laning.'**
   String get loadFailedDescription;
 
-  /// D2 — headline rendered by `NetworkWrapper` when device connectivity
-  /// drops or the API health check fails.
+  /// No description provided for @noInternetTitle.
   ///
   /// In uz, this message translates to:
   /// **'Internet aloqasi yo\'q'**
   String get noInternetTitle;
 
-  /// D2 — subtitle under `noInternetTitle` hinting the user to check
-  /// their connection before tapping Retry.
+  /// No description provided for @noInternetDescription.
   ///
   /// In uz, this message translates to:
   /// **'Iltimos, internet aloqasini tekshiring va qayta urinib ko\'ring'**
   String get noInternetDescription;
 
-  /// GAP-1 — "Muddat" label rendered next to a debt's optional due date in
-  /// the detail header and customer list card. Backend exposes
-  /// `Debt.DueDate` (nullable timestamptz); when null the line is hidden.
+  /// No description provided for @debtDueLabel.
   ///
   /// In uz, this message translates to:
   /// **'Muddat'**
   String get debtDueLabel;
 
-  /// GAP-1 — pill rendered on a debt card when DateTime.now() has passed
-  /// the stored dueDate by 24h+ (we treat "today" as still on time).
+  /// No description provided for @debtOverdueBadge.
   ///
   /// In uz, this message translates to:
   /// **'Muddat o\'tgan'**
   String get debtOverdueBadge;
 
-  /// GAP-1 — variant of [debtDueInDays] for the same-day case so the user
-  /// doesn't see a misleading "0 kun qoldi".
+  /// No description provided for @debtDueToday.
   ///
   /// In uz, this message translates to:
   /// **'Bugun muddat'**
   String get debtDueToday;
 
-  /// GAP-1 — variant of [debtDueInDays] for the next-day case so we render
-  /// a friendlier "Ertaga muddat" instead of "1 kun qoldi".
+  /// No description provided for @debtDueTomorrow.
   ///
   /// In uz, this message translates to:
   /// **'Ertaga muddat'**
   String get debtDueTomorrow;
 
-  /// GAP-1 — "kun qoldi" countdown chip. {n} is the integer day delta
-  /// (always 2+) between today and the dueDate.
+  /// No description provided for @debtDueInDays.
   ///
   /// In uz, this message translates to:
   /// **'{n} kun qoldi'**
   String debtDueInDays(Object n);
 
-  /// GAP-1 — overdue-by-days subtitle paired with [debtOverdueBadge] so
-  /// the owner sees how stale the debt is, not just that it's late.
+  /// No description provided for @debtOverdueByDays.
   ///
   /// In uz, this message translates to:
   /// **'{n} kun kechikkan'**

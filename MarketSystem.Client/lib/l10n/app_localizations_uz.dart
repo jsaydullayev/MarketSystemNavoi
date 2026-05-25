@@ -921,10 +921,14 @@ class AppLocalizationsUz extends AppLocalizations {
   String get debtDueTomorrow => 'Ertaga muddat';
 
   @override
-  String debtDueInDays(Object n) => '$n kun qoldi';
+  String debtDueInDays(Object n) {
+    return '$n kun qoldi';
+  }
 
   @override
-  String debtOverdueByDays(Object n) => '$n kun kechikkan';
+  String debtOverdueByDays(Object n) {
+    return '$n kun kechikkan';
+  }
 
   @override
   String get customerDeleted => 'Mijoz muvaffaqiyatli o\'chirildi';
