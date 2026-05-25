@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import '../../core/auth/permission_context.dart';
 import '../../core/auth/permissions.dart';
 import '../../core/providers/auth_provider.dart';
-import '../../core/providers/locale_provider.dart';
 import '../../core/routes/app_routes.dart';
 import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
@@ -50,18 +49,6 @@ class DashboardDrawer extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 children: [
                   ..._menuTiles(context, role),
-                  const SizedBox(height: AppSpacing.lg),
-                  Divider(color: context.colors.border, height: 1),
-                  const SizedBox(height: AppSpacing.md),
-                  Consumer<LocaleProvider>(
-                    builder: (context, lp, _) => _SettingsTile(
-                      icon: Icons.translate_rounded,
-                      label: lp.locale.languageCode == 'uz'
-                          ? "O'zbekcha"
-                          : 'Русский',
-                      onTap: () => _showLanguageDialog(context, lp),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -182,75 +169,6 @@ class DashboardDrawer extends StatelessWidget {
           },
         ),
     ];
-  }
-
-  void _showLanguageDialog(BuildContext context, LocaleProvider lp) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: context.colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
-        ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-        title: Row(
-          children: [
-            Icon(Icons.translate_rounded, color: context.colors.brand),
-            const SizedBox(width: AppSpacing.lg),
-            Text(
-              AppLocalizations.of(context)!.selectLanguage,
-              style: AppTextStyles.titleMedium(),
-            ),
-          ],
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 20),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _languageOption(ctx, lp, "O'zbekcha", 'uz', '🇺🇿'),
-            _languageOption(ctx, lp, 'Русский', 'ru', '🇷🇺'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _languageOption(
-    BuildContext ctx,
-    LocaleProvider lp,
-    String title,
-    String code,
-    String flag,
-  ) {
-    final isSelected = lp.locale.languageCode == code;
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      onTap: () {
-        lp.setLocale(code);
-        Navigator.pop(ctx);
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl,
-          vertical: AppSpacing.lg,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              isSelected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_unchecked_rounded,
-              color: isSelected ? ctx.colors.brand : ctx.colors.textSecondary,
-              size: 22,
-            ),
-            const SizedBox(width: AppSpacing.lg),
-            Text(flag, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: AppSpacing.lg),
-            Text(title, style: AppTextStyles.bodyLarge()),
-          ],
-        ),
-      ),
-    );
   }
 
   /// D3 — gate the destructive logout behind a confirmation dialog so an
