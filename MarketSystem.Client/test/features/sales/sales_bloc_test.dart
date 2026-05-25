@@ -243,7 +243,7 @@ void main() {
 
   group('ReturnSaleItemEvent', () {
     blocTest<SalesBloc, SalesState>(
-      'emits SaleItemReturned WITHOUT a Loading state (it skips the spinner)',
+      'emits [SalesLoading, SaleItemReturned] on success',
       build: () {
         when(() => returnItem(
               saleId: any(named: 'saleId'),
@@ -258,11 +258,13 @@ void main() {
         saleItemId: 'si-1',
         quantity: 1,
       )),
-      // Deliberate — the bloc handler doesn't emit a SalesLoading first.
-      // Pinning the current behaviour so any refactor that adds one
-      // gets reviewed (it would change the spinner UX on the return
-      // confirmation dialog).
-      expect: () => [const SaleItemReturned()],
+      // The bloc emits SalesLoading first so the return confirmation
+      // dialog renders a spinner while the API call is in flight, then
+      // SaleItemReturned on success. Earlier revisions skipped the
+      // loading state — see fix `functional robustness — rollback,
+      // permission gate, null safety, loading state` for the rationale.
+      expect: () =>
+          [const SalesLoading(), const SaleItemReturned()],
     );
   });
 }
