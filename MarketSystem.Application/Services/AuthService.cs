@@ -75,7 +75,7 @@ public class AuthService : IAuthService
         async Task<AuthResponse?> RejectAndMaybeLockAsync()
         {
             await LogLoginFailedAsync();
-            var attempt = _loginAttempts.RecordFailure(request.Username);
+            var attempt = await _loginAttempts.RecordFailureAsync(request.Username, cancellationToken);
             if (attempt.LockedUntilUtc is { } lockedUntil)
             {
                 _logger.LogWarning(
@@ -188,7 +188,7 @@ public class AuthService : IAuthService
         // Wipe the brute-force counter — a user who got the password right
         // after one typo shouldn't stay one failure closer to a lockout for
         // the next 15 minutes.
-        _loginAttempts.RecordSuccess(request.Username);
+        await _loginAttempts.RecordSuccessAsync(request.Username, cancellationToken);
         await _auditLogService.LogActionAsync(
             AuditEntityTypes.Auth, matched.Id, AuditActions.Login, matched.Id,
             new { username = matched.Username, role = matched.Role.ToString() }, cancellationToken);

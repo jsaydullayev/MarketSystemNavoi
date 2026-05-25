@@ -5,21 +5,15 @@ namespace MarketSystem.Application.Services;
 
 /// <summary>
 /// Process-local brute-force lockout tracker (Plan 05 Bosqich 3 — username
-/// based). Singleton, ConcurrentDictionary-backed. Survives the lifetime of
-/// one server process — short revocations resetting on restart are tolerable
-/// because the IP-based rate limiter still gates the burst surface.
+/// based). Singleton, ConcurrentDictionary-backed. Survives only the lifetime
+/// of one server process — see the M1 fix in <c>DbLoginAttemptTracker</c> for
+/// the durable variant used in production.
 ///
-/// M1 — Known limitation: in-memory state is lost on process restart, so
-/// a determined attacker who can trigger restarts (or just wait for a
-/// natural restart) could side-step the username-based lockout. The IP
-/// rate limiter and the per-username audit-log "FailedLogin burst"
-/// detection (see <c>AuditLogService.GetFailedLoginBurstsAsync</c>) cover
-/// the same threat at the network layer. If/when that combination ever
-/// proves insufficient, swap this implementation for a DB-backed one
-/// (new <c>LoginAttempt</c> entity scoped by username, queried on every
-/// login). Going DB-backed adds one DB write per failed login — a real
-/// cost — so we accept the in-memory trade-off until evidence justifies
-/// the change.
+/// This class is still useful for two scenarios:
+///   • Integration tests where we want the tracker to be self-contained,
+///     with no DB scope-factory needed.
+///   • Single-process dev runs where rebooting the API to drop the lock
+///     state is a feature, not a bug.
 ///
 /// Tunables (all internal — these are the rule, not config):
 ///   • <see cref="Threshold"/> failures inside <see cref="Window"/> → lock
@@ -61,10 +55,10 @@ public sealed class InMemoryLoginAttemptTracker : ILoginAttemptTracker
         return state.LockedUntilUtc;
     }
 
-    public LoginFailureResult RecordFailure(string username)
+    public Task<LoginFailureResult> RecordFailureAsync(string username, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(username))
-            return new LoginFailureResult(0, null);
+            return Task.FromResult(new LoginFailureResult(0, null));
 
         var key = NormalizeKey(username);
         var now = DateTime.UtcNow;
@@ -102,15 +96,16 @@ public sealed class InMemoryLoginAttemptTracker : ILoginAttemptTracker
         // failure inside the lock window.
         var justLocked = updated.LockedUntilUtc > now
             && updated.FailureCount == Threshold;
-        return new LoginFailureResult(
+        return Task.FromResult(new LoginFailureResult(
             updated.FailureCount,
-            justLocked ? updated.LockedUntilUtc : null);
+            justLocked ? updated.LockedUntilUtc : null));
     }
 
-    public void RecordSuccess(string username)
+    public Task RecordSuccessAsync(string username, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(username)) return;
+        if (string.IsNullOrWhiteSpace(username)) return Task.CompletedTask;
         _entries.TryRemove(NormalizeKey(username), out _);
+        return Task.CompletedTask;
     }
 
     /// <summary>Match the casing rules the rest of the auth stack uses —
