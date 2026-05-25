@@ -98,7 +98,9 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
   }
 
   void _submit() {
-    final qty = int.tryParse(_qtyController.text.trim());
+    final qty = double.tryParse(
+      _qtyController.text.trim().replaceAll(',', '.'),
+    );
     final price = double.tryParse(
       _priceController.text.trim().replaceAll(',', '.'),
     );
@@ -122,7 +124,7 @@ class _AddZakupSheetState extends State<AddZakupSheet> {
     context.read<ZakupBloc>().add(
       CreateZakupEvent(
         productId: _selectedProduct['id'],
-        quantity: qty.toDouble(),
+        quantity: qty,
         costPrice: price,
       ),
     );

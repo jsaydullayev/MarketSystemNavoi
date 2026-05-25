@@ -1113,6 +1113,17 @@ public partial class SaleService : ISaleService
 
         sale.PaidAmount += creditToApply;
         _context.Sales.Update(sale);
+
+        var debtForCredit = await _context.Debts
+            .FirstOrDefaultAsync(d => d.SaleId == saleId && d.MarketId == marketId, cancellationToken);
+        if (debtForCredit != null)
+        {
+            debtForCredit.RemainingDebt = Math.Max(0, debtForCredit.RemainingDebt - creditToApply);
+            if (debtForCredit.RemainingDebt <= 0)
+                debtForCredit.Status = DebtStatus.Closed;
+            _context.Debts.Update(debtForCredit);
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Credit applied successfully: SaleId={SaleId}, NewPaidAmount={NewPaidAmount}",
@@ -1541,6 +1552,21 @@ public partial class SaleService : ISaleService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await RecalculateSaleTotalAsync(sale, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            if (sale.Status == SaleStatus.Debt)
+            {
+                var debtForPrice = await _context.Debts
+                    .FirstOrDefaultAsync(d => d.SaleId == sale.Id && d.MarketId == marketId, cancellationToken);
+                if (debtForPrice != null)
+                {
+                    debtForPrice.TotalDebt = sale.TotalAmount;
+                    debtForPrice.RemainingDebt = Math.Max(0, sale.TotalAmount - sale.PaidAmount);
+                    if (debtForPrice.RemainingDebt <= 0)
+                        debtForPrice.Status = DebtStatus.Closed;
+                    _context.Debts.Update(debtForPrice);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+            }
 
             // Get product name for response
             string productName;

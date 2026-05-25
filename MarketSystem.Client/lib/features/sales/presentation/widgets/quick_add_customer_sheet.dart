@@ -8,6 +8,7 @@ import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/design/widgets/app_text_input.dart';
+import 'package:market_system_client/features/customers/presentation/widgets/phone_validator.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 /// Minimal "create a customer right now" bottom sheet.
@@ -55,6 +56,17 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(l10n.fillIn),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    final normalizedPhone = phone.startsWith('+') ? phone.substring(1) : phone;
+    if (!PhoneValidator.isValid(normalizedPhone)) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.phoneFormatHint),
           backgroundColor: AppColors.warning,
         ),
       );

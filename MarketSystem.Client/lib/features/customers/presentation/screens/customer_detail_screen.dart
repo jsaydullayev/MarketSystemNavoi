@@ -11,6 +11,7 @@ import 'package:market_system_client/features/customers/presentation/widgets/ava
 import 'package:market_system_client/features/customers/presentation/widgets/debt_card.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
+import '../../../../core/routes/app_routes.dart';
 import '../bloc/customers_bloc.dart';
 import '../bloc/events/customers_event.dart';
 import '../bloc/states/customers_state.dart';
@@ -199,19 +200,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   }
 
   void _onPay() {
-    // The pay sheet lives on the debts feature; for the detail screen we
-    // surface the action but routing into the existing flow is left to the
-    // caller (debts_screen handles it). When called here we open a simple
-    // hint snackbar — wiring deeper would require importing the debts feature
-    // and crossing layer boundaries we don't want from customers.
-    final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l10n.payDebt),
-        backgroundColor: context.colors.brand,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    Navigator.of(context).pushNamed(AppRoutes.debts);
   }
 
   void _onSendSms() {
