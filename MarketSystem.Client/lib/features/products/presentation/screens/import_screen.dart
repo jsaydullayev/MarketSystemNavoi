@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -95,11 +97,52 @@ class _ImportScreenState extends State<ImportScreen> {
     }
   }
 
-  void _downloadTemplate() {
+  Future<void> _downloadTemplate() async {
     final l10n = AppLocalizations.of(context)!;
     final lang = Localizations.localeOf(context).languageCode;
-    final bytes = ProductImportService.generateTemplate(lang: lang);
-    fh.FileHelper.saveAndOpenExcel(bytes, l10n.importTemplateFileName);
+
+    final Uint8List bytes;
+    try {
+      bytes = ProductImportService.generateTemplate(lang: lang);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.importErrorGenerate}: $e')),
+        );
+      }
+      return;
+    }
+
+    if (bytes.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.importErrorGenerate)),
+        );
+      }
+      return;
+    }
+
+    final ok = await fh.FileHelper.saveAndOpenExcel(
+      bytes,
+      l10n.importTemplateFileName,
+    );
+
+    if (!mounted) return;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.importTemplateDownloaded),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.importErrorSaveFile),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
   }
 
   // ── Build ──────────────────────────────────────────────────────────────

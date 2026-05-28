@@ -10,6 +10,7 @@ import '../../data/services/http_service.dart';
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
   StreamSubscription<SessionEndedInfo>? _sessionEndedSub;
+  StreamSubscription<Map<String, dynamic>>? _tokenRefreshedSub;
 
   AuthProvider({required AuthService authService})
     : _authService = authService {
@@ -20,9 +21,24 @@ class AuthProvider extends ChangeNotifier {
     // construction matches the singleton lifetime of HttpService — no need
     // to unsubscribe in normal operation, but dispose() cleans up for tests.
     _sessionEndedSub = HttpService.sessionEndedStream.listen((_) {
-      if (_user == null) return; // already logged out — nothing to do
+      if (_user == null) return;
       _user = null;
       _sessionEndedExternally = true;
+      notifyListeners();
+    });
+
+    // When the access token is silently refreshed (every ~30 min), the new
+    // AuthResponse carries an updated permissions list. Merge it into _user so
+    // the UI reflects permission changes the Owner made without requiring a
+    // full re-login.
+    _tokenRefreshedSub = HttpService.tokenRefreshedStream.listen((data) {
+      if (_user == null) return;
+      _user = {
+        ..._user!,
+        'permissions': data['permissions'] ?? _user!['permissions'],
+        'accessToken': data['accessToken'] ?? _user!['accessToken'],
+        'expiresAt': data['expiresAt'] ?? _user!['expiresAt'],
+      };
       notifyListeners();
     });
   }
@@ -42,6 +58,7 @@ class AuthProvider extends ChangeNotifier {
   @override
   void dispose() {
     _sessionEndedSub?.cancel();
+    _tokenRefreshedSub?.cancel();
     super.dispose();
   }
 

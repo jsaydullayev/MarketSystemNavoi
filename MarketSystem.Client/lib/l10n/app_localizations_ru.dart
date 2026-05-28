@@ -2819,4 +2819,17 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get importTemplateFileName => 'shablon_tovary.xlsx';
+
+  @override
+  String get importTemplateDownloaded => 'Шаблон успешно загружен';
+
+  @override
+  String get importErrorGenerate => 'Ошибка при создании шаблона';
+
+  @override
+  String get importErrorSaveFile =>
+      'Ошибка сохранения файла. Попробуйте ещё раз';
+
+  @override
+  String get noAccess => 'Нет доступа к этому разделу';
 }

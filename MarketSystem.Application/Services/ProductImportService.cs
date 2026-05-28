@@ -171,22 +171,26 @@ public sealed class ProductImportService : IProductImportService
     {
         var marketId = _market.GetCurrentMarketId();
 
-        // Tranzaksiya ichida bajaramiz: kategoriyalar yoki mahsulotlar fail bo'lsa
-        // ikkalasi ham rollback bo'ladi — orphaned kategoriyalar qolmaydi.
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
-        try
+        // NpgsqlRetryingExecutionStrategy manual BeginTransactionAsync'ni bloklaydi.
+        // CreateExecutionStrategy().ExecuteAsync() bilan o'rash — AuthService pattern.
+        var strategy = _db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            var result = await RunConfirmAsync(request, marketId, ct);
-            await tx.CommitAsync(ct);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            await tx.RollbackAsync(ct);
-            _log.LogError(ex, "Import rollback qilindi. MarketId={MarketId}, Rows={Count}",
-                marketId, request.Rows.Count);
-            throw;
-        }
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
+            try
+            {
+                var result = await RunConfirmAsync(request, marketId, ct);
+                await tx.CommitAsync(ct);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync(ct);
+                _log.LogError(ex, "Import rollback qilindi. MarketId={MarketId}, Rows={Count}",
+                    marketId, request.Rows.Count);
+                throw;
+            }
+        });
     }
 
     private async Task<ImportResultDto> RunConfirmAsync(

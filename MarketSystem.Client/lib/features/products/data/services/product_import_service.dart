@@ -106,12 +106,12 @@ class ProductImportService {
 
   static Uint8List generateTemplate({String lang = 'uz'}) {
     final isRu = lang == 'ru';
-    final sheetName = isRu ? 'Товары' : 'Mahsulotlar';
 
+    // excel v3.0.0 + archive 3.6.x: rename() calls delete() which calls
+    // _archive.files.removeWhere() — unmodifiable list exception.
+    // Fix: skip rename, write directly to the default 'Sheet1'.
     final excel = Excel.createExcel();
-    excel.rename('Sheet1', sheetName);
-    excel.setDefaultSheet(sheetName);
-    final sheet = excel[sheetName];
+    final sheet = excel['Sheet1'];
 
     final headers = isRu
         ? ['Название*', 'Цена продажи*', 'Мин. цена', 'Категория', 'Ед. изм. (шт/кг/м)', 'Мин. остаток']

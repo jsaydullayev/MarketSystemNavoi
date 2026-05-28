@@ -7,6 +7,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/auth/permission_context.dart';
+import '../../core/auth/permissions.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/widgets/network_wrapper.dart';
@@ -203,6 +205,38 @@ class _DashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = _fullName(context);
     final date = _dateLabel(context);
+    final l10n = AppLocalizations.of(context)!;
+
+    // Owner/SuperAdmin bypass permission checks. For Seller/Admin with
+    // dashboardAccess revoked — show a clean "no access" placeholder
+    // instead of an empty or broken screen.
+    if (!context.can(Permissions.dashboardAccess)) {
+      return SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl3),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 56,
+                  color: context.colors.textMuted,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Text(
+                  l10n.noAccess,
+                  style: AppTextStyles.titleMedium().copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return SafeArea(
       child: SingleChildScrollView(

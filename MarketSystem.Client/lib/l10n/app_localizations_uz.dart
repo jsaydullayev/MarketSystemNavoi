@@ -2815,4 +2815,17 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get importTemplateFileName => 'mahsulotlar_shablon.xlsx';
+
+  @override
+  String get importTemplateDownloaded => 'Shablon muvaffaqiyatli yuklab olindi';
+
+  @override
+  String get importErrorGenerate => 'Shablon yaratishda xato';
+
+  @override
+  String get importErrorSaveFile =>
+      'Faylni saqlashda xato. Qayta urinib ko\'ring';
+
+  @override
+  String get noAccess => 'Bu bo\'limga kirish huquqi yo\'q';
 }

@@ -9,6 +9,8 @@ import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/customers/presentation/bloc/customers_bloc.dart';
 import 'package:market_system_client/features/customers/presentation/bloc/events/customers_event.dart';
 import 'package:market_system_client/features/customers/presentation/screens/customer_detail_screen.dart';
+import 'package:market_system_client/core/auth/permission_context.dart';
+import 'package:market_system_client/core/auth/permissions.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:market_system_client/design/widgets/tappable.dart';
@@ -32,6 +34,107 @@ class CustomersCard extends StatelessWidget {
         : '?';
     final avatarColor = CustomerAvatarPalette.pick(displayLabel);
 
+    final canDelete = context.can(Permissions.customersDelete);
+
+    final card = Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: context.colors.border),
+      ),
+      child: Tappable(
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CustomerDetailScreen(
+                customerId: customer['id']?.toString() ?? '',
+                customerName: name,
+                customerPhone: phone,
+              ),
+            ),
+          );
+          if (context.mounted) {
+            context.read<CustomersBloc>().add(const GetCustomersEvent());
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg + 2,
+            vertical: AppSpacing.lg + 2,
+          ),
+          child: Row(
+            children: [
+              _Avatar(initial: initial, color: avatarColor),
+              const SizedBox(width: AppSpacing.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayLabel,
+                      style: AppTextStyles.labelLarge(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      phone,
+                      style: AppTextStyles.bodySmall().copyWith(
+                        fontSize: 12,
+                        color: context.colors.textMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (comment.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        comment,
+                        style: AppTextStyles.bodySmall().copyWith(
+                          fontSize: 11,
+                          color: context.colors.textMuted,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  GestureDetector(
+                    onTap: () => _showInfoSheet(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: context.colors.inputFill,
+                        borderRadius: BorderRadius.circular(AppRadius.md - 2),
+                      ),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        size: 18,
+                        color: context.colors.textMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _DebtBadge(hasDebt: hasDebt, totalDebt: totalDebt),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!canDelete) return card;
+
     return Dismissible(
       key: Key('customer_${customer['id']}'),
       direction: DismissDirection.endToStart,
@@ -46,11 +149,7 @@ class CustomersCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.delete_forever_rounded,
-              color: Colors.white,
-              size: 26,
-            ),
+            const Icon(Icons.delete_forever_rounded, color: Colors.white, size: 26),
             const SizedBox(height: AppSpacing.xs),
             Text(
               l10n.delete,
@@ -66,104 +165,7 @@ class CustomersCard extends StatelessWidget {
         await _confirmDelete(context);
         return false;
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: context.colors.border),
-        ),
-        child: Tappable(
-          onTap: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CustomerDetailScreen(
-                  customerId: customer['id']?.toString() ?? '',
-                  customerName: name,
-                  customerPhone: phone,
-                ),
-              ),
-            );
-            if (context.mounted) {
-              context.read<CustomersBloc>().add(const GetCustomersEvent());
-            }
-          },
-          child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg + 2,
-                vertical: AppSpacing.lg + 2,
-              ),
-              child: Row(
-                children: [
-                  _Avatar(initial: initial, color: avatarColor),
-                  const SizedBox(width: AppSpacing.lg),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayLabel,
-                          style: AppTextStyles.labelLarge(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          phone,
-                          style: AppTextStyles.bodySmall().copyWith(
-                            fontSize: 12,
-                            color: context.colors.textMuted,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (comment.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            comment,
-                            style: AppTextStyles.bodySmall().copyWith(
-                              fontSize: 11,
-                              color: context.colors.textMuted,
-                              fontStyle: FontStyle.italic,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      GestureDetector(
-                        onTap: () => _showInfoSheet(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: context.colors.inputFill,
-                            borderRadius: BorderRadius.circular(
-                              AppRadius.md - 2,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.info_outline_rounded,
-                            size: 18,
-                            color: context.colors.textMuted,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _DebtBadge(hasDebt: hasDebt, totalDebt: totalDebt),
-                    ],
-                  ),
-                ],
-              ),
-          ),
-        ),
-      ),
+      child: card,
     );
   }
 

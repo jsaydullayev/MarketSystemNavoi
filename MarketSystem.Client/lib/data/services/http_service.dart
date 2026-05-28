@@ -86,6 +86,15 @@ class HttpService {
   static Stream<SessionEndedInfo> get sessionEndedStream =>
       _sessionEndedController.stream;
 
+  /// Emitted after a successful token refresh with the new AuthResponse data.
+  /// AuthProvider subscribes to update _user['permissions'] so permission
+  /// changes granted by the Owner take effect at the next refresh cycle
+  /// (≤30 min) without requiring a full re-login.
+  static final StreamController<Map<String, dynamic>> _tokenRefreshedController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static Stream<Map<String, dynamic>> get tokenRefreshedStream =>
+      _tokenRefreshedController.stream;
+
   String get baseUrl => ApiConstants.baseUrl;
 
   // ── Singleton ───────────────────────────────────────────────
@@ -263,6 +272,9 @@ class HttpService {
     try {
       final refreshed = await _authService?.refreshToken();
       succeeded = refreshed != null;
+      if (succeeded) {
+        _tokenRefreshedController.add(refreshed);
+      }
       return succeeded;
     } catch (e) {
       debugPrint('HttpService._doRefresh error: $e');

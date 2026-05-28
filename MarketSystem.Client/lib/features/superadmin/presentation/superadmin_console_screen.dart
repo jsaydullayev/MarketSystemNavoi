@@ -309,16 +309,6 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
           ),
         ],
       ),
-      floatingActionButton: _tabs.index == 1
-          ? FloatingActionButton.extended(
-              onPressed: _onCreateOwner,
-              icon: const Icon(Icons.person_add_outlined),
-              label: Text(l10n.newOwner),
-              backgroundColor: context.colors.brand,
-              foregroundColor: context.colors.onBrand,
-              elevation: 2,
-            )
-          : null,
     );
   }
 
@@ -364,7 +354,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
             vertical: AppSpacing.md,
           ),
           child: SizedBox(
-            width: 130,
+            width: 170,
             child: AppSecondaryButton(
               onPressed: _forceLogout,
               icon: Icons.logout,

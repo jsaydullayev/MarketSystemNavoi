@@ -968,5 +968,9 @@
   "importClose": "Yopish",
   "importRowsAnalyzed": "{count} ta qator tahlil qilindi",
   "@importRowsAnalyzed": { "placeholders": { "count": { "type": "int" } } },
-  "importTemplateFileName": "mahsulotlar_shablon.xlsx"
+  "importTemplateFileName": "mahsulotlar_shablon.xlsx",
+  "importTemplateDownloaded": "Shablon muvaffaqiyatli yuklab olindi",
+  "importErrorGenerate": "Shablon yaratishda xato",
+  "importErrorSaveFile": "Faylni saqlashda xato. Qayta urinib ko'ring",
+  "noAccess": "Bu bo'limga kirish huquqi yo'q"
 }

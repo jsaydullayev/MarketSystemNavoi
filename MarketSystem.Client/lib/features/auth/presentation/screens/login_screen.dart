@@ -90,6 +90,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 hint: l10n.loginLabel,
                                 prefixIcon: Icons.person_outline_rounded,
                                 controller: _usernameController,
+                                autofillHints: const [AutofillHints.username],
+                                textInputAction: TextInputAction.next,
                                 validator: (v) =>
                                     (v == null || v.trim().isEmpty)
                                     ? l10n.loginHint
@@ -107,6 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 prefixIcon: Icons.lock_outline_rounded,
                                 obscureText: _obscurePassword,
                                 controller: _passwordController,
+                                autofillHints: const [AutofillHints.password],
+                                textInputAction: TextInputAction.done,
                                 validator: (v) => (v == null || v.isEmpty)
                                     ? l10n.passwordHint
                                     : null,
@@ -162,43 +166,45 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Logo: rounded corners + orange glow shadow — no extra background
         Container(
-          width: 64,
-          height: 64,
           decoration: BoxDecoration(
-            color: context.colors.brand,
-            borderRadius: BorderRadius.circular(AppRadius.xl2),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: context.colors.brand.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: AppColors.brand.withValues(alpha: 0.35),
+                blurRadius: 28,
+                spreadRadius: 0,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          alignment: Alignment.center,
-          child: Text(
-            'S',
-            style: AppTextStyles.displayLarge().copyWith(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              height: 1.0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: Image.asset(
+              'assets/images/logo.png',
+              width: 88,
+              height: 88,
+              fit: BoxFit.cover,
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
         Text(
           'Strotech',
           style: AppTextStyles.titleLarge().copyWith(
-            fontSize: 22,
+            fontSize: 24,
             fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           l10n.appTagline,
-          style: AppTextStyles.bodySmall().copyWith(fontSize: 13),
+          style: AppTextStyles.bodySmall().copyWith(
+            fontSize: 13,
+            color: context.colors.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
       ],

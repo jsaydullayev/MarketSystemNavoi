@@ -963,5 +963,9 @@
   "importClose": "Закрыть",
   "importRowsAnalyzed": "Проанализировано {count} строк",
   "@importRowsAnalyzed": { "placeholders": { "count": { "type": "int" } } },
-  "importTemplateFileName": "shablon_tovary.xlsx"
+  "importTemplateFileName": "shablon_tovary.xlsx",
+  "importTemplateDownloaded": "Шаблон успешно загружен",
+  "importErrorGenerate": "Ошибка при создании шаблона",
+  "importErrorSaveFile": "Ошибка сохранения файла. Попробуйте ещё раз",
+  "noAccess": "Нет доступа к этому разделу"
 }

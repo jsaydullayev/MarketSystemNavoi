@@ -5359,6 +5359,30 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'mahsulotlar_shablon.xlsx'**
   String get importTemplateFileName;
+
+  /// No description provided for @importTemplateDownloaded.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shablon muvaffaqiyatli yuklab olindi'**
+  String get importTemplateDownloaded;
+
+  /// No description provided for @importErrorGenerate.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shablon yaratishda xato'**
+  String get importErrorGenerate;
+
+  /// No description provided for @importErrorSaveFile.
+  ///
+  /// In uz, this message translates to:
+  /// **'Faylni saqlashda xato. Qayta urinib ko\'ring'**
+  String get importErrorSaveFile;
+
+  /// No description provided for @noAccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu bo\'limga kirish huquqi yo\'q'**
+  String get noAccess;
 }
 
 class _AppLocalizationsDelegate

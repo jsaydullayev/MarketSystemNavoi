@@ -18,6 +18,9 @@ class AppTextInput extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.enabled = true,
+    this.autofillHints,
+    this.textInputAction,
+    this.onFieldSubmitted,
   });
 
   final String? label;
@@ -30,6 +33,9 @@ class AppTextInput extends StatelessWidget {
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
   final bool enabled;
+  final Iterable<String>? autofillHints;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +72,9 @@ class AppTextInput extends StatelessWidget {
           validator: validator,
           onChanged: onChanged,
           enabled: enabled,
+          autofillHints: autofillHints,
+          textInputAction: textInputAction,
+          onFieldSubmitted: onFieldSubmitted,
           style: AppTextStyles.bodyMedium().copyWith(
             fontSize: 15,
             color: textColor,

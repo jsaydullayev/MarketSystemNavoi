@@ -78,96 +78,95 @@ class DashboardDrawer extends StatelessWidget {
   }
 
   List<Widget> _menuTiles(BuildContext context, String role) {
-    final items = <_DrawerItem>[
-      _DrawerItem(
-        icon: Icons.inventory_2_rounded,
-        label: l10n.products,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProductsScreen(
-              isReadOnly: !context.can(Permissions.productsEdit),
-            ),
-          ),
-        ),
-      ),
-      _DrawerItem(
-        icon: Icons.grid_view_rounded,
-        label: l10n.categories,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CategoryManagementScreen()),
-        ),
-      ),
-      _DrawerItem(
-        icon: Icons.shopping_bag_rounded,
-        label: l10n.sales,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
-      ),
-      _DrawerItem(
-        icon: Icons.receipt_long_rounded,
-        label: l10n.dailySales,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DailySalesScreen()),
-        ),
-      ),
-      _DrawerItem(
-        icon: Icons.people_alt_rounded,
-        label: l10n.customers,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.customers),
-      ),
-      _DrawerItem(
-        icon: Icons.add_business_rounded,
-        label: l10n.zakup,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.zakup),
-      ),
-    ];
-
-    if (role == 'Admin' || role == 'Owner') {
-      items.addAll([
-        _DrawerItem(
-          icon: Icons.account_balance_wallet_rounded,
-          label: l10n.cashRegister,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.cashRegister),
-        ),
-        _DrawerItem(
-          icon: Icons.bar_chart_rounded,
-          label: l10n.reports,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.reports),
-        ),
-        _DrawerItem(
-          icon: Icons.admin_panel_settings,
-          label: l10n.users,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.users),
-        ),
-        _DrawerItem(
-          icon: Icons.monetization_on_rounded,
-          label: l10n.debts,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
-        ),
-      ]);
-    }
-
-    if (role == 'SuperAdmin') {
-      items.add(
-        _DrawerItem(
-          icon: Icons.shield_outlined,
-          label: l10n.securityJournal,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.securityJournal),
-        ),
-      );
+    void go(VoidCallback nav) {
+      Navigator.pop(context);
+      nav();
     }
 
     return [
-      for (final it in items)
+      if (context.can(Permissions.productsAccess))
         _SettingsTile(
-          icon: it.icon,
-          label: it.label,
-          onTap: () {
-            Navigator.pop(context);
-            it.onTap();
-          },
+          icon: Icons.inventory_2_rounded,
+          label: l10n.products,
+          onTap: () => go(() => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProductsScreen(
+                    isReadOnly: !context.can(Permissions.productsEdit),
+                  ),
+                ),
+              )),
+        ),
+      if (context.can(Permissions.categoriesAccess))
+        _SettingsTile(
+          icon: Icons.grid_view_rounded,
+          label: l10n.categories,
+          onTap: () => go(() => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const CategoryManagementScreen()),
+              )),
+        ),
+      if (context.can(Permissions.salesAccess))
+        _SettingsTile(
+          icon: Icons.shopping_bag_rounded,
+          label: l10n.sales,
+          onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.sales)),
+        ),
+      if (context.can(Permissions.salesAccess))
+        _SettingsTile(
+          icon: Icons.receipt_long_rounded,
+          label: l10n.dailySales,
+          onTap: () => go(() => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DailySalesScreen()),
+              )),
+        ),
+      if (context.can(Permissions.customersAccess))
+        _SettingsTile(
+          icon: Icons.people_alt_rounded,
+          label: l10n.customers,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.customers)),
+        ),
+      if (context.can(Permissions.zakupAccess))
+        _SettingsTile(
+          icon: Icons.add_business_rounded,
+          label: l10n.zakup,
+          onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.zakup)),
+        ),
+      if (context.can(Permissions.cashRegisterAccess))
+        _SettingsTile(
+          icon: Icons.account_balance_wallet_rounded,
+          label: l10n.cashRegister,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.cashRegister)),
+        ),
+      if (context.can(Permissions.reportsAccess))
+        _SettingsTile(
+          icon: Icons.bar_chart_rounded,
+          label: l10n.reports,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.reports)),
+        ),
+      if (context.can(Permissions.usersAccess))
+        _SettingsTile(
+          icon: Icons.admin_panel_settings,
+          label: l10n.users,
+          onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.users)),
+        ),
+      if (context.can(Permissions.debtsAccess))
+        _SettingsTile(
+          icon: Icons.monetization_on_rounded,
+          label: l10n.debts,
+          onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.debts)),
+        ),
+      if (role == 'SuperAdmin')
+        _SettingsTile(
+          icon: Icons.shield_outlined,
+          label: l10n.securityJournal,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.securityJournal)),
         ),
     ];
   }
@@ -447,14 +446,3 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-class _DrawerItem {
-  const _DrawerItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-}
