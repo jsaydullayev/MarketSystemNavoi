@@ -17,6 +17,7 @@ public static class PermissionKeys
     public const string ProductsEdit = "products.edit";
     public const string ProductsDelete = "products.delete";
     public const string ProductsExport = "products.export";
+    public const string ProductsImport = "products.import";
 
     public const string CategoriesAccess = "categories.access";
     public const string CategoriesManage = "categories.manage";
@@ -62,7 +63,7 @@ public static class PermissionKeys
     public static readonly IReadOnlyList<string> All = new[]
     {
         DashboardAccess,
-        ProductsAccess, ProductsCreate, ProductsEdit, ProductsDelete, ProductsExport,
+        ProductsAccess, ProductsCreate, ProductsEdit, ProductsDelete, ProductsExport, ProductsImport,
         CategoriesAccess, CategoriesManage,
         SalesAccess, SalesCreate, SalesEdit, SalesDelete, SalesExport,
         CustomersAccess, CustomersManage, CustomersDelete, CustomersExport,

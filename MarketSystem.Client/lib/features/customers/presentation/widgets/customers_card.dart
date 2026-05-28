@@ -11,6 +11,7 @@ import 'package:market_system_client/features/customers/presentation/bloc/events
 import 'package:market_system_client/features/customers/presentation/screens/customer_detail_screen.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
+import 'package:market_system_client/design/widgets/tappable.dart';
 import 'package:provider/provider.dart';
 
 class CustomersCard extends StatelessWidget {
@@ -72,27 +73,23 @@ class CustomersCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(color: context.colors.border),
         ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          child: InkWell(
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CustomerDetailScreen(
-                    customerId: customer['id']?.toString() ?? '',
-                    customerName: name,
-                    customerPhone: phone,
-                  ),
+        child: Tappable(
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CustomerDetailScreen(
+                  customerId: customer['id']?.toString() ?? '',
+                  customerName: name,
+                  customerPhone: phone,
                 ),
-              );
-              if (context.mounted) {
-                context.read<CustomersBloc>().add(const GetCustomersEvent());
-              }
-            },
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            child: Padding(
+              ),
+            );
+            if (context.mounted) {
+              context.read<CustomersBloc>().add(const GetCustomersEvent());
+            }
+          },
+          child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.lg + 2,
                 vertical: AppSpacing.lg + 2,
@@ -164,7 +161,6 @@ class CustomersCard extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
           ),
         ),
       ),

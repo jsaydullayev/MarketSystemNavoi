@@ -2743,4 +2743,76 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get securityJournalEntityTypes => 'Obyektlar';
+
+  @override
+  String get importExcel => 'Excel Import';
+
+  @override
+  String get importDownloadTemplateFirst => 'Avval shablonni yuklang';
+
+  @override
+  String get importFillInFormat => 'Excelni to\'g\'ri ustunlarda to\'ldiring';
+
+  @override
+  String get importDownloadTemplate => 'Shablon yuklab olish';
+
+  @override
+  String get importSelectFile => 'Excel fayl tanlash';
+
+  @override
+  String get importSuccess => 'Import muvaffaqiyatli!';
+
+  @override
+  String get importSaved => 'Saqlandi';
+
+  @override
+  String importCountProducts(int count) {
+    return '$count ta tovar';
+  }
+
+  @override
+  String get importSkipped => 'O\'tkazib yuborildi';
+
+  @override
+  String importCountItems(int count) {
+    return '$count ta';
+  }
+
+  @override
+  String get importNewCategory => 'Yangi kategoriya';
+
+  @override
+  String get importColumnGuide => 'Ustunlar tartibi (1-qator sarlavha)';
+
+  @override
+  String get importUnitHint => 'Birlik (dona/kg/m)';
+
+  @override
+  String get importRequired => '*majburiy';
+
+  @override
+  String get importFileEmpty =>
+      'Fayl bo\'sh yoki format noto\'g\'ri. Shablonni ko\'ring.';
+
+  @override
+  String get importSavingLabel => 'Saqlanmoqda...';
+
+  @override
+  String importConfirmButton(int count) {
+    return 'Tasdiqlash ($count ta)';
+  }
+
+  @override
+  String get importAllErrors => 'Hamma qatorda xato';
+
+  @override
+  String get importClose => 'Yopish';
+
+  @override
+  String importRowsAnalyzed(int count) {
+    return '$count ta qator tahlil qilindi';
+  }
+
+  @override
+  String get importTemplateFileName => 'mahsulotlar_shablon.xlsx';
 }

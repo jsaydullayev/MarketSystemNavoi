@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../core/utils/file_helper.dart' as core_file_helper;
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../design/widgets/tappable.dart';
 import '../../../../data/services/sales_service.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/sale_entity.dart';
@@ -32,11 +33,30 @@ class SalesScreen extends StatefulWidget {
 class _SalesScreenState extends State<SalesScreen> {
   String _selectedStatus = 'all';
   bool _isExporting = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadSales();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final state = context.read<SalesBloc>().state;
+      if (state is SalesLoaded && state.hasMore) {
+        context.read<SalesBloc>().add(const LoadMoreSalesEvent());
+      }
+    }
   }
 
   void _loadSales() {
@@ -299,12 +319,18 @@ class _SalesScreenState extends State<SalesScreen> {
                     );
                   }
 
-                  if (state is SalesLoaded) {
-                    final filteredSales = _filterSales(state.sales);
+                  if (state is SalesLoaded || state is SalesLoadingMore) {
+                    final sales = state is SalesLoaded
+                        ? state.sales
+                        : (state as SalesLoadingMore).sales;
+                    final hasMore =
+                        state is SalesLoaded ? state.hasMore : false;
+                    final isLoadingMore = state is SalesLoadingMore;
+                    final filteredSales = _filterSales(sales);
                     return Column(
                       children: [
-                        _buildHeroSummary(context, state.sales, l10n),
-                        _buildStatusChips(context, state.sales, l10n),
+                        _buildHeroSummary(context, sales, l10n),
+                        _buildStatusChips(context, sales, l10n),
                         Expanded(
                           child: RefreshIndicator(
                             color: context.colors.brand,
@@ -312,16 +338,25 @@ class _SalesScreenState extends State<SalesScreen> {
                             child: filteredSales.isEmpty
                                 ? _buildEmptyState(context, l10n)
                                 : ListView.builder(
+                                    controller: _scrollController,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: AppSpacing.xl,
                                     ),
-                                    itemCount: filteredSales.length,
-                                    itemBuilder: (context, index) =>
-                                        _buildSaleItem(
+                                    itemCount: filteredSales.length +
+                                        (hasMore || isLoadingMore ? 1 : 0),
+                                    itemBuilder: (context, index) {
+                                      if (index == filteredSales.length) {
+                                        return _buildLoadMoreIndicator(
                                           context,
-                                          filteredSales[index],
-                                          l10n,
-                                        ),
+                                          isLoadingMore,
+                                        );
+                                      }
+                                      return _buildSaleItem(
+                                        context,
+                                        filteredSales[index],
+                                        l10n,
+                                      );
+                                    },
                                   ),
                           ),
                         ),
@@ -363,16 +398,44 @@ class _SalesScreenState extends State<SalesScreen> {
               if (result == true && mounted) _loadSales();
             },
             backgroundColor: context.colors.brand,
-            icon: const Icon(
+            icon: Icon(
               Icons.add_shopping_cart_rounded,
-              color: Colors.white,
+              color: context.colors.onBrand,
             ),
             label: Text(
               l10n.newSale,
-              style: AppTextStyles.labelLarge().copyWith(color: Colors.white),
+              style: AppTextStyles.labelLarge().copyWith(
+                color: context.colors.onBrand,
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreIndicator(BuildContext context, bool isLoading) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      child: Center(
+        child: isLoading
+            ? CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  context.colors.brand,
+                ),
+              )
+            : TextButton.icon(
+                onPressed: () =>
+                    context.read<SalesBloc>().add(const LoadMoreSalesEvent()),
+                icon: Icon(Icons.expand_more, color: context.colors.brand),
+                label: Text(
+                  'Yana yuklash',
+                  style: AppTextStyles.bodyMedium().copyWith(
+                    color: context.colors.brand,
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -632,21 +695,18 @@ class _SalesScreenState extends State<SalesScreen> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => BlocProvider.value(
-                value: context.read<SalesBloc>(),
-                child: SaleDetailScreen(saleId: sale.id),
-              ),
+      child: Tappable(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlocProvider.value(
+              value: context.read<SalesBloc>(),
+              child: SaleDetailScreen(saleId: sale.id),
             ),
           ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          child: Opacity(
-            opacity: isCancelled ? 0.65 : 1,
+        ),
+        child: Opacity(
+          opacity: isCancelled ? 0.65 : 1,
             // AppCard gives us the demo's 1px border + 14-radius + white
             // surface, matching `.sale-row` in design-demo/index.html.
             child: AppCard(
@@ -773,7 +833,6 @@ class _SalesScreenState extends State<SalesScreen> {
             ),
           ),
         ),
-      ),
     );
   }
 

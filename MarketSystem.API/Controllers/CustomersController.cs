@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.API.Authorization;
@@ -134,6 +135,7 @@ public class CustomersController : ControllerBase
     /// helper handles both files on the Flutter side.
     /// </summary>
     [HttpGet("export")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.CustomersExport)]
     public async Task<IActionResult> ExportCustomersToExcel(
         [FromQuery] string lang = "uz",

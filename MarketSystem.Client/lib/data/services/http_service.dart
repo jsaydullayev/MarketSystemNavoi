@@ -362,9 +362,7 @@ class HttpService {
 
     debugPrint('=== HTTP GET ===');
     debugPrint('URL: $baseUrl$endpoint');
-    debugPrint(
-      'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}',
-    );
+    debugPrint('Auth: ${token != null ? 'Bearer [•••]' : 'NO TOKEN'}');
     debugPrint('================');
 
     return http
@@ -402,9 +400,7 @@ class HttpService {
 
     debugPrint('=== HTTP POST ===');
     debugPrint('URL: $baseUrl$endpoint');
-    debugPrint(
-      'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}',
-    );
+    debugPrint('Auth: ${token != null ? 'Bearer [•••]' : 'NO TOKEN'}');
     debugPrint('Body: $encodedBody');
     debugPrint('================');
 
@@ -538,8 +534,13 @@ class HttpService {
     request.headers['Content-Type'] = 'application/json';
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     request.body = jsonEncode(body);
-    final streamed = await http.Client().send(request);
-    return http.Response.fromStream(streamed);
+    final client = http.Client();
+    try {
+      final streamed = await client.send(request);
+      return await http.Response.fromStream(streamed);
+    } finally {
+      client.close();
+    }
   }
 
   // PATCH request

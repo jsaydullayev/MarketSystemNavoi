@@ -5233,6 +5233,132 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Obyektlar'**
   String get securityJournalEntityTypes;
+
+  /// No description provided for @importExcel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Excel Import'**
+  String get importExcel;
+
+  /// No description provided for @importDownloadTemplateFirst.
+  ///
+  /// In uz, this message translates to:
+  /// **'Avval shablonni yuklang'**
+  String get importDownloadTemplateFirst;
+
+  /// No description provided for @importFillInFormat.
+  ///
+  /// In uz, this message translates to:
+  /// **'Excelni to\'g\'ri ustunlarda to\'ldiring'**
+  String get importFillInFormat;
+
+  /// No description provided for @importDownloadTemplate.
+  ///
+  /// In uz, this message translates to:
+  /// **'Shablon yuklab olish'**
+  String get importDownloadTemplate;
+
+  /// No description provided for @importSelectFile.
+  ///
+  /// In uz, this message translates to:
+  /// **'Excel fayl tanlash'**
+  String get importSelectFile;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In uz, this message translates to:
+  /// **'Import muvaffaqiyatli!'**
+  String get importSuccess;
+
+  /// No description provided for @importSaved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Saqlandi'**
+  String get importSaved;
+
+  /// No description provided for @importCountProducts.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta tovar'**
+  String importCountProducts(int count);
+
+  /// No description provided for @importSkipped.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'tkazib yuborildi'**
+  String get importSkipped;
+
+  /// No description provided for @importCountItems.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta'**
+  String importCountItems(int count);
+
+  /// No description provided for @importNewCategory.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi kategoriya'**
+  String get importNewCategory;
+
+  /// No description provided for @importColumnGuide.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ustunlar tartibi (1-qator sarlavha)'**
+  String get importColumnGuide;
+
+  /// No description provided for @importUnitHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Birlik (dona/kg/m)'**
+  String get importUnitHint;
+
+  /// No description provided for @importRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'*majburiy'**
+  String get importRequired;
+
+  /// No description provided for @importFileEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Fayl bo\'sh yoki format noto\'g\'ri. Shablonni ko\'ring.'**
+  String get importFileEmpty;
+
+  /// No description provided for @importSavingLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Saqlanmoqda...'**
+  String get importSavingLabel;
+
+  /// No description provided for @importConfirmButton.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tasdiqlash ({count} ta)'**
+  String importConfirmButton(int count);
+
+  /// No description provided for @importAllErrors.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hamma qatorda xato'**
+  String get importAllErrors;
+
+  /// No description provided for @importClose.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yopish'**
+  String get importClose;
+
+  /// No description provided for @importRowsAnalyzed.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta qator tahlil qilindi'**
+  String importRowsAnalyzed(int count);
+
+  /// No description provided for @importTemplateFileName.
+  ///
+  /// In uz, this message translates to:
+  /// **'mahsulotlar_shablon.xlsx'**
+  String get importTemplateFileName;
 }
 
 class _AppLocalizationsDelegate

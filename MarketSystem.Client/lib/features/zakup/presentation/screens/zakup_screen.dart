@@ -213,7 +213,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
               ? FloatingActionButton.extended(
                   onPressed: () => _openAddSheet(context),
                   backgroundColor: context.colors.brand,
-                  foregroundColor: Colors.white,
+                  foregroundColor: context.colors.onBrand,
                   elevation: 2,
                   icon: const Icon(Icons.add_rounded),
                   label: Text(

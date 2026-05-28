@@ -42,10 +42,13 @@ public class ProductService : IProductService
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         // P3 — list-then-map path; same reasoning as GetProductByIdAsync.
+        // Hard cap at 5000 to prevent OOM on large markets; callers needing
+        // unbounded access should use GetAllProductsPagedAsync instead.
         var products = await _context.Products
             .AsNoTracking()
             .Include(p => p.Category)
             .Where(p => p.MarketId == marketId)
+            .Take(5000)
             .ToListAsync(cancellationToken);
 
         return products.Select(MapToDto);

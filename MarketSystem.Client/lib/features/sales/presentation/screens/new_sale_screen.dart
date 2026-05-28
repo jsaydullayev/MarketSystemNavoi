@@ -506,7 +506,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: context.colors.brand,
-              foregroundColor: Colors.white,
+              foregroundColor: context.colors.onBrand,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(

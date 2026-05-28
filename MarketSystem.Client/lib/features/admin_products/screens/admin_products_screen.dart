@@ -348,7 +348,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: context.colors.brand,
-          foregroundColor: Colors.white,
+          foregroundColor: context.colors.onBrand,
           elevation: 4,
           onPressed: () => _openForm(),
           child: const Icon(Icons.add_rounded, size: 28),

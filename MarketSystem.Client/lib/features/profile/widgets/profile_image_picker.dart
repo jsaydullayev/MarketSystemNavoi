@@ -99,7 +99,8 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
   }
 
   Widget _buildDefaultPlaceholder(dynamic user) {
-    final initial = (user?['fullName'] ?? 'U')[0].toUpperCase();
+    final fullName = (user?['fullName'] as String?) ?? '';
+    final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
     return Container(
       color: context.colors.brandLight,
       alignment: Alignment.center,

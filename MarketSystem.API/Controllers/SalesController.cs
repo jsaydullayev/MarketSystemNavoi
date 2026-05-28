@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.API.Authorization;
@@ -55,12 +56,19 @@ public class SalesController : ControllerBase
 
     [HttpGet("by-date")]
     [RequirePermission(PermissionKeys.SalesAccess)]
-    public async Task<ActionResult<IEnumerable<SaleDto>>> GetSalesByDateRange([FromQuery] DateTime start, [FromQuery] DateTime end, CancellationToken ct = default)
+    public async Task<ActionResult<IEnumerable<SaleDto>>> GetSalesByDateRange(
+        [FromQuery] DateTime start,
+        [FromQuery] DateTime end,
+        CancellationToken ct = default)
     {
         if (start > end)
             return BadRequest(new { message = "Start date must be before end date" });
 
-        var sales = await _saleService.GetSalesByDateRangeAsync(start, end);
+        // Max 90 kun — kattaroq oraliq OOM xavfi tug'diradi
+        if ((end - start).TotalDays > 90)
+            return BadRequest(new { message = "Sana oralig'i 90 kundan oshmasligi kerak." });
+
+        var sales = await _saleService.GetSalesByDateRangeAsync(start, end, ct);
         return Ok(sales);
     }
 
@@ -350,6 +358,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.SalesExport)]
     public async Task<IActionResult> ExportSalesToExcel(
         [FromQuery] string lang = "uz",
@@ -410,6 +419,7 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("export-pdf")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.SalesExport)]
     public async Task<IActionResult> ExportSalesToPdf([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string lang = "uz", CancellationToken ct = default)
     {

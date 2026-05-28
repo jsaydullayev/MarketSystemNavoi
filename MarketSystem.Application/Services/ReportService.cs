@@ -229,11 +229,25 @@ public partial class ReportService : IReportService
             z => z.CreatedAt >= start && z.CreatedAt < end && z.MarketId == marketId,
             cancellationToken);
 
-        // Get all products for inventory report (filtered by market) with Category
-        var products = await _unitOfWork.Products.FindAsync(
-            p => p.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "Category");
+        // P6 — Projection o'rniga to'liq entity yuklash:
+        // 10K tovar × ~20 ustun + Category navigation = ~100MB memory.
+        // Select projection faqat kerakli 7 ustunni oladi → ~15MB.
+        var productProjections = await _context.Products
+            .AsNoTracking()
+            .Where(p => p.MarketId == marketId)
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Quantity,
+                p.MinThreshold,
+                p.CostPrice,
+                p.SalePrice,
+                p.MinSalePrice,
+                p.Unit,
+                CategoryName = p.Category != null ? p.Category.Name : (string?)null,
+            })
+            .ToListAsync(cancellationToken);
 
         // Calculate daily report
         var dailyReport = CalculateReport(sales, zakups, start, end);
@@ -273,7 +287,7 @@ public partial class ReportService : IReportService
                         user.Id,
                         user.FullName,
                         totalSales,
-                        totalProfit,  // Already filtered since this is only called when userRole == Role.Owner.ToString()
+                        totalProfit,
                         userSales.Count
                     ));
                 }
@@ -289,11 +303,11 @@ public partial class ReportService : IReportService
         bool includeProfit = userRole == Role.Owner.ToString();
 
         // Calculate inventory statistics
-        int productCount = products.Count();
-        int lowStockCount = products.Count(p => p.Quantity < 10 && p.Quantity > 0);
-        int outOfStockCount = products.Count(p => p.Quantity <= 0);
+        int productCount = productProjections.Count;
+        int lowStockCount = productProjections.Count(p => p.Quantity <= p.MinThreshold && p.Quantity > 0);
+        int outOfStockCount = productProjections.Count(p => p.Quantity <= 0);
 
-        foreach (var product in products)
+        foreach (var product in productProjections)
         {
             var totalCostValue = product.Quantity * product.CostPrice;
             var totalSaleValue = product.Quantity * product.SalePrice;
@@ -301,6 +315,13 @@ public partial class ReportService : IReportService
 
             totalInventoryCost += totalCostValue;
             totalInventorySaleValue += totalSaleValue;
+
+            var unitName = product.Unit switch
+            {
+                UnitType.Kilogram => "kg",
+                UnitType.Meter    => "m",
+                _                 => "dona",
+            };
 
             inventoryReport.Add(new InventoryReportDto(
                 product.Id,
@@ -312,8 +333,8 @@ public partial class ReportService : IReportService
                 totalCostValue,
                 totalSaleValue,
                 potentialProfit,
-                product.Category?.Name,
-                product.GetUnitName()
+                product.CategoryName,
+                unitName
             ));
         }
 

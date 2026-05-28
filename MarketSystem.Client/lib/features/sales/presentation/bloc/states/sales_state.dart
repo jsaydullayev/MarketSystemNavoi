@@ -25,11 +25,24 @@ class SalesLoading extends SalesState {
 /// Sales loaded state
 class SalesLoaded extends SalesState {
   final List<SaleEntity> sales;
+  final bool hasMore;
+  final int currentPage;
 
-  const SalesLoaded(this.sales);
+  const SalesLoaded(this.sales, {this.hasMore = false, this.currentPage = 1});
 
   @override
-  List<Object?> get props => [sales];
+  List<Object?> get props => [sales, hasMore, currentPage];
+}
+
+/// Loading more sales (next page) — keeps existing list visible
+class SalesLoadingMore extends SalesState {
+  final List<SaleEntity> sales;
+  final int currentPage;
+
+  const SalesLoadingMore(this.sales, {required this.currentPage});
+
+  @override
+  List<Object?> get props => [sales, currentPage];
 }
 
 /// My draft sales loaded state

@@ -379,7 +379,7 @@ class _EmptyView extends StatelessWidget {
               label: Text(l10n.addCategory),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.brand,
-                foregroundColor: Colors.white,
+                foregroundColor: context.colors.onBrand,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl3,
                   vertical: AppSpacing.lg,
@@ -443,7 +443,7 @@ class _ErrorView extends StatelessWidget {
               label: Text(l10n.loading),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.brand,
-                foregroundColor: Colors.white,
+                foregroundColor: context.colors.onBrand,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl3,
                   vertical: AppSpacing.lg,

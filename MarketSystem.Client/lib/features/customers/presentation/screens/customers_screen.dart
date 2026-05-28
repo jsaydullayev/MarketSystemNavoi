@@ -191,7 +191,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
           floatingActionButton: FloatingActionButton(
             onPressed: _openAddSheet,
             backgroundColor: context.colors.brand,
-            foregroundColor: Colors.white,
+            foregroundColor: context.colors.onBrand,
             elevation: 4,
             child: const Icon(Icons.add, size: 28),
           ),
@@ -486,13 +486,14 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             ElevatedButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              icon: Icon(Icons.refresh_rounded, color: context.colors.onBrand),
               label: Text(
                 l10n.retry,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: context.colors.onBrand),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.brand,
+                foregroundColor: context.colors.onBrand,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl3,
                   vertical: AppSpacing.lg,

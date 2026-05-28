@@ -3,6 +3,7 @@
 
 import '../../../../core/failure/api_result.dart';
 import '../../domain/entities/sale_entity.dart';
+import '../../domain/entities/sale_page_result.dart';
 import '../../domain/repositories/sale_repository_interface.dart';
 import '../datasources/sale_remote_data_source.dart';
 
@@ -16,14 +17,33 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
   Future<ApiResult<List<SaleEntity>>> getAllSales() async {
     try {
       final data = await remoteDataSource.getAllSales();
-
       final sales = data
-          .map(
-            (saleJson) => SaleEntity.fromJson(saleJson as Map<String, dynamic>),
-          )
+          .map((j) => SaleEntity.fromJson(j as Map<String, dynamic>))
           .toList();
-
       return ApiResult.success(sales);
+    } catch (e) {
+      return ApiResult.failure('Sotuvlarni yuklashda xatolik: $e');
+    }
+  }
+
+  @override
+  Future<ApiResult<SalePageResult>> getPagedSales({
+    int page = 1,
+    int size = 50,
+  }) async {
+    try {
+      final raw = await remoteDataSource.getSalesPaged(page: page, size: size);
+      final items = raw.items
+          .map((j) => SaleEntity.fromJson(j as Map<String, dynamic>))
+          .toList();
+      return ApiResult.success(
+        SalePageResult(
+          items: items,
+          currentPage: raw.currentPage,
+          totalPages: raw.totalPages,
+          total: raw.total,
+        ),
+      );
     } catch (e) {
       return ApiResult.failure('Sotuvlarni yuklashda xatolik: $e');
     }

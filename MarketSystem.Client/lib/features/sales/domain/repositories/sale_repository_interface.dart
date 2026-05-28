@@ -3,12 +3,16 @@
 
 import '../../../../core/failure/api_result.dart';
 import '../entities/sale_entity.dart';
+import '../entities/sale_page_result.dart';
 
 /// Sale Repository Interface
 /// Data layer implementation qilishi kerak bo'lgan metodlar
 abstract class SaleRepositoryInterface {
-  /// Barcha sotuvlarni olish
+  /// Barcha sotuvlarni olish (backward compat)
   Future<ApiResult<List<SaleEntity>>> getAllSales();
+
+  /// Paginated sotuvlarni olish
+  Future<ApiResult<SalePageResult>> getPagedSales({int page = 1, int size = 50});
 
   /// Sotuvni tafsilotlari bilan olish
   Future<ApiResult<Map<String, dynamic>>> getSaleDetail(String saleId);

@@ -14,6 +14,7 @@ class Permissions {
   static const productsEdit = 'products.edit';
   static const productsDelete = 'products.delete';
   static const productsExport = 'products.export';
+  static const productsImport = 'products.import';
 
   static const categoriesAccess = 'categories.access';
   static const categoriesManage = 'categories.manage';

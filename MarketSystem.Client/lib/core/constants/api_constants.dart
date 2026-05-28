@@ -72,6 +72,12 @@ class ApiConstants {
   static const String productsExportExcel =
       '$products/ExportProductsToExcel/export';
 
+  // Products — Import (dry-run va haqiqiy)
+  static const String productsImportPreview =
+      '$products/ImportPreview/import/preview';
+  static const String productsImportConfirm =
+      '$products/ImportConfirm/import/confirm';
+
   // Categories — Excel export lives on the ProductCategories controller.
   static const String productCategoriesExportExcel =
       '$productCategories/ExportCategoriesToExcel';

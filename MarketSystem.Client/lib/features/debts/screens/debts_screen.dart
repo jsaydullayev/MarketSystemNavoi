@@ -201,16 +201,23 @@ class _DebtsScreenState extends State<DebtsScreen> {
                           customerDebts: customerDebts,
                           totalDebt: totalDebt,
                           remainingDebt: remainingDebt,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DebtDetailsScreen(
-                                debt: customerDebts.first,
-                                customerName: customerName,
+                          onTap: () {
+                            final debt = customerDebts.firstOrNull;
+                            if (debt == null) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DebtDetailsScreen(
+                                  debt: debt,
+                                  customerName: customerName,
+                                ),
                               ),
-                            ),
-                          ),
-                          onPay: () => _openPaySheet(customerDebts.first, l10n),
+                            );
+                          },
+                          onPay: () {
+                            final debt = customerDebts.firstOrNull;
+                            if (debt != null) _openPaySheet(debt, l10n);
+                          },
                         );
                       },
                     ),

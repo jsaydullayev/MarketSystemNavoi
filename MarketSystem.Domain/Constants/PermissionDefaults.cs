@@ -26,7 +26,8 @@ public static class PermissionDefaults
     public static readonly IReadOnlyList<string> Admin = PermissionKeys.All
         .Where(k => k != PermissionKeys.DataProfit
                  && k != PermissionKeys.DataCashBalance
-                 && k != PermissionKeys.DataAuditLog)
+                 && k != PermissionKeys.DataAuditLog
+                 && k != PermissionKeys.ProductsImport)
         .ToArray();
 
     /// <summary>Seller = view access + create-sale + customer create/edit +

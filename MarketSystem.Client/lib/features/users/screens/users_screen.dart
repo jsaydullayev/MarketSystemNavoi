@@ -243,7 +243,7 @@ class _UsersScreenState extends State<UsersScreen> {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => AddUserSheet.show(context),
           backgroundColor: context.colors.brand,
-          foregroundColor: Colors.white,
+          foregroundColor: context.colors.onBrand,
           icon: const Icon(Icons.person_add_rounded),
           label: Text(
             l10n.newUser,

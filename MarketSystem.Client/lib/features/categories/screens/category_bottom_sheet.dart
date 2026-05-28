@@ -410,7 +410,7 @@ class _CustomEmojiField extends StatelessWidget {
             onPressed: onApply,
             style: ElevatedButton.styleFrom(
               backgroundColor: context.colors.brand,
-              foregroundColor: Colors.white,
+              foregroundColor: context.colors.onBrand,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md + 2),

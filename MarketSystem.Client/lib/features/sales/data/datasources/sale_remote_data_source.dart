@@ -11,9 +11,15 @@ class SaleRemoteDataSource {
   const SaleRemoteDataSource({required SalesService salesService})
     : _salesService = salesService;
 
-  /// Barcha sotuvlarni olish
+  /// Barcha sotuvlarni olish (backward compat, faqat birinchi sahifa)
   Future<List<dynamic>> getAllSales() async {
     return _salesService.getAllSales();
+  }
+
+  /// Paged sotuvlarni olish
+  Future<({List<dynamic> items, int currentPage, int totalPages, int total})>
+  getSalesPaged({int page = 1, int size = 50}) async {
+    return _salesService.getSalesPaged(page: page, size: size);
   }
 
   /// Sotuvni ID bo'yicha olish

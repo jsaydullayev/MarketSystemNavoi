@@ -154,15 +154,15 @@ public class TenantResolutionMiddleware
             }
         }
 
-        // MarketId topilmadi - 401 Unauthorized qaytarish
+        // MarketId topilmadi — user authenticated lekin market ga ruxsat yo'q → 403
         _logger.LogWarning("MarketId not found for user {User}, path {Path}",
             context.User?.Identity?.Name, context.Request.Path);
 
-        context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsJsonAsync(new
         {
-            error = "Unauthorized",
+            error = "Forbidden",
             message = "Market topilmadi. Iltimos, tizimga qaytadan kiring yoki administrator bilan bog'laning."
         });
     }

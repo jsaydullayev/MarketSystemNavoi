@@ -14,28 +14,46 @@ class SalesService {
     _httpService = HttpService();
   }
 
-  // Barcha sotuvlarni olish.
-  // The API returns a paginated wrapper `{ items: [...], page, size, total, totalPages }`.
-  // We accept both shapes (bare list or wrapped) so older deployments don't break.
-  Future<List<dynamic>> getAllSales() async {
-    final response = await _httpService.get(ApiConstants.sales);
+  // Paged sotuvlar.
+  // Backend: GET /api/Sales?page=N&size=M → { items, page, size, total, totalPages }
+  Future<({List<dynamic> items, int currentPage, int totalPages, int total})>
+  getSalesPaged({int page = 1, int size = 50}) async {
+    final response = await _httpService.get(
+      '${ApiConstants.sales}?page=$page&size=$size',
+    );
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
-        return [];
+        return (items: <dynamic>[], currentPage: page, totalPages: 1, total: 0);
       }
       final data = jsonDecode(response.body);
-      if (data is List) return List<dynamic>.from(data);
-      if (data is Map && data['items'] is List) {
-        return List<dynamic>.from(data['items']);
+      if (data is Map) {
+        final items = data['items'] is List
+            ? List<dynamic>.from(data['items'] as List)
+            : <dynamic>[];
+        return (
+          items: items,
+          currentPage: (data['page'] as num?)?.toInt() ?? page,
+          totalPages: (data['totalPages'] as num?)?.toInt() ?? 1,
+          total: (data['total'] as num?)?.toInt() ?? items.length,
+        );
       }
-      return [];
+      if (data is List) {
+        return (items: List<dynamic>.from(data), currentPage: 1, totalPages: 1, total: data.length);
+      }
+      return (items: <dynamic>[], currentPage: page, totalPages: 1, total: 0);
     } else {
       throw ApiException.fromResponse(
         response,
         fallbackMessage: 'Failed to load sales',
       );
     }
+  }
+
+  // Backward-compat: barcha sotuvlarni olish (birinchi sahifa, size=50)
+  Future<List<dynamic>> getAllSales() async {
+    final result = await getSalesPaged(page: 1, size: 50);
+    return result.items;
   }
 
   // Sotuvni ID bo'yicha olish

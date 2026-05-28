@@ -315,7 +315,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
               icon: const Icon(Icons.person_add_outlined),
               label: Text(l10n.newOwner),
               backgroundColor: context.colors.brand,
-              foregroundColor: Colors.white,
+              foregroundColor: context.colors.onBrand,
               elevation: 2,
             )
           : null,

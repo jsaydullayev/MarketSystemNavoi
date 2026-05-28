@@ -169,6 +169,16 @@ public class AppDbContext : DbContext, IAppDbContext
                 .IsUnique()
                 .HasFilter("\"IsDeleted\" = false")
                 .HasDatabaseName("IX_Products_MarketId_Name_Active");
+
+            // P5 — low-stock scan: faqat Quantity <= MinThreshold bo'lgan qatorlar.
+            // GetLowStockProductsAsync uchun — butun market scan o'rniga kichik
+            // partial index ishlatiladi (odatda 1-5% tovarlar low-stock bo'ladi).
+            // Eslatma: pagination uchun alohida index kerak emas — mavjud
+            // IX_Products_MarketId_Name_Active (MarketId, Name) composite unique
+            // index ORDER BY Name so'rovlari uchun ham ishlatiladi.
+            b.HasIndex(x => x.MarketId)
+                .HasFilter("\"Quantity\" <= \"MinThreshold\" AND \"IsDeleted\" = false")
+                .HasDatabaseName("IX_Products_LowStock");
         });
 
         // ✅ Configure ProductCategory

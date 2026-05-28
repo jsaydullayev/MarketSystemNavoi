@@ -11,9 +11,14 @@ abstract class SalesEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Get all sales event
+/// Get all sales event (page=1 reset)
 class GetSalesEvent extends SalesEvent {
   const GetSalesEvent();
+}
+
+/// Load next page of sales
+class LoadMoreSalesEvent extends SalesEvent {
+  const LoadMoreSalesEvent();
 }
 
 /// Get my draft sales event

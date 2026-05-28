@@ -2747,4 +2747,76 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get securityJournalEntityTypes => 'Объекты';
+
+  @override
+  String get importExcel => 'Импорт Excel';
+
+  @override
+  String get importDownloadTemplateFirst => 'Сначала скачайте шаблон';
+
+  @override
+  String get importFillInFormat => 'Заполните Excel в правильном формате';
+
+  @override
+  String get importDownloadTemplate => 'Скачать шаблон';
+
+  @override
+  String get importSelectFile => 'Выбрать файл Excel';
+
+  @override
+  String get importSuccess => 'Импорт выполнен!';
+
+  @override
+  String get importSaved => 'Сохранено';
+
+  @override
+  String importCountProducts(int count) {
+    return '$count товаров';
+  }
+
+  @override
+  String get importSkipped => 'Пропущено';
+
+  @override
+  String importCountItems(int count) {
+    return '$count шт';
+  }
+
+  @override
+  String get importNewCategory => 'Новая категория';
+
+  @override
+  String get importColumnGuide => 'Порядок столбцов (1-я строка — заголовок)';
+
+  @override
+  String get importUnitHint => 'Ед. изм. (шт/кг/м)';
+
+  @override
+  String get importRequired => '*обязательно';
+
+  @override
+  String get importFileEmpty =>
+      'Файл пуст или неверный формат. Смотрите шаблон.';
+
+  @override
+  String get importSavingLabel => 'Сохраняется...';
+
+  @override
+  String importConfirmButton(int count) {
+    return 'Подтвердить ($count шт)';
+  }
+
+  @override
+  String get importAllErrors => 'Все строки содержат ошибки';
+
+  @override
+  String get importClose => 'Закрыть';
+
+  @override
+  String importRowsAnalyzed(int count) {
+    return 'Проанализировано $count строк';
+  }
+
+  @override
+  String get importTemplateFileName => 'shablon_tovary.xlsx';
 }

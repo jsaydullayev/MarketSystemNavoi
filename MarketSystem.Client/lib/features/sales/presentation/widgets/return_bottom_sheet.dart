@@ -132,6 +132,7 @@ void showReturnBottomSheet(
   String selectedReason = l10n.returnReasonBad;
   String selectedMethod = 'cash';
 
+  // ignore: unawaited_futures — dispose when sheet closes
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -372,7 +373,10 @@ void showReturnBottomSheet(
         );
       },
     ),
-  );
+  ).then((_) {
+    quantityController.dispose();
+    commentController.dispose();
+  });
 }
 
 Widget _warningBanner(BuildContext context, String message) {

@@ -176,7 +176,7 @@ try
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuerSigningKey = true,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero,
+                ClockSkew = TimeSpan.FromSeconds(30),
                 RoleClaimType = ClaimTypes.Role,
                 NameClaimType = ClaimTypes.Name
             };
@@ -364,6 +364,19 @@ try
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
+
+        // Export endpoints — Excel/PDF generation is CPU/memory intensive.
+        // 10 exports/min per IP stops loop-abuse while allowing normal usage.
+        options.AddPolicy("export", ctx => System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            PartitionKey(ctx),
+            _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 2,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
     });
     // CORS origins — accepts:
     //   appsettings.json: "Cors:AllowedOrigins": ["https://a", "https://b"]
@@ -492,6 +505,7 @@ try
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+    builder.Services.AddScoped<IProductImportService, ProductImportService>();
     builder.Services.AddScoped<ICustomerService, CustomerService>();
     builder.Services.AddScoped<ISaleService, SaleService>();
     builder.Services.AddScoped<IZakupService, ZakupService>();
