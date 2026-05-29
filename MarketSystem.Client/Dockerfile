@@ -24,8 +24,16 @@ RUN flutter pub get
 #    Build context here is minimal thanks to .dockerignore
 COPY . .
 
+# Build-time deployment knob: the hidden SuperAdmin console URL segment.
+# Compiled into the bundle via --dart-define (NOT a secret — see AppConfig).
+# MUST match the backend's SuperAdmin:ConsoleSegment, else every console
+# call 404s and the SPA shows "Konsol sozlanmagan". Passed from compose
+# (build.args) which reads it from the .env SuperAdmin__ConsoleSegment.
+ARG SUPERADMIN_CONSOLE_SEGMENT=""
+
 # 4) Build the web app (release mode)
-RUN flutter build web --release --no-tree-shake-icons
+RUN flutter build web --release --no-tree-shake-icons \
+    --dart-define=SUPERADMIN_CONSOLE_SEGMENT=${SUPERADMIN_CONSOLE_SEGMENT}
 
 # ---- Runtime stage ----
 FROM nginx:alpine AS runtime

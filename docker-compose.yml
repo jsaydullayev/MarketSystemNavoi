@@ -88,6 +88,10 @@ services:
     build:
       context: ./MarketSystem.Client
       dockerfile: Dockerfile
+      args:
+        # Baked into the Flutter bundle at build time. Must match the API's
+        # SuperAdmin__ConsoleSegment or the hidden console 404s. Not a secret.
+        SUPERADMIN_CONSOLE_SEGMENT: ${SuperAdmin__ConsoleSegment:-}
     container_name: market-system-client
     ports:
       - "127.0.0.1:8081:80"
