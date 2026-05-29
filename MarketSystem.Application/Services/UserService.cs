@@ -244,12 +244,16 @@ public class UserService : IUserService
         if (user is null)
             return false;
 
-        // Defence in depth: SuperAdmin accounts are cross-tenant (MarketId=null)
-        // so the marketId filter above already excludes them, but if a future
-        // bug ever assigns a SuperAdmin to a market, we refuse to delete them
-        // through the regular Users endpoint. The SuperAdmin lifecycle goes
-        // through the bootstrap seeder only.
-        if (user.Role == Role.SuperAdmin)
+        // Defence in depth: neither a SuperAdmin nor an Owner may be removed
+        // through the regular Users endpoint.
+        //  • SuperAdmin is cross-tenant (MarketId=null) so the filter above
+        //    already excludes them; the guard stays as belt-and-braces.
+        //  • Owner is the market's top-level account. An Admin (who also holds
+        //    UsersManage) is in the same tenant and would otherwise pass the
+        //    marketId filter and delete their own Owner — a privilege
+        //    escalation. The Owner lifecycle is owned by the SuperAdmin console
+        //    (SuperAdminController), never by an in-market Admin.
+        if (user.Role is Role.SuperAdmin or Role.Owner)
             return false;
 
         // Soft-delete — mirrors the SuperAdmin owner-delete flow and preserves
@@ -276,7 +280,9 @@ public class UserService : IUserService
         if (user is null)
             return false;
 
-        if (user.Role == Role.SuperAdmin)
+        // An Admin must never deactivate the market's Owner (or a SuperAdmin).
+        // Owner lifecycle belongs to the SuperAdmin console only.
+        if (user.Role is Role.SuperAdmin or Role.Owner)
             return false;
 
         user.IsActive = false;
@@ -297,7 +303,9 @@ public class UserService : IUserService
         if (user is null)
             return false;
 
-        if (user.Role == Role.SuperAdmin)
+        // Symmetric with deactivate/delete: an Admin can't flip an Owner's
+        // (or SuperAdmin's) active state. Owner lifecycle = SuperAdmin console.
+        if (user.Role is Role.SuperAdmin or Role.Owner)
             return false;
 
         user.IsActive = true;

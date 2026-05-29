@@ -127,7 +127,18 @@ public class GlobalExceptionHandlerMiddleware
                     "23514" => (int)HttpStatusCode.BadRequest,
                     _ => (int)HttpStatusCode.ServiceUnavailable
                 };
-                _logger.LogError(postgresEx, "PostgreSQL error: SqlState={SqlState}", postgresEx.SqlState);
+                // Log the table/column/message too — an unmapped SqlState
+                // (→ 503) is almost always schema drift (42703 undefined_column
+                // / 42P01 undefined_table). Without these fields the next drift
+                // incident means trawling a full stack trace; with them it's
+                // one line ("column p.CategoryId does not exist", table=Products).
+                _logger.LogError(
+                    postgresEx,
+                    "PostgreSQL error: SqlState={SqlState} Message={Message} Table={Table} Column={Column}",
+                    postgresEx.SqlState,
+                    postgresEx.MessageText,
+                    postgresEx.TableName,
+                    postgresEx.ColumnName);
                 response.Message = postgresEx.SqlState switch
                 {
                     "23505" => "Bu ma'lumot allaqachon mavjud.",
