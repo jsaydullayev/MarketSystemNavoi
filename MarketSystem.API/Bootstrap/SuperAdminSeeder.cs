@@ -25,10 +25,15 @@ public static class SuperAdminSeeder
         using var scope = services.CreateScope();
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-        var username = config["SuperAdmin:Username"]
-            ?? Environment.GetEnvironmentVariable("SUPERADMIN_USERNAME");
-        var password = config["SuperAdmin:Password"]
-            ?? Environment.GetEnvironmentVariable("SUPERADMIN_PASSWORD");
+        var cfgUser = config["SuperAdmin:Username"];
+        var username = string.IsNullOrWhiteSpace(cfgUser)
+            ? Environment.GetEnvironmentVariable("SUPERADMIN_USERNAME")
+            : cfgUser;
+
+        var cfgPass = config["SuperAdmin:Password"];
+        var password = string.IsNullOrWhiteSpace(cfgPass)
+            ? Environment.GetEnvironmentVariable("SUPERADMIN_PASSWORD")
+            : cfgPass;
 
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
