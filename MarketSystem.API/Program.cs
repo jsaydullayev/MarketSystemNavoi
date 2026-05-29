@@ -148,17 +148,6 @@ try
         options.Preload = false;
     });
 
-    // Redirect HTTP -> HTTPS. nginx already does 301 at the edge; this is
-    // a defence-in-depth net so Kestrel never serves a sensitive response
-    // over plain HTTP if nginx is misconfigured or bypassed.
-    // HttpsPort MUST be set (443 = the public-facing port nginx terminates
-    // TLS on) — otherwise UseHttpsRedirection silently no-ops, which would
-    // make the "defence in depth" claim a lie.
-    builder.Services.AddHttpsRedirection(options =>
-    {
-        options.RedirectStatusCode = StatusCodes.Status308PermanentRedirect;
-        options.HttpsPort = 443;
-    });
 
 
     // Add JWT Authentication
@@ -620,13 +609,13 @@ try
         // set — only opt in once the operator has confirmed every subdomain
         // can serve HTTPS.
         app.UseHsts();
-        // /health is excluded because the Docker HEALTHCHECK calls
-        // http://localhost:8080/health from inside the container with no
-        // X-Forwarded-Proto. Redirecting it to https://...:443/health would
-        // either fail (no local TLS endpoint) or break the healthcheck loop.
-        app.UseWhen(
-            ctx => !ctx.Request.Path.StartsWithSegments("/health"),
-            branch => branch.UseHttpsRedirection());
+        // NOTE: UseHttpsRedirection is intentionally disabled here.
+        // The API is bound to 127.0.0.1:8080 inside Docker and is never
+        // directly reachable from the internet — nginx terminates TLS and
+        // proxies plain HTTP to Kestrel. Adding a second HTTP→HTTPS redirect
+        // at the .NET layer causes a 308 loop because Kestrel sees HTTP
+        // (not HTTPS) regardless of X-Forwarded-Proto processing.
+        // nginx already handles the HTTP→HTTPS redirect at the edge.
     }
     app.UseSerilogRequestLogging();
     app.UseMiddleware<RequestLoggingMiddleware>();
