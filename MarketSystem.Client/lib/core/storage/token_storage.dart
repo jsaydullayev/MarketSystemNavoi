@@ -55,6 +55,69 @@ class TokenStorage {
 
   bool _migrated = false;
 
+  /// Flutter Web's flutter_secure_storage encrypts via the Web Crypto API
+  /// (`window.crypto.subtle`), which the browser ONLY exposes in a *secure
+  /// context* — HTTPS or http://localhost. Served over plain HTTP on a bare
+  /// IP (e.g. http://158.220.123.53 before the domain's TLS is wired up),
+  /// crypto.subtle is undefined and every secure-storage call throws. That
+  /// previously bubbled up through saveTokens() into AuthService.login()'s
+  /// catch block and surfaced as the misleading "Tarmoq xatosi" — even
+  /// though the login API itself returned 200.
+  ///
+  /// When that happens we flip this flag and fall back to plain
+  /// SharedPreferences so the app stays usable. Tokens are then NOT encrypted
+  /// at rest — an explicit, logged trade-off for HTTP/IP deployments that
+  /// self-corrects the moment the app is served over HTTPS or localhost.
+  bool _secureUnavailable = false;
+
+  // ── Fallback-aware primitives ────────────────────────────────────
+  // Each tries secure storage first; on the first failure it latches
+  // _secureUnavailable and routes to SharedPreferences from then on.
+
+  Future<void> _write(String key, String value) async {
+    if (!_secureUnavailable) {
+      try {
+        await _secure.write(key: key, value: value);
+        return;
+      } catch (e) {
+        debugPrint('TokenStorage: secure write failed ($e) — '
+            'falling back to SharedPreferences.');
+        _secureUnavailable = true;
+      }
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
+
+  Future<String?> _read(String key) async {
+    if (!_secureUnavailable) {
+      try {
+        final v = await _secure.read(key: key);
+        if (v != null) return v;
+      } catch (e) {
+        debugPrint('TokenStorage: secure read failed ($e) — '
+            'falling back to SharedPreferences.');
+        _secureUnavailable = true;
+      }
+    }
+    // Secure store was empty OR unavailable — check the fallback location too,
+    // so a token written during a non-secure session is still found.
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key);
+  }
+
+  Future<void> _delete(String key) async {
+    if (!_secureUnavailable) {
+      try {
+        await _secure.delete(key: key);
+      } catch (e) {
+        _secureUnavailable = true;
+      }
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
+  }
+
   /// Run the SharedPreferences → secure-storage migration if it hasn't
   /// happened already in this process. Safe to call on every read; the
   /// `_migrated` guard short-circuits after the first execution.
@@ -99,23 +162,23 @@ class TokenStorage {
     required String refreshToken,
   }) async {
     await _migrateIfNeeded();
-    await _secure.write(key: _accessKey, value: accessToken);
-    await _secure.write(key: _refreshKey, value: refreshToken);
+    await _write(_accessKey, accessToken);
+    await _write(_refreshKey, refreshToken);
   }
 
   Future<String?> readAccess() async {
     await _migrateIfNeeded();
-    return _secure.read(key: _accessKey);
+    return _read(_accessKey);
   }
 
   Future<String?> readRefresh() async {
     await _migrateIfNeeded();
-    return _secure.read(key: _refreshKey);
+    return _read(_refreshKey);
   }
 
   Future<void> clear() async {
     await _migrateIfNeeded();
-    await _secure.delete(key: _accessKey);
-    await _secure.delete(key: _refreshKey);
+    await _delete(_accessKey);
+    await _delete(_refreshKey);
   }
 }
