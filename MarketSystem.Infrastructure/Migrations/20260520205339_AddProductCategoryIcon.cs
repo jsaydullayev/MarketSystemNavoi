@@ -10,20 +10,21 @@ namespace MarketSystem.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "Icon",
-                table: "ProductCategories",
-                type: "character varying(32)",
-                maxLength: 32,
-                nullable: true);
+            // Safe for fresh databases: ProductCategories may not exist yet
+            // (it is created with Icon already present by CompensateMissingColumns).
+            migrationBuilder.Sql(@"
+                ALTER TABLE IF EXISTS ""ProductCategories""
+                    ADD COLUMN IF NOT EXISTS ""Icon"" character varying(32);
+            ");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Icon",
-                table: "ProductCategories");
+            migrationBuilder.Sql(@"
+                ALTER TABLE IF EXISTS ""ProductCategories""
+                    DROP COLUMN IF EXISTS ""Icon"";
+            ");
         }
     }
 }
