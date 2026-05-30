@@ -8,13 +8,13 @@
 // - Brand-orange floating action chip with camera icon
 // - Bottom sheet with two options: Galereya / Kamera (driven by image_picker)
 
-import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/widgets/base64_image.dart';
 import '../../../data/services/user_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
@@ -81,19 +81,29 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
 
   Widget _buildSmartImage(String imageStr) {
     if (imageStr.startsWith('http')) {
-      return CachedNetworkImage(imageUrl: imageStr, fit: BoxFit.cover);
+      // memCache* decodes the network avatar at the 120px display size
+      // instead of full resolution.
+      return CachedNetworkImage(
+        imageUrl: imageStr,
+        fit: BoxFit.cover,
+        memCacheWidth: 240,
+        memCacheHeight: 240,
+      );
     } else if (imageStr.startsWith('data:image') || imageStr.length > 100) {
-      try {
-        final base64Str = imageStr.contains(',')
-            ? imageStr.split(',').last
-            : imageStr;
-        return Image.memory(base64Decode(base64Str), fit: BoxFit.cover);
-      } catch (_) {
-        return Icon(
+      final base64Str = imageStr.contains(',')
+          ? imageStr.split(',').last
+          : imageStr;
+      // Base64Image decodes once + caches (was decoding on every rebuild,
+      // including unrelated AuthProvider notifications).
+      return Base64Image(
+        data: base64Str,
+        cacheWidth: 240,
+        cacheHeight: 240,
+        errorWidget: Icon(
           Icons.broken_image_outlined,
           color: context.colors.textMuted,
-        );
-      }
+        ),
+      );
     }
     return Icon(Icons.person_outline, color: context.colors.textMuted);
   }
@@ -211,9 +221,13 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     final messenger = ScaffoldMessenger.of(context);
 
     final ImagePicker picker = ImagePicker();
+    // Downscale at capture so a 12MP phone photo doesn't become a multi-MB
+    // upload that then has to be base64-decoded everywhere it's shown.
     final XFile? image = await picker.pickImage(
       source: source,
       imageQuality: 50,
+      maxWidth: 1024,
+      maxHeight: 1024,
     );
 
     if (image == null) return;

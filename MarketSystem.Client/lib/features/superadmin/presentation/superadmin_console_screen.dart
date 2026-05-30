@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/session_actions.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../design/tokens/app_theme_colors.dart';
@@ -63,7 +64,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
     if (!auth.isAuthenticated || role != 'SuperAdmin') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+        SessionActions.redirectToLogin();
       });
       return;
     }
@@ -201,9 +202,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
   }
 
   Future<void> _forceLogout() async {
-    await context.read<AuthProvider>().logout();
-    if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+    await SessionActions.logout(context);
   }
 
   void _snack(String message, {required bool isError}) {

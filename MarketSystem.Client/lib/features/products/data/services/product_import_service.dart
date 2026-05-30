@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show compute, debugPrint;
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/api_exception.dart';
@@ -43,63 +43,11 @@ class ProductImportService {
     final bytes = result.files.first.bytes;
     if (bytes == null || bytes.isEmpty) return null;
 
-    return _parseExcel(bytes);
-  }
-
-  List<ImportProductRow>? _parseExcel(Uint8List bytes) {
-    try {
-      final excel = Excel.decodeBytes(bytes);
-      final sheet = excel.tables.values.firstOrNull;
-      if (sheet == null || sheet.rows.isEmpty) return [];
-
-      final rows = <ImportProductRow>[];
-
-      // 0-qator — sarlavhalar, 1-qatordan boshlab ma'lumotlar
-      for (var i = 1; i < sheet.rows.length; i++) {
-        final row = sheet.rows[i];
-
-        final name = _cellString(row, 0)?.trim();
-        final salePrice = _cellDouble(row, 1);
-        final minSalePrice = _cellDouble(row, 2);
-        final categoryName = _cellString(row, 3)?.trim();
-        final unitName = _cellString(row, 4)?.trim();
-        final minThreshold = _cellDouble(row, 5);
-
-        // To'liq bo'sh qatorlarni o'tkazib yuboramiz
-        if ((name == null || name.isEmpty) && salePrice == null) continue;
-
-        rows.add(ImportProductRow(
-          rowNumber: i + 1,
-          name: name?.isEmpty == true ? null : name,
-          salePrice: salePrice,
-          minSalePrice: minSalePrice,
-          categoryName: categoryName?.isEmpty == true ? null : categoryName,
-          unitName: unitName?.isEmpty == true ? null : unitName,
-          minThreshold: minThreshold,
-        ));
-      }
-      return rows;
-    } catch (e) {
-      debugPrint('Excel parse xato: $e');
-      return null;
-    }
-  }
-
-  // excel v3: cell.value dynamic (String, int, double, bool, null)
-  static String? _cellString(List<Data?> row, int col) {
-    if (col >= row.length) return null;
-    final v = row[col]?.value;
-    if (v == null) return null;
-    return v.toString();
-  }
-
-  static double? _cellDouble(List<Data?> row, int col) {
-    if (col >= row.length) return null;
-    final v = row[col]?.value;
-    if (v == null) return null;
-    if (v is int) return v.toDouble();
-    if (v is double) return v;
-    return double.tryParse(v.toString());
+    // Parsing a large .xlsx is CPU-bound (Excel.decodeBytes + a full row
+    // walk) and was running on the UI isolate — it froze the screen for
+    // seconds on big files while the spinner sat still. Offload it to a
+    // background isolate via compute().
+    return compute(_parseExcelRows, bytes);
   }
 
   // ── Template Excel generatsiya ─────────────────────────────────────────
@@ -114,8 +62,22 @@ class ProductImportService {
     final sheet = excel['Sheet1'];
 
     final headers = isRu
-        ? ['Название*', 'Цена продажи*', 'Мин. цена', 'Категория', 'Ед. изм. (шт/кг/м)', 'Мин. остаток']
-        : ['Tovar nomi*', 'Sotuv narxi*', 'Minimal narx', 'Kategoriya', 'Birlik (dona/kg/m)', 'Minimal chegara'];
+        ? [
+            'Название*',
+            'Цена продажи*',
+            'Мин. цена',
+            'Категория',
+            'Ед. изм. (шт/кг/м)',
+            'Мин. остаток',
+          ]
+        : [
+            'Tovar nomi*',
+            'Sotuv narxi*',
+            'Minimal narx',
+            'Kategoriya',
+            'Birlik (dona/kg/m)',
+            'Minimal chegara',
+          ];
 
     final sample = isRu
         ? ['Яблоко', '5000', '4500', 'Фрукты', 'кг', '10']
@@ -135,8 +97,9 @@ class ProductImportService {
 
     for (var i = 0; i < sample.length; i++) {
       sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 1))
-          .value = sample[i];
+              .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 1))
+              .value =
+          sample[i];
     }
 
     sheet.setColumnWidth(0, 30);
@@ -181,4 +144,66 @@ class ProductImportService {
       fallbackMessage: 'Import amalga oshmadi',
     );
   }
+}
+
+// ── Isolate-side Excel parsing ────────────────────────────────────────────
+// Top-level (not a method) so it can be handed to compute(). Takes the raw
+// file bytes and returns the parsed rows; both ends are isolate-sendable.
+
+List<ImportProductRow>? _parseExcelRows(Uint8List bytes) {
+  try {
+    final excel = Excel.decodeBytes(bytes);
+    final sheet = excel.tables.values.firstOrNull;
+    if (sheet == null || sheet.rows.isEmpty) return [];
+
+    final rows = <ImportProductRow>[];
+
+    // 0-qator — sarlavhalar, 1-qatordan boshlab ma'lumotlar
+    for (var i = 1; i < sheet.rows.length; i++) {
+      final row = sheet.rows[i];
+
+      final name = _cellString(row, 0)?.trim();
+      final salePrice = _cellDouble(row, 1);
+      final minSalePrice = _cellDouble(row, 2);
+      final categoryName = _cellString(row, 3)?.trim();
+      final unitName = _cellString(row, 4)?.trim();
+      final minThreshold = _cellDouble(row, 5);
+
+      // To'liq bo'sh qatorlarni o'tkazib yuboramiz
+      if ((name == null || name.isEmpty) && salePrice == null) continue;
+
+      rows.add(
+        ImportProductRow(
+          rowNumber: i + 1,
+          name: name?.isEmpty == true ? null : name,
+          salePrice: salePrice,
+          minSalePrice: minSalePrice,
+          categoryName: categoryName?.isEmpty == true ? null : categoryName,
+          unitName: unitName?.isEmpty == true ? null : unitName,
+          minThreshold: minThreshold,
+        ),
+      );
+    }
+    return rows;
+  } catch (e) {
+    debugPrint('Excel parse xato: $e');
+    return null;
+  }
+}
+
+// excel v3: cell.value dynamic (String, int, double, bool, null)
+String? _cellString(List<Data?> row, int col) {
+  if (col >= row.length) return null;
+  final v = row[col]?.value;
+  if (v == null) return null;
+  return v.toString();
+}
+
+double? _cellDouble(List<Data?> row, int col) {
+  if (col >= row.length) return null;
+  final v = row[col]?.value;
+  if (v == null) return null;
+  if (v is int) return v.toDouble();
+  if (v is double) return v;
+  return double.tryParse(v.toString());
 }

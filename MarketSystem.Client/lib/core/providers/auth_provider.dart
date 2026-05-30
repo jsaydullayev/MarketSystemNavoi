@@ -218,10 +218,22 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Logout
+  //
+  // Guarded against re-entrancy: the logout endpoint is a network round-trip,
+  // and during that await the UI stays interactive. A second tap (or a
+  // reactive session-ended event arriving mid-logout) would otherwise fire a
+  // duplicate logout + navigation. The first call wins; the rest no-op.
+  bool _loggingOut = false;
   Future<void> logout() async {
-    await _authService.logout();
-    _user = null;
-    notifyListeners();
+    if (_loggingOut) return;
+    _loggingOut = true;
+    try {
+      await _authService.logout();
+      _user = null;
+      notifyListeners();
+    } finally {
+      _loggingOut = false;
+    }
   }
 
   int _profileImageVersion = 0;

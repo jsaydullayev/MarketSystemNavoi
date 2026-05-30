@@ -185,6 +185,9 @@ class _LoginScreenState extends State<LoginScreen> {
               'assets/images/logo.png',
               width: 88,
               height: 88,
+              // Decode at ~display size instead of the full-res asset.
+              cacheWidth: 264,
+              cacheHeight: 264,
               fit: BoxFit.cover,
             ),
           ),

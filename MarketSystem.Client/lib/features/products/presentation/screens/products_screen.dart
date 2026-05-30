@@ -5,6 +5,8 @@
 // `ProductsBody`. Quick-zakup bottom sheet kept inline because it is small
 // and only used here.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/file_helper.dart'
     as core_file_helper;
@@ -48,6 +50,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
   String? _errorMessage;
   final _searchController = TextEditingController();
 
+  // PERF: debounce search so a full-screen setState + list scan runs once the
+  // user pauses typing, not on every keystroke.
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
@@ -58,13 +64,22 @@ class _ProductsScreenState extends State<ProductsScreen> {
       _searchController.text = initialSearch;
     }
     _loadProducts();
-    _searchController.addListener(_filterProducts);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      _filterProducts();
+    });
   }
 
   void _filterProducts() {
@@ -286,11 +301,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
       }
       setState(() => _isLoading = true);
       try {
-        await ZakupService(authProvider: authProvider).createZakup(
-          productId: product['id'],
-          quantity: qty,
-          costPrice: cost,
-        );
+        await ZakupService(
+          authProvider: authProvider,
+        ).createZakup(productId: product['id'], quantity: qty, costPrice: cost);
         _loadProducts();
         _showSnackBar(l10n.zakupSuccess, AppColors.success);
       } catch (e) {

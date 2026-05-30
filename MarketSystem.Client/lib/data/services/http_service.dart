@@ -90,7 +90,8 @@ class HttpService {
   /// AuthProvider subscribes to update _user['permissions'] so permission
   /// changes granted by the Owner take effect at the next refresh cycle
   /// (≤30 min) without requiring a full re-login.
-  static final StreamController<Map<String, dynamic>> _tokenRefreshedController =
+  static final StreamController<Map<String, dynamic>>
+  _tokenRefreshedController =
       StreamController<Map<String, dynamic>>.broadcast();
   static Stream<Map<String, dynamic>> get tokenRefreshedStream =>
       _tokenRefreshedController.stream;
@@ -153,29 +154,49 @@ class HttpService {
     _accessToken = null;
   }
 
+  // Memoised decoded `exp` for the current access token. A dashboard load
+  // fires ~10 requests in parallel and each used to base64+JSON-decode the
+  // same JWT just to read its expiry. Keying the cache on the token string
+  // means the decode runs once per token and every other request is a cheap
+  // string compare; rotating the token (refresh / login) is a natural cache
+  // miss, so there's nothing to invalidate.
+  String? _expCacheToken;
+  DateTime? _expCacheExpiry;
+
+  /// Decoded `exp` (UTC) for [token], or null when the token can't be read.
+  /// Result is memoised for the current token string.
+  DateTime? _accessTokenExpiry(String token) {
+    if (token == _expCacheToken) return _expCacheExpiry;
+    DateTime? expiry;
+    try {
+      final parts = token.split('.');
+      if (parts.length == 3) {
+        final payload = jsonDecode(
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+        );
+        final exp = payload is Map ? payload['exp'] : null;
+        if (exp is int) {
+          expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
+        }
+      }
+    } catch (_) {
+      expiry = null;
+    }
+    _expCacheToken = token;
+    _expCacheExpiry = expiry;
+    return expiry;
+  }
+
   /// True when the JWT's `exp` claim is in the past (with a 15-second
   /// leeway so a token about to expire mid-request is renewed now). On any
   /// decode failure returns false — we then proceed and let the reactive
   /// 401 handler deal with it rather than blocking on an unreadable token.
   bool _isAccessTokenExpired(String token) {
-    try {
-      final parts = token.split('.');
-      if (parts.length != 3) return false;
-      final payload = jsonDecode(
-        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-      );
-      final exp = payload is Map ? payload['exp'] : null;
-      if (exp is! int) return false;
-      final expiry = DateTime.fromMillisecondsSinceEpoch(
-        exp * 1000,
-        isUtc: true,
-      );
-      return DateTime.now().toUtc().isAfter(
-        expiry.subtract(const Duration(seconds: 15)),
-      );
-    } catch (_) {
-      return false;
-    }
+    final expiry = _accessTokenExpiry(token);
+    if (expiry == null) return false;
+    return DateTime.now().toUtc().isAfter(
+      expiry.subtract(const Duration(seconds: 15)),
+    );
   }
 
   /// Returns a non-expired access token, refreshing PROACTIVELY (single-

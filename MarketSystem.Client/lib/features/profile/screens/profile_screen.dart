@@ -16,6 +16,7 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/session_actions.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/validators/password_validator.dart';
@@ -28,7 +29,6 @@ import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_button.dart';
 import '../../../design/widgets/app_text_input.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../auth/presentation/screens/login_screen.dart';
 import '../widgets/profile_image_picker.dart';
 import '../widgets/profile_widgets.dart';
 
@@ -543,13 +543,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (confirm == true && mounted) {
-      await Provider.of<AuthProvider>(context, listen: false).logout();
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (r) => false,
-      );
+      await SessionActions.logout(context);
     }
   }
 }

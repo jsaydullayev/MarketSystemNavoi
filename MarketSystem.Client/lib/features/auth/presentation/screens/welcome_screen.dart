@@ -83,6 +83,8 @@ class WelcomeScreen extends StatelessWidget {
           'assets/images/orangeLogo.png',
           width: 120,
           height: 120,
+          // Decode at ~display size instead of the asset's 1024px.
+          cacheWidth: 360,
           fit: BoxFit.contain,
         ),
         const SizedBox(height: AppSpacing.lg),
