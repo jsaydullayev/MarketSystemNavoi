@@ -118,6 +118,14 @@ class HttpService {
   factory HttpService() => _instance;
   HttpService._internal();
 
+  /// Single keep-alive HTTP client reused for every request so sequential /
+  /// repeated calls (dashboard load + refresh, navigation between screens)
+  /// reuse the warm TCP connection instead of paying a fresh handshake per
+  /// call. The package-level `http.get/post/…` helpers create and tear down a
+  /// client EACH call — no connection reuse. This singleton lives for the
+  /// whole app, so the client is intentionally never closed.
+  final http.Client _client = http.Client();
+
   void setAuthService(AuthService authService) {
     _authService = authService;
   }
@@ -330,7 +338,7 @@ class HttpService {
 
     switch (method.toUpperCase()) {
       case 'GET':
-        return http.get(
+        return _client.get(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -339,7 +347,7 @@ class HttpService {
         );
       case 'POST':
         final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.post(
+        return _client.post(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -349,7 +357,7 @@ class HttpService {
         );
       case 'PUT':
         final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.put(
+        return _client.put(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -358,7 +366,7 @@ class HttpService {
           body: encodedBody,
         );
       case 'DELETE':
-        return http.delete(
+        return _client.delete(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -367,7 +375,7 @@ class HttpService {
         );
       case 'PATCH':
         final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.patch(
+        return _client.patch(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -398,7 +406,7 @@ class HttpService {
     debugPrint('Auth: ${token != null ? 'Bearer [•••]' : 'NO TOKEN'}');
     debugPrint('================');
 
-    return http
+    return _client
         .get(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
@@ -437,7 +445,7 @@ class HttpService {
     debugPrint('Body: $encodedBody');
     debugPrint('================');
 
-    return http
+    return _client
         .post(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
@@ -514,7 +522,7 @@ class HttpService {
       }
     }
 
-    return http
+    return _client
         .put(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
@@ -554,7 +562,7 @@ class HttpService {
     // hand-roll the request when one is supplied. RFC 7231 permits a body on
     // DELETE — ASP.NET Core accepts it with [FromBody].
     if (body == null) {
-      return http.delete(
+      return _client.delete(
         Uri.parse(fullUrl),
         headers: {
           'Content-Type': 'application/json',
@@ -593,7 +601,7 @@ class HttpService {
     }
     debugPrint('================');
 
-    return http.patch(
+    return _client.patch(
       Uri.parse('$baseUrl$endpoint'),
       headers: {
         'Content-Type': 'application/json',
@@ -661,7 +669,7 @@ class HttpService {
       debugPrint('URL: $baseUrl$endpoint');
       debugPrint('================');
 
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl$endpoint'),
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );

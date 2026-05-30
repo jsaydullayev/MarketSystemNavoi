@@ -54,8 +54,9 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Brief splash visibility before navigating away.
-    await Future.delayed(const Duration(milliseconds: 600));
+    // Brief splash visibility before navigating away. Kept short — the restore
+    // below is optimistic (no network wait), so a long delay is pure dead time.
+    await Future.delayed(const Duration(milliseconds: 200));
 
     if (!mounted) return;
 
