@@ -492,34 +492,29 @@ class HttpService {
     }
     debugPrint('================');
 
-    // For large bodies, use a different approach to avoid encoding issues
+    // For large bodies, stream the request via the shared keep-alive client
+    // (Request API) instead of buffering through the put() convenience helper.
     if (encodedBody != null && encodedBody.length > 100000) {
-      final client = http.Client();
-      try {
-        final request = http.Request('PUT', Uri.parse('$baseUrl$endpoint'));
-        request.headers.addAll({
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        });
-        request.body = encodedBody;
+      final request = http.Request('PUT', Uri.parse('$baseUrl$endpoint'));
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      });
+      request.body = encodedBody;
 
-        final streamedResponse = await client
-            .send(request)
-            .timeout(
-              const Duration(seconds: 60),
-              onTimeout: () {
-                throw ApiException(
-                  statusCode: 0,
-                  message: 'Request timeout after 60 seconds',
-                  code: 'TIMEOUT',
-                );
-              },
-            );
-        final response = await http.Response.fromStream(streamedResponse);
-        return response;
-      } finally {
-        client.close();
-      }
+      final streamedResponse = await _client
+          .send(request)
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              throw ApiException(
+                statusCode: 0,
+                message: 'Request timeout after 60 seconds',
+                code: 'TIMEOUT',
+              );
+            },
+          );
+      return http.Response.fromStream(streamedResponse);
     }
 
     return _client
@@ -575,13 +570,8 @@ class HttpService {
     request.headers['Content-Type'] = 'application/json';
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     request.body = jsonEncode(body);
-    final client = http.Client();
-    try {
-      final streamed = await client.send(request);
-      return await http.Response.fromStream(streamed);
-    } finally {
-      client.close();
-    }
+    final streamed = await _client.send(request);
+    return http.Response.fromStream(streamed);
   }
 
   // PATCH request
