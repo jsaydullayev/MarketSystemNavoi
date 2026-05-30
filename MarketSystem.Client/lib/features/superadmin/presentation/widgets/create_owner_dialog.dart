@@ -549,13 +549,18 @@ class _CreateOwnerDialogState extends State<CreateOwnerDialog> {
                               fontSize: 12,
                             ),
                           ),
-                          Text(
-                            '$previewSubdomain.strotech.uz',
-                            style: AppTextStyles.bodySmall().copyWith(
-                              fontSize: 12,
-                              fontFamily: 'monospace',
-                              color: context.colors.brand,
-                              fontWeight: FontWeight.w600,
+                          Flexible(
+                            child: Text(
+                              '$previewSubdomain.strotech.uz',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
+                              style: AppTextStyles.bodySmall().copyWith(
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                color: context.colors.brand,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],

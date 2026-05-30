@@ -110,67 +110,71 @@ class OwnerCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (owner.marketName case final marketName?)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.storefront_outlined,
-                          size: 13,
-                          color: context.colors.textSecondary,
-                        ),
-                        const SizedBox(width: 5),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 140),
-                          child: Text(
-                            marketName,
-                            style: AppTextStyles.bodySmall().copyWith(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: context.colors.text,
+              // Flexible so a long market name shares remaining width with the
+              // Expanded name column instead of starving it on narrow phones.
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (owner.marketName case final marketName?)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.storefront_outlined,
+                            size: 13,
+                            color: context.colors.textSecondary,
+                          ),
+                          const SizedBox(width: 5),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 140),
+                            child: Text(
+                              marketName,
+                              style: AppTextStyles.bodySmall().copyWith(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: context.colors.text,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusBg,
-                      borderRadius: BorderRadius.circular(AppRadius.full),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: statusColor,
-                            shape: BoxShape.circle,
+                        ],
+                      ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusBg,
+                        borderRadius: BorderRadius.circular(AppRadius.full),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          statusLabel,
-                          style: AppTextStyles.bodySmall().copyWith(
-                            fontSize: 11,
-                            color: statusColor,
-                            fontWeight: FontWeight.w700,
+                          const SizedBox(width: 5),
+                          Text(
+                            statusLabel,
+                            style: AppTextStyles.bodySmall().copyWith(
+                              fontSize: 11,
+                              color: statusColor,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Icon(Icons.chevron_right, color: context.colors.textSecondary),

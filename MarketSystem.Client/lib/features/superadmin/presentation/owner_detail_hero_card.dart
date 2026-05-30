@@ -252,13 +252,26 @@ class _MetaItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: context.colors.textSecondary),
-        const SizedBox(width: 5),
-        Text(text, style: AppTextStyles.bodySmall()),
-      ],
+    // Capped + ellipsised: a single long market name / subdomain inside the
+    // parent Wrap can't shrink on its own (Wrap only breaks between children),
+    // so bound the item and let the label ellipsize.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 220),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: context.colors.textSecondary),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              text,
+              style: AppTextStyles.bodySmall(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

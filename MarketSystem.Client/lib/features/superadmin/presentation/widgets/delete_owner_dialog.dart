@@ -378,10 +378,12 @@ class _CascadeRow extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          Text(
-            label,
-            style: AppTextStyles.bodySmall().copyWith(
-              color: context.colors.text,
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.bodySmall().copyWith(
+                color: context.colors.text,
+              ),
             ),
           ),
         ],

@@ -53,7 +53,12 @@ class MiniStatCard extends StatelessWidget {
               color: color,
             ),
           ),
-          Text(subtitle, style: AppTextStyles.bodySmall()),
+          Text(
+            subtitle,
+            style: AppTextStyles.bodySmall(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -193,7 +198,9 @@ class TabLabelBadge extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: AppSpacing.md),
-        Text(label),
+        Flexible(
+          child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
         const SizedBox(width: AppSpacing.md),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),

@@ -94,7 +94,10 @@ class MarketInfoCard extends StatelessWidget {
             valueColor: AppColors.danger,
           ),
         if (market.isBlocked && blockedAt != null)
-          _InfoRow(label: l10n.blockedAtUpper, value: formatOwnerDetailDate(blockedAt)),
+          _InfoRow(
+            label: l10n.blockedAtUpper,
+            value: formatOwnerDetailDate(blockedAt),
+          ),
         if (expiresAt != null)
           _InfoRow(
             label: l10n.subscriptionExpiresUpper,

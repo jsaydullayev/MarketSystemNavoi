@@ -258,8 +258,8 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
                   style: AppTextStyles.bodySmall(),
                 ),
                 const SizedBox(height: AppSpacing.xl3),
-                SizedBox(
-                  width: 220,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 220),
                   child: AppSecondaryButton(
                     onPressed: _forceLogout,
                     icon: Icons.logout,
@@ -311,6 +311,33 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
     );
   }
 
+  /// Logout control for the app bar. Adapts to width so the label never
+  /// clips on compact phones: narrow screens get an icon-only button (with a
+  /// long-press tooltip), roomier screens keep the "Tizimdan chiqish" label.
+  Widget _logoutAction(BuildContext context, AppLocalizations l10n) {
+    final color = context.colors.textSecondary;
+    if (MediaQuery.sizeOf(context).width < 380) {
+      return IconButton(
+        onPressed: _forceLogout,
+        icon: const Icon(Icons.logout),
+        color: color,
+        tooltip: l10n.logout,
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
+      child: TextButton.icon(
+        onPressed: _forceLogout,
+        icon: const Icon(Icons.logout, size: 18),
+        label: Text(l10n.logout, overflow: TextOverflow.ellipsis),
+        style: TextButton.styleFrom(
+          foregroundColor: color,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        ),
+      ),
+    );
+  }
+
   PreferredSizeWidget _buildAppBar(
     BuildContext context,
     AppLocalizations l10n, {
@@ -340,28 +367,16 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          Text(
-            l10n.superAdminConsoleTitleShort,
-            style: AppTextStyles.titleMedium(),
+          Flexible(
+            child: Text(
+              l10n.superAdminConsoleTitleShort,
+              style: AppTextStyles.titleMedium(),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.md,
-          ),
-          child: SizedBox(
-            width: 170,
-            child: AppSecondaryButton(
-              onPressed: _forceLogout,
-              icon: Icons.logout,
-              label: l10n.logout,
-            ),
-          ),
-        ),
-      ],
+      actions: [_logoutAction(context, l10n)],
       bottom: withTabs
           ? PreferredSize(
               preferredSize: const Size.fromHeight(48),

@@ -176,9 +176,17 @@ class _AppButtonBaseState extends State<_AppButtonBase>
                     Icon(widget.icon, size: 18, color: fg),
                     const SizedBox(width: AppSpacing.md),
                   ],
-                  Text(
-                    widget.label,
-                    style: AppTextStyles.labelLarge().copyWith(color: fg),
+                  // Flexible + ellipsis so a long label (or a narrow,
+                  // Expanded-in-a-Row button on a small phone / RU locale)
+                  // degrades gracefully instead of overflowing the button.
+                  Flexible(
+                    child: Text(
+                      widget.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.labelLarge().copyWith(color: fg),
+                    ),
                   ),
                 ],
               ),
@@ -203,12 +211,12 @@ class AppPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _AppButtonBase(
-        label: label,
-        onPressed: onPressed,
-        icon: icon,
-        isLoading: isLoading,
-        variant: _AppButtonVariant.primary,
-      );
+    label: label,
+    onPressed: onPressed,
+    icon: icon,
+    isLoading: isLoading,
+    variant: _AppButtonVariant.primary,
+  );
 }
 
 class AppSecondaryButton extends StatelessWidget {
@@ -227,12 +235,12 @@ class AppSecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _AppButtonBase(
-        label: label,
-        onPressed: onPressed,
-        icon: icon,
-        isLoading: isLoading,
-        variant: _AppButtonVariant.secondary,
-      );
+    label: label,
+    onPressed: onPressed,
+    icon: icon,
+    isLoading: isLoading,
+    variant: _AppButtonVariant.secondary,
+  );
 }
 
 class AppDangerButton extends StatelessWidget {
@@ -251,10 +259,10 @@ class AppDangerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _AppButtonBase(
-        label: label,
-        onPressed: onPressed,
-        icon: icon,
-        isLoading: isLoading,
-        variant: _AppButtonVariant.danger,
-      );
+    label: label,
+    onPressed: onPressed,
+    icon: icon,
+    isLoading: isLoading,
+    variant: _AppButtonVariant.danger,
+  );
 }

@@ -108,12 +108,18 @@ class _StatTile extends StatelessWidget {
               color: context.colors.textSecondary,
             ),
           ),
-          Text(
-            value,
-            style: AppTextStyles.titleLarge().copyWith(
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
-              color: color,
+          // scaleDown so grouped integers (e.g. "1,234,567") shrink to fit the
+          // fixed-aspect grid cell instead of overflowing horizontally.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: AppTextStyles.titleLarge().copyWith(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
             ),
           ),
           Row(
@@ -124,6 +130,7 @@ class _StatTile extends StatelessWidget {
                 child: Text(
                   subtitle,
                   style: AppTextStyles.bodySmall(),
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
