@@ -199,6 +199,21 @@ public class ReportsController : ControllerBase
     }
 
     /// <summary>
+    /// Pre-aggregated counters for the Owner dashboard (customer count,
+    /// low-stock count, pending / overdue debts). Lets the client fetch a
+    /// tiny JSON payload instead of downloading and folding three full
+    /// catalogs on the UI isolate.
+    /// </summary>
+    [HttpGet("dashboard-summary")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
+    public async Task<ActionResult<DashboardSummaryDto>> GetDashboardSummary(
+        CancellationToken cancellationToken)
+    {
+        var summary = await _reportService.GetOwnerDashboardSummaryAsync(cancellationToken);
+        return Ok(summary);
+    }
+
+    /// <summary>
     /// Get daily sales list with role-based filtering
     /// - Owner: sees all sales with profit
     /// - Admin: sees all sales without profit

@@ -597,6 +597,49 @@ public partial class ReportService : IReportService
         );
     }
 
+    public async Task<DashboardSummaryDto> GetOwnerDashboardSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        var now = DateTime.UtcNow;
+        var overdueCutoff = now.AddDays(-14);
+
+        // These five COUNT/SUM queries replace what the client used to do by
+        // downloading GetAllCustomers + GetAllProducts + GetAllDebts in full
+        // and folding them on the UI isolate. Definitions are kept identical to
+        // that client logic so the dashboard numbers don't shift:
+        //   - customerCount: non-deleted customers (== GetAllCustomers().length)
+        //   - lowStockCount: Quantity <= MinThreshold (== Product.IsLowStock;
+        //     intentionally NOT filtering IsDeleted, matching GetAllProducts)
+        //   - pending debts: RemainingDebt > 0
+        //   - overdue: past DueDate, or (no DueDate) created > 14 days ago
+        var customerCount = await _context.Customers
+            .AsNoTracking()
+            .CountAsync(c => c.MarketId == marketId && !c.IsDeleted, cancellationToken);
+
+        var lowStockCount = await _context.Products
+            .AsNoTracking()
+            .CountAsync(p => p.MarketId == marketId && p.Quantity <= p.MinThreshold, cancellationToken);
+
+        var pending = _context.Debts
+            .AsNoTracking()
+            .Where(d => d.MarketId == marketId && d.RemainingDebt > 0);
+
+        var pendingDebtsCount = await pending.CountAsync(cancellationToken);
+        var pendingDebtsTotal =
+            await pending.SumAsync(d => (decimal?)d.RemainingDebt, cancellationToken) ?? 0m;
+        var overdueDebtsCount = await pending.CountAsync(
+            d => (d.DueDate != null && d.DueDate < now) ||
+                 (d.DueDate == null && d.CreatedAt < overdueCutoff),
+            cancellationToken);
+
+        return new DashboardSummaryDto(
+            customerCount,
+            lowStockCount,
+            pendingDebtsCount,
+            pendingDebtsTotal,
+            overdueDebtsCount);
+    }
+
     public async Task<DailySalesListDto> GetDailySalesListAsync(
         DateTime date,
         string? userRole = null,
