@@ -161,16 +161,13 @@ class _DebtsScreenState extends State<DebtsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _debtsByCustomer.isEmpty
           ? _EmptyDebtsView(onRefresh: _loadData)
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl,
-                  AppSpacing.md,
-                  AppSpacing.xl,
-                  AppSpacing.xl3,
-                ),
-                children: [
+          : Builder(
+              builder: (context) {
+                // Hero + sort chips render once; only the debtor cards are
+                // built lazily via ListView.builder. _sortedCustomerIds() is
+                // computed once per build instead of being re-walked inline.
+                final ids = _sortedCustomerIds();
+                final leading = <Widget>[
                   _DebtsHero(
                     totalRemaining: _totalRemaining,
                     debtorCount: _debtsByCustomer.length,
@@ -181,42 +178,59 @@ class _DebtsScreenState extends State<DebtsScreen> {
                     onChanged: (s) => setState(() => _sort = s),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  for (final customerId in _sortedCustomerIds()) ...[
-                    Builder(
-                      builder: (context) {
-                        final customerDebts = _debtsByCustomer[customerId]!;
-                        final customerName =
-                            _customerNames[customerId] ?? l10n.unknown;
+                ];
+                return RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                      AppSpacing.xl,
+                      AppSpacing.xl3,
+                    ),
+                    itemCount: leading.length + ids.length,
+                    itemBuilder: (context, index) {
+                      if (index < leading.length) return leading[index];
+                      final customerId = ids[index - leading.length];
+                      final customerDebts = _debtsByCustomer[customerId]!;
+                      final customerName =
+                          _customerNames[customerId] ?? l10n.unknown;
 
-                        double totalDebt = 0;
-                        double remainingDebt = 0;
-                        for (var d in customerDebts) {
-                          totalDebt += (d['totalDebt'] as num).toDouble();
-                          remainingDebt += (d['remainingDebt'] as num)
-                              .toDouble();
-                        }
+                      double totalDebt = 0;
+                      double remainingDebt = 0;
+                      for (var d in customerDebts) {
+                        totalDebt += (d['totalDebt'] as num).toDouble();
+                        remainingDebt += (d['remainingDebt'] as num).toDouble();
+                      }
 
-                        return CustomerDebtCard(
-                          customerName: customerName,
-                          customerDebts: customerDebts,
-                          totalDebt: totalDebt,
-                          remainingDebt: remainingDebt,
-                          onTap: () => Navigator.push(
+                      return CustomerDebtCard(
+                        key: ValueKey('debt_$customerId'),
+                        customerName: customerName,
+                        customerDebts: customerDebts,
+                        totalDebt: totalDebt,
+                        remainingDebt: remainingDebt,
+                        onTap: () {
+                          final debt = customerDebts.firstOrNull;
+                          if (debt == null) return;
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => DebtDetailsScreen(
-                                debt: customerDebts.first,
+                                debt: debt,
                                 customerName: customerName,
                               ),
                             ),
-                          ),
-                          onPay: () => _openPaySheet(customerDebts.first, l10n),
-                        );
-                      },
-                    ),
-                  ],
-                ],
-              ),
+                          );
+                        },
+                        onPay: () {
+                          final debt = customerDebts.firstOrNull;
+                          if (debt != null) _openPaySheet(debt, l10n);
+                        },
+                      );
+                    },
+                  ),
+                );
+              },
             ),
     );
   }

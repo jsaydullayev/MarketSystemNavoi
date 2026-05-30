@@ -1,15 +1,30 @@
 import 'package:intl/intl.dart';
 
 class NumberFormatter {
+  // Hoisted to class level so the hot paths (every product/sale/debt card,
+  // re-run on each scroll frame and search keystroke) don't allocate a fresh
+  // NumberFormat + compile a RegExp on every call. NumberFormat.format is a
+  // pure read, so a single shared instance per decimal-mode is safe.
+  static final NumberFormat _fmtInt = NumberFormat.currency(
+    locale: 'ru_RU',
+    symbol: '',
+    decimalDigits: 0,
+  );
+  static final NumberFormat _fmtDec = NumberFormat.currency(
+    locale: 'ru_RU',
+    symbol: '',
+    decimalDigits: 2,
+  );
+  static final RegExp _whitespace = RegExp(r'\s+');
+  static final RegExp _trailingZeros = RegExp(r'\.?0+$');
+
   /// Format number with space separator (e.g., 100000 -> "100 000")
   static String format(dynamic value) {
     if (value == null) return '0';
 
     num number;
     if (value is String) {
-      final cleanVal = value
-          .replaceAll(RegExp(r'\s+'), '')
-          .replaceAll(',', '.');
+      final cleanVal = value.replaceAll(_whitespace, '').replaceAll(',', '.');
       number = num.tryParse(cleanVal) ?? 0;
     } else if (value is num) {
       number = value;
@@ -20,14 +35,8 @@ class NumberFormatter {
     final bool hasDecimals =
         number is double && number != number.truncateToDouble();
 
-    // Use NumberFormat.currency with custom symbol to get space separator
-    final formatter = NumberFormat.currency(
-      locale: 'ru_RU',
-      symbol: '',
-      decimalDigits: hasDecimals ? 2 : 0,
-    );
-
-    return formatter.format(number).trim();
+    // Shared NumberFormat.currency instances (space separator via ru_RU).
+    return (hasDecimals ? _fmtDec : _fmtInt).format(number).trim();
   }
 
   /// Format decimal number with space separator (e.g., 15000.50 -> "15 000.50")
@@ -36,9 +45,7 @@ class NumberFormatter {
 
     num number;
     if (value is String) {
-      final cleanVal = value
-          .replaceAll(RegExp(r'\s+'), '')
-          .replaceAll(',', '.');
+      final cleanVal = value.replaceAll(_whitespace, '').replaceAll(',', '.');
       number = num.tryParse(cleanVal) ?? 0;
     } else if (value is num) {
       number = value;
@@ -52,13 +59,7 @@ class NumberFormatter {
     final bool hasDecimals =
         number is double && number != number.truncateToDouble();
 
-    final formatter = NumberFormat.currency(
-      locale: 'ru_RU',
-      symbol: '',
-      decimalDigits: hasDecimals ? 2 : 0,
-    );
-
-    return formatter.format(number);
+    return (hasDecimals ? _fmtDec : _fmtInt).format(number);
   }
 
   /// Format a quantity for display.
@@ -79,7 +80,7 @@ class NumberFormatter {
     }
     final d = n.toDouble();
     if (d == d.truncateToDouble()) return d.toInt().toString();
-    return d.toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '');
+    return d.toStringAsFixed(3).replaceAll(_trailingZeros, '');
   }
 
   /// Format DateTime to GMT+5 (Tashkent time)

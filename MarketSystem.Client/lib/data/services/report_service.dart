@@ -77,11 +77,14 @@ class ReportService {
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {
-        throw Exception('Empty response body');
+        // 200 with empty body — backend bug or a proxy stripping the body.
+        // Surface as a typed exception so the screen renders a real error
+        // instead of a hard cast crash.
+        throw ApiException(statusCode: 200, message: 'Empty response body');
       }
       final decoded = jsonDecode(response.body);
       if (decoded == null) {
-        throw Exception('Null response body');
+        throw ApiException(statusCode: 200, message: 'Null response body');
       }
       return ProfitSummaryModel.fromJson(decoded as Map<String, dynamic>);
     }
@@ -107,6 +110,25 @@ class ReportService {
       fallbackMessage: response.statusCode == 403
           ? 'Sizga bu ma\'lumotni ko\'rish huquqi yo\'q'
           : 'Failed to load cash balance',
+    );
+  }
+
+  // Owner dashboard pre-aggregated counters. Throws on non-200 (including 404
+  // on a backend that predates this endpoint) so DashboardService._safe()
+  // falls back to the legacy three-catalog computation.
+  Future<DashboardSummaryModel> getDashboardSummary() async {
+    final response = await _httpService.get(
+      '${ApiConstants.reports}/dashboard-summary',
+    );
+
+    if (response.statusCode == 200) {
+      return DashboardSummaryModel.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to load dashboard summary',
     );
   }
 
@@ -318,6 +340,35 @@ DateTime _asDate(dynamic v) {
     return DateTime.tryParse(v) ?? DateTime.fromMillisecondsSinceEpoch(0);
   }
   return DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+/// Mirrors `DashboardSummaryDto` — pre-aggregated Owner-dashboard counters,
+/// computed server-side so the client no longer downloads + folds the full
+/// customer / product / debt catalogs on the UI isolate.
+class DashboardSummaryModel {
+  const DashboardSummaryModel({
+    required this.customerCount,
+    required this.lowStockCount,
+    required this.pendingDebtsCount,
+    required this.pendingDebtsTotal,
+    required this.overdueDebtsCount,
+  });
+
+  final int customerCount;
+  final int lowStockCount;
+  final int pendingDebtsCount;
+  final double pendingDebtsTotal;
+  final int overdueDebtsCount;
+
+  factory DashboardSummaryModel.fromJson(Map<String, dynamic> json) {
+    return DashboardSummaryModel(
+      customerCount: _asInt(json['customerCount']),
+      lowStockCount: _asInt(json['lowStockCount']),
+      pendingDebtsCount: _asInt(json['pendingDebtsCount']),
+      pendingDebtsTotal: _asDouble(json['pendingDebtsTotal']),
+      overdueDebtsCount: _asInt(json['overdueDebtsCount']),
+    );
+  }
 }
 
 /// Mirrors `WeeklySeriesDto { List<DailyPoint> Points, decimal CurrentTotal,

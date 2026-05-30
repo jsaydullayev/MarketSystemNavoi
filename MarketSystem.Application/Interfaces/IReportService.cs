@@ -12,6 +12,13 @@ public interface IReportService
     // New methods for role-based access control
     Task<ProfitSummaryDto> GetProfitSummaryAsync(CancellationToken cancellationToken = default);
     Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Pre-aggregated Owner-dashboard counters (customers, low-stock, pending /
+    /// overdue debts) computed server-side so the client no longer downloads
+    /// and folds three full catalogs on the UI isolate.
+    /// </summary>
+    Task<DashboardSummaryDto> GetOwnerDashboardSummaryAsync(CancellationToken cancellationToken = default);
     /// <summary>
     /// Sales list for a single Tashkent day, or — when <paramref name="endDate"/>
     /// is supplied — for the inclusive [date, endDate] day range. The range

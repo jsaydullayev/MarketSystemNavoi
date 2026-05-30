@@ -109,215 +109,219 @@ class _BlockMarketDialogState extends State<BlockMarketDialog> {
           padding: const EdgeInsets.all(AppSpacing.xl2),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: accentBg,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Icon(icon, color: accent, size: 20),
-                    ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: Text(title, style: AppTextStyles.titleMedium()),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      color: context.colors.textSecondary,
-                      onPressed: _submitting
-                          ? null
-                          : () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                RichText(
-                  text: TextSpan(
-                    style: AppTextStyles.bodySmall(),
+            // Scrollable so a short/landscape viewport with the keyboard open
+            // can't bottom-overflow (mirrors edit/delete owner dialogs).
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
                     children: [
-                      TextSpan(
-                        text: blocking ? l10n.blocking : l10n.unblocking,
-                      ),
-                      TextSpan(
-                        text: widget.marketName,
-                        style: AppTextStyles.labelLarge(),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                if (blocking) ...[
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    decoration: BoxDecoration(
-                      color: AppColors.warningLight,
-                      border: Border.all(
-                        color: AppColors.warning.withValues(alpha: 0.5),
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.warning_amber_rounded,
-                          size: 18,
-                          color: AppColors.warning,
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: accentBg,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Text(
-                            l10n.blockImmediateInfo,
-                            style: AppTextStyles.bodySmall().copyWith(
-                              color: context.colors.text,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    l10n.blockReasonRequired,
-                    style: AppTextStyles.caption().copyWith(
-                      color: context.colors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  TextFormField(
-                    controller: _reason,
-                    maxLines: 3,
-                    autofocus: true,
-                    style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
-                    decoration: InputDecoration(
-                      hintText: l10n.blockReasonHint,
-                      hintStyle: AppTextStyles.bodyMedium().copyWith(
-                        color: context.colors.textMuted,
-                        fontSize: 15,
+                        child: Icon(icon, color: accent, size: 20),
                       ),
-                      filled: true,
-                      fillColor: context.colors.inputFill,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xl,
-                        vertical: AppSpacing.lg + 2,
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: Text(title, style: AppTextStyles.titleMedium()),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
-                        borderSide: BorderSide(
-                          color: context.colors.brand,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    validator: (v) => (v ?? '').trim().length < 3
-                        ? l10n.reasonRequiredDetailed
-                        : null,
-                  ),
-                ] else ...[
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    decoration: BoxDecoration(
-                      color: AppColors.successLight,
-                      border: Border.all(
-                        color: AppColors.success.withValues(alpha: 0.5),
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.check_circle_outline,
-                          size: 18,
-                          color: AppColors.success,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Text(
-                            l10n.unblockInfo,
-                            style: AppTextStyles.bodySmall().copyWith(
-                              color: context.colors.text,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (widget.currentReason case final previousReason?) ...[
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      l10n.previousBlockReason,
-                      style: AppTextStyles.caption().copyWith(
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
                         color: context.colors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(previousReason, style: AppTextStyles.bodyMedium()),
-                  ],
-                ],
-                if (_errorMessage case final msg?) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.md + 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.dangerLight,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Text(
-                      msg,
-                      style: AppTextStyles.bodySmall().copyWith(
-                        color: AppColors.danger,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.xl),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppSecondaryButton(
-                        label: l10n.cancel,
                         onPressed: _submitting
                             ? null
                             : () => Navigator.pop(context),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  RichText(
+                    text: TextSpan(
+                      style: AppTextStyles.bodySmall(),
+                      children: [
+                        TextSpan(
+                          text: blocking ? l10n.blocking : l10n.unblocking,
+                        ),
+                        TextSpan(
+                          text: widget.marketName,
+                          style: AppTextStyles.labelLarge(),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: blocking
-                          ? AppDangerButton(
-                              label: l10n.block,
-                              icon: Icons.block_outlined,
-                              isLoading: _submitting,
-                              onPressed: _submitting ? null : _doBlock,
-                            )
-                          : AppPrimaryButton(
-                              label: l10n.unblock,
-                              icon: Icons.lock_open_outlined,
-                              isLoading: _submitting,
-                              onPressed: _submitting ? null : _doUnblock,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  if (blocking) ...[
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.warningLight,
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.5),
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            size: 18,
+                            color: AppColors.warning,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Text(
+                              l10n.blockImmediateInfo,
+                              style: AppTextStyles.bodySmall().copyWith(
+                                color: context.colors.text,
+                                fontSize: 12,
+                              ),
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      l10n.blockReasonRequired,
+                      style: AppTextStyles.caption().copyWith(
+                        color: context.colors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextFormField(
+                      controller: _reason,
+                      maxLines: 3,
+                      autofocus: true,
+                      style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
+                      decoration: InputDecoration(
+                        hintText: l10n.blockReasonHint,
+                        hintStyle: AppTextStyles.bodyMedium().copyWith(
+                          color: context.colors.textMuted,
+                          fontSize: 15,
+                        ),
+                        filled: true,
+                        fillColor: context.colors.inputFill,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xl,
+                          vertical: AppSpacing.lg + 2,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md + 2),
+                          borderSide: BorderSide(
+                            color: context.colors.brand,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      validator: (v) => (v ?? '').trim().length < 3
+                          ? l10n.reasonRequiredDetailed
+                          : null,
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.successLight,
+                        border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.5),
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            size: 18,
+                            color: AppColors.success,
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Text(
+                              l10n.unblockInfo,
+                              style: AppTextStyles.bodySmall().copyWith(
+                                color: context.colors.text,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (widget.currentReason case final previousReason?) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      Text(
+                        l10n.previousBlockReason,
+                        style: AppTextStyles.caption().copyWith(
+                          color: context.colors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(previousReason, style: AppTextStyles.bodyMedium()),
+                    ],
+                  ],
+                  if (_errorMessage case final msg?) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md + 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerLight,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Text(
+                        msg,
+                        style: AppTextStyles.bodySmall().copyWith(
+                          color: AppColors.danger,
+                        ),
+                      ),
                     ),
                   ],
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppSecondaryButton(
+                          label: l10n.cancel,
+                          onPressed: _submitting
+                              ? null
+                              : () => Navigator.pop(context),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: blocking
+                            ? AppDangerButton(
+                                label: l10n.block,
+                                icon: Icons.block_outlined,
+                                isLoading: _submitting,
+                                onPressed: _submitting ? null : _doBlock,
+                              )
+                            : AppPrimaryButton(
+                                label: l10n.unblock,
+                                icon: Icons.lock_open_outlined,
+                                isLoading: _submitting,
+                                onPressed: _submitting ? null : _doUnblock,
+                              ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

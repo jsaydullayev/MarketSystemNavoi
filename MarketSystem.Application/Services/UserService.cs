@@ -398,9 +398,17 @@ public class UserService : IUserService
         if (invalid.Count > 0)
             throw new InvalidOperationException($"Noma'lum ruxsat kaliti: {string.Join(", ", invalid)}");
 
-        // Persist a deduplicated, catalogue-ordered set. An empty result means
-        // "not customised" — the user then falls back to its role default.
-        user.Permissions = PermissionKeys.All.Where(requested.Contains).ToList();
+        // Persist a deduplicated, catalogue-ordered set.
+        var ordered = PermissionKeys.All.Where(requested.Contains).ToList();
+        user.Permissions = ordered;
+
+        // If the requested set exactly matches the role default, treat this as
+        // a "reset" — clear the customisation flag so the user inherits future
+        // default changes automatically. Any other explicit set (including
+        // intentionally empty) marks the user as customised.
+        // SetEquals is order-independent — safe even if PermissionKeys.All order changes.
+        var roleDefault = PermissionDefaults.ForRole(user.Role);
+        user.IsPermissionsCustomized = !ordered.ToHashSet().SetEquals(roleDefault);
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -411,7 +419,7 @@ public class UserService : IUserService
     private static UserPermissionsDto BuildPermissionsDto(User user) => new(
         user.Id,
         user.Role.ToString(),
-        user.Permissions.Count > 0,
+        user.IsPermissionsCustomized,
         user.GetEffectivePermissions(),
         PermissionDefaults.ForRole(user.Role),
         PermissionKeys.All

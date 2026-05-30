@@ -163,6 +163,8 @@ class _SplashScreenState extends State<SplashScreen> {
                     'assets/images/orangeLogo.png',
                     width: 140,
                     height: 140,
+                    // Decode at ~display size instead of the asset's 1024px.
+                    cacheWidth: 420,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: AppSpacing.xl3),

@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
 import '../../core/storage/token_storage.dart';
 import 'auth_service.dart';
 
@@ -85,6 +86,16 @@ class HttpService {
   static Stream<SessionEndedInfo> get sessionEndedStream =>
       _sessionEndedController.stream;
 
+  /// Emitted after a successful token refresh with the new AuthResponse data.
+  /// AuthProvider subscribes to update _user['permissions'] so permission
+  /// changes granted by the Owner take effect at the next refresh cycle
+  /// (≤30 min) without requiring a full re-login.
+  static final StreamController<Map<String, dynamic>>
+  _tokenRefreshedController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static Stream<Map<String, dynamic>> get tokenRefreshedStream =>
+      _tokenRefreshedController.stream;
+
   String get baseUrl => ApiConstants.baseUrl;
 
   // ── Singleton ───────────────────────────────────────────────
@@ -143,29 +154,49 @@ class HttpService {
     _accessToken = null;
   }
 
+  // Memoised decoded `exp` for the current access token. A dashboard load
+  // fires ~10 requests in parallel and each used to base64+JSON-decode the
+  // same JWT just to read its expiry. Keying the cache on the token string
+  // means the decode runs once per token and every other request is a cheap
+  // string compare; rotating the token (refresh / login) is a natural cache
+  // miss, so there's nothing to invalidate.
+  String? _expCacheToken;
+  DateTime? _expCacheExpiry;
+
+  /// Decoded `exp` (UTC) for [token], or null when the token can't be read.
+  /// Result is memoised for the current token string.
+  DateTime? _accessTokenExpiry(String token) {
+    if (token == _expCacheToken) return _expCacheExpiry;
+    DateTime? expiry;
+    try {
+      final parts = token.split('.');
+      if (parts.length == 3) {
+        final payload = jsonDecode(
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+        );
+        final exp = payload is Map ? payload['exp'] : null;
+        if (exp is int) {
+          expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
+        }
+      }
+    } catch (_) {
+      expiry = null;
+    }
+    _expCacheToken = token;
+    _expCacheExpiry = expiry;
+    return expiry;
+  }
+
   /// True when the JWT's `exp` claim is in the past (with a 15-second
   /// leeway so a token about to expire mid-request is renewed now). On any
   /// decode failure returns false — we then proceed and let the reactive
   /// 401 handler deal with it rather than blocking on an unreadable token.
   bool _isAccessTokenExpired(String token) {
-    try {
-      final parts = token.split('.');
-      if (parts.length != 3) return false;
-      final payload = jsonDecode(
-        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-      );
-      final exp = payload is Map ? payload['exp'] : null;
-      if (exp is! int) return false;
-      final expiry = DateTime.fromMillisecondsSinceEpoch(
-        exp * 1000,
-        isUtc: true,
-      );
-      return DateTime.now().toUtc().isAfter(
-        expiry.subtract(const Duration(seconds: 15)),
-      );
-    } catch (_) {
-      return false;
-    }
+    final expiry = _accessTokenExpiry(token);
+    if (expiry == null) return false;
+    return DateTime.now().toUtc().isAfter(
+      expiry.subtract(const Duration(seconds: 15)),
+    );
   }
 
   /// Returns a non-expired access token, refreshing PROACTIVELY (single-
@@ -262,6 +293,9 @@ class HttpService {
     try {
       final refreshed = await _authService?.refreshToken();
       succeeded = refreshed != null;
+      if (succeeded) {
+        _tokenRefreshedController.add(refreshed);
+      }
       return succeeded;
     } catch (e) {
       debugPrint('HttpService._doRefresh error: $e');
@@ -342,7 +376,11 @@ class HttpService {
           body: encodedBody,
         );
       default:
-        throw Exception('Unsupported method: $method');
+        // ApiException-2 — programmer error (the switch only covers GET /
+        // POST / PUT / PATCH / DELETE; any other verb is a coding mistake
+        // upstream). Surface as ArgumentError so a future static analyser
+        // can flag it separately from network failures.
+        throw ArgumentError('Unsupported method: $method');
     }
   }
 
@@ -357,9 +395,7 @@ class HttpService {
 
     debugPrint('=== HTTP GET ===');
     debugPrint('URL: $baseUrl$endpoint');
-    debugPrint(
-      'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ', NO TOKEN!'}}',
-    );
+    debugPrint('Auth: ${token != null ? 'Bearer [•••]' : 'NO TOKEN'}');
     debugPrint('================');
 
     return http
@@ -372,8 +408,15 @@ class HttpService {
         )
         .timeout(
           const Duration(seconds: 30),
+          // ApiException-2 — surface timeouts as typed ApiException with
+          // statusCode 0 so callers can branch on `e is ApiException`
+          // without a separate catch arm for raw Exception.
           onTimeout: () {
-            throw Exception('Request timeout after 30 seconds');
+            throw ApiException(
+              statusCode: 0,
+              message: 'Request timeout after 30 seconds',
+              code: 'TIMEOUT',
+            );
           },
         );
   }
@@ -390,9 +433,7 @@ class HttpService {
 
     debugPrint('=== HTTP POST ===');
     debugPrint('URL: $baseUrl$endpoint');
-    debugPrint(
-      'Headers: {Content-Type: application/json${token != null ? ', Authorization: Bearer $token' : ''}}',
-    );
+    debugPrint('Auth: ${token != null ? 'Bearer [•••]' : 'NO TOKEN'}');
     debugPrint('Body: $encodedBody');
     debugPrint('================');
 
@@ -407,8 +448,15 @@ class HttpService {
         )
         .timeout(
           const Duration(seconds: 30),
+          // ApiException-2 — surface timeouts as typed ApiException with
+          // statusCode 0 so callers can branch on `e is ApiException`
+          // without a separate catch arm for raw Exception.
           onTimeout: () {
-            throw Exception('Request timeout after 30 seconds');
+            throw ApiException(
+              statusCode: 0,
+              message: 'Request timeout after 30 seconds',
+              code: 'TIMEOUT',
+            );
           },
         );
   }
@@ -452,7 +500,11 @@ class HttpService {
             .timeout(
               const Duration(seconds: 60),
               onTimeout: () {
-                throw Exception('Request timeout after 60 seconds');
+                throw ApiException(
+                  statusCode: 0,
+                  message: 'Request timeout after 60 seconds',
+                  code: 'TIMEOUT',
+                );
               },
             );
         final response = await http.Response.fromStream(streamedResponse);
@@ -474,7 +526,11 @@ class HttpService {
         .timeout(
           const Duration(seconds: 60),
           onTimeout: () {
-            throw Exception('Request timeout after 60 seconds');
+            throw ApiException(
+              statusCode: 0,
+              message: 'Request timeout after 60 seconds',
+              code: 'TIMEOUT',
+            );
           },
         );
   }
@@ -511,8 +567,13 @@ class HttpService {
     request.headers['Content-Type'] = 'application/json';
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     request.body = jsonEncode(body);
-    final streamed = await http.Client().send(request);
-    return http.Response.fromStream(streamed);
+    final client = http.Client();
+    try {
+      final streamed = await client.send(request);
+      return await http.Response.fromStream(streamed);
+    } finally {
+      client.close();
+    }
   }
 
   // PATCH request

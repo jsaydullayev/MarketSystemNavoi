@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.API.Authorization;
@@ -198,6 +199,21 @@ public class ReportsController : ControllerBase
     }
 
     /// <summary>
+    /// Pre-aggregated counters for the Owner dashboard (customer count,
+    /// low-stock count, pending / overdue debts). Lets the client fetch a
+    /// tiny JSON payload instead of downloading and folding three full
+    /// catalogs on the UI isolate.
+    /// </summary>
+    [HttpGet("dashboard-summary")]
+    [RequirePermission(PermissionKeys.ReportsAccess)]
+    public async Task<ActionResult<DashboardSummaryDto>> GetDashboardSummary(
+        CancellationToken cancellationToken)
+    {
+        var summary = await _reportService.GetOwnerDashboardSummaryAsync(cancellationToken);
+        return Ok(summary);
+    }
+
+    /// <summary>
     /// Get daily sales list with role-based filtering
     /// - Owner: sees all sales with profit
     /// - Admin: sees all sales without profit
@@ -245,6 +261,7 @@ public class ReportsController : ControllerBase
 
 
     [HttpGet("comprehensive-report/export")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportComprehensiveReportToExcel(
         [FromQuery] DateTime? date = null,
@@ -561,6 +578,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("daily/export-pdf")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportDailyReportToPdf([FromQuery] DateTime date, [FromQuery] string lang = "uz")
     {
@@ -576,6 +594,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("period/export-pdf")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportPeriodReportToPdf(
         [FromQuery] DateTime start,
@@ -601,6 +620,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("comprehensive/export-pdf")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportComprehensiveReportToPdf([FromQuery] DateTime date, [FromQuery] string lang = "uz")
     {
@@ -619,6 +639,7 @@ public class ReportsController : ControllerBase
     /// Export daily report to Excel - kunlik hisobot, sotuvlar ro'yxati va mahsulotlar bo'yicha
     /// </summary>
     [HttpGet("daily/export")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ReportsExport)]
     public async Task<IActionResult> ExportDailyReportToExcel([FromQuery] DateTime date)
     {

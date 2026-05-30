@@ -13,8 +13,8 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../utils/di.dart';
 import '../constants/app_strings.dart';
+import '../auth/session_actions.dart';
 import '../handlers/navigation_handler.dart';
-import '../routes/app_routes.dart';
 import '../routes/route_generator.dart';
 import '../routes/navigator_observer.dart';
 import '../../data/services/http_service.dart';
@@ -70,7 +70,7 @@ class _MainAppState extends State<MainApp> {
           TextButton(
             onPressed: () {
               Navigator.of(dialogCtx).pop();
-              NavigationHandler.navigateToAndClear(AppRoutes.login);
+              SessionActions.redirectToLogin();
             },
             child: Text(l10n?.ok ?? 'OK'),
           ),
@@ -97,7 +97,7 @@ class _MainAppState extends State<MainApp> {
       SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
     );
 
-    NavigationHandler.navigateToAndClear(AppRoutes.login);
+    SessionActions.redirectToLogin();
   }
 
   @override

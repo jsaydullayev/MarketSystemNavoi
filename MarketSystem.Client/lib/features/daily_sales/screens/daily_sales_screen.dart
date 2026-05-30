@@ -462,104 +462,114 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
     final visible = _visibleSales;
     final hasFilter = _filter != DailySaleFilter.all;
 
+    // Summary card, hourly chart and the list header render once; only the
+    // sale rows are built lazily via ListView.builder so a busy day's
+    // (unpaged) sales list no longer constructs every row up-front.
+    final leading = <Widget>[
+      DailySummaryCard(
+        data: dailySales,
+        selectedFilter: _filter,
+        onFilterChanged: (f) => setState(() => _filter = f),
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      HourlyChart(sales: dailySales.sales),
+      const SizedBox(height: AppSpacing.xl),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Text(
+                l10n.sales,
+                style: AppTextStyles.labelLarge().copyWith(fontSize: 15),
+              ),
+              if (hasFilter) ...[
+                const SizedBox(width: AppSpacing.md),
+                GestureDetector(
+                  onTap: () => setState(() => _filter = DailySaleFilter.all),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _filterColor(
+                        context,
+                        _filter,
+                      ).withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _filterLabel(_filter, l10n),
+                          style: AppTextStyles.caption().copyWith(
+                            color: _filterColor(context, _filter),
+                            fontSize: 10,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.close_rounded,
+                          size: 12,
+                          color: _filterColor(context, _filter),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: context.colors.brandLight,
+              borderRadius: BorderRadius.circular(AppRadius.full),
+            ),
+            child: Text(
+              '${visible.length} ${l10n.piece}',
+              style: AppTextStyles.caption().copyWith(
+                color: context.colors.brandDark,
+                fontSize: 11,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: AppSpacing.md),
+    ];
+    final bool empty = visible.isEmpty;
+    final int bodyCount = empty ? 1 : visible.length;
+
     return RefreshIndicator(
       color: context.colors.brand,
       onRefresh: _loadDailySales,
-      child: ListView(
+      child: ListView.builder(
         padding: const EdgeInsets.all(AppSpacing.xl),
-        children: [
-          DailySummaryCard(
-            data: dailySales,
-            selectedFilter: _filter,
-            onFilterChanged: (f) => setState(() => _filter = f),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          HourlyChart(sales: dailySales.sales),
-          const SizedBox(height: AppSpacing.xl),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    l10n.sales,
-                    style: AppTextStyles.labelLarge().copyWith(fontSize: 15),
-                  ),
-                  if (hasFilter) ...[
-                    const SizedBox(width: AppSpacing.md),
-                    GestureDetector(
-                      onTap: () =>
-                          setState(() => _filter = DailySaleFilter.all),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _filterColor(
-                            context,
-                            _filter,
-                          ).withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(AppRadius.full),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _filterLabel(_filter, l10n),
-                              style: AppTextStyles.caption().copyWith(
-                                color: _filterColor(context, _filter),
-                                fontSize: 10,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.close_rounded,
-                              size: 12,
-                              color: _filterColor(context, _filter),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: 4,
+        itemCount: leading.length + bodyCount + 1,
+        itemBuilder: (context, index) {
+          if (index < leading.length) return leading[index];
+          final bodyIndex = index - leading.length;
+          if (bodyIndex < bodyCount) {
+            if (empty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl3),
+                child: Center(
+                  child: Text(l10n.noData, style: AppTextStyles.bodySmall()),
                 ),
-                decoration: BoxDecoration(
-                  color: context.colors.brandLight,
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                ),
-                child: Text(
-                  '${visible.length} ${l10n.piece}',
-                  style: AppTextStyles.caption().copyWith(
-                    color: context.colors.brandDark,
-                    fontSize: 11,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (visible.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl3),
-              child: Center(
-                child: Text(l10n.noData, style: AppTextStyles.bodySmall()),
-              ),
-            )
-          else
-            ...visible.map(
-              (sale) =>
-                  SaleListRow(sale: sale, onTap: () => _showSaleDetails(sale)),
-            ),
-          const SizedBox(height: 100),
-        ],
+              );
+            }
+            final sale = visible[bodyIndex];
+            return SaleListRow(sale: sale, onTap: () => _showSaleDetails(sale));
+          }
+          return const SizedBox(height: 100);
+        },
       ),
     );
   }

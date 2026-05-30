@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
@@ -37,28 +39,45 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   List<dynamic> _filteredProducts = [];
   String? _selectedCategoryName;
 
+  // PERF: distinct category names, computed once when products load instead of
+  // on every build (the old getter rebuilt+sorted a Set on each rebuild, i.e.
+  // on every search keystroke and cart edit).
+  List<String> _categories = const [];
+
+  // PERF: debounce the search so filtering runs once after the cashier stops
+  // typing — not a full-screen setState + list scan on every keystroke.
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
     _filteredProducts = _products;
     _loadData();
-    _searchController.addListener(_filterProducts);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  List<String> get _categories {
+  void _onSearchChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      _filterProducts();
+    });
+  }
+
+  List<String> _computeCategories() {
     final set = <String>{};
     for (final p in _products) {
       final cat = p['categoryName'];
       if (cat is String && cat.trim().isNotEmpty) set.add(cat.trim());
     }
-    final list = set.toList()..sort();
-    return list;
+    return set.toList()..sort();
   }
 
   void _onCategorySelected(String? category) {
@@ -101,6 +120,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         _products = products;
         _filteredProducts = products;
         _customers = customers;
+        _categories = _computeCategories();
         _isLoading = false;
       });
     } catch (e) {
@@ -252,11 +272,13 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           final scaffoldMessenger = ScaffoldMessenger.of(context);
           final navigator = Navigator.of(context);
 
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
           final salesService = SalesService(authProvider: authProvider);
           String? finalSaleId;
           try {
-
             // Use the customer the dialog returns — it may be one the
             // cashier created inline from the debt row, which the
             // pre-dialog snapshot wouldn't have.
@@ -506,7 +528,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: context.colors.brand,
-              foregroundColor: Colors.white,
+              foregroundColor: context.colors.onBrand,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(

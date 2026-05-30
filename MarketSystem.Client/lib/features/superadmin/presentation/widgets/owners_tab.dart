@@ -125,14 +125,28 @@ class OwnersTab extends StatelessWidget {
                 ),
                 RefreshChip(onRefresh: onRefresh),
                 const SizedBox(width: AppSpacing.md),
-                SizedBox(
-                  width: 160,
-                  child: AppPrimaryButton(
+                // Adaptive: a full labelled button would crush the header title
+                // on narrow phones (and looks stranded on tablets), so collapse
+                // to an icon-only add button below ~380dp.
+                if (MediaQuery.sizeOf(context).width < 380)
+                  IconButton.filled(
                     onPressed: onCreate,
-                    icon: Icons.add,
-                    label: l10n.addNew,
+                    icon: const Icon(Icons.add),
+                    tooltip: l10n.addNew,
+                    style: IconButton.styleFrom(
+                      backgroundColor: context.colors.brand,
+                      foregroundColor: context.colors.onBrand,
+                    ),
+                  )
+                else
+                  SizedBox(
+                    width: 160,
+                    child: AppPrimaryButton(
+                      onPressed: onCreate,
+                      icon: Icons.add,
+                      label: l10n.addNew,
+                    ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: AppSpacing.lg),

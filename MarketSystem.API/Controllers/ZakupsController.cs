@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.API.Authorization;
@@ -133,6 +134,7 @@ public class ZakupsController : ControllerBase
     }
 
     [HttpGet("export")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ZakupAccess)]
     public async Task<IActionResult> ExportZakupsToExcel()
     {

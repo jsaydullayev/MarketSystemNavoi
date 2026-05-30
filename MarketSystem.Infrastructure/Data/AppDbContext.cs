@@ -27,6 +27,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<CashWithdrawal> CashWithdrawals => Set<CashWithdrawal>();
     public DbSet<RegistrationRequest> RegistrationRequests => Set<RegistrationRequest>();
     public DbSet<RevokedToken> RevokedTokens => Set<RevokedToken>();
+    public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
     public DbSet<Shift> Shifts => Set<Shift>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -40,6 +41,24 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.Jti).IsRequired().HasMaxLength(200);
             b.HasIndex(x => x.Jti).IsUnique();
             b.HasIndex(x => x.ExpiresAtUtc);
+        });
+
+        // Configure LoginAttempt — brute-force lockout state (M1).
+        // The Username uniqueness is enforced at the DB layer so two
+        // concurrent failure-record writes for the same user can't create
+        // duplicate rows; DbLoginAttemptTracker upserts against this key.
+        modelBuilder.Entity<LoginAttempt>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Username).IsRequired().HasMaxLength(100);
+            b.HasIndex(x => x.Username).IsUnique();
+            b.Property(x => x.FailureCount).IsRequired();
+            b.Property(x => x.FirstFailureUtc).IsRequired();
+            b.Property(x => x.UpdatedAtUtc).IsRequired();
+            // Sweep query: "rows whose LockedUntilUtc is past AND
+            // FirstFailureUtc + Window is past" — UpdatedAtUtc as a single
+            // anchor index covers the cleanup pass at startup.
+            b.HasIndex(x => x.UpdatedAtUtc);
         });
 
         // Configure Market
@@ -150,6 +169,16 @@ public class AppDbContext : DbContext, IAppDbContext
                 .IsUnique()
                 .HasFilter("\"IsDeleted\" = false")
                 .HasDatabaseName("IX_Products_MarketId_Name_Active");
+
+            // P5 — low-stock scan: faqat Quantity <= MinThreshold bo'lgan qatorlar.
+            // GetLowStockProductsAsync uchun — butun market scan o'rniga kichik
+            // partial index ishlatiladi (odatda 1-5% tovarlar low-stock bo'ladi).
+            // Eslatma: pagination uchun alohida index kerak emas — mavjud
+            // IX_Products_MarketId_Name_Active (MarketId, Name) composite unique
+            // index ORDER BY Name so'rovlari uchun ham ishlatiladi.
+            b.HasIndex(x => x.MarketId)
+                .HasFilter("\"Quantity\" <= \"MinThreshold\" AND \"IsDeleted\" = false")
+                .HasDatabaseName("IX_Products_LowStock");
         });
 
         // ✅ Configure ProductCategory

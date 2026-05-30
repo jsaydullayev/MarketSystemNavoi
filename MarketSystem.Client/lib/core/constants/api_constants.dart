@@ -5,7 +5,8 @@ class ApiConstants {
   // =================== SERVER ===================
   // Production: all traffic goes through nginx (HTTPS termination).
   // Mobile release builds hit the domain — nginx proxies /api → API container.
-  static const String _productionApiUrl = 'https://strotech.uz/api';
+  // TODO: HTTPS ga qaytarish — SSL sertifikat yoki Cloudflare proxy yoqilgach
+  static const String _productionApiUrl = 'http://strotech.uz/api';
 
   // Local dev backend (dotnet run / Visual Studio F5 → http://localhost:5050).
   // Port 5050 chosen over 8080 to avoid Chrome's HSTS cache forcing HTTPS upgrades
@@ -71,6 +72,12 @@ class ApiConstants {
   // Products — Excel export ships through a doubly-segmented route.
   static const String productsExportExcel =
       '$products/ExportProductsToExcel/export';
+
+  // Products — Import (dry-run va haqiqiy)
+  static const String productsImportPreview =
+      '$products/ImportPreview/import/preview';
+  static const String productsImportConfirm =
+      '$products/ImportConfirm/import/confirm';
 
   // Categories — Excel export lives on the ProductCategories controller.
   static const String productCategoriesExportExcel =

@@ -35,6 +35,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.returnSaleItemUseCase,
   }) : super(const SalesInitial()) {
     on<GetSalesEvent>(_onGetSales);
+    on<LoadMoreSalesEvent>(_onLoadMoreSales);
     on<GetMyDraftSalesEvent>(_onGetMyDraftSales);
     on<CreateSaleEvent>(_onCreateSale);
     on<AddSaleItemEvent>(_onAddSaleItem);
@@ -44,19 +45,45 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<ReturnSaleItemEvent>(_onReturnSaleItem);
   }
 
-  /// Get all sales
+  /// Get sales — resets to page 1
   Future<void> _onGetSales(
     GetSalesEvent event,
     Emitter<SalesState> emit,
   ) async {
     emit(const SalesLoading());
-    final result = await getSalesUseCase();
-
-    // Dart-3 pattern-with-guard: binds `data` as non-nullable only when
-    // result.data is non-null AND the call succeeded — no `!` round-trip.
-    if (result.data case final data? when result.isSuccess) {
-      emit(SalesLoaded(data));
+    final result = await getSalesUseCase.paged(page: 1);
+    if (result.data case final page? when result.isSuccess) {
+      emit(SalesLoaded(page.items, hasMore: page.hasMore, currentPage: 1));
     } else {
+      emit(SalesError(result.error ?? 'Sotuvlarni yuklashda xatolik'));
+    }
+  }
+
+  /// Load next page — appends to existing list
+  Future<void> _onLoadMoreSales(
+    LoadMoreSalesEvent event,
+    Emitter<SalesState> emit,
+  ) async {
+    final current = state;
+    if (current is! SalesLoaded || !current.hasMore) return;
+
+    final nextPage = current.currentPage + 1;
+    emit(SalesLoadingMore(current.sales, currentPage: current.currentPage));
+
+    final result = await getSalesUseCase.paged(page: nextPage);
+    if (result.data case final page? when result.isSuccess) {
+      emit(SalesLoaded(
+        [...current.sales, ...page.items],
+        hasMore: page.hasMore,
+        currentPage: nextPage,
+      ));
+    } else {
+      // Restore previous loaded state on failure
+      emit(SalesLoaded(
+        current.sales,
+        hasMore: current.hasMore,
+        currentPage: current.currentPage,
+      ));
       emit(SalesError(result.error ?? 'Sotuvlarni yuklashda xatolik'));
     }
   }
@@ -126,9 +153,9 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     );
 
     if (result.isSuccess) {
-      final listResult = await getSalesUseCase();
-      if (listResult.data case final data? when listResult.isSuccess) {
-        emit(SalesLoaded(data));
+      final listResult = await getSalesUseCase.paged(page: 1);
+      if (listResult.data case final page? when listResult.isSuccess) {
+        emit(SalesLoaded(page.items, hasMore: page.hasMore, currentPage: 1));
       } else {
         emit(const PaymentAdded());
       }

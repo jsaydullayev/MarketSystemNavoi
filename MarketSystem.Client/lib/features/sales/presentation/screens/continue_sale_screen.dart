@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
-import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_payment_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_cart_item.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_product_card.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_bottom_bar.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/customer_selection_dialog.dart';
 import 'package:market_system_client/features/sales/presentation/widgets/external_product_sheet.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_app_bar.dart';
+import 'package:market_system_client/features/sales/presentation/widgets/continue_sale_header_widgets.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../../../../data/services/sales_service.dart';
@@ -512,7 +513,13 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         onRetry: _loadData,
         child: Scaffold(
           backgroundColor: context.colors.bg,
-          appBar: _buildAppBar(context, l10n),
+          appBar: ContinueSaleAppBar(
+            sale: _sale,
+            selectedCustomer: _selectedCustomer,
+            l10n: l10n,
+            onBack: () => Navigator.maybePop(context),
+            onCustomerTap: _selectOrChangeCustomer,
+          ),
           body: Center(
             child: CircularProgressIndicator(color: context.colors.brand),
           ),
@@ -535,7 +542,13 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       onRetry: _loadData,
       child: Scaffold(
         backgroundColor: context.colors.bg,
-        appBar: _buildAppBar(context, l10n),
+        appBar: ContinueSaleAppBar(
+          sale: _sale,
+          selectedCustomer: _selectedCustomer,
+          l10n: l10n,
+          onBack: () => Navigator.maybePop(context),
+          onCustomerTap: _selectOrChangeCustomer,
+        ),
         body: Column(
           children: [
             if (_cartItems.isNotEmpty)
@@ -585,10 +598,16 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                     ),
                     child: Row(
                       children: [
-                        Expanded(child: _buildSearchInput(context, l10n)),
+                        Expanded(
+                          child: ContinueSaleSearchInput(
+                            controller: _searchController,
+                            l10n: l10n,
+                            onClear: _filterProducts,
+                          ),
+                        ),
                         if (!isClosed) ...[
                           const SizedBox(width: AppSpacing.md),
-                          _ExternalProductButton(
+                          ContinueSaleExternalProductButton(
                             tooltip: l10n.addExternalProduct,
                             onTap: _addExternalProduct,
                           ),
@@ -598,7 +617,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                   ),
                   Expanded(
                     child: _filteredProducts.isEmpty
-                        ? _buildEmptyState(context, l10n)
+                        ? ContinueSaleEmptyState(l10n: l10n)
                         : GridView.builder(
                             padding: const EdgeInsets.fromLTRB(
                               AppSpacing.xl,
@@ -637,343 +656,4 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     );
   }
 
-  /// Custom POS-style header — back button + title with chek# meta on the
-  /// left, customer chip on the right. Mirrors `NewSaleScreen` so the
-  /// "continue" experience visually picks up where "new" left off.
-  PreferredSizeWidget _buildAppBar(
-    BuildContext context,
-    AppLocalizations l10n,
-  ) {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(64),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          border: Border(
-            bottom: BorderSide(color: context.colors.borderSoft, width: 1),
-          ),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.md,
-            ),
-            child: Row(
-              children: [
-                _PosBackButton(onTap: () => Navigator.maybePop(context)),
-                const SizedBox(width: AppSpacing.lg),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        l10n.draftSale,
-                        style: AppTextStyles.labelLarge().copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _headerMeta(),
-                        style: AppTextStyles.caption().copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0,
-                          color: context.colors.textMuted,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                _CustomerChip(
-                  customer: _selectedCustomer,
-                  fallbackLabel: l10n.customerNotSelected,
-                  enabled: _sale == null ? false : _sale?['status'] != 'Closed',
-                  onTap: _selectOrChangeCustomer,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Meta line under the title — receipt number from the sale + a stable
-  /// time slug. Receipt number falls back to the saleId prefix when the
-  /// API hasn't surfaced one.
-  String _headerMeta() {
-    final receipt = (_sale?['receiptNumber'] ?? _sale?['number'] ?? '')
-        .toString();
-    final now = DateTime.now();
-    final hh = now.hour.toString().padLeft(2, '0');
-    final mm = now.minute.toString().padLeft(2, '0');
-    if (receipt.isNotEmpty) return 'Chek #$receipt · $hh:$mm';
-    return 'Chek · $hh:$mm';
-  }
-
-  /// Gray-fill search input with brand-orange focus. Replaces the inline
-  /// dark-mode-aware TextField from the legacy implementation.
-  Widget _buildSearchInput(BuildContext context, AppLocalizations l10n) {
-    return TextField(
-      controller: _searchController,
-      style: AppTextStyles.bodyMedium().copyWith(fontSize: 14),
-      decoration: InputDecoration(
-        hintText: l10n.searchProduct,
-        hintStyle: AppTextStyles.bodyMedium().copyWith(
-          color: context.colors.textMuted,
-          fontSize: 14,
-        ),
-        prefixIcon: Icon(
-          Icons.search_rounded,
-          size: 18,
-          color: context.colors.textMuted,
-        ),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear_rounded, size: 16),
-                color: context.colors.textSecondary,
-                onPressed: () {
-                  _searchController.clear();
-                  _filterProducts();
-                },
-              )
-            : null,
-        filled: true,
-        fillColor: context.colors.inputFill,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          borderSide: BorderSide(color: context.colors.brand, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl,
-          vertical: AppSpacing.lg,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.search_off_rounded,
-            size: 48,
-            color: context.colors.border,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            l10n.productsNotFound,
-            style: AppTextStyles.bodySmall().copyWith(
-              color: context.colors.textMuted,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Round 36×36 back button — matches the demo's `.pos-back` element.
-class _PosBackButton extends StatelessWidget {
-  const _PosBackButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: context.colors.bg,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
-          child: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 16,
-            color: context.colors.text,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Customer chip — pill on the right of the header. Brand-tinted when a
-/// customer is selected, neutral grey otherwise. Closed sales disable
-/// tapping (the API rejects customer updates on closed sales).
-class _CustomerChip extends StatelessWidget {
-  const _CustomerChip({
-    required this.customer,
-    required this.fallbackLabel,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final Map<String, dynamic>? customer;
-  final String fallbackLabel;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasCustomer = customer != null;
-    final name = hasCustomer
-        ? (customer!['fullName']?.toString() ?? fallbackLabel)
-        : fallbackLabel;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 140),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: hasCustomer
-                  ? context.colors.brandLight
-                  : context.colors.inputFill,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (hasCustomer)
-                  _InitialAvatar(name: name)
-                else
-                  Icon(
-                    Icons.person_outline_rounded,
-                    size: 14,
-                    color: context.colors.textSecondary,
-                  ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.labelSmall().copyWith(
-                      fontSize: 12,
-                      letterSpacing: 0,
-                      fontWeight: FontWeight.w700,
-                      color: hasCustomer
-                          ? context.colors.brand
-                          : context.colors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 18×18 orange-filled circle with the customer's first initial. Mirrors
-/// the avatar used in the `NewSaleScreen` header for visual continuity.
-class _InitialAvatar extends StatelessWidget {
-  const _InitialAvatar({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final letter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    return Container(
-      width: 18,
-      height: 18,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: context.colors.brand,
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        letter,
-        style: AppTextStyles.caption().copyWith(
-          fontSize: 10,
-          color: Colors.white,
-          letterSpacing: 0,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-/// 44×44 brand-orange tile that opens the external-product sheet. Replaces
-/// the legacy gradient + custom shadow with the design-system brand color.
-class _ExternalProductButton extends StatelessWidget {
-  const _ExternalProductButton({required this.tooltip, required this.onTap});
-
-  final String tooltip;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: context.colors.brand,
-              borderRadius: BorderRadius.circular(AppRadius.md + 2),
-              boxShadow: [
-                BoxShadow(
-                  color: context.colors.brand.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.storefront_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

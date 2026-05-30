@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Constants;
 using MarketSystem.Application.Interfaces;
@@ -18,12 +19,18 @@ public class ProductsController : ControllerBase
     private readonly IProductService _productService;
     private readonly IExcelService _excelService;
     private readonly ITashkentClock _clock;
+    private readonly IProductImportService _importService;
 
-    public ProductsController(IProductService productService, IExcelService excelService, ITashkentClock clock)
+    public ProductsController(
+        IProductService productService,
+        IExcelService excelService,
+        ITashkentClock clock,
+        IProductImportService importService)
     {
         _productService = productService;
         _excelService = excelService;
         _clock = clock;
+        _importService = importService;
     }
 
     [HttpGet("{id}")]
@@ -41,8 +48,12 @@ public class ProductsController : ControllerBase
     [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts(CancellationToken ct = default)
     {
-        var products = await _productService.GetAllProductsAsync();
-        return Ok(products);
+        var products = await _productService.GetAllProductsAsync(ct);
+        // X-Total-Count: -1 → mijoz ma'lumotlar to'liq emasligini biladi
+        var list = products.ToList();
+        if (list.Count >= 5000)
+            Response.Headers["X-Total-Count"] = "-1";
+        return Ok(list);
     }
 
     [HttpGet]
@@ -134,6 +145,7 @@ public class ProductsController : ControllerBase
     /// can sort / filter in Excel if needed.
     /// </summary>
     [HttpGet("export")]
+    [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ProductsExport)]
     public async Task<IActionResult> ExportProductsToExcel(
         [FromQuery] string lang = "uz",
@@ -185,6 +197,48 @@ public class ProductsController : ControllerBase
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"{sheetName}_{_clock.NowLocal:yyyyMMdd_HHmmss}.xlsx"
         );
+    }
+
+    /// <summary>
+    /// Dry-run: Excel qatorlarini tahlil qiladi, bazaga yozmaydi.
+    /// Flutter bu natijani foydalanuvchiga ko'rsatadi (xatolar, ogohlantirishlar, kategoriya takliflari).
+    /// </summary>
+    [HttpPost("import/preview")]
+    [EnableRateLimiting("export")]
+    [RequirePermission(PermissionKeys.ProductsImport)]
+    public async Task<ActionResult<ImportPreviewResultDto>> ImportPreview(
+        [FromBody] List<ImportProductRowDto> rows,
+        CancellationToken ct = default)
+    {
+        if (rows is null or { Count: 0 })
+            return BadRequest(new { message = "Kamida bitta qator yuborilishi kerak." });
+
+        if (rows.Count > 1000)
+            return BadRequest(new { message = "Bir marta maksimum 1000 ta qator import qilish mumkin." });
+
+        var result = await _importService.PreviewAsync(rows, ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Haqiqiy import: faqat Error bo'lmagan qatorlarni saqlaydi.
+    /// CategoryOverrides — foydalanuvchi kategoriya moslamalarini tasdiqlaydi.
+    /// </summary>
+    [HttpPost("import/confirm")]
+    [EnableRateLimiting("export")]
+    [RequirePermission(PermissionKeys.ProductsImport)]
+    public async Task<ActionResult<ImportResultDto>> ImportConfirm(
+        [FromBody] ImportConfirmDto request,
+        CancellationToken ct = default)
+    {
+        if (request.Rows is null or { Count: 0 })
+            return BadRequest(new { message = "Kamida bitta qator yuborilishi kerak." });
+
+        if (request.Rows.Count > 1000)
+            return BadRequest(new { message = "Bir marta maksimum 1000 ta qator import qilish mumkin." });
+
+        var result = await _importService.ConfirmAsync(request, ct);
+        return Ok(result);
     }
 
 }

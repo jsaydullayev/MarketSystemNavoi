@@ -42,7 +42,12 @@ class CategoryService {
     } on ApiException {
       rethrow;
     } catch (e) {
-      throw Exception('Kategoriyalarni yuklashda xatolik: $e');
+      // Network / parse error — surface as ApiException(statusCode: 0) so
+      // the call site can branch uniformly on `e is ApiException`.
+      throw ApiException(
+        statusCode: 0,
+        message: 'Kategoriyalarni yuklashda xatolik: $e',
+      );
     }
   }
 

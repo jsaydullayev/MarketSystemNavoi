@@ -1,5 +1,7 @@
 // lib/features/customers/presentation/screens/customers_screen.dart
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
@@ -29,26 +31,33 @@ class _CustomersScreenState extends State<CustomersScreen> {
   final _searchController = TextEditingController();
   _CustomerFilter _filter = _CustomerFilter.all;
 
+  // PERF: debounce search so the list re-filters once the user pauses typing,
+  // not a full rebuild on every keystroke.
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
     context.read<CustomersBloc>().add(const GetCustomersEvent());
-    _searchController.addListener(() => setState(() {}));
+    _searchController.addListener(_onSearchChanged);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (mounted) {
-      Future.delayed(Duration.zero, () {
-        if (!mounted) return;
-        context.read<CustomersBloc>().add(const GetCustomersEvent());
-      });
-    }
+  // Removed the didChangeDependencies override that dispatched a SECOND
+  // GetCustomersEvent on first build — it double-fetched the list and flashed
+  // the loading spinner on every open. initState's fetch (plus BlocListener
+  // re-fetch after add/delete and the manual refresh actions) is sufficient.
+
+  void _onSearchChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -148,40 +157,53 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   totalDebt += v;
                   if (v > 0) debtors++;
                 }
+                // Header widgets (search / hero / filter chips) render once;
+                // only the customer cards below them are built lazily via
+                // ListView.builder, so a 200+ customer list no longer
+                // constructs every card up-front on each rebuild.
+                final leading = <Widget>[
+                  _SearchBar(controller: _searchController),
+                  const SizedBox(height: AppSpacing.lg),
+                  _CustomersHero(
+                    customerCount: all.length,
+                    totalDebt: totalDebt,
+                    debtors: debtors,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _FilterChips(
+                    active: _filter,
+                    onChanged: (f) => setState(() => _filter = f),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ];
+                final bodyCount = filtered.isEmpty ? 1 : filtered.length;
                 return RefreshIndicator(
                   onRefresh: () async => context.read<CustomersBloc>().add(
                     const GetCustomersEvent(),
                   ),
-                  child: ListView(
+                  child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.xl,
                       AppSpacing.xl,
                       AppSpacing.xl,
                       96,
                     ),
-                    children: [
-                      _SearchBar(controller: _searchController),
-                      const SizedBox(height: AppSpacing.lg),
-                      _CustomersHero(
-                        customerCount: all.length,
-                        totalDebt: totalDebt,
-                        debtors: debtors,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      _FilterChips(
-                        active: _filter,
-                        onChanged: (f) => setState(() => _filter = f),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (filtered.isEmpty)
-                        _EmptyView(
+                    itemCount: leading.length + bodyCount,
+                    itemBuilder: (context, index) {
+                      if (index < leading.length) return leading[index];
+                      if (filtered.isEmpty) {
+                        return _EmptyView(
                           isSearching:
                               _searchController.text.isNotEmpty ||
                               _filter != _CustomerFilter.all,
-                        )
-                      else
-                        ...filtered.map((c) => CustomersCard(customer: c)),
-                    ],
+                        );
+                      }
+                      final c = filtered[index - leading.length];
+                      return CustomersCard(
+                        key: ValueKey('customer_${c['id']}'),
+                        customer: c,
+                      );
+                    },
                   ),
                 );
               }
@@ -191,7 +213,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
           floatingActionButton: FloatingActionButton(
             onPressed: _openAddSheet,
             backgroundColor: context.colors.brand,
-            foregroundColor: Colors.white,
+            foregroundColor: context.colors.onBrand,
             elevation: 4,
             child: const Icon(Icons.add, size: 28),
           ),
@@ -486,13 +508,14 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             ElevatedButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              icon: Icon(Icons.refresh_rounded, color: context.colors.onBrand),
               label: Text(
                 l10n.retry,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: context.colors.onBrand),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.brand,
+                foregroundColor: context.colors.onBrand,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.xl3,
                   vertical: AppSpacing.lg,

@@ -219,10 +219,11 @@ class DashboardService {
     final monthStart = DateTime(now.year, now.month, 1);
     final monthFuture = _safe(() => _reports.getPeriodReport(monthStart, now));
 
-    // Customer + product + debt counts.
-    final customersFuture = _safe(() => _customers.getAllCustomers());
-    final productsFuture = _safe(() => _products.getAllProducts());
-    final debtsFuture = _safe(() => _debts.getAllDebts());
+    // Owner-dashboard counters: prefer the server-side summary endpoint (a
+    // tiny pre-aggregated payload). On a backend that predates it the _safe
+    // wrapper yields null and we fall back to downloading + folding the three
+    // full catalogs (legacy path) below.
+    final summaryFuture = _safe(() => _reports.getDashboardSummary());
 
     // Dashboard analytics endpoints (added 2026-05):
     //   weekly-series  → bar chart in ChartCard
@@ -239,6 +240,21 @@ class DashboardService {
         limit: 3,
       ),
     );
+
+    // Await the (small) summary first so we can SKIP the three heavy catalog
+    // fetches when it succeeds — that synchronous decode + fold on the UI
+    // isolate was the dashboard's main jank source. The futures above are
+    // already in flight, so this await doesn't serialise them.
+    final dash = await summaryFuture;
+    final customersFuture = dash != null
+        ? Future<List<dynamic>?>.value(null)
+        : _safe(() => _customers.getAllCustomers());
+    final productsFuture = dash != null
+        ? Future<List<dynamic>?>.value(null)
+        : _safe(() => _products.getAllProducts());
+    final debtsFuture = dash != null
+        ? Future<List<dynamic>?>.value(null)
+        : _safe(() => _debts.getAllDebts());
 
     final results = await Future.wait([
       profitFuture,
@@ -283,34 +299,44 @@ class DashboardService {
     // This-month revenue.
     final double monthRevenue = _num(month, 'totalSales').toDouble();
 
-    // Lifetime customer count = length of the GetAllCustomers list.
-    final int customerCount = customers?.length ?? 0;
+    // Owner-dashboard counters. When the server summary [dash] is present we
+    // use its pre-aggregated values directly; otherwise we fall back to
+    // folding the three catalogs fetched above. The fallback math is the
+    // original client-side logic, kept byte-for-byte so the displayed numbers
+    // are identical on either path.
+    final int customerCount = dash?.customerCount ?? (customers?.length ?? 0);
 
     // Low-stock count: backend ProductDto exposes `isLowStock`.
-    final lowStock = _filterLowStock(products);
-    final int lowStockCount = lowStock.length;
+    final int lowStockCount =
+        dash?.lowStockCount ?? _filterLowStock(products).length;
 
-    // Pending debts: status == "Active" (or any non-paid). Aggregate
-    // remainingDebt across active debts.
-    final pendingDebts = _filterPendingDebts(debts);
-    final double pendingDebtsTotal = pendingDebts.fold<double>(
-      0,
-      (sum, d) => sum + _numFromMap(d, 'remainingDebt').toDouble(),
-    );
-    final int pendingDebtsCount = pendingDebts.length;
+    // Pending debts: remainingDebt > 0. Aggregate remainingDebt across them.
+    final pendingDebts = dash != null
+        ? const <dynamic>[]
+        : _filterPendingDebts(debts);
+    final double pendingDebtsTotal =
+        dash?.pendingDebtsTotal ??
+        pendingDebts.fold<double>(
+          0,
+          (sum, d) => sum + _numFromMap(d, 'remainingDebt').toDouble(),
+        );
+    final int pendingDebtsCount =
+        dash?.pendingDebtsCount ?? pendingDebts.length;
 
     // Of those pending debts, how many are overdue. Prefer the explicit
     // dueDate from the backend (set once the AddDueDateToDebt migration ran);
     // fall back to the 14-day heuristic for legacy rows that have no dueDate.
     final overdueCutoff = now.subtract(const Duration(days: 14));
-    final int overdueDebtsCount = pendingDebts.where((d) {
-      if (d is! Map) return false;
-      final dueDate = _parseDate(d['dueDate']);
-      if (dueDate != null) return now.isAfter(dueDate);
-      final created = _parseDate(d['createdAt']);
-      if (created == null) return false;
-      return created.isBefore(overdueCutoff);
-    }).length;
+    final int overdueDebtsCount =
+        dash?.overdueDebtsCount ??
+        pendingDebts.where((d) {
+          if (d is! Map) return false;
+          final dueDate = _parseDate(d['dueDate']);
+          if (dueDate != null) return now.isAfter(dueDate);
+          final created = _parseDate(d['createdAt']);
+          if (created == null) return false;
+          return created.isBefore(overdueCutoff);
+        }).length;
 
     // Top products of the day — derived from daily-items (no dedicated
     // endpoint exists). We sum quantity per product name and take top 3.

@@ -293,6 +293,41 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.ToTable("DebtAuditLogs");
                 });
 
+            modelBuilder.Entity("MarketSystem.Domain.Entities.LoginAttempt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FailureCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FirstFailureUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UpdatedAtUtc");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("LoginAttempts");
+                });
+
             modelBuilder.Entity("MarketSystem.Domain.Entities.Market", b =>
                 {
                     b.Property<int>("Id")
@@ -460,7 +495,9 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasIndex("CreatedBySellerId");
 
-                    b.HasIndex("MarketId");
+                    b.HasIndex("MarketId")
+                        .HasDatabaseName("IX_Products_LowStock")
+                        .HasFilter("\"Quantity\" <= \"MinThreshold\" AND \"IsDeleted\" = false");
 
                     b.HasIndex("MarketId", "Name")
                         .IsUnique()
@@ -830,6 +867,11 @@ namespace MarketSystem.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text[]")
                         .HasDefaultValueSql("'{}'::text[]");
+
+                    b.Property<bool>("IsPermissionsCustomized")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)

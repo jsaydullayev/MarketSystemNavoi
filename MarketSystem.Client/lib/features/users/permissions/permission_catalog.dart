@@ -24,122 +24,132 @@ class PermissionGroup {
 /// Uzbek/Russian labels. Mirrors the backend `PermissionKeys` catalogue —
 /// keep the two in sync when keys are added.
 const List<PermissionGroup> permissionGroups = [
-  PermissionGroup('Boshqaruv paneli', 'Панель управления', [
+  PermissionGroup('Boshqaruv paneli', 'Panel upravleniya', [
     PermissionEntry(
       Permissions.dashboardAccess,
       'Panelga kirish',
-      'Доступ к панели',
+      'Dostup k paneli',
     ),
   ]),
-  PermissionGroup('Mahsulotlar', 'Товары', [
-    PermissionEntry(Permissions.productsAccess, "Ko'rish", 'Просмотр'),
-    PermissionEntry(Permissions.productsCreate, "Qo'shish", 'Добавление'),
-    PermissionEntry(Permissions.productsEdit, 'Tahrirlash', 'Редактирование'),
-    PermissionEntry(Permissions.productsDelete, "O'chirish", 'Удаление'),
+  PermissionGroup('Mahsulotlar', 'Tovary', [
+    PermissionEntry(Permissions.productsAccess, "Ko'rish", 'Prosmotr'),
+    PermissionEntry(Permissions.productsCreate, "Qo'shish", 'Dobavlenie'),
+    PermissionEntry(Permissions.productsEdit, 'Tahrirlash', 'Redaktirovanie'),
+    PermissionEntry(Permissions.productsDelete, "O'chirish", 'Udalenie'),
     PermissionEntry(
       Permissions.productsExport,
       'Excelga eksport',
-      'Экспорт в Excel',
+      'Eksport v Excel',
+    ),
+    PermissionEntry(
+      Permissions.productsImport,
+      'Exceldan import',
+      'Import iz Excel',
     ),
   ]),
-  PermissionGroup('Kategoriyalar', 'Категории', [
-    PermissionEntry(Permissions.categoriesAccess, "Ko'rish", 'Просмотр'),
-    PermissionEntry(Permissions.categoriesManage, 'Boshqarish', 'Управление'),
+  PermissionGroup('Kategoriyalar', 'Kategorii', [
+    PermissionEntry(Permissions.categoriesAccess, "Ko'rish", 'Prosmotr'),
+    PermissionEntry(Permissions.categoriesManage, 'Boshqarish', 'Upravlenie'),
   ]),
-  PermissionGroup('Sotuvlar', 'Продажи', [
-    PermissionEntry(Permissions.salesAccess, "Ko'rish", 'Просмотр'),
+  PermissionGroup('Sotuvlar', 'Prodazhi', [
+    PermissionEntry(Permissions.salesAccess, "Ko'rish", 'Prosmotr'),
     PermissionEntry(
       Permissions.salesCreate,
       'Sotuv yaratish',
-      'Создание продажи',
+      'Sozdanie prodazhi',
     ),
     PermissionEntry(
       Permissions.salesEdit,
       'Tahrirlash / qaytarish',
-      'Редактирование / возврат',
+      'Redaktirovanie / vozvrat',
     ),
     PermissionEntry(
       Permissions.salesDelete,
       "O'chirish / bekor qilish",
-      'Удаление / отмена',
+      'Udalenie / otmena',
     ),
     PermissionEntry(
       Permissions.salesExport,
       'Excelga eksport',
-      'Экспорт в Excel',
+      'Eksport v Excel',
     ),
   ]),
-  PermissionGroup('Mijozlar', 'Клиенты', [
-    PermissionEntry(Permissions.customersAccess, "Ko'rish", 'Просмотр'),
+  PermissionGroup('Mijozlar', 'Klienty', [
+    PermissionEntry(Permissions.customersAccess, "Ko'rish", 'Prosmotr'),
     PermissionEntry(
       Permissions.customersManage,
       "Qo'shish / tahrirlash",
-      'Добавление / редактирование',
+      'Dobavlenie / redaktirovanie',
     ),
-    PermissionEntry(Permissions.customersDelete, "O'chirish", 'Удаление'),
+    PermissionEntry(Permissions.customersDelete, "O'chirish", 'Udalenie'),
     PermissionEntry(
       Permissions.customersExport,
       'Excelga eksport',
-      'Экспорт в Excel',
+      'Eksport v Excel',
     ),
   ]),
-  PermissionGroup('Zakuplar', 'Закупки', [
-    PermissionEntry(Permissions.zakupAccess, "Ko'rish", 'Просмотр'),
+  PermissionGroup('Zakuplar', 'Zakupki', [
+    PermissionEntry(Permissions.zakupAccess, "Ko'rish", 'Prosmotr'),
     PermissionEntry(
       Permissions.zakupCreate,
       'Zakup yaratish',
-      'Создание закупки',
+      'Sozdanie zakupki',
     ),
   ]),
-  PermissionGroup('Kassa', 'Касса', [
-    PermissionEntry(Permissions.cashRegisterAccess, "Ko'rish", 'Просмотр'),
+  PermissionGroup('Kassa', 'Kassa', [
+    PermissionEntry(Permissions.cashRegisterAccess, "Ko'rish", 'Prosmotr'),
     PermissionEntry(
       Permissions.cashRegisterManage,
       'Pul kiritish / chiqarish',
-      'Внесение / снятие',
+      'Vnesenie / snyatie',
     ),
   ]),
-  PermissionGroup('Hisobotlar', 'Отчёты', [
-    PermissionEntry(Permissions.reportsAccess, "Ko'rish", 'Просмотр'),
-    PermissionEntry(Permissions.reportsExport, 'Eksport', 'Экспорт'),
+  PermissionGroup('Hisobotlar', 'Otchyoty', [
+    PermissionEntry(Permissions.reportsAccess, "Ko'rish", 'Prosmotr'),
+    PermissionEntry(Permissions.reportsExport, 'Eksport', 'Eksport'),
   ]),
-  PermissionGroup('Foydalanuvchilar', 'Пользователи', [
-    PermissionEntry(Permissions.usersAccess, "Ko'rish", 'Просмотр'),
-    PermissionEntry(Permissions.usersManage, 'Boshqarish', 'Управление'),
+  PermissionGroup('Foydalanuvchilar', 'Polzovateli', [
+    PermissionEntry(Permissions.usersAccess, "Ko'rish", 'Prosmotr'),
+    PermissionEntry(Permissions.usersManage, 'Boshqarish', 'Upravlenie'),
     PermissionEntry(
       Permissions.usersShift,
       'Smena boshqaruvi',
-      'Управление сменами',
+      'Upravlenie smenami',
     ),
   ]),
-  PermissionGroup('Qarzlar', 'Долги', [
-    PermissionEntry(Permissions.debtsAccess, "Ko'rish", 'Просмотр'),
+  PermissionGroup('Qarzlar', 'Dolgi', [
+    PermissionEntry(Permissions.debtsAccess, "Ko'rish", 'Prosmotr'),
     PermissionEntry(
       Permissions.debtsManage,
       "To'lov qabul qilish",
-      'Приём оплаты',
+      'Priyom oplaty',
     ),
   ]),
-  PermissionGroup('Maxfiy maʼlumot', 'Конфиденциальные данные', [
+  PermissionGroup('Maxfiy malumot', 'Konfidencialnye dannye', [
     PermissionEntry(
       Permissions.dataCostPrice,
-      'Xarid narxini ko‘rish',
-      'Просмотр цены закупки',
+      "Xarid narxini ko'rish",
+      'Prosmotr tseny zakupki',
     ),
     PermissionEntry(
       Permissions.dataProfit,
-      'Foydani ko‘rish',
-      'Просмотр прибыли',
+      "Foydani ko'rish",
+      'Prosmotr pribyli',
     ),
     PermissionEntry(
       Permissions.dataCashBalance,
-      'Kassa qoldig‘ini ko‘rish',
-      'Просмотр остатка кассы',
+      "Kassa qoldiqini ko'rish",
+      'Prosmotr ostatka kassy',
     ),
     PermissionEntry(
       Permissions.dataAllSalesView,
-      'Barcha sotuvlarni ko‘rish',
-      'Просмотр всех продаж',
+      "Barcha sotuvlarni ko'rish",
+      'Prosmotr vsekh prodazh',
+    ),
+    PermissionEntry(
+      Permissions.dataAuditLog,
+      "Audit jurnalini ko'rish",
+      'Prosmotr zhurnala audita',
     ),
   ]),
 ];

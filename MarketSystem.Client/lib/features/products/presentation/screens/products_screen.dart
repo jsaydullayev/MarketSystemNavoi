@@ -5,6 +5,8 @@
 // `ProductsBody`. Quick-zakup bottom sheet kept inline because it is small
 // and only used here.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/file_helper.dart'
     as core_file_helper;
@@ -22,6 +24,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../data/services/zakup_service.dart';
 import '../../../../l10n/app_localizations.dart';
+import 'import_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   final bool isReadOnly;
@@ -47,6 +50,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
   String? _errorMessage;
   final _searchController = TextEditingController();
 
+  // PERF: debounce search so a full-screen setState + list scan runs once the
+  // user pauses typing, not on every keystroke.
+  Timer? _searchDebounce;
+
   @override
   void initState() {
     super.initState();
@@ -57,13 +64,22 @@ class _ProductsScreenState extends State<ProductsScreen> {
       _searchController.text = initialSearch;
     }
     _loadProducts();
-    _searchController.addListener(_filterProducts);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      _filterProducts();
+    });
   }
 
   void _filterProducts() {
@@ -270,25 +286,24 @@ class _ProductsScreenState extends State<ProductsScreen> {
       ),
     );
 
+    // AUDIT-1 — read before dispose so values are captured even on early return
+    final qtyText = qtyController.text.trim().replaceAll(',', '.');
+    final costText = costController.text.trim().replaceAll(',', '.');
+    qtyController.dispose();
+    costController.dispose();
+
     if (confirmed == true) {
-      // AUDIT-1 — the inline zakup dialog has no Form/validator, so
-      // `double.parse` could blow up on empty / "abc" / "10,5,5" input
-      // and bubble a FormatException into the user-facing snackbar as
-      // "FormatException: Invalid double". Branch on tryParse first so
-      // we can surface a localized "wrong input" message instead.
-      final qty = double.tryParse(qtyController.text.trim().replaceAll(',', '.'));
-      final cost = double.tryParse(costController.text.trim().replaceAll(',', '.'));
+      final qty = double.tryParse(qtyText);
+      final cost = double.tryParse(costText);
       if (qty == null || qty <= 0 || cost == null || cost <= 0) {
         _showSnackBar(l10n.errorOccurred, AppColors.danger);
         return;
       }
       setState(() => _isLoading = true);
       try {
-        await ZakupService(authProvider: authProvider).createZakup(
-          productId: product['id'],
-          quantity: qty,
-          costPrice: cost,
-        );
+        await ZakupService(
+          authProvider: authProvider,
+        ).createZakup(productId: product['id'], quantity: qty, costPrice: cost);
         _loadProducts();
         _showSnackBar(l10n.zakupSuccess, AppColors.success);
       } catch (e) {
@@ -330,6 +345,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openImport() async {
+    final refreshed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const ImportScreen()),
+    );
+    if (refreshed == true && mounted) _loadProducts();
   }
 
   Future<void> _exportExcel() async {
@@ -405,6 +428,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
   /// Sticky POS-style header: back arrow, centered title, export/refresh
   /// icon actions on the right. Matches the demo's `.pos-flow-header`.
   PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final canImport = authProvider.can(Permissions.productsImport);
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
       child: Container(
@@ -439,6 +464,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     ),
                   ),
                 ),
+                if (canImport)
+                  IconButton(
+                    icon: Icon(
+                      Icons.upload_file_rounded,
+                      color: context.colors.textSecondary,
+                      size: 22,
+                    ),
+                    onPressed: _openImport,
+                    tooltip: 'Import',
+                  ),
                 IconButton(
                   icon: Icon(
                     Icons.file_download_outlined,
@@ -446,7 +481,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     size: 22,
                   ),
                   onPressed: _exportExcel,
-                  tooltip: 'Excel',
+                  tooltip: 'Export',
                 ),
                 IconButton(
                   icon: Icon(

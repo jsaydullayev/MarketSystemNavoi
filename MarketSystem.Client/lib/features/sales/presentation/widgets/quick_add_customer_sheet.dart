@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:market_system_client/core/errors/api_exception.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/data/services/customer_service.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
@@ -83,6 +84,11 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
 
       // Normalise the response into a plain Map the payment dialogs expect.
       // createCustomer returns the decoded JSON body; defend against shapes.
+      //
+      // ApiException-2 — surface response-shape mismatches as ApiException
+      // so the catch block at the bottom of this method renders the
+      // localised "Xato" snackbar with a useful message instead of the
+      // double-prefixed "Xato: Exception: Customer created without an id".
       if (created is Map) {
         final result = <String, dynamic>{
           'id': created['id']?.toString() ?? '',
@@ -90,12 +96,18 @@ class _QuickAddCustomerSheetState extends State<QuickAddCustomerSheet> {
           'phone': (created['phone'] ?? phone).toString(),
         };
         if (result['id'].toString().isEmpty) {
-          throw Exception('Customer created without an id');
+          throw ApiException(
+            statusCode: 200,
+            message: 'Customer created without an id',
+          );
         }
         navigator.pop(result);
         return;
       }
-      throw Exception('Unexpected createCustomer response');
+      throw ApiException(
+        statusCode: 200,
+        message: 'Unexpected createCustomer response',
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isCreating = false);

@@ -243,7 +243,7 @@ class _UsersScreenState extends State<UsersScreen> {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => AddUserSheet.show(context),
           backgroundColor: context.colors.brand,
-          foregroundColor: Colors.white,
+          foregroundColor: context.colors.onBrand,
           icon: const Icon(Icons.person_add_rounded),
           label: Text(
             l10n.newUser,
@@ -264,6 +264,21 @@ class _UsersScreenState extends State<UsersScreen> {
 
     final filtered = _applyFilters(_users);
 
+    // Search / summary / filter chips render once; only the user cards are
+    // built lazily via ListView.builder.
+    final leading = <Widget>[
+      _SearchBar(controller: _searchCtrl),
+      const SizedBox(height: AppSpacing.lg),
+      _StaffSummary(users: _users, todayRevenue: _todayRevenue),
+      const SizedBox(height: AppSpacing.lg),
+      _FilterChips(
+        active: _filter,
+        onChanged: (f) => setState(() => _filter = f),
+      ),
+      const SizedBox(height: AppSpacing.lg),
+    ];
+    final bodyCount = filtered.isEmpty ? 1 : filtered.length;
+
     return RefreshIndicator(
       onRefresh: _loadUsers,
       // Centered + max-width container so the layout adapts cleanly to any
@@ -274,43 +289,33 @@ class _UsersScreenState extends State<UsersScreen> {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
-          child: ListView(
+          child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.xl,
               AppSpacing.xl,
               AppSpacing.xl,
               96,
             ),
-            children: [
-              _SearchBar(controller: _searchCtrl),
-              const SizedBox(height: AppSpacing.lg),
-              _StaffSummary(users: _users, todayRevenue: _todayRevenue),
-              const SizedBox(height: AppSpacing.lg),
-              _FilterChips(
-                active: _filter,
-                onChanged: (f) => setState(() => _filter = f),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              if (filtered.isEmpty)
-                _EmptyView(
+            itemCount: leading.length + bodyCount,
+            itemBuilder: (context, index) {
+              if (index < leading.length) return leading[index];
+              if (filtered.isEmpty) {
+                return _EmptyView(
                   isSearching:
                       _searchCtrl.text.isNotEmpty ||
                       _filter != _UsersFilter.all,
-                )
-              else
-                ...filtered.map(
-                  (u) => UserCard(
-                    user: u,
-                    onTap: () => UserInfoSheet.show(
-                      context,
-                      user: u,
-                      onChanged: _loadUsers,
-                    ),
-                    onToggleStatus: () => _toggleStatus(u),
-                    onDelete: () => _deleteUser(u),
-                  ),
-                ),
-            ],
+                );
+              }
+              final u = filtered[index - leading.length];
+              return UserCard(
+                key: ValueKey('user_${u['id']}'),
+                user: u,
+                onTap: () =>
+                    UserInfoSheet.show(context, user: u, onChanged: _loadUsers),
+                onToggleStatus: () => _toggleStatus(u),
+                onDelete: () => _deleteUser(u),
+              );
+            },
           ),
         ),
       ),

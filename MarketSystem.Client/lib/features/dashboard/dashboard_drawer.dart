@@ -1,14 +1,12 @@
-import 'dart:convert' show base64Decode;
-
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../core/auth/permission_context.dart';
 import '../../core/auth/permissions.dart';
-import '../../core/providers/auth_provider.dart';
+import '../../core/auth/session_actions.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/widgets/base64_image.dart';
 import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
@@ -48,9 +46,7 @@ class DashboardDrawer extends StatelessWidget {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                children: [
-                  ..._menuTiles(context, role),
-                ],
+                children: [..._menuTiles(context, role)],
               ),
             ),
             Divider(
@@ -78,117 +74,116 @@ class DashboardDrawer extends StatelessWidget {
   }
 
   List<Widget> _menuTiles(BuildContext context, String role) {
-    final items = <_DrawerItem>[
-      _DrawerItem(
-        icon: Icons.inventory_2_rounded,
-        label: l10n.products,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProductsScreen(
-              isReadOnly: !context.can(Permissions.productsEdit),
-            ),
-          ),
-        ),
-      ),
-      _DrawerItem(
-        icon: Icons.grid_view_rounded,
-        label: l10n.categories,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CategoryManagementScreen()),
-        ),
-      ),
-      _DrawerItem(
-        icon: Icons.shopping_bag_rounded,
-        label: l10n.sales,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
-      ),
-      _DrawerItem(
-        icon: Icons.receipt_long_rounded,
-        label: l10n.dailySales,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const DailySalesScreen()),
-        ),
-      ),
-      _DrawerItem(
-        icon: Icons.people_alt_rounded,
-        label: l10n.customers,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.customers),
-      ),
-      _DrawerItem(
-        icon: Icons.add_business_rounded,
-        label: l10n.zakup,
-        onTap: () => Navigator.pushNamed(context, AppRoutes.zakup),
-      ),
-    ];
-
-    if (role == 'Admin' || role == 'Owner') {
-      items.addAll([
-        _DrawerItem(
-          icon: Icons.account_balance_wallet_rounded,
-          label: l10n.cashRegister,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.cashRegister),
-        ),
-        _DrawerItem(
-          icon: Icons.bar_chart_rounded,
-          label: l10n.reports,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.reports),
-        ),
-        _DrawerItem(
-          icon: Icons.admin_panel_settings,
-          label: l10n.users,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.users),
-        ),
-        _DrawerItem(
-          icon: Icons.monetization_on_rounded,
-          label: l10n.debts,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
-        ),
-      ]);
-    }
-
-    if (role == 'SuperAdmin') {
-      items.add(
-        _DrawerItem(
-          icon: Icons.shield_outlined,
-          label: l10n.securityJournal,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.securityJournal),
-        ),
-      );
+    void go(VoidCallback nav) {
+      Navigator.pop(context);
+      nav();
     }
 
     return [
-      for (final it in items)
+      if (context.can(Permissions.productsAccess))
         _SettingsTile(
-          icon: it.icon,
-          label: it.label,
-          onTap: () {
-            Navigator.pop(context);
-            it.onTap();
-          },
+          icon: Icons.inventory_2_rounded,
+          label: l10n.products,
+          onTap: () => go(
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProductsScreen(
+                  isReadOnly: !context.can(Permissions.productsEdit),
+                ),
+              ),
+            ),
+          ),
+        ),
+      if (context.can(Permissions.categoriesAccess))
+        _SettingsTile(
+          icon: Icons.grid_view_rounded,
+          label: l10n.categories,
+          onTap: () => go(
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CategoryManagementScreen(),
+              ),
+            ),
+          ),
+        ),
+      if (context.can(Permissions.salesAccess))
+        _SettingsTile(
+          icon: Icons.shopping_bag_rounded,
+          label: l10n.sales,
+          onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.sales)),
+        ),
+      if (context.can(Permissions.salesAccess))
+        _SettingsTile(
+          icon: Icons.receipt_long_rounded,
+          label: l10n.dailySales,
+          onTap: () => go(
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DailySalesScreen()),
+            ),
+          ),
+        ),
+      if (context.can(Permissions.customersAccess))
+        _SettingsTile(
+          icon: Icons.people_alt_rounded,
+          label: l10n.customers,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.customers)),
+        ),
+      if (context.can(Permissions.zakupAccess))
+        _SettingsTile(
+          icon: Icons.add_business_rounded,
+          label: l10n.zakup,
+          onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.zakup)),
+        ),
+      if (context.can(Permissions.cashRegisterAccess))
+        _SettingsTile(
+          icon: Icons.account_balance_wallet_rounded,
+          label: l10n.cashRegister,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.cashRegister)),
+        ),
+      if (context.can(Permissions.reportsAccess))
+        _SettingsTile(
+          icon: Icons.bar_chart_rounded,
+          label: l10n.reports,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.reports)),
+        ),
+      if (context.can(Permissions.usersAccess))
+        _SettingsTile(
+          icon: Icons.admin_panel_settings,
+          label: l10n.users,
+          onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.users)),
+        ),
+      if (context.can(Permissions.debtsAccess))
+        _SettingsTile(
+          icon: Icons.monetization_on_rounded,
+          label: l10n.debts,
+          onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.debts)),
+        ),
+      if (role == 'SuperAdmin')
+        _SettingsTile(
+          icon: Icons.shield_outlined,
+          label: l10n.securityJournal,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.securityJournal)),
         ),
     ];
   }
 
   /// D3 — gate the destructive logout behind a confirmation dialog so an
   /// accidental drawer tap doesn't kick a seller out mid-shift. After the
-  /// user confirms, we call `AuthProvider.logout()` and reset the back
-  /// stack with `pushNamedAndRemoveUntil` — `pushReplacement` only swaps
-  /// the top route, so a backswipe could still land on a stale
-  /// authenticated screen with a now-cleared auth provider.
+  /// user confirms, [SessionActions.logout] clears auth state and resets the
+  /// back stack to `/login` exactly once (see SessionActions for why the
+  /// "/login opens twice" guard lives there rather than here).
   Future<void> _handleLogout(BuildContext context) async {
     final confirmed = await _confirmLogout(context);
     if (confirmed != true) return;
     if (!context.mounted) return;
-    await Provider.of<AuthProvider>(context, listen: false).logout();
-    if (!context.mounted) return;
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.login,
-      (route) => false,
-    );
+    await SessionActions.logout(context);
   }
 
   /// Returns `true` only when the user explicitly taps the danger-styled
@@ -358,25 +353,24 @@ class _DrawerHeader extends StatelessWidget {
         imageUrl: img,
         width: 50,
         height: 50,
+        memCacheWidth: 144,
+        memCacheHeight: 144,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => fallback,
         placeholder: (_, __) => fallback,
       );
     } else if (img.startsWith('data:image') || img.length > 100) {
-      try {
-        final b64 = img.contains(',') ? img.split(',').last : img;
-        imgWidget = Image.memory(
-          base64Decode(b64),
-          width: 50,
-          height: 50,
-          cacheWidth: 144,
-          cacheHeight: 144,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => fallback,
-        );
-      } catch (_) {
-        imgWidget = null;
-      }
+      final b64 = img.contains(',') ? img.split(',').last : img;
+      // Base64Image decodes once + caches; the old inline base64Decode ran on
+      // every drawer rebuild (e.g. AuthProvider notifying while it's open).
+      imgWidget = Base64Image(
+        data: b64,
+        width: 50,
+        height: 50,
+        cacheWidth: 144,
+        cacheHeight: 144,
+        errorWidget: fallback,
+      );
     }
     return imgWidget ?? fallback;
   }
@@ -445,16 +439,4 @@ class _SettingsTile extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DrawerItem {
-  const _DrawerItem({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
 }

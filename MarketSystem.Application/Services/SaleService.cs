@@ -714,6 +714,10 @@ public partial class SaleService : ISaleService
                 }
             }
 
+            // Allaqachon to'liq to'langan savdoga qayta to'lov qilish taqiqlanadi.
+            if (sale.PaidAmount >= sale.TotalAmount)
+                throw new InvalidOperationException("Bu savdo allaqachon to'liq to'langan.");
+
             // VALIDATION: Mijozsiz qarzga savdo taqiqlanadi
             var newPaidAmount = sale.PaidAmount + request.Amount;
             if (newPaidAmount < sale.TotalAmount && (!sale.CustomerId.HasValue || sale.CustomerId.Value == Guid.Empty))
@@ -940,7 +944,17 @@ public partial class SaleService : ISaleService
                     if (item.IsExternal || !item.ProductId.HasValue) continue;
                     if (products.TryGetValue(item.ProductId.Value, out var product))
                     {
-                        product.Quantity += item.Quantity;
+                        if (product.IsTemporary)
+                        {
+                            // Vaqtinchalik mahsulot: bekor qilingan sotuvda yaratilgan,
+                            // inventarda qolmasin — soft-delete qilamiz.
+                            product.IsDeleted = true;
+                            product.DeletedAt = DateTime.UtcNow;
+                        }
+                        else
+                        {
+                            product.Quantity += item.Quantity;
+                        }
                         _unitOfWork.Products.Update(product);
                     }
                 }

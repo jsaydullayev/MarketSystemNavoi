@@ -16,10 +16,12 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/session_actions.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/validators/password_validator.dart';
 import '../../../core/widgets/common_app_bar.dart';
+import '../../../data/services/market_service.dart';
 import '../../../data/services/user_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
@@ -27,7 +29,6 @@ import '../../../design/tokens/app_typography.dart';
 import '../../../design/widgets/app_button.dart';
 import '../../../design/widgets/app_text_input.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../auth/presentation/screens/login_screen.dart';
 import '../widgets/profile_image_picker.dart';
 import '../widgets/profile_widgets.dart';
 
@@ -41,6 +42,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _fullNameController = TextEditingController();
   final _usernameController = TextEditingController();
+  final _marketNameController = TextEditingController();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
 
@@ -58,6 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (user != null) {
       _fullNameController.text = user['fullName'] ?? '';
       _usernameController.text = user['username'] ?? '';
+      _marketNameController.text = user['marketName'] ?? '';
     }
   }
 
@@ -65,6 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _fullNameController.dispose();
     _usernameController.dispose();
+    _marketNameController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     super.dispose();
@@ -135,6 +139,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             label: l10n.role,
                             value: user?['role'] ?? 'Seller',
                           ),
+                          if (user?['role'] == 'Owner')
+                            ProfileEditableField(
+                              icon: Icons.store_rounded,
+                              label: l10n.marketName,
+                              controller: _marketNameController,
+                            ),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.lg),
@@ -472,9 +482,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isSaving = true);
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      await UserService(
-        authProvider: auth,
-      ).updateProfile(fullName: _fullNameController.text.trim());
+      await UserService(authProvider: auth)
+          .updateProfile(fullName: _fullNameController.text.trim());
+
+      // Owner: market nomini ham yangilash
+      final newMarketName = _marketNameController.text.trim();
+      if (auth.role == 'Owner' && newMarketName.isNotEmpty) {
+        await MarketService(authProvider: auth)
+            .updateMyMarket(name: newMarketName);
+      }
+
       await auth.fetchUserProfile();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -526,13 +543,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (confirm == true && mounted) {
-      await Provider.of<AuthProvider>(context, listen: false).logout();
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (r) => false,
-      );
+      await SessionActions.logout(context);
     }
   }
 }

@@ -9,13 +9,10 @@
 // - Pull-to-refresh + role gating preserved from the legacy screen.
 
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
-import 'package:market_system_client/design/widgets/app_button.dart';
-import 'package:market_system_client/design/widgets/app_card.dart';
 import 'package:market_system_client/design/widgets/app_text_input.dart';
 import 'package:provider/provider.dart';
 
@@ -24,8 +21,9 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../dashboard/dashboard_screen.dart';
 import 'admin_product_form_screen.dart';
-
-enum _StockFilter { all, low, out }
+import 'widgets/admin_products_filter_chips.dart';
+import 'widgets/admin_products_product_row.dart';
+import 'widgets/admin_products_states.dart';
 
 class AdminProductsScreen extends StatefulWidget {
   const AdminProductsScreen({super.key});
@@ -39,7 +37,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   List<dynamic> _filteredProducts = [];
   bool _isLoading = false;
   String? _errorMessage;
-  _StockFilter _filter = _StockFilter.all;
+  StockFilter _filter = StockFilter.all;
   final _searchController = TextEditingController();
 
   @override
@@ -66,16 +64,16 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         });
       }
       switch (_filter) {
-        case _StockFilter.all:
+        case StockFilter.all:
           break;
-        case _StockFilter.low:
+        case StockFilter.low:
           base = base.where((p) {
             final qty = (p['quantity'] as num?)?.toDouble() ?? 0;
             final min = (p['minThreshold'] as num?)?.toDouble() ?? 0;
             return qty > 0 && qty <= min;
           });
           break;
-        case _StockFilter.out:
+        case StockFilter.out:
           base = base.where((p) {
             final qty = (p['quantity'] as num?)?.toDouble() ?? 0;
             return qty <= 0;
@@ -290,7 +288,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               ),
             ),
             // Filter chips
-            _FilterChips(
+            AdminProductsFilterChips(
               selected: _filter,
               onChanged: (f) {
                 setState(() => _filter = f);
@@ -307,13 +305,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                       ),
                     )
                   : errorMessage != null
-                  ? _ErrorState(
+                  ? AdminProductsErrorState(
                       message: errorMessage,
                       onRetry: _loadProducts,
                       l10n: l10n,
                     )
                   : _filteredProducts.isEmpty
-                  ? _EmptyState(
+                  ? AdminProductsEmptyState(
                       isSearching: _searchController.text.isNotEmpty,
                       l10n: l10n,
                     )
@@ -333,7 +331,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                             const SizedBox(height: AppSpacing.md),
                         itemBuilder: (context, index) {
                           final product = _filteredProducts[index];
-                          return _ProductRow(
+                          return AdminProductsProductRow(
                             product: product,
                             userRole: userRole,
                             l10n: l10n,
@@ -348,431 +346,10 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: context.colors.brand,
-          foregroundColor: Colors.white,
+          foregroundColor: context.colors.onBrand,
           elevation: 4,
           onPressed: () => _openForm(),
           child: const Icon(Icons.add_rounded, size: 28),
-        ),
-      ),
-    );
-  }
-}
-
-/// Filter chip row (Hammasi / Kam stok / Tugadi). Demo's `.sales-filter-bar`.
-class _FilterChips extends StatelessWidget {
-  final _StockFilter selected;
-  final ValueChanged<_StockFilter> onChanged;
-  final AppLocalizations l10n;
-
-  const _FilterChips({
-    required this.selected,
-    required this.onChanged,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final items = <(String, _StockFilter, IconData?)>[
-      (l10n.no == 'Yo\'q' ? 'Hammasi' : 'All', _StockFilter.all, null),
-      ('Kam stok', _StockFilter.low, Icons.warning_amber_rounded),
-      ('Tugadi', _StockFilter.out, Icons.block_rounded),
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xl,
-        vertical: AppSpacing.md,
-      ),
-      child: Row(
-        children: items
-            .map(
-              (e) => Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.md),
-                child: _Chip(
-                  label: e.$1,
-                  icon: e.$3,
-                  active: e.$2 == selected,
-                  onTap: () => onChanged(e.$2),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final String label;
-  final IconData? icon;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _Chip({
-    required this.label,
-    required this.active,
-    required this.onTap,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.full),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl,
-          vertical: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: active ? context.colors.brand : context.colors.inputFill,
-          borderRadius: BorderRadius.circular(AppRadius.full),
-          border: Border.all(
-            color: active ? context.colors.brand : context.colors.border,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 14,
-                color: active
-                    ? context.colors.onBrand
-                    : context.colors.textSecondary,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              label,
-              style: AppTextStyles.bodySmall().copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: active
-                    ? context.colors.onBrand
-                    : context.colors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Single product card. Demo's `.prod-row` inside `id="page-prod-list"`.
-class _ProductRow extends StatelessWidget {
-  final dynamic product;
-  final String? userRole;
-  final AppLocalizations l10n;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _ProductRow({
-    required this.product,
-    required this.userRole,
-    required this.l10n,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final qty = (product['quantity'] as num?)?.toDouble() ?? 0;
-    final minThreshold = (product['minThreshold'] as num?)?.toDouble() ?? 0;
-    final isOut = qty <= 0;
-    final isLow = !isOut && qty <= minThreshold;
-    final unitName = product['unitName'] ?? l10n.piece;
-
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image / icon tile
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: context.colors.brandLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Icon(
-              Icons.inventory_2_outlined,
-              color: context.colors.brandDark,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          // Name, category, badges
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product['name'] ?? l10n.unknown,
-                  style: AppTextStyles.bodyLarge().copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  l10n.salePriceLabel(product['salePrice'] ?? 0),
-                  style: AppTextStyles.bodySmall().copyWith(
-                    color: context.colors.textSecondary,
-                    fontSize: 12,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  l10n.costPriceLabel(product['costPrice'] ?? 0),
-                  style: AppTextStyles.bodySmall().copyWith(
-                    color: context.colors.textMuted,
-                    fontSize: 11,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                if (product['isTemporary'] == true)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: _Pill(
-                      label: l10n.temporary,
-                      color: context.colors.brandDark,
-                      bg: context.colors.brandLight,
-                    ),
-                  ),
-                if (isLow)
-                  _Pill(
-                    label: l10n.lowStockWarning(product['minThreshold'] ?? 0),
-                    color: AppColors.warning,
-                    bg: AppColors.warningLight,
-                    icon: Icons.warning_amber_rounded,
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          // Price + stock + actions
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                NumberFormatter.format(
-                  (product['salePrice'] as num?)?.toDouble() ?? 0,
-                ),
-                style: AppTextStyles.bodyLarge().copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: context.colors.brand,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                isOut
-                    ? 'Tugadi'
-                    : 'Stok: ${qty.toStringAsFixed(qty == qty.roundToDouble() ? 0 : 2)} $unitName',
-                style: AppTextStyles.bodySmall().copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isOut
-                      ? AppColors.danger
-                      : (isLow
-                            ? AppColors.warning
-                            : context.colors.textSecondary),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _IconAction(
-                    icon: Icons.edit_outlined,
-                    color: context.colors.brand,
-                    onTap: onEdit,
-                    tooltip: l10n.edit,
-                  ),
-                  const SizedBox(width: 4),
-                  _IconAction(
-                    icon: Icons.delete_outline_rounded,
-                    color: AppColors.danger,
-                    onTap: onDelete,
-                    tooltip: l10n.delete,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color bg;
-  final IconData? icon;
-  const _Pill({
-    required this.label,
-    required this.color,
-    required this.bg,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: 2,
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppRadius.full),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 11, color: color),
-            const SizedBox(width: 3),
-          ],
-          Text(
-            label,
-            style: AppTextStyles.caption().copyWith(
-              fontSize: 10,
-              letterSpacing: 0.4,
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IconAction extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  final String tooltip;
-  const _IconAction({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-    required this.tooltip,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
-          child: Icon(icon, color: color, size: 18),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final bool isSearching;
-  final AppLocalizations l10n;
-  const _EmptyState({required this.isSearching, required this.l10n});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: context.colors.inputFill,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.inventory_2_outlined,
-              size: 36,
-              color: context.colors.textMuted,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            isSearching ? l10n.productNotFound : l10n.noProducts,
-            style: AppTextStyles.titleMedium().copyWith(
-              color: context.colors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  final AppLocalizations l10n;
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-    required this.l10n,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl3),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              size: 56,
-              color: AppColors.danger,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium().copyWith(
-                color: AppColors.danger,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            SizedBox(
-              width: 200,
-              child: AppPrimaryButton(
-                label: l10n.retry,
-                icon: Icons.refresh_rounded,
-                onPressed: onRetry,
-              ),
-            ),
-          ],
         ),
       ),
     );

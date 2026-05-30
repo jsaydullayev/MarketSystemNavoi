@@ -47,22 +47,28 @@ public class User : BaseEntity, ISoftDelete
     // --- Owner RBAC — fine-grained permissions ---
     /// <summary>
     /// Explicit per-user permission set, customised by the Owner. Stored as a
-    /// PostgreSQL <c>text[]</c>. An EMPTY list means "not customised" — the
-    /// user then falls back to <see cref="PermissionDefaults"/> for its role,
-    /// so existing rows need no data migration. Ignored for Owner/SuperAdmin.
+    /// PostgreSQL <c>text[]</c>. Only meaningful when <see cref="IsPermissionsCustomized"/>
+    /// is true. Ignored for Owner/SuperAdmin.
     /// </summary>
     public List<string> Permissions { get; set; } = new();
 
     /// <summary>
-    /// The permissions actually in force for this user: the full catalogue for
-    /// Owner/SuperAdmin, the explicit set when customised, otherwise the role
-    /// default.
+    /// True when the Owner has explicitly saved a permission set for this user
+    /// (even if the saved set is empty — meaning "no permissions at all").
+    /// False = never customised → fall back to role defaults.
+    /// </summary>
+    public bool IsPermissionsCustomized { get; set; } = false;
+
+    /// <summary>
+    /// The permissions actually in force: full catalogue for Owner/SuperAdmin,
+    /// explicit set when <see cref="IsPermissionsCustomized"/> is true,
+    /// otherwise the role default.
     /// </summary>
     public IReadOnlyList<string> GetEffectivePermissions()
     {
         if (Role is Role.Owner or Role.SuperAdmin)
             return PermissionKeys.All;
-        return Permissions.Count > 0 ? Permissions : PermissionDefaults.ForRole(Role);
+        return IsPermissionsCustomized ? Permissions : PermissionDefaults.ForRole(Role);
     }
 
     /// <summary>True when the user is allowed the given permission key. Owner

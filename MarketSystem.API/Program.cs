@@ -165,7 +165,7 @@ try
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuerSigningKey = true,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero,
+                ClockSkew = TimeSpan.FromSeconds(30),
                 RoleClaimType = ClaimTypes.Role,
                 NameClaimType = ClaimTypes.Name
             };
@@ -353,6 +353,19 @@ try
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
+
+        // Export endpoints — Excel/PDF generation is CPU/memory intensive.
+        // 10 exports/min per IP stops loop-abuse while allowing normal usage.
+        options.AddPolicy("export", ctx => System.Threading.RateLimiting.RateLimitPartition.GetSlidingWindowLimiter(
+            PartitionKey(ctx),
+            _ => new System.Threading.RateLimiting.SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 2,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
     });
     // CORS origins — accepts:
     //   appsettings.json: "Cors:AllowedOrigins": ["https://a", "https://b"]
@@ -481,6 +494,7 @@ try
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+    builder.Services.AddScoped<IProductImportService, ProductImportService>();
     builder.Services.AddScoped<ICustomerService, CustomerService>();
     builder.Services.AddScoped<ISaleService, SaleService>();
     builder.Services.AddScoped<IZakupService, ZakupService>();
@@ -507,12 +521,17 @@ try
     builder.Services.AddSingleton<DbRevokedTokenStore>();
     builder.Services.AddSingleton<IRevokedTokenStore>(
         sp => sp.GetRequiredService<DbRevokedTokenStore>());
-    // Brute-force lockout (Plan 05 Bosqich 3). Singleton — the failure
-    // counter must outlive any single request scope. Process-local; the IP
-    // rate limiter and this username tracker are the two complementary
-    // defences (one stops a single IP from probing fast, the other stops a
-    // distributed attacker from probing one username at a normal pace).
-    builder.Services.AddSingleton<ILoginAttemptTracker, InMemoryLoginAttemptTracker>();
+    // Brute-force lockout (Plan 05 Bosqich 3 — M1 hardening).
+    //
+    // Singleton — the failure counter must outlive any single request scope.
+    // DbLoginAttemptTracker caches the hot path (one ConcurrentDictionary
+    // lookup per login attempt) but writes every failure/success through to
+    // PostgreSQL, so an API restart no longer resets the lockout state and
+    // we're ready to scale to multiple replicas without losing the rate
+    // limiter. Cache is rehydrated from DB once during startup (below).
+    builder.Services.AddSingleton<DbLoginAttemptTracker>();
+    builder.Services.AddSingleton<ILoginAttemptTracker>(
+        sp => sp.GetRequiredService<DbLoginAttemptTracker>());
 
     var app = builder.Build();
 
@@ -560,6 +579,16 @@ try
         using var scope = app.Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<DbRevokedTokenStore>();
         await store.LoadFromDbAsync();
+    }
+
+    // M1 — hydrate the brute-force lockout cache from the LoginAttempts
+    // table. Mirrors the revoked-token hydration above: without this, a
+    // restart would forget which usernames were locked and which were
+    // mid-window, letting an attacker reset the counter at will.
+    {
+        using var scope = app.Services.CreateScope();
+        var tracker = scope.ServiceProvider.GetRequiredService<DbLoginAttemptTracker>();
+        await tracker.LoadFromDbAsync();
     }
 
     // Trust X-Forwarded-* headers from the reverse proxy (nginx) so HttpContext.Request.Scheme

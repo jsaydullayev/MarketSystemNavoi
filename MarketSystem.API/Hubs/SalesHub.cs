@@ -28,6 +28,12 @@ public class SalesHub : Hub
 
     public async Task NotifyDraftSaleUpdated(Guid branchId, Guid sellerId, Guid saleId)
     {
+        var callerId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (callerId is null || callerId != sellerId.ToString())
+        {
+            Context.Abort();
+            return;
+        }
         await Clients.Group($"branch_{branchId}").SendAsync("DraftSaleUpdated", sellerId, saleId);
     }
 }

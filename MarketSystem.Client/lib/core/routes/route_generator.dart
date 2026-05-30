@@ -7,8 +7,10 @@ import 'package:market_system_client/features/cash_register/screens/cash_registe
 import 'package:market_system_client/features/splash/splash_screen.dart';
 
 import 'app_routes.dart';
+import '../auth/permissions.dart';
 import '../constants/public_routes.dart';
 import '../managers/route_state_manager.dart';
+import '../widgets/permission_gate.dart';
 
 // Screens
 import '../../features/auth/presentation/screens/welcome_screen.dart';
@@ -85,34 +87,74 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
 
     case AppRoutes.products:
-      return MaterialPageRoute(builder: (_) => const ProductsScreen());
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.productsAccess,
+          child: ProductsScreen(),
+        ),
+      );
 
     case AppRoutes.sales:
-      return MaterialPageRoute(builder: (_) => const SalesScreen());
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.salesAccess,
+          child: SalesScreen(),
+        ),
+      );
 
     case AppRoutes.customers:
-      return MaterialPageRoute(builder: (_) => const CustomersScreen());
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.customersAccess,
+          child: CustomersScreen(),
+        ),
+      );
 
     case AppRoutes.zakup:
-      return MaterialPageRoute(builder: (_) => const ZakupScreen());
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.zakupAccess,
+          child: ZakupScreen(),
+        ),
+      );
 
     case AppRoutes.adminProducts:
       return MaterialPageRoute(builder: (_) => const AdminProductsScreen());
 
     case AppRoutes.users:
-      return MaterialPageRoute(builder: (_) => const UsersScreen());
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.usersAccess,
+          child: UsersScreen(),
+        ),
+      );
 
     case AppRoutes.profile:
       return MaterialPageRoute(builder: (_) => const ProfileScreen());
 
     case AppRoutes.reports:
-      return MaterialPageRoute(builder: (_) => const ReportsScreen());
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.reportsAccess,
+          child: ReportsScreen(),
+        ),
+      );
 
     case AppRoutes.debts:
-      return MaterialPageRoute(builder: (_) => const DebtsScreen());
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.debtsAccess,
+          child: DebtsScreen(),
+        ),
+      );
 
     case AppRoutes.cashRegister:
-      return MaterialPageRoute(builder: (_) => const CashRegisterScreen());
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.cashRegisterAccess,
+          child: CashRegisterScreen(),
+        ),
+      );
 
     case AppRoutes.notifications:
       return MaterialPageRoute(builder: (_) => const NotificationsScreen());

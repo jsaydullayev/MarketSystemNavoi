@@ -78,7 +78,14 @@ class RequestCard extends StatelessWidget {
                           color: context.colors.textSecondary,
                         ),
                         const SizedBox(width: 5),
-                        Text(request.phone, style: AppTextStyles.bodySmall()),
+                        Expanded(
+                          child: Text(
+                            request.phone,
+                            style: AppTextStyles.bodySmall(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
                   ],

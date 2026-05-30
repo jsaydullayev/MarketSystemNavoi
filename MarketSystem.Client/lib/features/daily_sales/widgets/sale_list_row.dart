@@ -5,6 +5,9 @@ import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 
+// PERF: shared instead of constructed per row on every list rebuild.
+final DateFormat _timeFormat = DateFormat('HH:mm');
+
 /// Compact one-row sale entry (Variant A timeline). Replaces the old square
 /// grid card so 10+ sales/day stay scannable. Tapping opens the detail sheet
 /// (handled by the parent screen via `onTap`).
@@ -133,7 +136,7 @@ class _TimeBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            DateFormat('HH:mm').format(time),
+            _timeFormat.format(time),
             style: AppTextStyles.labelLarge().copyWith(
               fontSize: 13,
               letterSpacing: -0.3,
@@ -153,8 +156,9 @@ class _CustomerAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     // Snapshot the widget field so flow analysis can drop both `!`s.
     final n = name;
-    final hasName = n != null && n.isNotEmpty;
-    final initial = hasName ? n.trim()[0].toUpperCase() : '?';
+    final trimmed = n?.trim() ?? '';
+    final hasName = trimmed.isNotEmpty;
+    final initial = hasName ? trimmed[0].toUpperCase() : '?';
     return Container(
       width: 18,
       height: 18,

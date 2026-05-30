@@ -229,11 +229,25 @@ public partial class ReportService : IReportService
             z => z.CreatedAt >= start && z.CreatedAt < end && z.MarketId == marketId,
             cancellationToken);
 
-        // Get all products for inventory report (filtered by market) with Category
-        var products = await _unitOfWork.Products.FindAsync(
-            p => p.MarketId == marketId,
-            cancellationToken,
-            includeProperties: "Category");
+        // P6 — Projection o'rniga to'liq entity yuklash:
+        // 10K tovar × ~20 ustun + Category navigation = ~100MB memory.
+        // Select projection faqat kerakli 7 ustunni oladi → ~15MB.
+        var productProjections = await _context.Products
+            .AsNoTracking()
+            .Where(p => p.MarketId == marketId)
+            .Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Quantity,
+                p.MinThreshold,
+                p.CostPrice,
+                p.SalePrice,
+                p.MinSalePrice,
+                p.Unit,
+                CategoryName = p.Category != null ? p.Category.Name : (string?)null,
+            })
+            .ToListAsync(cancellationToken);
 
         // Calculate daily report
         var dailyReport = CalculateReport(sales, zakups, start, end);
@@ -273,7 +287,7 @@ public partial class ReportService : IReportService
                         user.Id,
                         user.FullName,
                         totalSales,
-                        totalProfit,  // Already filtered since this is only called when userRole == Role.Owner.ToString()
+                        totalProfit,
                         userSales.Count
                     ));
                 }
@@ -289,11 +303,11 @@ public partial class ReportService : IReportService
         bool includeProfit = userRole == Role.Owner.ToString();
 
         // Calculate inventory statistics
-        int productCount = products.Count();
-        int lowStockCount = products.Count(p => p.Quantity < 10 && p.Quantity > 0);
-        int outOfStockCount = products.Count(p => p.Quantity <= 0);
+        int productCount = productProjections.Count;
+        int lowStockCount = productProjections.Count(p => p.Quantity <= p.MinThreshold && p.Quantity > 0);
+        int outOfStockCount = productProjections.Count(p => p.Quantity <= 0);
 
-        foreach (var product in products)
+        foreach (var product in productProjections)
         {
             var totalCostValue = product.Quantity * product.CostPrice;
             var totalSaleValue = product.Quantity * product.SalePrice;
@@ -301,6 +315,13 @@ public partial class ReportService : IReportService
 
             totalInventoryCost += totalCostValue;
             totalInventorySaleValue += totalSaleValue;
+
+            var unitName = product.Unit switch
+            {
+                UnitType.Kilogram => "kg",
+                UnitType.Meter    => "m",
+                _                 => "dona",
+            };
 
             inventoryReport.Add(new InventoryReportDto(
                 product.Id,
@@ -312,8 +333,8 @@ public partial class ReportService : IReportService
                 totalCostValue,
                 totalSaleValue,
                 potentialProfit,
-                product.Category?.Name,
-                product.GetUnitName()
+                product.CategoryName,
+                unitName
             ));
         }
 
@@ -574,6 +595,49 @@ public partial class ReportService : IReportService
             cardPayments,
             cashInRegister + cardPayments
         );
+    }
+
+    public async Task<DashboardSummaryDto> GetOwnerDashboardSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        var now = DateTime.UtcNow;
+        var overdueCutoff = now.AddDays(-14);
+
+        // These five COUNT/SUM queries replace what the client used to do by
+        // downloading GetAllCustomers + GetAllProducts + GetAllDebts in full
+        // and folding them on the UI isolate. Definitions are kept identical to
+        // that client logic so the dashboard numbers don't shift:
+        //   - customerCount: non-deleted customers (== GetAllCustomers().length)
+        //   - lowStockCount: Quantity <= MinThreshold (== Product.IsLowStock;
+        //     intentionally NOT filtering IsDeleted, matching GetAllProducts)
+        //   - pending debts: RemainingDebt > 0
+        //   - overdue: past DueDate, or (no DueDate) created > 14 days ago
+        var customerCount = await _context.Customers
+            .AsNoTracking()
+            .CountAsync(c => c.MarketId == marketId && !c.IsDeleted, cancellationToken);
+
+        var lowStockCount = await _context.Products
+            .AsNoTracking()
+            .CountAsync(p => p.MarketId == marketId && p.Quantity <= p.MinThreshold, cancellationToken);
+
+        var pending = _context.Debts
+            .AsNoTracking()
+            .Where(d => d.MarketId == marketId && d.RemainingDebt > 0);
+
+        var pendingDebtsCount = await pending.CountAsync(cancellationToken);
+        var pendingDebtsTotal =
+            await pending.SumAsync(d => (decimal?)d.RemainingDebt, cancellationToken) ?? 0m;
+        var overdueDebtsCount = await pending.CountAsync(
+            d => (d.DueDate != null && d.DueDate < now) ||
+                 (d.DueDate == null && d.CreatedAt < overdueCutoff),
+            cancellationToken);
+
+        return new DashboardSummaryDto(
+            customerCount,
+            lowStockCount,
+            pendingDebtsCount,
+            pendingDebtsTotal,
+            overdueDebtsCount);
     }
 
     public async Task<DailySalesListDto> GetDailySalesListAsync(

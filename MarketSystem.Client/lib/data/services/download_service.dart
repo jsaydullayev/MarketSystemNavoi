@@ -6,6 +6,7 @@ import 'package:universal_html/html.dart' as html;
 import 'package:open_filex/open_filex.dart';
 
 import '../../core/constants/api_constants.dart';
+import '../../core/errors/api_exception.dart';
 import 'http_service.dart';
 
 class DownloadService {
@@ -28,51 +29,33 @@ class DownloadService {
 
   /// Kategoriyalarni Excel formatida yuklab olish
   Future<void> downloadCategories({String lang = 'uz'}) async {
-    try {
-      final response = await _httpService.get(
-        '${ApiConstants.productCategoriesExportExcel}?lang=$lang',
+    final response = await _httpService.get(
+      '${ApiConstants.productCategoriesExportExcel}?lang=$lang',
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Kategoriyalarni yuklab olishda xatolik',
       );
-
-      if (response.statusCode == 200) {
-        final filename = lang == 'ru'
-            ? 'Kategorii_${DateTime.now().millisecondsSinceEpoch}.xlsx'
-            : 'Kategoriyalar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-        if (kIsWeb) {
-          _downloadWeb(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-          'Kategoriyalarni yuklab olishda xatolik: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Kategoriyalarni yuklab olishda xatolik: $e');
     }
+    final filename = lang == 'ru'
+        ? 'Kategorii_${DateTime.now().millisecondsSinceEpoch}.xlsx'
+        : 'Kategoriyalar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+    await _saveDownloadedFile(response.bodyBytes, filename);
   }
 
   /// Mahsulotlarni Excel formatida yuklab olish
   Future<void> downloadProducts() async {
-    try {
-      final response = await _httpService.get(ApiConstants.productsExportExcel);
-
-      if (response.statusCode == 200) {
-        final filename =
-            'mahsulotlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-        if (kIsWeb) {
-          _downloadWeb(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-          'Mahsulotlarni yuklab olishda xatolik: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Mahsulotlarni yuklab olishda xatolik: $e');
+    final response = await _httpService.get(ApiConstants.productsExportExcel);
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Mahsulotlarni yuklab olishda xatolik',
+      );
     }
+    final filename =
+        'mahsulotlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+    await _saveDownloadedFile(response.bodyBytes, filename);
   }
 
   /// Umumiy hisobotni Excel formatida yuklab olish
@@ -80,31 +63,22 @@ class DownloadService {
     DateTime? date,
     String lang = 'uz',
   }) async {
-    try {
-      final params = <String, String>{'lang': lang};
-      if (date != null) params['date'] = _formatDateForQuery(date);
-      final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-      final url = '/Reports/comprehensive-report/export?$query';
+    final params = <String, String>{'lang': lang};
+    if (date != null) params['date'] = _formatDateForQuery(date);
+    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+    final url = '/Reports/comprehensive-report/export?$query';
 
-      final response = await _httpService.get(url);
-
-      if (response.statusCode == 200) {
-        final filename = lang == 'ru'
-            ? 'otchet_${DateTime.now().millisecondsSinceEpoch}.xlsx'
-            : 'hisobot_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-        if (kIsWeb) {
-          _downloadWeb(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-          'Hisobotlarni yuklab olishda xatolik: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Hisobotlarni yuklab olishda xatolik: $e');
+    final response = await _httpService.get(url);
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Hisobotlarni yuklab olishda xatolik',
+      );
     }
+    final filename = lang == 'ru'
+        ? 'otchet_${DateTime.now().millisecondsSinceEpoch}.xlsx'
+        : 'hisobot_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+    await _saveDownloadedFile(response.bodyBytes, filename);
   }
 
   /// Mijozlarni Excel formatida yuklab olish.
@@ -112,105 +86,102 @@ class DownloadService {
   /// (added 2026-05-18 — mirrors /api/Products/.../export so the same
   /// download flow handles both files).
   Future<void> downloadCustomers({String lang = 'uz'}) async {
-    try {
-      final response = await _httpService.get(
-        '/Customers/ExportCustomersToExcel/export?lang=$lang',
+    final response = await _httpService.get(
+      '/Customers/ExportCustomersToExcel/export?lang=$lang',
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Mijozlarni yuklab olishda xatolik',
       );
+    }
+    final filename = 'mijozlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+    await _saveDownloadedFile(response.bodyBytes, filename);
+  }
 
-      if (response.statusCode == 200) {
-        final filename =
-            'mijozlar_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-        if (kIsWeb) {
-          _downloadWeb(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-          'Mijozlarni yuklab olishda xatolik: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Mijozlarni yuklab olishda xatolik: $e');
+  /// ApiException-2 — single dispatch for "save these bytes". Web hits the
+  /// browser's blob download path; mobile/desktop drops the file into the
+  /// Downloads folder and asks the OS to open it. Errors from either branch
+  /// surface as `ApiException(statusCode: 0)` so callers can branch on
+  /// `e is ApiException` instead of double-catching.
+  Future<void> _saveDownloadedFile(List<int> bytes, String filename) async {
+    if (kIsWeb) {
+      _downloadWeb(bytes, filename);
+    } else {
+      await _downloadMobileDesktop(bytes, filename);
     }
   }
 
-  /// Faylni mobile/desktop device ga yuklab olish
+  /// Faylni mobile/desktop device ga yuklab olish.
+  /// ApiException-2 — disk / open errors fold into ApiException(statusCode: 0)
+  /// so the snackbar at the call site can render a localized message instead
+  /// of "Exception: Exception: Faylni yuklab olishda xatolik: ...".
   Future<void> _downloadMobileDesktop(List<int> bytes, String filename) async {
     try {
-      // Downloads papkasini olish
       final directory = await getDownloadsDirectory();
-
-      if (directory != null) {
-        final filePath = '${directory.path}/$filename';
-        final file = File(filePath);
-
-        // Faylni yozish
-        await file.writeAsBytes(bytes);
-
-        // Faylni ochish - OS automatic ravishda default app (Excel, LibreOffice, etc) bilan ochadi
-        await OpenFilex.open(filePath);
-      } else {
-        throw Exception('Downloads papkasini topib bo\'lmadi');
+      if (directory == null) {
+        throw ApiException(
+          statusCode: 0,
+          message: 'Downloads papkasini topib bo\'lmadi',
+        );
       }
+      final filePath = '${directory.path}/$filename';
+      final file = File(filePath);
+      await file.writeAsBytes(bytes);
+      // OS automatic ravishda default app (Excel, LibreOffice, etc) bilan ochadi.
+      await OpenFilex.open(filePath);
+    } on ApiException {
+      rethrow;
     } catch (e) {
-      throw Exception('Faylni yuklab olishda xatolik: $e');
+      throw ApiException(
+        statusCode: 0,
+        message: 'Faylni yuklab olishda xatolik: $e',
+      );
     }
   }
 
-  /// Faylni web browser orqali yuklab olish (Browser Download API)
+  /// Faylni web browser orqali yuklab olish (Browser Download API).
   void _downloadWeb(List<int> bytes, String filename) {
     try {
-      // Blob yaratish
       final blob = html.Blob([
         bytes,
       ], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-
-      // Download URL yaratish
       final url = html.Url.createObjectUrlFromBlob(blob);
-
-      // Anchor element yaratish va click qilish
       final anchor = html.AnchorElement()
         ..href = url
         ..download = filename
         ..style.display = 'none';
-
-      // DOM ga qo'shish, click qilish, va o'chirish
       html.document.body?.append(anchor);
       anchor.click();
       anchor.remove();
-
-      // URLni tozalash (memory leak oldini olish uchun)
+      // Memory leak oldini olish uchun blob URL'ni tozalash.
       html.Url.revokeObjectUrl(url);
     } catch (e) {
-      throw Exception('Web download xatolik: $e');
+      throw ApiException(
+        statusCode: 0,
+        message: 'Web download xatolik: $e',
+      );
     }
   }
 
-  /// Faylni web browser orqali PDF formatda yuklab olish
+  /// Faylni web browser orqali PDF formatda yuklab olish.
   void _downloadWebPdf(List<int> bytes, String filename) {
     try {
-      // Blob yaratish (PDF MIME type)
       final blob = html.Blob([bytes], 'application/pdf');
-
-      // Download URL yaratish
       final url = html.Url.createObjectUrlFromBlob(blob);
-
-      // Anchor element yaratish va click qilish
       final anchor = html.AnchorElement()
         ..href = url
         ..download = filename
         ..style.display = 'none';
-
-      // DOM ga qo'shish, click qilish, va o'chirish
       html.document.body?.append(anchor);
       anchor.click();
       anchor.remove();
-
-      // URLni tozalash (memory leak oldini olish uchun)
       html.Url.revokeObjectUrl(url);
     } catch (e) {
-      throw Exception('Web PDF download xatolik: $e');
+      throw ApiException(
+        statusCode: 0,
+        message: 'Web PDF download xatolik: $e',
+      );
     }
   }
 
@@ -219,30 +190,18 @@ class DownloadService {
     DateTime date, {
     String lang = 'uz',
   }) async {
-    try {
-      String url =
-          '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
-
-      final response = await _httpService.get(url);
-
-      if (response.statusCode == 200) {
-        final filename =
-            'daily_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
-        if (kIsWeb) {
-          _downloadWebPdf(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-          'Kunlik hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception(
-        'Kunlik hisobotni PDF formatida yuklab olishda xatolik: $e',
+    final response = await _httpService.get(
+      '/Reports/daily/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang',
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Kunlik hisobotni PDF formatida yuklab olishda xatolik',
       );
     }
+    final filename =
+        'daily_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    await _savePdf(response.bodyBytes, filename);
   }
 
   /// Davr hisobotni PDF formatida yuklab olish
@@ -251,30 +210,19 @@ class DownloadService {
     DateTime end, {
     String lang = 'uz',
   }) async {
-    try {
-      String url =
-          '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}&lang=$lang';
-
-      final response = await _httpService.get(url);
-
-      if (response.statusCode == 200) {
-        final filename =
-            'period_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
-        if (kIsWeb) {
-          _downloadWebPdf(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-          'Davriy hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception(
-        'Davriy hisobotni PDF formatida yuklab olishda xatolik: $e',
+    final response = await _httpService.get(
+      '/Reports/period/export-pdf?start=${_formatDateForQuery(start)}&end=${_formatDateForQuery(end)}&lang=$lang',
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage:
+            'Davriy hisobotni PDF formatida yuklab olishda xatolik',
       );
     }
+    final filename =
+        'period_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    await _savePdf(response.bodyBytes, filename);
   }
 
   /// Umumiy hisobotni PDF formatida yuklab olish
@@ -282,29 +230,29 @@ class DownloadService {
     DateTime date, {
     String lang = 'uz',
   }) async {
-    try {
-      String url =
-          '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang';
-
-      final response = await _httpService.get(url);
-
-      if (response.statusCode == 200) {
-        final filename =
-            'comprehensive_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
-        if (kIsWeb) {
-          _downloadWebPdf(response.bodyBytes, filename);
-        } else {
-          await _downloadMobileDesktop(response.bodyBytes, filename);
-        }
-      } else {
-        throw Exception(
-          'Umumiy hisobotni PDF formatida yuklab olishda xatolik: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      throw Exception(
-        'Umumiy hisobotni PDF formatida yuklab olishda xatolik: $e',
+    final response = await _httpService.get(
+      '/Reports/comprehensive/export-pdf?date=${_formatDateForQuery(date)}&lang=$lang',
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage:
+            'Umumiy hisobotni PDF formatida yuklab olishda xatolik',
       );
+    }
+    final filename =
+        'comprehensive_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    await _savePdf(response.bodyBytes, filename);
+  }
+
+  /// PDF-variant of [_saveDownloadedFile]. Web uses the PDF MIME-type blob
+  /// path so the browser opens an inline preview instead of forcing a
+  /// download as `application/octet-stream`.
+  Future<void> _savePdf(List<int> bytes, String filename) async {
+    if (kIsWeb) {
+      _downloadWebPdf(bytes, filename);
+    } else {
+      await _downloadMobileDesktop(bytes, filename);
     }
   }
 }
