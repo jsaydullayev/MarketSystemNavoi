@@ -80,8 +80,10 @@ class TokenStorage {
         await _secure.write(key: key, value: value);
         return;
       } catch (e) {
-        debugPrint('TokenStorage: secure write failed ($e) — '
-            'falling back to SharedPreferences.');
+        debugPrint(
+          'TokenStorage: secure write failed ($e) — '
+          'falling back to SharedPreferences.',
+        );
         _secureUnavailable = true;
       }
     }
@@ -95,8 +97,10 @@ class TokenStorage {
         final v = await _secure.read(key: key);
         if (v != null) return v;
       } catch (e) {
-        debugPrint('TokenStorage: secure read failed ($e) — '
-            'falling back to SharedPreferences.');
+        debugPrint(
+          'TokenStorage: secure read failed ($e) — '
+          'falling back to SharedPreferences.',
+        );
         _secureUnavailable = true;
       }
     }
@@ -180,5 +184,35 @@ class TokenStorage {
     await _migrateIfNeeded();
     await _delete(_accessKey);
     await _delete(_refreshKey);
+  }
+
+  // ── "Remember me" credentials ────────────────────────────────────
+  // Saved in the SAME platform-secure store as the tokens, so the remembered
+  // password is encrypted at rest (EncryptedSharedPreferences / Keychain) with
+  // the same plain-SharedPreferences fallback on HTTP-web. Kept SEPARATE from
+  // the session tokens: [clear] (logout) wipes the session but leaves these, so
+  // the login form can still prefill on the next visit.
+  static const _rememberUserKey = 'remember_username';
+  static const _rememberPassKey = 'remember_password';
+
+  Future<void> saveCredentials({
+    required String username,
+    required String password,
+  }) async {
+    await _write(_rememberUserKey, username);
+    await _write(_rememberPassKey, password);
+  }
+
+  /// The remembered (username, password), or null if either was never saved.
+  Future<({String username, String password})?> readCredentials() async {
+    final u = await _read(_rememberUserKey);
+    final p = await _read(_rememberPassKey);
+    if (u == null || u.isEmpty || p == null || p.isEmpty) return null;
+    return (username: u, password: p);
+  }
+
+  Future<void> clearCredentials() async {
+    await _delete(_rememberUserKey);
+    await _delete(_rememberPassKey);
   }
 }
