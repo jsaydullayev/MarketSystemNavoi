@@ -4,7 +4,7 @@ library;
 
 /// App name and info
 class AppStrings {
-  static const String appName = 'Market System';
+  static const String appName = 'strotech.uz';
   static const String appVersion = '1.0.0';
 
   // Authentication
