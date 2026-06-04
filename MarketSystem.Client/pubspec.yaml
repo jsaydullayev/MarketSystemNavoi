@@ -87,20 +87,18 @@ flutter_launcher_icons:
     android: true
     ios: true
     image_path: "assets/images/logo.png"
-    # Windows desktop: regenerate windows/runner/resources/app_icon.ico from the
-    # same brand logo so the .exe (and its desktop shortcut) stops showing the
-    # default Flutter glyph. icon_size 256 = crisp at every shell size.
+    # Desktop + web use app_icon.png — a full-bleed orange square (the brand
+    # logo with its transparent/white corners flooded to #F6862A) so the icon
+    # has no white edges in the taskbar, browser tab, or installed-PWA shell.
     windows:
         generate: true
-        image_path: "assets/images/logo.png"
+        image_path: "assets/images/app_icon.png"
         icon_size: 256
-    # Web: regenerate web/favicon.png + web/icons/Icon-*.png from the brand logo
-    # so the browser tab / installed-app icon stops showing the default Flutter glyph.
     web:
         generate: true
-        image_path: "assets/images/logo.png"
-        background_color: "#0175C2"
-        theme_color: "#0175C2"
+        image_path: "assets/images/app_icon.png"
+        background_color: "#F6862A"
+        theme_color: "#F6862A"
 
 flutter:
     uses-material-design: true
