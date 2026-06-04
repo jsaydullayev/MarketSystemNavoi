@@ -26,6 +26,10 @@ public class RbacPermissionTests
             Username = "test",
             Role = role,
             Permissions = permissions.ToList(),
+            // Mirror UserService: an explicit set only overrides the role
+            // default when the user is flagged customized. With no permissions
+            // passed, the user falls back to PermissionDefaults.ForRole.
+            IsPermissionsCustomized = permissions.Length > 0,
         };
 
     // ---- Owner / SuperAdmin always bypass ------------------------------
@@ -61,7 +65,8 @@ public class RbacPermissionTests
         {
             if (key is PermissionKeys.DataProfit
                     or PermissionKeys.DataCashBalance
-                    or PermissionKeys.DataAuditLog)
+                    or PermissionKeys.DataAuditLog
+                    or PermissionKeys.ProductsImport)   // Owner-only: product import is gated to Owner by default
                 continue;
             admin.HasPermission(key).Should().BeTrue($"Admin default must include {key}");
         }

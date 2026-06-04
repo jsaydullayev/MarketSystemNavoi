@@ -2,17 +2,16 @@
 # Release Android App Bundle (.aab) build for Google Play.
 #
 # WHY THIS SCRIPT EXISTS:
-#   The hidden SuperAdmin console only works when the binary is built with
-#   --dart-define=SUPERADMIN_CONSOLE_SEGMENT=<value>. In RELEASE builds the
-#   dev fallback in app_config.dart is ignored on purpose, so an .aab built
-#   with a plain `flutter build appbundle` shows "Konsol sozlanmagan" and the
-#   console 404s. This script always injects the segment so it can't be
-#   forgotten.
+#   The hidden SuperAdmin console needs SUPERADMIN_CONSOLE_SEGMENT. app_config.dart
+#   now bakes a sensible DEFAULT, so a plain `flutter build appbundle` already
+#   reaches the console — but this script gives a clean, reproducible release
+#   (pub get + correct flags in one step) and lets you OVERRIDE the segment per
+#   deployment via dart_defines/prod.json without editing source.
 #
-#   The value lives in MarketSystem.Client/dart_defines/prod.json (gitignored)
-#   and MUST match the production backend's SuperAdmin__ConsoleSegment (the
-#   server's .env). Copy dart_defines/prod.example.json -> prod.json and fill
-#   it in on a fresh checkout.
+#   The override value lives in MarketSystem.Client/dart_defines/prod.json
+#   (gitignored) and MUST match that deployment's backend SuperAdmin__ConsoleSegment.
+#   Copy dart_defines/prod.example.json -> prod.json and fill it in. If you don't
+#   need a custom segment, you can ignore this script and build normally.
 #
 # USAGE (from repo root):
 #   .\build_appbundle.ps1

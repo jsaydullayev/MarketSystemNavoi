@@ -118,6 +118,14 @@ class HttpService {
   factory HttpService() => _instance;
   HttpService._internal();
 
+  /// Single keep-alive HTTP client reused for every request so sequential /
+  /// repeated calls (dashboard load + refresh, navigation between screens)
+  /// reuse the warm TCP connection instead of paying a fresh handshake per
+  /// call. The package-level `http.get/post/…` helpers create and tear down a
+  /// client EACH call — no connection reuse. This singleton lives for the
+  /// whole app, so the client is intentionally never closed.
+  final http.Client _client = http.Client();
+
   void setAuthService(AuthService authService) {
     _authService = authService;
   }
@@ -330,7 +338,7 @@ class HttpService {
 
     switch (method.toUpperCase()) {
       case 'GET':
-        return http.get(
+        return _client.get(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -339,7 +347,7 @@ class HttpService {
         );
       case 'POST':
         final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.post(
+        return _client.post(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -349,7 +357,7 @@ class HttpService {
         );
       case 'PUT':
         final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.put(
+        return _client.put(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -358,7 +366,7 @@ class HttpService {
           body: encodedBody,
         );
       case 'DELETE':
-        return http.delete(
+        return _client.delete(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -367,7 +375,7 @@ class HttpService {
         );
       case 'PATCH':
         final encodedBody = body != null ? jsonEncode(body) : null;
-        return http.patch(
+        return _client.patch(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
             'Content-Type': 'application/json',
@@ -398,7 +406,7 @@ class HttpService {
     debugPrint('Auth: ${token != null ? 'Bearer [•••]' : 'NO TOKEN'}');
     debugPrint('================');
 
-    return http
+    return _client
         .get(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
@@ -437,7 +445,7 @@ class HttpService {
     debugPrint('Body: $encodedBody');
     debugPrint('================');
 
-    return http
+    return _client
         .post(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
@@ -484,37 +492,32 @@ class HttpService {
     }
     debugPrint('================');
 
-    // For large bodies, use a different approach to avoid encoding issues
+    // For large bodies, stream the request via the shared keep-alive client
+    // (Request API) instead of buffering through the put() convenience helper.
     if (encodedBody != null && encodedBody.length > 100000) {
-      final client = http.Client();
-      try {
-        final request = http.Request('PUT', Uri.parse('$baseUrl$endpoint'));
-        request.headers.addAll({
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        });
-        request.body = encodedBody;
+      final request = http.Request('PUT', Uri.parse('$baseUrl$endpoint'));
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      });
+      request.body = encodedBody;
 
-        final streamedResponse = await client
-            .send(request)
-            .timeout(
-              const Duration(seconds: 60),
-              onTimeout: () {
-                throw ApiException(
-                  statusCode: 0,
-                  message: 'Request timeout after 60 seconds',
-                  code: 'TIMEOUT',
-                );
-              },
-            );
-        final response = await http.Response.fromStream(streamedResponse);
-        return response;
-      } finally {
-        client.close();
-      }
+      final streamedResponse = await _client
+          .send(request)
+          .timeout(
+            const Duration(seconds: 60),
+            onTimeout: () {
+              throw ApiException(
+                statusCode: 0,
+                message: 'Request timeout after 60 seconds',
+                code: 'TIMEOUT',
+              );
+            },
+          );
+      return http.Response.fromStream(streamedResponse);
     }
 
-    return http
+    return _client
         .put(
           Uri.parse('$baseUrl$endpoint'),
           headers: {
@@ -554,7 +557,7 @@ class HttpService {
     // hand-roll the request when one is supplied. RFC 7231 permits a body on
     // DELETE — ASP.NET Core accepts it with [FromBody].
     if (body == null) {
-      return http.delete(
+      return _client.delete(
         Uri.parse(fullUrl),
         headers: {
           'Content-Type': 'application/json',
@@ -567,13 +570,8 @@ class HttpService {
     request.headers['Content-Type'] = 'application/json';
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     request.body = jsonEncode(body);
-    final client = http.Client();
-    try {
-      final streamed = await client.send(request);
-      return await http.Response.fromStream(streamed);
-    } finally {
-      client.close();
-    }
+    final streamed = await _client.send(request);
+    return http.Response.fromStream(streamed);
   }
 
   // PATCH request
@@ -593,7 +591,7 @@ class HttpService {
     }
     debugPrint('================');
 
-    return http.patch(
+    return _client.patch(
       Uri.parse('$baseUrl$endpoint'),
       headers: {
         'Content-Type': 'application/json',
@@ -661,7 +659,7 @@ class HttpService {
       debugPrint('URL: $baseUrl$endpoint');
       debugPrint('================');
 
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl$endpoint'),
         headers: {if (token != null) 'Authorization': 'Bearer $token'},
       );

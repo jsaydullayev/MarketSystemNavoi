@@ -27,9 +27,13 @@ class AppColors {
   static const Color accentPurple = Color(0xFF7C3AED); // violet-600
   static const Color accentPurpleDeep = Color(0xFF6D28D9); // violet-700
   static const Color accentPurpleLight = Color(0xFFEDE9FE); // violet-100
-  static const Color accentViolet = Color(0xFF8B5CF6); // violet-500 (avg stats card)
+  static const Color accentViolet = Color(
+    0xFF8B5CF6,
+  ); // violet-500 (avg stats card)
   static const Color avatarSky = Color(0xFF0EA5E9); // sky-500 (avatar palette)
-  static const Color avatarPink = Color(0xFFEC4899); // pink-500 (avatar palette)
+  static const Color avatarPink = Color(
+    0xFFEC4899,
+  ); // pink-500 (avatar palette)
 
   // Surface & borders
   static const Color surface = Color(0xFFFFFFFF);
@@ -74,7 +78,9 @@ class AppColors {
   static const Color darkText = Color(0xFFF1F5F9); // slate-100 — high contrast
   static const Color darkTextSecondary = Color(0xFFCBD5E1); // slate-300
   static const Color darkTextMuted = Color(0xFF64748B); // slate-500
-  static const Color darkInputFill = Color(0xFF2A3A55); // slightly above darkSurface2 so inputs stand out
+  static const Color darkInputFill = Color(
+    0xFF2A3A55,
+  ); // slightly above darkSurface2 so inputs stand out
 }
 
 class AppSpacing {
@@ -95,4 +101,11 @@ class AppRadius {
   static const double xl = 16;
   static const double xl2 = 18;
   static const double full = 9999;
+}
+
+/// Width breakpoints (logical px) for adaptive layouts. Below [compact],
+/// app bars / headers collapse labelled actions to icon-only so they fit
+/// narrow phones without clipping.
+class AppBreakpoints {
+  static const double compact = 380;
 }

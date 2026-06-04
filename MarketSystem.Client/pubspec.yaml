@@ -1,7 +1,7 @@
 name: market_system_client
 description: Market System Mobile App
 publish_to: "none"
-version: 1.0.0+4
+version: 1.0.0+6
 
 environment:
     sdk: ">=3.8.0 <4.0.0"
@@ -62,7 +62,9 @@ dependencies:
     share_plus: ^12.0.1
     liquid_pull_to_refresh: ^3.0.1
     cached_network_image: ^3.4.1
-    google_fonts: ^6.2.1
+    # google_fonts removed — Inter is now bundled (assets/fonts/Inter-Variable.ttf)
+    # and used via plain TextStyle in app_typography.dart, so the app no longer
+    # fetches fonts from fonts.gstatic.com at runtime.
 
     # Excel Import
     file_picker: ^8.1.7 # Cross-platform fayl tanlash (.xlsx)
@@ -85,6 +87,13 @@ flutter_launcher_icons:
     android: true
     ios: true
     image_path: "assets/images/logo.png"
+    # Windows desktop: regenerate windows/runner/resources/app_icon.ico from the
+    # same brand logo so the .exe (and its desktop shortcut) stops showing the
+    # default Flutter glyph. icon_size 256 = crisp at every shell size.
+    windows:
+        generate: true
+        image_path: "assets/images/logo.png"
+        icon_size: 256
 
 flutter:
     uses-material-design: true
@@ -95,3 +104,10 @@ flutter:
         - assets/lottie/
         - assets/svg/
         - assets/translations/
+
+    # Inter bundled locally (variable font, all weights) so the app never
+    # fetches it from fonts.gstatic.com at runtime — see app_typography.dart.
+    fonts:
+        - family: Inter
+          fonts:
+              - asset: assets/fonts/Inter-Variable.ttf

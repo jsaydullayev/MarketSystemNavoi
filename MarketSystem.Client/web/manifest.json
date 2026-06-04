@@ -1,11 +1,11 @@
 {
-    "name": "market_system_client",
-    "short_name": "market_system_client",
+    "name": "strotech.uz",
+    "short_name": "strotech.uz",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Strotech POS — chakana savdo boshqaruv tizimi",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

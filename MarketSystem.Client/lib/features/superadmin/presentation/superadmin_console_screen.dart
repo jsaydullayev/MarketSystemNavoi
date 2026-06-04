@@ -316,7 +316,7 @@ class _SuperAdminConsoleScreenState extends State<SuperAdminConsoleScreen>
   /// long-press tooltip), roomier screens keep the "Tizimdan chiqish" label.
   Widget _logoutAction(BuildContext context, AppLocalizations l10n) {
     final color = context.colors.textSecondary;
-    if (MediaQuery.sizeOf(context).width < 380) {
+    if (MediaQuery.sizeOf(context).width < AppBreakpoints.compact) {
       return IconButton(
         onPressed: _forceLogout,
         icon: const Icon(Icons.logout),

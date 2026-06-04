@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../../../../core/widgets/network_wrapper.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
@@ -34,6 +35,24 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreRememberedCredentials();
+  }
+
+  /// Prefill the form from the last "remember me" login so the user doesn't
+  /// retype their credentials. No-op the first time (nothing saved yet).
+  Future<void> _restoreRememberedCredentials() async {
+    final creds = await TokenStorage.instance.readCredentials();
+    if (creds == null || !mounted) return;
+    setState(() {
+      _usernameController.text = creds.username;
+      _passwordController.text = creds.password;
+      _rememberMe = true;
+    });
+  }
 
   @override
   void dispose() {
@@ -378,6 +397,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success) {
       TextInput.finishAutofillContext();
+
+      // "Remember me": persist the typed credentials (encrypted, via secure
+      // storage) for next-time prefill, or wipe them if the box is unchecked.
+      if (_rememberMe) {
+        await TokenStorage.instance.saveCredentials(
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
+        );
+      } else {
+        await TokenStorage.instance.clearCredentials();
+      }
 
       final user = authProvider.user;
 
