@@ -5,8 +5,9 @@ class ApiConstants {
   // =================== SERVER ===================
   // Production: all traffic goes through nginx (HTTPS termination).
   // Mobile release builds hit the domain — nginx proxies /api → API container.
-  // TODO: HTTPS ga qaytarish — SSL sertifikat yoki Cloudflare proxy yoqilgach
-  static const String _productionApiUrl = 'http://strotech.uz/api';
+  // SSL restored on the new server (Let's Encrypt) 2026-06-04, so we're back
+  // on HTTPS; the host nginx 80→443 redirect would upgrade plain HTTP anyway.
+  static const String _productionApiUrl = 'https://strotech.uz/api';
 
   // Local dev backend (dotnet run / Visual Studio F5 → http://localhost:5050).
   // Port 5050 chosen over 8080 to avoid Chrome's HSTS cache forcing HTTPS upgrades
