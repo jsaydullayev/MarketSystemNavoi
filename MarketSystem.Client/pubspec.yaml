@@ -94,6 +94,13 @@ flutter_launcher_icons:
         generate: true
         image_path: "assets/images/logo.png"
         icon_size: 256
+    # Web: regenerate web/favicon.png + web/icons/Icon-*.png from the brand logo
+    # so the browser tab / installed-app icon stops showing the default Flutter glyph.
+    web:
+        generate: true
+        image_path: "assets/images/logo.png"
+        background_color: "#0175C2"
+        theme_color: "#0175C2"
 
 flutter:
     uses-material-design: true
