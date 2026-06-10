@@ -6,6 +6,7 @@ using MarketSystem.Application.Constants;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.API.Authorization;
 using MarketSystem.Domain.Constants;
+using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,17 +21,20 @@ public class ProductsController : ControllerBase
     private readonly IExcelService _excelService;
     private readonly ITashkentClock _clock;
     private readonly IProductImportService _importService;
+    private readonly IAuditLogService _auditLogService;
 
     public ProductsController(
         IProductService productService,
         IExcelService excelService,
         ITashkentClock clock,
-        IProductImportService importService)
+        IProductImportService importService,
+        IAuditLogService auditLogService)
     {
         _productService = productService;
         _excelService = excelService;
         _clock = clock;
         _importService = importService;
+        _auditLogService = auditLogService;
     }
 
     [HttpGet("{id}")]
@@ -197,6 +201,112 @@ public class ProductsController : ControllerBase
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             $"{sheetName}_{_clock.NowLocal:yyyyMMdd_HHmmss}.xlsx"
         );
+    }
+
+    /// <summary>
+    /// Mahsulotga rasm biriktiradi yoki mavjudini almashtiradi. Ikki formatni
+    /// qabul qiladi: multipart/form-data (`image` fayl) yoki JSON
+    /// ({ "image": "data:image/...;base64,..." }). Faqat savdo ekranida
+    /// ko'rsatish uchun. Magic-byte va hajm (max 5MB) tekshiruvidan o'tadi.
+    /// </summary>
+    [HttpPost("{id}/image")]
+    [RequirePermission(PermissionKeys.ProductsEdit)]
+    // 5MB raw rasm base64'da ~6.7MB bo'ladi; 8MB ceiling boundary'da 413 emas,
+    // aniq "5MB" xabarini beruvchi ichki tekshiruvga yetib borishni kafolatlaydi.
+    [RequestSizeLimit(8 * 1024 * 1024)]
+    public async Task<ActionResult<ProductDto>> SetImage(Guid id, CancellationToken ct = default)
+    {
+        // Ikki xil yuborishni qo'llab-quvvatlaymiz (avatar endpoint'i kabi):
+        //  1) multipart/form-data — `image` fayl;
+        //  2) JSON — { "image": "data:image/...;base64,..." }.
+        // Mijozning HttpService base64-JSON yo'lidan foydalanadi.
+        byte[] imageBytes;
+
+        if (Request.HasFormContentType && Request.Form.Files.Count > 0)
+        {
+            var image = Request.Form.Files[0];
+            if (image.Length == 0)
+                return BadRequest("Rasm fayli bo'sh.");
+            if (image.Length > 5 * 1024 * 1024)
+                return BadRequest("Rasm hajmi juda katta. Maksimum rasm hajmi 5MB.");
+
+            using var memoryStream = new MemoryStream();
+            await image.CopyToAsync(memoryStream, ct);
+            imageBytes = memoryStream.ToArray();
+        }
+        else
+        {
+            SetProductImageRequest? body;
+            try
+            {
+                body = await Request.ReadFromJsonAsync<SetProductImageRequest>(ct);
+            }
+            catch
+            {
+                return BadRequest("So'rov noto'g'ri formatda.");
+            }
+
+            var dataUrl = body?.Image;
+            if (string.IsNullOrWhiteSpace(dataUrl))
+                return BadRequest("Rasm yuborilmadi.");
+
+            // "data:image/png;base64,XXXX" yoki to'g'ridan-to'g'ri base64.
+            var base64 = dataUrl.Contains(',') ? dataUrl[(dataUrl.IndexOf(',') + 1)..] : dataUrl;
+            try
+            {
+                imageBytes = Convert.FromBase64String(base64);
+            }
+            catch (FormatException)
+            {
+                return BadRequest("Rasm ma'lumoti noto'g'ri (base64 emas).");
+            }
+
+            if (imageBytes.Length == 0)
+                return BadRequest("Rasm fayli bo'sh.");
+            if (imageBytes.Length > 5 * 1024 * 1024)
+                return BadRequest("Rasm hajmi juda katta. Maksimum rasm hajmi 5MB.");
+        }
+
+        // Baytlarga ISHONISHDAN OLDIN magic-byte'larni tekshiramiz.
+        var kind = MarketSystem.API.Validation.ImageContentValidator.Detect(imageBytes);
+        if (kind == MarketSystem.API.Validation.ImageKind.Unknown)
+            return BadRequest("Fayl tasvir emas yoki qo'llab-quvvatlanmaydigan formatda (JPEG/PNG/GIF/WebP qabul qilinadi).");
+
+        var extension = MarketSystem.API.Validation.ImageContentValidator.ToExtension(kind);
+
+        var product = await _productService.SetProductImageAsync(id, imageBytes, extension, ct);
+        if (product is null)
+            return NotFound();
+
+        // Audit — faqat flag, hech qachon rasm baytlari/URL emas.
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Product, id, AuditActions.ProductImageUpdate, CurrentUserId(),
+            new { imageSet = true });
+
+        return Ok(product);
+    }
+
+    /// <summary>Mahsulot rasmini o'chiradi.</summary>
+    [HttpDelete("{id}/image")]
+    [RequirePermission(PermissionKeys.ProductsEdit)]
+    public async Task<ActionResult<ProductDto>> RemoveImage(Guid id, CancellationToken ct = default)
+    {
+        var product = await _productService.RemoveProductImageAsync(id, ct);
+        if (product is null)
+            return NotFound();
+
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Product, id, AuditActions.ProductImageUpdate, CurrentUserId(),
+            new { imageSet = false });
+
+        return Ok(product);
+    }
+
+    /// <summary>The authenticated caller's user id from the JWT (Guid.Empty if absent).</summary>
+    private Guid CurrentUserId()
+    {
+        var raw = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
     }
 
     /// <summary>

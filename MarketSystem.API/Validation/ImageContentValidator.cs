@@ -46,4 +46,14 @@ public static class ImageContentValidator
         ImageKind.WebP => "image/webp",
         _ => "application/octet-stream"
     };
+
+    /// <summary>Nuqtasiz fayl kengaytmasi (file-storage uchun): "jpg"/"png"/...</summary>
+    public static string ToExtension(ImageKind kind) => kind switch
+    {
+        ImageKind.Jpeg => "jpg",
+        ImageKind.Png => "png",
+        ImageKind.Gif => "gif",
+        ImageKind.WebP => "webp",
+        _ => "bin"
+    };
 }

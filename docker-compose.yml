@@ -30,6 +30,11 @@ services:
     networks:
       - market-network
     restart: unless-stopped
+    # Uploaded product images live on a named volume so they survive the
+    # `--no-cache` image rebuilds every deploy does — wwwroot inside the image
+    # is ephemeral, the volume is not.
+    volumes:
+      - product-images:/app/wwwroot/uploads/products
     deploy:
       resources:
         limits:
@@ -110,6 +115,10 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  # Persistent store for uploaded product images (mounted at
+  # /app/wwwroot/uploads/products in the API container).
+  product-images:
     driver: local
 
 networks:

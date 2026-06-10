@@ -1,9 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/api_constants.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
+
+import 'product_image_view.dart';
 
 /// Compact product tile shown in the "continue sale" product grid.
 ///
@@ -27,6 +31,7 @@ class ContinueSaleProductCard extends StatelessWidget {
     final quantity = (product['quantity'] as num?)?.toDouble() ?? 0.0;
     final isInStock = quantity > 0;
     final isLow = quantity > 0 && quantity <= 5;
+    final hasImage = (product['imageUrl'] as String?)?.isNotEmpty == true;
 
     // Stock color logic: out → muted grey, low → warning amber, healthy →
     // brand orange (matches the demo's `.low` accent on tight stock).
@@ -40,6 +45,12 @@ class ContinueSaleProductCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: isInStock ? onTap : null,
+        // Long-press → larger preview to confirm the product; independent of
+        // the tap-to-add gesture. Works even when out of stock.
+        onLongPress: () => showProductImagePreview(
+          context,
+          Map<String, dynamic>.from(product as Map),
+        ),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
@@ -59,12 +70,22 @@ class ContinueSaleProductCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Product name — 2-line clamp so wide names don't push the
-                // price off the tile.
+                // Prominent product photo (or placeholder) filling the top.
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: _image(context, hasImage),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text(
                   product['name'] ?? l10n.unknown,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -73,10 +94,8 @@ class ContinueSaleProductCard extends StatelessWidget {
                         : context.colors.textMuted,
                     height: 1.25,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                // Brand-orange price — matches demo `.pprice`.
+                const SizedBox(height: 2),
                 Text(
                   '${NumberFormatter.format(product['salePrice'])} ${l10n.currencySom}',
                   style: AppTextStyles.labelLarge().copyWith(
@@ -87,7 +106,7 @@ class ContinueSaleProductCard extends StatelessWidget {
                         : context.colors.textMuted,
                   ),
                 ),
-                // Stock label — colored dot + count. Low stock turns amber.
+                const SizedBox(height: 2),
                 Row(
                   children: [
                     Container(
@@ -118,6 +137,28 @@ class ContinueSaleProductCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _image(BuildContext context, bool hasImage) {
+    final placeholder = Container(
+      color: context.colors.inputFill,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.inventory_2_rounded,
+        color: context.colors.textSecondary,
+        size: 30,
+      ),
+    );
+    if (!hasImage) return placeholder;
+    final full = ApiConstants.productImageUrl(product['imageUrl'] as String?);
+    if (full == null) return placeholder;
+    return CachedNetworkImage(
+      imageUrl: full,
+      fit: BoxFit.cover,
+      memCacheWidth: 320,
+      placeholder: (_, __) => placeholder,
+      errorWidget: (_, __, ___) => placeholder,
     );
   }
 }

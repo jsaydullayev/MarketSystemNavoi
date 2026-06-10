@@ -628,7 +628,9 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 3,
-                                  childAspectRatio: 1.45,
+                                  // Taller tile so the product photo on top
+                                  // reads clearly.
+                                  childAspectRatio: 0.82,
                                   crossAxisSpacing: AppSpacing.md,
                                   mainAxisSpacing: AppSpacing.md,
                                 ),

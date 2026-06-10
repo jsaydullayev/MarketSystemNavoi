@@ -12,12 +12,14 @@ public class ProductService : IProductService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IProductImageStorage _imageStorage;
 
-    public ProductService(IUnitOfWork unitOfWork, IAppDbContext context, ICurrentMarketService currentMarketService)
+    public ProductService(IUnitOfWork unitOfWork, IAppDbContext context, ICurrentMarketService currentMarketService, IProductImageStorage imageStorage)
     {
         _unitOfWork = unitOfWork;
         _context = context;
         _currentMarketService = currentMarketService;
+        _imageStorage = imageStorage;
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -123,7 +125,10 @@ public class ProductService : IProductService
             CostPrice = 0, // Zakup orqali belgilanadi
             SalePrice = request.SalePrice,
             MinSalePrice = request.MinSalePrice,
-            Quantity = 0, // Zakup orqali belgilanadi
+            // Boshlang'ich qoldiq: do'konda bor, lekin zakupsiz tovarlar uchun
+            // foydalanuvchi kiritgan miqdor. Keyingi qoldiq o'zgarishlari zakup
+            // orqali davom etadi.
+            Quantity = request.Quantity,
             MinThreshold = request.MinThreshold,
             Unit = (UnitType)unitValue,  // ✅ NEW: Unit type
             MarketId = marketId.Value,  // Multi-tenancy
@@ -209,6 +214,62 @@ public class ProductService : IProductService
         return true;
     }
 
+    public async Task<ProductDto?> SetProductImageAsync(Guid productId, byte[] bytes, string extension, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Tenant filtri — boshqa marketning mahsulotini topib bo'lmaydi.
+        var products = await _unitOfWork.Products.FindAsync(
+            p => p.Id == productId && p.MarketId == marketId,
+            cancellationToken);
+        var product = products.FirstOrDefault();
+
+        if (product is null)
+            return null;
+
+        // Eski rasmni o'chiramiz (yetim fayl qolmasin). Best-effort.
+        var oldImageUrl = product.ImageUrl;
+
+        var newUrl = await _imageStorage.SaveAsync(marketId, product.Id, bytes, extension, cancellationToken);
+        product.ImageUrl = newUrl;
+        product.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.Products.Update(product);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // DB muvaffaqiyatli yangilangandan keyingina eski faylni o'chiramiz —
+        // saqlash muvaffaqiyatsiz bo'lsa, eski rasm hamon ko'rsatiladi.
+        if (!string.IsNullOrEmpty(oldImageUrl) && oldImageUrl != newUrl)
+            await _imageStorage.DeleteAsync(oldImageUrl, cancellationToken);
+
+        return MapToDto(product);
+    }
+
+    public async Task<ProductDto?> RemoveProductImageAsync(Guid productId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var products = await _unitOfWork.Products.FindAsync(
+            p => p.Id == productId && p.MarketId == marketId,
+            cancellationToken);
+        var product = products.FirstOrDefault();
+
+        if (product is null)
+            return null;
+
+        var oldImageUrl = product.ImageUrl;
+        product.ImageUrl = null;
+        product.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.Products.Update(product);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrEmpty(oldImageUrl))
+            await _imageStorage.DeleteAsync(oldImageUrl, cancellationToken);
+
+        return MapToDto(product);
+    }
+
     private static ProductDto MapToDto(Product product)
     {
         return new ProductDto(
@@ -225,7 +286,8 @@ public class ProductService : IProductService
             product.Category?.Name,
             product.IsTemporary,
             product.IsInStock(1),  // Simplified check
-            product.IsLowStock
+            product.IsLowStock,
+            product.ImageUrl
         );
     }
 }

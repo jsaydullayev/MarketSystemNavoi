@@ -40,6 +40,14 @@ ENV ASPNETCORE_ENVIRONMENT=Production \
 
 COPY --from=build --chown=marketsystem:marketsystem /app/publish .
 
+# Product-images mount point must exist AND be owned by the runtime user before
+# the named volume (docker-compose: product-images) mounts over it. Docker
+# seeds a fresh named volume with this directory's ownership, so creating it as
+# marketsystem here is what lets the non-root process write uploads. Without
+# this, the volume would be root-owned and every upload would fail with EACCES.
+RUN mkdir -p /app/wwwroot/uploads/products \
+    && chown -R marketsystem:marketsystem /app/wwwroot
+
 USER marketsystem:marketsystem
 
 # wget alpine'da mavjud (busybox) — curl o'rnatilmaydi

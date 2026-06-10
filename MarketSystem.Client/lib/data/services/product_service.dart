@@ -50,6 +50,7 @@ class ProductService {
     required int minThreshold,
     int? categoryId,
     required int unit,
+    double quantity = 0,
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.products}/CreateProduct',
@@ -61,6 +62,7 @@ class ProductService {
         'minThreshold': minThreshold,
         if (categoryId != null) 'categoryId': categoryId,
         'unit': unit,
+        'quantity': quantity,
       },
     );
 
@@ -119,6 +121,63 @@ class ProductService {
         fallbackMessage: 'Failed to delete product',
       );
     }
+  }
+
+  /// Attaches (or replaces) a product's image. Sends a base64 data-URL as JSON
+  /// — the same transport the avatar upload uses — so it works on every
+  /// platform without a multipart helper. The backend re-validates the bytes
+  /// (magic-byte + 5MB cap) and returns the updated product (with `imageUrl`).
+  Future<dynamic> uploadProductImage(
+    String productId,
+    List<int> imageBytes,
+    String filename,
+  ) async {
+    final fileSizeInMB = imageBytes.length / (1024 * 1024);
+    if (fileSizeInMB > 5) {
+      throw ApiException(
+        statusCode: 0,
+        message:
+            'Rasm hajmi juda katta. Iltimos, kichikroq rasm tanlang (maksimum 5MB).',
+      );
+    }
+
+    final base64Image = base64Encode(imageBytes);
+    final extension = filename.toLowerCase().split('.').last;
+    final mimeType = switch (extension) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'gif' => 'image/gif',
+      'webp' => 'image/webp',
+      _ => 'image/jpeg',
+    };
+
+    final response = await _httpService.post(
+      ApiConstants.productImage(productId),
+      body: {'image': 'data:$mimeType;base64,$base64Image'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Rasm yuklashda xatolik',
+    );
+  }
+
+  /// Removes a product's image. Returns the updated product (imageUrl == null).
+  Future<dynamic> removeProductImage(String productId) async {
+    final response = await _httpService.delete(
+      ApiConstants.productImageRemove(productId),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Rasmni o\'chirishda xatolik',
+    );
   }
 
   /// Downloads the products workbook. Pass `lang: 'ru'` to get

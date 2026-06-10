@@ -26,7 +26,7 @@ public class ProductServiceTests : TestBase
         // UnauthorizedAccessException.
         CurrentMarketServiceMock.Setup(x => x.TryGetCurrentMarketId()).Returns((int?)TestMarketId);
         var unitOfWork = new UnitOfWork(DbContext, NullLogger<UnitOfWork>.Instance);
-        return new ProductService(unitOfWork, DbContext, CurrentMarketServiceMock.Object);
+        return new ProductService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, new Moq.Mock<MarketSystem.Application.Interfaces.IProductImageStorage>().Object);
     }
 
     private Product SeedSampleProduct(string name = "Sample", decimal cost = 100m, decimal sale = 150m, decimal qty = 50m)
@@ -176,7 +176,7 @@ public class ProductServiceTests : TestBase
         // Pretend the caller is now in a different market. Build the service
         // BEFORE switching the mock so CreateService doesn't re-set TestMarketId.
         var unitOfWork = new UnitOfWork(DbContext, NullLogger<UnitOfWork>.Instance);
-        var service = new ProductService(unitOfWork, DbContext, CurrentMarketServiceMock.Object);
+        var service = new ProductService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, new Moq.Mock<MarketSystem.Application.Interfaces.IProductImageStorage>().Object);
 
         var otherMarketId = 9002;
         DbContext.Markets.Add(new Market { Id = otherMarketId, Name = "Other", Subdomain = "other2", OwnerId = Guid.NewGuid() });
@@ -213,7 +213,7 @@ public class ProductServiceTests : TestBase
         // Build service first, then strip the market — otherwise the
         // CreateService helper re-sets TryGetCurrentMarketId to TestMarketId.
         var unitOfWork = new UnitOfWork(DbContext, NullLogger<UnitOfWork>.Instance);
-        var service = new ProductService(unitOfWork, DbContext, CurrentMarketServiceMock.Object);
+        var service = new ProductService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, new Moq.Mock<MarketSystem.Application.Interfaces.IProductImageStorage>().Object);
 
         CurrentMarketServiceMock.Setup(x => x.TryGetCurrentMarketId()).Returns((int?)null);
 
@@ -335,5 +335,114 @@ public class ProductServiceTests : TestBase
 
         var ok = await CreateService().UpdateStockAsync(otherId, 999m);
         ok.Should().BeFalse();
+    }
+
+    // ───────────────────── Product images ─────────────────────
+
+    /// <summary>
+    /// Records storage calls so tests can assert what was saved/deleted without
+    /// touching the real filesystem. SaveAsync returns a deterministic URL.
+    /// </summary>
+    private sealed class RecordingImageStorage : MarketSystem.Application.Interfaces.IProductImageStorage
+    {
+        public List<string> Saved { get; } = new();
+        public List<string?> Deleted { get; } = new();
+        private int _counter;
+
+        public Task<string> SaveAsync(int marketId, Guid productId, byte[] bytes, string extension, CancellationToken ct = default)
+        {
+            var url = $"/uploads/products/{marketId}/{productId:N}_{_counter++}.{extension}";
+            Saved.Add(url);
+            return Task.FromResult(url);
+        }
+
+        public Task DeleteAsync(string? imageUrl, CancellationToken ct = default)
+        {
+            Deleted.Add(imageUrl);
+            return Task.CompletedTask;
+        }
+    }
+
+    private ProductService CreateServiceWithStorage(MarketSystem.Application.Interfaces.IProductImageStorage storage)
+    {
+        CurrentMarketServiceMock.Setup(x => x.TryGetCurrentMarketId()).Returns((int?)TestMarketId);
+        var unitOfWork = new UnitOfWork(DbContext, NullLogger<UnitOfWork>.Instance);
+        return new ProductService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, storage);
+    }
+
+    [Fact]
+    public async Task SetProductImage_OwnMarket_SavesAndSetsUrl()
+    {
+        var seeded = SeedSampleProduct();
+        var storage = new RecordingImageStorage();
+
+        var result = await CreateServiceWithStorage(storage)
+            .SetProductImageAsync(seeded.Id, new byte[] { 1, 2, 3 }, "webp");
+
+        result.Should().NotBeNull();
+        result!.ImageUrl.Should().NotBeNullOrEmpty();
+        storage.Saved.Should().HaveCount(1);
+        // No prior image → nothing to delete.
+        storage.Deleted.Should().BeEmpty();
+
+        var persisted = await DbContext.Products.AsNoTracking().FirstAsync(p => p.Id == seeded.Id);
+        persisted.ImageUrl.Should().Be(result.ImageUrl);
+    }
+
+    [Fact]
+    public async Task SetProductImage_Replace_DeletesOldFile()
+    {
+        var seeded = SeedSampleProduct();
+        var storage = new RecordingImageStorage();
+        var service = CreateServiceWithStorage(storage);
+
+        var first = await service.SetProductImageAsync(seeded.Id, new byte[] { 1 }, "png");
+        var second = await service.SetProductImageAsync(seeded.Id, new byte[] { 2 }, "jpg");
+
+        storage.Saved.Should().HaveCount(2);
+        // The first (old) URL must have been deleted when the second replaced it.
+        storage.Deleted.Should().ContainSingle().Which.Should().Be(first!.ImageUrl);
+        second!.ImageUrl.Should().NotBe(first.ImageUrl);
+    }
+
+    [Fact]
+    public async Task SetProductImage_OtherMarket_ReturnsNullAndSavesNothing()
+    {
+        var otherMarketId = 9100;
+        DbContext.Markets.Add(new Market { Id = otherMarketId, Name = "Other", Subdomain = "otherimg", OwnerId = Guid.NewGuid() });
+        var otherId = Guid.NewGuid();
+        DbContext.Products.Add(new Product
+        {
+            Id = otherId, Name = "Foreign",
+            CostPrice = 10, SalePrice = 20, MinSalePrice = 10,
+            Quantity = 5, MinThreshold = 1, Unit = UnitType.Piece,
+            MarketId = otherMarketId,
+        });
+        await DbContext.SaveChangesAsync();
+
+        var storage = new RecordingImageStorage();
+        var result = await CreateServiceWithStorage(storage)
+            .SetProductImageAsync(otherId, new byte[] { 1, 2, 3 }, "png");
+
+        result.Should().BeNull();
+        storage.Saved.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RemoveProductImage_ClearsUrlAndDeletesFile()
+    {
+        var seeded = SeedSampleProduct();
+        var storage = new RecordingImageStorage();
+        var service = CreateServiceWithStorage(storage);
+
+        var withImage = await service.SetProductImageAsync(seeded.Id, new byte[] { 1 }, "png");
+        var removed = await service.RemoveProductImageAsync(seeded.Id);
+
+        removed.Should().NotBeNull();
+        removed!.ImageUrl.Should().BeNull();
+        storage.Deleted.Should().Contain(withImage!.ImageUrl);
+
+        var persisted = await DbContext.Products.AsNoTracking().FirstAsync(p => p.Id == seeded.Id);
+        persisted.ImageUrl.Should().BeNull();
     }
 }

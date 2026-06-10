@@ -154,7 +154,7 @@ public class MultiTenantWriteIsolationTests : TestBase
     private ProductService CreateProductService()
     {
         var uow = new UnitOfWork(DbContext, NullLogger<UnitOfWork>.Instance);
-        return new ProductService(uow, DbContext, CurrentMarketServiceMock.Object);
+        return new ProductService(uow, DbContext, CurrentMarketServiceMock.Object, new Moq.Mock<MarketSystem.Application.Interfaces.IProductImageStorage>().Object);
     }
 
     private ZakupService CreateZakupService()

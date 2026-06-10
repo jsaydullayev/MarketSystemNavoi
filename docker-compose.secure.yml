@@ -17,6 +17,9 @@ services:
     networks:
       - market-network
     restart: unless-stopped
+    # Persist uploaded product images across `--no-cache` rebuilds.
+    volumes:
+      - product-images:/app/wwwroot/uploads/products
 
   postgres:
     image: postgres:16-alpine
@@ -43,4 +46,6 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+  product-images:
     driver: local
