@@ -9,7 +9,12 @@ namespace MarketSystem.Domain.Extensions
     /// </summary>
     public class TashkentTimeJsonConverter : JsonConverter<DateTime>
     {
-        private static readonly TimeZoneInfo TashkentTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+        // Uzbekistan is a permanent UTC+5 (no DST). Use a fixed offset so the
+        // result is identical on Windows and Linux/Docker and never depends on
+        // the host OS timezone database. NOTE: the Windows ID "Central Asia
+        // Standard Time" is UTC+6 (Astana) — it pushed every timestamp 1h ahead.
+        private static readonly TimeZoneInfo TashkentTimeZone =
+            TimeZoneInfo.CreateCustomTimeZone("UZT", TimeSpan.FromHours(5), "Uzbekistan Time (UTC+5)", "UZT");
 
         public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
@@ -51,7 +56,12 @@ namespace MarketSystem.Domain.Extensions
     /// </summary>
     public class TashkentTimeJsonConverterNullable : JsonConverter<DateTime?>
     {
-        private static readonly TimeZoneInfo TashkentTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+        // Uzbekistan is a permanent UTC+5 (no DST). Use a fixed offset so the
+        // result is identical on Windows and Linux/Docker and never depends on
+        // the host OS timezone database. NOTE: the Windows ID "Central Asia
+        // Standard Time" is UTC+6 (Astana) — it pushed every timestamp 1h ahead.
+        private static readonly TimeZoneInfo TashkentTimeZone =
+            TimeZoneInfo.CreateCustomTimeZone("UZT", TimeSpan.FromHours(5), "Uzbekistan Time (UTC+5)", "UZT");
 
         public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {

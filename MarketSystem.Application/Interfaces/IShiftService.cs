@@ -18,4 +18,10 @@ public interface IShiftService
     /// <summary>Closes the user's open shift. Throws
     /// <see cref="InvalidOperationException"/> when no shift is open.</summary>
     Task<ShiftDto> CloseShiftAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>The worked-shift sessions of <paramref name="userId"/> in the
+    /// current market, most recent first (capped at <paramref name="limit"/>).
+    /// Lets an Owner/Admin review how long a seller actually worked; market-scoped
+    /// so it never leaks shifts from another tenant.</summary>
+    Task<IReadOnlyList<ShiftDto>> GetUserShiftsAsync(Guid userId, int limit = 30, CancellationToken cancellationToken = default);
 }

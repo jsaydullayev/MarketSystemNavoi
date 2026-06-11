@@ -101,4 +101,23 @@ class ShiftService {
     }
     return Shift.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
+
+  /// Worked-shift sessions for [userId], most recent first. Owner/Admin only
+  /// (the backend gates on users.shift). Returns an empty list on any failure
+  /// so the history sheet shows its empty state instead of throwing.
+  Future<List<Shift>> getUserShifts(String userId) async {
+    try {
+      final res = await _http.get('/Shifts/user/$userId');
+      if (res.statusCode != 200 || res.body.isEmpty) return const [];
+      final data = jsonDecode(res.body);
+      if (data is! List) return const [];
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(Shift.fromJson)
+          .toList();
+    } catch (e) {
+      debugPrint('ShiftService.getUserShifts: $e');
+      return const [];
+    }
+  }
 }

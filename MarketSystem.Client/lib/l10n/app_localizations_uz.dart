@@ -1393,6 +1393,18 @@ class AppLocalizationsUz extends AppLocalizations {
       'Tugash vaqti boshlanish vaqtidan keyin bo\'lishi kerak';
 
   @override
+  String get workedShifts => 'Ishlagan smenalar';
+
+  @override
+  String get workedShiftsEmpty => 'Hozircha ishlagan smenalar yo\'q';
+
+  @override
+  String get shiftStillOpen => 'Hozir ochiq';
+
+  @override
+  String get minuteShort => 'daq';
+
+  @override
   String get yesterday => 'Kecha';
 
   @override
