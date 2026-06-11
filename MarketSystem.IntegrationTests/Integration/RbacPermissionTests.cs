@@ -89,7 +89,6 @@ public class RbacPermissionTests
             PermissionKeys.CustomersAccess, PermissionKeys.CustomersManage, PermissionKeys.CustomersExport,
             PermissionKeys.ZakupAccess,
             PermissionKeys.ReportsExport,
-            PermissionKeys.UsersAccess,
             PermissionKeys.DebtsAccess, PermissionKeys.DebtsManage,
             PermissionKeys.DataAllSalesView,
         };
@@ -112,12 +111,39 @@ public class RbacPermissionTests
             PermissionKeys.ZakupCreate,
             PermissionKeys.CashRegisterAccess, PermissionKeys.CashRegisterManage,
             PermissionKeys.ReportsAccess,
-            PermissionKeys.UsersManage, PermissionKeys.UsersShift,
+            PermissionKeys.UsersAccess, PermissionKeys.UsersManage, PermissionKeys.UsersShift,
             PermissionKeys.DataCostPrice, PermissionKeys.DataProfit, PermissionKeys.DataCashBalance,
             PermissionKeys.DataAuditLog,
         };
         foreach (var key in denied)
             seller.HasPermission(key).Should().BeFalse($"Seller default must NOT include {key}");
+    }
+
+    // ---- Hard role-level block: a Seller never sees cost / profit -------
+
+    [Fact]
+    public void SellerNeverSeesCostOrProfit_EvenWhenExplicitlyGranted()
+    {
+        // An Owner ticks the confidential cost/profit boxes for a Seller in the
+        // permission matrix. The role-level hard block overrides the grant —
+        // the shop's purchase price and margin are never visible to a cashier.
+        var seller = UserWith(
+            Role.Seller,
+            PermissionKeys.DataCostPrice,
+            PermissionKeys.DataProfit,
+            PermissionKeys.SalesAccess);
+
+        seller.HasPermission(PermissionKeys.DataCostPrice)
+            .Should().BeFalse("a Seller may never see cost price");
+        seller.HasPermission(PermissionKeys.DataProfit)
+            .Should().BeFalse("a Seller may never see profit");
+
+        // A non-confidential key granted in the same set is unaffected.
+        seller.HasPermission(PermissionKeys.SalesAccess).Should().BeTrue();
+        seller.GetEffectivePermissions().Should()
+            .NotContain(PermissionKeys.DataCostPrice).And
+            .NotContain(PermissionKeys.DataProfit).And
+            .Contain(PermissionKeys.SalesAccess);
     }
 
     // ---- Explicit set overrides the role default -----------------------
