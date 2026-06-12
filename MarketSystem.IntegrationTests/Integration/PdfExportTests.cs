@@ -105,28 +105,28 @@ public class PdfExportTests
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), new DateTime(2026, 5, 13), new DateTime(2026, 5, 13),
             includeProfit: true, includeCost: true,
-            totalSales: 515500m, totalProfit: 50000m, generatedAtLocal: FixedNow));
+            totalSales: 515500m, totalProfit: 50000m, receiptCount: 2, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_SellerView_NoCostNoProfitColumns_IsValid()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), null, null,
             includeProfit: false, includeCost: false,
-            totalSales: 515500m, totalProfit: 0m, generatedAtLocal: FixedNow));
+            totalSales: 515500m, totalProfit: 0m, receiptCount: 2, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_EmptyList_RendersNoDataMessage()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             new List<ReportService.SalesReportItem>(), null, null,
             includeProfit: true, includeCost: true,
-            totalSales: 0m, totalProfit: 0m, generatedAtLocal: FixedNow));
+            totalSales: 0m, totalProfit: 0m, receiptCount: 0, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_RussianLocale_OwnerView_IsValid()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), new DateTime(2026, 5, 13), new DateTime(2026, 5, 13),
             includeProfit: true, includeCost: true,
-            totalSales: 515500m, totalProfit: 50000m, generatedAtLocal: FixedNow, lang: "ru"));
+            totalSales: 515500m, totalProfit: 50000m, receiptCount: 2, generatedAtLocal: FixedNow, lang: "ru"));
 
     // ---- Daily / period summary report ----
 

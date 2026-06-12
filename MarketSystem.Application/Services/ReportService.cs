@@ -1074,7 +1074,7 @@ public partial class ReportService : IReportService
         try
         {
             _logger.LogInformation($"[ExportSalesListToPdfAsync] Starting PDF generation for {reportItems.Count} items");
-            return RenderSalesListPdf(reportItems, startDate, endDate, includeProfit, includeCost, totalSales, totalProfit, _clock.NowLocal, lang);
+            return RenderSalesListPdf(reportItems, startDate, endDate, includeProfit, includeCost, totalSales, totalProfit, sortedSales.Count, _clock.NowLocal, lang);
         }
         catch (Exception ex)
         {
@@ -1095,6 +1095,7 @@ public partial class ReportService : IReportService
         bool includeCost,
         decimal totalSales,
         decimal totalProfit,
+        int receiptCount,
         DateTime generatedAtLocal,
         string lang = "uz")
     {
@@ -1105,39 +1106,63 @@ public partial class ReportService : IReportService
             ? $"{startDate.Value:dd.MM.yyyy} — {endDate.Value:dd.MM.yyyy}"
             : L("Barcha vaqt", "За всё время");
 
+        // receiptCount = number of distinct sales (cheklar). `items` holds one
+        // row per sale LINE, so items.Count would overcount receipts and
+        // deflate the average check — use the caller-supplied receiptCount.
+        decimal avg = receiptCount > 0 ? totalSales / receiptCount : 0;
+
         return Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4.Landscape());
                 page.Margin(0);
-                page.DefaultTextStyle(x => x.FontSize(8.5f).FontColor(PdfTheme.Ink));
+                page.DefaultTextStyle(x => x.FontSize(9).FontColor(PdfTheme.Ink));
 
-                // ── Brand header strip ──
-                page.Header().Background(PdfTheme.Brand).PaddingVertical(14).PaddingHorizontal(28).Row(row =>
+                // ── Header: white, single brand mark, ink rule ──
+                page.Header().PaddingHorizontal(28).PaddingTop(22).PaddingBottom(14)
+                    .BorderBottom(2).BorderColor(PdfTheme.Ink).Row(row =>
                 {
-                    row.RelativeItem().Column(col =>
+                    row.AutoItem().Element(c => BrandMark(c, "S"));
+                    row.RelativeItem().PaddingLeft(13).Column(col =>
                     {
-                        col.Item().Text(L("SOTUVLAR HISOBOTI", "ОТЧЁТ О ПРОДАЖАХ")).FontSize(17).Bold().FontColor(PdfTheme.White);
-                        col.Item().PaddingTop(2).Text(period).FontSize(9).FontColor(PdfTheme.BrandTint);
+                        col.Item().Text(L("Sotuvlar hisoboti", "Отчёт о продажах"))
+                            .FontSize(18).Bold().FontColor(PdfTheme.Ink);
+                        col.Item().PaddingTop(2).Text(period)
+                            .FontSize(10).FontColor(PdfTheme.Muted);
                     });
-                    row.ConstantItem(180).AlignRight().AlignBottom()
+                    row.ConstantItem(190).AlignRight().AlignBottom()
                         .Text($"{L("Yaratilgan: ", "Создан: ")}{generatedAtLocal:dd.MM.yyyy HH:mm}")
-                        .FontSize(8).FontColor(PdfTheme.BrandTint);
+                        .FontSize(9).FontColor(PdfTheme.Muted);
                 });
 
-                // ── Content ──
-                page.Content().PaddingHorizontal(20).PaddingTop(14).Element(content =>
+                page.Content().PaddingHorizontal(28).PaddingTop(16).Column(column =>
                 {
+                    // ── KPI summary strip ──
+                    column.Item().PaddingBottom(18).Row(row =>
+                    {
+                        SummaryKpi(row, L("Jami savdo", "Общая выручка"),
+                            $"{totalSales:N0}", L("so'm", "сум"), PdfTheme.Ink, first: true);
+                        if (includeProfit)
+                            SummaryKpi(row, L("Sof foyda", "Чистая прибыль"),
+                                $"{totalProfit:N0}", L("so'm", "сум"),
+                                totalProfit >= 0 ? PdfTheme.Success : PdfTheme.Danger, first: false);
+                        SummaryKpi(row, L("Cheklar soni", "Кол-во чеков"),
+                            $"{receiptCount:N0}", "", PdfTheme.Ink, first: false);
+                        SummaryKpi(row, L("O'rtacha chek", "Средний чек"),
+                            $"{avg:N0}", L("so'm", "сум"), PdfTheme.Ink, first: false);
+                    });
+
                     if (items.Count == 0)
                     {
-                        content.AlignCenter().PaddingTop(60)
+                        column.Item().AlignCenter().PaddingTop(50)
                             .Text(L("Tanlangan davr uchun ma'lumot topilmadi", "Нет данных за выбранный период"))
                             .FontSize(11).FontColor(PdfTheme.Muted);
                         return;
                     }
 
-                    content.Table(table =>
+                    // ── Table: hairline rows, no zebra ──
+                    column.Item().Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
@@ -1151,56 +1176,58 @@ public partial class ReportService : IReportService
                             columns.ConstantColumn(72);   // Narx
                             columns.ConstantColumn(90);   // Jami
                             if (includeProfit) columns.ConstantColumn(78); // Foyda
-                            columns.ConstantColumn(86);   // Holat
+                            columns.ConstantColumn(96);   // Holat
                         });
 
                         table.Header(header =>
                         {
-                            header.Cell().Element(SalesHeadCell).Text("#");
-                            header.Cell().Element(SalesHeadCell).Text(L("SANA", "ДАТА"));
-                            header.Cell().Element(SalesHeadCell).Text(L("MIJOZ", "КЛИЕНТ"));
-                            header.Cell().Element(SalesHeadCell).Text(L("SOTUVCHI", "ПРОДАВЕЦ"));
-                            header.Cell().Element(SalesHeadCell).Text(L("MAHSULOT", "ТОВАР"));
-                            header.Cell().Element(SalesHeadCell).AlignRight().Text(L("MIQDOR", "КОЛ-ВО"));
+                            header.Cell().Element(SalesListHeadCell).Text("#");
+                            header.Cell().Element(SalesListHeadCell).Text(L("SANA", "ДАТА"));
+                            header.Cell().Element(SalesListHeadCell).Text(L("MIJOZ", "КЛИЕНТ"));
+                            header.Cell().Element(SalesListHeadCell).Text(L("SOTUVCHI", "ПРОДАВЕЦ"));
+                            header.Cell().Element(SalesListHeadCell).Text(L("MAHSULOT", "ТОВАР"));
+                            header.Cell().Element(SalesListHeadCell).AlignRight().Text(L("MIQDOR", "КОЛ-ВО"));
                             if (includeCost)
-                                header.Cell().Element(SalesHeadCell).AlignRight().Text(L("XARID", "ЗАКУП"));
-                            header.Cell().Element(SalesHeadCell).AlignRight().Text(L("NARX", "ЦЕНА"));
-                            header.Cell().Element(SalesHeadCell).AlignRight().Text(L("JAMI", "СУММА"));
+                                header.Cell().Element(SalesListHeadCell).AlignRight().Text(L("XARID", "ЗАКУП"));
+                            header.Cell().Element(SalesListHeadCell).AlignRight().Text(L("NARX", "ЦЕНА"));
+                            header.Cell().Element(SalesListHeadCell).AlignRight().Text(L("JAMI", "СУММА"));
                             if (includeProfit)
-                                header.Cell().Element(SalesHeadCell).AlignRight().Text(L("FOYDA", "ПРИБЫЛЬ"));
-                            header.Cell().Element(SalesHeadCell).Text(L("HOLAT", "СТАТУС"));
+                                header.Cell().Element(SalesListHeadCell).AlignRight().Text(L("FOYDA", "ПРИБЫЛЬ"));
+                            header.Cell().Element(SalesListHeadCell).Text(L("HOLAT", "СТАТУС"));
                         });
 
-                        int i = 0;
                         foreach (var item in items)
                         {
-                            var bg = i++ % 2 == 0 ? PdfTheme.White : PdfTheme.Zebra;
                             var (statusLabel, statusColor) = SaleStatusInfo(item.Status, isRu);
+                            var statusBg = SaleStatusBg(item.Status);
 
-                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text($"{item.Number}");
-                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text(item.Date.ToString("dd.MM.yy HH:mm"));
-                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text(item.CustomerName);
-                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text(item.SellerName);
-                            table.Cell().Element(c => SalesBodyCell(c, bg)).Text(item.ProductName);
-                            table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{item.Quantity:N2}");
+                            table.Cell().Element(SalesListBodyCell).Text($"{item.Number}")
+                                .FontColor(PdfTheme.Faint).SemiBold();
+                            table.Cell().Element(SalesListBodyCell).Text(item.Date.ToString("dd.MM.yy HH:mm"))
+                                .FontColor(PdfTheme.Muted);
+                            table.Cell().Element(SalesListBodyCell).Text(item.CustomerName).SemiBold();
+                            table.Cell().Element(SalesListBodyCell).Text(item.SellerName).FontColor(PdfTheme.Muted);
+                            table.Cell().Element(SalesListBodyCell).Text(item.ProductName);
+                            table.Cell().Element(SalesListBodyCell).AlignRight().Text($"{item.Quantity:N2}");
                             if (includeCost)
-                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{item.CostPrice:N0}");
-                            table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight().Text($"{item.SalePrice:N0}");
-                            table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight()
-                                .Text($"{item.TotalPrice:N0}").SemiBold();
+                                table.Cell().Element(SalesListBodyCell).AlignRight().Text($"{item.CostPrice:N0}")
+                                    .FontColor(PdfTheme.Muted);
+                            table.Cell().Element(SalesListBodyCell).AlignRight().Text($"{item.SalePrice:N0}")
+                                .FontColor(PdfTheme.Muted);
+                            table.Cell().Element(SalesListBodyCell).AlignRight().Text($"{item.TotalPrice:N0}").Bold();
                             if (includeProfit)
-                                table.Cell().Element(c => SalesBodyCell(c, bg)).AlignRight()
-                                    .Text($"{item.Profit ?? 0:N0}")
+                                table.Cell().Element(SalesListBodyCell).AlignRight()
+                                    .Text($"{item.Profit ?? 0:N0}").SemiBold()
                                     .FontColor((item.Profit ?? 0) >= 0 ? PdfTheme.Success : PdfTheme.Danger);
-                            table.Cell().Element(c => SalesBodyCell(c, bg))
-                                .Text(statusLabel).SemiBold().FontColor(statusColor);
+                            table.Cell().Element(SalesListBodyCell)
+                                .Element(c => StatusChip(c, statusLabel, statusColor, statusBg));
                         }
                     });
                 });
 
-                // ── Footer: totals + page number ──
+                // ── Footer: brand + totals ──
                 page.Footer().BorderTop(1).BorderColor(PdfTheme.Line)
-                    .PaddingHorizontal(20).PaddingVertical(8).Row(row =>
+                    .PaddingHorizontal(28).PaddingVertical(9).Row(row =>
                 {
                     row.RelativeItem().AlignMiddle()
                         .Text(L("Strotech tomonidan yaratildi  ·  strotech.uz", "Создано в Strotech  ·  strotech.uz"))
@@ -1222,6 +1249,10 @@ public partial class ReportService : IReportService
     }
 
     // ── Sales-list rendering helpers ──
+    // Legacy orange/zebra cells — still used by the comprehensive seller table
+    // and the payment-breakdown table (the summary/daily/period reports keep
+    // their bold brand band, so their inner tables stay on-brand). Do NOT fold
+    // these into the minimalist SalesList* helpers below.
     private static IContainer SalesHeadCell(IContainer c)
         => c.Background(PdfTheme.Brand).PaddingVertical(6).PaddingHorizontal(6)
             .DefaultTextStyle(x => x.FontSize(8).Bold().FontColor(PdfTheme.White));
@@ -1229,6 +1260,17 @@ public partial class ReportService : IReportService
     private static IContainer SalesBodyCell(IContainer c, string background)
         => c.Background(background).BorderBottom(1).BorderColor(PdfTheme.Line)
             .PaddingVertical(5).PaddingHorizontal(6).AlignMiddle();
+
+    // ── Minimalist sales-list cells: white header, muted uppercase, hairline
+    // rows, no zebra. Used only by the redesigned RenderSalesListPdf. ──
+    private static IContainer SalesListHeadCell(IContainer c)
+        => c.PaddingBottom(9).PaddingHorizontal(6)
+            .BorderBottom(1.5f).BorderColor(PdfTheme.Line)
+            .DefaultTextStyle(x => x.FontSize(8).Bold().FontColor(PdfTheme.Muted).LetterSpacing(0.06f));
+
+    private static IContainer SalesListBodyCell(IContainer c)
+        => c.BorderBottom(1).BorderColor(PdfTheme.Line)
+            .PaddingVertical(7).PaddingHorizontal(6).AlignMiddle();
 
     public async Task<byte[]> ExportDailyReportToPdfAsync(DateTime date, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default)
     {
@@ -1663,8 +1705,12 @@ public partial class ReportService : IReportService
         string L(string uz, string ru) => isRu ? ru : uz;
 
         var (statusLabel, statusColor) = SaleStatusInfo(data.Status, isRu);
+        var statusBg = SaleStatusBg(data.Status);
         var shortId = data.InvoiceNumber.ToString("N")[..6].ToUpperInvariant();
         var displayNumber = $"INV-{data.Date:yyMMdd}-{shortId}";
+        var initial = string.IsNullOrWhiteSpace(data.MarketName)
+            ? "M"
+            : data.MarketName.Trim()[..1].ToUpperInvariant();
 
         return Document.Create(container =>
         {
@@ -1674,57 +1720,49 @@ public partial class ReportService : IReportService
                 page.Margin(0);
                 page.DefaultTextStyle(x => x.FontSize(10).FontColor(PdfTheme.Ink));
 
-                // ── Brand header strip ──
-                page.Header().Background(PdfTheme.Brand).PaddingVertical(18).PaddingHorizontal(32).Row(row =>
+                // ── Header: white, brand mark, orange "FAKTURA" ──
+                page.Header().PaddingHorizontal(32).PaddingTop(26).PaddingBottom(16)
+                    .BorderBottom(2).BorderColor(PdfTheme.Ink).Row(row =>
                 {
-                    row.RelativeItem().Column(col =>
+                    row.AutoItem().Element(c => BrandMark(c, initial));
+                    row.RelativeItem().PaddingLeft(14).Column(col =>
                     {
-                        col.Item().Text(data.MarketName).FontSize(20).Bold().FontColor(PdfTheme.White);
+                        col.Item().Text(data.MarketName).FontSize(21).Bold().FontColor(PdfTheme.Ink);
                         if (!string.IsNullOrWhiteSpace(data.MarketDescription))
                             col.Item().PaddingTop(2).Text(data.MarketDescription)
-                                .FontSize(9).FontColor(PdfTheme.BrandTint);
+                                .FontSize(10).FontColor(PdfTheme.Muted);
                     });
-                    row.ConstantItem(150).Column(col =>
+                    row.ConstantItem(160).Column(col =>
                     {
-                        col.Item().AlignRight().Text(L("FAKTURA", "СЧЁТ-ФАКТУРА")).FontSize(22).Bold().FontColor(PdfTheme.White);
-                        col.Item().AlignRight().Text(displayNumber).FontSize(9).FontColor(PdfTheme.BrandTint);
+                        col.Item().AlignRight().Text(L("FAKTURA", "СЧЁТ-ФАКТУРА"))
+                            .FontSize(24).Bold().FontColor(PdfTheme.Brand).LetterSpacing(0.04f);
+                        col.Item().AlignRight().PaddingTop(3).Text(displayNumber)
+                            .FontSize(10).SemiBold().FontColor(PdfTheme.Muted);
                     });
                 });
 
                 // ── Content ──
                 page.Content().PaddingHorizontal(32).PaddingTop(22).Column(column =>
                 {
-                    column.Spacing(16);
+                    column.Spacing(0);
 
-                    // Meta card
-                    column.Item().Background(PdfTheme.BrandLight).Padding(14).Row(row =>
+                    // ── Meta: clean fields (no filled card) + status chip ──
+                    column.Item().PaddingBottom(20).Row(row =>
                     {
-                        row.RelativeItem().Column(col =>
-                        {
-                            InvoiceMetaField(col, L("Sana", "Дата"), data.Date.ToString("dd.MM.yyyy  HH:mm"));
-                            col.Item().PaddingTop(6);
-                            InvoiceMetaField(col, L("Sotuvchi", "Продавец"), data.SellerName);
-                        });
-                        row.RelativeItem().Column(col =>
-                        {
-                            InvoiceMetaField(col, L("Mijoz", "Клиент"), data.CustomerName);
-                            col.Item().PaddingTop(6);
-                            InvoiceMetaField(col, L("To'lov turi", "Тип оплаты"), data.PaymentType);
-                        });
-                        row.ConstantItem(120).AlignRight().AlignMiddle().Element(badge =>
-                        {
-                            badge.Background(statusColor).PaddingHorizontal(12).PaddingVertical(6)
-                                .Text(statusLabel.ToUpperInvariant())
-                                .FontSize(9).Bold().FontColor(PdfTheme.White);
-                        });
+                        InvoiceMetaField(row, L("Sana", "Дата"), data.Date.ToString("dd.MM.yyyy · HH:mm"), first: true);
+                        InvoiceMetaField(row, L("Mijoz", "Клиент"), data.CustomerName, first: false);
+                        InvoiceMetaField(row, L("Sotuvchi", "Продавец"), data.SellerName, first: false);
+                        InvoiceMetaField(row, L("To'lov turi", "Тип оплаты"), data.PaymentType, first: false);
+                        row.ConstantItem(130).AlignRight().AlignMiddle()
+                            .Element(c => StatusChip(c, statusLabel, statusColor, statusBg));
                     });
 
-                    // Items table
+                    // ── Items table: hairline rows, no zebra ──
                     column.Item().Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
-                            columns.ConstantColumn(32);   // #
+                            columns.ConstantColumn(34);   // #
                             columns.RelativeColumn(4);    // Mahsulot
                             columns.RelativeColumn(1.4f); // Miqdor
                             columns.RelativeColumn(2);    // Narx
@@ -1743,44 +1781,60 @@ public partial class ReportService : IReportService
                         int i = 0;
                         foreach (var item in data.Items)
                         {
-                            var bg = i++ % 2 == 0 ? PdfTheme.White : PdfTheme.Zebra;
-                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).Text($"{i}");
-                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).Text(t =>
+                            i++;
+                            table.Cell().Element(InvoiceBodyCell).Text($"{i}").FontColor(PdfTheme.Faint).SemiBold();
+                            table.Cell().Element(InvoiceBodyCell).Text(t =>
                             {
-                                t.Span(item.ProductName);
+                                t.Span(item.ProductName).SemiBold();
                                 if (item.IsExternal)
-                                    t.Span(L("  (tashqi)", "  (внешний)")).FontSize(8).SemiBold().FontColor(PdfTheme.BrandDark);
+                                    t.Span(L("  · tashqi", "  · внешний")).FontSize(8).SemiBold().FontColor(PdfTheme.BrandDark);
                             });
-                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).AlignRight().Text($"{item.Quantity:N2}");
-                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).AlignRight().Text($"{item.Price:N0}");
-                            table.Cell().Element(c => InvoiceBodyCell(c, bg)).AlignRight()
-                                .Text($"{item.Total:N0}").SemiBold();
+                            table.Cell().Element(InvoiceBodyCell).AlignRight().Text($"{item.Quantity:N2}").FontColor(PdfTheme.Muted);
+                            table.Cell().Element(InvoiceBodyCell).AlignRight().Text($"{item.Price:N0}").FontColor(PdfTheme.Muted);
+                            table.Cell().Element(InvoiceBodyCell).AlignRight().Text($"{item.Total:N0}").Bold();
 
                             if (!string.IsNullOrWhiteSpace(item.Comment))
-                                table.Cell().ColumnSpan(5).Element(c => InvoiceBodyCell(c, bg))
-                                    .Text($"{L("Izoh", "Примечание")}: {item.Comment}").FontSize(8).Italic().FontColor(PdfTheme.Muted);
+                                table.Cell().ColumnSpan(5).Element(InvoiceBodyCell)
+                                    .Text($"{L("Izoh", "Примечание")}: {item.Comment}")
+                                    .FontSize(8.5f).Italic().FontColor(PdfTheme.Muted);
                         }
                     });
 
-                    // Totals block
-                    column.Item().AlignRight().Width(260).Column(col =>
+                    // ── Totals block: ink-divided grand total, paid, debt block ──
+                    // (No separate subtotal — there is no discount/tax line, so a
+                    // subtotal would just repeat the grand total.)
+                    column.Item().PaddingTop(22).AlignRight().Width(290).Column(col =>
                     {
-                        InvoiceTotalRow(col, L("Jami summa", "Общая сумма"), $"{data.TotalAmount:N0}{L(" so'm", " сум")}", bold: true);
+                        col.Item().BorderTop(2).BorderColor(PdfTheme.Ink).PaddingTop(10).Row(r =>
+                        {
+                            r.RelativeItem().Text(L("Jami summa", "Общая сумма")).FontSize(13).Bold().FontColor(PdfTheme.Ink);
+                            r.AutoItem().Text(t =>
+                            {
+                                t.Span($"{data.TotalAmount:N0}").FontSize(19).Bold().FontColor(PdfTheme.Ink);
+                                t.Span(L(" so'm", " сум")).FontSize(11).FontColor(PdfTheme.Faint);
+                            });
+                        });
                         InvoiceTotalRow(col, L("To'langan", "Оплачено"), $"{data.PaidAmount:N0}{L(" so'm", " сум")}");
                         if (data.RemainingAmount > 0)
-                            InvoiceTotalRow(col, L("Qarzdorlik", "Задолженность"), $"{data.RemainingAmount:N0}{L(" so'm", " сум")}",
-                                bold: true, color: PdfTheme.Danger);
+                            col.Item().PaddingTop(8).Background(PdfTheme.DangerBg)
+                                .PaddingHorizontal(13).PaddingVertical(10).Row(r =>
+                            {
+                                r.RelativeItem().AlignMiddle().Text(L("Qarzdorlik", "Задолженность"))
+                                    .FontSize(12).Bold().FontColor(PdfTheme.Danger);
+                                r.AutoItem().Text($"{data.RemainingAmount:N0}{L(" so'm", " сум")}")
+                                    .FontSize(14).Bold().FontColor(PdfTheme.Danger);
+                            });
                     });
 
                     // Thank-you note
-                    column.Item().PaddingTop(8).AlignCenter()
+                    column.Item().PaddingTop(24).AlignCenter()
                         .Text(L("Xaridingiz uchun rahmat!", "Спасибо за покупку!"))
-                        .FontSize(11).Bold().FontColor(PdfTheme.BrandDark);
+                        .FontSize(12).Bold().FontColor(PdfTheme.BrandDark);
                 });
 
                 // ── Footer ──
                 page.Footer().BorderTop(1).BorderColor(PdfTheme.Line)
-                    .PaddingHorizontal(32).PaddingVertical(8).Row(row =>
+                    .PaddingHorizontal(32).PaddingVertical(9).Row(row =>
                 {
                     row.RelativeItem().AlignMiddle()
                         .Text(L("Strotech tomonidan yaratildi  ·  strotech.uz", "Создано в Strotech  ·  strotech.uz"))
@@ -1798,31 +1852,51 @@ public partial class ReportService : IReportService
         }).GeneratePdf();
     }
 
-    // ── Invoice rendering helpers ──
-    private static void InvoiceMetaField(QuestPDF.Fluent.ColumnDescriptor col, string label, string value)
+    // ── Invoice rendering helpers (minimalist redesign) ──
+    // Meta field divided from its neighbour by a hairline rather than a filled
+    // BrandLight card.
+    private static void InvoiceMetaField(QuestPDF.Fluent.RowDescriptor row,
+        string label, string value, bool first)
     {
-        col.Item().Text(label.ToUpperInvariant()).FontSize(7.5f).Bold().FontColor(PdfTheme.Muted);
-        col.Item().Text(value).FontSize(10).FontColor(PdfTheme.Ink);
-    }
-
-    private static void InvoiceTotalRow(QuestPDF.Fluent.ColumnDescriptor col, string label, string value,
-        bool bold = false, string color = PdfTheme.Ink)
-    {
-        col.Item().PaddingVertical(3).Row(row =>
+        row.RelativeItem().Element(e =>
         {
-            var l = row.RelativeItem().Text(label).FontSize(10).FontColor(color);
-            if (bold) l.SemiBold();
-            var v = row.ConstantItem(130).AlignRight().Text(value).FontSize(11).FontColor(color);
-            if (bold) v.Bold();
+            var box = first
+                ? e.PaddingRight(18)
+                : e.BorderLeft(1).BorderColor(PdfTheme.Line).PaddingLeft(18).PaddingRight(18);
+            box.Column(col =>
+            {
+                col.Item().Text(label.ToUpperInvariant())
+                    .FontSize(8).Bold().FontColor(PdfTheme.Muted).LetterSpacing(0.06f);
+                col.Item().PaddingTop(5).Text(value).FontSize(12).SemiBold().FontColor(PdfTheme.Ink);
+            });
         });
     }
 
+    // White header, muted uppercase, hairline underline (was orange fill).
     private static IContainer InvoiceHeadCell(IContainer c)
-        => c.Background(PdfTheme.Brand).PaddingVertical(7).PaddingHorizontal(8);
+        => c.PaddingBottom(10).PaddingHorizontal(8)
+            .BorderBottom(1.5f).BorderColor(PdfTheme.Line)
+            .DefaultTextStyle(x => x.FontSize(9).Bold().FontColor(PdfTheme.Muted).LetterSpacing(0.06f));
 
-    private static IContainer InvoiceBodyCell(IContainer c, string background)
-        => c.Background(background).BorderBottom(1).BorderColor(PdfTheme.Line)
-            .PaddingVertical(6).PaddingHorizontal(8).AlignMiddle();
+    // Hairline body cell, no zebra fill (single-arg — the old background
+    // parameter is gone).
+    private static IContainer InvoiceBodyCell(IContainer c)
+        => c.BorderBottom(1).BorderColor(PdfTheme.Line)
+            .PaddingVertical(8).PaddingHorizontal(8).AlignMiddle();
+
+    // Neutral total row (subtotal / paid). The label is always muted; the value
+    // can take an accent colour.
+    private static void InvoiceTotalRow(QuestPDF.Fluent.ColumnDescriptor col, string label, string value,
+        bool bold = false, string color = PdfTheme.Ink)
+    {
+        col.Item().PaddingVertical(4).Row(row =>
+        {
+            var l = row.RelativeItem().Text(label).FontSize(12).FontColor(PdfTheme.Muted);
+            if (bold) l.SemiBold();
+            var v = row.AutoItem().Text(value).FontSize(12.5f).SemiBold().FontColor(color);
+            if (bold) v.Bold();
+        });
+    }
 
     // Invoice data classes — `internal` so the PDF renderers (and their tests)
     // can construct them; see InternalsVisibleTo in the .csproj.
@@ -1881,6 +1955,16 @@ public partial class ReportService : IReportService
         public const string Success = "#16A34A";     // paid / profit
         public const string Danger = "#DC2626";      // debt / loss
         public const string InfoBlue = "#2563EB";    // closed
+
+        // ── Minimalist redesign additions ──
+        // Soft chip backgrounds + a tertiary "faint" ink. These let the
+        // refreshed Sales-list and Invoice PDFs lighten the brand to a single
+        // accent (white header, hairline tables, soft status chips) while the
+        // legacy summary/comprehensive reports keep the bold orange bands.
+        public const string Faint     = "#94A3B8";   // index / tertiary text
+        public const string SuccessBg = "#E7F6EC";   // "To'langan" chip background
+        public const string DangerBg  = "#FCEBE9";   // "Qarz" chip background
+        public const string InfoBg    = "#E8F0FE";   // "Qarz yopilgan" chip background
     }
 
     /// <summary>Localised label + status colour for a sale status — accepts
@@ -1894,6 +1978,61 @@ public partial class ReportService : IReportService
         "Draft" => (isRu ? "Черновик" : "Qoralama", PdfTheme.Muted),
         _ => (status, PdfTheme.Muted),
     };
+
+    /// <summary>Soft background colour for a status chip — pairs with the
+    /// foreground returned by <see cref="SaleStatusInfo"/>. Used by the
+    /// minimalist Sales-list and Invoice PDFs.</summary>
+    private static string SaleStatusBg(string status) => status switch
+    {
+        "Paid" or "To'langan" => PdfTheme.SuccessBg,
+        "Debt" or "Qarz" => PdfTheme.DangerBg,
+        "Closed" or "Qarz yopilgan" => PdfTheme.InfoBg,
+        "Cancelled" or "Bekor qilingan" => PdfTheme.DangerBg,
+        _ => PdfTheme.Zebra,
+    };
+
+    // ── Minimalist redesign — shared chrome ──
+    // Orange square + white initial. Swap for .Image(logoBytes) once a real
+    // logo asset ships.
+    private static void BrandMark(IContainer c, string initial)
+        => c.Width(38).Height(38).Background(PdfTheme.Brand)
+            .AlignCenter().AlignMiddle()
+            .Text(initial).FontSize(18).Bold().FontColor(PdfTheme.White);
+
+    // Soft-filled status chip. QuestPDF Community has no border-radius, so this
+    // is a square-cornered tinted tag; the trailing RelativeItem keeps the chip
+    // hugging its content instead of stretching across the cell.
+    private static void StatusChip(IContainer c, string label, string fg, string bg)
+        => c.Row(r =>
+        {
+            r.AutoItem().Background(bg).PaddingHorizontal(9).PaddingVertical(3)
+                .Text(label).FontSize(9).SemiBold().FontColor(fg);
+            r.RelativeItem();
+        });
+
+    // Box-free KPI summary cell — divided from its neighbour by a hairline
+    // rule rather than a card border.
+    private static void SummaryKpi(QuestPDF.Fluent.RowDescriptor row,
+        string label, string value, string suffix, string accent, bool first)
+    {
+        row.RelativeItem().Element(e =>
+        {
+            var box = first
+                ? e.PaddingRight(20)
+                : e.BorderLeft(1).BorderColor(PdfTheme.Line).PaddingLeft(20).PaddingRight(20);
+            box.Column(col =>
+            {
+                col.Item().Text(label.ToUpperInvariant())
+                    .FontSize(8).Bold().FontColor(PdfTheme.Muted).LetterSpacing(0.05f);
+                col.Item().PaddingTop(6).Text(t =>
+                {
+                    t.Span(value).FontSize(18).Bold().FontColor(accent);
+                    if (!string.IsNullOrEmpty(suffix))
+                        t.Span($" {suffix}").FontSize(10).FontColor(PdfTheme.Faint);
+                });
+            });
+        });
+    }
 
     private static IContainer HeaderStyle(IContainer container)
     {
