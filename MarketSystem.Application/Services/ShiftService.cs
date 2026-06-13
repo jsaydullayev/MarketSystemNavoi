@@ -75,6 +75,20 @@ public class ShiftService : IShiftService
         return ToDto(open);
     }
 
+    public async Task<IReadOnlyList<ShiftDto>> GetUserShiftsAsync(
+        Guid userId, int limit = 30, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+        var shifts = await _unitOfWork.Shifts.FindAsync(
+            s => s.UserId == userId && s.MarketId == marketId,
+            cancellationToken);
+        return shifts
+            .OrderByDescending(s => s.OpenedAt)
+            .Take(limit)
+            .Select(ToDto)
+            .ToList();
+    }
+
     /// <summary>The user's single open shift in the current market, if any.</summary>
     private async Task<Shift?> FindOpenShiftAsync(Guid userId, CancellationToken cancellationToken)
     {

@@ -82,7 +82,17 @@ public record ProductDto(
     [property: JsonPropertyName("categoryName")] string? CategoryName,
     [property: JsonPropertyName("isTemporary")] bool IsTemporary,
     [property: JsonPropertyName("isInStock")] bool IsInStock,
-    [property: JsonPropertyName("isLowStock")] bool IsLowStock
+    [property: JsonPropertyName("isLowStock")] bool IsLowStock,
+    // Server-nisbiy URL yoki null. Faqat savdo (POS) ekranida ko'rsatish uchun.
+    [property: JsonPropertyName("imageUrl")] string? ImageUrl = null
+);
+
+/// <summary>
+/// Mahsulot rasmini JSON orqali yuklash tanasi: "data:image/...;base64,..."
+/// yoki to'g'ridan-to'g'ri base64 satr. (Multipart yuborishda ishlatilmaydi.)
+/// </summary>
+public record SetProductImageRequest(
+    [property: JsonPropertyName("image")] string? Image
 );
 
 public record CreateZakupRequest(
@@ -127,7 +137,13 @@ public record CreateProductDto(
     decimal MinThreshold,
 
     [property: JsonPropertyName("categoryId")] int? CategoryId,
-    [property: JsonPropertyName("unit")] int Unit = 1
+    [property: JsonPropertyName("unit")] int Unit = 1,
+
+    // Boshlang'ich qoldiq — zakup orqali kelmagan, lekin do'konda allaqachon
+    // bor tovarlar uchun. 0 bo'lsa, qoldiq keyin zakup orqali to'ldiriladi.
+    [property: JsonPropertyName("quantity")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
+    decimal Quantity = 0
 );
 
 public record UpdateProductDto(

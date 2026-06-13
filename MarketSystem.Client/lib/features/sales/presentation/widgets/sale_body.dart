@@ -1,10 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/extensions/app_extensions.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../l10n/app_localizations.dart';
+import 'product_image_view.dart';
 
 class SaleBody extends StatelessWidget {
   final bool isLoading;
@@ -265,7 +268,8 @@ class SaleBody extends StatelessWidget {
           ),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            childAspectRatio: 1.05,
+            // Taller tile so the product photo on top reads clearly.
+            childAspectRatio: 0.82,
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
           ),
@@ -298,6 +302,7 @@ class _ProductTile extends StatelessWidget {
         product['isPopular'] == true ||
         product['popular'] == true ||
         (product['salesCount'] is num && (product['salesCount'] as num) > 50);
+    final hasImage = (product['imageUrl'] as String?)?.isNotEmpty == true;
 
     return Opacity(
       opacity: isInStock ? 1.0 : 0.55,
@@ -305,6 +310,9 @@ class _ProductTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isInStock ? onAdd : null,
+          // Long-press opens a larger preview so the cashier can confirm the
+          // product — never competes with tap-to-add. Works even out of stock.
+          onLongPress: () => showProductImagePreview(context, product),
           borderRadius: BorderRadius.circular(AppRadius.lg - 2),
           child: Ink(
             decoration: BoxDecoration(
@@ -316,9 +324,22 @@ class _ProductTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Prominent product photo (or placeholder) filling the top.
+                // Expanded → flexes to the tile height, so the text below never
+                // overflows; the photo just gets the remaining space.
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: _tileImage(context, hasImage),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Text(
                   product['name']?.toString() ?? '',
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 13,
@@ -327,7 +348,7 @@ class _ProductTile extends StatelessWidget {
                     color: context.colors.text,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   NumberFormatter.format(product['salePrice']),
                   style: AppTextStyles.bodyMedium().copyWith(
@@ -339,22 +360,53 @@ class _ProductTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  _stockLabel(stock, isLow, isInStock),
-                  style: AppTextStyles.caption().copyWith(
-                    fontSize: 11,
-                    letterSpacing: 0,
-                    color: isLow ? AppColors.warning : context.colors.textMuted,
-                    fontWeight: isLow ? FontWeight.w600 : FontWeight.w400,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _stockLabel(stock, isLow, isInStock),
+                        style: AppTextStyles.caption().copyWith(
+                          fontSize: 11,
+                          letterSpacing: 0,
+                          color: isLow
+                              ? AppColors.warning
+                              : context.colors.textMuted,
+                          fontWeight: isLow
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                    if (isPopular) const _PopularChip(),
+                  ],
                 ),
-                const Spacer(),
-                if (isPopular) const _PopularChip(),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _tileImage(BuildContext context, bool hasImage) {
+    final placeholder = Container(
+      color: context.colors.inputFill,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.inventory_2_rounded,
+        color: context.colors.textSecondary,
+        size: 30,
+      ),
+    );
+    if (!hasImage) return placeholder;
+    final full = ApiConstants.productImageUrl(product['imageUrl'] as String?);
+    if (full == null) return placeholder;
+    return CachedNetworkImage(
+      imageUrl: full,
+      fit: BoxFit.cover,
+      memCacheWidth: 320,
+      placeholder: (_, __) => placeholder,
+      errorWidget: (_, __, ___) => placeholder,
     );
   }
 

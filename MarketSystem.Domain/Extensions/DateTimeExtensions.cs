@@ -7,7 +7,11 @@ namespace MarketSystem.Domain.Extensions
     /// </summary>
     public static class DateTimeExtensions
     {
-        private static readonly TimeZoneInfo TashkentTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central Asia Standard Time");
+        // Fixed UTC+5 (Uzbekistan, no DST) — identical on Windows and
+        // Linux/Docker, never depends on the host OS timezone database. The
+        // Windows ID "Central Asia Standard Time" is actually UTC+6 (Astana).
+        private static readonly TimeZoneInfo TashkentTimeZone =
+            TimeZoneInfo.CreateCustomTimeZone("UZT", TimeSpan.FromHours(5), "Uzbekistan Time (UTC+5)", "UZT");
 
         /// <summary>
         /// Convert DateTime to GMT+5 (Tashkent Time)

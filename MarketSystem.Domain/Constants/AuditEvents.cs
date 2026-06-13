@@ -17,6 +17,7 @@ public static class AuditEntityTypes
     public const string CashRegister = "CashRegister";
     public const string Shift = "Shift";
     public const string RegistrationRequest = "RegistrationRequest";
+    public const string Product = "Product";
 }
 
 /// <summary>Canonical <c>AuditLog.Action</c> values.</summary>
@@ -44,4 +45,5 @@ public static class AuditActions
     public const string PasswordChange = "PasswordChange";
     public const string ShiftChange = "ShiftChange";
     public const string ProfileImageUpdate = "ProfileImageUpdate";
+    public const string ProductImageUpdate = "ProductImageUpdate";
 }

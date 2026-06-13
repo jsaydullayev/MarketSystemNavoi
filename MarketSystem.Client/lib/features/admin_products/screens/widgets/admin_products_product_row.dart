@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/constants/api_constants.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -45,11 +47,8 @@ class AdminProductsProductRow extends StatelessWidget {
               color: context.colors.brandLight,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(
-              Icons.inventory_2_outlined,
-              color: context.colors.brandDark,
-              size: 22,
-            ),
+            clipBehavior: Clip.antiAlias,
+            child: _imageOrIcon(context),
           ),
           const SizedBox(width: AppSpacing.lg),
           // Name, category, badges
@@ -158,6 +157,23 @@ class AdminProductsProductRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _imageOrIcon(BuildContext context) {
+    final url = ApiConstants.productImageUrl(product['imageUrl'] as String?);
+    final icon = Icon(
+      Icons.inventory_2_outlined,
+      color: context.colors.brandDark,
+      size: 22,
+    );
+    if (url == null) return icon;
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      memCacheWidth: 132,
+      placeholder: (_, __) => icon,
+      errorWidget: (_, __, ___) => icon,
     );
   }
 }

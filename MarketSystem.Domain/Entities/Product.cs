@@ -6,6 +6,14 @@ namespace MarketSystem.Domain.Entities;
 public class Product : BaseEntity, ISoftDelete
 {
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Mahsulot rasmiga server-nisbiy URL, masalan "/uploads/products/12/abc.webp".
+    /// Null = rasmsiz (ko'pchilik tovarlar uchun odatiy holat). Rasm fayli diskda
+    /// (persistent volume) saqlanadi; bu yerda faqat qisqa yo'l turadi.
+    /// </summary>
+    public string? ImageUrl { get; set; }
+
     public bool IsTemporary { get; set; } = false;
     public Guid? CreatedBySellerId { get; set; }
     public bool IsDeleted { get; set; } = false;

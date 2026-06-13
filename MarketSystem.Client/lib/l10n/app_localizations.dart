@@ -2732,6 +2732,30 @@ abstract class AppLocalizations {
   /// **'Tugash vaqti boshlanish vaqtidan keyin bo\'lishi kerak'**
   String get shiftInvalidWindow;
 
+  /// No description provided for @workedShifts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ishlagan smenalar'**
+  String get workedShifts;
+
+  /// No description provided for @workedShiftsEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha ishlagan smenalar yo\'q'**
+  String get workedShiftsEmpty;
+
+  /// No description provided for @shiftStillOpen.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozir ochiq'**
+  String get shiftStillOpen;
+
+  /// No description provided for @minuteShort.
+  ///
+  /// In uz, this message translates to:
+  /// **'daq'**
+  String get minuteShort;
+
   /// No description provided for @yesterday.
   ///
   /// In uz, this message translates to:

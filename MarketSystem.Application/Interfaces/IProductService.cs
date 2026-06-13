@@ -12,4 +12,14 @@ public interface IProductService
     Task<ProductDto?> UpdateProductAsync(UpdateProductDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteProductAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> UpdateStockAsync(Guid id, decimal quantityChange, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Mahsulotga rasm biriktiradi (yoki mavjudini almashtiradi). Baytlar
+    /// allaqachon validatsiyadan o'tgan deb hisoblanadi. Mahsulot topilmasa
+    /// (yoki boshqa tenantniki) null qaytaradi.
+    /// </summary>
+    Task<ProductDto?> SetProductImageAsync(Guid productId, byte[] bytes, string extension, CancellationToken cancellationToken = default);
+
+    /// <summary>Mahsulot rasmini o'chiradi (ImageUrl=null + fayl). Topilmasa null.</summary>
+    Task<ProductDto?> RemoveProductImageAsync(Guid productId, CancellationToken cancellationToken = default);
 }

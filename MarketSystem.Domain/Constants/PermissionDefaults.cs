@@ -32,10 +32,12 @@ public static class PermissionDefaults
 
     /// <summary>Seller = view access + create-sale + customer create/edit +
     /// debt payment + the exports that were open to all roles. No product /
-    /// category / user management, no customer delete, no cost/profit, no
-    /// cash register. Note: no <c>reports.access</c> — the Reports controller
-    /// was AdminOrOwner, so a Seller could only ever reach its export and
-    /// daily-list endpoints (gated below by reports.export / sales.access).</summary>
+    /// category / user management, no users list (the Foydalanuvchilar section
+    /// is Owner/Admin only — the self-service profile/shift endpoints need no
+    /// permission), no customer delete, no cost/profit, no cash register.
+    /// Note: no <c>reports.access</c> — the Reports controller was AdminOrOwner,
+    /// so a Seller could only ever reach its export and daily-list endpoints
+    /// (gated below by reports.export / sales.access).</summary>
     public static readonly IReadOnlyList<string> Seller = new[]
     {
         PermissionKeys.DashboardAccess,
@@ -45,9 +47,21 @@ public static class PermissionDefaults
         PermissionKeys.CustomersAccess, PermissionKeys.CustomersManage, PermissionKeys.CustomersExport,
         PermissionKeys.ZakupAccess,
         PermissionKeys.ReportsExport,
-        PermissionKeys.UsersAccess,
         PermissionKeys.DebtsAccess, PermissionKeys.DebtsManage,
         PermissionKeys.DataAllSalesView,
+    };
+
+    /// <summary>
+    /// Confidential keys a <see cref="Role.Seller"/> may NEVER hold, even if an
+    /// Owner toggles them on in the permission matrix. Cost price and profit are
+    /// the shop's private margins — a hard role-level guarantee, not just a
+    /// default. Owner/SuperAdmin bypass all gating; Admin keeps cost-price
+    /// visibility (a trusted manager role) so it is intentionally absent here.
+    /// </summary>
+    public static readonly IReadOnlyList<string> SellerForbidden = new[]
+    {
+        PermissionKeys.DataCostPrice,
+        PermissionKeys.DataProfit,
     };
 
     /// <summary>Default effective set for a freshly created user of

@@ -1,10 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
+import 'product_image_view.dart';
 
 class PriceInputSheet extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -185,18 +188,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: context.colors.brand,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Icon(
-                      Icons.shopping_bag_outlined,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
+                  _buildHeaderImage(context),
                   const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Text(
@@ -296,6 +288,79 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                   child: AppPrimaryButton(label: l10n.add, onPressed: _submit),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Header thumbnail. With an image: a tappable 52x52 photo (tap → full-size
+  /// preview). Without: the original brand shopping-bag tile.
+  Widget _buildHeaderImage(BuildContext context) {
+    final full = ApiConstants.productImageUrl(
+      widget.product['imageUrl'] as String?,
+    );
+    if (full == null) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: context.colors.brand,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: const Icon(
+          Icons.shopping_bag_outlined,
+          color: Colors.white,
+          size: 20,
+        ),
+      );
+    }
+    return GestureDetector(
+      onTap: () => showProductImagePreview(context, widget.product),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Stack(
+          children: [
+            CachedNetworkImage(
+              imageUrl: full,
+              width: 52,
+              height: 52,
+              fit: BoxFit.cover,
+              memCacheWidth: 156,
+              placeholder: (_, __) => Container(
+                width: 52,
+                height: 52,
+                color: context.colors.surface,
+              ),
+              errorWidget: (_, __, ___) => Container(
+                width: 52,
+                height: 52,
+                color: context.colors.brand,
+                child: const Icon(
+                  Icons.shopping_bag_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+            // Tap-to-zoom hint badge.
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(6),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.zoom_in_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
             ),
           ],
         ),

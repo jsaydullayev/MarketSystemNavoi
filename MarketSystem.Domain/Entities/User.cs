@@ -68,7 +68,18 @@ public class User : BaseEntity, ISoftDelete
     {
         if (Role is Role.Owner or Role.SuperAdmin)
             return PermissionKeys.All;
-        return IsPermissionsCustomized ? Permissions : PermissionDefaults.ForRole(Role);
+
+        var effective = IsPermissionsCustomized ? Permissions : PermissionDefaults.ForRole(Role);
+
+        // Hard guarantee: a Seller may never hold the confidential cost/profit
+        // keys, even if an Owner toggled them on. Enforced at this single source
+        // so every consumer — JWT claims, HasPermission, the API permission
+        // gates — inherits the block. Owner/SuperAdmin already returned above;
+        // Admin is intentionally allowed cost-price visibility.
+        if (Role is Role.Seller)
+            return effective.Where(k => !PermissionDefaults.SellerForbidden.Contains(k)).ToList();
+
+        return effective;
     }
 
     /// <summary>True when the user is allowed the given permission key. Owner

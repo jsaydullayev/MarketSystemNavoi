@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/user_service.dart';
 import '../../data/services/http_service.dart';
+import '../auth/permissions.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
@@ -92,6 +93,15 @@ class AuthProvider extends ChangeNotifier {
   bool can(String permissionKey) {
     final r = role;
     if (r == 'Owner' || r == 'SuperAdmin') return true;
+    // Hard guarantee: a Seller may NEVER see the shop's confidential cost
+    // price or profit, even if an Owner toggled those permissions on for the
+    // account. Mirrors the backend's role-level block in
+    // User.GetEffectivePermissions so the UI and server stay in lock-step.
+    if (r == 'Seller' &&
+        (permissionKey == Permissions.dataCostPrice ||
+            permissionKey == Permissions.dataProfit)) {
+      return false;
+    }
     return permissions.contains(permissionKey);
   }
 

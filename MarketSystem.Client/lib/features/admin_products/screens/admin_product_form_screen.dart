@@ -28,6 +28,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import 'admin_product_form_dropdowns.dart';
 import 'admin_product_form_sections.dart';
+import 'widgets/admin_product_image_section.dart';
 
 class AdminProductFormScreen extends StatefulWidget {
   final dynamic product;
@@ -290,6 +291,21 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
+
+            // === Mahsulot rasmi (faqat tahrirlashda — rasm biriktirish uchun
+            // mahsulot allaqachon mavjud bo'lishi kerak) ===
+            if (isEditing) ...[
+              const SectionLabel(text: 'Mahsulot rasmi'),
+              const SizedBox(height: AppSpacing.md),
+              AppCard(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: AdminProductImageSection(
+                  productId: widget.product['id'].toString(),
+                  initialImageUrl: widget.product['imageUrl'] as String?,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
 
             // === рџ’° Narxlar (brand-light) ===
             PriceCard(

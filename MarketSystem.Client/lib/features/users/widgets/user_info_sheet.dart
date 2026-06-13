@@ -9,6 +9,7 @@ import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/features/users/screens/user_permissions_screen.dart';
+import 'package:market_system_client/features/users/widgets/shift_history_sheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
 /// User detail bottom sheet matching the staff-detail hero card from
@@ -568,6 +569,25 @@ class _ShiftSection extends StatelessWidget {
                   label: l10n.shiftSetWindow,
                   color: context.colors.brand,
                   onTap: onSetWindow,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Read-only worked-shift history — lets the Owner see how long the
+          // seller actually worked (open/close sessions + duration).
+          Row(
+            children: [
+              Expanded(
+                child: _ShiftActionButton(
+                  icon: Icons.history_rounded,
+                  label: l10n.workedShifts,
+                  color: context.colors.textSecondary,
+                  onTap: () => ShiftHistorySheet.show(
+                    context,
+                    userId: (user['id'] ?? '').toString(),
+                    userName: (user['fullName'] ?? '').toString(),
+                  ),
                 ),
               ),
             ],

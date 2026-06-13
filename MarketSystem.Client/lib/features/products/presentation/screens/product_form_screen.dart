@@ -7,6 +7,8 @@
 // - "Stok" section (hozirgi stok, minimum stok) with helper text
 // - Sticky primary CTA at the bottom
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -21,6 +23,7 @@ import '../../../../design/tokens/app_typography.dart';
 import '../../../../design/widgets/app_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'widgets/product_form_fields.dart';
+import 'widgets/product_form_image_picker.dart';
 
 class ProductBottomSheet extends StatefulWidget {
   final dynamic product;
@@ -34,11 +37,16 @@ class ProductBottomSheet extends StatefulWidget {
 class _ProductBottomSheetState extends State<ProductBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _costPriceController = TextEditingController();
   final _salePriceController = TextEditingController();
   final _minSalePriceController = TextEditingController();
   final _stockController = TextEditingController();
   final _minThresholdController = TextEditingController();
+
+  // Deferred image: chosen locally, uploaded after the product is saved
+  // (a new product has no id until then).
+  Uint8List? _pickedImageBytes;
+  String? _pickedImageName;
+  bool _imageRemoved = false;
 
   bool _isTemporary = false;
   bool _isLoading = false;
@@ -60,7 +68,6 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
     _loadCategories();
     if (widget.product != null) {
       _nameController.text = widget.product['name'] ?? '';
-      _costPriceController.text = (widget.product['costPrice'] ?? 0).toString();
       _salePriceController.text = (widget.product['salePrice'] ?? 0).toString();
       _minSalePriceController.text = (widget.product['minSalePrice'] ?? 0)
           .toString();
@@ -91,7 +98,6 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   @override
   void dispose() {
     _nameController.dispose();
-    _costPriceController.dispose();
     _salePriceController.dispose();
     _minSalePriceController.dispose();
     _stockController.dispose();
@@ -115,10 +121,15 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           double.tryParse(_minSalePriceController.text.replaceAll(',', '.')) ??
           0.0;
       final int minThreshold = int.tryParse(_minThresholdController.text) ?? 0;
+      // Boshlang'ich qoldiq faqat yangi mahsulotda kiritiladi (tahrirda zakup
+      // orqali). Bo'sh/no'to'g'ri bo'lsa 0.
+      final double initialQuantity =
+          double.tryParse(_stockController.text.replaceAll(',', '.')) ?? 0.0;
       final bool tempStatus = _isTemporary;
 
+      String productId;
       if (widget.product == null) {
-        await productService.createProduct(
+        final created = await productService.createProduct(
           name: name,
           isTemporary: tempStatus,
           salePrice: salePrice,
@@ -126,7 +137,9 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           minThreshold: minThreshold,
           categoryId: _selectedCategory,
           unit: _selectedUnit,
+          quantity: initialQuantity,
         );
+        productId = created['id'] as String;
       } else {
         await productService.updateProduct(
           id: widget.product['id'],
@@ -138,6 +151,31 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           unit: _selectedUnit,
           isTemporary: tempStatus,
         );
+        productId = widget.product['id'] as String;
+      }
+
+      // Rasm — endi mahsulot id'si bor, kechiktirilgan yuklash/o'chirishni
+      // bajaramiz. Mahsulotning o'zi saqlanib bo'lgani uchun rasm xatosi
+      // FATAL emas — ogohlantiramiz-u, formani muvaffaqiyat bilan yopamiz.
+      try {
+        if (_pickedImageBytes != null) {
+          await productService.uploadProductImage(
+            productId,
+            _pickedImageBytes!,
+            _pickedImageName ?? 'image.jpg',
+          );
+        } else if (_imageRemoved && widget.product != null) {
+          await productService.removeProductImage(productId);
+        }
+      } catch (imgErr) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Mahsulot saqlandi, lekin rasm yuklanmadi: $imgErr'),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
       }
 
       if (mounted) Navigator.pop(context, true);
@@ -264,41 +302,52 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                   ),
                   18.height,
 
+                  // === Mahsulot rasmi (ixtiyoriy) ===
+                  const SectionLabel(text: 'Mahsulot rasmi'),
+                  10.height,
+                  ProductFormImagePicker(
+                    pickedBytes: _pickedImageBytes,
+                    existingImageUrl: widget.product?['imageUrl'] as String?,
+                    removed: _imageRemoved,
+                    onPicked: (bytes, name) => setState(() {
+                      _pickedImageBytes = bytes;
+                      _pickedImageName = name;
+                      _imageRemoved = false;
+                    }),
+                    onRemoved: () => setState(() {
+                      _pickedImageBytes = null;
+                      _pickedImageName = null;
+                      _imageRemoved = true;
+                    }),
+                  ),
+                  6.height,
+                  Text(
+                    'Savdo ekranida mahsulotni tezroq tanib olish uchun. (ixtiyoriy, maks 5MB)',
+                    style: AppTextStyles.caption().copyWith(
+                      fontSize: 11,
+                      letterSpacing: 0,
+                      color: context.colors.textMuted,
+                    ),
+                  ),
+                  18.height,
+
                   // === Narxlar (brand-light card) ===
                   PriceCard(
                     title: l10n.pricesSection,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: LabeledField(
-                              label: l10n.shortCostPrice,
-                              required: true,
-                              compact: true,
-                              child: _buildSuffixField(
-                                controller: _costPriceController,
-                                suffix: 'UZS',
-                                isNumber: true,
-                              ),
-                            ),
-                          ),
-                          12.width,
-                          Expanded(
-                            child: LabeledField(
-                              label: l10n.salePrice,
-                              required: true,
-                              compact: true,
-                              child: _buildSuffixField(
-                                controller: _salePriceController,
-                                suffix: 'UZS',
-                                isNumber: true,
-                                validator: (v) => (v == null || v.isEmpty)
-                                    ? l10n.fillIn
-                                    : null,
-                              ),
-                            ),
-                          ),
-                        ],
+                      // Tannarx (cost) intentionally omitted: cost is set via
+                      // zakup, and initial existing stock is entered without it.
+                      LabeledField(
+                        label: l10n.salePrice,
+                        required: true,
+                        compact: true,
+                        child: _buildSuffixField(
+                          controller: _salePriceController,
+                          suffix: 'UZS',
+                          isNumber: true,
+                          validator: (v) =>
+                              (v == null || v.isEmpty) ? l10n.fillIn : null,
+                        ),
                       ),
                       12.height,
                       LabeledField(

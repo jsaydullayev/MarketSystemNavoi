@@ -4,9 +4,11 @@
 // popular chip). Extracted from `product_body.dart` as part of a code-move
 // refactor.
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
@@ -274,6 +276,9 @@ class _EmojiTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = ApiConstants.productImageUrl(
+      product['imageUrl'] as String?,
+    );
     return Container(
       width: 48,
       height: 48,
@@ -281,13 +286,24 @@ class _EmojiTile extends StatelessWidget {
         color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.md + 1),
       ),
-      child: Icon(
-        Icons.inventory_2_rounded,
-        color: context.colors.textSecondary,
-        size: 24,
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: imageUrl == null
+          ? _icon(context)
+          : CachedNetworkImage(
+              imageUrl: imageUrl,
+              fit: BoxFit.cover,
+              memCacheWidth: 144,
+              placeholder: (_, __) => _icon(context),
+              errorWidget: (_, __, ___) => _icon(context),
+            ),
     );
   }
+
+  Widget _icon(BuildContext context) => Icon(
+    Icons.inventory_2_rounded,
+    color: context.colors.textSecondary,
+    size: 24,
+  );
 }
 
 /// Stock label on the right edge of each row. Muted by default, warning

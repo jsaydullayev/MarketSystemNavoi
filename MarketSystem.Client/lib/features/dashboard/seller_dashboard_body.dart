@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/auth/permission_context.dart';
+import '../../core/auth/permissions.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/routes/app_routes.dart';
 import '../../data/services/dashboard_service.dart';
@@ -51,6 +53,29 @@ class SellerDashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isAdmin = role == 'Admin';
+
+    // Quick-action cards, each gated by the permission its destination needs so
+    // a card the Owner revoked simply disappears (no dead-end taps). Returns are
+    // an Admin/Owner capability (backend AdminOrOwner), so Sellers don't see
+    // Qaytarish — they'd only hit a 403.
+    final quickActions = <Widget>[
+      if (context.can(Permissions.debtsAccess))
+        KpiCard(
+          emoji: '💸',
+          value: l10n.debt,
+          label: l10n.debtPayments,
+          tone: KpiTone.orange,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
+        ),
+      if (isAdmin)
+        KpiCard(
+          emoji: '↩️',
+          value: l10n.refundLabel,
+          label: l10n.refundActionDesc,
+          tone: KpiTone.blue,
+          onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
+        ),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -114,32 +139,22 @@ class SellerDashboardBody extends StatelessWidget {
             },
           ),
         ],
-        const SizedBox(height: AppSpacing.xl),
-        SectionHeader(title: l10n.quickActions),
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            Expanded(
-              child: KpiCard(
-                emoji: '💸',
-                value: l10n.debt,
-                label: l10n.debtPayments,
-                tone: KpiTone.orange,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
+        if (quickActions.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xl),
+          SectionHeader(title: l10n.quickActions),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(child: quickActions.first),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: quickActions.length > 1
+                    ? quickActions[1]
+                    : const SizedBox.shrink(),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: KpiCard(
-                emoji: '↩️',
-                value: l10n.refundLabel,
-                label: l10n.refundActionDesc,
-                tone: KpiTone.blue,
-                onTap: () => Navigator.pushNamed(context, AppRoutes.sales),
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
         if (isAdmin) ...[
           const SizedBox(height: AppSpacing.xl),
           SectionHeader(title: l10n.adminSectionLabel),

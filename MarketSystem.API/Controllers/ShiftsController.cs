@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MarketSystem.API.Authorization;
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using System.Security.Claims;
 
 namespace MarketSystem.API.Controllers;
@@ -54,4 +56,13 @@ public class ShiftsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    /// <summary>A specific user's worked-shift sessions (most recent first).
+    /// Owner/Admin only — gated by users.shift — so an Owner can review how
+    /// long a seller actually worked. Market-scoped inside the service.</summary>
+    [HttpGet("user/{userId:guid}")]
+    [RequirePermission(PermissionKeys.UsersShift)]
+    public async Task<ActionResult<IReadOnlyList<ShiftDto>>> GetUserShifts(
+        Guid userId, CancellationToken ct = default)
+        => Ok(await _shiftService.GetUserShiftsAsync(userId, 30, ct));
 }

@@ -74,6 +74,40 @@ class ApiConstants {
   static const String productsExportExcel =
       '$products/ExportProductsToExcel/export';
 
+  // Product image set/remove. Backend route is `/Products/{Action}/{id}/image`.
+  static String productImage(String id) => '$products/SetImage/$id/image';
+  static String productImageRemove(String id) =>
+      '$products/RemoveImage/$id/image';
+
+  /// Turns the server-relative product image path ("/api/uploads/products/...")
+  /// into an absolute URL the image widgets can load. The server already
+  /// includes the "/api" prefix, so we join it with the API ORIGIN (baseUrl
+  /// minus a trailing "/api"). Returns null for null/empty input.
+  ///
+  /// - mobile prod:  baseUrl "https://strotech.uz/api" → origin
+  ///   "https://strotech.uz" → "https://strotech.uz/api/uploads/...".
+  /// - web release:  baseUrl "/api" → origin "" → "/api/uploads/..." (same
+  ///   origin, host nginx routes it to the API).
+  /// - local dev:    "http://localhost:5050/api" → "http://localhost:5050" →
+  ///   "http://localhost:5050/api/uploads/...".
+  static String? productImageUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    // Already absolute (defensive — server may change shape later).
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+    final base = baseUrl; // ends with "/api" (or is exactly "/api")
+    var origin = base.endsWith('/api')
+        ? base.substring(0, base.length - 4)
+        : base;
+    // Web release: baseUrl is the relative "/api", so origin is empty. A bare
+    // relative URL isn't reliably fetched by cached_network_image, so resolve
+    // it against the page origin (e.g. https://strotech.uz). On mobile, origin
+    // already carries the host, so Uri.base is never consulted here.
+    if (origin.isEmpty) origin = Uri.base.origin;
+    final suffix = path.startsWith('/') ? path : '/$path';
+    return '$origin$suffix';
+  }
+
   // Products — Import (dry-run va haqiqiy)
   static const String productsImportPreview =
       '$products/ImportPreview/import/preview';

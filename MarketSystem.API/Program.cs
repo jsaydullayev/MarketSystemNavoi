@@ -493,6 +493,7 @@ try
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<IProductImageStorage, MarketSystem.API.Storage.LocalProductImageStorage>();
     builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
     builder.Services.AddScoped<IProductImportService, ProductImportService>();
     builder.Services.AddScoped<ICustomerService, CustomerService>();
@@ -673,6 +674,34 @@ try
     });
 
     app.UseStaticFiles();
+
+    // Product images are served under "/api/uploads/..." so the existing nginx
+    // "/api/" proxy reaches them with no new location block. Physical files live
+    // in wwwroot/uploads (a persistent Docker volume); filenames are unique guids
+    // so a long immutable cache is safe and keeps the POS grid cheap to scroll.
+    {
+        var uploadsWebRoot = app.Environment.WebRootPath;
+        if (string.IsNullOrEmpty(uploadsWebRoot))
+            uploadsWebRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+        var uploadsPhysical = Path.Combine(uploadsWebRoot, "uploads");
+        Directory.CreateDirectory(uploadsPhysical);
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPhysical),
+            RequestPath = "/api/uploads",
+            OnPrepareResponse = ctx =>
+            {
+                ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=2592000, immutable";
+                // Rasm — ochiq, sensitiv emas (unguessable guid nom bilan himoyalangan).
+                // Static fayllar CORS middleware'ni chetlab o'tadi, shuning uchun
+                // ACAO'ni shu yerda qo'yamiz — web-debug (klient boshqa portda)
+                // thumbnail'larni yuklay olishi uchun. Prod'da same-origin → zararsiz.
+                ctx.Context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+            }
+        });
+    }
+
     // SuperAdmin URL gate — MUST run before UseAuthentication so an
     // unauthenticated probe to the wrong path returns 404 (not 401),
     // keeping the existence of the console hidden.

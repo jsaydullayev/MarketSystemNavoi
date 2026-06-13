@@ -1396,6 +1396,18 @@ class AppLocalizationsRu extends AppLocalizations {
       'Время окончания должно быть позже времени начала';
 
   @override
+  String get workedShifts => 'Рабочие смены';
+
+  @override
+  String get workedShiftsEmpty => 'Пока нет рабочих смен';
+
+  @override
+  String get shiftStillOpen => 'Сейчас открыта';
+
+  @override
+  String get minuteShort => 'мин';
+
+  @override
   String get yesterday => 'Вчера';
 
   @override
