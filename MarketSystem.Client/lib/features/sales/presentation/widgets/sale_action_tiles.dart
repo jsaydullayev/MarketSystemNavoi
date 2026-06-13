@@ -7,9 +7,10 @@ import '../../../../design/widgets/app_card.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class SaleActionTiles extends StatelessWidget {
-  const SaleActionTiles({super.key, required this.onDownloadPdf});
+  const SaleActionTiles({super.key, required this.onPrint});
 
-  final VoidCallback onDownloadPdf;
+  /// Print tile tap — sends the compact invoice to the OS print dialog.
+  final VoidCallback onPrint;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +22,7 @@ class SaleActionTiles extends StatelessWidget {
             context,
             icon: Icons.print_outlined,
             label: l10n.printAction,
-            onTap: onDownloadPdf,
+            onTap: onPrint,
           ),
         ),
         const SizedBox(width: AppSpacing.lg),

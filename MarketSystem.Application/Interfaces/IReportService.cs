@@ -35,8 +35,9 @@ public interface IReportService
     Task<byte[]> ExportPeriodReportToPdfAsync(PeriodReportRequest request, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
     Task<byte[]> ExportComprehensiveReportToPdfAsync(DateTime date, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
 
-    // Invoice generation
-    Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
+    // Invoice generation. `compact` renders the print-friendly variant: full A4
+    // sheet, content packed into a small block at the top, rest left blank.
+    Task<byte[]> GenerateInvoicePdfAsync(Guid saleId, string? userRole = null, string lang = "uz", bool compact = false, CancellationToken cancellationToken = default);
 
     // Sales list export to PDF
     Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);

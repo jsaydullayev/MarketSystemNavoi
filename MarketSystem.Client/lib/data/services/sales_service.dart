@@ -481,18 +481,20 @@ class SalesService {
     return await _httpService.downloadBytes(url);
   }
 
-  // Savdo uchun faktura (PDF) yuklab olish
+  // Savdo uchun faktura (PDF) yuklab olish.
+  // `compact: true` — pechatga mo'ljallangan ixcham variant (A4 varaq, kontent
+  // yuqorida kichik blok). Default (false) — to'liq A4 faktura (yuklab olish/share).
   Future<List<int>?> downloadInvoice(
     String saleId, {
     String lang = 'uz',
+    bool compact = false,
   }) async {
+    final url = '${ApiConstants.sales}/$saleId/invoice?lang=$lang&compact=$compact';
     debugPrint('=== DOWNLOAD INVOICE ===');
     debugPrint('Sale ID: $saleId');
-    debugPrint('URL: ${ApiConstants.sales}/$saleId/invoice?lang=$lang');
+    debugPrint('URL: $url');
     debugPrint('=======================');
 
-    return await _httpService.downloadBytes(
-      '${ApiConstants.sales}/$saleId/invoice?lang=$lang',
-    );
+    return await _httpService.downloadBytes(url);
   }
 }

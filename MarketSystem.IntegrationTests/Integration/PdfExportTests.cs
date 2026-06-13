@@ -90,6 +90,67 @@ public class PdfExportTests
         AssertValidPdf(ReportService.RenderInvoicePdf(data, lang: "ru"));
     }
 
+    // ---- Compact invoice (print-friendly: A4 sheet, content block at top) ----
+
+    [Fact]
+    public void RenderInvoiceCompactPdf_DebtSaleWithExternalItemAndComment_IsValid()
+    {
+        var data = new ReportService.InvoiceData(
+            MarketName: "Strotech Market",
+            MarketDescription: "Qurilish mollari",
+            SellerName: "Jahongir",
+            CustomerName: "Mijoz ko'rsatilmagan",
+            InvoiceNumber: Guid.NewGuid(),
+            Date: new DateTime(2026, 5, 12, 22, 36, 0),
+            PaymentType: "Naqd",
+            Items: new List<ReportService.InvoiceItemData>
+            {
+                new("Taxta", 5m, 18000m, 90000m, null, false),
+                new("Mix", 10m, 1000m, 10000m, "Tezkor buyurtma", true),
+            },
+            TotalAmount: 100000m,
+            PaidAmount: 60000m,
+            RemainingAmount: 40000m,
+            Status: "Debt");
+
+        AssertValidPdf(ReportService.RenderInvoiceCompactPdf(data));
+    }
+
+    [Fact]
+    public void RenderInvoiceCompactPdf_PaidSaleNoItems_IsValid()
+    {
+        var data = new ReportService.InvoiceData(
+            "Strotech Market", "", "Jahongir", "Mijoz", Guid.NewGuid(),
+            DateTime.Now, "Click", new List<ReportService.InvoiceItemData>(),
+            0m, 0m, 0m, "Paid");
+
+        AssertValidPdf(ReportService.RenderInvoiceCompactPdf(data));
+    }
+
+    [Fact]
+    public void RenderInvoiceCompactPdf_RussianLocale_IsValid()
+    {
+        var data = new ReportService.InvoiceData(
+            MarketName: "Strotech Market",
+            MarketDescription: "Qurilish mollari",
+            SellerName: "Jahongir",
+            CustomerName: "Без клиента",
+            InvoiceNumber: Guid.NewGuid(),
+            Date: new DateTime(2026, 5, 12, 22, 36, 0),
+            PaymentType: "Наличные",
+            Items: new List<ReportService.InvoiceItemData>
+            {
+                new("Taxta", 5m, 18000m, 90000m, null, false),
+                new("Mix", 10m, 1000m, 10000m, "Tezkor buyurtma", true),
+            },
+            TotalAmount: 100000m,
+            PaidAmount: 60000m,
+            RemainingAmount: 40000m,
+            Status: "Debt");
+
+        AssertValidPdf(ReportService.RenderInvoiceCompactPdf(data, lang: "ru"));
+    }
+
     // ---- Sales list ----
 
     private static List<ReportService.SalesReportItem> SampleRows() => new()
@@ -105,28 +166,28 @@ public class PdfExportTests
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), new DateTime(2026, 5, 13), new DateTime(2026, 5, 13),
             includeProfit: true, includeCost: true,
-            totalSales: 515500m, totalProfit: 50000m, generatedAtLocal: FixedNow));
+            totalSales: 515500m, totalProfit: 50000m, receiptCount: 2, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_SellerView_NoCostNoProfitColumns_IsValid()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), null, null,
             includeProfit: false, includeCost: false,
-            totalSales: 515500m, totalProfit: 0m, generatedAtLocal: FixedNow));
+            totalSales: 515500m, totalProfit: 0m, receiptCount: 2, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_EmptyList_RendersNoDataMessage()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             new List<ReportService.SalesReportItem>(), null, null,
             includeProfit: true, includeCost: true,
-            totalSales: 0m, totalProfit: 0m, generatedAtLocal: FixedNow));
+            totalSales: 0m, totalProfit: 0m, receiptCount: 0, generatedAtLocal: FixedNow));
 
     [Fact]
     public void RenderSalesListPdf_RussianLocale_OwnerView_IsValid()
         => AssertValidPdf(ReportService.RenderSalesListPdf(
             SampleRows(), new DateTime(2026, 5, 13), new DateTime(2026, 5, 13),
             includeProfit: true, includeCost: true,
-            totalSales: 515500m, totalProfit: 50000m, generatedAtLocal: FixedNow, lang: "ru"));
+            totalSales: 515500m, totalProfit: 50000m, receiptCount: 2, generatedAtLocal: FixedNow, lang: "ru"));
 
     // ---- Daily / period summary report ----
 
