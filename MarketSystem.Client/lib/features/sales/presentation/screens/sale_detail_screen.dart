@@ -9,6 +9,7 @@ import 'package:market_system_client/core/auth/permissions.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
+import 'package:market_system_client/core/utils/pdf_print_helper.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -39,6 +40,10 @@ class SaleDetailScreen extends StatefulWidget {
 
 class _SaleDetailScreenState extends State<SaleDetailScreen> {
   late final SalesService _salesService;
+
+  // Re-entrancy guard for the print action — a double-tap on the print tile
+  // must not stack two spinners or fire two print jobs.
+  bool _isPrinting = false;
 
   @override
   void initState() {
@@ -177,6 +182,79 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     }
   }
 
+  /// Download the print-friendly compact invoice and hand it to the OS print
+  /// dialog (Windows kassa: every press opens the system print window).
+  ///
+  /// The spinner route is popped exactly once (in the download `finally`); the
+  /// print hand-off runs only after the spinner is already gone, so a print
+  /// failure (printer offline, job cancelled in the OS dialog) just shows a
+  /// snackbar instead of accidentally popping the screen itself.
+  Future<void> _printInvoice(Map<String, dynamic> sale) async {
+    if (_isPrinting) return;
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return;
+    final lang = Localizations.localeOf(context).languageCode;
+    if (!mounted) return;
+
+    _isPrinting = true;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(context.colors.brand),
+        ),
+      ),
+    );
+
+    // Phase 1 — download behind the modal spinner; close it exactly once.
+    List<int>? pdfData;
+    try {
+      pdfData = await _salesService.downloadInvoice(
+        widget.saleId,
+        lang: lang,
+        compact: true,
+      );
+    } catch (_) {
+      pdfData = null;
+    } finally {
+      if (mounted) Navigator.pop(context); // close the progress spinner
+    }
+
+    if (!mounted) {
+      _isPrinting = false;
+      return;
+    }
+
+    if (pdfData == null || pdfData.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.errorOccurred),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      _isPrinting = false;
+      return;
+    }
+
+    // Phase 2 — OS print dialog. No spinner route is open here, so a failure
+    // only surfaces a snackbar; it can never pop a real screen.
+    try {
+      await printPdfBytes(pdfData, name: 'faktura_${widget.saleId}');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${l10n.errorOccurred}: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    } finally {
+      _isPrinting = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -312,7 +390,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   remaining: remainingAmount,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                SaleActionTiles(onDownloadPdf: () => _downloadPdf(sale)),
+                SaleActionTiles(onPrint: () => _printInvoice(sale)),
                 const SizedBox(height: AppSpacing.lg),
                 if (canReturn)
                   AppDangerButton(

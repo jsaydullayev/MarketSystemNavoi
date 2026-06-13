@@ -9,6 +9,7 @@ import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/utils/file_helper.dart' as core_file_helper;
+import '../../../../core/utils/pdf_print_helper.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../data/services/sales_service.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -172,6 +173,42 @@ class _SalesScreenState extends State<SalesScreen> {
     }
   }
 
+  /// Sotuvlar ro'yxatini (A4 landshaft PDF) OS print oynasi orqali pechatga
+  /// beradi — mavjud `downloadSalesPdf` baytlari `printPdfBytes` ga uzatiladi.
+  Future<void> _printSalesPdf() async {
+    setState(() => _isExporting = true);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final salesService = SalesService(authProvider: authProvider);
+      final lang = Localizations.localeOf(context).languageCode;
+      final bytes = await salesService.downloadSalesPdf(lang: lang);
+
+      if (bytes != null && bytes.isNotEmpty) {
+        await printPdfBytes(bytes, name: 'sotuvlar');
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PDF faylini yuklab olishda xatolik yuz berdi'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xatolik: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isExporting = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -226,6 +263,8 @@ class _SalesScreenState extends State<SalesScreen> {
                           _exportExcel();
                         } else if (value == 'pdf') {
                           _exportPdf();
+                        } else if (value == 'print') {
+                          _printSalesPdf();
                         }
                       },
                       itemBuilder: (context) => [
@@ -258,6 +297,23 @@ class _SalesScreenState extends State<SalesScreen> {
                               const SizedBox(width: AppSpacing.lg),
                               Text(
                                 'PDF export',
+                                style: AppTextStyles.bodyMedium(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'print',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.print_outlined,
+                                size: 20,
+                                color: context.colors.brand,
+                              ),
+                              const SizedBox(width: AppSpacing.lg),
+                              Text(
+                                l10n.printAction,
                                 style: AppTextStyles.bodyMedium(),
                               ),
                             ],

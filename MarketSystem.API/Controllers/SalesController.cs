@@ -489,14 +489,14 @@ public class SalesController : ControllerBase
     /// </summary>
     [HttpGet("{id}/invoice")]
     [RequirePermission(PermissionKeys.SalesAccess)]
-    public async Task<IActionResult> GetInvoice(Guid id, [FromQuery] string lang = "uz", CancellationToken ct = default)
+    public async Task<IActionResult> GetInvoice(Guid id, [FromQuery] string lang = "uz", [FromQuery] bool compact = false, CancellationToken ct = default)
     {
         try
         {
             _logger.LogInformation("GetInvoice called - Sale ID: {SaleId}", id);
 
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole, lang);
+            var pdfBytes = await _reportService.GenerateInvoicePdfAsync(id, userRole, lang, compact);
 
             var sale = await _saleService.GetSaleByIdAsync(id);
             var fileName = $"Faktura_{id}_{_clock.NowLocal:yyyyMMdd_HHmmss}.pdf";
