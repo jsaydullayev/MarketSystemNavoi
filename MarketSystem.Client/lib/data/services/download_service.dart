@@ -81,6 +81,32 @@ class DownloadService {
     await _saveDownloadedFile(response.bodyBytes, filename);
   }
 
+  /// Ombordagi (sklad) mahsulotlarni Excel formatida yuklab olish.
+  /// Reports → Ombor tabidagi yuklab olish tugmasi shu metodni chaqiradi:
+  /// joriy ombor holati (barcha mahsulotlar, qoldiq, narxlar, qiymatlar).
+  /// Backend RBAC: tannarx/foyda ustunlari faqat Owner/Admin uchun chiqadi.
+  Future<void> downloadInventoryReport({
+    DateTime? date,
+    String lang = 'uz',
+  }) async {
+    final params = <String, String>{'lang': lang};
+    if (date != null) params['date'] = _formatDateForQuery(date);
+    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+    final url = '/Reports/inventory-report/export?$query';
+
+    final response = await _httpService.get(url);
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Ombor hisobotini yuklab olishda xatolik',
+      );
+    }
+    final filename = lang == 'ru'
+        ? 'sklad_${DateTime.now().millisecondsSinceEpoch}.xlsx'
+        : 'ombor_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+    await _saveDownloadedFile(response.bodyBytes, filename);
+  }
+
   /// Mijozlarni Excel formatida yuklab olish.
   /// Backend endpoint: GET /api/Customers/ExportCustomersToExcel/export
   /// (added 2026-05-18 — mirrors /api/Products/.../export so the same

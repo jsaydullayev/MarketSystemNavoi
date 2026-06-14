@@ -566,6 +566,235 @@ public class ReportsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Export the current warehouse (Ombor) inventory to Excel — mirrors the
+    /// Reports → Ombor tab: a summary sheet (product count, incoming/sale
+    /// valuation, potential profit, low/out-of-stock counts) plus the full
+    /// per-product list (every product in the market, not date-bound).
+    ///
+    /// RBAC mirrors the rest of the report exports:
+    ///   - cost columns (purchase price, total cost) → Owner + Admin only
+    ///   - potential-profit columns → Owner only
+    /// A Seller never sees cost or profit, so those columns are dropped
+    /// entirely from their workbook rather than blanked.
+    /// </summary>
+    [HttpGet("inventory-report/export")]
+    [EnableRateLimiting("export")]
+    [RequirePermission(PermissionKeys.ReportsExport)]
+    public async Task<IActionResult> ExportInventoryReportToExcel(
+        [FromQuery] DateTime? date = null,
+        [FromQuery] string lang = "uz",
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Exporting warehouse (inventory) report to Excel. Date: {Date}", date);
+
+            var isRu = lang.Equals("ru", StringComparison.OrdinalIgnoreCase);
+
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            // Cost is visible to Owner AND Admin; profit only to Owner —
+            // same masking the sales PDF/Excel exports apply.
+            bool includeCost = userRole is "Owner" or "Admin";
+            bool includeProfit = userRole == "Owner";
+
+            DateTime reportDate = date ?? DateTime.UtcNow;
+            var utcDate = DateTime.SpecifyKind(reportDate.Date, DateTimeKind.Utc);
+
+            // The comprehensive report already computes the full inventory list
+            // (current quantity × cost/sale prices) for the whole market.
+            var report = await _reportService.GetComprehensiveReportAsync(utcDate, userRole, cancellationToken);
+            var inventory = report.InventoryReport;
+
+            using var workbook = new XLWorkbook();
+
+            // ── Sheet 1: warehouse summary ──
+            var summary = workbook.Worksheets.Add(isRu ? "Склад (сводка)" : "Ombor (xulosa)");
+
+            summary.Cell(1, 1).Value = isRu ? "СКЛАД — СВОДКА" : "OMBOR — XULOSA";
+            summary.Range(1, 1, 1, 2).Merge();
+            summary.Cell(1, 1).Style.Font.Bold = true;
+            summary.Cell(1, 1).Style.Font.FontSize = 16;
+            summary.Cell(1, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            int r = 3;
+            summary.Cell(r, 1).Value = isRu ? "ПОКАЗАТЕЛЬ" : "KO'RSATGICH";
+            summary.Cell(r, 2).Value = isRu ? "ЗНАЧЕНИЕ" : "QIYMATI";
+            summary.Range(r, 1, r, 2).Style.Font.Bold = true;
+            summary.Range(r, 1, r, 2).Style.Fill.BackgroundColor = XLColor.LightBlue;
+
+            r++;
+            summary.Cell(r, 1).Value = isRu ? "Количество товаров" : "Mahsulotlar soni";
+            summary.Cell(r, 2).Value = report.ProductCount;
+            summary.Cell(r, 2).Style.NumberFormat.Format = "#,##0";
+
+            if (includeCost)
+            {
+                r++;
+                summary.Cell(r, 1).Value = isRu ? "Приходная стоимость" : "Kelgan narxi";
+                summary.Cell(r, 2).Value = report.TotalInventoryCost;
+                summary.Cell(r, 2).Style.NumberFormat.Format = "#,##0.00";
+            }
+
+            r++;
+            summary.Cell(r, 1).Value = isRu ? "Стоимость продажи" : "Sotish narxi";
+            summary.Cell(r, 2).Value = report.TotalInventorySaleValue;
+            summary.Cell(r, 2).Style.NumberFormat.Format = "#,##0.00";
+
+            if (includeProfit)
+            {
+                r++;
+                summary.Cell(r, 1).Value = isRu ? "Потенциальная прибыль" : "Potensial foyda";
+                summary.Cell(r, 2).Value = report.TotalInventorySaleValue - report.TotalInventoryCost;
+                summary.Cell(r, 2).Style.NumberFormat.Format = "#,##0.00";
+                summary.Cell(r, 2).Style.Font.Bold = true;
+                summary.Cell(r, 2).Style.Font.FontColor = XLColor.Green;
+            }
+
+            r++;
+            summary.Cell(r, 1).Value = isRu ? "Заканчивается" : "Kam qolgan";
+            summary.Cell(r, 2).Value = report.LowStockCount;
+            summary.Cell(r, 2).Style.NumberFormat.Format = "#,##0";
+
+            r++;
+            summary.Cell(r, 1).Value = isRu ? "Закончились" : "Tugagan";
+            summary.Cell(r, 2).Value = report.OutOfStockCount;
+            summary.Cell(r, 2).Style.NumberFormat.Format = "#,##0";
+            summary.Cell(r, 2).Style.Font.FontColor = report.OutOfStockCount > 0 ? XLColor.Red : XLColor.Black;
+
+            summary.Column(1).Width = 28;
+            summary.Column(2).Width = 22;
+
+            // ── Sheet 2: per-product warehouse list ──
+            var sheet = workbook.Worksheets.Add(isRu ? "Товары на складе" : "Ombordagi mahsulotlar");
+
+            // Build column layout dynamically so masked columns leave no gaps.
+            int c = 1;
+            int colNo = c++;
+            int colName = c++;
+            int colCategory = c++;
+            int colUnit = c++;
+            int colStock = c++;
+            int colPurchase = includeCost ? c++ : 0;
+            int colSale = c++;
+            int colMinSale = c++;
+            int colTotalCost = includeCost ? c++ : 0;
+            int colTotalValue = c++;
+            int colProfit = includeProfit ? c++ : 0;
+            int lastCol = c - 1;
+
+            sheet.Cell(1, colNo).Value = "№";
+            sheet.Cell(1, colName).Value = isRu ? "Название товара" : "Mahsulot nomi";
+            sheet.Cell(1, colCategory).Value = isRu ? "Категория" : "Kategoriya";
+            sheet.Cell(1, colUnit).Value = isRu ? "Ед." : "Birlik";
+            sheet.Cell(1, colStock).Value = isRu ? "Остаток" : "Qoldiq";
+            if (includeCost) sheet.Cell(1, colPurchase).Value = isRu ? "Цена закупки" : "Sotib olish narxi";
+            sheet.Cell(1, colSale).Value = isRu ? "Цена продажи" : "Sotuv narxi";
+            sheet.Cell(1, colMinSale).Value = isRu ? "Мин. цена" : "Min. narx";
+            if (includeCost) sheet.Cell(1, colTotalCost).Value = isRu ? "Общий расход" : "Jami xarajat";
+            sheet.Cell(1, colTotalValue).Value = isRu ? "Общая стоимость" : "Jami qiymat";
+            if (includeProfit) sheet.Cell(1, colProfit).Value = isRu ? "Потенц. прибыль" : "Potensial foyda";
+
+            var headerRange = sheet.Range(1, 1, 1, lastCol);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightGreen;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            int row = 2;
+            int idx = 1;
+            foreach (var item in inventory)
+            {
+                sheet.Cell(row, colNo).Value = idx++;
+                sheet.Cell(row, colName).Value = item.ProductName;
+                sheet.Cell(row, colCategory).Value = item.Category ?? "";
+                sheet.Cell(row, colUnit).Value = item.Unit ?? "";
+                sheet.Cell(row, colStock).Value = item.Quantity;
+                sheet.Cell(row, colStock).Style.NumberFormat.Format = "#,##0.###";
+
+                if (includeCost)
+                {
+                    sheet.Cell(row, colPurchase).Value = item.CostPrice ?? 0;
+                    sheet.Cell(row, colPurchase).Style.NumberFormat.Format = "#,##0.00";
+                }
+
+                sheet.Cell(row, colSale).Value = item.SalePrice;
+                sheet.Cell(row, colSale).Style.NumberFormat.Format = "#,##0.00";
+                sheet.Cell(row, colMinSale).Value = item.MinSalePrice;
+                sheet.Cell(row, colMinSale).Style.NumberFormat.Format = "#,##0.00";
+
+                if (includeCost)
+                {
+                    sheet.Cell(row, colTotalCost).Value = item.TotalCostValue;
+                    sheet.Cell(row, colTotalCost).Style.NumberFormat.Format = "#,##0.00";
+                }
+
+                sheet.Cell(row, colTotalValue).Value = item.TotalSaleValue;
+                sheet.Cell(row, colTotalValue).Style.NumberFormat.Format = "#,##0.00";
+
+                if (includeProfit)
+                {
+                    sheet.Cell(row, colProfit).Value = item.PotentialProfit ?? 0;
+                    sheet.Cell(row, colProfit).Style.NumberFormat.Format = "#,##0.00";
+                }
+
+                // Colour the stock cell like the UI chip: red when out, orange when low.
+                var stockCell = sheet.Cell(row, colStock);
+                if (item.Quantity <= 0)
+                    stockCell.Style.Font.FontColor = XLColor.Red;
+                else if (item.Quantity <= 10)
+                    stockCell.Style.Font.FontColor = XLColor.Orange;
+                else
+                    stockCell.Style.Font.FontColor = XLColor.Green;
+
+                row++;
+            }
+
+            // Totals row
+            sheet.Cell(row, colNo).Value = isRu ? "ИТОГО:" : "JAMI:";
+            sheet.Range(row, colNo, row, colStock).Merge();
+            sheet.Cell(row, colNo).Style.Font.Bold = true;
+            if (includeCost)
+            {
+                sheet.Cell(row, colTotalCost).Value = report.TotalInventoryCost;
+                sheet.Cell(row, colTotalCost).Style.NumberFormat.Format = "#,##0.00";
+                sheet.Cell(row, colTotalCost).Style.Font.Bold = true;
+            }
+            sheet.Cell(row, colTotalValue).Value = report.TotalInventorySaleValue;
+            sheet.Cell(row, colTotalValue).Style.NumberFormat.Format = "#,##0.00";
+            sheet.Cell(row, colTotalValue).Style.Font.Bold = true;
+            if (includeProfit)
+            {
+                sheet.Cell(row, colProfit).Value = report.TotalInventorySaleValue - report.TotalInventoryCost;
+                sheet.Cell(row, colProfit).Style.NumberFormat.Format = "#,##0.00";
+                sheet.Cell(row, colProfit).Style.Font.Bold = true;
+            }
+
+            sheet.Columns().AdjustToContents();
+            sheet.Column(colName).Width = 36;
+            var borderRange = sheet.Range(1, 1, row, lastCol);
+            borderRange.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+            borderRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+            borderRange.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+            borderRange.Style.Border.RightBorder = XLBorderStyleValues.Thin;
+            sheet.Range(1, 1, 1, lastCol).SetAutoFilter();
+
+            var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            stream.Position = 0;
+            var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            var fileName = (isRu ? "sklad_" : "ombor_") +
+                $"{TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _tashkent):yyyyMMdd_HHmmss}.xlsx";
+
+            _logger.LogInformation("Successfully exported warehouse report to Excel ({Count} products)", inventory.Count);
+            return File(stream, contentType, fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting warehouse report to Excel");
+            return StatusCode(500, new { message = "Xatolik yuz berdi", error = ex.Message });
+        }
+    }
+
     [HttpGet("monthly-category-sales")]
     [RequirePermission(PermissionKeys.SalesAccess)]
     public async Task<ActionResult<MonthlyCategorySalesResponseDto>> GetMonthlyCategorySales([FromQuery] DateTime date, CancellationToken cancellationToken = default)

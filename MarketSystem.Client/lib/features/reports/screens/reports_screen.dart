@@ -170,13 +170,25 @@ class _ReportsScreenState extends State<ReportsScreen>
 
   Future<void> _downloadExcelReport() async {
     final l10n = AppLocalizations.of(context)!;
+    final lang = Localizations.localeOf(context).languageCode;
+    // Tab-aware export: on the Ombor (warehouse) tab the download button
+    // exports the current inventory — all products with stock/valuation —
+    // instead of the daily comprehensive report. Index 2 == InventoryReportTab.
+    final isInventoryTab = _tabController.index == 2;
 
     setState(() => _isDownloading = true);
     try {
-      await _downloadService.downloadComprehensiveReport(
-        date: _selectedDate,
-        lang: Localizations.localeOf(context).languageCode,
-      );
+      if (isInventoryTab) {
+        await _downloadService.downloadInventoryReport(
+          date: _selectedDate,
+          lang: lang,
+        );
+      } else {
+        await _downloadService.downloadComprehensiveReport(
+          date: _selectedDate,
+          lang: lang,
+        );
+      }
       if (mounted) {
         _showSnack(l10n.reportDownloadSuccess, isError: false);
       }
