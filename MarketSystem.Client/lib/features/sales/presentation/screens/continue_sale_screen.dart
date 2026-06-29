@@ -420,15 +420,16 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             listen: false,
           );
           final salesService = SalesService(authProvider: authProvider);
-          await Future.wait(
-            payments.map(
-              (payment) => salesService.addPayment(
-                saleId: widget.saleId,
-                paymentType: payment['paymentType'],
-                amount: payment['amount'],
-              ),
-            ),
-          );
+          // Sequential, not Future.wait: multi-tender payments otherwise hit
+          // the single per-market CashRegister row and the per-sale Debt row
+          // concurrently, colliding on their xmin tokens → 409.
+          for (final payment in payments) {
+            await salesService.addPayment(
+              saleId: widget.saleId,
+              paymentType: payment['paymentType'],
+              amount: payment['amount'],
+            );
+          }
           if (mounted) {
             Navigator.pop(context);
             Navigator.pop(context, true);

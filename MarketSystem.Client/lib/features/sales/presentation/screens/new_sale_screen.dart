@@ -288,44 +288,46 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             final saleId = sale['id'] as String;
             finalSaleId = saleId;
 
-            // Add all items in parallel — each addSaleItem is independent
-            // once the saleId is known. Reduces N sequential round-trips to 1.
-            await Future.wait(
-              cartSnapshot.map((item) {
-                if (item['isExternal'] == true) {
-                  return salesService.addSaleItem(
-                    saleId: saleId,
-                    isExternal: true,
-                    externalProductName: item['productName'],
-                    externalCostPrice: item['externalCostPrice'] ?? 0.0,
-                    quantity: item['quantity'],
-                    salePrice: item['salePrice'],
-                    minSalePrice: 0.0,
-                    comment: item['comment'],
-                  );
-                } else {
-                  return salesService.addSaleItem(
-                    saleId: saleId,
-                    productId: item['productId'],
-                    quantity: item['quantity'],
-                    salePrice: item['salePrice'],
-                    minSalePrice: item['minSalePrice'] ?? 0.0,
-                    comment: item['comment'],
-                  );
-                }
-              }),
-            );
-
-            // Add all payments in parallel as well.
-            await Future.wait(
-              payments.map(
-                (payment) => salesService.addPayment(
+            // Add items SEQUENTIALLY. Each addSaleItem mutates rows shared
+            // across the request — the sale's running total and the product's
+            // stock — which carry optimistic-concurrency (xmin) tokens. Firing
+            // them in parallel makes the writes collide and surface as a 409
+            // ("Ma'lumot boshqa foydalanuvchi tomonidan o'zgartirildi"), even
+            // for a single user. The extra latency is negligible for a cart.
+            for (final item in cartSnapshot) {
+              if (item['isExternal'] == true) {
+                await salesService.addSaleItem(
                   saleId: saleId,
-                  paymentType: payment['paymentType'],
-                  amount: payment['amount'],
-                ),
-              ),
-            );
+                  isExternal: true,
+                  externalProductName: item['productName'],
+                  externalCostPrice: item['externalCostPrice'] ?? 0.0,
+                  quantity: item['quantity'],
+                  salePrice: item['salePrice'],
+                  minSalePrice: 0.0,
+                  comment: item['comment'],
+                );
+              } else {
+                await salesService.addSaleItem(
+                  saleId: saleId,
+                  productId: item['productId'],
+                  quantity: item['quantity'],
+                  salePrice: item['salePrice'],
+                  minSalePrice: item['minSalePrice'] ?? 0.0,
+                  comment: item['comment'],
+                );
+              }
+            }
+
+            // Payments SEQUENTIALLY too — multi-tender (e.g. Cash + Terminal)
+            // otherwise hits the single per-market CashRegister row and the
+            // per-sale Debt row concurrently → 409.
+            for (final payment in payments) {
+              await salesService.addPayment(
+                saleId: saleId,
+                paymentType: payment['paymentType'],
+                amount: payment['amount'],
+              );
+            }
 
             if (useDebt && payments.isEmpty) {
               await salesService.markSaleAsDebt(saleId);

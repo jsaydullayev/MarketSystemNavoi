@@ -30,10 +30,10 @@ public class AuditLogsControllerTests
             .Setup(x => x.TryGetCurrentMarketId())
             .Returns(CallerMarketId);
         _queryServiceMock
-            .Setup(x => x.QueryAsync(It.IsAny<AuditLogFilter>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.QueryAsync(It.IsAny<AuditLogFilter>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(PagedResult<AuditLogDto>.Empty(1, 50));
         _queryServiceMock
-            .Setup(x => x.GetSuspiciousAsync(It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetSuspiciousAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SuspiciousActivityReport(
                 Array.Empty<FailedLoginBurstDto>(),
                 Array.Empty<BulkDeleteBurstDto>()));
@@ -71,6 +71,7 @@ public class AuditLogsControllerTests
 
         _queryServiceMock.Verify(x => x.QueryAsync(
             It.Is<AuditLogFilter>(f => f.MarketId == CallerMarketId),
+            false,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -86,6 +87,7 @@ public class AuditLogsControllerTests
 
         _queryServiceMock.Verify(x => x.QueryAsync(
             It.Is<AuditLogFilter>(f => f.MarketId == 99),
+            true,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -101,6 +103,7 @@ public class AuditLogsControllerTests
 
         _queryServiceMock.Verify(x => x.QueryAsync(
             It.Is<AuditLogFilter>(f => f.MarketId == null),
+            true,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -118,6 +121,7 @@ public class AuditLogsControllerTests
 
         _queryServiceMock.Verify(x => x.GetSuspiciousAsync(
             CallerMarketId,
+            false,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -130,6 +134,7 @@ public class AuditLogsControllerTests
 
         _queryServiceMock.Verify(x => x.GetSuspiciousAsync(
             99,
+            true,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -122,8 +122,21 @@ public class UserService : IUserService
         if (user is null)
             return null;
 
+        // Privilege-escalation guard. Without this, an Admin (who holds
+        // users.manage by default) could PUT {"role":"Owner"} to promote
+        // itself — or rewrite the real Owner row — and bypass all RBAC.
+        // Mirror CreateUserAsync: an Owner/SuperAdmin is never editable here,
+        // and the only assignable roles are Admin and Seller.
+        if (user.Role is Role.Owner or Role.SuperAdmin)
+            return null;
+
+        if (!Enum.TryParse<Role>(request.Role, ignoreCase: true, out var newRole))
+            throw new InvalidOperationException($"Invalid role: '{request.Role}'");
+        if (newRole is not (Role.Admin or Role.Seller))
+            throw new InvalidOperationException("Faqat Admin yoki Seller rolini belgilash mumkin.");
+
         user.FullName = request.FullName;
-        user.Role = Enum.Parse<Role>(request.Role, true);
+        user.Role = newRole;
         user.IsActive = request.IsActive;
 
         // Update password only if provided

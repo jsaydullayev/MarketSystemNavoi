@@ -56,9 +56,16 @@ if ($DockerOk) {
     docker container prune -f
     docker image prune -a -f
     docker network prune -f
-    docker volume prune -f
+    # NOTE: `docker volume prune -f` is intentionally NOT run here. It deletes
+    # any volume not attached to a *currently running* container, so if the
+    # stack is ever down when this scheduled task fires (maintenance, crash,
+    # mid-deploy, Docker restart) it would permanently destroy the named data
+    # volumes — postgres_data (the database) and product-images (uploads).
+    # Named volumes are NOT protected from prune; only "in use right now" is.
+    # Reclaim image/builder space below instead; prune volumes manually if ever
+    # needed with an explicit allow-list.
     docker builder prune -a -f
-    Log "Docker prune finished."
+    Log "Docker prune finished (volumes deliberately preserved)."
 } else {
     Log "Docker daemon not running. Skipping prune (VHDX shrink will still run)."
 }

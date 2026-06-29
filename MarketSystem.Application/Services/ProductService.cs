@@ -22,7 +22,7 @@ public class ProductService : IProductService
         _imageStorage = imageStorage;
     }
 
-    public async Task<ProductDto?> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ProductDto?> GetProductByIdAsync(Guid id, bool canViewCost = true, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
@@ -36,10 +36,10 @@ public class ProductService : IProductService
         if (product is null)
             return null;
 
-        return MapToDto(product);
+        return MapToDto(product, canViewCost);
     }
 
-    public async Task<IEnumerable<ProductDto>> GetAllProductsAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ProductDto>> GetAllProductsAsync(bool canViewCost = true, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
@@ -53,10 +53,10 @@ public class ProductService : IProductService
             .Take(5000)
             .ToListAsync(cancellationToken);
 
-        return products.Select(MapToDto);
+        return products.Select(p => MapToDto(p, canViewCost));
     }
 
-    public async Task<PagedResult<ProductDto>> GetAllProductsPagedAsync(int page, int size, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ProductDto>> GetAllProductsPagedAsync(int page, int size, bool canViewCost = true, CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
         size = Math.Clamp(size, 1, 200);
@@ -75,10 +75,10 @@ public class ProductService : IProductService
             .Take(size)
             .ToListAsync(cancellationToken);
 
-        return PagedResult<ProductDto>.From(items.Select(MapToDto).ToList(), page, size, total);
+        return PagedResult<ProductDto>.From(items.Select(p => MapToDto(p, canViewCost)).ToList(), page, size, total);
     }
 
-    public async Task<IEnumerable<ProductDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ProductDto>> GetLowStockProductsAsync(bool canViewCost = true, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
@@ -89,7 +89,7 @@ public class ProductService : IProductService
             .Where(p => p.MarketId == marketId && p.Quantity <= p.MinThreshold)
             .ToListAsync(cancellationToken);
 
-        return products.Select(MapToDto);
+        return products.Select(p => MapToDto(p, canViewCost));
     }
 
     public async Task<ProductDto> CreateProductAsync(CreateProductDto request, Guid? sellerId, CancellationToken cancellationToken = default)
@@ -270,12 +270,18 @@ public class ProductService : IProductService
         return MapToDto(product);
     }
 
-    private static ProductDto MapToDto(Product product)
+    // canViewCost masks the confidential cost price for callers without
+    // data.costPrice visibility (Sellers). The JSON read endpoints used to
+    // return CostPrice unconditionally — leaking the shop's margin to every
+    // Seller — while the Excel export already masked it. 0 == hidden; the
+    // Flutter client gates the field on the same permission so a Seller never
+    // sees the value either way.
+    private static ProductDto MapToDto(Product product, bool canViewCost = true)
     {
         return new ProductDto(
             product.Id,
             product.Name,
-            product.CostPrice,
+            canViewCost ? product.CostPrice : 0m,
             product.SalePrice,
             product.MinSalePrice,
             product.Quantity,

@@ -4,10 +4,14 @@ namespace MarketSystem.Application.Interfaces;
 
 public interface IProductService
 {
-    Task<ProductDto?> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<IEnumerable<ProductDto>> GetAllProductsAsync(CancellationToken cancellationToken = default);
-    Task<PagedResult<ProductDto>> GetAllProductsPagedAsync(int page, int size, CancellationToken cancellationToken = default);
-    Task<IEnumerable<ProductDto>> GetLowStockProductsAsync(CancellationToken cancellationToken = default);
+    // canViewCost=false masks CostPrice (returns 0) for callers without
+    // data.costPrice visibility — Sellers. Defaults to true so existing
+    // internal/mutation call-sites and tests are unaffected; the read
+    // controllers pass the role-derived value explicitly.
+    Task<ProductDto?> GetProductByIdAsync(Guid id, bool canViewCost = true, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ProductDto>> GetAllProductsAsync(bool canViewCost = true, CancellationToken cancellationToken = default);
+    Task<PagedResult<ProductDto>> GetAllProductsPagedAsync(int page, int size, bool canViewCost = true, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ProductDto>> GetLowStockProductsAsync(bool canViewCost = true, CancellationToken cancellationToken = default);
     Task<ProductDto> CreateProductAsync(CreateProductDto request, Guid? sellerId, CancellationToken cancellationToken = default);
     Task<ProductDto?> UpdateProductAsync(UpdateProductDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteProductAsync(Guid id, CancellationToken cancellationToken = default);

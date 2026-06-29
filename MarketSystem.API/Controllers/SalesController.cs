@@ -68,7 +68,15 @@ public class SalesController : ControllerBase
         if ((end - start).TotalDays > 90)
             return BadRequest(new { message = "Sana oralig'i 90 kundan oshmasligi kerak." });
 
-        var sales = await _saleService.GetSalesByDateRangeAsync(start, end, ct);
+        // `start`/`end` arrive as Tashkent-local calendar days. Every other
+        // dated query (reports, dashboard) anchors to Tashkent before hitting
+        // the UTC-stored CreatedAt; this endpoint used to compare the raw
+        // local dates directly, shifting the "day" by the GMT+5 offset. Convert
+        // to a UTC half-open range [startOfFirstDay, endOfLastDay) here.
+        var startUtc = _clock.LocalDayToUtcRange(start).UtcStart;
+        var endUtc = _clock.LocalDayToUtcRange(end).UtcEnd;
+
+        var sales = await _saleService.GetSalesByDateRangeAsync(startUtc, endUtc, ct);
         return Ok(sales);
     }
 

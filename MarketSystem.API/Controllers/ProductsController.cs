@@ -37,11 +37,17 @@ public class ProductsController : ControllerBase
         _auditLogService = auditLogService;
     }
 
+    /// <summary>Cost price is visible to Owner and Admin only — a Seller must
+    /// never see the shop's margin (SellerForbidden = data.costPrice). Mirrors
+    /// the masking the Excel export already applies.</summary>
+    private bool CanViewCost() =>
+        User.FindFirst(ClaimTypes.Role)?.Value is "Owner" or "Admin";
+
     [HttpGet("{id}")]
     [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<ProductDto>> GetProduct(Guid id, CancellationToken ct = default)
     {
-        var product = await _productService.GetProductByIdAsync(id);
+        var product = await _productService.GetProductByIdAsync(id, CanViewCost(), ct);
         if (product is null)
             return NotFound();
 
@@ -52,7 +58,7 @@ public class ProductsController : ControllerBase
     [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts(CancellationToken ct = default)
     {
-        var products = await _productService.GetAllProductsAsync(ct);
+        var products = await _productService.GetAllProductsAsync(CanViewCost(), ct);
         // X-Total-Count: -1 → mijoz ma'lumotlar to'liq emasligini biladi
         var list = products.ToList();
         if (list.Count >= 5000)
@@ -67,7 +73,7 @@ public class ProductsController : ControllerBase
         [FromQuery] int size = 50,
         CancellationToken ct = default)
     {
-        var result = await _productService.GetAllProductsPagedAsync(page, size);
+        var result = await _productService.GetAllProductsPagedAsync(page, size, CanViewCost(), ct);
         return Ok(result);
     }
 
@@ -75,7 +81,7 @@ public class ProductsController : ControllerBase
     [RequirePermission(PermissionKeys.ProductsAccess)]
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetLowStockProducts(CancellationToken ct = default)
     {
-        var products = await _productService.GetLowStockProductsAsync();
+        var products = await _productService.GetLowStockProductsAsync(CanViewCost(), ct);
         return Ok(products);
     }
 
