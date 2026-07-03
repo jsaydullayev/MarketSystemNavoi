@@ -85,6 +85,16 @@ public class GlobalExceptionHandlerMiddleware
                 response.Code = "SHIFT_NOT_OPEN";
                 break;
 
+            case DuplicateUsernameException:
+                // 409 Conflict — a staff account with this username already
+                // exists in the market. Distinct `code` so the Flutter client
+                // warns "username band" inline on the field instead of falling
+                // through to the generic 400 InvalidOperation branch.
+                context.Response.StatusCode = (int)HttpStatusCode.Conflict;
+                response.Message = "Bu foydalanuvchi nomi allaqachon band. Boshqa nom tanlang.";
+                response.Code = "USERNAME_TAKEN";
+                break;
+
             case InvalidOperationException:
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 response.Message = isDev ? exception.Message : "So'rov noto'g'ri. Iltimos, ma'lumotlarni tekshiring.";

@@ -51,6 +51,7 @@ class ProductService {
     int? categoryId,
     required int unit,
     double quantity = 0,
+    bool hidePriceFromSellers = false,
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.products}/CreateProduct',
@@ -63,6 +64,7 @@ class ProductService {
         if (categoryId != null) 'categoryId': categoryId,
         'unit': unit,
         'quantity': quantity,
+        'hidePriceFromSellers': hidePriceFromSellers,
       },
     );
 
@@ -85,6 +87,7 @@ class ProductService {
     int? categoryId,
     required int unit,
     required bool isTemporary,
+    bool hidePriceFromSellers = false,
   }) async {
     final response = await _httpService.put(
       '${ApiConstants.products}/UpdateProduct/$id',
@@ -97,6 +100,7 @@ class ProductService {
         'isTemporary': isTemporary,
         if (categoryId != null) 'categoryId': categoryId,
         'unit': unit,
+        'hidePriceFromSellers': hidePriceFromSellers,
       },
     );
 

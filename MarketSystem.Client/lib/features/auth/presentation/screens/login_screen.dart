@@ -395,9 +395,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    if (success) {
-      TextInput.finishAutofillContext();
+    // Har qanday natijada autofill kontekstini yakunlaymiz. Web'da uni ochiq
+    // qoldirish (muvaffaqiyatsiz login'dan keyin) parol maydonini qotirib
+    // qo'yadi — foydalanuvchi qayta yoza olmaydi. Brauzerning "parolni saqlash"
+    // taklifi faqat login to'g'ri bo'lganda chiqadi (shouldSave: success).
+    TextInput.finishAutofillContext(shouldSave: success);
 
+    if (success) {
       // "Remember me": persist the typed credentials (encrypted, via secure
       // storage) for next-time prefill, or wipe them if the box is unchecked.
       if (_rememberMe) {

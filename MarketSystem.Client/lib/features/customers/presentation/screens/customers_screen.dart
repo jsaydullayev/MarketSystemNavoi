@@ -4,6 +4,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:market_system_client/core/auth/permissions.dart';
+import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -210,13 +212,18 @@ class _CustomersScreenState extends State<CustomersScreen> {
               return const Center(child: CircularProgressIndicator());
             },
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: _openAddSheet,
-            backgroundColor: context.colors.brand,
-            foregroundColor: context.colors.onBrand,
-            elevation: 4,
-            child: const Icon(Icons.add, size: 28),
-          ),
+          // RBAC: mijoz qo'shish ruxsati (customers.manage) bo'lmasa, FAB umuman
+          // ko'rsatilmaydi — ruxsatsiz foydalanuvchi 403 xatoga urilmaydi.
+          floatingActionButton:
+              context.read<AuthProvider>().can(Permissions.customersManage)
+              ? FloatingActionButton(
+                  onPressed: _openAddSheet,
+                  backgroundColor: context.colors.brand,
+                  foregroundColor: context.colors.onBrand,
+                  elevation: 4,
+                  child: const Icon(Icons.add, size: 28),
+                )
+              : null,
         ),
       ),
     );

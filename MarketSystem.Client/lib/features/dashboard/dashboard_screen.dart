@@ -256,7 +256,11 @@ class _DashboardBody extends StatelessWidget {
                   hasNotification: unread > 0,
                   unreadNotifications: unread,
                   profileImage: user?['profileImage'] as String?,
-                  onNotificationTap: (role == 'Owner' || role == 'Admin')
+                  // RBAC: qo'ng'iroq faqat notifications.access ruxsati bilan
+                  // (Owner/Admin default'da bor; Owner uni sotuvchiga ham
+                  // yoqishi mumkin). Ruxsat yo'q bo'lsa — qo'ng'iroq yashiriladi.
+                  onNotificationTap:
+                      context.can(Permissions.notificationsAccess)
                       ? () => Navigator.pushNamed(
                           context,
                           AppRoutes.notifications,

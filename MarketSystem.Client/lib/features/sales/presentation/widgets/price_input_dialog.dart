@@ -43,22 +43,29 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
 
   double _minPrice = 0.0;
   bool _showMinPrice = false;
+  // Narxi yashirilgan mahsulot: narx maydoni bo'sh keladi (kassir qo'lda
+  // kiritadi) va min-narx ogohlantirishi ko'rsatilmaydi (u minSalePrice ni
+  // oshkor qilardi). POS oqimida hammaga (Owner/Admin/Seller) amal qiladi.
+  late final bool _hidePrice;
 
   @override
   void initState() {
     super.initState();
+    _hidePrice = widget.product['hidePriceFromSellers'] == true;
     _minPrice = widget.product['minSalePrice']?.toDouble() ?? 0.0;
 
     final currentPrice = widget.product['salePrice']?.toDouble() ?? 0.0;
     final initialQty = widget.product['initialQuantity']?.toDouble() ?? 1.0;
 
-    _priceController = TextEditingController(text: _formatNumber(currentPrice));
+    _priceController = TextEditingController(
+      text: _hidePrice ? '' : _formatNumber(currentPrice),
+    );
     _qtyController = TextEditingController(text: _formatNumber(initialQty));
     _commentController = TextEditingController(
       text: widget.product['comment'] ?? '',
     );
 
-    _showMinPrice = _minPrice > 0 && currentPrice < _minPrice;
+    _showMinPrice = !_hidePrice && _minPrice > 0 && currentPrice < _minPrice;
     _priceController.addListener(_onPriceChanged);
   }
 
@@ -80,7 +87,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
         .replaceAll(RegExp(r'\s+'), '')
         .replaceAll(',', '.');
     final price = double.tryParse(cleanText) ?? 0.0;
-    final shouldShow = _minPrice > 0 && price < _minPrice;
+    final shouldShow = !_hidePrice && _minPrice > 0 && price < _minPrice;
     if (shouldShow != _showMinPrice) {
       setState(() => _showMinPrice = shouldShow);
     }
@@ -118,6 +125,9 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     // FormatException; now we just keep the sheet open so the user can
     // correct the input.
     if (price < 0 ||
+        // Narxi yashirilgan mahsulot uchun kassir narxni majburiy kiritishi
+        // kerak — bo'sh (0) qoldirib yuborilmasin.
+        (_hidePrice && price <= 0) ||
         price > _maxAmount ||
         rawQty <= 0 ||
         rawQty > _maxAmount ||
@@ -316,7 +326,8 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
       );
     }
     return GestureDetector(
-      onTap: () => showProductImagePreview(context, widget.product),
+      onTap: () =>
+          showProductImagePreview(context, widget.product, hidePrice: _hidePrice),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Stack(

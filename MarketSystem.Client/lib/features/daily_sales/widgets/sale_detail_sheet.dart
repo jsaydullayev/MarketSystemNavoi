@@ -14,6 +14,8 @@ import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import '../../../data/services/sales_service.dart';
 import '../../../core/providers/auth_provider.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
+import 'package:market_system_client/features/sales/presentation/screens/continue_sale_screen.dart';
 
 class SaleDetailSheet extends StatefulWidget {
   final dynamic sale;
@@ -259,6 +261,26 @@ class _SaleDetailSheetState extends State<SaleDetailSheet> {
                   const SizedBox(height: AppSpacing.xl3),
                   _buildTotalsCard(context, l10n),
                   const SizedBox(height: AppSpacing.xl2),
+                  // Draft ("Davom etayotgan") sotuvni shu yerdan davom ettirish.
+                  // Sotuvlar market-wide bo'lgani uchun har bir seller istalgan
+                  // sellerning draft sotuvini davom ettira oladi.
+                  if (widget.sale.status.toLowerCase() == 'draft') ...[
+                    AppPrimaryButton(
+                      label: l10n.ongoing,
+                      icon: Icons.play_arrow_rounded,
+                      onPressed: () {
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        navigator.push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ContinueSaleScreen(saleId: widget.sale.id),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                 ],
               ),
             ),

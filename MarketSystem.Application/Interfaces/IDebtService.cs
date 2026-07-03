@@ -23,4 +23,10 @@ public interface IDebtService
     /// for cash payments.
     /// </summary>
     Task<PayDebtResultDto> PayAsync(Guid debtId, PayDebtDto request, Guid actorUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Qarzning to'lov muddatini (due date) yangilaydi, tenant-scoped. Debt
+    /// topilmasa null qaytaradi. dueDate null bo'lsa — muddat olib tashlanadi.
+    /// </summary>
+    Task<DebtDto?> UpdateDueDateAsync(Guid debtId, DateTime? dueDate, CancellationToken cancellationToken = default);
 }

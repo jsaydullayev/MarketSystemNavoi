@@ -72,8 +72,10 @@ class ProductThumb extends StatelessWidget {
 /// point — never interferes with the tap-to-add-to-cart gesture.
 Future<void> showProductImagePreview(
   BuildContext context,
-  Map<String, dynamic> product,
-) {
+  Map<String, dynamic> product, {
+  // Narxi yashirilgan mahsulot + Seller: preview'da ham narx ko'rsatilmaydi.
+  bool hidePrice = false,
+}) {
   final full = ApiConstants.productImageUrl(product['imageUrl'] as String?);
   final name = product['name']?.toString() ?? '';
   final price = NumberFormatter.format(product['salePrice']);
@@ -128,15 +130,17 @@ Future<void> showProductImagePreview(
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  price,
-                  style: AppTextStyles.bodyMedium().copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: context.colors.brand,
+                if (!hidePrice) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    price,
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: context.colors.brand,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

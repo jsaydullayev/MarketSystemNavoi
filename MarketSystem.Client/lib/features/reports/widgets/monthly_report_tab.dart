@@ -110,7 +110,7 @@ class MonthlyReportTab extends StatelessWidget {
           value:
               '${NumberFormatter.formatDecimal(avgSale)} ${l10n.currencySom}',
           icon: Icons.calculate_outlined,
-          color: const Color(0xFF8B5CF6),
+          color: AppColors.accentViolet,
           subtitle: l10n.averageTransactionValue,
         ),
         if (profit != null) ...[

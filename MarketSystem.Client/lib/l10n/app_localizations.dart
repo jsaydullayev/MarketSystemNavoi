@@ -1130,6 +1130,12 @@ abstract class AppLocalizations {
   /// **'Username kamida 3 ta belgi'**
   String get usernameMinLength;
 
+  /// No description provided for @usernameTaken.
+  ///
+  /// In uz, this message translates to:
+  /// **'\'{username}\' band'**
+  String usernameTaken(String username);
+
   /// No description provided for @passwordMinLength.
   ///
   /// In uz, this message translates to:
@@ -3632,6 +3638,30 @@ abstract class AppLocalizations {
   /// **'Bugun · {amount} UZS'**
   String alertDescRecent(String amount);
 
+  /// No description provided for @alertsDueSoonTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov muddati yaqinlashdi'**
+  String get alertsDueSoonTitle;
+
+  /// No description provided for @alertDescDueSoon.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lovga {days} kun qoldi · {amount} UZS'**
+  String alertDescDueSoon(int days, String amount);
+
+  /// No description provided for @alertDescDueToday.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bugun to\'lov muddati · {amount} UZS'**
+  String alertDescDueToday(String amount);
+
+  /// No description provided for @alertDescDueTomorrow.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ertaga to\'lov muddati · {amount} UZS'**
+  String alertDescDueTomorrow(String amount);
+
   /// No description provided for @alertDescLowStock.
   ///
   /// In uz, this message translates to:
@@ -3997,6 +4027,30 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Omborda vaqtincha saqlanadigan mahsulot'**
   String get temporaryProductDescription;
+
+  /// No description provided for @hidePriceFromSellerTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narxni sotuvchidan yashirish'**
+  String get hidePriceFromSellerTitle;
+
+  /// No description provided for @hidePriceFromSellerDescription.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuvda narx ko\'rinmaydi; sotuvchi narxni qo\'lda kiritadi'**
+  String get hidePriceFromSellerDescription;
+
+  /// No description provided for @showPriceTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Narxni ko\'rsatish'**
+  String get showPriceTitle;
+
+  /// No description provided for @showPriceDescription.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'chirilsa, sotuvchiga sotuv vaqtida narx (tannarx va sotuv narxi) ko\'rsatilmaydi'**
+  String get showPriceDescription;
 
   /// No description provided for @salePriceField.
   ///
@@ -4507,12 +4561,6 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Yaratishda xatolik yuz berdi'**
   String get createOwnerFailed;
-
-  /// No description provided for @usernameTaken.
-  ///
-  /// In uz, this message translates to:
-  /// **'\'{username}\' band'**
-  String usernameTaken(String username);
 
   /// No description provided for @marketNameTaken.
   ///

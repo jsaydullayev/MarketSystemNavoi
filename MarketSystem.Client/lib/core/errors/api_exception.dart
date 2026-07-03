@@ -80,8 +80,10 @@ class ApiException implements Exception {
   static const String codeMarketBlocked = 'MARKET_BLOCKED';
   static const String codeAccountLocked = 'ACCOUNT_LOCKED';
   static const String codeRateLimited = 'RATE_LIMITED';
+  static const String codeUsernameTaken = 'USERNAME_TAKEN';
 
   bool get isShiftNotOpen => code == codeShiftNotOpen;
+  bool get isUsernameTaken => code == codeUsernameTaken;
   bool get isConflict => statusCode == 409;
 
   @override

@@ -11,6 +11,7 @@ import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/services/debt_service.dart';
+import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
 import 'debt_details_screen.dart';
 
@@ -153,6 +154,12 @@ class _DebtsScreenState extends State<DebtsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // RBAC: qarz boshqarish ruxsati (debts.manage) bo'lmasa, "To'lash" tugmasi
+    // kartalarda ko'rsatilmaydi.
+    final canManage = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).can(Permissions.debtsManage);
 
     return Scaffold(
       backgroundColor: context.colors.bg,
@@ -209,6 +216,7 @@ class _DebtsScreenState extends State<DebtsScreen> {
                         customerDebts: customerDebts,
                         totalDebt: totalDebt,
                         remainingDebt: remainingDebt,
+                        canManage: canManage,
                         onTap: () {
                           final debt = customerDebts.firstOrNull;
                           if (debt == null) return;

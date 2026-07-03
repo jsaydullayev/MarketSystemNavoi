@@ -47,6 +47,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   final _minThresholdController = TextEditingController();
 
   bool _isTemporary = false;
+  bool _hideFromSeller = false;
   bool _isLoading = false;
   List<dynamic> _categories = [];
   dynamic _selectedCategory;
@@ -75,6 +76,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
       _minThresholdController.text = (widget.product['minThreshold'] ?? 0)
           .toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
+      _hideFromSeller = widget.product['hidePriceFromSellers'] ?? false;
       _selectedCategory = widget.product['categoryId'];
       _selectedUnit = widget.product['unit'] ?? 1;
     }
@@ -150,6 +152,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           minThreshold: minThreshold,
           categoryId: _selectedCategory,
           unit: _selectedUnit,
+          hidePriceFromSellers: _hideFromSeller,
         );
       } else {
         // Update existing product вЂ” Admin can update prices, threshold,
@@ -163,6 +166,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
           categoryId: _selectedCategory,
           unit: widget.product['unit'] ?? _selectedUnit,
           isTemporary: _isTemporary,
+          hidePriceFromSellers: _hideFromSeller,
         );
       }
 
@@ -356,6 +360,16 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
                 PriceTip(
                   text:
                       "Sotuvchi mijozga ${_minSalePriceController.text.isEmpty ? "X" : _minSalePriceController.text} UZS gacha tushira oladi.",
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                // Narxni ko'rsatish/yashirish: ON = narx ko'rinadi, OFF = sotuvda
+                // sotuvchiga narx (tannarx/sotuv narxi) ko'rsatilmaydi.
+                TempToggle(
+                  value: !_hideFromSeller,
+                  icon: Icons.visibility_outlined,
+                  title: l10n.showPriceTitle,
+                  subtitle: l10n.showPriceDescription,
+                  onChanged: (v) => setState(() => _hideFromSeller = !v),
                 ),
               ],
             ),

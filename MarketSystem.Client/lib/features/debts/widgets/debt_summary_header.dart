@@ -13,12 +13,17 @@ class DebtSummaryHeader extends StatelessWidget {
   final String debtStatus;
   final AppLocalizations l10n;
 
+  /// Null bo'lsa — muddat faqat o'qish uchun (badge). Berilsa — muddat
+  /// bosiladigan bo'ladi (tahrirlash/belgilash uchun).
+  final VoidCallback? onEditDueDate;
+
   const DebtSummaryHeader({
     super.key,
     required this.customerName,
     required this.debt,
     required this.debtStatus,
     required this.l10n,
+    this.onEditDueDate,
   });
 
   @override
@@ -91,17 +96,67 @@ class DebtSummaryHeader extends StatelessWidget {
               ),
             ],
           ),
-          // GAP-1 — when the backend supplied a dueDate, drop the badge
-          // directly below the chips. The widget renders nothing when the
-          // field is null (legacy debts), so the header height stays the
-          // same for any debt created before the column existed.
-          if (DueDateBadge.parse(debt['dueDate']) != null) ...[
+          // To'lov muddati. Tahrirlanadigan bo'lsa (onEditDueDate berilgan) —
+          // bosilsa sana tanlagich ochiladi; muddat yo'q bo'lsa "belgilash"
+          // chip ko'rsatiladi. Aks holda faqat badge (mavjud bo'lsa).
+          if (onEditDueDate != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                onTap: onEditDueDate,
+                borderRadius: BorderRadius.circular(AppRadius.full),
+                child: DueDateBadge.parse(debt['dueDate']) != null
+                    ? DueDateBadge(dueDate: debt['dueDate'])
+                    : const _SetDueDateChip(),
+              ),
+            ),
+          ] else if (DueDateBadge.parse(debt['dueDate']) != null) ...[
             const SizedBox(height: AppSpacing.lg),
             Align(
               alignment: Alignment.centerLeft,
               child: DueDateBadge(dueDate: debt['dueDate']),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// "To'lov muddatini belgilash" chip — muddat hali qo'yilmagan qarz uchun.
+class _SetDueDateChip extends StatelessWidget {
+  const _SetDueDateChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md + 2,
+        vertical: AppSpacing.xs + 2,
+      ),
+      decoration: BoxDecoration(
+        color: context.colors.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        border: Border.all(color: context.colors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.event_outlined,
+            size: 14,
+            color: context.colors.textSecondary,
+          ),
+          const SizedBox(width: AppSpacing.xs + 1),
+          Text(
+            "To'lov muddatini belgilash",
+            style: AppTextStyles.bodyMedium().copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: context.colors.textSecondary,
+            ),
+          ),
         ],
       ),
     );

@@ -163,15 +163,16 @@ public partial class SaleService : ISaleService
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ✅ OPTIMIZED: Single query with eager loading
-        // ✅ FIX: Add Distinct() to prevent duplicate sales from being returned
+        // [start, end) — half-open. The caller passes a UTC range where `end`
+        // is the exclusive start of the day after the last requested day
+        // (Tashkent-anchored), so use < end, not <= end.
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
             .Include(s => s.SaleItems)
                 .ThenInclude(si => si.Product)
             .Include(s => s.Payments)
-            .Where(s => s.MarketId == marketId && s.CreatedAt >= start && s.CreatedAt <= end)
+            .Where(s => s.MarketId == marketId && s.CreatedAt >= start && s.CreatedAt < end)
             .OrderByDescending(s => s.CreatedAt)
             .AsNoTracking()
             .AsSplitQuery()
@@ -181,18 +182,19 @@ public partial class SaleService : ISaleService
         return sales.Select(MapSaleToDto);
     }
 
-    public async Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid? sellerId, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ✅ OPTIMIZED: Single query with eager loading
+        // sellerId == null → butun do'kondagi draftlar (sellerlar hamkorligi);
+        // aks holda faqat o'sha sellerniki.
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
             .Include(s => s.SaleItems)
                 .ThenInclude(si => si.Product)
             .Include(s => s.Payments)
-            .Where(s => s.MarketId == marketId && s.SellerId == sellerId && s.Status == SaleStatus.Draft)
+            .Where(s => s.MarketId == marketId && (sellerId == null || s.SellerId == sellerId) && s.Status == SaleStatus.Draft)
             .OrderByDescending(s => s.CreatedAt)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -201,18 +203,18 @@ public partial class SaleService : ISaleService
         return sales.Select(MapSaleToDto);
     }
 
-    public async Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid? sellerId, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Draft, Debt va Paid statusdagi savdolarni olish
+        // sellerId == null → butun do'kondagi tugatilmagan savdolar (hamkorlik).
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
             .Include(s => s.SaleItems)
                 .ThenInclude(si => si.Product)
             .Include(s => s.Payments)
-            .Where(s => s.MarketId == marketId && s.SellerId == sellerId &&
+            .Where(s => s.MarketId == marketId && (sellerId == null || s.SellerId == sellerId) &&
                        (s.Status == SaleStatus.Draft || s.Status == SaleStatus.Debt || s.Status == SaleStatus.Paid))
             .OrderByDescending(s => s.CreatedAt)
             .AsNoTracking()
@@ -235,16 +237,23 @@ public partial class SaleService : ISaleService
             MarketId = _currentMarketService.GetCurrentMarketId()  // Multi-tenancy
         };
 
-        await _unitOfWork.Sales.AddAsync(sale, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        // If customer is specified, apply any available credit
-        if (request.CustomerId.HasValue)
+        // Atomic: the Sale insert, any customer-credit application, and the
+        // audit row must commit together. Previously these were three separate
+        // SaveChanges — a failure mid-way left a committed Sale with no credit
+        // applied and no audit trail.
+        await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            await ApplyCustomerCreditInternalAsync(sale.Id, request.CustomerId.Value, cancellationToken);
-        }
+            await _unitOfWork.Sales.AddAsync(sale, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
+            // If customer is specified, apply any available credit
+            if (request.CustomerId.HasValue)
+            {
+                await ApplyCustomerCreditInternalAsync(sale.Id, request.CustomerId.Value, cancellationToken);
+            }
+
+            await _auditLogService.LogSaleActionAsync(sale.Id, "Create", sellerId, cancellationToken);
+        }, cancellationToken);
 
         return await MapToDtoAsync(sale, cancellationToken);
     }
@@ -714,9 +723,22 @@ public partial class SaleService : ISaleService
                 }
             }
 
+            // Authoritative total from a server-side SUM of the sale's items.
+            // This used to be recomputed from the in-memory SaleItems collection
+            // further down — which is stale if items were added/removed by a
+            // concurrent request. Computing it here (once) makes every check
+            // below (already-paid, over-payment, debt) use the real total.
+            await RecalculateSaleTotalAsync(sale, cancellationToken);
+
             // Allaqachon to'liq to'langan savdoga qayta to'lov qilish taqiqlanadi.
-            if (sale.PaidAmount >= sale.TotalAmount)
+            if (sale.TotalAmount > 0 && sale.PaidAmount >= sale.TotalAmount)
                 throw new InvalidOperationException("Bu savdo allaqachon to'liq to'langan.");
+
+            // Over-payment guard: never accept more than the outstanding balance.
+            // Without this, PaidAmount could exceed TotalAmount and the overage
+            // would silently resurface later as phantom customer credit.
+            if (sale.TotalAmount > 0 && request.Amount > sale.TotalAmount - sale.PaidAmount)
+                throw new InvalidOperationException("To'lov summasi qoldiq summadan oshib ketdi.");
 
             // VALIDATION: Mijozsiz qarzga savdo taqiqlanadi
             var newPaidAmount = sale.PaidAmount + request.Amount;
@@ -765,20 +787,9 @@ public partial class SaleService : ISaleService
                 cashRegister.LastUpdated = DateTime.UtcNow;
             }
 
-            // Update sale paid amount
+            // Update sale paid amount. TotalAmount is already authoritative
+            // (RecalculateSaleTotalAsync ran above), so no in-memory recompute here.
             sale.PaidAmount += request.Amount;
-
-            // CRITICAL: Recalculate TotalAmount from SaleItems before determining status
-            decimal calculatedTotal = sale.SaleItems?.Sum(si => si.SalePrice * si.Quantity) ?? 0;
-            _logger.LogDebug("Calculated TotalAmount from items: {CalculatedTotal}", calculatedTotal);
-
-            // Update TotalAmount if it differs (this can happen if sale was created before items were added)
-            if (sale.TotalAmount != calculatedTotal)
-            {
-                _logger.LogWarning("TotalAmount mismatch for sale {SaleId}! DB={DbTotal}, Calculated={CalcTotal}. Updating...",
-                    sale.Id, sale.TotalAmount, calculatedTotal);
-                sale.TotalAmount = calculatedTotal;
-            }
 
             _logger.LogDebug("Final values for sale {SaleId} - TotalAmount: {TotalAmount}, PaidAmount: {PaidAmount}",
                 sale.Id, sale.TotalAmount, sale.PaidAmount);
@@ -843,6 +854,9 @@ public partial class SaleService : ISaleService
                             TotalDebt = sale.TotalAmount,
                             RemainingDebt = sale.TotalAmount - sale.PaidAmount,
                             Status = DebtStatus.Open,
+                            DueDate = request.DueDate.HasValue
+                                ? DateTime.SpecifyKind(request.DueDate.Value.Date, DateTimeKind.Utc)
+                                : (DateTime?)null,
                             MarketId = sale.MarketId
                         };
                         await _unitOfWork.Debts.AddAsync(newDebt, cancellationToken);
@@ -1476,9 +1490,13 @@ public partial class SaleService : ISaleService
     /// <summary>
     /// Marks a sale as debt status
     /// </summary>
-    public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default)
+    public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, DateTime? dueDate = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Npgsql timestamptz UTC talab qiladi — kun sanasini UTC deb belgilaymiz.
+        if (dueDate.HasValue)
+            dueDate = DateTime.SpecifyKind(dueDate.Value.Date, DateTimeKind.Utc);
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -1513,6 +1531,7 @@ public partial class SaleService : ISaleService
                     TotalDebt = sale.TotalAmount,
                     RemainingDebt = sale.TotalAmount - sale.PaidAmount,
                     Status = DebtStatus.Open,
+                    DueDate = dueDate,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.Debts.AddAsync(debt, cancellationToken);
@@ -1772,6 +1791,25 @@ public partial class SaleService : ISaleService
                         sale.Id);
                 }
                 _unitOfWork.Debts.Update(debt);
+            }
+
+            // Oxirgi tovar qaytarilib, savdoda hech qanday mahsulot qolmasa —
+            // savdo bekor qilinadi (Cancelled). Barcha tovar qaytarilgan =
+            // savdo amalda yo'q. Cancelled hisobotlardan chiqarib tashlanadi
+            // (filtr: != Draft && != Cancelled) — aks holda bo'sh (0 summa)
+            // savdo "savdolar soni"ni oshirib, o'rtachani buzardi.
+            if (isFullReturn)
+            {
+                var remainingItems = await _context.SaleItems
+                    .CountAsync(si => si.SaleId == saleId, cancellationToken);
+                if (remainingItems == 0)
+                {
+                    sale.Status = SaleStatus.Cancelled;
+                    _unitOfWork.Sales.Update(sale);
+                    _logger.LogInformation(
+                        "Sale {SaleId} cancelled: all items returned, none remain.",
+                        sale.Id);
+                }
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);

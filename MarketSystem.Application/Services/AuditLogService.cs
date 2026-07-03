@@ -177,8 +177,15 @@ public class AuditLogService : IAuditLogService, IAuditLogQueryService
     /// <inheritdoc />
     public async Task<PagedResult<AuditLogDto>> QueryAsync(
         AuditLogFilter filter,
+        bool allowCrossMarket = false,
         CancellationToken cancellationToken = default)
     {
+        // Fail-closed tenant guard: a non-SuperAdmin caller must be scoped to a
+        // concrete market. If the controller's pin ever resolves to null (e.g.
+        // a missing market claim), refuse rather than leak every tenant's logs.
+        if (!allowCrossMarket && !filter.MarketId.HasValue)
+            throw new InvalidOperationException("Audit log query requires a market scope.");
+
         var query = _context.AuditLogs.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filter.EntityType))
@@ -234,8 +241,13 @@ public class AuditLogService : IAuditLogService, IAuditLogQueryService
     /// <inheritdoc />
     public async Task<SuspiciousActivityReport> GetSuspiciousAsync(
         int? marketId,
+        bool allowCrossMarket = false,
         CancellationToken cancellationToken = default)
     {
+        // Fail-closed tenant guard — see QueryAsync.
+        if (!allowCrossMarket && !marketId.HasValue)
+            throw new InvalidOperationException("Suspicious-activity query requires a market scope.");
+
         var now = DateTime.UtcNow;
         var failedLoginBursts = await GetFailedLoginBurstsAsync(marketId, now, cancellationToken);
         var bulkDeleteBursts = await GetBulkDeleteBurstsAsync(marketId, now, cancellationToken);

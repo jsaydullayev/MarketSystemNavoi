@@ -264,10 +264,16 @@ class SalesService {
     required String saleId,
     required String paymentType,
     required double amount,
+    // Qisman to'lov qarz qoldirsa — yaratilgan qarz to'lov muddati (ISO-8601).
+    String? dueDate,
   }) async {
     final response = await _httpService.post(
       '${ApiConstants.sales}/$saleId/payments',
-      body: {'paymentType': paymentType, 'amount': amount},
+      body: {
+        'paymentType': paymentType,
+        'amount': amount,
+        if (dueDate != null) 'dueDate': dueDate,
+      },
     );
 
     debugPrint('=== ADD PAYMENT RESPONSE ===');
@@ -285,11 +291,11 @@ class SalesService {
     }
   }
 
-  // Savdoni qarzga yozish (Mark as Debt)
-  Future<dynamic> markSaleAsDebt(String saleId) async {
+  // Savdoni qarzga yozish (Mark as Debt). dueDate — to'lov muddati (ISO-8601).
+  Future<dynamic> markSaleAsDebt(String saleId, {String? dueDate}) async {
     final response = await _httpService.post(
       '${ApiConstants.sales}/$saleId/mark-debt',
-      body: {},
+      body: {if (dueDate != null) 'dueDate': dueDate},
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -395,8 +401,15 @@ class SalesService {
     debugPrint('Response Body: ${response.body}');
     debugPrint('=======================');
 
+    // 204 No Content = to'liq qaytarish (tovarning butun miqdori qaytarildi;
+    // backend `Ok(null)` qaytaradi). Bu MUVAFFAQIYATLI amal — xato emas.
+    // Ilgari 204 `else` shoxiga tushib "ApiException(204)" berardi.
+    if (response.statusCode == 204) {
+      return null;
+    }
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      // 200 bo'lsa ham tana bo'sh bo'lishi mumkin — jsonDecode'ni himoyalaymiz.
+      return response.body.isEmpty ? null : jsonDecode(response.body);
     } else if (response.statusCode == 404) {
       return null;
     } else {

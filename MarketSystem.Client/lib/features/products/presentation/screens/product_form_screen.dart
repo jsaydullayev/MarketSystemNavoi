@@ -49,6 +49,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   bool _imageRemoved = false;
 
   bool _isTemporary = false;
+  bool _hideFromSeller = false;
   bool _isLoading = false;
   List<ProductCategoryModel> _categories = [];
   int? _selectedCategory;
@@ -75,6 +76,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       _minThresholdController.text = (widget.product['minThreshold'] ?? 0)
           .toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
+      _hideFromSeller = widget.product['hidePriceFromSellers'] ?? false;
       _selectedCategory = widget.product['categoryId'];
       _selectedUnit = widget.product['unit'] ?? 1;
     }
@@ -138,6 +140,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           categoryId: _selectedCategory,
           unit: _selectedUnit,
           quantity: initialQuantity,
+          hidePriceFromSellers: _hideFromSeller,
         );
         productId = created['id'] as String;
       } else {
@@ -150,6 +153,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           categoryId: _selectedCategory,
           unit: _selectedUnit,
           isTemporary: tempStatus,
+          hidePriceFromSellers: _hideFromSeller,
         );
         productId = widget.product['id'] as String;
       }
@@ -367,6 +371,14 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                               ? 'X'
                               : _minSalePriceController.text,
                         ),
+                      ),
+                      12.height,
+                      // Narxni ko'rsatish/yashirish: ON = narx ko'rinadi,
+                      // OFF = sotuvda sotuvchiga narx (tannarx/sotuv narxi)
+                      // ko'rsatilmaydi.
+                      PriceVisibilityToggle(
+                        value: !_hideFromSeller,
+                        onChanged: (v) => setState(() => _hideFromSeller = !v),
                       ),
                     ],
                   ),

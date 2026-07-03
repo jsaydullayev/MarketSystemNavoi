@@ -106,7 +106,7 @@ class SaleListRow extends StatelessWidget {
       case 'debt':
         return AppColors.warning;
       case 'closed':
-        return const Color(0xFF6366F1);
+        return AppColors.indigo;
       case 'cancelled':
         return AppColors.danger;
       default:

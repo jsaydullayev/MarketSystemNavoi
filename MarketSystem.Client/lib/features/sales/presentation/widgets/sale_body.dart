@@ -303,6 +303,9 @@ class _ProductTile extends StatelessWidget {
         product['popular'] == true ||
         (product['salesCount'] is num && (product['salesCount'] as num) > 50);
     final hasImage = (product['imageUrl'] as String?)?.isNotEmpty == true;
+    // Narxi yashirilgan mahsulot: POS sotuv oynasida narx hech kimga
+    // ko'rsatilmaydi (Owner/Admin/Seller). Mahsulotlar bo'limida ochiq qoladi.
+    final hidePrice = product['hidePriceFromSellers'] == true;
 
     return Opacity(
       opacity: isInStock ? 1.0 : 0.55,
@@ -312,7 +315,8 @@ class _ProductTile extends StatelessWidget {
           onTap: isInStock ? onAdd : null,
           // Long-press opens a larger preview so the cashier can confirm the
           // product — never competes with tap-to-add. Works even out of stock.
-          onLongPress: () => showProductImagePreview(context, product),
+          onLongPress: () =>
+              showProductImagePreview(context, product, hidePrice: hidePrice),
           borderRadius: BorderRadius.circular(AppRadius.lg - 2),
           child: Ink(
             decoration: BoxDecoration(
@@ -350,11 +354,13 @@ class _ProductTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  NumberFormatter.format(product['salePrice']),
+                  hidePrice
+                      ? '—'
+                      : NumberFormatter.format(product['salePrice']),
                   style: AppTextStyles.bodyMedium().copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: isInStock
+                    color: !hidePrice && isInStock
                         ? context.colors.brand
                         : context.colors.textMuted,
                   ),

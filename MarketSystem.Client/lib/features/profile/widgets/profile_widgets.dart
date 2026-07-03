@@ -120,11 +120,11 @@ class ProfileSettingsRow extends StatelessWidget {
       case ProfileRowIconTone.green:
         return (bg: AppColors.successLight, fg: AppColors.success);
       case ProfileRowIconTone.blue:
-        return (bg: const Color(0xFFEFF6FF), fg: const Color(0xFF2563EB));
+        return (bg: AppColors.accentBlueTint, fg: AppColors.accentBlue);
       case ProfileRowIconTone.purple:
-        return (bg: const Color(0xFFF3E8FF), fg: const Color(0xFF7C3AED));
+        return (bg: AppColors.accentPurpleTint, fg: AppColors.accentPurple);
       case ProfileRowIconTone.pink:
-        return (bg: const Color(0xFFFCE7F3), fg: const Color(0xFFDB2777));
+        return (bg: AppColors.accentPinkTint, fg: AppColors.accentPinkStrong);
       case ProfileRowIconTone.gray:
         return (bg: context.colors.inputFill, fg: context.colors.textSecondary);
       case ProfileRowIconTone.red:

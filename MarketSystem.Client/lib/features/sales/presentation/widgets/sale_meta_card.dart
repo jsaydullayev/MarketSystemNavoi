@@ -122,7 +122,7 @@ class SaleMetaCard extends StatelessWidget {
       case 'draft':
         return AppColors.warning;
       case 'closed':
-        return const Color(0xFF6366F1);
+        return AppColors.indigo;
       default:
         return context.colors.textMuted;
     }

@@ -164,7 +164,10 @@ class DashboardDrawer extends StatelessWidget {
           label: l10n.debts,
           onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.debts)),
         ),
-      if (role == 'SuperAdmin')
+      // Audit jurnali — data.auditLog ruxsati bilan (Owner/SuperAdmin doim,
+      // Owner ishonchli Admin'ga ham yoqishi mumkin). Ilgari xato bilan faqat
+      // SuperAdmin'ga cheklangan edi, shuning uchun Owner panelда ko'rinmasди.
+      if (context.can(Permissions.dataAuditLog))
         _SettingsTile(
           icon: Icons.shield_outlined,
           label: l10n.securityJournal,

@@ -10,7 +10,9 @@ import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/features/debts/widgets/debt_summary_header.dart';
+import 'package:market_system_client/features/debts/widgets/due_date_badge.dart';
 import 'package:market_system_client/features/debts/widgets/edit_price_bottomsheet.dart';
+import 'package:market_system_client/data/services/debt_service.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,6 +20,7 @@ import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
 
+import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/services/sales_service.dart';
 
@@ -47,6 +50,48 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
       authProvider: Provider.of<AuthProvider>(context, listen: false),
     );
     _loadSaleDetails();
+  }
+
+  /// Qarz to'lov muddatini (due date) tanlash/o'zgartirish. Sana tanlanib,
+  /// backendga saqlanadi va header darhol yangilanadi.
+  Future<void> _editDueDate() async {
+    final l10n = AppLocalizations.of(context)!;
+    final debtId = widget.debt['id']?.toString() ?? '';
+    if (debtId.isEmpty) return;
+
+    final now = DateTime.now();
+    final current = DueDateBadge.parse(widget.debt['dueDate']);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current ?? now.add(const Duration(days: 14)),
+      firstDate: now.subtract(const Duration(days: 1)),
+      lastDate: now.add(const Duration(days: 365 * 3)),
+    );
+    if (picked == null || !mounted) return;
+
+    try {
+      final debtService = DebtService(
+        authProvider: Provider.of<AuthProvider>(context, listen: false),
+      );
+      final iso = picked.toIso8601String();
+      await debtService.updateDueDate(debtId: debtId, dueDate: iso);
+      if (!mounted) return;
+      setState(() => widget.debt['dueDate'] = iso);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("To'lov muddati saqlandi"),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.error}: $e'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
   }
 
   Future<void> _downloadPdf() async {
@@ -250,6 +295,10 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userRole = authProvider.user?['role'];
     final debtStatus = widget.debt['status'];
+    // RBAC: chek yuklab olish (sales.invoice) va muddat belgilash (debts.dueDate)
+    // alohida ruxsatlar — yo'q bo'lsa, tegishli tugma ko'rsatilmaydi.
+    final canInvoice = authProvider.can(Permissions.salesInvoice);
+    final canDueDate = authProvider.can(Permissions.debtsDueDate);
     final l10n = AppLocalizations.of(context)!;
 
     return NetworkWrapper(
@@ -258,13 +307,15 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
         backgroundColor: context.colors.bg,
         appBar: CommonAppBar(
           title: l10n.debtDetails,
-          extraActions: [
-            IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: _downloadPdf,
-              tooltip: l10n.downloadPdf,
-            ),
-          ],
+          extraActions: canInvoice
+              ? [
+                  IconButton(
+                    icon: const Icon(Icons.download),
+                    onPressed: _downloadPdf,
+                    tooltip: l10n.downloadPdf,
+                  ),
+                ]
+              : null,
         ),
         body: Column(
           children: [
@@ -273,6 +324,10 @@ class _DebtDetailsScreenState extends State<DebtDetailsScreen> {
               debt: widget.debt,
               debtStatus: debtStatus,
               l10n: l10n,
+              // Faqat ochiq qarzlarda muddatni tahrirlash mumkin.
+              onEditDueDate: (debtStatus == 'Open' && canDueDate)
+                  ? _editDueDate
+                  : null,
             ),
             Expanded(
               child: _isLoading

@@ -23,6 +23,7 @@ import 'package:market_system_client/features/categories/screens/category_bottom
 import 'package:market_system_client/features/categories/widgets/categories_card.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/models/product_category_model.dart';
 import '../../../data/services/category_service.dart';
@@ -131,6 +132,12 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   }
 
   Widget _buildBody(BuildContext context, AppLocalizations l10n) {
+    // RBAC: kategoriya boshqarish ruxsati (categories.manage) bo'lmasa,
+    // qo'shish/tahrirlash/o'chirish amallari umuman ko'rsatilmaydi.
+    final canManage = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).can(Permissions.categoriesManage);
     if (_isLoading && _categories.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -140,7 +147,10 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
     }
 
     if (_categories.isEmpty) {
-      return _EmptyView(l10n: l10n, onAdd: () => _openForm());
+      return _EmptyView(
+        l10n: l10n,
+        onAdd: canManage ? () => _openForm() : null,
+      );
     }
 
     final active = _categories.where((c) => c.isActive).toList();
@@ -164,6 +174,7 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
               category: c,
               l10n: l10n,
               isDark: false,
+              canManage: canManage,
               onEdit: (_) => _openForm(category: c),
               onDelete: (_) => _delete(c),
             ),
@@ -182,16 +193,19 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
                 category: c,
                 l10n: l10n,
                 isDark: false,
+                canManage: canManage,
                 onEdit: (_) => _openForm(category: c),
                 onDelete: (_) => _delete(c),
               ),
             ),
           ],
-          const SizedBox(height: AppSpacing.md),
-          _AddCategoryButton(
-            label: '+ ${l10n.addCategory}',
-            onTap: () => _openForm(),
-          ),
+          if (canManage) ...[
+            const SizedBox(height: AppSpacing.md),
+            _AddCategoryButton(
+              label: '+ ${l10n.addCategory}',
+              onTap: () => _openForm(),
+            ),
+          ],
         ],
       ),
     );
@@ -333,9 +347,9 @@ class _DashedBorderPainter extends CustomPainter {
 
 class _EmptyView extends StatelessWidget {
   final AppLocalizations l10n;
-  final VoidCallback onAdd;
+  final VoidCallback? onAdd;
 
-  const _EmptyView({required this.l10n, required this.onAdd});
+  const _EmptyView({required this.l10n, this.onAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -372,24 +386,26 @@ class _EmptyView extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppSpacing.xl3),
-            ElevatedButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(l10n.addCategory),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.colors.brand,
-                foregroundColor: context.colors.onBrand,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xl3,
-                  vertical: AppSpacing.lg,
-                ),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg - 2),
+            if (onAdd != null) ...[
+              const SizedBox(height: AppSpacing.xl3),
+              ElevatedButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(l10n.addCategory),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.colors.brand,
+                  foregroundColor: context.colors.onBrand,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xl3,
+                    vertical: AppSpacing.lg,
+                  ),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg - 2),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

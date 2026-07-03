@@ -315,6 +315,12 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // RBAC: hisobot yoki sotuv eksport ruxsati bo'lmasa, eksport tugmasi
+    // umuman ko'rsatilmaydi (PDF → sales.export, Excel → reports.export).
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final canExport =
+        auth.can(Permissions.reportsExport) ||
+        auth.can(Permissions.salesExport);
 
     return NetworkWrapper(
       onRetry: _loadDailySales,
@@ -326,24 +332,28 @@ class _DailySalesScreenState extends State<DailySalesScreen> {
             // Export — disabled while a download is in flight or before data
             // arrives. We show a spinner in-place rather than a toast so the
             // user knows their tap registered.
-            IconButton(
-              tooltip: 'Eksport',
-              icon: _isExporting
-                  ? SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          context.colors.brand,
+            if (canExport)
+              IconButton(
+                tooltip: 'Eksport',
+                icon: _isExporting
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            context.colors.brand,
+                          ),
                         ),
+                      )
+                    : Icon(
+                        Icons.ios_share_rounded,
+                        color: context.colors.brand,
                       ),
-                    )
-                  : Icon(Icons.ios_share_rounded, color: context.colors.brand),
-              onPressed: (_isExporting || _dailySales == null)
-                  ? null
-                  : _showExportSheet,
-            ),
+                onPressed: (_isExporting || _dailySales == null)
+                    ? null
+                    : _showExportSheet,
+              ),
             IconButton(
               tooltip: 'Kalendar',
               icon: Icon(

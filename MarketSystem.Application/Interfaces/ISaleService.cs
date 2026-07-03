@@ -14,8 +14,10 @@ public interface ISaleService
     Task<IEnumerable<SaleDto>> GetAllSalesAsync(CancellationToken cancellationToken = default);
     Task<PagedResult<SaleDto>> GetSalesPagedAsync(int page, int size, CancellationToken cancellationToken = default);
     Task<IEnumerable<SaleDto>> GetSalesByDateRangeAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default);
-    Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default);
-    Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default);
+    // sellerId null bo'lsa — butun do'kondagi (barcha sellerlarning) sotuvlari
+    // qaytariladi (sellerlar hamkorligi, data.allSalesView ruxsati bilan).
+    Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid? sellerId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid? sellerId, CancellationToken cancellationToken = default);
     Task<SaleDto> CreateSaleAsync(CreateSaleDto request, Guid sellerId, CancellationToken cancellationToken = default);
     Task<SaleDto?> UpdateSaleCustomerAsync(Guid saleId, UpdateSaleCustomerDto request, CancellationToken cancellationToken = default);
     Task<SaleItemDto?> AddSaleItemAsync(Guid saleId, AddSaleItemDto request, CancellationToken cancellationToken = default);
@@ -41,7 +43,8 @@ public interface ISaleService
     /// <summary>
     /// Marks a sale as debt status
     /// </summary>
-    Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default);
+    // dueDate — "Qarzga olish"da tanlangan to'lov muddati (ixtiyoriy).
+    Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, DateTime? dueDate = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates sale item price with role-based permissions

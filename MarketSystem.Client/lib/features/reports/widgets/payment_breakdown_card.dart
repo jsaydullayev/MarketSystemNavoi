@@ -33,15 +33,15 @@ class ReportPaymentBreakdownCard extends StatelessWidget {
     'Cash': {'icon': Icons.payments_outlined, 'color': AppColors.success},
     'Terminal': {
       // Fixed category marker colour (not the theme accent) — orange reads
-      // fine on both light and dark, like the literal purple/blue below.
+      // fine on both light and dark, like the fixed purple/blue below.
       'icon': Icons.credit_card_outlined,
-      'color': Color(0xFFFF6B00),
+      'color': AppColors.brand,
     },
     'Transfer': {
       'icon': Icons.account_balance_outlined,
-      'color': Color(0xFF8B5CF6),
+      'color': AppColors.accentViolet,
     },
-    'Click': {'icon': Icons.phone_android_outlined, 'color': Color(0xFF3B82F6)},
+    'Click': {'icon': Icons.phone_android_outlined, 'color': AppColors.info},
     'Qaytarilgan': {
       'icon': Icons.assignment_return_outlined,
       'color': AppColors.danger,

@@ -25,6 +25,13 @@ public class Product : BaseEntity, ISoftDelete
     public decimal SalePrice { get; set; }
     public decimal MinSalePrice { get; set; }
 
+    /// <summary>
+    /// True bo'lsa, bu mahsulotning narxi sotuv (POS) oqimida Seller roliga
+    /// ko'rsatilmaydi — kassir narxni qo'lda kiritadi. Mahsulotlar bo'limida
+    /// narx baribir ko'rinadi. Admin/Owner mahsulot formasidan boshqaradi.
+    /// </summary>
+    public bool HidePriceFromSellers { get; set; } = false;
+
     // Stock - DECIMAL qilib o'zgartirdik (1.5 kg bo'lishi mumkin)
     public decimal Quantity { get; set; }
     public decimal MinThreshold { get; set; } = 5m;

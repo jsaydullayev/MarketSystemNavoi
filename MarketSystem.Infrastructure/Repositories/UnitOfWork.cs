@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using MarketSystem.Domain.Entities;
@@ -8,6 +9,15 @@ namespace MarketSystem.Infrastructure.Repositories;
 
 public class UnitOfWork : IUnitOfWork
 {
+    // How many times to replay a transactional operation that lost an
+    // optimistic-concurrency race (DbUpdateConcurrencyException). A single
+    // user completing a sale fires several writes that collide on shared
+    // xmin-tokened rows (the per-market CashRegister, the per-sale Debt, a
+    // double-tapped Product); EnableRetryOnFailure does NOT classify these as
+    // transient, so without this they surfaced to the user as HTTP 409. 3
+    // attempts comfortably absorbs realistic contention.
+    private const int MaxConcurrencyRetries = 3;
+
     private readonly AppDbContext _context;
     private readonly ILogger<UnitOfWork> _logger;
     private IDbContextTransaction? _transaction;
@@ -84,42 +94,48 @@ public class UnitOfWork : IUnitOfWork
             strategy,
             async () =>
             {
-                await BeginTransactionAsync(cancellationToken);
-                try
+                for (var attempt = 1; ; attempt++)
                 {
-                    var result = await operation();
-                    await CommitTransactionAsync(cancellationToken);
-                    return result;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "UnitOfWork: transaction rolled back.");
-                    await RollbackTransactionAsync(cancellationToken);
-                    throw;
+                    await BeginTransactionAsync(cancellationToken);
+                    try
+                    {
+                        var result = await operation();
+                        await CommitTransactionAsync(cancellationToken);
+                        return result;
+                    }
+                    catch (DbUpdateConcurrencyException ex) when (attempt < MaxConcurrencyRetries)
+                    {
+                        // A concurrent writer bumped an xmin token (busy-sale
+                        // CashRegister/Debt/Product, or a real multi-user race).
+                        // Roll back, discard the now-stale tracked entities so
+                        // the replay reads fresh from the DB, and re-run the
+                        // whole operation. The operation delegates load their
+                        // entities INSIDE the closure, so a replay re-reads.
+                        _logger.LogWarning(ex,
+                            "UnitOfWork: concurrency conflict, retrying (attempt {Attempt}/{Max}).",
+                            attempt, MaxConcurrencyRetries);
+                        await RollbackTransactionAsync(cancellationToken);
+                        _context.ChangeTracker.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "UnitOfWork: transaction rolled back.");
+                        await RollbackTransactionAsync(cancellationToken);
+                        throw;
+                    }
                 }
             });
     }
 
     public async Task ExecuteInTransactionAsync(Func<Task> operation, CancellationToken cancellationToken = default)
     {
-        var strategy = _context.Database.CreateExecutionStrategy();
-        await Microsoft.EntityFrameworkCore.ExecutionStrategyExtensions.ExecuteAsync(
-            strategy,
-            async () =>
-            {
-                await BeginTransactionAsync(cancellationToken);
-                try
-                {
-                    await operation();
-                    await CommitTransactionAsync(cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "UnitOfWork: transaction rolled back.");
-                    await RollbackTransactionAsync(cancellationToken);
-                    throw;
-                }
-            });
+        // Delegate to the generic overload so the concurrency-retry logic lives
+        // in exactly one place.
+        await ExecuteInTransactionAsync<object?>(async () =>
+        {
+            await operation();
+            return null;
+        }, cancellationToken);
     }
 
     public void Dispose()

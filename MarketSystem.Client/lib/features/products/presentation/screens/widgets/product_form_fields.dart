@@ -239,3 +239,77 @@ class TempToggle extends StatelessWidget {
     );
   }
 }
+
+/// Toggle controlling whether a product's price is visible to Seller-role
+/// users during a sale. ON = price shown (default); OFF = the price, cost and
+/// min-price are hidden from the seller in the POS flow (Owner/Admin always
+/// see it, and the Products section still shows it).
+class PriceVisibilityToggle extends StatelessWidget {
+  /// true = show price (switch ON), false = hide from seller (switch OFF).
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const PriceVisibilityToggle({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md - 2,
+      ),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: context.colors.border, width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+            size: 18,
+            color: value ? context.colors.brand : context.colors.textSecondary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.showPriceTitle,
+                  style: AppTextStyles.bodySmall().copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: context.colors.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.showPriceDescription,
+                  style: AppTextStyles.caption().copyWith(
+                    fontSize: 10,
+                    letterSpacing: 0,
+                    color: context.colors.textMuted,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Transform.scale(
+            scale: 0.85,
+            child: Switch(
+              value: value,
+              activeThumbColor: context.colors.brand,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:universal_html/html.dart' as html;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/core/auth/permissions.dart';
@@ -16,8 +13,6 @@ import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/features/sales/presentation/screens/continue_sale_screen.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -103,72 +98,30 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       final dateStr = DateFormat('dd.MM.yyyy').format(createdAt);
       final fileName = 'faktura_${widget.saleId}_$dateStr.pdf';
 
-      if (kIsWeb) {
-        final blob = html.Blob([pdfBytes], 'application/pdf');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement()
-          ..href = url
-          ..download = fileName
-          ..style.display = 'none';
-        html.document.body?.append(anchor);
-        anchor.click();
-        anchor.remove();
-        html.Url.revokeObjectUrl(url);
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
-      } else {
-        Directory? directory;
-        if (Platform.isWindows) {
-          final username = Platform.environment['USERNAME'] ?? 'User';
-          directory = Directory('C:/Users/$username/Downloads');
-        } else if (Platform.isMacOS || Platform.isLinux) {
-          directory = await getDownloadsDirectory();
-        }
-
-        final path = '${directory?.path ?? '.'}/$fileName';
-        final file = File(path);
-
-        if (directory != null && !directory.existsSync()) {
-          await directory.create(recursive: true);
-        }
-        await file.writeAsBytes(pdfBytes);
-
-        if (mounted) Navigator.pop(context);
-
-        if (mounted) {
-          final result = await OpenFilex.open(path);
-          if (result.type != ResultType.done) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${l10n.errorOccurred}: ${result.message}'),
-                  backgroundColor: AppColors.warning,
-                ),
-              );
-            }
-          } else {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.pdfDownloaded),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            }
-          }
-        }
-        return;
-      }
-
+      // Loading spinner'ni yopamiz, so'ng CHINAKAM print oynasini ochamiz.
       if (mounted) Navigator.pop(context);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.pdfDownloaded),
-            backgroundColor: AppColors.success,
-          ),
+
+      // "Chop etish" — barcha platformalarda tizim/brauzer PRINT oynasi
+      // ochiladi (u yerdan printerga chiqarish yoki PDF saqlash mumkin).
+      // Ilgari web'da fayl shunchaki yuklab olinar, print oynasi ochilmasdi.
+      // Ichki try — layoutPdf xatosi tashqi catch'ga tushib spinner'ni
+      // ikkinchi marta pop qilib, ekranni yopib qo'ymasligi uchun.
+      try {
+        await Printing.layoutPdf(
+          onLayout: (_) async => pdfBytes,
+          name: fileName,
         );
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${l10n.errorOccurred}: $e'),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
       }
+      return;
     } catch (e) {
       if (mounted) Navigator.pop(context);
       if (mounted) {
@@ -281,7 +234,12 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
       child: BlocBuilder<SalesBloc, SalesState>(
         builder: (context, state) {
           List<Widget>? extraActions;
-          if (state is SaleDetailLoaded) {
+          // Chek yuklab olish faqat sales.invoice ruxsati bilan ko'rinadi.
+          final canInvoice = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          ).can(Permissions.salesInvoice);
+          if (state is SaleDetailLoaded && canInvoice) {
             extraActions = [
               IconButton(
                 icon: Icon(Icons.download, color: context.colors.text),
@@ -321,7 +279,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                         );
                         if (result == true && mounted) _loadSaleDetails();
                       },
-                      backgroundColor: const Color(0xFF3B82F6),
+                      backgroundColor: AppColors.info,
                       icon: const Icon(
                         Icons.play_arrow_rounded,
                         color: Colors.white,
@@ -361,6 +319,10 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         context,
         listen: false,
       ).can(Permissions.salesEdit);
+      final canInvoice = Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).can(Permissions.salesInvoice);
       final statusLower = status.toLowerCase();
       final canReturn =
           canEditSales &&
@@ -390,8 +352,10 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                   remaining: remainingAmount,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                SaleActionTiles(onPrint: () => _printInvoice(sale)),
-                const SizedBox(height: AppSpacing.lg),
+                if (canInvoice) ...[
+                  SaleActionTiles(onPrint: () => _printInvoice(sale)),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
                 if (canReturn)
                   AppDangerButton(
                     label: l10n.returnAction,

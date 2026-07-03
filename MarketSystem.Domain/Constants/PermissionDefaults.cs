@@ -43,11 +43,11 @@ public static class PermissionDefaults
         PermissionKeys.DashboardAccess,
         PermissionKeys.ProductsAccess, PermissionKeys.ProductsExport,
         PermissionKeys.CategoriesAccess,
-        PermissionKeys.SalesAccess, PermissionKeys.SalesCreate, PermissionKeys.SalesExport,
+        PermissionKeys.SalesAccess, PermissionKeys.SalesCreate, PermissionKeys.SalesExport, PermissionKeys.SalesInvoice,
         PermissionKeys.CustomersAccess, PermissionKeys.CustomersManage, PermissionKeys.CustomersExport,
         PermissionKeys.ZakupAccess,
         PermissionKeys.ReportsExport,
-        PermissionKeys.DebtsAccess, PermissionKeys.DebtsManage,
+        PermissionKeys.DebtsAccess, PermissionKeys.DebtsManage, PermissionKeys.DebtsDueDate,
         PermissionKeys.DataAllSalesView,
     };
 

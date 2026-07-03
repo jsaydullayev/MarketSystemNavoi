@@ -32,6 +32,9 @@ class ContinueSaleProductCard extends StatelessWidget {
     final isInStock = quantity > 0;
     final isLow = quantity > 0 && quantity <= 5;
     final hasImage = (product['imageUrl'] as String?)?.isNotEmpty == true;
+    // Narxi yashirilgan mahsulot: POS sotuv oynasida narx hech kimga
+    // ko'rsatilmaydi (Owner/Admin/Seller). Mahsulotlar bo'limida ochiq qoladi.
+    final hidePrice = product['hidePriceFromSellers'] == true;
 
     // Stock color logic: out → muted grey, low → warning amber, healthy →
     // brand orange (matches the demo's `.low` accent on tight stock).
@@ -50,6 +53,7 @@ class ContinueSaleProductCard extends StatelessWidget {
         onLongPress: () => showProductImagePreview(
           context,
           Map<String, dynamic>.from(product as Map),
+          hidePrice: hidePrice,
         ),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: AnimatedContainer(
@@ -97,11 +101,13 @@ class ContinueSaleProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${NumberFormatter.format(product['salePrice'])} ${l10n.currencySom}',
+                  hidePrice
+                      ? '—'
+                      : '${NumberFormatter.format(product['salePrice'])} ${l10n.currencySom}',
                   style: AppTextStyles.labelLarge().copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: isInStock
+                    color: !hidePrice && isInStock
                         ? context.colors.brand
                         : context.colors.textMuted,
                   ),

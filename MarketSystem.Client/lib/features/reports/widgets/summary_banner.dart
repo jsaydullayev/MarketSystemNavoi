@@ -28,8 +28,8 @@ class DailySummaryBanner extends StatelessWidget {
     required this.isDark,
   });
 
-  static const _heroStart = Color(0xFF0F172A);
-  static const _heroEnd = Color(0xFF1E293B);
+  static const _heroStart = AppColors.heroGradientTop;
+  static const _heroEnd = AppColors.heroGradientBottom;
 
   @override
   Widget build(BuildContext context) {

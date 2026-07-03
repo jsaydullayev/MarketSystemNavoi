@@ -100,11 +100,6 @@ public class AuthService : IAuthService
                 request.Username, existingLockUntil, 0);
         }
 
-        // Username uniqueness is enforced PER MARKET (partial index). A tenant user and a
-        // cross-tenant user (e.g. SuperAdmin with MarketId=NULL) can therefore share the same
-        // username. Iterate all candidates and pick the one whose password hash matches.
-        // This is constant-time-ish (BCrypt.Verify per candidate) and there are at most a
-        // handful of collisions in practice.
         var candidates = (await _unitOfWork.Users.FindAsync(
             u => u.Username == request.Username && u.IsActive,
             cancellationToken)).ToList();

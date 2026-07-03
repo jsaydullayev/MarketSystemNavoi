@@ -68,7 +68,15 @@ public class SalesController : ControllerBase
         if ((end - start).TotalDays > 90)
             return BadRequest(new { message = "Sana oralig'i 90 kundan oshmasligi kerak." });
 
-        var sales = await _saleService.GetSalesByDateRangeAsync(start, end, ct);
+        // `start`/`end` arrive as Tashkent-local calendar days. Every other
+        // dated query (reports, dashboard) anchors to Tashkent before hitting
+        // the UTC-stored CreatedAt; this endpoint used to compare the raw
+        // local dates directly, shifting the "day" by the GMT+5 offset. Convert
+        // to a UTC half-open range [startOfFirstDay, endOfLastDay) here.
+        var startUtc = _clock.LocalDayToUtcRange(start).UtcStart;
+        var endUtc = _clock.LocalDayToUtcRange(end).UtcEnd;
+
+        var sales = await _saleService.GetSalesByDateRangeAsync(startUtc, endUtc, ct);
         return Ok(sales);
     }
 
@@ -80,7 +88,11 @@ public class SalesController : ControllerBase
         if (string.IsNullOrEmpty(sellerIdStr) || !Guid.TryParse(sellerIdStr, out var sellerId))
             return Unauthorized();
 
-        var sales = await _saleService.GetDraftSalesBySellerAsync(sellerId);
+        // Kollaboratsiya: data.allSalesView ruxsati bor seller (yoki Owner/Admin)
+        // butun do'kondagi draftlarni ko'rib, davom ettira oladi; aks holda
+        // faqat o'zinikini.
+        var sellerFilter = CanViewAllSales() ? (Guid?)null : sellerId;
+        var sales = await _saleService.GetDraftSalesBySellerAsync(sellerFilter);
         return Ok(sales);
     }
 
@@ -92,8 +104,20 @@ public class SalesController : ControllerBase
         if (string.IsNullOrEmpty(sellerIdStr) || !Guid.TryParse(sellerIdStr, out var sellerId))
             return Unauthorized();
 
-        var sales = await _saleService.GetUnfinishedSalesBySellerAsync(sellerId);
+        var sellerFilter = CanViewAllSales() ? (Guid?)null : sellerId;
+        var sales = await _saleService.GetUnfinishedSalesBySellerAsync(sellerFilter);
         return Ok(sales);
+    }
+
+    // Owner/Admin/SuperAdmin va data.allSalesView ruxsatiga ega sellerlar butun
+    // do'kondagi sotuvlarni ko'ra/davom ettira oladi (sellerlar hamkorligi).
+    // Ruxsat bo'lmasa — seller faqat o'z sotuvlarini ko'radi.
+    private bool CanViewAllSales()
+    {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+        if (role is "Owner" or "SuperAdmin" or "Admin")
+            return true;
+        return User.HasClaim("perm", PermissionKeys.DataAllSalesView);
     }
 
     [HttpPost]
@@ -249,13 +273,13 @@ public class SalesController : ControllerBase
 
     [HttpPost("{saleId}/mark-debt")]
     [RequirePermission(PermissionKeys.SalesEdit)]
-    public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId, CancellationToken ct = default)
+    public async Task<ActionResult<SaleDto>> MarkSaleAsDebt(Guid saleId, [FromBody] MarkSaleAsDebtDto? request = null, CancellationToken ct = default)
     {
         try
         {
             _logger.LogInformation("MarkSaleAsDebt called - Sale ID: {SaleId}", saleId);
 
-            var sale = await _saleService.MarkSaleAsDebtAsync(saleId);
+            var sale = await _saleService.MarkSaleAsDebtAsync(saleId, request?.DueDate, ct);
             if (sale is null)
                 return NotFound();
 
@@ -488,7 +512,7 @@ public class SalesController : ControllerBase
     /// Generate and download PDF invoice for a sale
     /// </summary>
     [HttpGet("{id}/invoice")]
-    [RequirePermission(PermissionKeys.SalesAccess)]
+    [RequirePermission(PermissionKeys.SalesInvoice)]
     public async Task<IActionResult> GetInvoice(Guid id, [FromQuery] string lang = "uz", [FromQuery] bool compact = false, CancellationToken ct = default)
     {
         try

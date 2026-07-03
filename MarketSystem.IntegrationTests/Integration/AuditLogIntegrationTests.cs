@@ -157,7 +157,7 @@ public class AuditLogIntegrationTests : TestBase
         SeedRow(action: "Update", createdAt: new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc));
         await DbContext.SaveChangesAsync();
 
-        var result = await QueryService().QueryAsync(new AuditLogFilter());
+        var result = await QueryService().QueryAsync(new AuditLogFilter(), allowCrossMarket: true);
 
         result.Total.Should().Be(3);
         result.Items.Select(i => i.Action).Should().Equal("Cancel", "Update", "Create");
@@ -171,7 +171,7 @@ public class AuditLogIntegrationTests : TestBase
         SeedRow(entityType: "Payment");
         await DbContext.SaveChangesAsync();
 
-        var result = await QueryService().QueryAsync(new AuditLogFilter(EntityType: "Sale"));
+        var result = await QueryService().QueryAsync(new AuditLogFilter(EntityType: "Sale"), allowCrossMarket: true);
 
         result.Total.Should().Be(2);
         result.Items.Should().OnlyContain(i => i.EntityType == "Sale");
@@ -187,7 +187,7 @@ public class AuditLogIntegrationTests : TestBase
         await DbContext.SaveChangesAsync();
 
         var result = await QueryService().QueryAsync(
-            new AuditLogFilter(Action: "Login", UserId: TestUserId));
+            new AuditLogFilter(Action: "Login", UserId: TestUserId), allowCrossMarket: true);
 
         result.Total.Should().Be(1);
         result.Items[0].Action.Should().Be("Login");
@@ -222,7 +222,7 @@ public class AuditLogIntegrationTests : TestBase
         SeedRow(userId: TestUserId); // TestUser.FullName = "Test User"
         await DbContext.SaveChangesAsync();
 
-        var result = await QueryService().QueryAsync(new AuditLogFilter());
+        var result = await QueryService().QueryAsync(new AuditLogFilter(), allowCrossMarket: true);
 
         result.Items[0].UserName.Should().Be("Test User");
     }
@@ -245,7 +245,7 @@ public class AuditLogIntegrationTests : TestBase
         });
         await DbContext.SaveChangesAsync();
 
-        var result = await QueryService().QueryAsync(new AuditLogFilter());
+        var result = await QueryService().QueryAsync(new AuditLogFilter(), allowCrossMarket: true);
 
         result.Total.Should().Be(1);
         result.Items[0].UserId.Should().BeNull();
@@ -260,7 +260,7 @@ public class AuditLogIntegrationTests : TestBase
             SeedRow(action: $"A{i}", createdAt: new DateTime(2026, 1, 1).AddMinutes(i));
         await DbContext.SaveChangesAsync();
 
-        var result = await QueryService().QueryAsync(new AuditLogFilter(Page: 2, Size: 2));
+        var result = await QueryService().QueryAsync(new AuditLogFilter(Page: 2, Size: 2), allowCrossMarket: true);
 
         result.Total.Should().Be(5);
         result.Page.Should().Be(2);
@@ -280,11 +280,11 @@ public class AuditLogIntegrationTests : TestBase
         // size below 1 clamps up to 1; size above 200 clamps down to 200; page
         // below 1 clamps up to 1. The clamp values surface on the response so
         // the client can render correct paging controls.
-        var below = await QueryService().QueryAsync(new AuditLogFilter(Page: 0, Size: 0));
+        var below = await QueryService().QueryAsync(new AuditLogFilter(Page: 0, Size: 0), allowCrossMarket: true);
         below.Page.Should().Be(1);
         below.Size.Should().Be(1);
 
-        var above = await QueryService().QueryAsync(new AuditLogFilter(Size: 5000));
+        var above = await QueryService().QueryAsync(new AuditLogFilter(Size: 5000), allowCrossMarket: true);
         above.Size.Should().Be(200);
     }
 

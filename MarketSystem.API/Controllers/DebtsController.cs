@@ -56,6 +56,15 @@ public class DebtsController : ControllerBase
         catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
+    /// <summary>Update a debt's payment due date. Requires debts.dueDate.</summary>
+    [HttpPut("~/api/Debts/{debtId}/due-date")]
+    [RequirePermission(PermissionKeys.DebtsDueDate)]
+    public async Task<ActionResult<DebtDto>> UpdateDueDate(Guid debtId, [FromBody] UpdateDebtDueDateDto request, CancellationToken ct)
+    {
+        var updated = await _debts.UpdateDueDateAsync(debtId, request.DueDate, ct);
+        return updated is null ? NotFound(new { message = "Qarz topilmadi." }) : Ok(updated);
+    }
+
     /// <summary>All debts in this market (optionally filtered by status).</summary>
     [HttpGet]
     [RequirePermission(PermissionKeys.DebtsAccess)]

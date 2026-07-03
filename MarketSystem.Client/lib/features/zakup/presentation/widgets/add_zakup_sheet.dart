@@ -543,7 +543,7 @@ class _TotalCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: const Color(0xFF111827),
+        color: AppColors.text,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(

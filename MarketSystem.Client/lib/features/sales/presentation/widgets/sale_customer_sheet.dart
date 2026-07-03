@@ -4,6 +4,7 @@ import '../../../../design/tokens/app_theme_colors.dart';
 import '../../../../design/tokens/app_tokens.dart';
 import '../../../../design/tokens/app_typography.dart';
 import '../../../../l10n/app_localizations.dart';
+import 'quick_add_customer_sheet.dart';
 
 /// Customer-selection bottom sheet.
 ///
@@ -53,6 +54,59 @@ void showCustomerSelectionSheet(
                   icon: Icon(Icons.close, color: context.colors.textSecondary),
                 ),
               ],
+            ),
+          ),
+          // Yangi mijoz qo'shish — quick-add oynasini ochadi; yaratilsa, o'sha
+          // mijozni shu yerda tanlaydi (parent ro'yxatga ham qo'shadi). Ro'yxat
+          // bo'sh bo'lsa ham ko'rinib turadi, shuning uchun ustki qismда.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              0,
+              AppSpacing.xl,
+              AppSpacing.md,
+            ),
+            child: InkWell(
+              onTap: () async {
+                final navigator = Navigator.of(ctx);
+                final created = await showQuickAddCustomerSheet(context);
+                if (created != null) {
+                  navigator.pop();
+                  onSelected(created);
+                }
+              },
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                decoration: BoxDecoration(
+                  color: context.colors.brandLight,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: context.colors.brand, width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: context.colors.brand,
+                      child: const Icon(
+                        Icons.person_add_alt_1_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xl),
+                    Expanded(
+                      child: Text(
+                        l10n.addNewCustomer,
+                        style: AppTextStyles.labelLarge().copyWith(
+                          color: context.colors.brandDark,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.add_rounded, color: context.colors.brand),
+                  ],
+                ),
+              ),
             ),
           ),
           Expanded(

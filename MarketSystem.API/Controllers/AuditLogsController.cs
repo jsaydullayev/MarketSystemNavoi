@@ -72,7 +72,7 @@ public class AuditLogsController : ControllerBase
             Page: page,
             Size: size);
 
-        return Ok(await _queryService.QueryAsync(filter, ct));
+        return Ok(await _queryService.QueryAsync(filter, allowCrossMarket: isSuperAdmin, ct));
     }
 
     /// <summary>
@@ -95,6 +95,6 @@ public class AuditLogsController : ControllerBase
             ? marketId
             : _currentMarketService.TryGetCurrentMarketId();
 
-        return Ok(await _queryService.GetSuspiciousAsync(effectiveMarketId, ct));
+        return Ok(await _queryService.GetSuspiciousAsync(effectiveMarketId, allowCrossMarket: isSuperAdmin, ct));
     }
 }

@@ -213,13 +213,16 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.TotalAmount).HasPrecision(18, 2);
             b.Property(x => x.PaidAmount).HasPrecision(18, 2);
 
-            // Optimistic concurrency via PostgreSQL system column xmin.
-            // No DDL needed — xmin already exists on every PostgreSQL table.
+            // Xmin concurrency token disabled for Sale — too many modifications
+            // in a single transaction (items add/remove, status change, debt update)
+            // cause false conflicts. Use database-level constraints instead (FK, CHECK).
+            // If needed, implement optimistic locking at the application layer with
+            // a dedicated RowVersion column (int/long) instead of PostgreSQL xmin.
             b.Property(x => x.Xmin)
                 .HasColumnName("xmin")
                 .HasColumnType("xid")
-                .ValueGeneratedOnAddOrUpdate()
-                .IsConcurrencyToken();
+                .ValueGeneratedOnAddOrUpdate();
+                // .IsConcurrencyToken(); // DISABLED — see above
 
             // IMPORTANT: Seller/User o'chirilsa, Sale tarixi o'CHMASIN kerak
             b.HasOne(x => x.Seller).WithMany(p => p.Sales).HasForeignKey(x => x.SellerId)

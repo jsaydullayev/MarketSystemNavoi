@@ -255,6 +255,7 @@ class TempToggle extends StatelessWidget {
   final String title;
   final String subtitle;
   final ValueChanged<bool> onChanged;
+  final IconData icon;
 
   const TempToggle({
     super.key,
@@ -262,6 +263,7 @@ class TempToggle extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onChanged,
+    this.icon = Icons.timer_outlined,
   });
 
   @override
@@ -279,7 +281,7 @@ class TempToggle extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            Icons.timer_outlined,
+            icon,
             size: 18,
             color: context.colors.textSecondary,
           ),

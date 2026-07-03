@@ -12,6 +12,10 @@ public static class PermissionKeys
 {
     public const string DashboardAccess = "dashboard.access";
 
+    // Bell / alerts feed (low-stock, due-soon debts, new debt sales). Client-side
+    // gate — the alert data itself comes from endpoints with their own perms.
+    public const string NotificationsAccess = "notifications.access";
+
     public const string ProductsAccess = "products.access";
     public const string ProductsCreate = "products.create";
     public const string ProductsEdit = "products.edit";
@@ -27,6 +31,8 @@ public static class PermissionKeys
     public const string SalesEdit = "sales.edit";
     public const string SalesDelete = "sales.delete";
     public const string SalesExport = "sales.export";
+    // Print / download the sale receipt (invoice) PDF.
+    public const string SalesInvoice = "sales.invoice";
 
     public const string CustomersAccess = "customers.access";
     public const string CustomersManage = "customers.manage";
@@ -48,6 +54,8 @@ public static class PermissionKeys
 
     public const string DebtsAccess = "debts.access";
     public const string DebtsManage = "debts.manage";
+    // Set / change a debt's payment due date (separate from accepting payment).
+    public const string DebtsDueDate = "debts.dueDate";
 
     // Sensitive data fields — gate whether the user may see the value at all.
     public const string DataCostPrice = "data.costPrice";
@@ -63,15 +71,16 @@ public static class PermissionKeys
     public static readonly IReadOnlyList<string> All = new[]
     {
         DashboardAccess,
+        NotificationsAccess,
         ProductsAccess, ProductsCreate, ProductsEdit, ProductsDelete, ProductsExport, ProductsImport,
         CategoriesAccess, CategoriesManage,
-        SalesAccess, SalesCreate, SalesEdit, SalesDelete, SalesExport,
+        SalesAccess, SalesCreate, SalesEdit, SalesDelete, SalesExport, SalesInvoice,
         CustomersAccess, CustomersManage, CustomersDelete, CustomersExport,
         ZakupAccess, ZakupCreate,
         CashRegisterAccess, CashRegisterManage,
         ReportsAccess, ReportsExport,
         UsersAccess, UsersManage, UsersShift,
-        DebtsAccess, DebtsManage,
+        DebtsAccess, DebtsManage, DebtsDueDate,
         DataCostPrice, DataProfit, DataCashBalance, DataAllSalesView, DataAuditLog,
     };
 

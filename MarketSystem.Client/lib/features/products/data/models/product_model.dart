@@ -19,6 +19,7 @@ class ProductModel {
   final String? categoryName;
   final bool isInStock;
   final bool isLowStock;
+  final bool hidePriceFromSellers;
 
   ProductModel({
     required this.id,
@@ -35,6 +36,7 @@ class ProductModel {
     this.categoryName,
     required this.isInStock,
     required this.isLowStock,
+    this.hidePriceFromSellers = false,
   });
 
   /// Create from JSON
@@ -64,6 +66,7 @@ class ProductModel {
       categoryName: json['categoryName'] as String?,
       isInStock: json['isInStock'] ?? true,
       isLowStock: json['isLowStock'] ?? false,
+      hidePriceFromSellers: json['hidePriceFromSellers'] ?? false,
     );
   }
 
@@ -100,6 +103,7 @@ class ProductModel {
       'minThreshold': minThreshold,
       'unit': unit,
       'categoryId': categoryId,
+      'hidePriceFromSellers': hidePriceFromSellers,
     };
   }
 }
