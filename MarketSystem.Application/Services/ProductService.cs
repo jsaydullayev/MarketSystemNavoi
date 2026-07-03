@@ -132,7 +132,8 @@ public class ProductService : IProductService
             MinThreshold = request.MinThreshold,
             Unit = (UnitType)unitValue,  // ✅ NEW: Unit type
             MarketId = marketId.Value,  // Multi-tenancy
-            CategoryId = request.CategoryId  // Category
+            CategoryId = request.CategoryId,  // Category
+            HidePriceFromSellers = request.HidePriceFromSellers
         };
 
         await _unitOfWork.Products.AddAsync(product, cancellationToken);
@@ -167,6 +168,7 @@ public class ProductService : IProductService
         product.MinThreshold = request.MinThreshold;
         product.Unit = (UnitType)unitValue;  // ✅ NEW: Update unit
         product.CategoryId = request.CategoryId;  // Category
+        product.HidePriceFromSellers = request.HidePriceFromSellers;
 
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -293,7 +295,8 @@ public class ProductService : IProductService
             product.IsTemporary,
             product.IsInStock(1),  // Simplified check
             product.IsLowStock,
-            product.ImageUrl
+            product.ImageUrl,
+            product.HidePriceFromSellers
         );
     }
 }

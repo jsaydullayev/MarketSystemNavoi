@@ -35,23 +35,31 @@ class WelcomeScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl3, // 24 horizontal
-              AppSpacing.xl4, // 32 top
-              AppSpacing.xl3,
-              AppSpacing.xl3,
-            ),
-            child: Column(
-              children: [
-                _buildTopBar(context, isDark),
-                const Spacer(flex: 2),
-                _buildBrandSection(context),
-                const Spacer(flex: 3),
-                _buildActions(context),
-                const SizedBox(height: AppSpacing.lg),
-                _buildPrivacyCaption(context, isDark),
-              ],
+          // Web / keng ekranda kontent butun viewport kengligiga cho'zilmasin —
+          // markazda, sobit maksimal kenglikdagi ustunga (mobil-kartaga o'xshash)
+          // cheklaymiz. Mobil ekranda ustun baribir to'liq kenglikni egallaydi.
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl3, // 24 horizontal
+                  AppSpacing.xl4, // 32 top
+                  AppSpacing.xl3,
+                  AppSpacing.xl3,
+                ),
+                child: Column(
+                  children: [
+                    _buildTopBar(context, isDark),
+                    const Spacer(flex: 2),
+                    _buildBrandSection(context),
+                    const Spacer(flex: 3),
+                    _buildActions(context),
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildPrivacyCaption(context, isDark),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -381,7 +389,7 @@ class _ThemeToggleButton extends StatelessWidget {
           child: Icon(
             isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round_outlined,
             key: ValueKey(isDark),
-            color: isDark ? Colors.amber : context.colors.text,
+            color: isDark ? AppColors.amber : context.colors.text,
             size: 20,
           ),
         ),

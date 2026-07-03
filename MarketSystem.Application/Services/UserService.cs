@@ -3,6 +3,7 @@ using MarketSystem.Application.Interfaces;
 using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Enums;
+using MarketSystem.Domain.Exceptions;
 using MarketSystem.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -88,7 +89,7 @@ public class UserService : IUserService
         if (await _unitOfWork.Users.AnyAsync(
                 u => u.Username == request.Username && u.MarketId == currentMarketId,
                 cancellationToken))
-            throw new InvalidOperationException($"Username '{request.Username}' already exists");
+            throw new DuplicateUsernameException(request.Username);
 
         var user = new User
         {

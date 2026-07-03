@@ -84,7 +84,10 @@ public record ProductDto(
     [property: JsonPropertyName("isInStock")] bool IsInStock,
     [property: JsonPropertyName("isLowStock")] bool IsLowStock,
     // Server-nisbiy URL yoki null. Faqat savdo (POS) ekranida ko'rsatish uchun.
-    [property: JsonPropertyName("imageUrl")] string? ImageUrl = null
+    [property: JsonPropertyName("imageUrl")] string? ImageUrl = null,
+    // True bo'lsa — bu mahsulot narxi POS oqimida Seller roliga yashiriladi
+    // (klient tomonida gate qilinadi). Mahsulotlar bo'limida narx baribir ko'rinadi.
+    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false
 );
 
 /// <summary>
@@ -143,7 +146,9 @@ public record CreateProductDto(
     // bor tovarlar uchun. 0 bo'lsa, qoldiq keyin zakup orqali to'ldiriladi.
     [property: JsonPropertyName("quantity")]
     [param: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
-    decimal Quantity = 0
+    decimal Quantity = 0,
+
+    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false
 );
 
 public record UpdateProductDto(
@@ -168,5 +173,6 @@ public record UpdateProductDto(
 
     [property: JsonPropertyName("categoryId")] int? CategoryId,
     [property: JsonPropertyName("unit")] int Unit = 1,
-    [property: JsonPropertyName("isTemporary")] bool IsTemporary = false
+    [property: JsonPropertyName("isTemporary")] bool IsTemporary = false,
+    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false
 );

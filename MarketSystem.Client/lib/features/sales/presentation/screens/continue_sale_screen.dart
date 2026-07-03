@@ -158,6 +158,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             'minSalePrice':
                 (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
             'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
+            'hidePriceFromSellers': product['hidePriceFromSellers'] == true,
             'quantity': qty,
             'comment': comment ?? '',
           }),
@@ -291,6 +292,7 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         'salePrice': currentPrice,
         'minSalePrice': (item['minSalePrice'] as num?)?.toDouble() ?? 0.0,
         'costPrice': (item['costPrice'] as num?)?.toDouble() ?? 0.0,
+        'hidePriceFromSellers': item['hidePriceFromSellers'] == true,
         'id': item['productId'] ?? '',
         'unitName': item['unitName'] ?? l10n.piece,
         'initialQuantity': currentQty,
@@ -398,7 +400,14 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
         quantity: returnQty,
       );
       await _loadData(silent: true);
-      if (mounted) _showSnack(l10n.productReturned, isError: false);
+      if (!mounted) return;
+      _showSnack(l10n.productReturned, isError: false);
+      // Oxirgi tovar qaytarilib savdoda mahsulot qolmasa, backend savdoni
+      // yopadi (Closed) — bo'sh davom-etish ekranida qolmasdan ro'yxatga
+      // qaytamiz.
+      if (_cartItems.isEmpty) {
+        Navigator.pop(context, true);
+      }
     } catch (e) {
       if (mounted) _showSnack('${l10n.error}: $e', isError: true);
     }
@@ -423,12 +432,23 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
           // Sequential, not Future.wait: multi-tender payments otherwise hit
           // the single per-market CashRegister row and the per-sale Debt row
           // concurrently, colliding on their xmin tokens → 409.
+          // Qarz qoldirilsa — standart to'lov muddati +14 kun (keyin Qarz
+          // bo'limidan aniq sanaga o'zgartirsa bo'ladi).
+          final dueIso = useDebt
+              ? DateTime.now().add(const Duration(days: 14)).toIso8601String()
+              : null;
           for (final payment in payments) {
             await salesService.addPayment(
               saleId: widget.saleId,
               paymentType: payment['paymentType'],
               amount: payment['amount'],
+              dueDate: dueIso,
             );
+          }
+          // To'liq qarz (0 to'lov): to'lovsiz qarzni markSaleAsDebt bilan
+          // yakunlaymiz — aks holda sotuv Draft holatida qolib ketadi.
+          if (useDebt && payments.isEmpty) {
+            await salesService.markSaleAsDebt(widget.saleId, dueDate: dueIso);
           }
           if (mounted) {
             Navigator.pop(context);

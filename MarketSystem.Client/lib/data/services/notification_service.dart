@@ -37,6 +37,10 @@ enum AlertCategory {
   /// Shows the customer + remaining amount.
   recentDebt,
 
+  /// Muddatga yaqin qarzlar — DueDate hali o'tmagan, lekin [_dueSoonWithinDays]
+  /// kun yoki kamroq qolgan (owner/admin uchun "to'lov yaqinlashdi" eslatmasi).
+  dueSoonPayment,
+
   /// Overdue debts — open debts older than [_overdueAfterDays].
   overduePayment,
 }
@@ -49,6 +53,7 @@ class AlertItem {
     this.amount,
     this.createdAt,
     this.ageDays,
+    this.daysUntilDue,
     this.quantity,
     this.threshold,
     this.unit,
@@ -79,6 +84,10 @@ class AlertItem {
   /// [AlertCategory.overduePayment]).
   final int? ageDays;
 
+  /// For due-soon debts: calendar days until DueDate. 0 = bugun, 1 = ertaga,
+  /// manfiy = o'tgan (set when category is [AlertCategory.dueSoonPayment]).
+  final int? daysUntilDue;
+
   /// For low-stock products: current on-hand quantity.
   final double? quantity;
 
@@ -96,14 +105,20 @@ class AlertFeed {
   const AlertFeed({
     this.lowStock = const [],
     this.recentDebts = const [],
+    this.dueSoonDebts = const [],
     this.overdueDebts = const [],
   });
 
   final List<AlertItem> lowStock;
   final List<AlertItem> recentDebts;
+  final List<AlertItem> dueSoonDebts;
   final List<AlertItem> overdueDebts;
 
-  int get total => lowStock.length + recentDebts.length + overdueDebts.length;
+  int get total =>
+      lowStock.length +
+      recentDebts.length +
+      dueSoonDebts.length +
+      overdueDebts.length;
   bool get isEmpty => total == 0;
 }
 
@@ -122,6 +137,9 @@ class NotificationService {
   // still be deciding whether to chase.
   static const int _overdueAfterDays = 14;
   static const int _recentWindowDays = 7;
+  // Muddatga shu kun yoki kamroq qolgan (lekin o'tmagan) qarzlar "muddatga
+  // yaqin" hisoblanadi — owner/admin'ga to'lov eslatmasi (5-3-1 kun).
+  static const int _dueSoonWithinDays = 5;
 
   /// Total count for the bell badge. Cheap fallback path that doesn't
   /// require fetching the full lists; falls through to `loadAlerts().total`
@@ -151,10 +169,13 @@ class NotificationService {
     // the same endpoint twice with different filters.
     final now = DateTime.now();
     final recent = <AlertItem>[];
+    final dueSoon = <AlertItem>[];
     final overdue = <AlertItem>[];
     for (final d in allDebts) {
       if (d.category == AlertCategory.overduePayment) {
         overdue.add(d);
+      } else if (d.category == AlertCategory.dueSoonPayment) {
+        dueSoon.add(d);
       } else {
         // Hide debts older than the recent window so the "recent" bucket
         // doesn't double-count with overdue — overdue items only.
@@ -166,10 +187,15 @@ class NotificationService {
         }
       }
     }
+    // Muddatga yaqin qarzlar eng shoshilinch (kam kun qolgan) tepada.
+    dueSoon.sort(
+      (a, b) => (a.daysUntilDue ?? 0).compareTo(b.daysUntilDue ?? 0),
+    );
 
     return AlertFeed(
       lowStock: lowStock,
       recentDebts: recent,
+      dueSoonDebts: dueSoon,
       overdueDebts: overdue,
     );
   }
@@ -230,27 +256,35 @@ class NotificationService {
       final customerName = (d['customerName'] ?? '').toString().trim();
       final ageDays = created == null ? 0 : now.difference(created).inDays;
 
-      // Prefer the explicit dueDate from the backend; fall back to the
-      // 14-day heuristic for legacy debts that predate the migration.
-      final isOverdue = dueDate != null
-          ? now.isAfter(dueDate)
-          : ageDays >= _overdueAfterDays;
+      // Muddat (dueDate) bo'yicha tasnif: o'tgan → overdue; 5 kun yoki kamroq
+      // qolgan → dueSoon (to'lov eslatmasi); aks holda recent. Muddat yo'q
+      // (eski qarz) bo'lsa — 14 kunlik evristika.
+      final daysUntil = _daysUntilDue(dueDate, now);
+      final AlertCategory category;
+      if (dueDate != null) {
+        if (daysUntil! < 0) {
+          category = AlertCategory.overduePayment;
+        } else if (daysUntil <= _dueSoonWithinDays) {
+          category = AlertCategory.dueSoonPayment;
+        } else {
+          category = AlertCategory.recentDebt;
+        }
+      } else {
+        category = ageDays >= _overdueAfterDays
+            ? AlertCategory.overduePayment
+            : AlertCategory.recentDebt;
+      }
       items.add(
         AlertItem(
-          category: isOverdue
-              ? AlertCategory.overduePayment
-              : AlertCategory.recentDebt,
+          category: category,
           // Customer fallback ("Mijoz" / "Клиент") will be filled by the UI
           // layer when title is empty — keeping it untranslated here.
           title: customerName.isEmpty ? '' : customerName,
           subjectId: (d['id'] ?? '').toString(),
           amount: remaining.toDouble(),
           createdAt: created,
-          // Age in days — the UI uses it for both the recent ("Bugun · …" /
-          // "Сегодня · …" when fresh) and the overdue ("Qarz N kunda" /
-          // "Долг N дней назад") description lines, picking the right
-          // wording in the active locale.
           ageDays: ageDays,
+          daysUntilDue: daysUntil,
         ),
       );
     }
@@ -297,5 +331,15 @@ class NotificationService {
     if (v is DateTime) return v;
     if (v is String && v.isNotEmpty) return DateTime.tryParse(v);
     return null;
+  }
+
+  /// Muddatga qolgan kalendar kunlar (mahalliy sana bo'yicha). 0 = bugun,
+  /// 1 = ertaga, manfiy = o'tgan.
+  int? _daysUntilDue(DateTime? dueDate, DateTime now) {
+    if (dueDate == null) return null;
+    final d = dueDate.toLocal();
+    final due = DateTime(d.year, d.month, d.day);
+    final today = DateTime(now.year, now.month, now.day);
+    return due.difference(today).inDays;
   }
 }

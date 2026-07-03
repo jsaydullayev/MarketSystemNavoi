@@ -150,6 +150,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             'productId': product['id'],
             'productName': product['name'],
             'salePrice': price,
+            'minSalePrice': (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+            'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
+            'hidePriceFromSellers': product['hidePriceFromSellers'] == true,
             'quantity': qty,
             'comment': comment,
           });
@@ -221,6 +224,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         'salePrice': (item['salePrice'] ?? 0.0).toDouble(),
         'minSalePrice': (item['minSalePrice'] ?? 0.0).toDouble(),
         'costPrice': (item['costPrice'] ?? 0.0).toDouble(),
+        'hidePriceFromSellers': item['hidePriceFromSellers'] == true,
         'id': item['productId'] ?? '',
         'unitName': (item['unitName'] ?? 'dona'),
         'initialQuantity': currentQuantity,
@@ -251,7 +255,18 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       context,
       customers: _customers,
       selectedId: _selectedCustomer?['id']?.toString(),
-      onSelected: (c) => setState(() => _selectedCustomer = c),
+      onSelected: (c) => setState(() {
+        // Quick-add orqali yaratilgan yangi mijozni ro'yxatga ham qo'shamiz —
+        // shunda picker qayta ochilganda ko'rinadi. Mavjud mijoz tanlansa,
+        // takror qo'shilmaydi (id bo'yicha tekshiramiz).
+        final id = c['id']?.toString();
+        if (id != null &&
+            id.isNotEmpty &&
+            !_customers.any((e) => (e as Map)['id']?.toString() == id)) {
+          _customers.add(c);
+        }
+        _selectedCustomer = c;
+      }),
     );
   }
 
@@ -321,16 +336,22 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             // Payments SEQUENTIALLY too — multi-tender (e.g. Cash + Terminal)
             // otherwise hits the single per-market CashRegister row and the
             // per-sale Debt row concurrently → 409.
+            // Qarz qoldirilsa — standart to'lov muddati +14 kun (keyin Qarz
+            // bo'limidan aniq sanaga o'zgartirsa bo'ladi).
+            final dueIso = useDebt
+                ? DateTime.now().add(const Duration(days: 14)).toIso8601String()
+                : null;
             for (final payment in payments) {
               await salesService.addPayment(
                 saleId: saleId,
                 paymentType: payment['paymentType'],
                 amount: payment['amount'],
+                dueDate: dueIso,
               );
             }
 
             if (useDebt && payments.isEmpty) {
-              await salesService.markSaleAsDebt(saleId);
+              await salesService.markSaleAsDebt(saleId, dueDate: dueIso);
             }
 
             if (!mounted) return;

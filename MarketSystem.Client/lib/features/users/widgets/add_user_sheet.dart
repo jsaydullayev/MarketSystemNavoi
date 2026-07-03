@@ -18,6 +18,7 @@ import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/errors/api_exception.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/services/users_service.dart';
 
@@ -40,10 +41,10 @@ class AddUserSheet extends StatefulWidget {
 // Role chip colors mirror the staff list/detail so the picker chip reads
 // consistently across the feature. Defined here so the role picker doesn't
 // have to import the card widget.
-const _adminBg = Color(0xFFF3E8FF);
-const _adminFg = Color(0xFF7C3AED);
-const _sellerBg = Color(0xFFECFDF5);
-const _sellerFg = Color(0xFF047857);
+const _adminBg = AppColors.roleAdminBg;
+const _adminFg = AppColors.roleAdminFg;
+const _sellerBg = AppColors.roleSellerBg;
+const _sellerFg = AppColors.roleSellerFg;
 
 class _AddUserSheetState extends State<AddUserSheet> {
   final _formKey = GlobalKey<FormState>();
@@ -55,6 +56,9 @@ class _AddUserSheetState extends State<AddUserSheet> {
   bool _loading = false;
   bool _obscPass = true;
   bool _obscConf = true;
+  // Backend rad etgan (band) username'lar. Inline validatsiya shu ro'yxatga
+  // qarab maydon ostida xato ko'rsatadi; boshqa nomga o'zgartirilsa, tozalanadi.
+  final Set<String> _takenUsernames = {};
 
   @override
   void dispose() {
@@ -93,9 +97,26 @@ class _AddUserSheetState extends State<AddUserSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      // Takroriy username — o'sha nomni "band" ro'yxatiga qo'shib, formani
+      // qayta validatsiya qilamiz (maydon ostida inline xato) va aniq snackbar
+      // ko'rsatamiz. Boshqa xatolarda backend xabarini (message) ko'rsatamiz.
+      if (e is ApiException && e.isUsernameTaken) {
+        setState(
+          () => _takenUsernames.add(_userCtrl.text.trim().toLowerCase()),
+        );
+        _formKey.currentState!.validate();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.usernameTaken(_userCtrl.text.trim())),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+        return;
+      }
+      final msg = e is ApiException ? e.message : e.toString();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${l10n.error}: $e'),
+          content: Text('${l10n.error}: $msg'),
           backgroundColor: AppColors.danger,
         ),
       );
@@ -170,6 +191,9 @@ class _AddUserSheetState extends State<AddUserSheet> {
                           }
                           if (v.length < 3) return l10n.usernameMinLength;
                           if (v.contains(' ')) return l10n.noSpacesAllowed;
+                          if (_takenUsernames.contains(v.trim().toLowerCase())) {
+                            return l10n.usernameTaken(v.trim());
+                          }
                           return null;
                         },
                       ),

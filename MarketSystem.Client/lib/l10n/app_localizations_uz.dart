@@ -532,6 +532,11 @@ class AppLocalizationsUz extends AppLocalizations {
   String get usernameMinLength => 'Username kamida 3 ta belgi';
 
   @override
+  String usernameTaken(String username) {
+    return '\'$username\' band';
+  }
+
+  @override
   String get passwordMinLength =>
       'Parol kamida 8 belgi, 1 harf va 1 raqam o\'z ichiga olishi kerak';
 
@@ -1879,6 +1884,24 @@ class AppLocalizationsUz extends AppLocalizations {
   }
 
   @override
+  String get alertsDueSoonTitle => 'To\'lov muddati yaqinlashdi';
+
+  @override
+  String alertDescDueSoon(int days, String amount) {
+    return 'To\'lovga $days kun qoldi · $amount UZS';
+  }
+
+  @override
+  String alertDescDueToday(String amount) {
+    return 'Bugun to\'lov muddati · $amount UZS';
+  }
+
+  @override
+  String alertDescDueTomorrow(String amount) {
+    return 'Ertaga to\'lov muddati · $amount UZS';
+  }
+
+  @override
   String alertDescLowStock(String qty, String unit, String threshold) {
     return 'Qoldiq: $qty $unit · min $threshold $unit';
   }
@@ -2086,6 +2109,20 @@ class AppLocalizationsUz extends AppLocalizations {
   @override
   String get temporaryProductDescription =>
       'Omborda vaqtincha saqlanadigan mahsulot';
+
+  @override
+  String get hidePriceFromSellerTitle => 'Narxni sotuvchidan yashirish';
+
+  @override
+  String get hidePriceFromSellerDescription =>
+      'Sotuvda narx ko\'rinmaydi; sotuvchi narxni qo\'lda kiritadi';
+
+  @override
+  String get showPriceTitle => 'Narxni ko\'rsatish';
+
+  @override
+  String get showPriceDescription =>
+      'O\'chirilsa, sotuvchiga sotuv vaqtida narx (tannarx va sotuv narxi) ko\'rsatilmaydi';
 
   @override
   String get salePriceField => 'Sotish narxi (so\'m)';
@@ -2353,11 +2390,6 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get createOwnerFailed => 'Yaratishda xatolik yuz berdi';
-
-  @override
-  String usernameTaken(String username) {
-    return '\'$username\' band';
-  }
 
   @override
   String marketNameTaken(String name) {

@@ -14,6 +14,8 @@ class CustomerDebtCard extends StatelessWidget {
   final double remainingDebt;
   final VoidCallback onTap;
   final VoidCallback onPay;
+  // RBAC: debts.manage bo'lmasa, "To'lash" tugmasi ko'rsatilmaydi.
+  final bool canManage;
 
   const CustomerDebtCard({
     super.key,
@@ -23,6 +25,7 @@ class CustomerDebtCard extends StatelessWidget {
     required this.remainingDebt,
     required this.onTap,
     required this.onPay,
+    this.canManage = true,
   });
 
   /// GAP-1 — pick the soonest dueDate across this customer's open debts.
@@ -88,7 +91,7 @@ class CustomerDebtCard extends StatelessWidget {
                     child: DueDateBadge(dueDate: dueRaw),
                   ),
                 ],
-                if (hasDebt) ...[
+                if (hasDebt && canManage) ...[
                   const SizedBox(height: AppSpacing.lg),
                   _PayButton(onTap: onPay),
                 ],

@@ -220,6 +220,31 @@ public class DebtService : IDebtService
         });
     }
 
+    public async Task<DebtDto?> UpdateDueDateAsync(Guid debtId, DateTime? dueDate, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarket.GetCurrentMarketId();
+
+        var debt = await _context.Debts
+            .Include(d => d.Customer)
+            .Include(d => d.Sale)
+                .ThenInclude(s => s!.SaleItems)
+                    .ThenInclude(si => si.Product)
+            .FirstOrDefaultAsync(d => d.Id == debtId && d.MarketId == marketId, cancellationToken);
+
+        if (debt is null)
+            return null;
+
+        // Npgsql timestamptz faqat UTC qabul qiladi; kelgan sanani (faqat kun,
+        // vaqtsiz) UTC deb belgilaymiz — aks holda "Kind=Unspecified" 500 beradi.
+        debt.DueDate = dueDate.HasValue
+            ? DateTime.SpecifyKind(dueDate.Value.Date, DateTimeKind.Utc)
+            : null;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Debt {DebtId} due date updated to {DueDate}.", debtId, dueDate);
+        return MapToDto(debt);
+    }
+
     private static DebtDto MapToDto(Debt debt)
     {
         List<SaleItemDto>? saleItems = null;

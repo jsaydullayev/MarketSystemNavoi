@@ -37,3 +37,11 @@ public record PayDebtResultDto(
     decimal PaymentAmount,
     string DebtStatus
 );
+
+/// <summary>
+/// Qarzning to'lov muddatini (due date) yangilash tanasi. Null yuborilsa —
+/// muddat olib tashlanadi.
+/// </summary>
+public record UpdateDebtDueDateDto(
+    [property: JsonPropertyName("dueDate")] DateTime? DueDate
+);

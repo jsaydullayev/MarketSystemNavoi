@@ -158,14 +158,18 @@ class GreetingCard extends StatelessWidget {
               ],
             ),
           ),
-          _IconCircle(
-            icon: Icons.notifications_none_rounded,
-            badgeCount: unreadNotifications > 0
-                ? unreadNotifications
-                : (hasNotification ? 1 : 0),
-            onTap: onNotificationTap,
-          ),
-          const SizedBox(width: AppSpacing.md),
+          // Bildirishnoma qo'ng'irog'i — faqat notifications.access ruxsati
+          // bo'lganda ko'rsatiladi (dashboard onNotificationTap'ni null qiladi).
+          if (onNotificationTap != null) ...[
+            _IconCircle(
+              icon: Icons.notifications_none_rounded,
+              badgeCount: unreadNotifications > 0
+                  ? unreadNotifications
+                  : (hasNotification ? 1 : 0),
+              onTap: onNotificationTap,
+            ),
+            const SizedBox(width: AppSpacing.md),
+          ],
           _IconCircle(icon: Icons.settings_outlined, onTap: onSettingsTap),
         ],
       ),

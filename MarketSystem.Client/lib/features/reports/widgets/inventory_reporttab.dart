@@ -100,7 +100,7 @@ class InventoryReportTab extends StatelessWidget {
                   value:
                       '${NumberFormatter.formatDecimal(potentialProfit)} ${l10n.currencySom}',
                   icon: Icons.trending_up_rounded,
-                  color: const Color(0xFF8B5CF6),
+                  color: AppColors.accentViolet,
                 ),
               ),
             ],

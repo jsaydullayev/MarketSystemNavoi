@@ -34,6 +34,32 @@ class AppColors {
   static const Color avatarPink = Color(
     0xFFEC4899,
   ); // pink-500 (avatar palette)
+  static const Color avatarOrange = Color(
+    0xFFF97316,
+  ); // orange-500 (avatar palette)
+  static const Color indigo = Color(0xFF6366F1); // indigo-500 (sale "closed")
+
+  // Decorative accent tones (profile row icons, decorative tiles).
+  static const Color accentBlue = Color(0xFF2563EB); // blue-600
+  static const Color accentBlueTint = Color(0xFFEFF6FF); // blue-50
+  static const Color accentPinkStrong = Color(0xFFDB2777); // pink-600
+  static const Color accentPinkTint = Color(0xFFFCE7F3); // pink-100
+  static const Color accentPurpleTint = Color(0xFFF3E8FF); // purple-100
+
+  // Golden amber (Material `Colors.amber`) — theme-toggle sun icon.
+  static const Color amber = Color(0xFFFFC107);
+
+  // Role badge palette (staff list + user sheets) — per demo spec.
+  //   Admin : purple-100 bg / violet-600 fg
+  //   Seller: emerald-50 bg / emerald-700 fg
+  static const Color roleAdminBg = accentPurpleTint; // purple-100
+  static const Color roleAdminFg = accentPurple; // violet-600 (#7C3AED)
+  static const Color roleSellerBg = Color(0xFFECFDF5); // emerald-50
+  static const Color roleSellerFg = successDeep; // emerald-700 (#047857)
+
+  // Report hero banner gradient (always-dark by design, both themes).
+  static const Color heroGradientTop = Color(0xFF0F172A); // slate-900
+  static const Color heroGradientBottom = Color(0xFF1E293B); // slate-800
 
   // Surface & borders
   static const Color surface = Color(0xFFFFFFFF);

@@ -107,7 +107,18 @@ public record AddPaymentDto(
 
     [property: JsonPropertyName("amount")]
     [param: Range(0.01, double.MaxValue, ErrorMessage = "To'lov miqdori 0 dan katta bo'lishi kerak")]
-    decimal Amount
+    decimal Amount,
+
+    // Qisman to'lov qarz qoldirsa — yaratilgan qarzning to'lov muddati
+    // (ixtiyoriy). To'liq to'lovlarda e'tiborga olinmaydi.
+    [property: JsonPropertyName("dueDate")] DateTime? DueDate = null
+);
+
+/// <summary>
+/// "Qarzga olish" (to'liq qarz) uchun ixtiyoriy to'lov muddati (due date).
+/// </summary>
+public record MarkSaleAsDebtDto(
+    [property: JsonPropertyName("dueDate")] DateTime? DueDate = null
 );
 
 public record UpdateSaleItemPriceDto(

@@ -179,6 +179,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
+                if (feed.dueSoonDebts.isNotEmpty) ...[
+                  SectionHeader(title: l10n.alertsDueSoonTitle),
+                  const SizedBox(height: AppSpacing.md),
+                  ..._buildSection(
+                    context,
+                    items: feed.dueSoonDebts,
+                    tone: AlertTone.warning,
+                    emoji: '⏰',
+                    onTap: _openDebt,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
                 if (feed.lowStock.isNotEmpty) ...[
                   SectionHeader(title: l10n.alertsLowStockTitle),
                   const SizedBox(height: AppSpacing.md),
@@ -257,6 +269,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           item.ageDays ?? 0,
           _fmtUzs(item.amount ?? 0),
         );
+      case AlertCategory.dueSoonPayment:
+        final days = item.daysUntilDue ?? 0;
+        final amount = _fmtUzs(item.amount ?? 0);
+        if (days <= 0) return l10n.alertDescDueToday(amount);
+        if (days == 1) return l10n.alertDescDueTomorrow(amount);
+        return l10n.alertDescDueSoon(days, amount);
     }
   }
 

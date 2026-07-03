@@ -7,14 +7,15 @@
 // keeps the rest of the migration trivial.
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/tokens/app_tokens.dart';
 
 class CustomerAvatarPalette {
   static const _palette = <Color>[
-    Color(0xFFF97316), // orange
-    Color(0xFF3B82F6), // blue
-    Color(0xFF10B981), // green
-    Color(0xFF8B5CF6), // purple
-    Color(0xFFEC4899), // pink
+    AppColors.avatarOrange, // orange
+    AppColors.info, // blue
+    AppColors.success, // green
+    AppColors.accentViolet, // purple
+    AppColors.avatarPink, // pink
   ];
 
   /// Stable colour for a customer based on a hash of the label string.

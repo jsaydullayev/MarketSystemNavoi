@@ -100,4 +100,24 @@ class DebtService {
       fallbackMessage: 'Failed to pay debt',
     );
   }
+
+  // Qarz to'lov muddatini (due date) yangilash. dueDate ISO-8601 satr yoki
+  // null (muddatni olib tashlash uchun).
+  Future<dynamic> updateDueDate({
+    required String debtId,
+    required String? dueDate,
+  }) async {
+    final response = await _httpService.put(
+      '${ApiConstants.debts}/$debtId/due-date',
+      body: {'dueDate': dueDate},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to update due date',
+    );
+  }
 }

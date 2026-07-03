@@ -16,6 +16,7 @@ import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../data/services/report_service.dart';
 import '../../../data/services/users_service.dart';
@@ -233,28 +234,38 @@ class _UsersScreenState extends State<UsersScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // RBAC: foydalanuvchi boshqarish ruxsati (users.manage) bo'lmasa, qo'shish
+    // FAB va kartadagi bloklash/o'chirish tugmalari ko'rsatilmaydi.
+    final canManage = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).can(Permissions.usersManage);
 
     return NetworkWrapper(
       onRetry: _loadUsers,
       child: Scaffold(
         backgroundColor: context.colors.bg,
         appBar: CommonAppBar(title: l10n.users, onRefresh: _loadUsers),
-        body: _buildBody(l10n),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => AddUserSheet.show(context),
-          backgroundColor: context.colors.brand,
-          foregroundColor: context.colors.onBrand,
-          icon: const Icon(Icons.person_add_rounded),
-          label: Text(
-            l10n.newUser,
-            style: AppTextStyles.labelLarge().copyWith(color: Colors.white),
-          ),
-        ),
+        body: _buildBody(l10n, canManage),
+        floatingActionButton: !canManage
+            ? null
+            : FloatingActionButton.extended(
+                onPressed: () => AddUserSheet.show(context),
+                backgroundColor: context.colors.brand,
+                foregroundColor: context.colors.onBrand,
+                icon: const Icon(Icons.person_add_rounded),
+                label: Text(
+                  l10n.newUser,
+                  style: AppTextStyles.labelLarge().copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
       ),
     );
   }
 
-  Widget _buildBody(AppLocalizations l10n) {
+  Widget _buildBody(AppLocalizations l10n, bool canManage) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -310,6 +321,7 @@ class _UsersScreenState extends State<UsersScreen> {
               return UserCard(
                 key: ValueKey('user_${u['id']}'),
                 user: u,
+                canManage: canManage,
                 onTap: () =>
                     UserInfoSheet.show(context, user: u, onChanged: _loadUsers),
                 onToggleStatus: () => _toggleStatus(u),

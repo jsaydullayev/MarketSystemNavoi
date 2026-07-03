@@ -10,6 +10,7 @@ import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/utils/file_helper.dart' as core_file_helper;
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/auth/permissions.dart';
 import '../../../../data/services/sales_service.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/sale_entity.dart';
@@ -175,6 +176,11 @@ class _SalesScreenState extends State<SalesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // RBAC: sotuv yaratish / eksport ruxsati bo'lmasa, tegishli amal tugmasini
+    // umuman ko'rsatmaymiz (backend baribir 403 qaytaradi).
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final canCreate = authProvider.can(Permissions.salesCreate);
+    final canExport = authProvider.can(Permissions.salesExport);
 
     return BlocListener<SalesBloc, SalesState>(
       listener: (context, state) {
@@ -194,7 +200,9 @@ class _SalesScreenState extends State<SalesScreen> {
           appBar: CommonAppBar(
             title: l10n.sales,
             onRefresh: _loadSales,
-            extraActions: _isExporting
+            extraActions: !canExport
+                ? const <Widget>[]
+                : _isExporting
                 ? [
                     Center(
                       child: Padding(
@@ -370,7 +378,9 @@ class _SalesScreenState extends State<SalesScreen> {
               ),
             ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
+          floatingActionButton: !canCreate
+              ? null
+              : FloatingActionButton.extended(
             onPressed: () async {
               final result = await Navigator.push(
                 context,

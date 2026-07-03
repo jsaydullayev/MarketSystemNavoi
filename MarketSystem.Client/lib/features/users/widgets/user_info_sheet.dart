@@ -57,10 +57,10 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
   }
 
   // Role chip colors (mirror UserCard so chips read consistently).
-  static const _adminBg = Color(0xFFF3E8FF);
-  static const _adminFg = Color(0xFF7C3AED);
-  static const _sellerBg = Color(0xFFECFDF5);
-  static const _sellerFg = Color(0xFF047857);
+  static const _adminBg = AppColors.roleAdminBg;
+  static const _adminFg = AppColors.roleAdminFg;
+  static const _sellerBg = AppColors.roleSellerBg;
+  static const _sellerFg = AppColors.roleSellerFg;
 
   ({Color bg, Color fg}) _roleColors(BuildContext context, String role) {
     switch (role.toLowerCase()) {

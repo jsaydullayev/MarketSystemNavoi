@@ -236,6 +236,10 @@ class _ReportsScreenState extends State<ReportsScreen>
     final l10n = AppLocalizations.of(context)!;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final canViewCostPrice = authProvider.can(Permissions.dataCostPrice);
+    // Excel eksport ruxsati bo'lmasa (backend 403 qaytaradi), yuklab olish
+    // tugmasini umuman ko'rsatmaymiz — foydalanuvchi mavjud bo'lmagan amalni
+    // bosib xato olmasin.
+    final canExport = authProvider.can(Permissions.reportsExport);
 
     return NetworkWrapper(
       onRetry: _loadReports,
@@ -244,24 +248,27 @@ class _ReportsScreenState extends State<ReportsScreen>
         appBar: CommonAppBar(
           title: l10n.reports,
           extraActions: [
-            _isDownloading
-                ? Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: context.colors.brand,
+            // Faqat Excel eksport ruxsati bor foydalanuvchiga ko'rsatamiz.
+            if (canExport)
+              _isDownloading
+                  ? Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: context.colors.brand,
+                        ),
                       ),
+                    )
+                  : IconButton(
+                      icon: const Icon(Icons.download_rounded),
+                      tooltip: l10n.downloadExcel,
+                      onPressed: _downloadExcelReport,
                     ),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.download_rounded),
-                    tooltip: l10n.downloadExcel,
-                    onPressed: _downloadExcelReport,
-                  ),
           ],
+
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(52),
             child: ReportTabBar(controller: _tabController),

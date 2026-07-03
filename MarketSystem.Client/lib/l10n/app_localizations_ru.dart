@@ -532,6 +532,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get usernameMinLength => 'Имя пользователя минимум 3 символа';
 
   @override
+  String usernameTaken(String username) {
+    return '\'$username\' занят';
+  }
+
+  @override
   String get passwordMinLength => 'Минимум 8 символов, 1 буква и 1 цифра';
 
   @override
@@ -1882,6 +1887,24 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get alertsDueSoonTitle => 'Срок оплаты приближается';
+
+  @override
+  String alertDescDueSoon(int days, String amount) {
+    return 'До оплаты $days дн. · $amount UZS';
+  }
+
+  @override
+  String alertDescDueToday(String amount) {
+    return 'Оплата сегодня · $amount UZS';
+  }
+
+  @override
+  String alertDescDueTomorrow(String amount) {
+    return 'Оплата завтра · $amount UZS';
+  }
+
+  @override
   String alertDescLowStock(String qty, String unit, String threshold) {
     return 'Остаток: $qty $unit · мин $threshold $unit';
   }
@@ -2089,6 +2112,20 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get temporaryProductDescription =>
       'Товар, временно хранимый на складе';
+
+  @override
+  String get hidePriceFromSellerTitle => 'Скрыть цену от продавца';
+
+  @override
+  String get hidePriceFromSellerDescription =>
+      'В продаже цена скрыта; продавец вводит цену вручную';
+
+  @override
+  String get showPriceTitle => 'Показывать цену';
+
+  @override
+  String get showPriceDescription =>
+      'Если выключено, продавцу при продаже цена (себестоимость и цена продажи) не показывается';
 
   @override
   String get salePriceField => 'Цена продажи (сум)';
@@ -2356,11 +2393,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get createOwnerFailed => 'Ошибка при создании';
-
-  @override
-  String usernameTaken(String username) {
-    return '\'$username\' занят';
-  }
 
   @override
   String marketNameTaken(String name) {

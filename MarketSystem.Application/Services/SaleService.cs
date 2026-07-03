@@ -182,18 +182,19 @@ public partial class SaleService : ISaleService
         return sales.Select(MapSaleToDto);
     }
 
-    public async Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<SaleDto>> GetDraftSalesBySellerAsync(Guid? sellerId, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // ✅ OPTIMIZED: Single query with eager loading
+        // sellerId == null → butun do'kondagi draftlar (sellerlar hamkorligi);
+        // aks holda faqat o'sha sellerniki.
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
             .Include(s => s.SaleItems)
                 .ThenInclude(si => si.Product)
             .Include(s => s.Payments)
-            .Where(s => s.MarketId == marketId && s.SellerId == sellerId && s.Status == SaleStatus.Draft)
+            .Where(s => s.MarketId == marketId && (sellerId == null || s.SellerId == sellerId) && s.Status == SaleStatus.Draft)
             .OrderByDescending(s => s.CreatedAt)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -202,18 +203,18 @@ public partial class SaleService : ISaleService
         return sales.Select(MapSaleToDto);
     }
 
-    public async Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<SaleDto>> GetUnfinishedSalesBySellerAsync(Guid? sellerId, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
-        // Draft, Debt va Paid statusdagi savdolarni olish
+        // sellerId == null → butun do'kondagi tugatilmagan savdolar (hamkorlik).
         var sales = await _context.Sales
             .Include(s => s.Seller)
             .Include(s => s.Customer)
             .Include(s => s.SaleItems)
                 .ThenInclude(si => si.Product)
             .Include(s => s.Payments)
-            .Where(s => s.MarketId == marketId && s.SellerId == sellerId &&
+            .Where(s => s.MarketId == marketId && (sellerId == null || s.SellerId == sellerId) &&
                        (s.Status == SaleStatus.Draft || s.Status == SaleStatus.Debt || s.Status == SaleStatus.Paid))
             .OrderByDescending(s => s.CreatedAt)
             .AsNoTracking()
@@ -853,6 +854,9 @@ public partial class SaleService : ISaleService
                             TotalDebt = sale.TotalAmount,
                             RemainingDebt = sale.TotalAmount - sale.PaidAmount,
                             Status = DebtStatus.Open,
+                            DueDate = request.DueDate.HasValue
+                                ? DateTime.SpecifyKind(request.DueDate.Value.Date, DateTimeKind.Utc)
+                                : (DateTime?)null,
                             MarketId = sale.MarketId
                         };
                         await _unitOfWork.Debts.AddAsync(newDebt, cancellationToken);
@@ -1486,9 +1490,13 @@ public partial class SaleService : ISaleService
     /// <summary>
     /// Marks a sale as debt status
     /// </summary>
-    public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, CancellationToken cancellationToken = default)
+    public async Task<SaleDto?> MarkSaleAsDebtAsync(Guid saleId, DateTime? dueDate = null, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
+
+        // Npgsql timestamptz UTC talab qiladi — kun sanasini UTC deb belgilaymiz.
+        if (dueDate.HasValue)
+            dueDate = DateTime.SpecifyKind(dueDate.Value.Date, DateTimeKind.Utc);
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
@@ -1523,6 +1531,7 @@ public partial class SaleService : ISaleService
                     TotalDebt = sale.TotalAmount,
                     RemainingDebt = sale.TotalAmount - sale.PaidAmount,
                     Status = DebtStatus.Open,
+                    DueDate = dueDate,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.Debts.AddAsync(debt, cancellationToken);
@@ -1782,6 +1791,25 @@ public partial class SaleService : ISaleService
                         sale.Id);
                 }
                 _unitOfWork.Debts.Update(debt);
+            }
+
+            // Oxirgi tovar qaytarilib, savdoda hech qanday mahsulot qolmasa —
+            // savdo bekor qilinadi (Cancelled). Barcha tovar qaytarilgan =
+            // savdo amalda yo'q. Cancelled hisobotlardan chiqarib tashlanadi
+            // (filtr: != Draft && != Cancelled) — aks holda bo'sh (0 summa)
+            // savdo "savdolar soni"ni oshirib, o'rtachani buzardi.
+            if (isFullReturn)
+            {
+                var remainingItems = await _context.SaleItems
+                    .CountAsync(si => si.SaleId == saleId, cancellationToken);
+                if (remainingItems == 0)
+                {
+                    sale.Status = SaleStatus.Cancelled;
+                    _unitOfWork.Sales.Update(sale);
+                    _logger.LogInformation(
+                        "Sale {SaleId} cancelled: all items returned, none remain.",
+                        sale.Id);
+                }
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);

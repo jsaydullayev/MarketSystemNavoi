@@ -191,9 +191,9 @@ class OwnerCard extends StatelessWidget {
     final palette = [
       context.colors.brand,
       AppColors.success,
-      const Color(0xFF7C3AED), // purple
-      const Color(0xFF0EA5E9), // sky
-      const Color(0xFFEC4899), // pink
+      AppColors.accentPurple, // purple
+      AppColors.avatarSky, // sky
+      AppColors.avatarPink, // pink
       AppColors.warning,
     ];
     final hash = userId.codeUnits.fold<int>(0, (acc, c) => acc + c);

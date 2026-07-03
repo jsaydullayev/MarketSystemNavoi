@@ -418,7 +418,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
           isReadOnly: widget.isReadOnly,
           canViewCostPrice: canViewCostPrice,
         ),
-        floatingActionButton: !widget.isReadOnly
+        floatingActionButton:
+            (!widget.isReadOnly &&
+                Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                ).can(Permissions.productsCreate))
             ? _ProductsFab(onTap: () => _openProductForm())
             : null,
       ),
@@ -430,6 +435,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final canImport = authProvider.can(Permissions.productsImport);
+    final canExport = authProvider.can(Permissions.productsExport);
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
       child: Container(
@@ -474,15 +480,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     onPressed: _openImport,
                     tooltip: 'Import',
                   ),
-                IconButton(
-                  icon: Icon(
-                    Icons.file_download_outlined,
-                    color: context.colors.textSecondary,
-                    size: 22,
+                if (canExport)
+                  IconButton(
+                    icon: Icon(
+                      Icons.file_download_outlined,
+                      color: context.colors.textSecondary,
+                      size: 22,
+                    ),
+                    onPressed: _exportExcel,
+                    tooltip: 'Export',
                   ),
-                  onPressed: _exportExcel,
-                  tooltip: 'Export',
-                ),
                 IconButton(
                   icon: Icon(
                     Icons.refresh_rounded,

@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/widgets/base64_image.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
@@ -13,6 +15,8 @@ class UserCard extends StatelessWidget {
   final VoidCallback onToggleStatus;
   final VoidCallback onDelete;
   final VoidCallback onTap;
+  // RBAC: users.manage bo'lmasa, bloklash/o'chirish tugmalari ko'rsatilmaydi.
+  final bool canManage;
 
   const UserCard({
     super.key,
@@ -20,16 +24,17 @@ class UserCard extends StatelessWidget {
     required this.onToggleStatus,
     required this.onDelete,
     required this.onTap,
+    this.canManage = true,
   });
 
   /// Role chip colors per design spec:
   /// - Admin: purple bg #F3E8FF, text #7C3AED
   /// - Seller: green bg #ECFDF5, text #047857
   /// - Owner: brand orange tones
-  static const _adminBg = Color(0xFFF3E8FF);
-  static const _adminFg = Color(0xFF7C3AED);
-  static const _sellerBg = Color(0xFFECFDF5);
-  static const _sellerFg = Color(0xFF047857);
+  static const _adminBg = AppColors.roleAdminBg;
+  static const _adminFg = AppColors.roleAdminFg;
+  static const _sellerBg = AppColors.roleSellerBg;
+  static const _sellerFg = AppColors.roleSellerFg;
 
   ({Color bg, Color fg}) _roleColors(BuildContext context, String role) {
     switch (role.toLowerCase()) {
@@ -57,6 +62,64 @@ class UserCard extends StatelessWidget {
     }
   }
 
+  /// 48×48 rounded avatar tile. Shows the user's uploaded profile photo when
+  /// present — a full `http` URL renders via [CachedNetworkImage], a base64
+  /// / data-URI payload via [Base64Image] (same URL-or-base64 handling the
+  /// dashboard drawer uses for the current user). Falls back to the role-tinted
+  /// initial tile when there's no image, it's still loading, or it fails to
+  /// decode.
+  Widget _buildAvatar(String? img, String initial, ({Color bg, Color fg}) c) {
+    final fallback = _avatarFallback(initial, c);
+    if (img == null || img.isEmpty) return fallback;
+
+    Widget? imgWidget;
+    if (img.startsWith('http')) {
+      imgWidget = CachedNetworkImage(
+        imageUrl: img,
+        width: 48,
+        height: 48,
+        memCacheWidth: 144,
+        memCacheHeight: 144,
+        fit: BoxFit.cover,
+        errorWidget: (_, __, ___) => fallback,
+        placeholder: (_, __) => fallback,
+      );
+    } else if (img.startsWith('data:image') || img.length > 100) {
+      final b64 = img.contains(',') ? img.split(',').last : img;
+      imgWidget = Base64Image(
+        data: b64,
+        width: 48,
+        height: 48,
+        cacheWidth: 144,
+        cacheHeight: 144,
+        errorWidget: fallback,
+      );
+    }
+    if (imgWidget == null) return fallback;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: imgWidget,
+    );
+  }
+
+  Widget _avatarFallback(String initial, ({Color bg, Color fg}) c) => Container(
+    width: 48,
+    height: 48,
+    decoration: BoxDecoration(
+      color: c.bg,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+    ),
+    alignment: Alignment.center,
+    child: Text(
+      initial,
+      style: AppTextStyles.titleMedium().copyWith(
+        color: c.fg,
+        fontWeight: FontWeight.w700,
+        fontSize: 20,
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -65,6 +128,7 @@ class UserCard extends StatelessWidget {
     final fullName = user['fullName'] ?? l10n.unknown;
     final username = user['username'] ?? '';
     final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : '?';
+    final profileImage = user['profileImage'] as String?;
     final colors = _roleColors(context, role);
 
     return GestureDetector(
@@ -85,24 +149,7 @@ class UserCard extends StatelessWidget {
             children: [
               Stack(
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: colors.bg,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                    ),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: AppTextStyles.titleMedium().copyWith(
-                          color: colors.fg,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ),
-                  ),
+                  _buildAvatar(profileImage, initial, colors),
                   // Online indicator dot (smena ochiq xodimlar uchun)
                   Positioned(
                     right: 0,
@@ -176,24 +223,29 @@ class UserCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Actions
-              Column(
-                children: [
-                  _ActionBtn(
-                    icon: isActive
-                        ? Icons.block_rounded
-                        : Icons.check_circle_rounded,
-                    color: isActive ? AppColors.warning : AppColors.success,
-                    onTap: onToggleStatus,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _ActionBtn(
-                    icon: Icons.delete_rounded,
-                    color: AppColors.danger,
-                    onTap: onDelete,
-                  ),
-                ],
-              ),
+              // Actions — faqat users.manage ruxsati bilan ko'rinadi.
+              // Owner/SuperAdmin'ni esa bloklab/o'chirib bo'lmaydi (backend
+              // 404 qaytaradi), shuning uchun ular uchun ham ko'rsatilmaydi.
+              if (canManage &&
+                  role.toLowerCase() != 'owner' &&
+                  role.toLowerCase() != 'superadmin')
+                Column(
+                  children: [
+                    _ActionBtn(
+                      icon: isActive
+                          ? Icons.block_rounded
+                          : Icons.check_circle_rounded,
+                      color: isActive ? AppColors.warning : AppColors.success,
+                      onTap: onToggleStatus,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _ActionBtn(
+                      icon: Icons.delete_rounded,
+                      color: AppColors.danger,
+                      onTap: onDelete,
+                    ),
+                  ],
+                ),
             ],
           ),
         ),

@@ -280,11 +280,29 @@ class _UserPermissionsScreenState extends State<UserPermissionsScreen> {
                   _selected.remove(entry.key);
                 }
               }),
-              title: Text(entry.label(lang), style: AppTextStyles.bodyMedium()),
+              title: Text(
+                entry.label(lang),
+                style: AppTextStyles.bodyMedium().copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              // Har bir ruxsatning nima vazifa bajarishi to'liq yozib beriladi —
+              // Owner aynan nimani yoqayotganini biladi.
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 3, right: AppSpacing.md),
+                child: Text(
+                  entry.desc(lang),
+                  style: AppTextStyles.caption().copyWith(
+                    color: context.colors.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+              isThreeLine: true,
               activeTrackColor: context.colors.brand,
-              dense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.xl,
+                vertical: AppSpacing.xs,
               ),
             ),
         ],

@@ -8,6 +8,7 @@ class Permissions {
   Permissions._();
 
   static const dashboardAccess = 'dashboard.access';
+  static const notificationsAccess = 'notifications.access';
 
   static const productsAccess = 'products.access';
   static const productsCreate = 'products.create';
@@ -24,6 +25,7 @@ class Permissions {
   static const salesEdit = 'sales.edit';
   static const salesDelete = 'sales.delete';
   static const salesExport = 'sales.export';
+  static const salesInvoice = 'sales.invoice';
 
   static const customersAccess = 'customers.access';
   static const customersManage = 'customers.manage';
@@ -45,6 +47,7 @@ class Permissions {
 
   static const debtsAccess = 'debts.access';
   static const debtsManage = 'debts.manage';
+  static const debtsDueDate = 'debts.dueDate';
 
   static const dataCostPrice = 'data.costPrice';
   static const dataProfit = 'data.profit';

@@ -29,6 +29,9 @@ class CategoryCard extends StatelessWidget {
   final bool isDark;
   final Function(ProductCategoryModel) onEdit;
   final Function(ProductCategoryModel) onDelete;
+  // RBAC: categories.manage bo'lmasa, tahrirlash/o'chirish (menyu + swipe)
+  // ko'rsatilmaydi. Standart true — eski chaqiruvlar buzilmaydi.
+  final bool canManage;
 
   const CategoryCard({
     super.key,
@@ -37,6 +40,7 @@ class CategoryCard extends StatelessWidget {
     required this.isDark,
     required this.onEdit,
     required this.onDelete,
+    this.canManage = true,
   });
 
   // Fallback emoji guessed from the category name — used only for legacy
@@ -79,6 +83,7 @@ class CategoryCard extends StatelessWidget {
           align: Alignment.centerRight,
         ),
         confirmDismiss: (direction) async {
+          if (!canManage) return false;
           if (direction == DismissDirection.startToEnd) {
             onEdit(category);
             return false;
@@ -164,18 +169,19 @@ class CategoryCard extends StatelessWidget {
                 ),
               ),
 
-              // 32x32 ⋯ menu button (kulrang)
-              _MenuButton(
-                onSelected: (value) async {
-                  if (value == 'edit') {
-                    onEdit(category);
-                  } else if (value == 'delete') {
-                    final ok = await _showDeleteDialog(context);
-                    if (ok) onDelete(category);
-                  }
-                },
-                l10n: l10n,
-              ),
+              // 32x32 ⋯ menu button — faqat boshqaruv ruxsati bilan ko'rinadi.
+              if (canManage)
+                _MenuButton(
+                  onSelected: (value) async {
+                    if (value == 'edit') {
+                      onEdit(category);
+                    } else if (value == 'delete') {
+                      final ok = await _showDeleteDialog(context);
+                      if (ok) onDelete(category);
+                    }
+                  },
+                  l10n: l10n,
+                ),
             ],
           ),
         ),
