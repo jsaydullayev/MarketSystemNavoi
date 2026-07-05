@@ -1,10 +1,25 @@
 # ✅ Product Categories System - READY TO USE
 
-## Current Status
-✅ **Build: SUCCESS** (0 errors, 3 warnings - pre-existing)
-✅ **Auto-migration: DISABLED**
-✅ **Bad migration files: REMOVED**
-✅ **API: Ready to run**
+> ⚠️ **OUTDATED — read before following the steps below.**
+> This note was written for an early state of the *Product Categories*
+> feature and no longer reflects how the system runs.
+>
+> * **Migrations are now applied AUTOMATICALLY at API startup** — see the
+>   migration loop in `MarketSystem.API/Program.cs`. You do **NOT** run the
+>   manual SQL in STEP 1; the migration `20260219100000_AddProductCategories`
+>   is already part of the EF Core migration set and is applied for you.
+> * The `dotnet run` steps are for **local development only**. Production is
+>   launched with Docker — see `deployment/scripts/deploy.sh`.
+> * **For launching/operating the system, follow the authoritative docs:**
+>   `docs/runbooks/migrations.md` and `docs/runbooks/deployment-troubleshooting.md`.
+>
+> The step-by-step content below is kept for historical reference on the
+> Product Categories feature; treat the SQL as illustrative, not a required step.
+
+## Current Status (feature note — historical)
+- Build: SUCCESS
+- Migrations: **applied automatically at startup** (not manual — see banner above)
+- API: Ready to run
 
 ---
 
