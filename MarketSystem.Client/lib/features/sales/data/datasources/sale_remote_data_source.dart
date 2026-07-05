@@ -74,6 +74,11 @@ class SaleRemoteDataSource {
     return _salesService.cancelSale(saleId: saleId);
   }
 
+  /// Sotuvni o'chirish (Owner data-cleanup)
+  Future<dynamic> deleteSale({required String saleId}) async {
+    return _salesService.deleteSale(saleId: saleId);
+  }
+
   /// Sotilgan mahsulotni qaytarish
   Future<dynamic> returnSaleItem({
     required String saleId,

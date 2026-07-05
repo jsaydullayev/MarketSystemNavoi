@@ -80,6 +80,11 @@ class SaleCancelled extends SalesState {
   const SaleCancelled();
 }
 
+/// Sale deleted state (Owner data-cleanup)
+class SaleDeleted extends SalesState {
+  const SaleDeleted();
+}
+
 /// Sale item returned state
 class SaleItemReturned extends SalesState {
   const SaleItemReturned();

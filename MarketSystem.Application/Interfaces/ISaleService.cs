@@ -23,7 +23,14 @@ public interface ISaleService
     Task<SaleItemDto?> AddSaleItemAsync(Guid saleId, AddSaleItemDto request, CancellationToken cancellationToken = default);
     Task<SaleItemDto?> RemoveSaleItemAsync(Guid saleId, RemoveSaleItemDto request, CancellationToken cancellationToken = default);
     Task<PaymentDto?> AddPaymentAsync(Guid saleId, AddPaymentDto request, CancellationToken cancellationToken = default);
-    Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Owner data-cleanup: soft-deletes a wrongly-entered sale and reverses its
+    /// side effects (restores stock, backs cash out of the till, closes any open
+    /// debt). <paramref name="actorId"/> MUST be the authenticated caller's id
+    /// from the JWT claim — never a client-supplied value — so the audit row
+    /// can't be forged to blame someone else.
+    /// </summary>
+    Task<SaleDto?> DeleteSaleAsync(Guid saleId, Guid actorId, CancellationToken cancellationToken = default);
     /// <summary>
     /// Cancel a paid sale. <paramref name="adminId"/> MUST be the
     /// authenticated caller's id taken from the JWT claim — NEVER trust a

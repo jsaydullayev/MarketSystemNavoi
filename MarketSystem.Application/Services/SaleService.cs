@@ -1315,8 +1315,12 @@ public partial class SaleService : ISaleService
     /// ============================================
     /// Savdoni o'chirganda tashqi mahsulotlar stokni saqlash
     /// </summary>
-    public async Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default)
+    public async Task<SaleDto?> DeleteSaleAsync(Guid saleId, Guid actorId, CancellationToken cancellationToken = default)
     {
+        // actorId is the JWT-extracted caller identity (controller reads it from
+        // ClaimTypes.NameIdentifier). Never trust a client-supplied value here or
+        // the destructive-delete audit row could be forged to blame another user.
+        _logger.LogInformation("DeleteSale by actor {ActorId}", actorId);
         var marketId = _currentMarketService.GetCurrentMarketId();
 
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
@@ -1338,10 +1342,16 @@ public partial class SaleService : ISaleService
                 return null;
             }
 
-            if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Paid)
+            // Owner cleanup can remove Draft, Paid and Debt sales (a wrongly
+            // entered debt sale is a common cleanup case — any open debt is
+            // closed below). Already Cancelled/Closed sales are terminal and
+            // are left untouched.
+            if (sale.Status != SaleStatus.Draft
+                && sale.Status != SaleStatus.Paid
+                && sale.Status != SaleStatus.Debt)
             {
                 _logger.LogWarning("Sale cannot be deleted: {SaleId}, Status: {Status}", saleId, sale.Status);
-                throw new InvalidOperationException("Faqat draft yoki to'langan (Paid) savdolarini o'chirish mumkin! Qarzli savdolarni o'chirib bo'lmaydi.");
+                throw new InvalidOperationException("Faqat qoralama (Draft), to'langan (Paid) yoki qarzli (Debt) savdolarni o'chirish mumkin. Bekor qilingan yoki yopilgan savdolarni o'chirib bo'lmaydi.");
             }
 
             // Save sale items for DTO
@@ -1367,8 +1377,9 @@ public partial class SaleService : ISaleService
                 // Tashqi mahsulotlar - stokni o'zgarmaslik
             }
 
-            // Savdoni o'chirish (soft delete - IsDeleted = true)
+            // Savdoni o'chirish (soft delete - IsDeleted = true + DeletedAt)
             sale.IsDeleted = true;
+            sale.DeletedAt = DateTime.UtcNow;
             _context.Sales.Update(sale);
             _logger.LogInformation("Sale marked as deleted: {SaleId}", saleId);
 
@@ -1422,6 +1433,42 @@ public partial class SaleService : ISaleService
                 _context.Payments.Remove(payment);
                 _logger.LogInformation("Payment deleted: {PaymentId}", payment.Id);
             }
+
+            // Close any open debt tied to this sale (Debt-status sales, or a Paid
+            // sale that previously carried a debt). A soft-delete does NOT fire
+            // the DB-level Sale→Debt cascade, so we close it explicitly and zero
+            // RemainingDebt — mirrors CancelSaleAsync — to keep the customer's
+            // outstanding balance consistent after cleanup.
+            var openDebts = await _unitOfWork.Debts.FindAsync(
+                d => d.SaleId == saleId && d.Status == DebtStatus.Open,
+                cancellationToken);
+            foreach (var debt in openDebts)
+            {
+                debt.Status = DebtStatus.Closed;
+                debt.RemainingDebt = 0;
+                _unitOfWork.Debts.Update(debt);
+            }
+
+            // Stage the destructive-delete audit row on the SAME transaction so it
+            // commits/rolls back with the business write. The payload preserves
+            // what was removed (payments are hard-deleted above, so their totals
+            // survive only here, in the append-only audit log).
+            await _auditLogService.EnqueueActionAsync(
+                AuditEntityTypes.Sale, saleId, AuditActions.Delete, actorId,
+                new
+                {
+                    SaleId = saleId,
+                    sale.SellerId,
+                    sale.CustomerId,
+                    Status = sale.Status.ToString(),
+                    sale.TotalAmount,
+                    sale.PaidAmount,
+                    ItemCount = saleItems.Count,
+                    PaymentCount = payments.Count,
+                    PaymentsTotal = payments.Sum(p => p.Amount),
+                    NetCashReversed = netCashOnSale,
+                },
+                cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

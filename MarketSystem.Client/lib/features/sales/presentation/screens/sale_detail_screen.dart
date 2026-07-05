@@ -229,6 +229,16 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
             ),
           );
           _loadSaleDetails();
+        } else if (state is SaleDeleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.saleDeleted),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          // Refresh the list behind us and leave the (now-deleted) detail view.
+          context.read<SalesBloc>().add(const GetSalesEvent());
+          Navigator.pop(context);
         }
       },
       child: BlocBuilder<SalesBloc, SalesState>(
@@ -299,6 +309,52 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     );
   }
 
+  /// Two-step confirmation before a destructive delete. On confirm, dispatches
+  /// DeleteSaleEvent; the BlocListener above handles success (snackbar + pop).
+  Future<void> _confirmAndDeleteSale(AppLocalizations l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: context.colors.surface,
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.danger),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                l10n.confirmDeleteTitle,
+                style: AppTextStyles.titleMedium(),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '${l10n.deleteSaleConfirm}\n\n'
+          '${l10n.warning} Ombor va kassa avtomatik qaytariladi.',
+          style: AppTextStyles.bodyMedium(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      context.read<SalesBloc>().add(DeleteSaleEvent(saleId: widget.saleId));
+    }
+  }
+
   Widget _buildBody(SalesState state, AppLocalizations l10n) {
     if (state is SaleDetailLoading) {
       return Center(
@@ -329,6 +385,19 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           (statusLower == 'paid' ||
               statusLower == 'debt' ||
               statusLower == 'closed');
+
+      // Owner data-cleanup: delete a wrongly-entered sale. Gated by the
+      // sales.delete permission (Owner/SuperAdmin always pass). Backend allows
+      // Draft/Paid/Debt only — mirror that here so the button isn't offered for
+      // terminal (cancelled/closed) sales.
+      final canDelete =
+          Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          ).can(Permissions.salesDelete) &&
+          (statusLower == 'draft' ||
+              statusLower == 'paid' ||
+              statusLower == 'debt');
 
       return Center(
         child: Container(
@@ -363,6 +432,14 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     onPressed: () =>
                         showRefundPicker(context, items, widget.saleId),
                   ),
+                if (canDelete) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  AppDangerButton(
+                    label: l10n.deleteSale,
+                    icon: Icons.delete_outline_rounded,
+                    onPressed: () => _confirmAndDeleteSale(l10n),
+                  ),
+                ],
               ],
             ),
           ),

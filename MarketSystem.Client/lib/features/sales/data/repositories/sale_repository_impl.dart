@@ -145,6 +145,17 @@ class SaleRepositoryImpl implements SaleRepositoryInterface {
   }
 
   @override
+  Future<ApiResult<void>> deleteSale({required String saleId}) async {
+    try {
+      await remoteDataSource.deleteSale(saleId: saleId);
+
+      return ApiResult.success(null);
+    } catch (e) {
+      return ApiResult.failure('Sotuvni o\'chirishda xatolik: $e');
+    }
+  }
+
+  @override
   Future<ApiResult<void>> returnSaleItem({
     required String saleId,
     required String saleItemId,

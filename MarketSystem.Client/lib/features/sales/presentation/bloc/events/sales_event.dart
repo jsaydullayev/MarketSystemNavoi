@@ -92,6 +92,17 @@ class CancelSaleEvent extends SalesEvent {
   List<Object?> get props => [saleId];
 }
 
+/// Delete sale event (Owner data-cleanup). The acting user is taken from the
+/// JWT on the server — no actorId param here.
+class DeleteSaleEvent extends SalesEvent {
+  final String saleId;
+
+  const DeleteSaleEvent({required this.saleId});
+
+  @override
+  List<Object?> get props => [saleId];
+}
+
 /// Get sale detail event
 class GetSaleDetailEvent extends SalesEvent {
   final String saleId;

@@ -328,7 +328,7 @@ public class MultiTenantWriteIsolationTests : TestBase
     {
         await SeedOtherMarketAsync();
 
-        var result = await SaleService.DeleteSaleAsync(_otherSaleId);
+        var result = await SaleService.DeleteSaleAsync(_otherSaleId, TestUserId);
 
         result.Should().BeNull("cross-tenant delete must be a no-op");
         ClearDbContext();

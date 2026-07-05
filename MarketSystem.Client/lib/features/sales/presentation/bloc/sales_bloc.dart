@@ -6,6 +6,7 @@ import '../../domain/usecases/add_payment_usecase.dart';
 import '../../domain/usecases/add_sale_item_usecase.dart';
 import '../../domain/usecases/cancel_sale_usecase.dart';
 import '../../domain/usecases/create_sale_usecase.dart';
+import '../../domain/usecases/delete_sale_usecase.dart';
 import '../../domain/usecases/get_my_draft_sales_usecase.dart';
 import '../../domain/usecases/get_sale_detail_usecase.dart';
 import '../../domain/usecases/get_sales_usecase.dart';
@@ -21,6 +22,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
   final AddSaleItemUseCase addSaleItemUseCase;
   final AddPaymentUseCase addPaymentUseCase;
   final CancelSaleUseCase cancelSaleUseCase;
+  final DeleteSaleUseCase deleteSaleUseCase;
   final GetSaleDetailUseCase getSaleDetailUseCase;
   final ReturnSaleItemUseCase returnSaleItemUseCase;
 
@@ -31,6 +33,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     required this.addSaleItemUseCase,
     required this.addPaymentUseCase,
     required this.cancelSaleUseCase,
+    required this.deleteSaleUseCase,
     required this.getSaleDetailUseCase,
     required this.returnSaleItemUseCase,
   }) : super(const SalesInitial()) {
@@ -41,6 +44,7 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
     on<AddSaleItemEvent>(_onAddSaleItem);
     on<AddPaymentEvent>(_onAddPayment);
     on<CancelSaleEvent>(_onCancelSale);
+    on<DeleteSaleEvent>(_onDeleteSale);
     on<GetSaleDetailEvent>(_onGetSaleDetail);
     on<ReturnSaleItemEvent>(_onReturnSaleItem);
   }
@@ -176,6 +180,21 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
       emit(const SaleCancelled());
     } else {
       emit(SalesError(result.error ?? 'Sotuvni bekor qilishda xatolik'));
+    }
+  }
+
+  /// Delete sale (Owner data-cleanup)
+  Future<void> _onDeleteSale(
+    DeleteSaleEvent event,
+    Emitter<SalesState> emit,
+  ) async {
+    emit(const SalesLoading());
+    final result = await deleteSaleUseCase(saleId: event.saleId);
+
+    if (result.isSuccess) {
+      emit(const SaleDeleted());
+    } else {
+      emit(SalesError(result.error ?? 'Sotuvni o\'chirishda xatolik'));
     }
   }
 
