@@ -44,6 +44,10 @@ abstract class SaleRepositoryInterface {
   /// claim'idan oladi — adminId param qabul qilmaymiz.
   Future<ApiResult<void>> cancelSale({required String saleId});
 
+  /// Sotuvni o'chirish (Owner data-cleanup). Yumshoq o'chirish: ombor va kassa
+  /// qaytariladi, qarz yopiladi, amal audit'ga yoziladi. Aktor JWT'dan olinadi.
+  Future<ApiResult<void>> deleteSale({required String saleId});
+
   /// Sotilgan mahsulotni qaytarish
   Future<ApiResult<void>> returnSaleItem({
     required String saleId,

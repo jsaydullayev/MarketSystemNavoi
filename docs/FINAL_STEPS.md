@@ -1,9 +1,25 @@
 # ✅ Backend Build Success - Final Steps
 
-## Current Status
-✅ Build succeeded (0 errors)
-✅ Automatic migrations DISABLED
-✅ API ready to run
+> ⚠️ **OUTDATED — read before following the steps below.**
+> This note was written for an early state of the *Product Categories*
+> feature and no longer reflects how the system runs.
+>
+> * **Migrations are now applied AUTOMATICALLY at API startup** (migration loop
+>   in `MarketSystem.API/Program.cs`). You do **NOT** run the manual SQL in
+>   Step 1 — the `20260219100000_AddProductCategories` migration is already in
+>   the EF Core migration set and is applied for you.
+> * The `dotnet run` steps are for **local development only**. Production is
+>   launched with Docker — see `deployment/scripts/deploy.sh`.
+> * **Authoritative launch/operate docs:** `docs/runbooks/migrations.md` and
+>   `docs/runbooks/deployment-troubleshooting.md`.
+>
+> Content below is kept for historical reference; the SQL is illustrative, not
+> a required step.
+
+## Current Status (feature note — historical)
+- Build succeeded
+- Migrations: **applied automatically at startup** (not manual — see banner above)
+- API ready to run
 
 ## Step 1: Apply SQL Migration to PostgreSQL
 

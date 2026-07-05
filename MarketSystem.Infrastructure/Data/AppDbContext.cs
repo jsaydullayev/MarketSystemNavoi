@@ -212,6 +212,7 @@ public class AppDbContext : DbContext, IAppDbContext
             b.HasKey(x => x.Id);
             b.Property(x => x.TotalAmount).HasPrecision(18, 2);
             b.Property(x => x.PaidAmount).HasPrecision(18, 2);
+            b.Property(x => x.DeletedAt).IsRequired(false);
 
             // Xmin concurrency token disabled for Sale — too many modifications
             // in a single transaction (items add/remove, status change, debt update)
