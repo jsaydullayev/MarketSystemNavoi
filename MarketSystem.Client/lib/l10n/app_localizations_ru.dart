@@ -1438,6 +1438,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Вы действительно хотите удалить эту продажу?';
 
   @override
+  String get deleteSaleWarning =>
+      'Остаток на складе и касса будут автоматически возвращены.';
+
+  @override
   String get noDebtSalesFound => 'Долговые продажи не найдены';
 
   @override

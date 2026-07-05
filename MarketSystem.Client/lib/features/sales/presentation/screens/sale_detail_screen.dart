@@ -330,7 +330,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
         ),
         content: Text(
           '${l10n.deleteSaleConfirm}\n\n'
-          '${l10n.warning} Ombor va kassa avtomatik qaytariladi.',
+          '${l10n.warning} ${l10n.deleteSaleWarning}',
           style: AppTextStyles.bodyMedium(),
         ),
         actions: [

@@ -458,6 +458,7 @@
   "yearsAgo": "{count} yil oldin",
   "deleteSale": "Savdoni o'chirish",
   "deleteSaleConfirm": "Haqiqatan ham bu savdoni o'chirmoqchimisiz?",
+  "deleteSaleWarning": "Ombor qoldig'i va kassa avtomatik qaytariladi.",
   "noDebtSalesFound": "Qarz savdolari topilmadi",
   "debtorCustomers": "Qarzdor mijozlar",
   "ongoing": "Davom etayotgan",

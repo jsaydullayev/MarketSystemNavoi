@@ -1435,6 +1435,10 @@ class AppLocalizationsUz extends AppLocalizations {
       'Haqiqatan ham bu savdoni o\'chirmoqchimisiz?';
 
   @override
+  String get deleteSaleWarning =>
+      'Ombor qoldig\'i va kassa avtomatik qaytariladi.';
+
+  @override
   String get noDebtSalesFound => 'Qarz savdolari topilmadi';
 
   @override

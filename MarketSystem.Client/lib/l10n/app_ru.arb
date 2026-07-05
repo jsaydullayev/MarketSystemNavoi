@@ -459,6 +459,7 @@
   "yearsAgo": "{count} г. назад",
   "deleteSale": "Удалить продажу",
   "deleteSaleConfirm": "Вы действительно хотите удалить эту продажу?",
+  "deleteSaleWarning": "Остаток на складе и касса будут автоматически возвращены.",
   "noDebtSalesFound": "Долговые продажи не найдены",
   "debtorCustomers": "Клиенты-должники",
   "ongoing": "В процессе",

@@ -2798,6 +2798,12 @@ abstract class AppLocalizations {
   /// **'Haqiqatan ham bu savdoni o\'chirmoqchimisiz?'**
   String get deleteSaleConfirm;
 
+  /// No description provided for @deleteSaleWarning.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ombor qoldig\'i va kassa avtomatik qaytariladi.'**
+  String get deleteSaleWarning;
+
   /// No description provided for @noDebtSalesFound.
   ///
   /// In uz, this message translates to:
