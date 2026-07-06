@@ -532,11 +532,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get usernameMinLength => 'Имя пользователя минимум 3 символа';
 
   @override
-  String usernameTaken(String username) {
-    return '\'$username\' занят';
-  }
-
-  @override
   String get passwordMinLength => 'Минимум 8 символов, 1 буква и 1 цифра';
 
   @override
@@ -2393,6 +2388,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get createOwnerFailed => 'Ошибка при создании';
+
+  @override
+  String usernameTaken(String username) {
+    return '\'$username\' занят';
+  }
 
   @override
   String marketNameTaken(String name) {

@@ -34,6 +34,7 @@ class Permissions {
 
   static const zakupAccess = 'zakup.access';
   static const zakupCreate = 'zakup.create';
+  static const zakupDelete = 'zakup.delete';
 
   static const cashRegisterAccess = 'cashregister.access';
   static const cashRegisterManage = 'cashregister.manage';

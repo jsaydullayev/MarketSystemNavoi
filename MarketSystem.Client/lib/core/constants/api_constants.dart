@@ -131,4 +131,5 @@ class ApiConstants {
       '$zakups/GetZakupsByDateRange/by-date'
       '?start=${start.toIso8601String()}&end=${end.toIso8601String()}';
   static const String zakupsExportExcel = '$zakups/ExportZakupsToExcel/export';
+  static String deleteZakup(String id) => '$zakups/DeleteZakup/$id';
 }

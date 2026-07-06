@@ -133,6 +133,27 @@ public class ZakupsController : ControllerBase
         }
     }
 
+    [HttpDelete("{id}")]
+    [RequirePermission(PermissionKeys.ZakupDelete)]
+    public async Task<IActionResult> DeleteZakup(Guid id)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            var deleted = await _zakupService.DeleteZakupAsync(id, userId);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpGet("export")]
     [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ZakupAccess)]

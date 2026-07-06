@@ -53,6 +53,58 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
     context.read<SalesBloc>().add(GetSaleDetailEvent(widget.saleId));
   }
 
+  /// Owner data-cleanup: savdoni o'chirish. Backend faqat Draft/Paid savdolarga
+  /// ruxsat beradi va ombor qoldig'ini tiklaydi. Tasdiqdan keyin ro'yxatga
+  /// qaytamiz va uni yangilaymiz.
+  Future<void> _deleteSale() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+        title: Text(l10n.confirmDelete, style: AppTextStyles.titleMedium()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.no),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await _salesService.deleteSale(saleId: widget.saleId);
+      if (!mounted) return;
+      context.read<SalesBloc>().add(const GetSalesEvent());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.deleteSuccess),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.errorOccurred}: $e'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+  }
+
   Future<void> _downloadPdf(Map<String, dynamic> sale) async {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
@@ -329,6 +381,14 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
           (statusLower == 'paid' ||
               statusLower == 'debt' ||
               statusLower == 'closed');
+      // RBAC: faqat sales.delete ruxsati + o'chirilishi mumkin bo'lgan holat
+      // (Draft yoki Paid). Backend ham aynan shu qoidani tekshiradi.
+      final canDelete =
+          Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          ).can(Permissions.salesDelete) &&
+          (statusLower == 'draft' || statusLower == 'paid');
 
       return Center(
         child: Container(
@@ -363,6 +423,14 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                     onPressed: () =>
                         showRefundPicker(context, items, widget.saleId),
                   ),
+                if (canDelete) ...[
+                  if (canReturn) const SizedBox(height: AppSpacing.md),
+                  AppDangerButton(
+                    label: l10n.delete,
+                    icon: Icons.delete_outline_rounded,
+                    onPressed: _deleteSale,
+                  ),
+                ],
               ],
             ),
           ),

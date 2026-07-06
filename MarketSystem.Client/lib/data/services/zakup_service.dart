@@ -92,4 +92,16 @@ class ZakupService {
   Future<List<int>?> downloadZakupsExcel() async {
     return await _httpService.downloadBytes(ApiConstants.zakupsExportExcel);
   }
+
+  /// O'chirish (Owner/zakup.delete) — backend ombor qoldig'ini qaytaradi.
+  /// 204 (NoContent) yoki 200 — muvaffaqiyat.
+  Future<void> deleteZakup(String id) async {
+    final response = await _httpService.delete(ApiConstants.deleteZakup(id));
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to delete zakup',
+      );
+    }
+  }
 }

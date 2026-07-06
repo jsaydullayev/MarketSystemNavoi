@@ -255,6 +255,17 @@ const List<PermissionGroup> permissionGroups = [
       descRu:
           'Добавление новой закупки — пополняет остаток товара на складе.',
     ),
+    PermissionEntry(
+      Permissions.zakupDelete,
+      "O'chirish",
+      'Udalenie',
+      descUz:
+          "Xaridni (zakupni) o'chirish — u qo'shgan ombor qoldig'i qaytariladi "
+          "(kamaytiriladi). Xato kiritilgan xaridni tozalash uchun.",
+      descRu:
+          'Удаление закупки — добавленный ею остаток на складе возвращается '
+          '(вычитается). Для очистки ошибочной закупки.',
+    ),
   ]),
   PermissionGroup('Kassa', 'Kassa', [
     PermissionEntry(

@@ -1358,11 +1358,25 @@ public partial class SaleService : ISaleService
                 // ============================================
                 if (!saleItem.IsExternal && saleItem.Product != null)
                 {
-                    // Faqat oddiy mahsulotlar uchun stokni qaytarish
-                    saleItem.Product.Quantity += saleItem.Quantity;
+                    if (saleItem.Product.IsTemporary)
+                    {
+                        // Vaqtinchalik mahsulot faqat shu savdo uchun yaratilgan —
+                        // stokni qaytarish o'rniga soft-delete qilamiz (aynan
+                        // CancelSaleAsync kabi), aks holda inventarda fantom
+                        // mahsulot va soxta qoldiq qolib ketardi.
+                        saleItem.Product.IsDeleted = true;
+                        saleItem.Product.DeletedAt = DateTime.UtcNow;
+                        _logger.LogInformation("Temporary product soft-deleted on sale delete: {ProductId}",
+                            saleItem.ProductId);
+                    }
+                    else
+                    {
+                        // Oddiy mahsulot uchun stokni qaytarish
+                        saleItem.Product.Quantity += saleItem.Quantity;
+                        _logger.LogInformation("Product stock restored: {ProductId}, Qty: +{Quantity}",
+                            saleItem.ProductId, saleItem.Quantity);
+                    }
                     _unitOfWork.Products.Update(saleItem.Product);
-                    _logger.LogInformation("Product stock restored: {ProductId}, Qty: +{Quantity}",
-                        saleItem.ProductId, saleItem.Quantity);
                 }
                 // Tashqi mahsulotlar - stokni o'zgarmaslik
             }
