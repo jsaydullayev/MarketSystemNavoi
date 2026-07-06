@@ -10,6 +10,7 @@ import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/auth/permissions.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../data/services/product_service.dart';
 import '../../../../data/services/zakup_service.dart';
@@ -100,6 +101,22 @@ class _ZakupScreenState extends State<ZakupScreen> {
     }
   }
 
+  Future<void> _deleteZakup(Map<String, dynamic> zakup) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await ZakupService(
+        authProvider: authProvider,
+      ).deleteZakup(zakup['id'].toString());
+      if (!mounted) return;
+      _showSnack(l10n.deleteSuccess);
+      context.read<ZakupBloc>().add(const GetZakupsEvent());
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('${l10n.errorOccurred}: $e', isError: true);
+    }
+  }
+
   void _showSnack(
     String message, {
     bool isError = false,
@@ -128,6 +145,7 @@ class _ZakupScreenState extends State<ZakupScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final userRole = authProvider.user?['role'];
     final canAdd = userRole == 'Admin' || userRole == 'Owner';
+    final canDelete = authProvider.can(Permissions.zakupDelete);
 
     return BlocListener<ZakupBloc, ZakupState>(
       listener: (context, state) {
@@ -201,7 +219,12 @@ class _ZakupScreenState extends State<ZakupScreen> {
                       100,
                     ),
                     itemCount: zakups.length,
-                    itemBuilder: (_, i) => ZakupCard(zakup: zakups[i]),
+                    itemBuilder: (_, i) => ZakupCard(
+                      zakup: zakups[i],
+                      onDelete: canDelete
+                          ? () => _deleteZakup(zakups[i])
+                          : null,
+                    ),
                   ),
                 );
               }

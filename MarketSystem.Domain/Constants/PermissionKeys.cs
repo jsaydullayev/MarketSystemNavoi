@@ -41,6 +41,8 @@ public static class PermissionKeys
 
     public const string ZakupAccess = "zakup.access";
     public const string ZakupCreate = "zakup.create";
+    // Delete a purchase (reverses the stock it added). Owner data-cleanup.
+    public const string ZakupDelete = "zakup.delete";
 
     public const string CashRegisterAccess = "cashregister.access";
     public const string CashRegisterManage = "cashregister.manage";
@@ -76,7 +78,7 @@ public static class PermissionKeys
         CategoriesAccess, CategoriesManage,
         SalesAccess, SalesCreate, SalesEdit, SalesDelete, SalesExport, SalesInvoice,
         CustomersAccess, CustomersManage, CustomersDelete, CustomersExport,
-        ZakupAccess, ZakupCreate,
+        ZakupAccess, ZakupCreate, ZakupDelete,
         CashRegisterAccess, CashRegisterManage,
         ReportsAccess, ReportsExport,
         UsersAccess, UsersManage, UsersShift,

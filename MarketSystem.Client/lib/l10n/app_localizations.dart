@@ -1130,12 +1130,6 @@ abstract class AppLocalizations {
   /// **'Username kamida 3 ta belgi'**
   String get usernameMinLength;
 
-  /// No description provided for @usernameTaken.
-  ///
-  /// In uz, this message translates to:
-  /// **'\'{username}\' band'**
-  String usernameTaken(String username);
-
   /// No description provided for @passwordMinLength.
   ///
   /// In uz, this message translates to:
@@ -4561,6 +4555,12 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Yaratishda xatolik yuz berdi'**
   String get createOwnerFailed;
+
+  /// No description provided for @usernameTaken.
+  ///
+  /// In uz, this message translates to:
+  /// **'\'{username}\' band'**
+  String usernameTaken(String username);
 
   /// No description provided for @marketNameTaken.
   ///

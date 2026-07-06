@@ -49,7 +49,9 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   bool _imageRemoved = false;
 
   bool _isTemporary = false;
-  bool _hideFromSeller = false;
+  // Yangi mahsulot uchun narx DEFAULT yashirin (sotuvchiga ko'rinmaydi).
+  // Mavjud mahsulotда initState uni saqlangan qiymatдан yuklaydi (79-qator).
+  bool _hideFromSeller = true;
   bool _isLoading = false;
   List<ProductCategoryModel> _categories = [];
   int? _selectedCategory;

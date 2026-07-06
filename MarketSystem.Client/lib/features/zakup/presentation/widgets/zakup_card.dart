@@ -18,7 +18,11 @@ import 'package:market_system_client/core/providers/auth_provider.dart';
 class ZakupCard extends StatelessWidget {
   final Map<String, dynamic> zakup;
 
-  const ZakupCard({super.key, required this.zakup});
+  /// RBAC: zakup.delete ruxsati bo'lganda beriladi. null bo'lsa — swipe orqali
+  /// o'chirish ko'rsatilmaydi.
+  final VoidCallback? onDelete;
+
+  const ZakupCard({super.key, required this.zakup, this.onDelete});
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}  '
@@ -39,7 +43,7 @@ class ZakupCard extends StatelessWidget {
         ? qty.toInt().toString()
         : qty.toString();
 
-    return Padding(
+    final card = Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md + 2),
       child: AppCard(
         padding: const EdgeInsets.symmetric(
@@ -137,6 +141,63 @@ class ZakupCard extends StatelessWidget {
         ),
       ),
     );
+
+    if (onDelete == null) return card;
+    return Dismissible(
+      key: ValueKey('zakup_${zakup['id']}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md + 2),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl2),
+        decoration: BoxDecoration(
+          color: AppColors.danger,
+          borderRadius: BorderRadius.circular(AppRadius.xl2),
+        ),
+        child: const Icon(Icons.delete_rounded, color: Colors.white),
+      ),
+      confirmDismiss: (_) async {
+        final ok = await _confirmDelete(context, l10n);
+        if (ok) onDelete!();
+        return false; // ro'yxat qayta yuklanadi — auto-dismiss shart emas
+      },
+      child: card,
+    );
+  }
+
+  Future<bool> _confirmDelete(BuildContext context, AppLocalizations l10n) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: context.colors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+            ),
+            title: Text(l10n.confirmDelete, style: AppTextStyles.titleMedium()),
+            content: Text(
+              '"${zakup['productName'] ?? l10n.unknown}" · '
+              '${zakup['quantity'] ?? ''} ${l10n.piece}',
+              style: AppTextStyles.bodyMedium().copyWith(
+                color: context.colors.textSecondary,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.no),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.delete),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }
 

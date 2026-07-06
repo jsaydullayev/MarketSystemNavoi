@@ -1,5 +1,6 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Entities;
 using MarketSystem.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -129,6 +130,65 @@ public class ZakupService : IZakupService
             await _auditLogService.LogZakupActionAsync(zakup.Id, adminId, cancellationToken);
 
             return await MapToDtoAsync(zakup, cancellationToken);
+        }, cancellationToken);
+    }
+
+    public async Task<bool> DeleteZakupAsync(Guid id, Guid deletedByUserId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var zakups = await _unitOfWork.Zakups.FindAsync(
+                z => z.Id == id && z.MarketId == marketId, cancellationToken);
+            var zakup = zakups.FirstOrDefault();
+            if (zakup is null)
+                return false;
+
+            // Reverse the stock this purchase added. If the product's current
+            // stock is already below the purchased quantity (items were sold),
+            // refuse — deleting would drive stock negative and desync inventory.
+            var products = await _unitOfWork.Products.FindAsync(
+                p => p.Id == zakup.ProductId && p.MarketId == marketId, cancellationToken);
+            var product = products.FirstOrDefault();
+            if (product is not null)
+            {
+                if (product.Quantity < zakup.Quantity)
+                    throw new InvalidOperationException(
+                        "Bu xaridni o'chirib bo'lmaydi — undagi tovarlar allaqachon sotilgan (ombor qoldig'i yetarli emas).");
+
+                product.Quantity -= zakup.Quantity;
+
+                // CostPrice = eng oxirgi xarid narxi. Agar mahsulotning joriy tan
+                // narxi aynan shu o'chirilayotgan xariddan bo'lsa (ya'ni bu oxirgi
+                // xarid edi va keyin qo'lda o'zgartirilmagan), narxni qolgan eng
+                // yangi xarid narxiga qaytaramiz. Aks holda mahsulotда endi mavjud
+                // bo'lmagan xarid narxi qolib, foyda/ombor-qiymat hisobi buziladi.
+                if (product.CostPrice == zakup.CostPrice)
+                {
+                    var latestRemaining = await _context.Zakups
+                        .Where(z => z.ProductId == zakup.ProductId
+                                 && z.MarketId == marketId
+                                 && z.Id != id)
+                        .OrderByDescending(z => z.CreatedAt)
+                        .FirstOrDefaultAsync(cancellationToken);
+                    if (latestRemaining is not null)
+                        product.CostPrice = latestRemaining.CostPrice;
+                }
+
+                _unitOfWork.Products.Update(product);
+            }
+
+            _unitOfWork.Zakups.Delete(zakup);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Audit — logs a Delete so it surfaces in the security journal and
+            // feeds the bulk-delete suspicious-activity detector.
+            await _auditLogService.LogActionAsync(
+                "Zakup", id, AuditActions.Delete, deletedByUserId,
+                new { zakup.ProductId, zakup.Quantity, zakup.CostPrice }, cancellationToken);
+
+            return true;
         }, cancellationToken);
     }
 
