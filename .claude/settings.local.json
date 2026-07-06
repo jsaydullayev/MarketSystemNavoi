@@ -26,7 +26,26 @@
       "PowerShell(docker system df 2>&1)",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Application\\\\Settings\")",
       "PowerShell(Copy-Item \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Domain\\\\Common\\\\JwtSetting.cs\" \"c:\\\\Users\\\\joo\\\\Desktop\\\\MarketSystem\\\\MarketSystem.Application\\\\Settings\\\\JwtSetting.cs\")",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "PowerShell($exe = \"$env:ProgramFiles\\\\Docker\\\\Docker\\\\Docker Desktop.exe\"; if \\(Test-Path $exe\\) { Start-Process $exe; \"Docker Desktop ishga tushirildi\" } else { \"topilmadi: $exe\" })",
+      "Bash(docker info *)",
+      "Bash(exit 0)",
+      "Bash(flutter devices *)",
+      "Bash(tasklist //FI \"IMAGENAME eq Docker Desktop.exe\")",
+      "Bash(where.exe docker *)",
+      "PowerShell($exe = \"$env:ProgramFiles\\\\Docker\\\\Docker\\\\Docker Desktop.exe\"; if \\(Test-Path $exe\\) { Start-Process $exe; \"Docker Desktop ishga tushirildi\" } else { \"topilmadi\" })",
+      "PowerShell(Get-Process \"Docker Desktop\" -ErrorAction SilentlyContinue)",
+      "Bash(timeout 90 bash -c 'until docker info >/dev/null 2>&1; do sleep 3; done')",
+      "Bash(netstat -ano)",
+      "Bash(tasklist //FI \"IMAGENAME eq dotnet.exe\")",
+      "Bash(tasklist //FI \"PID eq 17924\")",
+      "Bash(tee /c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/9316ddc6-f7d8-4280-86bf-c3ddcb77553f/scratchpad/api_run.log)",
+      "Bash(timeout 60 bash -c 'until grep -qE '\\\\''Now listening on|Application started|Unhandled exception|Failed to bind|error CS|Build FAILED'\\\\'' '\\\\''/c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/9316ddc6-f7d8-4280-86bf-c3ddcb77553f/scratchpad/api_run.log'\\\\'' 2>/dev/null; do sleep 1; done')",
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" http://localhost:5050/health)",
+      "Bash(tee /c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/9316ddc6-f7d8-4280-86bf-c3ddcb77553f/scratchpad/flutter_run.log)",
+      "Bash(timeout 120 bash -c 'until grep -qE '\\\\''lib.main.dart is being served|Application finished|A web development server|error:|No pubspec|Exception|Failed to compile'\\\\'' '\\\\''/c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/9316ddc6-f7d8-4280-86bf-c3ddcb77553f/scratchpad/flutter_run.log'\\\\'' 2>/dev/null; do sleep 2; done')",
+      "Bash(python3 -m json.tool)",
+      "Bash(git -C c:/Users/joo/Desktop/MarketSystem log --oneline -1 -- deployment/scripts/deploy.sh)"
     ]
   }
 }
