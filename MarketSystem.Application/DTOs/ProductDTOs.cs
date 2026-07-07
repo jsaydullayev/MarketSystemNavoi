@@ -174,5 +174,14 @@ public record UpdateProductDto(
     [property: JsonPropertyName("categoryId")] int? CategoryId,
     [property: JsonPropertyName("unit")] int Unit = 1,
     [property: JsonPropertyName("isTemporary")] bool IsTemporary = false,
-    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false
+    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false,
+
+    // Owner-only manual stock correction. Null (the default) means "leave stock
+    // untouched" — the normal path for name/price edits, and for every non-Owner
+    // caller, whose value the server ignores regardless. When an Owner supplies a
+    // value, Quantity is set to it as an absolute figure (physical-count fix).
+    // Stock otherwise moves only through zakup and sales.
+    [property: JsonPropertyName("quantity")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
+    decimal? Quantity = null
 );

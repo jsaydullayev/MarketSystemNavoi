@@ -142,7 +142,7 @@ public class ProductService : IProductService
         return MapToDto(product);
     }
 
-    public async Task<ProductDto?> UpdateProductAsync(UpdateProductDto request, CancellationToken cancellationToken = default)
+    public async Task<ProductDto?> UpdateProductAsync(UpdateProductDto request, bool canEditStock = false, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
@@ -162,13 +162,20 @@ public class ProductService : IProductService
 
         product.Name = request.Name;
         product.IsTemporary = request.IsTemporary;
-        // CostPrice va Quantity faqat Zakup orqali yangilanadi
+        // CostPrice faqat Zakup orqali yangilanadi. Quantity ham odatда zakup/
+        // sotuv orqali harakatlanadi — istisno: Owner (canEditStock) uni
+        // qo'lda tuzatishi mumkin (masalan, inventarizatsiyadan keyin).
         product.SalePrice = request.SalePrice;
         product.MinSalePrice = request.MinSalePrice;
         product.MinThreshold = request.MinThreshold;
         product.Unit = (UnitType)unitValue;  // ✅ NEW: Update unit
         product.CategoryId = request.CategoryId;  // Category
         product.HidePriceFromSellers = request.HidePriceFromSellers;
+
+        // Faqat Owner/SuperAdmin (canEditStock) va faqat qiymat kelganda qo'llanadi.
+        // Manfiy qiymat DTO Range validatsiyasida allaqachon rad etiladi.
+        if (canEditStock && request.Quantity.HasValue)
+            product.Quantity = request.Quantity.Value;
 
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

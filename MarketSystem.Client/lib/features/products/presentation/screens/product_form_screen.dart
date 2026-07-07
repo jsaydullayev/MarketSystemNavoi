@@ -53,6 +53,11 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
   // Mavjud mahsulotда initState uni saqlangan qiymatдан yuklaydi (79-qator).
   bool _hideFromSeller = true;
   bool _isLoading = false;
+
+  // Tahrirda yuklangan boshlang'ich qoldiq. Owner stokni qo'lda o'zgartirganda
+  // faqat HAQIQATAN o'zgargan bo'lsa serverga yuboramiz — aks holda eskirgan
+  // forma sotuvlar o'zgartirgan qoldiqni bosib ketishi mumkin edi.
+  double? _originalQuantity;
   List<ProductCategoryModel> _categories = [];
   int? _selectedCategory;
 
@@ -65,6 +70,15 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
   bool get _isEditing => widget.product != null;
 
+  /// Only Owner/SuperAdmin may hand-correct on-hand stock from this form (e.g.
+  /// after a physical count). The backend enforces the same rule from the JWT
+  /// role — this just decides whether the field is editable and whether we send
+  /// the new value. Mirrors AuthProvider.can()'s Owner/SuperAdmin short-circuit.
+  bool _userCanEditStock() {
+    final role = Provider.of<AuthProvider>(context, listen: false).role;
+    return role == 'Owner' || role == 'SuperAdmin';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +89,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       _minSalePriceController.text = (widget.product['minSalePrice'] ?? 0)
           .toString();
       _stockController.text = (widget.product['quantity'] ?? 0).toString();
+      _originalQuantity = (widget.product['quantity'] as num?)?.toDouble() ?? 0.0;
       _minThresholdController.text = (widget.product['minThreshold'] ?? 0)
           .toString();
       _isTemporary = widget.product['isTemporary'] ?? false;
@@ -146,6 +161,14 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
         );
         productId = created['id'] as String;
       } else {
+        // Owner qoldiqni qo'lda tuzatishi mumkin. Faqat HAQIQATAN o'zgargan
+        // bo'lsa yuboramiz — bo'lmasa null qoldirib, eskirgan forma sotuvlar
+        // o'zgartirgan qoldiqni bosib ketmasligini kafolatlaymiz.
+        double? quantityOverride;
+        if (_userCanEditStock() && initialQuantity != _originalQuantity) {
+          quantityOverride = initialQuantity;
+        }
+
         await productService.updateProduct(
           id: widget.product['id'],
           name: name,
@@ -156,6 +179,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
           unit: _selectedUnit,
           isTemporary: tempStatus,
           hidePriceFromSellers: _hideFromSeller,
+          quantity: quantityOverride,
         );
         productId = widget.product['id'] as String;
       }
@@ -204,6 +228,8 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isWeb = screenWidth > 600;
+    // Owner/SuperAdmin tahrirда hozirgi stokni qo'lda tuzatishi mumkin.
+    final canEditStock = _userCanEditStock();
     final unitName =
         _units.firstWhere(
               (u) => u['value'] == _selectedUnit,
@@ -399,9 +425,12 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                             controller: _stockController,
                             suffix: unitName,
                             isNumber: true,
-                            // Stock is set via zakup once the product exists,
-                            // so editing it here would be misleading.
-                            enabled: !_isEditing,
+                            // Yangi mahsulotда boshlang'ich qoldiq kiritiladi.
+                            // Mavjud mahsulotда qoldiq odatда zakup orqali
+                            // harakatlanadi — lekin Owner uni qo'lda tuzatishi
+                            // mumkin (masalan, inventarizatsiya). Boshqalar uchun
+                            // maydon o'zgartirib bo'lmaydigan holatда qoladi.
+                            enabled: !_isEditing || canEditStock,
                           ),
                         ),
                       ),
@@ -419,6 +448,19 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                       ),
                     ],
                   ),
+                  if (_isEditing && canEditStock) ...[
+                    8.height,
+                    Text(
+                      "Hozirgi stokni qo'lda tuzatishingiz mumkin (masalan, "
+                      "inventarizatsiyadan keyin). O'zgarish audit jurnaliga yoziladi.",
+                      style: AppTextStyles.caption().copyWith(
+                        fontSize: 11,
+                        letterSpacing: 0,
+                        color: context.colors.textMuted,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
                   8.height,
                   Text(
                     "Stok ${_minThresholdController.text.isEmpty ? "N" : _minThresholdController.text} donadan tushganda Owner'ga xabar yuboriladi",

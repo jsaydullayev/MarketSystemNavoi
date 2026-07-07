@@ -45,7 +45,9 @@
       "Bash(tee /c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/9316ddc6-f7d8-4280-86bf-c3ddcb77553f/scratchpad/flutter_run.log)",
       "Bash(timeout 120 bash -c 'until grep -qE '\\\\''lib.main.dart is being served|Application finished|A web development server|error:|No pubspec|Exception|Failed to compile'\\\\'' '\\\\''/c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/9316ddc6-f7d8-4280-86bf-c3ddcb77553f/scratchpad/flutter_run.log'\\\\'' 2>/dev/null; do sleep 2; done')",
       "Bash(python3 -m json.tool)",
-      "Bash(git -C c:/Users/joo/Desktop/MarketSystem log --oneline -1 -- deployment/scripts/deploy.sh)"
+      "Bash(git -C c:/Users/joo/Desktop/MarketSystem log --oneline -1 -- deployment/scripts/deploy.sh)",
+      "Bash(docker version *)",
+      "Bash(powershell.exe -NoProfile -Command \"if \\(Test-Path 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'\\) { Start-Process 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'; 'launched' } else { 'not-found-default-path' }\")"
     ]
   }
 }

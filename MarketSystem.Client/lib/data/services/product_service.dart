@@ -78,6 +78,10 @@ class ProductService {
     }
   }
 
+  /// Updates a product. [quantity] is an Owner-only manual stock correction —
+  /// pass it ONLY when the Owner actually changed the on-hand figure. Left null,
+  /// the server leaves stock untouched (stock normally moves via zakup/sales),
+  /// which avoids a stale form clobbering quantity that sales moved meanwhile.
   Future<dynamic> updateProduct({
     required String id,
     required String name,
@@ -88,6 +92,7 @@ class ProductService {
     required int unit,
     required bool isTemporary,
     bool hidePriceFromSellers = false,
+    double? quantity,
   }) async {
     final response = await _httpService.put(
       '${ApiConstants.products}/UpdateProduct/$id',
@@ -101,6 +106,7 @@ class ProductService {
         if (categoryId != null) 'categoryId': categoryId,
         'unit': unit,
         'hidePriceFromSellers': hidePriceFromSellers,
+        if (quantity != null) 'quantity': quantity,
       },
     );
 
