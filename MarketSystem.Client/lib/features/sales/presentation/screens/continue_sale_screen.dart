@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -20,8 +21,8 @@ import 'package:market_system_client/features/sales/presentation/widgets/price_i
 
 /// Resume / edit an existing draft sale by `saleId`. Mirrors the new
 /// `NewSaleScreen` POS layout: white sticky header (back + title + meta
-/// + customer chip), gray search input row, 3-column product grid, and a
-/// pinned cart bottom bar. The horizontal "items already added" strip
+/// + customer chip), gray search input row, responsive masonry product grid,
+/// and a pinned cart bottom bar. The horizontal "items already added" strip
 /// sits between the search and the grid to remind the cashier what's
 /// already in this draft.
 ///
@@ -557,7 +558,10 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     // the backend now rejects.)
     final status = _sale?['status'] as String?;
     final canEditPrice = status == 'Draft' || status == 'Debt';
-    final canReturn = Provider.of<AuthProvider>(context, listen: false).can('sales.edit');
+    final canReturn = Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).can('sales.edit');
 
     return NetworkWrapper(
       onRetry: _loadData,
@@ -639,29 +643,42 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
                   Expanded(
                     child: _filteredProducts.isEmpty
                         ? ContinueSaleEmptyState(l10n: l10n)
-                        : GridView.builder(
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.xl,
-                              AppSpacing.xs,
-                              AppSpacing.xl,
-                              AppSpacing.md,
-                            ),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  // Taller tile so the product photo on top
-                                  // reads clearly.
-                                  childAspectRatio: 0.82,
-                                  crossAxisSpacing: AppSpacing.md,
-                                  mainAxisSpacing: AppSpacing.md,
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              // Responsive columns, matching the new-sale grid.
+                              final int crossAxisCount;
+                              if (constraints.maxWidth >= 900) {
+                                crossAxisCount = 6;
+                              } else if (constraints.maxWidth >= 600) {
+                                crossAxisCount = 5;
+                              } else if (constraints.maxWidth >= 400) {
+                                crossAxisCount = 4;
+                              } else {
+                                crossAxisCount = 3;
+                              }
+                              // Masonry (variable-height) so a long product name
+                              // wraps to 2-3 lines and stays fully visible, while
+                              // short names keep compact tiles → more fit on
+                              // screen. No product photo (text-only tile).
+                              return MasonryGridView.count(
+                                padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.xl,
+                                  AppSpacing.xs,
+                                  AppSpacing.xl,
+                                  AppSpacing.md,
                                 ),
-                            itemCount: _filteredProducts.length,
-                            itemBuilder: (context, index) =>
-                                ContinueSaleProductCard(
-                                  product: _filteredProducts[index],
-                                  onTap: () =>
-                                      _addToCart(_filteredProducts[index]),
-                                ),
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: AppSpacing.md,
+                                mainAxisSpacing: AppSpacing.md,
+                                itemCount: _filteredProducts.length,
+                                itemBuilder: (context, index) =>
+                                    ContinueSaleProductCard(
+                                      product: _filteredProducts[index],
+                                      onTap: () =>
+                                          _addToCart(_filteredProducts[index]),
+                                    ),
+                              );
+                            },
                           ),
                   ),
                 ],
@@ -678,5 +695,4 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
       ),
     );
   }
-
 }

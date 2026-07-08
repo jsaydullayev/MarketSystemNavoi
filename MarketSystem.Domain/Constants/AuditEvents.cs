@@ -46,4 +46,9 @@ public static class AuditActions
     public const string ShiftChange = "ShiftChange";
     public const string ProfileImageUpdate = "ProfileImageUpdate";
     public const string ProductImageUpdate = "ProductImageUpdate";
+
+    // Owner hand-corrected a product's on-hand stock outside the zakup/sales
+    // flow (e.g. after a physical inventory count). Fraud-sensitive, so it gets
+    // its own action rather than a generic Update for the security journal.
+    public const string StockAdjust = "StockAdjust";
 }

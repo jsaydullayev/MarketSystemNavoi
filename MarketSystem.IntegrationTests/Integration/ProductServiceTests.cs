@@ -337,6 +337,60 @@ public class ProductServiceTests : TestBase
         ok.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task UpdateProduct_CanEditStock_OverridesQuantity()
+    {
+        // Owner hand-corrects on-hand stock (e.g. after a physical count).
+        var seeded = SeedSampleProduct("Countable", qty: 50m);
+
+        var result = await CreateService().UpdateProductAsync(
+            new UpdateProductDto(
+                Id: seeded.Id,
+                Name: seeded.Name,
+                SalePrice: seeded.SalePrice,
+                MinSalePrice: seeded.MinSalePrice,
+                MinThreshold: seeded.MinThreshold,
+                CategoryId: null,
+                Unit: (int)UnitType.Piece,
+                IsTemporary: false,
+                HidePriceFromSellers: false,
+                Quantity: 42m),
+            canEditStock: true);
+
+        result.Should().NotBeNull();
+        result!.Quantity.Should().Be(42m);
+
+        ClearDbContext();
+        (await DbContext.Products.FirstAsync(p => p.Id == seeded.Id)).Quantity.Should().Be(42m);
+    }
+
+    [Fact]
+    public async Task UpdateProduct_WithoutStockPermission_LeavesQuantityUntouched()
+    {
+        // Non-Owner (default canEditStock=false): even a supplied Quantity is
+        // ignored — stock may only move through zakup/sales for these callers.
+        var seeded = SeedSampleProduct("Locked", qty: 50m);
+
+        var result = await CreateService().UpdateProductAsync(
+            new UpdateProductDto(
+                Id: seeded.Id,
+                Name: seeded.Name,
+                SalePrice: seeded.SalePrice,
+                MinSalePrice: seeded.MinSalePrice,
+                MinThreshold: seeded.MinThreshold,
+                CategoryId: null,
+                Unit: (int)UnitType.Piece,
+                IsTemporary: false,
+                HidePriceFromSellers: false,
+                Quantity: 9999m));
+
+        result.Should().NotBeNull();
+        result!.Quantity.Should().Be(50m);
+
+        ClearDbContext();
+        (await DbContext.Products.FirstAsync(p => p.Id == seeded.Id)).Quantity.Should().Be(50m);
+    }
+
     // ───────────────────── Product images ─────────────────────
 
     /// <summary>

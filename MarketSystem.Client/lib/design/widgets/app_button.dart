@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import '../tokens/app_tokens.dart';
 import '../tokens/app_typography.dart';
 
-enum _AppButtonVariant { primary, secondary, danger }
+enum _AppButtonVariant { primary, secondary, danger, success }
 
 class _AppButtonBase extends StatefulWidget {
   const _AppButtonBase({
@@ -33,6 +33,8 @@ class _AppButtonBase extends StatefulWidget {
         return isDark ? AppColors.darkInputFill : AppColors.inputFill;
       case _AppButtonVariant.danger:
         return AppColors.danger;
+      case _AppButtonVariant.success:
+        return AppColors.success;
     }
   }
 
@@ -43,6 +45,8 @@ class _AppButtonBase extends StatefulWidget {
       case _AppButtonVariant.primary:
         return isDark ? AppColors.darkBg : Colors.white;
       case _AppButtonVariant.danger:
+        return Colors.white;
+      case _AppButtonVariant.success:
         return Colors.white;
     }
   }
@@ -264,5 +268,29 @@ class AppDangerButton extends StatelessWidget {
     icon: icon,
     isLoading: isLoading,
     variant: _AppButtonVariant.danger,
+  );
+}
+
+class AppSuccessButton extends StatelessWidget {
+  const AppSuccessButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.isLoading = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) => _AppButtonBase(
+    label: label,
+    onPressed: onPressed,
+    icon: icon,
+    isLoading: isLoading,
+    variant: _AppButtonVariant.success,
   );
 }

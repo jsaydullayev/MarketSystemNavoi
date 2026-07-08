@@ -12,33 +12,33 @@ class SalesHeroSummary extends StatelessWidget {
   final List<SaleEntity> sales;
   final AppLocalizations l10n;
 
-  const SalesHeroSummary({
-    super.key,
-    required this.sales,
-    required this.l10n,
-  });
+  const SalesHeroSummary({super.key, required this.sales, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
+    // Single pass over `sales`: previously `todaySales` was a lazy .where(), so
+    // fold + length + where(debt) + where(draft) each RE-RAN the date predicate
+    // over the whole list (~4 passes) on every rebuild (incl. each chip tap).
     final today = DateTime.now();
-    final todaySales = sales.where(
-      (s) =>
-          s.createdAt.year == today.year &&
-          s.createdAt.month == today.month &&
-          s.createdAt.day == today.day,
-    );
-
-    final totalToday = todaySales.fold<double>(
-      0,
-      (sum, s) => sum + s.totalAmount,
-    );
-    final countToday = todaySales.length;
-    final debtCount = todaySales
-        .where((s) => s.getStatusText().toLowerCase() == 'debt')
-        .length;
-    final ongoing = todaySales
-        .where((s) => s.getStatusText().toLowerCase() == 'draft')
-        .length;
+    double totalToday = 0;
+    int countToday = 0;
+    int debtCount = 0;
+    int ongoing = 0;
+    for (final s in sales) {
+      if (s.createdAt.year != today.year ||
+          s.createdAt.month != today.month ||
+          s.createdAt.day != today.day) {
+        continue;
+      }
+      totalToday += s.totalAmount;
+      countToday++;
+      final status = s.getStatusText().toLowerCase();
+      if (status == 'debt') {
+        debtCount++;
+      } else if (status == 'draft') {
+        ongoing++;
+      }
+    }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(

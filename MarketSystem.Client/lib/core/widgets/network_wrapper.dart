@@ -23,9 +23,21 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
   bool _isConnected = true;
   late StreamSubscription _subscription; // ✅ declare qilindi
 
+  // Throttle the /health probe across ALL NetworkWrapper mounts. Every wrapped
+  // screen (dashboard, products, sales, reports, …) used to fire a fresh
+  // /health GET on navigation, racing a round-trip against the screen's real
+  // data fetch. Caching the last result for a short TTL makes navigation reuse
+  // it. Device connectivity changes still update instantly via the stream
+  // below (no network cost).
+  static DateTime? _lastProbe;
+  static bool _lastReachable = true;
+  static const Duration _probeTtl = Duration(seconds: 30);
+
   @override
   void initState() {
     super.initState();
+    // Paint immediately from the cached probe; only re-probe if it's stale.
+    _isConnected = _lastReachable;
     _checkConnection();
     _subscription = Connectivity().onConnectivityChanged.listen((result) {
       if (!mounted) return;
@@ -41,7 +53,14 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
     super.dispose();
   }
 
-  Future<void> _checkConnection() async {
+  Future<void> _checkConnection({bool force = false}) async {
+    // Reuse a recent probe (from any wrapped screen) so navigation doesn't fire
+    // a fresh /health GET every time. `force: true` (Retry button) bypasses it.
+    final last = _lastProbe;
+    if (!force && last != null && DateTime.now().difference(last) < _probeTtl) {
+      if (mounted) setState(() => _isConnected = _lastReachable);
+      return;
+    }
     try {
       final result = await Connectivity().checkConnectivity();
       final hasNetwork = result != ConnectivityResult.none;
@@ -59,13 +78,19 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
           final apiConnected =
               response.statusCode >= 200 && response.statusCode < 500;
 
+          _lastProbe = DateTime.now();
+          _lastReachable = apiConnected;
           if (mounted) setState(() => _isConnected = apiConnected);
         } catch (apiError) {
           // API serverga ulana olmasa, lekin internet bor deb hisoblaymiz
           // Chunki server vaqtncha javob bermashi mumkin
+          _lastProbe = DateTime.now();
+          _lastReachable = true;
           if (mounted) setState(() => _isConnected = true);
         }
       } else {
+        _lastProbe = DateTime.now();
+        _lastReachable = false;
         if (mounted) setState(() => _isConnected = false);
       }
     } catch (_) {
@@ -134,7 +159,7 @@ class _NetworkWrapperState extends State<NetworkWrapper> {
                 label: l10n.retry,
                 icon: Icons.refresh_rounded,
                 onPressed: () async {
-                  await _checkConnection();
+                  await _checkConnection(force: true);
                   if (_isConnected) {
                     widget.onRetry?.call();
                   }

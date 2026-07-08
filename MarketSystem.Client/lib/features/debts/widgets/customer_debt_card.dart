@@ -3,6 +3,7 @@ import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
+import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/features/customers/presentation/widgets/avatar_palette.dart';
 import 'package:market_system_client/features/debts/widgets/due_date_badge.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -50,6 +51,7 @@ class CustomerDebtCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final hasDebt = remainingDebt > 0;
     final dueRaw = _earliestDueDate();
 
@@ -93,7 +95,14 @@ class CustomerDebtCard extends StatelessWidget {
                 ],
                 if (hasDebt && canManage) ...[
                   const SizedBox(height: AppSpacing.lg),
-                  _PayButton(onTap: onPay),
+                  // Design-system success button: no fixed height, so the
+                  // label never clips (the old bespoke _PayButton pinned
+                  // height:44 and clipped "To'lash" vertically).
+                  AppSuccessButton(
+                    label: l10n.pay,
+                    icon: Icons.payment_rounded,
+                    onPressed: onPay,
+                  ),
                 ],
               ],
             ),
@@ -250,39 +259,6 @@ class _AmountItem extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PayButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _PayButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return SizedBox(
-      width: double.infinity,
-      height: 44,
-      child: ElevatedButton.icon(
-        onPressed: onTap,
-        icon: const Icon(Icons.payment_rounded, size: 18, color: Colors.white),
-        label: Text(
-          l10n.pay,
-          style: AppTextStyles.bodyMedium().copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.success,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md + 2),
-          ),
-        ),
-      ),
     );
   }
 }

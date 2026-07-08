@@ -148,7 +148,13 @@ public record CreateProductDto(
     [param: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
     decimal Quantity = 0,
 
-    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false
+    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false,
+
+    // Kelgan (tannarx) narxi. Formadan ixtiyoriy kiritiladi — 0 bo'lsa keyin
+    // zakup orqali to'ldiriladi. Faqat cost-ko'ruvchi (Owner/Admin) kiritadi.
+    [property: JsonPropertyName("costPrice")]
+    [param: Range(0, double.MaxValue)]
+    decimal CostPrice = 0
 );
 
 public record UpdateProductDto(
@@ -174,5 +180,21 @@ public record UpdateProductDto(
     [property: JsonPropertyName("categoryId")] int? CategoryId,
     [property: JsonPropertyName("unit")] int Unit = 1,
     [property: JsonPropertyName("isTemporary")] bool IsTemporary = false,
-    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false
+    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false,
+
+    // Owner-only manual stock correction. Null (the default) means "leave stock
+    // untouched" — the normal path for name/price edits, and for every non-Owner
+    // caller, whose value the server ignores regardless. When an Owner supplies a
+    // value, Quantity is set to it as an absolute figure (physical-count fix).
+    // Stock otherwise moves only through zakup and sales.
+    [property: JsonPropertyName("quantity")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
+    decimal? Quantity = null,
+
+    // Kelgan (tannarx) narxi. Null (default) — tegilmaydi. Faqat cost-ko'ruvchi
+    // (Owner/Admin) yuboradi; cost-yashirin foydalanuvchida maskalangan 0 eski
+    // narxni bosib ketmasligi uchun null qoldiriladi.
+    [property: JsonPropertyName("costPrice")]
+    [param: Range(0, double.MaxValue)]
+    decimal? CostPrice = null
 );

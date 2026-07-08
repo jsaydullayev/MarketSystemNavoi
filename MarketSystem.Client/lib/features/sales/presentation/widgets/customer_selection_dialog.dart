@@ -46,6 +46,24 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
   final _phoneCtrl = TextEditingController();
   bool _isCreating = false;
 
+  // The customer list future is created ONCE per [_listVersion] and cached.
+  // Previously `future: getAllCustomers()` was built inline every `build()`, so
+  // every unrelated rebuild (add-mode toggle, _isCreating flip) re-fetched the
+  // whole customer list from the network — mid-sale, a latency-sensitive moment.
+  Future<List<dynamic>>? _customersFuture;
+  int _futureVersion = -1;
+
+  Future<List<dynamic>> _customers(BuildContext context) {
+    if (_customersFuture == null || _futureVersion != _listVersion) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      _customersFuture = CustomerService(
+        authProvider: authProvider,
+      ).getAllCustomers();
+      _futureVersion = _listVersion;
+    }
+    return _customersFuture!;
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -132,7 +150,6 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final customerService = CustomerService(authProvider: authProvider);
     final l10n = AppLocalizations.of(context)!;
 
     return Dialog(
@@ -147,8 +164,7 @@ class _CustomerSelectionDialogState extends State<CustomerSelectionDialog> {
       child: _isAddMode
           ? _buildAddForm(context, l10n)
           : FutureBuilder(
-              key: ValueKey(_listVersion),
-              future: customerService.getAllCustomers(),
+              future: _customers(context),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return SizedBox(

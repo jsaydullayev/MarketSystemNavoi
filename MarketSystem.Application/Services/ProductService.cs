@@ -122,7 +122,7 @@ public class ProductService : IProductService
             Name = request.Name,
             IsTemporary = request.IsTemporary,
             CreatedBySellerId = sellerId,
-            CostPrice = 0, // Zakup orqali belgilanadi
+            CostPrice = request.CostPrice, // Formadan; 0 bo'lsa keyin zakup orqali
             SalePrice = request.SalePrice,
             MinSalePrice = request.MinSalePrice,
             // Boshlang'ich qoldiq: do'konda bor, lekin zakupsiz tovarlar uchun
@@ -142,7 +142,7 @@ public class ProductService : IProductService
         return MapToDto(product);
     }
 
-    public async Task<ProductDto?> UpdateProductAsync(UpdateProductDto request, CancellationToken cancellationToken = default)
+    public async Task<ProductDto?> UpdateProductAsync(UpdateProductDto request, bool canEditStock = false, bool canEditCost = false, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarketService.GetCurrentMarketId();
 
@@ -162,13 +162,27 @@ public class ProductService : IProductService
 
         product.Name = request.Name;
         product.IsTemporary = request.IsTemporary;
-        // CostPrice va Quantity faqat Zakup orqali yangilanadi
+        // Quantity odatда zakup/sotuv orqali harakatlanadi — istisno: Owner
+        // (canEditStock) uni qo'lda tuzatishi mumkin. CostPrice ham endi forma
+        // orqali (canEditCost = Owner/Admin) o'zgartirilishi mumkin; aks holda
+        // zakup orqali yangilanadi.
         product.SalePrice = request.SalePrice;
         product.MinSalePrice = request.MinSalePrice;
         product.MinThreshold = request.MinThreshold;
         product.Unit = (UnitType)unitValue;  // ✅ NEW: Update unit
         product.CategoryId = request.CategoryId;  // Category
         product.HidePriceFromSellers = request.HidePriceFromSellers;
+
+        // Faqat Owner/SuperAdmin (canEditStock) va faqat qiymat kelganda qo'llanadi.
+        // Manfiy qiymat DTO Range validatsiyasida allaqachon rad etiladi.
+        if (canEditStock && request.Quantity.HasValue)
+            product.Quantity = request.Quantity.Value;
+
+        // Kelgan narx: faqat cost-ko'ruvchi (Owner/Admin) va qiymat kelganda.
+        // Null bo'lsa tegilmaydi — masking tufayli 0 kelib eski narxni bosib
+        // ketmasligi uchun.
+        if (canEditCost && request.CostPrice.HasValue)
+            product.CostPrice = request.CostPrice.Value;
 
         _unitOfWork.Products.Update(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

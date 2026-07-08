@@ -65,9 +65,22 @@ class _SalesScreenState extends State<SalesScreen> {
     context.read<SalesBloc>().add(const GetSalesEvent());
   }
 
-  List<SaleEntity> _filterSales(List<SaleEntity> sales) {
-    List<SaleEntity> filtered;
+  // Memoized filtered+sorted result. _filterSales runs inside the BlocBuilder
+  // body, so it fired the full List.from + O(n log n) sort on EVERY rebuild —
+  // including each status-chip tap (a bare setState). Cache it keyed by the
+  // source list identity + selected status; recompute only when one changes.
+  List<SaleEntity>? _filteredCache;
+  List<SaleEntity>? _filteredForSales;
+  String? _filteredForStatus;
 
+  List<SaleEntity> _filterSales(List<SaleEntity> sales) {
+    if (_filteredCache != null &&
+        identical(sales, _filteredForSales) &&
+        _selectedStatus == _filteredForStatus) {
+      return _filteredCache!;
+    }
+
+    List<SaleEntity> filtered;
     if (_selectedStatus == 'all') {
       filtered = List.from(sales);
     } else {
@@ -75,8 +88,11 @@ class _SalesScreenState extends State<SalesScreen> {
           .where((s) => s.getStatusText().toLowerCase() == _selectedStatus)
           .toList();
     }
-
     filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    _filteredCache = filtered;
+    _filteredForSales = sales;
+    _filteredForStatus = _selectedStatus;
     return filtered;
   }
 
@@ -350,8 +366,9 @@ class _SalesScreenState extends State<SalesScreen> {
                     final sales = state is SalesLoaded
                         ? state.sales
                         : (state as SalesLoadingMore).sales;
-                    final hasMore =
-                        state is SalesLoaded ? state.hasMore : false;
+                    final hasMore = state is SalesLoaded
+                        ? state.hasMore
+                        : false;
                     final isLoadingMore = state is SalesLoadingMore;
                     final filteredSales = _filterSales(sales);
                     return Column(
@@ -375,7 +392,8 @@ class _SalesScreenState extends State<SalesScreen> {
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: AppSpacing.xl,
                                     ),
-                                    itemCount: filteredSales.length +
+                                    itemCount:
+                                        filteredSales.length +
                                         (hasMore || isLoadingMore ? 1 : 0),
                                     itemBuilder: (context, index) {
                                       if (index == filteredSales.length) {
@@ -383,9 +401,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                           isLoading: isLoadingMore,
                                           onLoadMore: () => context
                                               .read<SalesBloc>()
-                                              .add(
-                                                const LoadMoreSalesEvent(),
-                                              ),
+                                              .add(const LoadMoreSalesEvent()),
                                         );
                                       }
                                       return SalesSaleItem(
@@ -394,13 +410,10 @@ class _SalesScreenState extends State<SalesScreen> {
                                         onTap: () => Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) =>
-                                                BlocProvider.value(
-                                              value:
-                                                  context.read<SalesBloc>(),
+                                            builder: (_) => BlocProvider.value(
+                                              value: context.read<SalesBloc>(),
                                               child: SaleDetailScreen(
-                                                saleId:
-                                                    filteredSales[index].id,
+                                                saleId: filteredSales[index].id,
                                               ),
                                             ),
                                           ),
@@ -437,30 +450,30 @@ class _SalesScreenState extends State<SalesScreen> {
           floatingActionButton: !canCreate
               ? null
               : FloatingActionButton.extended(
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: context.read<SalesBloc>(),
-                    child: const NewSaleScreen(),
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<SalesBloc>(),
+                          child: const NewSaleScreen(),
+                        ),
+                      ),
+                    );
+                    if (result == true && mounted) _loadSales();
+                  },
+                  backgroundColor: context.colors.brand,
+                  icon: Icon(
+                    Icons.add_shopping_cart_rounded,
+                    color: context.colors.onBrand,
+                  ),
+                  label: Text(
+                    l10n.newSale,
+                    style: AppTextStyles.labelLarge().copyWith(
+                      color: context.colors.onBrand,
+                    ),
                   ),
                 ),
-              );
-              if (result == true && mounted) _loadSales();
-            },
-            backgroundColor: context.colors.brand,
-            icon: Icon(
-              Icons.add_shopping_cart_rounded,
-              color: context.colors.onBrand,
-            ),
-            label: Text(
-              l10n.newSale,
-              style: AppTextStyles.labelLarge().copyWith(
-                color: context.colors.onBrand,
-              ),
-            ),
-          ),
         ),
       ),
     );

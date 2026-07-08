@@ -121,11 +121,35 @@ public class ProductsController : ControllerBase
         if (id != request.Id)
             return BadRequest("ID mismatch");
 
+        // On-hand stock may only be hand-corrected by Owner/SuperAdmin. For any
+        // other caller (even an Admin with products.edit) request.Quantity is
+        // ignored server-side; stock otherwise moves only through zakup/sales.
+        var canEditStock = User.FindFirst(ClaimTypes.Role)?.Value is "Owner" or "SuperAdmin";
+        // Kelgan (tannarx) narxini forma orqali faqat cost-ko'ruvchi (Owner/Admin)
+        // o'zgartira oladi — masking tufayli boshqa rol 0 yuborib eski narxni
+        // yo'qotib qo'ymasin.
+        var canEditCost = CanViewCost();
+
+        // Capture the pre-edit quantity only on an actual override so the audit
+        // row can record old→new. Rare Owner path — the extra read is fine.
+        decimal? oldQuantity = null;
+        if (canEditStock && request.Quantity.HasValue)
+            oldQuantity = (await _productService.GetProductByIdAsync(id, canViewCost: true, ct))?.Quantity;
+
         try
         {
-            var product = await _productService.UpdateProductAsync(request);
+            var product = await _productService.UpdateProductAsync(request, canEditStock, canEditCost, ct);
             if (product is null)
                 return NotFound();
+
+            // Manual stock correction is fraud-sensitive — journal it (old→new)
+            // whenever the figure actually changed.
+            if (oldQuantity.HasValue && oldQuantity.Value != product.Quantity)
+            {
+                await _auditLogService.LogActionAsync(
+                    AuditEntityTypes.Product, id, AuditActions.StockAdjust, CurrentUserId(),
+                    new { from = oldQuantity.Value, to = product.Quantity });
+            }
 
             return Ok(product);
         }
