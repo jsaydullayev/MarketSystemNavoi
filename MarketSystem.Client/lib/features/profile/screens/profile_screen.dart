@@ -21,6 +21,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/validators/password_validator.dart';
 import '../../../core/widgets/common_app_bar.dart';
+import '../../../design/widgets/app_snackbar.dart';
 import '../../../data/services/market_service.dart';
 import '../../../data/services/user_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
@@ -211,8 +212,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return "O'zbekcha";
       case 'ru':
         return 'Русский';
-      case 'en':
-        return 'English';
       default:
         return code;
     }
@@ -269,7 +268,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               for (final entry in const [
                 ('uz', "O'zbekcha"),
                 ('ru', 'Русский'),
-                ('en', 'English'),
               ])
                 _LanguageOption(
                   code: entry.$1,
@@ -397,11 +395,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // / no digit with a 400 — catch it here so the user sees a localized
     // hint inline instead of a translated server-error snackbar later.
     if (!PasswordValidator.isStrong(_newPasswordController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.passwordMinLength),
-          backgroundColor: AppColors.danger,
-        ),
+      showAppSnackBar(
+        context,
+        l10n.passwordMinLength,
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -415,12 +412,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.updateSuccess),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        showAppSnackBar(context, l10n.updateSuccess);
       }
     } catch (e) {
       if (mounted) {
@@ -429,9 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // for unexpected statuses; pull the human-readable text out.
         final raw = e.toString();
         final extracted = _extractServerMessage(raw) ?? raw;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(extracted), backgroundColor: AppColors.danger),
-        );
+        showAppSnackBar(context, extracted, kind: AppSnackKind.error);
       }
     } finally {
       setModalState(() => _isChangingPassword = false);
@@ -482,24 +472,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isSaving = true);
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      await UserService(authProvider: auth)
-          .updateProfile(fullName: _fullNameController.text.trim());
+      await UserService(
+        authProvider: auth,
+      ).updateProfile(fullName: _fullNameController.text.trim());
 
       // Owner: market nomini ham yangilash
       final newMarketName = _marketNameController.text.trim();
       if (auth.role == 'Owner' && newMarketName.isNotEmpty) {
-        await MarketService(authProvider: auth)
-            .updateMyMarket(name: newMarketName);
+        await MarketService(
+          authProvider: auth,
+        ).updateMyMarket(name: newMarketName);
       }
 
       await auth.fetchUserProfile();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.profileSaved),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        showAppSnackBar(context, l10n.profileSaved);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

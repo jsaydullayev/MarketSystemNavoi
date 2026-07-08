@@ -37,6 +37,15 @@ class _CustomersScreenState extends State<CustomersScreen> {
   // not a full rebuild on every keystroke.
   Timer? _searchDebounce;
 
+  // Memoize the entity→JSON conversion + hero aggregates by source-list
+  // identity. `map(toJson)` allocated 200+ maps on EVERY rebuild (each search
+  // keystroke, filter tap, refresh) even though the customer list only changes
+  // when the bloc emits a fresh CustomersLoaded.
+  List<dynamic>? _cachedSource;
+  List<Map<String, dynamic>> _cachedAll = const [];
+  double _cachedTotalDebt = 0;
+  int _cachedDebtors = 0;
+
   @override
   void initState() {
     super.initState();
@@ -145,20 +154,28 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 );
               }
               if (state is CustomersLoaded) {
-                final all = state.customers.map((e) => e.toJson()).toList();
-                final filtered = _applyFilters(all);
-                // AUDIT-2 — compute hero aggregates ONCE here instead of
-                // re-folding the full list inside `_CustomersHero.build`
-                // on every parent rebuild (search keystroke, filter chip
-                // tap, RefreshIndicator pull). With 200+ customers the
-                // old fold + where ran ~400 iterations per keystroke.
-                var totalDebt = 0.0;
-                var debtors = 0;
-                for (final c in all) {
-                  final v = (c['totalDebt'] as num?)?.toDouble() ?? 0.0;
-                  totalDebt += v;
-                  if (v > 0) debtors++;
+                // Recompute the JSON list + hero aggregates ONLY when the bloc
+                // hands us a new customer list; reuse the cache on plain
+                // rebuilds (search keystroke, filter tap, refresh-in-flight).
+                // Previously map(toJson) + the fold re-ran (~400 iterations +
+                // 200 map allocations) on every keystroke.
+                if (!identical(state.customers, _cachedSource)) {
+                  _cachedSource = state.customers;
+                  _cachedAll = state.customers.map((e) => e.toJson()).toList();
+                  var t = 0.0;
+                  var d = 0;
+                  for (final c in _cachedAll) {
+                    final v = (c['totalDebt'] as num?)?.toDouble() ?? 0.0;
+                    t += v;
+                    if (v > 0) d++;
+                  }
+                  _cachedTotalDebt = t;
+                  _cachedDebtors = d;
                 }
+                final all = _cachedAll;
+                final totalDebt = _cachedTotalDebt;
+                final debtors = _cachedDebtors;
+                final filtered = _applyFilters(all);
                 // Header widgets (search / hero / filter chips) render once;
                 // only the customer cards below them are built lazily via
                 // ListView.builder, so a 200+ customer list no longer

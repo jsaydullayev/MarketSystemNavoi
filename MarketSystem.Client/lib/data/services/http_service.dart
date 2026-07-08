@@ -63,6 +63,15 @@ class HttpService {
   /// Cleared when the refresh settles so a later expiry can refresh again.
   Future<bool>? _refreshInFlight;
 
+  /// Latched true the instant a refresh DEFINITIVELY fails — the session is
+  /// dead. Without it, every request that 401s in a LATER wave (a dashboard
+  /// full of pollers keeps firing after the token dies) started its own doomed
+  /// refresh and emitted ANOTHER sessionEnded event — so the logout/redirect
+  /// ran 4-5 times in a row. While latched, 401s short-circuit: no refresh, no
+  /// duplicate event (also spares the network the doomed refresh calls). Reset
+  /// in [saveTokens] when a fresh login/refresh revives the session.
+  bool _sessionEnded = false;
+
   // Broadcast so multiple listeners (auth provider, app shell, login screen)
   // can react. Late events do not need to be replayed — a fresh login attempt
   // will surface the 423 again.
@@ -145,6 +154,9 @@ class HttpService {
       refreshToken: refreshToken,
     );
     _accessToken = accessToken;
+    // A live session again (login or successful refresh) — re-arm the refresh
+    // path and the one-shot sessionEnded event.
+    _sessionEnded = false;
   }
 
   Future<String?> getAccessToken() async {
@@ -293,6 +305,9 @@ class HttpService {
   /// The first caller starts the refresh; everyone else awaits the same
   /// Future. Returns true when the token was renewed.
   Future<bool> _refreshTokenOnce() {
+    // Session already ended — don't start another doomed refresh (or emit a
+    // duplicate sessionEnded). Cleared by saveTokens on the next login.
+    if (_sessionEnded) return Future<bool>.value(false);
     return _refreshInFlight ??= _doRefresh();
   }
 
@@ -318,6 +333,10 @@ class HttpService {
       // listener (AuthProvider) navigates to /login and clears state;
       // subsequent listeners are idempotent.
       if (!succeeded) {
+        // Latch the dead session BEFORE the await below, so any request that
+        // 401s while we're clearing tokens short-circuits in _refreshTokenOnce
+        // instead of racing in a fresh refresh + emitting a second event.
+        _sessionEnded = true;
         // Wipe any stale local copies so a navigator pop back to a protected
         // route can't re-authorize with the dead token.
         await clearTokens();

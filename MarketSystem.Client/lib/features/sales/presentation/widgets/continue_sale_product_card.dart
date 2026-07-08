@@ -1,6 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:market_system_client/core/constants/api_constants.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -31,7 +29,6 @@ class ContinueSaleProductCard extends StatelessWidget {
     final quantity = (product['quantity'] as num?)?.toDouble() ?? 0.0;
     final isInStock = quantity > 0;
     final isLow = quantity > 0 && quantity <= 5;
-    final hasImage = (product['imageUrl'] as String?)?.isNotEmpty == true;
     // Narxi yashirilgan mahsulot: POS sotuv oynasida narx hech kimga
     // ko'rsatilmaydi (Owner/Admin/Seller). Mahsulotlar bo'limida ochiq qoladi.
     final hidePrice = product['hidePriceFromSellers'] == true;
@@ -74,21 +71,11 @@ class ContinueSaleProductCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Prominent product photo (or placeholder) filling the top.
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: _image(context, hasImage),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Text(
                   product['name'] ?? l10n.unknown,
-                  maxLines: 1,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 13,
@@ -143,28 +130,6 @@ class ContinueSaleProductCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _image(BuildContext context, bool hasImage) {
-    final placeholder = Container(
-      color: context.colors.inputFill,
-      alignment: Alignment.center,
-      child: Icon(
-        Icons.inventory_2_rounded,
-        color: context.colors.textSecondary,
-        size: 30,
-      ),
-    );
-    if (!hasImage) return placeholder;
-    final full = ApiConstants.productImageUrl(product['imageUrl'] as String?);
-    if (full == null) return placeholder;
-    return CachedNetworkImage(
-      imageUrl: full,
-      fit: BoxFit.cover,
-      memCacheWidth: 320,
-      placeholder: (_, __) => placeholder,
-      errorWidget: (_, __, ___) => placeholder,
     );
   }
 }

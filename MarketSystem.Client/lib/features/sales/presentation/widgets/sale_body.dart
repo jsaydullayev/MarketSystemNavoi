@@ -1,6 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/constants/api_constants.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../../../core/extensions/app_extensions.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../design/tokens/app_theme_colors.dart';
@@ -246,33 +245,33 @@ class SaleBody extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 2 cols on mobile, more on wider devices. Aspect ratio is tuned for
-        // the tile layout below (name + price + stock + optional chip).
+        // 3 cols on mobile, more on wider devices — denser now that tiles are
+        // text-only (name + price + stock + optional chip), no product photo.
         final int crossAxisCount;
         if (constraints.maxWidth >= 900) {
-          crossAxisCount = 5;
+          crossAxisCount = 6;
         } else if (constraints.maxWidth >= 600) {
-          crossAxisCount = 4;
+          crossAxisCount = 5;
         } else if (constraints.maxWidth >= 400) {
-          crossAxisCount = 3;
+          crossAxisCount = 4;
         } else {
-          crossAxisCount = 2;
+          crossAxisCount = 3;
         }
 
-        return GridView.builder(
+        // Masonry (variable-height) grid: each tile sizes to its own content,
+        // so a short name stays compact (more products fit) while a long name
+        // wraps to 2-3 lines and stays fully visible instead of being cut with
+        // an ellipsis. A uniform-height GridView can't do both at once.
+        return MasonryGridView.count(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl,
             AppSpacing.lg,
             AppSpacing.xl,
             AppSpacing.lg,
           ),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            // Taller tile so the product photo on top reads clearly.
-            childAspectRatio: 0.82,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-          ),
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
           itemCount: filteredProducts.length,
           itemBuilder: (context, index) {
             final p = filteredProducts[index];
@@ -302,7 +301,6 @@ class _ProductTile extends StatelessWidget {
         product['isPopular'] == true ||
         product['popular'] == true ||
         (product['salesCount'] is num && (product['salesCount'] as num) > 50);
-    final hasImage = (product['imageUrl'] as String?)?.isNotEmpty == true;
     // Narxi yashirilgan mahsulot: POS sotuv oynasida narx hech kimga
     // ko'rsatilmaydi (Owner/Admin/Seller). Mahsulotlar bo'limida ochiq qoladi.
     final hidePrice = product['hidePriceFromSellers'] == true;
@@ -327,23 +325,11 @@ class _ProductTile extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Prominent product photo (or placeholder) filling the top.
-                // Expanded → flexes to the tile height, so the text below never
-                // overflows; the photo just gets the remaining space.
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: _tileImage(context, hasImage),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Text(
                   product['name']?.toString() ?? '',
-                  maxLines: 1,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodySmall().copyWith(
                     fontSize: 13,
@@ -377,9 +363,7 @@ class _ProductTile extends StatelessWidget {
                           color: isLow
                               ? AppColors.warning
                               : context.colors.textMuted,
-                          fontWeight: isLow
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                          fontWeight: isLow ? FontWeight.w600 : FontWeight.w400,
                         ),
                       ),
                     ),
@@ -391,28 +375,6 @@ class _ProductTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _tileImage(BuildContext context, bool hasImage) {
-    final placeholder = Container(
-      color: context.colors.inputFill,
-      alignment: Alignment.center,
-      child: Icon(
-        Icons.inventory_2_rounded,
-        color: context.colors.textSecondary,
-        size: 30,
-      ),
-    );
-    if (!hasImage) return placeholder;
-    final full = ApiConstants.productImageUrl(product['imageUrl'] as String?);
-    if (full == null) return placeholder;
-    return CachedNetworkImage(
-      imageUrl: full,
-      fit: BoxFit.cover,
-      memCacheWidth: 320,
-      placeholder: (_, __) => placeholder,
-      errorWidget: (_, __, ___) => placeholder,
     );
   }
 

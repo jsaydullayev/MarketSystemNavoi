@@ -148,7 +148,13 @@ public record CreateProductDto(
     [param: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
     decimal Quantity = 0,
 
-    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false
+    [property: JsonPropertyName("hidePriceFromSellers")] bool HidePriceFromSellers = false,
+
+    // Kelgan (tannarx) narxi. Formadan ixtiyoriy kiritiladi — 0 bo'lsa keyin
+    // zakup orqali to'ldiriladi. Faqat cost-ko'ruvchi (Owner/Admin) kiritadi.
+    [property: JsonPropertyName("costPrice")]
+    [param: Range(0, double.MaxValue)]
+    decimal CostPrice = 0
 );
 
 public record UpdateProductDto(
@@ -183,5 +189,12 @@ public record UpdateProductDto(
     // Stock otherwise moves only through zakup and sales.
     [property: JsonPropertyName("quantity")]
     [param: Range(0, double.MaxValue, ErrorMessage = "Miqdor manfiy bo'lishi mumkin emas")]
-    decimal? Quantity = null
+    decimal? Quantity = null,
+
+    // Kelgan (tannarx) narxi. Null (default) — tegilmaydi. Faqat cost-ko'ruvchi
+    // (Owner/Admin) yuboradi; cost-yashirin foydalanuvchida maskalangan 0 eski
+    // narxni bosib ketmasligi uchun null qoldiriladi.
+    [property: JsonPropertyName("costPrice")]
+    [param: Range(0, double.MaxValue)]
+    decimal? CostPrice = null
 );

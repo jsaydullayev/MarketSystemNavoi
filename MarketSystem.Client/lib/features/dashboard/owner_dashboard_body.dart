@@ -9,7 +9,6 @@ import '../../design/tokens/app_theme_colors.dart';
 import '../../design/tokens/app_tokens.dart';
 import '../../design/tokens/app_typography.dart';
 import '../../l10n/app_localizations.dart';
-import '../products/presentation/screens/products_screen.dart';
 import 'dashboard_widgets.dart';
 
 class OwnerDashboardBody extends StatelessWidget {
@@ -63,10 +62,6 @@ class OwnerDashboardBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             _KpiGrid(summary: summary),
             const SizedBox(height: AppSpacing.xl),
-            SectionHeader(title: l10n.alertsSectionLabel),
-            const SizedBox(height: AppSpacing.md),
-            ..._buildAlertPreviewCards(context, summary, l10n),
-            const SizedBox(height: AppSpacing.xl),
             SectionHeader(
               title: l10n.analysisSectionLabel,
               actionLabel: l10n.reportsActionLabel,
@@ -94,79 +89,6 @@ class OwnerDashboardBody extends StatelessWidget {
       return '${k.toStringAsFixed(k >= 100 ? 0 : 1)}K';
     }
     return NumberFormatter.format(value);
-  }
-
-  static List<Widget> _buildAlertPreviewCards(
-    BuildContext context,
-    DashboardSummary summary,
-    AppLocalizations l10n,
-  ) {
-    final cards = <Widget>[];
-
-    if (summary.overdueDebtsCount > 0) {
-      cards.add(
-        AlertCard(
-          emoji: '⚠️',
-          title: l10n.alertPreviewOverdueDebts(summary.overdueDebtsCount),
-          description: l10n.alertPreviewOverdueDebtsDesc,
-          tone: AlertTone.danger,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.notifications),
-        ),
-      );
-    }
-
-    final nonOverdueActive =
-        summary.pendingDebtsCount - summary.overdueDebtsCount;
-    if (nonOverdueActive > 0) {
-      cards.add(
-        AlertCard(
-          emoji: '💸',
-          title: l10n.alertPreviewActiveDebts(nonOverdueActive),
-          description: l10n.alertPreviewActiveDebtsDesc(
-            NumberFormatter.format(summary.pendingDebtsTotal),
-          ),
-          tone: AlertTone.warning,
-          onTap: () => Navigator.pushNamed(context, AppRoutes.debts),
-        ),
-      );
-    }
-
-    if (summary.lowStockCount > 0) {
-      cards.add(
-        AlertCard(
-          emoji: '📦',
-          title: l10n.alertPreviewLowStock(summary.lowStockCount),
-          description: l10n.alertPreviewLowStockDesc,
-          tone: AlertTone.warning,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ProductsScreen(isReadOnly: false),
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (cards.isEmpty) {
-      return [
-        AlertCard(
-          emoji: '✅',
-          title: l10n.alertPreviewEmpty,
-          description: l10n.alertPreviewEmptyDesc,
-          tone: AlertTone.success,
-        ),
-      ];
-    }
-
-    final out = <Widget>[];
-    for (var i = 0; i < cards.length; i++) {
-      out.add(cards[i]);
-      if (i != cards.length - 1) {
-        out.add(const SizedBox(height: AppSpacing.md));
-      }
-    }
-    return out;
   }
 
   static ChartCard _buildChartCard(

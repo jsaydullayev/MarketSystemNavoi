@@ -18,7 +18,10 @@ public interface IProductService
     // request.Quantity (Owner/SuperAdmin only — the controller derives it from
     // the role). Defaults to false so existing call-sites and every non-Owner
     // request leave stock untouched; stock otherwise moves only through zakup/sales.
-    Task<ProductDto?> UpdateProductAsync(UpdateProductDto request, bool canEditStock = false, CancellationToken cancellationToken = default);
+    // canEditCost=true lets the caller set CostPrice via request.CostPrice
+    // (Owner/Admin — cost-viewers only). Defaults to false so cost-hidden callers
+    // (whose GET masks CostPrice to 0) can't clobber the stored cost on edit.
+    Task<ProductDto?> UpdateProductAsync(UpdateProductDto request, bool canEditStock = false, bool canEditCost = false, CancellationToken cancellationToken = default);
     Task<bool> DeleteProductAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> UpdateStockAsync(Guid id, decimal quantityChange, CancellationToken cancellationToken = default);
 

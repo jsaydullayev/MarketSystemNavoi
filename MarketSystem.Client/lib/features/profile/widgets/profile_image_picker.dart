@@ -18,6 +18,7 @@ import '../../../core/widgets/base64_image.dart';
 import '../../../data/services/user_service.dart';
 import '../../../design/tokens/app_theme_colors.dart';
 import '../../../design/tokens/app_tokens.dart';
+import '../../../design/widgets/app_snackbar.dart';
 import '../../../design/tokens/app_typography.dart';
 
 class ProfileImagePicker extends StatefulWidget {
@@ -218,7 +219,6 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
 
   Future<void> _handleImagePick(ImageSource source) async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final messenger = ScaffoldMessenger.of(context);
 
     final ImagePicker picker = ImagePicker();
     // Downscale at capture so a 12MP phone photo doesn't become a multi-MB
@@ -249,12 +249,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
         if (errorMessage.startsWith('Exception: ')) {
           errorMessage = errorMessage.substring(11);
         }
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: AppColors.danger,
-          ),
-        );
+        showAppSnackBar(context, errorMessage, kind: AppSnackKind.error);
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);

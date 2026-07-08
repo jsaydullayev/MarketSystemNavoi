@@ -83,6 +83,9 @@ class _ReportsScreenState extends State<ReportsScreen>
     super.dispose();
   }
 
+  // Full reload — initial load, retry, and pull-to-refresh only. The per-input
+  // handlers below reload ONLY the report that actually changed: a single
+  // date/range/period tweak used to refetch and re-parse all four reports.
   Future<void> _loadReports() async {
     setState(() => _isLoading = true);
     try {
@@ -101,11 +104,63 @@ class _ReportsScreenState extends State<ReportsScreen>
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
-      setState(() => _isLoading = false);
-      if (mounted) _showSnack('${l10n.error}: $e', isError: true);
+      _onLoadError(e);
     }
+  }
+
+  // Daily tab and Inventory tab share the SAME `_selectedDate` picker, so a
+  // date change reloads both — but nothing else.
+  Future<void> _loadDateReports() async {
+    setState(() => _isLoading = true);
+    try {
+      final results = await Future.wait([
+        _reportsService.getDailyReport(_selectedDate),
+        _reportsService.getComprehensiveReport(_selectedDate),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _dailyReport = results[0] as Map<String, dynamic>?;
+        _comprehensiveReport = results[1] as Map<String, dynamic>?;
+        _isLoading = false;
+      });
+    } catch (e) {
+      _onLoadError(e);
+    }
+  }
+
+  Future<void> _loadMonthly() async {
+    setState(() => _isLoading = true);
+    try {
+      final r = await _reportsService.getPeriodReport(_startDate, _endDate);
+      if (!mounted) return;
+      setState(() {
+        _periodReport = r as Map<String, dynamic>?;
+        _isLoading = false;
+      });
+    } catch (e) {
+      _onLoadError(e);
+    }
+  }
+
+  Future<void> _loadHero() async {
+    setState(() => _isLoading = true);
+    try {
+      final r = await _reportsService.getPeriodReport(_heroStart, _heroEnd);
+      if (!mounted) return;
+      setState(() {
+        _heroReport = r as Map<String, dynamic>?;
+        _isLoading = false;
+      });
+    } catch (e) {
+      _onLoadError(e);
+    }
+  }
+
+  void _onLoadError(Object e) {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _isLoading = false);
+    _showSnack('${l10n.error}: $e', isError: true);
   }
 
   /// Date window for a hero period. The end is always "now"; the start is
@@ -135,7 +190,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       _heroStart = start;
       _heroEnd = end;
     });
-    _loadReports();
+    _loadHero();
   }
 
   Future<void> _loadDailySaleItems() async {
@@ -326,7 +381,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         isLoadingDetails: _isLoadingDetails,
                         onDateChanged: (d) {
                           setState(() => _selectedDate = d);
-                          _loadReports();
+                          _loadDateReports();
                         },
                         onViewDetails: _loadDailySaleItems,
                       ),
@@ -339,7 +394,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                             _startDate = start;
                             _endDate = end;
                           });
-                          _loadReports();
+                          _loadMonthly();
                         },
                       ),
                       InventoryReportTab(
@@ -347,7 +402,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         selectedDate: _selectedDate,
                         onDateChanged: (d) {
                           setState(() => _selectedDate = d);
-                          _loadReports();
+                          _loadDateReports();
                         },
                         canViewCostPrice: canViewCostPrice,
                       ),

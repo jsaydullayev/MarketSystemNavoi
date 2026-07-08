@@ -124,35 +124,63 @@ class AlertCard extends StatelessWidget {
   final AlertTone tone;
   final VoidCallback? onTap;
 
-  ({Color bg, Color border, Color title, Color desc}) _colors() {
-    switch (tone) {
-      case AlertTone.danger:
-        return (
-          bg: AppColors.dangerLight,
-          border: AppColors.danger,
-          title: AppColors.dangerDeep,
-          desc: AppColors.dangerStrong,
-        );
-      case AlertTone.warning:
-        return (
-          bg: AppColors.warningLight,
-          border: AppColors.warning,
-          title: AppColors.warningDeep,
-          desc: AppColors.warningDark,
-        );
-      case AlertTone.success:
-        return (
-          bg: AppColors.successLight,
-          border: AppColors.success,
-          title: AppColors.successDeep,
-          desc: AppColors.successDeep,
-        );
+  ({Color bg, Color border, Color title, Color desc}) _colors(
+    BuildContext context,
+  ) {
+    final (
+      Color accent,
+      Color lightBg,
+      Color deepFg,
+      Color darkFg,
+      Color darkAccent,
+    ) = switch (tone) {
+      AlertTone.danger => (
+        AppColors.danger,
+        AppColors.dangerLight,
+        AppColors.dangerDeep,
+        AppColors.dangerStrong,
+        AppColors.danger,
+      ),
+      // "warning" alerts (low stock / debt notices) now use BLUE instead of the
+      // old amber — the yellow slab read poorly. Light mode uses info-blue;
+      // dark mode uses the theme's brighter sky-blue accent.
+      AlertTone.warning => (
+        AppColors.info,
+        AppColors.infoLight,
+        AppColors.infoDeep,
+        AppColors.info,
+        AppColors.darkPrimaryLight,
+      ),
+      AlertTone.success => (
+        AppColors.success,
+        AppColors.successLight,
+        AppColors.successDeep,
+        AppColors.successDeep,
+        AppColors.success,
+      ),
+    };
+
+    // Dark theme: the bright cream/pink slabs clash with the navy surface, so
+    // sit the card IN the theme — a faint accent tint over the surface, an
+    // accent border, the accent as the title colour, and muted body text.
+    // Light theme keeps the tone's solid palette.
+    if (Theme.of(context).brightness == Brightness.dark) {
+      return (
+        bg: Color.alphaBlend(
+          darkAccent.withValues(alpha: 0.16),
+          context.colors.surface,
+        ),
+        border: darkAccent.withValues(alpha: 0.45),
+        title: darkAccent,
+        desc: context.colors.textSecondary,
+      );
     }
+    return (bg: lightBg, border: accent, title: deepFg, desc: darkFg);
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = _colors();
+    final c = _colors(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.lg),

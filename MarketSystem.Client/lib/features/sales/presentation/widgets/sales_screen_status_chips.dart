@@ -33,6 +33,15 @@ class SalesStatusChips extends StatelessWidget {
       {'id': 'debt', 'label': l10n.debt},
     ];
 
+    // Single pass: tally counts per status once. Previously each chip's
+    // itemBuilder re-scanned the whole `sales` list (4 passes, getStatusText()
+    // per item) on every rebuild — including each chip tap on the parent.
+    final counts = <String, int>{};
+    for (final item in sales) {
+      final key = item.getStatusText().toLowerCase();
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+
     return SizedBox(
       height: 44,
       child: ListView.builder(
@@ -43,11 +52,7 @@ class SalesStatusChips extends StatelessWidget {
           final s = statuses[index];
           final id = s['id'] as String;
           final bool isSelected = selectedStatus == id;
-          final int count = id == 'all'
-              ? sales.length
-              : sales
-                    .where((item) => item.getStatusText().toLowerCase() == id)
-                    .length;
+          final int count = id == 'all' ? sales.length : (counts[id] ?? 0);
           // Each status carries a logical colour (see getStatusColor); the
           // "all" chip stays a neutral grey. Chips wear the colour as a soft
           // tint — the selected one deepens the fill and gains a ring.

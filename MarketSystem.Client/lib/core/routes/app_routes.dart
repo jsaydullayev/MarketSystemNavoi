@@ -29,7 +29,6 @@ class AppRoutes {
   static const String reports = '/reports';
   static const String debts = '/debts';
   static const String users = '/users';
-  static const String adminProducts = '/admin-products';
   static const String profile = '/profile';
   static const String privacy = '/privacy';
   static const String cashRegister = '/cash-register';
