@@ -48,6 +48,30 @@ void main() {
       expect(ex.message.contains('503'), isTrue);
     });
 
+    test('surfaces a bare JSON string body (BadRequest(ex.Message))', () {
+      // ASP.NET `BadRequest(ex.Message)` with an Accept: application/json
+      // request serializes as a bare JSON string literal, not an object.
+      final res = http.Response('"Omborda yetarli mahsulot yo\'q"', 400);
+      final ex = ApiException.fromResponse(
+        res,
+        fallbackMessage: 'Failed to add sale item',
+      );
+      expect(ex.statusCode, 400);
+      expect(ex.message, "Omborda yetarli mahsulot yo'q");
+    });
+
+    test('surfaces a short text/plain (non-JSON) body over the fallback', () {
+      // Same endpoint but no Accept header → StringOutputFormatter writes the
+      // raw message as text/plain; jsonDecode throws, so we use res.body.
+      final res = http.Response("Bu mahsulot omborda yo'q", 400);
+      final ex = ApiException.fromResponse(
+        res,
+        fallbackMessage: 'Failed to add sale item',
+      );
+      expect(ex.statusCode, 400);
+      expect(ex.message, "Bu mahsulot omborda yo'q");
+    });
+
     test('captures full payload for callers that want it', () {
       final res = http.Response(
         '{"message":"Bloklangan","code":"MARKET_BLOCKED","blockedAt":"2026-01-01T00:00:00Z"}',

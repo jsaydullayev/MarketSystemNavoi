@@ -135,7 +135,7 @@ public class SalesController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -153,7 +153,7 @@ public class SalesController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -171,7 +171,7 @@ public class SalesController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -192,7 +192,7 @@ public class SalesController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -210,7 +210,7 @@ public class SalesController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -234,7 +234,7 @@ public class SalesController : ControllerBase
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Failed to delete sale {SaleId}: {Message}", saleId, ex.Message);
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -267,7 +267,7 @@ public class SalesController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -287,7 +287,7 @@ public class SalesController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -313,7 +313,7 @@ public class SalesController : ControllerBase
             _logger.LogInformation("UpdateSaleItemPrice called by {UserId} with role {Role}", userId, userRole);
 
             if (!Guid.TryParse(request.SaleItemId, out var saleItemId))
-                return BadRequest("Noto'g'ri saleItemId formati.");
+                return BadRequest(new { message = "Noto'g'ri saleItemId formati." });
             var updatedItem = await _saleService.UpdateSaleItemPriceAsync(saleItemId, request);
 
             if (updatedItem == null)
@@ -324,12 +324,12 @@ public class SalesController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized access to UpdateSaleItemPrice");
-            return StatusCode(403, ex.Message);
+            return StatusCode(403, new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Invalid operation in UpdateSaleItemPrice");
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -347,7 +347,7 @@ public class SalesController : ControllerBase
             if (request == null)
             {
                 _logger.LogWarning("ReturnSaleItem called with null request body for SaleId: {SaleId}", saleId);
-                return BadRequest("Request body cannot be null");
+                return BadRequest(new { message = "Request body cannot be null" });
             }
 
             _logger.LogInformation("ReturnSaleItem called - SaleId: {SaleId}, SaleItemId: {SaleItemId}, Quantity: {Quantity}",
@@ -468,7 +468,7 @@ public class SalesController : ControllerBase
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Invalid operation during PDF export");
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -504,7 +504,7 @@ public class SalesController : ControllerBase
         catch (InvalidOperationException ex)
         {
             _logger.LogError(ex, "Error applying customer credit");
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -536,7 +536,7 @@ public class SalesController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             _logger.LogWarning(ex, "Sale not found: {SaleId}", id);
-            return NotFound(ex.Message);
+            return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {

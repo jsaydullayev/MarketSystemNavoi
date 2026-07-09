@@ -1465,6 +1465,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get draftSaveError => 'Ошибка при сохранении черновика';
 
   @override
+  String get stockRestoreFailedWarning =>
+      'Продажа отменена, но остаток на складе восстановлен не полностью. Проверьте склад.';
+
+  @override
   String get enterQuantityHint => 'Введите количество...';
 
   @override

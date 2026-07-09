@@ -113,8 +113,17 @@ public class DebtService : IDebtService
                 Debt? debt;
                 if (isPostgres)
                 {
+                    // NOTE: must be "SELECT *, xmin" — the Debt entity maps an
+                    // Xmin concurrency token to PostgreSQL's system column "xmin"
+                    // (AppDbContext: b.Property(x => x.Xmin).HasColumnName("xmin")
+                    // .IsConcurrencyToken()). PostgreSQL's `*` never expands system
+                    // columns, so EF Core — which wraps this FromSql in a subquery
+                    // and projects t.xmin — would reference a non-existent column and
+                    // raise 42703 (undefined_column) → PostgresException → HTTP 503.
+                    // The sibling Sales query (below) and the Products query in
+                    // SaleService both already list xmin explicitly for this reason.
                     debt = await _context.Debts
-                        .FromSqlInterpolated($"SELECT * FROM \"Debts\" WHERE \"Id\" = {debtId} FOR UPDATE")
+                        .FromSqlInterpolated($"SELECT *, xmin FROM \"Debts\" WHERE \"Id\" = {debtId} FOR UPDATE")
                         .FirstOrDefaultAsync(cancellationToken);
                 }
                 else

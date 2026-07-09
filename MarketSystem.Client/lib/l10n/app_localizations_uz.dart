@@ -1462,6 +1462,10 @@ class AppLocalizationsUz extends AppLocalizations {
   String get draftSaveError => 'Draft saqlashda xatolik';
 
   @override
+  String get stockRestoreFailedWarning =>
+      'Sotuv bekor qilindi, lekin ombor qoldig\'i to\'liq tiklanmadi. Iltimos, omborni tekshiring.';
+
+  @override
   String get enterQuantityHint => 'Miqdor kiriting...';
 
   @override

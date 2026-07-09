@@ -293,6 +293,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           );
           final salesService = SalesService(authProvider: authProvider);
           String? finalSaleId;
+          // Items successfully added (saleItemId -> quantity). Lets the catch
+          // below restore their stock if a later add/payment fails.
+          final addedItems = <String, double>{};
           try {
             // Use the customer the dialog returns — it may be one the
             // cashier created inline from the debt row, which the
@@ -310,8 +313,9 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             // ("Ma'lumot boshqa foydalanuvchi tomonidan o'zgartirildi"), even
             // for a single user. The extra latency is negligible for a cart.
             for (final item in cartSnapshot) {
+              final dynamic added;
               if (item['isExternal'] == true) {
-                await salesService.addSaleItem(
+                added = await salesService.addSaleItem(
                   saleId: saleId,
                   isExternal: true,
                   externalProductName: item['productName'],
@@ -322,7 +326,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   comment: item['comment'],
                 );
               } else {
-                await salesService.addSaleItem(
+                added = await salesService.addSaleItem(
                   saleId: saleId,
                   productId: item['productId'],
                   quantity: item['quantity'],
@@ -331,6 +335,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                   comment: item['comment'],
                 );
               }
+              _trackAddedItem(addedItems, added);
             }
 
             // Payments SEQUENTIALLY too — multi-tender (e.g. Cash + Terminal)
@@ -370,16 +375,30 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             );
             navigator.pop(true);
           } catch (e) {
-            if (!mounted) return;
+            // Restore stock for anything already added. Run this BEFORE the
+            // mounted check — navigating away mid-failure must not leak stock.
+            // _abortSale prefers cancelSale (also drops the empty draft) but
+            // falls back to per-item removeSaleItem, which a cashier is
+            // authorized for, so a Seller's failed sale no longer silently
+            // leaks stock (the old swallowed cancelSale 403) and snowballs into
+            // false "omborda yo'q" errors.
+            var stockRestored = true;
             if (finalSaleId != null) {
-              try {
-                await salesService.cancelSale(saleId: finalSaleId);
-              } catch (_) {}
+              stockRestored = await _abortSale(
+                salesService,
+                finalSaleId,
+                addedItems,
+              );
             }
+            if (!mounted) return;
             navigator.pop();
             scaffoldMessenger.showSnackBar(
               SnackBar(
-                content: Text('${l10n.error}: $e'),
+                content: Text(
+                  stockRestored
+                      ? '${l10n.error}: $e'
+                      : '${l10n.stockRestoreFailedWarning} ($e)',
+                ),
                 backgroundColor: AppColors.danger,
               ),
             );
@@ -387,6 +406,55 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         },
       ),
     );
+  }
+
+  /// Record a just-added sale item (id -> quantity) so a later failure in the
+  /// same checkout/draft can restore its stock. addSaleItem merges duplicate
+  /// products into a single row, so we key by id and keep the latest cumulative
+  /// quantity (removeSaleItem with that quantity deletes the row and restores
+  /// the full stock).
+  static void _trackAddedItem(Map<String, double> added, dynamic result) {
+    if (result is Map) {
+      final id = result['id'];
+      final qty = result['quantity'];
+      if (id is String && qty is num) added[id] = qty.toDouble();
+    }
+  }
+
+  /// Undo a partially-created sale after a failure; returns whether stock was
+  /// fully restored.
+  ///
+  /// Prefers cancelSale (which also deletes the now-orphan draft) but that
+  /// requires SalesDelete (Owner/Admin only); for a cashier (Seller) it 403s,
+  /// so we fall back to removeSaleItem — gated by SalesCreate, which sellers
+  /// have — for each item we added. removeSaleItem restores the product's
+  /// stock. This replaces the old `try { cancelSale } catch (_) {}` that
+  /// silently swallowed the 403 and leaked stock, which over repeated retries
+  /// produced false "omborda yetarli mahsulot yo'q" errors.
+  Future<bool> _abortSale(
+    SalesService salesService,
+    String saleId,
+    Map<String, double> addedItems,
+  ) async {
+    try {
+      await salesService.cancelSale(saleId: saleId);
+      return true;
+    } catch (_) {
+      // Not authorized to cancel (Seller) or cancel failed — reverse per item.
+    }
+    var restored = true;
+    for (final entry in addedItems.entries) {
+      try {
+        await salesService.removeSaleItem(
+          saleId: saleId,
+          saleItemId: entry.key,
+          quantity: entry.value,
+        );
+      } catch (_) {
+        restored = false;
+      }
+    }
+    return restored;
   }
 
   Future<void> _completeSale() async {
@@ -404,25 +472,35 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     _showPaymentDialog(null);
   }
 
-  Future<void> _saveAsDraft() async {
+  /// Persist the current cart as a Draft sale. Returns true on success.
+  ///
+  /// On a partial failure it rolls back the items it already added (so no orphan
+  /// draft is left holding leaked stock) and returns false — the caller then
+  /// keeps the user on the screen with their cart intact instead of silently
+  /// discarding it. Previously this had NO rollback: a mid-loop failure left a
+  /// partial draft whose already-added items held decremented stock.
+  Future<bool> _saveAsDraft() async {
     final l10n = AppLocalizations.of(context)!;
     if (_cartItems.isEmpty) {
-      return;
+      return true;
     }
 
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final salesService = SalesService(authProvider: authProvider);
+    String? saleId;
+    final addedItems = <String, double>{};
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salesService = SalesService(authProvider: authProvider);
-
       final sale = await salesService.createSale(
         customerId: _selectedCustomer?['id'],
       );
+      saleId = sale['id'] as String;
 
       for (var item in _cartItems) {
+        final dynamic added;
         if (item['isExternal'] == true) {
           // External product draft
-          await salesService.addSaleItem(
-            saleId: sale['id'],
+          added = await salesService.addSaleItem(
+            saleId: saleId,
             isExternal: true,
             externalProductName: item['productName'],
             externalCostPrice: item['externalCostPrice'] ?? 0.0,
@@ -433,8 +511,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           );
         } else {
           // Regular product draft
-          await salesService.addSaleItem(
-            saleId: sale['id'],
+          added = await salesService.addSaleItem(
+            saleId: saleId,
             productId: item['productId'],
             quantity: item['quantity'],
             salePrice: item['salePrice'],
@@ -442,6 +520,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             comment: item['comment'],
           );
         }
+        _trackAddedItem(addedItems, added);
       }
 
       if (mounted) {
@@ -453,7 +532,12 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           ),
         );
       }
+      return true;
     } catch (e) {
+      // Roll back the partial draft so it doesn't hold leaked stock.
+      if (saleId != null) {
+        await _abortSale(salesService, saleId, addedItems);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -462,6 +546,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           ),
         );
       }
+      return false;
     }
   }
 
@@ -564,8 +649,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     );
 
     if (action == 'save') {
-      await _saveAsDraft();
-      return true;
+      // Only leave the screen if the draft actually saved. On failure
+      // _saveAsDraft rolls back its partial writes and returns false, so we
+      // stay put and the cashier keeps the cart instead of losing the sale.
+      return await _saveAsDraft();
     }
     if (action == 'discard') {
       return true;
