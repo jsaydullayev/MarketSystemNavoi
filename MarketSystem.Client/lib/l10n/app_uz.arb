@@ -468,6 +468,7 @@
   "saleAlreadyPaid": "Bu sotuv to'liq to'langan. O'zgartirish kiritib bo'lmaydi.",
   "hourlySales": "Soatlik savdo",
   "draftSaveError": "Draft saqlashda xatolik",
+  "stockRestoreFailedWarning": "Sotuv bekor qilindi, lekin ombor qoldig'i to'liq tiklanmadi. Iltimos, omborni tekshiring.",
   "enterQuantityHint": "Miqdor kiriting...",
   "selectCustomerForDebtWarning": "Qarzga olish uchun mijoz tanlang!",
   "makePayment": "TO'LOV QILISH",

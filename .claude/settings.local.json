@@ -47,7 +47,25 @@
       "Bash(python3 -m json.tool)",
       "Bash(git -C c:/Users/joo/Desktop/MarketSystem log --oneline -1 -- deployment/scripts/deploy.sh)",
       "Bash(docker version *)",
-      "Bash(powershell.exe -NoProfile -Command \"if \\(Test-Path 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'\\) { Start-Process 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'; 'launched' } else { 'not-found-default-path' }\")"
+      "Bash(powershell.exe -NoProfile -Command \"if \\(Test-Path 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'\\) { Start-Process 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'; 'launched' } else { 'not-found-default-path' }\")",
+      "Bash(xxd)",
+      "Bash(powershell -Command \"Start-Process 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'\")",
+      "Bash(curl -s -o /dev/null -w \"health:%{http_code}\\\\n\" http://localhost:5050/health)",
+      "Bash(taskkill //PID 23436 //F)",
+      "Bash(curl -s -o /dev/null http://localhost:5050/health)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' http://localhost:5050/health)",
+      "Bash(echo \"backend:$\\(curl -s -o /dev/null -w '%{http_code}' http://localhost:5050/health\\)\")",
+      "Bash(grep -iE \"^\\\\s{2,4}[a-z0-9_-]+:|image:|container_name:|build:\" docker-compose.yml)",
+      "Bash(cd \"/c/Users/joo/.claude/projects/c--Users-joo-Desktop-MarketSystem/d6e5bb23-1605-4ee2-b436-0a84b640a256/subagents/workflows/wf_c52f27f6-aa3\")",
+      "Bash(find \"/c/Users/joo/.claude/projects/c--Users-joo-Desktop-MarketSystem/d6e5bb23-1605-4ee2-b436-0a84b640a256/subagents/workflows\" -name \"*.jsonl\")",
+      "Bash(jq --version)",
+      "Bash(python3 -u \"/c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/d6e5bb23-1605-4ee2-b436-0a84b640a256/scratchpad/wf_watch.py\")",
+      "Bash(command -v py)",
+      "Bash(\"/c/Program Files/Python312/python\" -u \"/c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/d6e5bb23-1605-4ee2-b436-0a84b640a256/scratchpad/wf_watch.py\")",
+      "Bash(rm -rf MarketSystem.*/_verifybin && git status --short | grep -E \"_verifybin\" && echo \"STILL PRESENT\" || echo \"all _verifybin removed\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\joo\\Desktop\\MarketSystem\\MarketSystem.*"
     ]
   }
 }

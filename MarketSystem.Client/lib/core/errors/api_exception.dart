@@ -62,9 +62,22 @@ class ApiException implements Exception {
         if (m is String && m.isNotEmpty) message = m;
         final c = decoded['code'];
         if (c is String && c.isNotEmpty) code = c;
+      } else if (decoded is String && decoded.trim().isNotEmpty) {
+        // Some endpoints return the reason as a BARE JSON string, e.g.
+        // ASP.NET `BadRequest(ex.Message)` → "Omborda yetarli mahsulot yo'q".
+        // Without this branch such a body was silently dropped and the caller's
+        // generic fallback ("Failed to add sale item") was shown instead.
+        message = decoded.trim();
       }
     } catch (_) {
-      // Body wasn't JSON. The fallback message and status code are still useful.
+      // Body wasn't valid JSON — e.g. text/plain from `BadRequest(string)` when
+      // the request sent no Accept header, or a proxy's HTML error page. Use the
+      // raw body as the message when it's short, non-empty and not HTML;
+      // otherwise keep the fallback + status code.
+      final body = res.body.trim();
+      if (body.isNotEmpty && body.length <= 300 && !body.startsWith('<')) {
+        message = body;
+      }
     }
     return ApiException(
       statusCode: res.statusCode,

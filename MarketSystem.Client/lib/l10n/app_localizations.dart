@@ -2852,6 +2852,12 @@ abstract class AppLocalizations {
   /// **'Draft saqlashda xatolik'**
   String get draftSaveError;
 
+  /// No description provided for @stockRestoreFailedWarning.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuv bekor qilindi, lekin ombor qoldig\'i to\'liq tiklanmadi. Iltimos, omborni tekshiring.'**
+  String get stockRestoreFailedWarning;
+
   /// No description provided for @enterQuantityHint.
   ///
   /// In uz, this message translates to:
