@@ -100,53 +100,86 @@ class AuditLogCard extends StatelessWidget {
               ],
             ],
           ),
-          if (entry.payload.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.xs,
-              ),
-              decoration: BoxDecoration(
-                color: c.inputFill,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: Text(
-                _previewPayload(entry.payload),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.bodyMedium().copyWith(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  color: c.textSecondary,
-                ),
-              ),
-            ),
-          ],
+          ..._buildPayloadRows(),
         ],
       ),
     );
   }
 
-  /// Anything that signals an account-takeover attempt or a privileged
-  /// change gets the danger pill instead of the brand pill. G6 — added
-  /// PasswordChange (credential mutation; review for plausibility against
-  /// the actor's normal pattern) and ShiftChange (admin gating a seller's
-  /// ability to log in; misuse can lock out the till outside hours).
+  /// Readable payload — labeled chips ("Soni: 3", "Jami summa: 130 000 so'm")
+  /// instead of the raw JSON with GUIDs the reviewer can't interpret. Empty
+  /// when the payload carries nothing worth showing.
+  List<Widget> _buildPayloadRows() {
+    final rows = readablePayloadRows(entry.payload);
+    if (rows.isEmpty) return const [];
+    return [
+      const SizedBox(height: AppSpacing.md),
+      Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: [
+          for (final (label, value) in rows)
+            _PayloadChip(label: label, value: value),
+        ],
+      ),
+    ];
+  }
+
+  /// High-risk actions get the danger pill (account-takeover / privileged
+  /// change) instead of the brand pill.
   bool _isHighRiskAction(String action) => switch (action) {
     'LoginFailed' ||
     'Delete' ||
     'PermissionChange' ||
     'Block' ||
     'PasswordChange' ||
-    'ShiftChange' => true,
+    'ShiftChange' ||
+    'Error' => true,
     _ => false,
   };
+}
 
-  String _previewPayload(String raw) {
-    // Collapse the JSON to one line; the screen renders monospaced so newlines
-    // would just produce ragged whitespace. The card itself wraps to maxLines: 2.
-    return raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+/// A single "label: value" pill from the audit payload.
+class _PayloadChip extends StatelessWidget {
+  const _PayloadChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: c.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: c.borderSoft),
+      ),
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: AppTextStyles.bodySmall().copyWith(
+                color: c.textMuted,
+                fontSize: 12,
+              ),
+            ),
+            TextSpan(
+              text: value,
+              style: AppTextStyles.bodySmall().copyWith(
+                color: c.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

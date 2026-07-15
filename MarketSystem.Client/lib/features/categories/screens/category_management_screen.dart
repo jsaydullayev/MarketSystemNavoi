@@ -73,11 +73,13 @@ class _CategoryManagementScreenState extends State<CategoryManagementScreen> {
   }
 
   void _openForm({ProductCategoryModel? category}) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => CategoryBottomSheet(category: category),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        backgroundColor: Colors.transparent,
+        child: CategoryBottomSheet(category: category),
+      ),
     ).then((v) {
       if (v == true) _loadCategories();
     });

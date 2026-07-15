@@ -14,13 +14,51 @@ public class UserService : IUserService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAppDbContext _context;
     private readonly ICurrentMarketService _currentMarketService;
+    private readonly IUserTokenEpochStore _tokenEpochStore;
 
-    public UserService(IUnitOfWork unitOfWork, IAppDbContext context, ICurrentMarketService currentMarketService)
+    public UserService(
+        IUnitOfWork unitOfWork,
+        IAppDbContext context,
+        ICurrentMarketService currentMarketService,
+        // MAJBURIY. Ilgari bu opsional (null default) edi — ya'ni DI'da ro'yxatdan
+        // o'tkazish tushib qolsa, xavfsizlik nazorati jimgina o'chib qolardi:
+        // TokensInvalidBeforeUtc DB'ga yozilaverardi, lekin kesh yangilanmagani
+        // uchun bekor qilingan access tokenlar to'liq TTL davomida ishlayverardi.
+        // Endi bunday konfiguratsiya startupda DI xatosi bilan darhol yiqiladi.
+        IUserTokenEpochStore tokenEpochStore)
     {
         _unitOfWork = unitOfWork;
         _context = context;
         _currentMarketService = currentMarketService;
+        _tokenEpochStore = tokenEpochStore;
     }
+
+    /// <summary>
+    /// Ishonchnoma o'zgarganda (parol, deaktivatsiya, o'chirish, ruxsatlar) foydalanuvchining
+    /// BARCHA sessiyalarini o'ldiradi. Ikki qatlam kerak:
+    ///   • refresh tokenlarni bekor qilish — aks holda o'g'irlangan refresh token parol
+    ///     almashtirilgandan keyin ham cheksiz yangi access token chiqaraveradi;
+    ///   • TokensInvalidBeforeUtc'ni stamplash — aks holda allaqachon berilgan access token
+    ///     o'zining TTL'i tugagunicha (30 daqiqagacha) ishlayveradi, chunki har so'rovda
+    ///     IsActive qayta tekshirilmaydi.
+    /// SaveChangesAsync'DAN OLDIN chaqiriladi: ikkalasi ham user qatori bilan bitta
+    /// tranzaksiyada commit bo'lsin. Commit'dan keyin <see cref="PublishEpoch"/>
+    /// keshni yangilaydi.
+    /// </summary>
+    private async Task InvalidateSessionsAsync(User user, DateTime utcNow, CancellationToken cancellationToken)
+    {
+        await _unitOfWork.RefreshTokens.RevokeAllForUserAsync(user.Id, cancellationToken);
+        user.TokensInvalidBeforeUtc = utcNow;
+    }
+
+    /// <summary>
+    /// Commit MUVAFFAQIYATLI bo'lgandan keyin epoch keshini yangilaydi (hot-path
+    /// lookup shu keshdan o'qiladi). Kesh-only: DB'ga yozuvni InvalidateSessionsAsync
+    /// foydalanuvchi qatori bilan bitta tranzaksiyada allaqachon qilgan.
+    /// Commit'gacha chaqirilsa, rollback bo'lgan o'zgarish keshda qolib ketardi.
+    /// </summary>
+    private void PublishEpoch(Guid userId, DateTime utcNow)
+        => _tokenEpochStore.Publish(userId, utcNow);
 
     public async Task<UserDto?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -32,7 +70,8 @@ public class UserService : IUserService
 
         var users = await _unitOfWork.Users.FindAsync(
             u => u.Id == id && u.MarketId == marketId,
-            cancellationToken);
+            cancellationToken,
+            includeProperties: "Market");
         var user = users.FirstOrDefault();
 
         if (user is null)
@@ -136,18 +175,39 @@ public class UserService : IUserService
         if (newRole is not (Role.Admin or Role.Seller))
             throw new InvalidOperationException("Faqat Admin yoki Seller rolini belgilash mumkin.");
 
+        var wasActive = user.IsActive;
+        var previousRole = user.Role;
+
         user.FullName = request.FullName;
         user.Role = newRole;
         user.IsActive = request.IsActive;
 
         // Update password only if provided
+        var passwordChanged = false;
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            passwordChanged = true;
         }
+
+        // Sessiyalarni uzish shartlari:
+        //  • parol almashtirildi,
+        //  • user deaktivatsiya qilindi (active → inactive),
+        //  • ROL o'zgardi — rol JWT ichiga muzlatib qo'yiladi (ClaimTypes.Role) va
+        //    ruxsat tekshiruvlari o'shanga qaraydi. Busiz Admin'dan Seller'ga
+        //    tushirilgan xodim access token muddati tugaguncha (30 daqiqa) Admin
+        //    bo'lib qolaverardi.
+        var roleChanged = previousRole != newRole;
+        var utcNow = DateTime.UtcNow;
+        var invalidate = passwordChanged || (wasActive && !user.IsActive) || roleChanged;
+        if (invalidate)
+            await InvalidateSessionsAsync(user, utcNow, cancellationToken);
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (invalidate)
+            PublishEpoch(user.Id, utcNow);
 
         return MapToDto(user);
     }
@@ -171,6 +231,7 @@ public class UserService : IUserService
         }
 
         // Update password if both current and new password are provided
+        var passwordChanged = false;
         if (!string.IsNullOrWhiteSpace(request.CurrentPassword) &&
             !string.IsNullOrWhiteSpace(request.NewPassword))
         {
@@ -179,10 +240,21 @@ public class UserService : IUserService
                 throw new UnauthorizedAccessException("Current password is incorrect");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            passwordChanged = true;
         }
+
+        // "Parolimni o'zgartirdim" — bu odatda aynan o'g'irlangan sessiyani uzish uchun
+        // qilinadi. Barcha sessiyalar (shu jumladan chaqiruvchiniki ham) yopiladi;
+        // klient qayta login qiladi.
+        var utcNow = DateTime.UtcNow;
+        if (passwordChanged)
+            await InvalidateSessionsAsync(user, utcNow, cancellationToken);
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (passwordChanged)
+            PublishEpoch(user.Id, utcNow);
 
         return MapToDto(user);
     }
@@ -277,8 +349,17 @@ public class UserService : IUserService
         // hidden by the global IsDeleted query filter.
         user.IsActive = false;
         user.IsDeleted = true;
+
+        // O'chirilgan user hozirning o'zida chiqarib yuborilishi kerak — soft-delete
+        // qatorni yashiradi, lekin uning access token'i hech narsa tekshirmasdan
+        // yana 30 daqiqa POS'da ishlayverardi.
+        var utcNow = DateTime.UtcNow;
+        await InvalidateSessionsAsync(user, utcNow, cancellationToken);
+
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        PublishEpoch(user.Id, utcNow);
         return true;
     }
 
@@ -300,8 +381,16 @@ public class UserService : IUserService
             return false;
 
         user.IsActive = false;
+
+        // Deaktivatsiya = "bu odam endi ishlamaydi". IsActive har so'rovda qayta
+        // tekshirilmaydi, shuning uchun sessiyalarni shu yerda uzamiz.
+        var utcNow = DateTime.UtcNow;
+        await InvalidateSessionsAsync(user, utcNow, cancellationToken);
+
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        PublishEpoch(user.Id, utcNow);
         return true;
     }
 
@@ -387,7 +476,9 @@ public class UserService : IUserService
     /// <summary>
     /// Owner-only: overwrite a user's explicit permission set. An empty list
     /// resets the user to its role default. Owner/SuperAdmin are not editable.
-    /// The change takes effect on the user's next login or token refresh.
+    /// The permission set is baked into the JWT ("perm" claims), so the change only
+    /// takes effect once the old token dies — we therefore kill the user's sessions
+    /// here, which forces a re-login and makes a permission REVOKE take effect at once.
     /// </summary>
     public async Task<UserPermissionsDto?> UpdateUserPermissionsAsync(Guid id, UpdatePermissionsDto request, CancellationToken cancellationToken = default)
     {
@@ -413,6 +504,7 @@ public class UserService : IUserService
             throw new InvalidOperationException($"Noma'lum ruxsat kaliti: {string.Join(", ", invalid)}");
 
         // Persist a deduplicated, catalogue-ordered set.
+        var previous = user.Permissions?.ToHashSet() ?? new HashSet<string>();
         var ordered = PermissionKeys.All.Where(requested.Contains).ToList();
         user.Permissions = ordered;
 
@@ -424,8 +516,26 @@ public class UserService : IUserService
         var roleDefault = PermissionDefaults.ForRole(user.Role);
         user.IsPermissionsCustomized = !ordered.ToHashSet().SetEquals(roleDefault);
 
+        // Sessiyani FAQAT ruxsat OLIB TASHLANGANDA uzamiz.
+        //
+        // Ilgari bu shartsiz ishlardi: Owner kassirning ruxsatlar oynasini ochib,
+        // hech narsani o'zgartirmasdan "Saqlash" bossa ham — yoki aksincha, YANGI
+        // ruxsat QO'SHSA ham — kassir savat o'rtasida tizimdan uchib ketardi.
+        // Xavfsizlik nuqtai nazaridan faqat imtiyoz KAMAYISHI shoshilinch:
+        // tokendagi eski (kengroq) ruxsatlar to'plami darhol yaroqsiz bo'lishi kerak.
+        // Ruxsat qo'shilganda esa eski token shunchaki kamroq narsaga ega bo'ladi —
+        // u tabiiy ravishda 30 daqiqada yangilanadi.
+        var revoked = previous.Except(ordered).Any();
+
+        var utcNow = DateTime.UtcNow;
+        if (revoked)
+            await InvalidateSessionsAsync(user, utcNow, cancellationToken);
+
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (revoked)
+            PublishEpoch(user.Id, utcNow);
 
         return BuildPermissionsDto(user);
     }
@@ -454,7 +564,8 @@ public class UserService : IUserService
             user.ShiftStartUtc,
             user.ShiftEndUtc,
             user.IsShiftActiveNow(),
-            user.GetEffectivePermissions()
+            user.GetEffectivePermissions(),
+            user.Market?.Name
         );
     }
 }

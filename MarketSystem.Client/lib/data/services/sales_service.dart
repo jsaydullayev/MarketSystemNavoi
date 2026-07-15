@@ -374,6 +374,27 @@ class SalesService {
     );
   }
 
+  // Sotuvga chegirma (skidka) qo'llash. Mahsulotlar qo'shilgach, to'lovdan
+  // oldin chaqiriladi. Item narxlariga tegmaydi; faqat umumiy hisobni
+  // (TotalAmount) kamaytiradi — keyingi to'lovlar shu summani yopadi.
+  Future<dynamic> setSaleDiscount({
+    required String saleId,
+    required double discountAmount,
+  }) async {
+    final response = await _httpService.patch(
+      '${ApiConstants.sales}/$saleId/discount',
+      body: {'discountAmount': discountAmount},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to apply discount',
+    );
+  }
+
   // Tovarni qaytarish (vozvrat)
   Future<dynamic> returnSaleItem({
     required String saleId,

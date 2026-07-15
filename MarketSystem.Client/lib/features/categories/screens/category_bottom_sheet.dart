@@ -132,6 +132,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
     // pair — typical emoji are 2 UTF-16 code units; flags/ZWJ sequences
     // can be longer but we accept whatever the user pasted as-is.
     final glyph = raw.characters.isNotEmpty ? raw.characters.first : raw;
+    _customEmojiCtrl.clear();
     setState(() {
       _customEmoji = glyph;
       _selectedEmoji = glyph;
@@ -189,20 +190,22 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final size = MediaQuery.of(context).size;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.xl3,
-        0,
-        AppSpacing.xl3,
-        AppSpacing.xl3 + bottomPadding,
-      ),
-      child: Form(
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: 520, maxHeight: size.height * 0.9),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: BorderRadius.circular(28),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl3,
+          0,
+          AppSpacing.xl3,
+          AppSpacing.xl3,
+        ),
+        child: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
@@ -302,7 +305,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
               _CustomEmojiField(
                 controller: _customEmojiCtrl,
                 onApply: _applyCustomEmoji,
-                hint: l10n.customEmojiHint,
+                hint: '',
               ),
               const SizedBox(height: AppSpacing.xl),
 
@@ -345,6 +348,7 @@ class _CategoryBottomSheetState extends State<CategoryBottomSheet> {
           ),
         ),
       ),
+    ),
     );
   }
 }

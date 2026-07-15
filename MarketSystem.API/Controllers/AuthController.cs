@@ -70,6 +70,13 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.RefreshTokenAsync(request);
 
+        // 401 — bitta umumiy javob: qaysi sabab (noma'lum/muddati o'tgan/begona/
+        // o'g'irlangan) ekanini oshkor qilmaymiz (user enumeration'ni oldini olish).
+        //
+        // Eslatma: rotatsiya poygasi (ikki tab) va "javob yo'lda yo'qoldi" holatlari
+        // bu yergacha YETIB KELMAYDI — AuthService ularni grace oynasi ichida
+        // xayrixoh deb tanib, o'sha zanjirdan yangi juftlik beradi. Shuning uchun
+        // bu yerda alohida 409 shoxi yo'q.
         if (result is null)
             return Unauthorized("Invalid token");
 

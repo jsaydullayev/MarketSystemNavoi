@@ -44,6 +44,12 @@ public static class PermissionKeys
     // Delete a purchase (reverses the stock it added). Owner data-cleanup.
     public const string ZakupDelete = "zakup.delete";
 
+    // Yetkazib beruvchilar (goods suppliers) directory. Cost/debt sensitive —
+    // Seller gets none by default; Owner may grant to a trusted Admin.
+    public const string SuppliersAccess = "suppliers.access";
+    public const string SuppliersManage = "suppliers.manage";
+    public const string SuppliersDelete = "suppliers.delete";
+
     public const string CashRegisterAccess = "cashregister.access";
     public const string CashRegisterManage = "cashregister.manage";
 
@@ -79,6 +85,7 @@ public static class PermissionKeys
         SalesAccess, SalesCreate, SalesEdit, SalesDelete, SalesExport, SalesInvoice,
         CustomersAccess, CustomersManage, CustomersDelete, CustomersExport,
         ZakupAccess, ZakupCreate, ZakupDelete,
+        SuppliersAccess, SuppliersManage, SuppliersDelete,
         CashRegisterAccess, CashRegisterManage,
         ReportsAccess, ReportsExport,
         UsersAccess, UsersManage, UsersShift,

@@ -1,7 +1,7 @@
 name: market_system_client
 description: Market System Mobile App
 publish_to: "none"
-version: 1.0.0+8
+version: 1.0.0+10
 
 environment:
     sdk: ">=3.8.0 <4.0.0"
@@ -86,10 +86,51 @@ dev_dependencies:
     bloc_test: ^9.1.5
     mocktail: ^1.0.4
 
+# Ishga tushish (splash) ekrani. Ilgari konfiguratsiya umuman yo'q edi:
+# Android'da splash oddiy OQ fon edi, iOS'da esa LaunchScreen.storyboard
+# mavjud bo'lmagan "LaunchBackground" rasmiga murojaat qilardi → iPhone'da
+# ilova bo'm-bo'sh oq ekran bilan ochilardi.
+#
+# Ranglar ilovaning sahifa foniga (AppColors.bg / AppColors.darkBg) AYNAN mos —
+# shunda splash'dan ilovaga o'tishda rang sakramaydi.
+# Light: to'liq logotip (qora matn — och fonda o'qiladi).
+# Dark:  logo plitkasi (o'zi to'q sariq — to'q fonda ham ko'rinadi).
+flutter_native_splash:
+    # WEB uchun splash generatsiya QILINMAYDI. Bu paket web/index.html'ni ham
+    # qayta yozib, brauzerda yuklanish paytida splash ko'rsatardi — web'da bunga
+    # ehtiyoj yo'q edi va u faqat halaqit berardi.
+    web: false
+
+    # DIQQAT — rasm tanlash:
+    #   logo.png    — alpha kanali YO'Q (colorType=2), dumaloq burchaklari QATTIQ
+    #                 OQ piksel sifatida saqlangan. To'q fonda u oq kvadrat bo'lib
+    #                 ko'rinadi. Shuning uchun bu yerda ISHLATILMAYDI.
+    #   app_icon.png — to'la to'q sariq (#F6862A) kvadrat, oq chekka yo'q → to'q
+    #                 fonda toza ko'rinadi.
+    #   splash.png  — to'liq logotip (qora matn), faqat OCH fonda o'qiladi.
+    color: "#F8FAFC"
+    image: "assets/images/splash.png"
+    color_dark: "#0B1426"
+    image_dark: "assets/images/app_icon.png"
+    android_12:
+        image: "assets/images/app_icon.png"
+        color: "#F8FAFC"
+        image_dark: "assets/images/app_icon.png"
+        color_dark: "#0B1426"
+
 flutter_launcher_icons:
     android: true
     ios: true
     image_path: "assets/images/logo.png"
+    # iOS ikonkasi app_icon.png dan — logo.png ning dumaloq burchaklari QATTIQ OQ
+    # piksel (alpha yo'q), iOS esa ikonkani o'z squircle maskasi bilan kesadi va
+    # burchaklarda oq chekka ko'rinib qolardi. app_icon.png to'la to'q sariq.
+    image_path_ios: "assets/images/app_icon.png"
+    # iOS ikonkasida alpha (shaffoflik) BO'LMASLIGI shart — aks holda App Store
+    # yuklashni "ERROR ITMS-90717: Invalid App Store Icon" bilan rad etadi.
+    # Shaffof pikselllar brend to'q sariq foniga quyiladi.
+    remove_alpha_ios: true
+    background_color_ios: "#F6862A"
     # Desktop + web use app_icon.png — a full-bleed orange square (the brand
     # logo with its transparent/white corners flooded to #F6862A) so the icon
     # has no white edges in the taskbar, browser tab, or installed-PWA shell.

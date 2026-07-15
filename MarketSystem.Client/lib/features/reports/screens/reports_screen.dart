@@ -595,46 +595,41 @@ class _KpiGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    // Kartochkalar VERTIKAL (balandan pastga) — har biri to'liq kenglikda,
+    // shunda to'liq summa ("87 000 000") kesilmasdan sig'adi. 4 tadan bir
+    // qatorli tor variantda katta sonlar kesilib qolardi.
+    return Column(
       children: [
-        Expanded(
-          child: _KpiTile(
-            icon: Icons.payments_rounded,
-            iconBg: AppColors.successLight,
-            iconColor: AppColors.success,
-            label: l10n.netProfit,
-            value: NumberFormatter.format(profit),
-          ),
+        _KpiTile(
+          icon: Icons.payments_rounded,
+          iconBg: AppColors.successLight,
+          iconColor: AppColors.success,
+          label: l10n.netProfit,
+          value: NumberFormatter.format(profit),
         ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: _KpiTile(
-            icon: Icons.receipt_long_rounded,
-            iconBg: context.colors.brandLight,
-            iconColor: context.colors.brand,
-            label: l10n.saleCount,
-            value: receipts.toString(),
-          ),
+        const SizedBox(height: AppSpacing.md),
+        _KpiTile(
+          icon: Icons.receipt_long_rounded,
+          iconBg: context.colors.brandLight,
+          iconColor: context.colors.brand,
+          label: l10n.saleCount,
+          value: receipts.toString(),
         ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: _KpiTile(
-            icon: Icons.check_circle_outline_rounded,
-            iconBg: AppColors.successLight,
-            iconColor: AppColors.success,
-            label: l10n.paid,
-            value: NumberFormatter.format(paid),
-          ),
+        const SizedBox(height: AppSpacing.md),
+        _KpiTile(
+          icon: Icons.check_circle_outline_rounded,
+          iconBg: AppColors.successLight,
+          iconColor: AppColors.success,
+          label: l10n.paid,
+          value: NumberFormatter.format(paid),
         ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: _KpiTile(
-            icon: Icons.warning_amber_rounded,
-            iconBg: AppColors.dangerLight,
-            iconColor: AppColors.danger,
-            label: l10n.onDebt,
-            value: NumberFormatter.format(debt),
-          ),
+        const SizedBox(height: AppSpacing.md),
+        _KpiTile(
+          icon: Icons.warning_amber_rounded,
+          iconBg: AppColors.dangerLight,
+          iconColor: AppColors.danger,
+          label: l10n.onDebt,
+          value: NumberFormatter.format(debt),
         ),
       ],
     );
@@ -658,6 +653,9 @@ class _KpiTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // To'liq kenglikdagi gorizontal karta: ikonka chapda, label + to'liq son
+    // o'ngda. Endi qiymatga butun qator eni tegadi — "87 000 000" bemalol
+    // sig'adi. FittedBox faqat juda katta son (mlrd) uchun himoya sifatida.
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -665,39 +663,49 @@ class _KpiTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: context.colors.border, width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: iconBg,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Icon(icon, size: 16, color: iconColor),
+            child: Icon(icon, size: 22, color: iconColor),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            label.toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.caption().copyWith(
-              fontSize: 9,
-              letterSpacing: 0.6,
-              color: context.colors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.bodyLarge().copyWith(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: context.colors.text,
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption().copyWith(
+                    fontSize: 10,
+                    letterSpacing: 0.6,
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: AppTextStyles.titleMedium().copyWith(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: context.colors.text,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

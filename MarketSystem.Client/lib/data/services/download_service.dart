@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:open_filex/open_filex.dart';
 
 import '../../core/constants/api_constants.dart';
 import '../../core/errors/api_exception.dart';
+import '../../core/utils/file_helper.dart';
 import 'http_service.dart';
 
 class DownloadService {
@@ -144,13 +144,13 @@ class DownloadService {
   /// of "Exception: Exception: Faylni yuklab olishda xatolik: ...".
   Future<void> _downloadMobileDesktop(List<int> bytes, String filename) async {
     try {
-      final directory = await getDownloadsDirectory();
-      if (directory == null) {
-        throw ApiException(
-          statusCode: 0,
-          message: 'Downloads papkasini topib bo\'lmadi',
-        );
-      }
+      // FileHelper bilan bir xil, platformaga mos va yozish mumkin bo'lgan
+      // papka. Ilgari bu yerda getDownloadsDirectory() chaqirilardi — iOS
+      // sandbox'ida Downloads papkasi YO'Q, u null qaytaradi, natijada
+      // Hisobotlar bo'limidagi HAR BIR eksport iPhone'da xatolik berardi.
+      // Android'da esa u ilovaning ichki papkasiga tushib, foydalanuvchi
+      // faylni topa olmasdi.
+      final directory = await FileHelper.resolveSaveDirectory();
       final filePath = '${directory.path}/$filename';
       final file = File(filePath);
       await file.writeAsBytes(bytes);

@@ -215,6 +215,30 @@ public class SalesController : ControllerBase
     }
 
     /// <summary>
+    /// Sotuvga sale-level chegirma (skidka) qo'llash. Kassa to'lov oynasidan
+    /// chaqiriladi — mahsulotlar qo'shilgach, to'lovdan oldin. Item narxlariga
+    /// tegmaydi; faqat umumiy hisobni (TotalAmount) kamaytiradi, keyingi
+    /// to'lovlar shu kamaytirilgan summani yopadi.
+    /// </summary>
+    [HttpPatch("{saleId}/discount")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
+    public async Task<ActionResult<SaleDto>> SetSaleDiscount(Guid saleId, [FromBody] SetSaleDiscountDto request, CancellationToken ct = default)
+    {
+        try
+        {
+            var sale = await _saleService.SetSaleDiscountAsync(saleId, request.DiscountAmount, ct);
+            if (sale is null)
+                return NotFound();
+
+            return Ok(sale);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Savdoni o'chirish (faqat Draft va Paid statusdagi savdolar uchun)
     /// </summary>
     [HttpDelete("{saleId}")]

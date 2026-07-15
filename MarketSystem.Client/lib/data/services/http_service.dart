@@ -25,11 +25,15 @@ class MarketBlockedInfo {
 /// recovery UX (snackbar + redirect to login) instead of dumping the user on
 /// an empty screen full of failed requests.
 enum SessionEndedReason {
-  /// Refresh-token call returned an error (or 401). Could mean the token was
-  /// rotated by the backend's reuse detector (S1 — a stolen copy was used
-  /// somewhere) OR the refresh-token row was invalidated by the K1 deploy
-  /// (every plaintext token in the DB became unreachable after we switched
-  /// to SHA-256-hashed lookups). Either way the user has to log in again.
+  /// The refresh token was DEFINITIVELY refused (401 / 403 — see
+  /// [RefreshOutcome.rejected]). Could mean the token was rotated by the
+  /// backend's reuse detector (S1 — a stolen copy was used somewhere), that it
+  /// expired, or that the row was invalidated server-side. Either way the user
+  /// has to log in again.
+  ///
+  /// Explicitly NOT emitted for transient failures (offline, timeout, 5xx,
+  /// 409 REFRESH_RACE): those keep the tokens and the session, and surface as
+  /// a plain network error on the request that triggered the refresh.
   refreshFailed,
 
   /// Explicit user-initiated logout. Provided so listeners can route to
@@ -61,10 +65,21 @@ class HttpService {
   ///
   /// Holds the in-flight refresh Future; concurrent 401s await the same one.
   /// Cleared when the refresh settles so a later expiry can refresh again.
-  Future<bool>? _refreshInFlight;
+  Future<RefreshOutcome>? _refreshInFlight;
 
-  /// Latched true the instant a refresh DEFINITIVELY fails — the session is
-  /// dead. Without it, every request that 401s in a LATER wave (a dashboard
+  /// Oxirgi MUVAFFAQIYATSIZ (transient) refresh vaqti — cooldown uchun.
+  /// Muvaffaqiyatli refresh buni null qiladi.
+  DateTime? _lastRefreshFailureAt;
+
+  /// Transient xatodan keyin yangi refresh urinishi boshlanmaydigan muddat.
+  static const Duration _refreshCooldown = Duration(seconds: 5);
+
+  /// Latched true the instant a refresh is DEFINITIVELY rejected (401 / 403 —
+  /// see [RefreshOutcome.rejected]) — the session is dead. A transient failure
+  /// (offline, 502 mid-deploy, timeout) must NOT latch this: the refresh token
+  /// is still valid and the next request simply retries the refresh.
+  ///
+  /// Without the latch, every request that 401s in a LATER wave (a dashboard
   /// full of pollers keeps firing after the token dies) started its own doomed
   /// refresh and emitted ANOTHER sessionEnded event — so the logout/redirect
   /// ran 4-5 times in a row. While latched, 401s short-circuit: no refresh, no
@@ -219,6 +234,18 @@ class HttpService {
     );
   }
 
+  /// `exp` HAQIQATAN o'tganmi — 15 soniyalik zaxira oynasisiz.
+  ///
+  /// [_isAccessTokenExpired] "tez orada tugaydi"ni ham true deb beradi (shuning
+  /// uchun oldindan yangilaymiz). Lekin yangilash tarmoq sababli muvaffaqiyatsiz
+  /// bo'lsa, token HALI AMAL QILIB TURGAN bo'lishi mumkin — o'shanda foydalanuvchiga
+  /// bekorga xato ko'rsatmaslik uchun shu qat'iy tekshiruv kerak.
+  bool _isAccessTokenTrulyExpired(String token) {
+    final expiry = _accessTokenExpiry(token);
+    if (expiry == null) return false;
+    return DateTime.now().toUtc().isAfter(expiry);
+  }
+
   /// Returns a non-expired access token, refreshing PROACTIVELY (single-
   /// flight) when the stored one has already expired.
   ///
@@ -238,8 +265,23 @@ class HttpService {
     if (endpoint.contains('/Auth/')) return token;
     if (_isAccessTokenExpired(token)) {
       debugPrint('Access token expired — proactive refresh before $endpoint');
-      final ok = await _refreshTokenOnce();
-      if (ok) return await getAccessToken();
+      final outcome = await _refreshTokenOnce();
+      if (outcome == RefreshOutcome.renewed) return await getAccessToken();
+      if (outcome == RefreshOutcome.transient) {
+        // Tokenlar joyida, sessiya tirik — shunchaki hozir yangilay olmadik.
+        //
+        // MUHIM: bu yerga 15 soniyalik ZAXIRA oynasi tufayli ham kelamiz, ya'ni
+        // token hali AMAL QILIB TURGAN bo'lishi mumkin. Bunday paytda bir soniyalik
+        // uzilish yoki bitta 502 uchun foydalanuvchiga xato ko'rsatish — mantiqsiz:
+        // hali tirik token bilan so'rovni yuboraveramiz, u muvaffaqiyatli o'tadi.
+        if (!_isAccessTokenTrulyExpired(token)) return token;
+
+        // Token haqiqatan muddati o'tgan — uni yuborsak 401 qaytaradi va yana
+        // shu yo'lga tushardi. Oddiy tarmoq xatosi bilan tugatamiz.
+        throw _refreshUnavailable(endpoint);
+      }
+      // rejected — _doRefresh sessiyani tugatdi va tokenlarni tozaladi;
+      // so'rov 401 oladi, app shell esa /login'ga o'tkazadi.
     }
     return token;
   }
@@ -288,13 +330,25 @@ class HttpService {
     if (response.statusCode == 401 && !endpoint.contains('/Auth/')) {
       debugPrint('Access token expired (401 on $endpoint) — refreshing...');
 
-      final refreshed = await _refreshTokenOnce();
+      final outcome = await _refreshTokenOnce();
 
-      if (refreshed) {
+      // Renewed — either we rotated the pair ourselves, or a concurrent caller
+      // won the race (409 REFRESH_RACE) and left a fresher token in the shared
+      // storage. Either way _retryRequest re-reads storage and replays this
+      // request ONCE with the new token.
+      if (outcome == RefreshOutcome.renewed) {
         debugPrint('Token refreshed — retrying $method $endpoint');
         return _retryRequest(method, endpoint, body);
       }
-      debugPrint('Token refresh failed — user must login again');
+
+      // Transient — the refresh couldn't be COMPLETED (offline, timeout, 502
+      // mid-deploy). The tokens are untouched and the session is still alive,
+      // so this must read as a network error, NOT a logout.
+      if (outcome == RefreshOutcome.transient) {
+        throw _refreshUnavailable(endpoint);
+      }
+
+      debugPrint('Token refresh rejected — user must login again');
       return response; // surface the 401 so the app shell can route to login
     }
 
@@ -303,36 +357,102 @@ class HttpService {
 
   /// Refresh the access token, shared single-flight across concurrent 401s.
   /// The first caller starts the refresh; everyone else awaits the same
-  /// Future. Returns true when the token was renewed.
-  Future<bool> _refreshTokenOnce() {
+  /// Future — and therefore the same [RefreshOutcome].
+  Future<RefreshOutcome> _refreshTokenOnce() {
     // Session already ended — don't start another doomed refresh (or emit a
     // duplicate sessionEnded). Cleared by saveTokens on the next login.
-    if (_sessionEnded) return Future<bool>.value(false);
+    if (_sessionEnded) {
+      return Future<RefreshOutcome>.value(RefreshOutcome.rejected);
+    }
+
+    // Cooldown. Transient xato sessiyani o'ldirmagani uchun (bu ataylab shunday),
+    // internet uzilganda HAR BIR so'rov yangi refresh boshlab yuborardi: o'nlab
+    // 15-soniyalik so'rov, batareya va serverga bekorga yuk. Muvaffaqiyatsiz
+    // urinishdan keyin qisqa muddat yangi urinish boshlamaymiz — kutayotgan
+    // so'rovlar darhol "tarmoq xatosi" oladi. Muvaffaqiyatli refresh cooldown'ni
+    // tozalaydi, ya'ni tarmoq tiklanishi bilan hammasi normal ishlaydi.
+    final lastFailure = _lastRefreshFailureAt;
+    if (_refreshInFlight == null &&
+        lastFailure != null &&
+        DateTime.now().difference(lastFailure) < _refreshCooldown) {
+      return Future<RefreshOutcome>.value(RefreshOutcome.transient);
+    }
+
     return _refreshInFlight ??= _doRefresh();
   }
 
-  Future<bool> _doRefresh() async {
-    bool succeeded = false;
+  /// Runs ONE refresh and decides what it means for the session. The session
+  /// is torn down ONLY on [RefreshOutcome.rejected]; a transient failure keeps
+  /// both tokens on the device so the user isn't logged out by a flaky network
+  /// or a redeploy.
+  Future<RefreshOutcome> _doRefresh() async {
+    // The token this refresh started from — used to detect whether a racing
+    // caller has since written a NEWER one to the shared storage (409 below).
+    final staleToken = _accessToken ?? await getAccessToken();
+    var outcome = RefreshOutcome.transient;
     try {
-      final refreshed = await _authService?.refreshToken();
-      succeeded = refreshed != null;
-      if (succeeded) {
-        _tokenRefreshedController.add(refreshed);
+      final auth = _authService;
+      if (auth == null) {
+        // DI not wired yet — retryable, definitely not a credential failure.
+        debugPrint('HttpService._doRefresh: no AuthService wired');
+        return outcome;
       }
-      return succeeded;
+
+      final result = await auth.refreshToken();
+      outcome = result.outcome;
+
+      if (outcome == RefreshOutcome.renewed) {
+        final data = result.data;
+        if (data != null) _tokenRefreshedController.add(data);
+        return outcome;
+      }
+
+      // 409 REFRESH_RACE — a concurrent caller rotated the family first and
+      // already saved the fresh pair to the SHARED storage. Re-read it: if the
+      // access token really did change, this request can just go out again
+      // with it. If storage still holds the old token, there's nothing to
+      // retry with — fall back to an ordinary transient failure.
+      if (result.isRace) {
+        final fresh = await getAccessToken();
+        if (fresh != null && fresh.isNotEmpty && fresh != staleToken) {
+          debugPrint('Refresh race — a fresher token is in storage, retrying');
+          outcome = RefreshOutcome.renewed;
+        } else {
+          debugPrint('Refresh race — storage still stale, treating as transient');
+          outcome = RefreshOutcome.transient;
+        }
+      }
+
+      return outcome;
     } catch (e) {
+      // AuthService already classifies its own failures; anything escaping it
+      // is unexpected — never destroy a session over it.
       debugPrint('HttpService._doRefresh error: $e');
-      return false;
+      outcome = RefreshOutcome.transient;
+      return outcome;
     } finally {
-      // Clear so a later (post-batch) expiry can trigger a fresh refresh.
+      // ALWAYS clear, on every path — a hung or failed refresh must never
+      // wedge the app by leaving a dead Future for the next request to await.
       _refreshInFlight = null;
-      // G1 — emit ONCE per failed refresh, not once per waiting request. The
+
+      // Cooldown hisobi: transient bo'lsa vaqtni belgilaymiz (keyingi so'rovlar
+      // darhol yangi refresh boshlamasin), muvaffaqiyatda esa tozalaymiz —
+      // tarmoq tiklangan zahoti hech qanday kechikish qolmasin.
+      _lastRefreshFailureAt = outcome == RefreshOutcome.transient
+          ? DateTime.now()
+          : null;
+
+      // G1 — emit ONCE per rejected refresh, not once per waiting request. The
       // single-flight gate above means every concurrent 401 awaited THIS
       // Future, so firing the event here keeps listeners from receiving a
       // duplicate "session ended" event for every parallel call. The first
       // listener (AuthProvider) navigates to /login and clears state;
       // subsequent listeners are idempotent.
-      if (!succeeded) {
+      //
+      // Only `rejected` gets here: a transient failure leaves the tokens in
+      // place and emits NOTHING — the waiting request surfaces a normal
+      // network error instead, and the next request retries the refresh.
+      if (outcome == RefreshOutcome.rejected) {
         // Latch the dead session BEFORE the await below, so any request that
         // 401s while we're clearing tokens short-circuits in _refreshTokenOnce
         // instead of racing in a fresh refresh + emitting a second event.
@@ -345,6 +465,18 @@ class HttpService {
         );
       }
     }
+  }
+
+  /// The error a pending request gets when its refresh failed TRANSIENTLY:
+  /// an ordinary network error, not a logout. Mirrors the timeout path's
+  /// `ApiException(statusCode: 0)` so call sites branch uniformly.
+  ApiException _refreshUnavailable(String endpoint) {
+    debugPrint('Refresh temporarily unavailable — $endpoint surfaces a network error');
+    return ApiException(
+      statusCode: 0,
+      message: 'Tarmoq xatosi. Internetni tekshirib, qayta urinib ko\'ring.',
+      code: 'NETWORK',
+    );
   }
 
   // So'rovni qayta yuborish

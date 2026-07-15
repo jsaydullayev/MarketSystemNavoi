@@ -154,6 +154,106 @@ public class ZakupsController : ControllerBase
         }
     }
 
+    // ── Goods-receipt (priyomka) — multi-item + supplier + payment ───────────
+
+    private static ZakupReceiptSellerDto ToSellerReceipt(ZakupReceiptDto r) => new(
+        r.Id, r.SupplierId, r.SupplierName, r.InvoiceNumber, r.ItemCount, r.CreatedAt, r.CreatedBy,
+        r.Items.Select(i => new ZakupReceiptLineSellerDto(i.Id, i.ProductId, i.ProductName, i.Quantity)).ToList());
+
+    [HttpPost]
+    [RequirePermission(PermissionKeys.ZakupCreate)]
+    public async Task<IActionResult> CreateReceipt([FromBody] CreateZakupReceiptDto request)
+    {
+        var adminIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(adminIdStr) || !Guid.TryParse(adminIdStr, out var adminId))
+            return Unauthorized();
+
+        try
+        {
+            var receipt = await _zakupService.CreateZakupReceiptAsync(request, adminId);
+            return Ok(IsSeller() ? (object)ToSellerReceipt(receipt) : receipt);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet]
+    [RequirePermission(PermissionKeys.ZakupAccess)]
+    public async Task<IActionResult> GetAllReceipts()
+    {
+        var receipts = await _zakupService.GetAllZakupReceiptsAsync();
+        if (IsSeller())
+            return Ok(receipts.Select(ToSellerReceipt));
+        return Ok(receipts);
+    }
+
+    [HttpGet]
+    [RequirePermission(PermissionKeys.ZakupAccess)]
+    public async Task<IActionResult> GetReceiptsPaged([FromQuery] int page = 1, [FromQuery] int size = 50)
+    {
+        var result = await _zakupService.GetAllZakupReceiptsPagedAsync(page, size);
+        if (IsSeller())
+        {
+            var items = result.Items.Select(ToSellerReceipt).ToList();
+            return Ok(new { items, result.Page, result.Size, result.Total, result.TotalPages });
+        }
+        return Ok(result);
+    }
+
+    [HttpGet("{id}")]
+    [RequirePermission(PermissionKeys.ZakupAccess)]
+    public async Task<IActionResult> GetReceipt(Guid id)
+    {
+        var receipt = await _zakupService.GetZakupReceiptByIdAsync(id);
+        if (receipt is null)
+            return NotFound();
+        return Ok(IsSeller() ? (object)ToSellerReceipt(receipt) : receipt);
+    }
+
+    [HttpDelete("{id}")]
+    [RequirePermission(PermissionKeys.ZakupDelete)]
+    public async Task<IActionResult> DeleteReceipt(Guid id)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            var deleted = await _zakupService.DeleteZakupReceiptAsync(id, userId);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("{id}")]
+    [RequirePermission(PermissionKeys.ZakupCreate)]
+    public async Task<IActionResult> RegisterSupplierPayment(Guid id, [FromBody] RegisterSupplierPaymentDto request)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            var receipt = await _zakupService.RegisterSupplierPaymentAsync(id, request.Amount, userId);
+            if (receipt is null)
+                return NotFound();
+            return Ok(IsSeller() ? (object)ToSellerReceipt(receipt) : receipt);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpGet("export")]
     [EnableRateLimiting("export")]
     [RequirePermission(PermissionKeys.ZakupAccess)]

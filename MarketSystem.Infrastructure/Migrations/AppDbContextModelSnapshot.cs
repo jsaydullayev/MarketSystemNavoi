@@ -582,10 +582,16 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime>("SessionStartedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -705,6 +711,10 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -835,6 +845,47 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.ToTable("Shifts");
                 });
 
+            modelBuilder.Entity("MarketSystem.Domain.Entities.Supplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MarketId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MarketId");
+
+                    b.HasIndex("MarketId", "Name");
+
+                    b.ToTable("Suppliers");
+                });
+
             modelBuilder.Entity("MarketSystem.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -895,6 +946,9 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Property<int>("ShiftStatus")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("TokensInvalidBeforeUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -943,6 +997,9 @@ namespace MarketSystem.Infrastructure.Migrations
                         .HasPrecision(18, 3)
                         .HasColumnType("numeric(18,3)");
 
+                    b.Property<Guid?>("ReceiptId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedByAdminId");
@@ -951,7 +1008,67 @@ namespace MarketSystem.Infrastructure.Migrations
 
                     b.HasIndex("ProductId");
 
+                    b.HasIndex("ReceiptId");
+
                     b.ToTable("Zakups");
+                });
+
+            modelBuilder.Entity("MarketSystem.Domain.Entities.ZakupReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByAdminId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("InvoiceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("MarketId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByAdminId");
+
+                    b.HasIndex("MarketId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("MarketId", "CreatedAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_ZakupReceipt_Market_CreatedAt_Desc");
+
+                    b.ToTable("ZakupReceipts");
                 });
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.AuditLog", b =>
@@ -1230,6 +1347,17 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MarketSystem.Domain.Entities.Supplier", b =>
+                {
+                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
+                        .WithMany()
+                        .HasForeignKey("MarketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Market");
+                });
+
             modelBuilder.Entity("MarketSystem.Domain.Entities.User", b =>
                 {
                     b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
@@ -1259,11 +1387,44 @@ namespace MarketSystem.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MarketSystem.Domain.Entities.ZakupReceipt", "Receipt")
+                        .WithMany("Items")
+                        .HasForeignKey("ReceiptId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("CreatedByAdmin");
 
                     b.Navigation("Market");
 
                     b.Navigation("Product");
+
+                    b.Navigation("Receipt");
+                });
+
+            modelBuilder.Entity("MarketSystem.Domain.Entities.ZakupReceipt", b =>
+                {
+                    b.HasOne("MarketSystem.Domain.Entities.User", "CreatedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("CreatedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MarketSystem.Domain.Entities.Market", "Market")
+                        .WithMany()
+                        .HasForeignKey("MarketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MarketSystem.Domain.Entities.Supplier", "Supplier")
+                        .WithMany("Receipts")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedByAdmin");
+
+                    b.Navigation("Market");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("MarketSystem.Domain.Entities.Customer", b =>
@@ -1311,6 +1472,11 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Navigation("SaleItems");
                 });
 
+            modelBuilder.Entity("MarketSystem.Domain.Entities.Supplier", b =>
+                {
+                    b.Navigation("Receipts");
+                });
+
             modelBuilder.Entity("MarketSystem.Domain.Entities.User", b =>
                 {
                     b.Navigation("AuditLogs");
@@ -1320,6 +1486,11 @@ namespace MarketSystem.Infrastructure.Migrations
                     b.Navigation("TemporaryProducts");
 
                     b.Navigation("Zakups");
+                });
+
+            modelBuilder.Entity("MarketSystem.Domain.Entities.ZakupReceipt", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

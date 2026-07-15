@@ -21,6 +21,7 @@ import '../../features/products/presentation/screens/products_screen.dart';
 import '../../features/sales/presentation/screens/sales_screen.dart';
 import '../../features/customers/presentation/screens/customers_screen.dart';
 import '../../features/zakup/presentation/screens/zakup_screen.dart';
+import '../../features/suppliers/presentation/screens/suppliers_screen.dart';
 import '../../features/users/screens/users_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
@@ -114,6 +115,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         builder: (_) => const PermissionGate(
           permission: Permissions.zakupAccess,
           child: ZakupScreen(),
+        ),
+      );
+
+    case AppRoutes.suppliers:
+      return MaterialPageRoute(
+        builder: (_) => const PermissionGate(
+          permission: Permissions.suppliersAccess,
+          child: SuppliersScreen(),
         ),
       );
 

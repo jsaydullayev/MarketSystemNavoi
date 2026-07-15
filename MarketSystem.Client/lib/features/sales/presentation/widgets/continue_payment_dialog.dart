@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/input_formatters.dart';
 import 'package:provider/provider.dart';
 
 import 'package:market_system_client/core/providers/auth_provider.dart';
@@ -552,6 +553,7 @@ class _PaymentMethodRow extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
+                inputFormatters: const [NoLeadingZeroFormatter()],
                 autofocus: true,
                 style: AppTextStyles.bodyLarge().copyWith(
                   fontWeight: FontWeight.w700,

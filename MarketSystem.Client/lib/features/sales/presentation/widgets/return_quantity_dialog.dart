@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/input_formatters.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
@@ -131,6 +132,7 @@ class _ReturnQuantityDialogState extends State<ReturnQuantityDialog> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: const [NoLeadingZeroFormatter()],
               autofocus: true,
               style: AppTextStyles.bodyLarge(),
               decoration: InputDecoration(

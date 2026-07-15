@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/design/widgets/app_snackbar.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -150,7 +151,8 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
             'productId': product['id'],
             'productName': product['name'],
             'salePrice': price,
-            'minSalePrice': (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
+            'minSalePrice':
+                (product['minSalePrice'] as num?)?.toDouble() ?? 0.0,
             'costPrice': (product['costPrice'] as num?)?.toDouble() ?? 0.0,
             'hidePriceFromSellers': product['hidePriceFromSellers'] == true,
             'quantity': qty,
@@ -158,12 +160,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           });
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("${product['name']} ${l10n.returnSuccess}"),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        showAppSnackBar(context, "${product['name']} ${l10n.returnSuccess}");
       },
     );
   }
@@ -185,11 +182,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
           });
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$name ${l10n.returnSuccess}'),
-            backgroundColor: context.colors.brand,
-          ),
+        showAppSnackBar(
+          context,
+          '$name ${l10n.returnSuccess}',
+          kind: AppSnackKind.info,
         );
       },
     );
@@ -283,7 +279,7 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
         saleId: saleId ?? '',
         totalAmount: _totalAmount,
         selectedCustomer: customerSnapshot,
-        onConfirm: (payments, useDebt, customer) async {
+        onConfirm: (payments, useDebt, customer, discount) async {
           final scaffoldMessenger = ScaffoldMessenger.of(context);
           final navigator = Navigator.of(context);
 
@@ -336,6 +332,17 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
                 );
               }
               _trackAddedItem(addedItems, added);
+            }
+
+            // Chegirma (skidka) — mahsulotlar qo'shilgach, to'lovdan OLDIN
+            // yuboriladi. Backend sotuvning hisobini (TotalAmount) shu
+            // summaga kamaytiradi, shunda quyidagi to'lovlar aynan
+            // chegirilgan hisobni yopadi (spiskadagi tovar narxlari o'zgarmaydi).
+            if (discount > 0) {
+              await salesService.setSaleDiscount(
+                saleId: saleId,
+                discountAmount: discount,
+              );
             }
 
             // Payments SEQUENTIALLY too — multi-tender (e.g. Cash + Terminal)

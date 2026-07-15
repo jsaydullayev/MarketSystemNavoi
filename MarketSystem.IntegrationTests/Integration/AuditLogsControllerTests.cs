@@ -36,7 +36,8 @@ public class AuditLogsControllerTests
             .Setup(x => x.GetSuspiciousAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SuspiciousActivityReport(
                 Array.Empty<FailedLoginBurstDto>(),
-                Array.Empty<BulkDeleteBurstDto>()));
+                Array.Empty<BulkDeleteBurstDto>(),
+                Array.Empty<ErrorEntryDto>()));
     }
 
     private AuditLogsController ControllerAs(Role role)

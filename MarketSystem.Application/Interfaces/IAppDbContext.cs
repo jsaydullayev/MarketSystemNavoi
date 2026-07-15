@@ -29,6 +29,8 @@ public interface IAppDbContext
     DbSet<Debt> Debts { get; }
     DbSet<DebtAuditLog> DebtAuditLogs { get; }
     DbSet<Zakup> Zakups { get; }
+    DbSet<Supplier> Suppliers { get; }
+    DbSet<ZakupReceipt> ZakupReceipts { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<CashRegister> CashRegisters { get; }

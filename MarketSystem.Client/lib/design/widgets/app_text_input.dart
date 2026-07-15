@@ -1,6 +1,7 @@
 // Form field input with uppercase label, gray fill, and orange focus border per demo.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../tokens/app_tokens.dart';
 import '../tokens/app_typography.dart';
@@ -21,6 +22,7 @@ class AppTextInput extends StatelessWidget {
     this.autofillHints,
     this.textInputAction,
     this.onFieldSubmitted,
+    this.inputFormatters,
   });
 
   final String? label;
@@ -36,6 +38,7 @@ class AppTextInput extends StatelessWidget {
   final Iterable<String>? autofillHints;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +72,7 @@ class AppTextInput extends StatelessWidget {
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           validator: validator,
           onChanged: onChanged,
           enabled: enabled,

@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/input_formatters.dart';
 import 'package:market_system_client/core/utils/file_helper.dart'
     as core_file_helper;
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -324,6 +325,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       keyboardType: isNum
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
+      inputFormatters: isNum ? const [NoLeadingZeroFormatter()] : null,
       style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
@@ -385,11 +387,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   void _openProductForm({dynamic product}) {
-    showModalBottomSheet(
+    // Markazdan chiqadigan dialog (pastdan chiqadigan sheet emas) — kategoriya
+    // va priyomka oynalari bilan bir xil naqsh.
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ProductBottomSheet(product: product),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        backgroundColor: Colors.transparent,
+        child: ProductBottomSheet(product: product),
+      ),
     ).then((value) {
       if (value == true) _loadProducts();
     });
@@ -516,27 +522,34 @@ class _ProductsFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 56,
-      height: 56,
+      width: 60,
+      height: 60,
       child: Material(
         color: Colors.transparent,
         child: Ink(
           decoration: BoxDecoration(
-            color: context.colors.brand,
-            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                context.colors.brand,
+                context.colors.brandDark,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: context.colors.brand.withValues(alpha: 0.35),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+                color: context.colors.brand.withValues(alpha: 0.40),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: InkWell(
             onTap: onTap,
-            customBorder: const CircleBorder(),
+            borderRadius: BorderRadius.circular(20),
             child: const Center(
-              child: Icon(Icons.add_rounded, color: Colors.white, size: 30),
+              child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
             ),
           ),
         ),

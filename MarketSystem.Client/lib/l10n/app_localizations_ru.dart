@@ -2880,4 +2880,131 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noAccess => 'Нет доступа к этому разделу';
+
+  @override
+  String get suppliersTitle => 'Поставщики';
+
+  @override
+  String get addSupplier => 'Новый поставщик';
+
+  @override
+  String get editSupplier => 'Редактировать поставщика';
+
+  @override
+  String get supplierNameLabel => 'Название';
+
+  @override
+  String get supplierNameHint => 'Например: Оптовая база';
+
+  @override
+  String get supplierPhoneLabel => 'Телефон';
+
+  @override
+  String get supplierAddressLabel => 'Адрес';
+
+  @override
+  String get supplierCommentLabel => 'Комментарий';
+
+  @override
+  String get noSuppliers => 'Поставщиков пока нет';
+
+  @override
+  String get searchSupplier => 'Поиск поставщика';
+
+  @override
+  String get supplierDebtLabel => 'Долг';
+
+  @override
+  String get supplierRequired => 'Название обязательно';
+
+  @override
+  String get supplierSaved => 'Сохранено';
+
+  @override
+  String get deleteSupplierConfirm =>
+      'Удалить поставщика? История закупок сохранится.';
+
+  @override
+  String get supplierLabel => 'Поставщик';
+
+  @override
+  String get newReceipt => 'Новая приёмка';
+
+  @override
+  String get selectSupplierOptional => 'Поставщик (необязательно)';
+
+  @override
+  String get noSupplierSelected => 'Не выбран';
+
+  @override
+  String get invoiceNumberLabel => 'Номер накладной';
+
+  @override
+  String get invoiceNumberHint => 'Необязательно';
+
+  @override
+  String get basketTitle => 'Корзина';
+
+  @override
+  String get basketEmpty => 'Корзина пуста. Добавьте товар.';
+
+  @override
+  String get addProductToBasket => 'Добавить товар';
+
+  @override
+  String itemsCountLabel(int count) {
+    return '$count товаров';
+  }
+
+  @override
+  String get grandTotalLabel => 'Итого';
+
+  @override
+  String get paidLabel => 'Оплачено';
+
+  @override
+  String get remainingDebtLabel => 'Остаток долга';
+
+  @override
+  String get paymentStatusLabel => 'Статус оплаты';
+
+  @override
+  String get statusPaid => 'Оплачено';
+
+  @override
+  String get statusPartial => 'Частично';
+
+  @override
+  String get statusUnpaid => 'Долг';
+
+  @override
+  String get receiveGoods => 'Принять';
+
+  @override
+  String get receiptCreated => 'Приёмка принята';
+
+  @override
+  String get payToSupplier => 'Внести оплату';
+
+  @override
+  String get paymentRegistered => 'Оплата зафиксирована';
+
+  @override
+  String get noReceipts => 'Приёмок пока нет';
+
+  @override
+  String get deleteReceiptConfirm =>
+      'Удалить приёмку? Остаток вернётся на склад.';
+
+  @override
+  String get markFullyPaid => 'Отметить полностью оплаченным';
+
+  @override
+  String get editItemAction => 'Редактировать';
+
+  @override
+  String get removeItemAction => 'Удалить';
+
+  @override
+  String get payFullAmount => 'Всё';
 }

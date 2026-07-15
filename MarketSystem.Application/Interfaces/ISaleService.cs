@@ -52,6 +52,13 @@ public interface ISaleService
     Task<SaleItemDto?> UpdateSaleItemPriceAsync(Guid saleItemId, UpdateSaleItemPriceDto request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Sets a sale-level chegirma (skidka) on a Draft/Debt sale. Reduces the
+    /// charged TotalAmount (gross item sum − discount, clamped at 0) without
+    /// touching item SalePrices, and re-syncs any open debt against the new total.
+    /// </summary>
+    Task<SaleDto?> SetSaleDiscountAsync(Guid saleId, decimal discountAmount, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns a sale item (partial or full return)
     /// </summary>
     Task<SaleItemDto?> ReturnSaleItemAsync(Guid saleId, ReturnSaleItemRequest request, CancellationToken cancellationToken = default);

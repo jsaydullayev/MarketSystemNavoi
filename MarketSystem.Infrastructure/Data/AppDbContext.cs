@@ -21,6 +21,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Debt> Debts => Set<Debt>();
     public DbSet<DebtAuditLog> DebtAuditLogs => Set<DebtAuditLog>();
     public DbSet<Zakup> Zakups => Set<Zakup>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<ZakupReceipt> ZakupReceipts => Set<ZakupReceipt>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<CashRegister> CashRegisters => Set<CashRegister>();
@@ -212,6 +214,7 @@ public class AppDbContext : DbContext, IAppDbContext
             b.HasKey(x => x.Id);
             b.Property(x => x.TotalAmount).HasPrecision(18, 2);
             b.Property(x => x.PaidAmount).HasPrecision(18, 2);
+            b.Property(x => x.DiscountAmount).HasPrecision(18, 2);
 
             // Xmin concurrency token disabled for Sale — too many modifications
             // in a single transaction (items add/remove, status change, debt update)
@@ -409,6 +412,65 @@ public class AppDbContext : DbContext, IAppDbContext
 
             b.HasOne(x => x.Market).WithMany(m => m.Zakups).HasForeignKey(x => x.MarketId);
             b.HasIndex(x => x.MarketId);
+
+            // Goods-receipt grouping. Deleting a receipt cascades its lines away
+            // (the service reverses stock per line first). ReceiptId is nullable
+            // only for the brief pre-migration window; the back-fill sets it.
+            b.HasOne(x => x.Receipt).WithMany(r => r.Items).HasForeignKey(x => x.ReceiptId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasIndex(x => x.ReceiptId);
+        });
+
+        // Configure Supplier — goods supplier directory (mirrors Customer).
+        modelBuilder.Entity<Supplier>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            b.Property(x => x.Phone).HasMaxLength(20);
+            b.Property(x => x.Address).HasMaxLength(300);
+            b.Property(x => x.Comment).HasMaxLength(500);
+            b.HasQueryFilter(x => !x.IsDeleted);
+
+            // Multi-tenancy
+            b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId);
+            b.HasIndex(x => x.MarketId);
+            b.HasIndex(x => new { x.MarketId, x.Name });
+        });
+
+        // Configure ZakupReceipt — goods-receipt header (priyomka).
+        modelBuilder.Entity<ZakupReceipt>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.Property(x => x.InvoiceNumber).HasMaxLength(100);
+            b.Property(x => x.Comment).HasMaxLength(500);
+            b.Property(x => x.TotalAmount).HasPrecision(18, 2);
+            b.Property(x => x.PaidAmount).HasPrecision(18, 2);
+            b.Property(x => x.PaymentStatus).HasConversion<int>().IsRequired();
+
+            // Optimistic concurrency via PostgreSQL system column xmin — stops
+            // concurrent supplier-payment updates from clobbering PaidAmount.
+            b.Property(x => x.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            // Supplier optional; if the supplier row is removed, keep the receipt
+            // history and just null the link.
+            b.HasOne(x => x.Supplier).WithMany(s => s.Receipts).HasForeignKey(x => x.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // User o'chirilsa, priyomka tarixi qoladi.
+            b.HasOne(x => x.CreatedByAdmin).WithMany().HasForeignKey(x => x.CreatedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.Market).WithMany().HasForeignKey(x => x.MarketId);
+            b.HasIndex(x => x.MarketId);
+            b.HasIndex(x => x.SupplierId);
+            // History screen: per-market, newest first.
+            b.HasIndex(x => new { x.MarketId, x.CreatedAt })
+                .IsDescending(false, true)
+                .HasDatabaseName("IX_ZakupReceipt_Market_CreatedAt_Desc");
         });
 
         // Configure AuditLog
@@ -459,6 +521,11 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(x => x.ExpiresAt).IsRequired();
             b.Property(x => x.IsUsed).IsRequired();
             b.Property(x => x.IsRevoked).IsRequired();
+
+            // Sessiya zanjirining boshlanish vaqti — mutlaq sessiya umri uchun.
+            // Eski qatorlarda 0001-01-01 emas, CreatedAt bo'lishi kerak; buni
+            // migration back-fill qiladi.
+            b.Property(x => x.SessionStartedAt).IsRequired();
 
             // Indexes for performance
             b.HasIndex(x => x.Token)

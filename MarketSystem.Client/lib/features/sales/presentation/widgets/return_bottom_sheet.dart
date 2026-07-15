@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/input_formatters.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/extensions/app_extensions.dart';
@@ -215,6 +216,7 @@ void showReturnBottomSheet(
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
+                          inputFormatters: const [NoLeadingZeroFormatter()],
                           onChanged: (_) => setSheetState(() {}),
                           decoration: _inputStyle(
                             context,

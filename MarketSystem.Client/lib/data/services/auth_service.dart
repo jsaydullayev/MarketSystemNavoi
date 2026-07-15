@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import '../../core/constants/api_constants.dart';
@@ -33,6 +35,40 @@ class LoginResult {
   final Map<String, dynamic>? user;
   final String? blockReason;
   final DateTime? blockedAt;
+}
+
+/// Outcome of a refresh attempt. The old `Map?` return collapsed "the server
+/// says this credential is dead" and "the network blinked" into the same
+/// `null` — so a 502 during a redeploy, or 3 seconds of dropped Wi-Fi at the
+/// moment the access token expired, wiped the (still perfectly valid) refresh
+/// token off the device and hard-logged the user out. The two MUST be
+/// distinguishable: only [rejected] may end a session.
+enum RefreshOutcome {
+  /// 200 — new token pair parsed and written to storage.
+  renewed,
+
+  /// The server DEFINITIVELY refused the credential (401 / 403), or there is
+  /// no token pair to refresh at all. Only this outcome may clear tokens.
+  rejected,
+
+  /// Anything retryable: offline / DNS / TLS / timeout, 408, 429, any 5xx
+  /// (nginx 502-504 while the API redeploys), an unreadable body, or a 409
+  /// REFRESH_RACE. Tokens stay on the device; the session stays alive.
+  transient,
+}
+
+class RefreshResult {
+  RefreshResult(this.outcome, {this.data, this.isRace = false});
+
+  final RefreshOutcome outcome;
+
+  /// The AuthResponse body — non-null only when [outcome] is [renewed].
+  final Map<String, dynamic>? data;
+
+  /// True only for HTTP 409 / `REFRESH_RACE`: a concurrent caller rotated the
+  /// family first and already saved the fresh pair to the SHARED storage. The
+  /// caller can re-read storage and retry rather than surfacing an error.
+  final bool isRace;
 }
 
 class AuthService {
@@ -154,12 +190,20 @@ class AuthService {
     if (token == null || token.isEmpty) return false;
 
     if (_isTokenExpired(token)) {
-      final refreshed = await refreshToken();
-      if (refreshed == null) {
-        await _httpService.clearTokens();
-        return false;
+      final result = await refreshToken();
+      switch (result.outcome) {
+        case RefreshOutcome.renewed:
+          return true;
+        case RefreshOutcome.rejected:
+          await _httpService.clearTokens();
+          return false;
+        case RefreshOutcome.transient:
+          // Server/tarmoq vaqtinchalik yiqilgan — refresh token hali ham
+          // haqiqiy. Sessiyani saqlab qolamiz: keyingi so'rov refresh'ni
+          // qayta urinadi. Aks holda app ochilishidagi bitta 502 hamma
+          // foydalanuvchini tizimdan chiqarib yuboradi.
+          return true;
       }
-      return true;
     }
 
     return true;
@@ -183,46 +227,124 @@ class AuthService {
     }
   }
 
-  // Refresh access token using refresh token
-  Future<Map<String, dynamic>?> refreshToken() async {
+  /// Refresh the access token. NEVER clears tokens — teardown belongs to the
+  /// caller ([HttpService]), which is the only place that knows whether the
+  /// session should actually die. See [RefreshOutcome] for the classification.
+  Future<RefreshResult> refreshToken() async {
     try {
       final refreshToken = await _httpService.getRefreshToken();
-      if (refreshToken == null) return null;
 
       // Backend requires BOTH tokens — it derives the user id from the
       // (expired) access token's claims, then checks the refresh row in
       // the DB. Sending only refreshToken makes the server return 401
       // because AccessToken=null can't be validated.
       final accessToken = await _httpService.getAccessToken();
-      if (accessToken == null) {
-        debugPrint('No access token to pair with refresh — user must login');
-        return null;
+
+      if (refreshToken == null ||
+          refreshToken.isEmpty ||
+          accessToken == null ||
+          accessToken.isEmpty) {
+        // Qayta urinishning ma'nosi yo'q — yuboradigan credential yo'q.
+        debugPrint('No token pair to refresh — user must login');
+        return RefreshResult(RefreshOutcome.rejected);
       }
 
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshToken}'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'accessToken': accessToken,
-          'refreshToken': refreshToken,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        await _httpService.saveTokens(
-          data['accessToken'],
-          data['refreshToken'],
-        );
-        return data;
-      } else {
-        await _httpService.clearTokens();
-        return null;
+      // Client'ni O'ZIMIZ boshqaramiz. Top-level `http.post` ichida bir martalik
+      // Client yaratadi va uni faqat Future TUGAGANDA yopadi — `.timeout()` esa
+      // Future'ni tashlab ketadi, so'rovni bekor qilmaydi. Ya'ni qora tuynukka
+      // ketgan har bir urinish bitta soket + IOClient'ni oqizib qoldirardi.
+      // finally'dagi close() uchib ketayotgan so'rovni ham uzadi.
+      final client = http.Client();
+      final http.Response response;
+      try {
+        response = await client
+            .post(
+              Uri.parse('${ApiConstants.baseUrl}${ApiConstants.refreshToken}'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'accessToken': accessToken,
+                'refreshToken': refreshToken,
+              }),
+            )
+            // Timeout SHART: usiz qora tuynukka ketgan ulanishda bu Future
+            // hech qachon tugamaydi, HttpService'dagi single-flight
+            // (_refreshInFlight) hech qachon tozalanmaydi va butun app
+            // muzlab qoladi — har bir ekran cheksiz spinner ko'rsatadi.
+            .timeout(const Duration(seconds: 15));
+      } finally {
+        client.close();
       }
+
+      final status = response.statusCode;
+
+      if (status == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final newAccess = data['accessToken'];
+        final newRefresh = data['refreshToken'];
+        if (newAccess is! String ||
+            newAccess.isEmpty ||
+            newRefresh is! String ||
+            newRefresh.isEmpty) {
+          // 200, lekin token yo'q (proxy tanani kesib qo'ygan?) — mavjud
+          // tokenlar hali ham haqiqiy bo'lishi mumkin, tegmaymiz.
+          debugPrint('AuthService.refreshToken: 200 without a token pair');
+          return RefreshResult(RefreshOutcome.transient);
+        }
+        await _httpService.saveTokens(newAccess, newRefresh);
+        return RefreshResult(RefreshOutcome.renewed, data: data);
+      }
+
+      // 409 REFRESH_RACE — parallel oqim tokenni bizdan oldin aylantirib
+      // ulgurgan. Bu O'G'IRLIK EMAS: server oilani kuydirmaydi, biz ham
+      // tokenlarni o'chirmaymiz. Chaqiruvchi umumiy xotiradan yangi tokenni
+      // o'qib, so'rovni qayta yuboradi.
+      if (status == 409) {
+        final isRace = _errorCodeOf(response) == 'REFRESH_RACE';
+        debugPrint('AuthService.refreshToken: 409 (race=$isRace)');
+        return RefreshResult(RefreshOutcome.transient, isRace: isRace);
+      }
+
+      // Faqat shu ikkisi — server credential'ni aniq rad etdi (eskirgan,
+      // bekor qilingan, grace'dan tashqarida qayta ishlatilgan, begona).
+      if (status == 401 || status == 403) {
+        debugPrint('AuthService.refreshToken: rejected ($status)');
+        return RefreshResult(RefreshOutcome.rejected);
+      }
+
+      // Qolgani — 408 / 429 / 5xx (deploy paytidagi nginx 502-504) va h.k.
+      // Vaqtinchalik: tokenlar joyida qoladi.
+      debugPrint('AuthService.refreshToken: transient status $status');
+      return RefreshResult(RefreshOutcome.transient);
+    } on TimeoutException catch (e) {
+      debugPrint('AuthService.refreshToken timeout: $e');
+      return RefreshResult(RefreshOutcome.transient);
+    } on SocketException catch (e) {
+      debugPrint('AuthService.refreshToken socket error: $e');
+      return RefreshResult(RefreshOutcome.transient);
+    } on http.ClientException catch (e) {
+      debugPrint('AuthService.refreshToken client error: $e');
+      return RefreshResult(RefreshOutcome.transient);
     } catch (e, st) {
+      // TLS/HandshakeException, buzuq JSON va boshqa kutilmagan xatolar.
+      // Sessiyani O'LDIRMAYMIZ — faqat 401/403 shunga haqli.
       debugPrint('AuthService.refreshToken error: $e\n$st');
-      return null;
+      return RefreshResult(RefreshOutcome.transient);
     }
+  }
+
+  /// Structured error `code` from a JSON error envelope, or null when the body
+  /// isn't JSON (a proxy's HTML page) or carries no code.
+  String? _errorCodeOf(http.Response response) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final code = decoded['code'];
+        if (code is String && code.isNotEmpty) return code;
+      }
+    } catch (_) {
+      /* not JSON — no code to read */
+    }
+    return null;
   }
 
   // Update access token only (for market registration)

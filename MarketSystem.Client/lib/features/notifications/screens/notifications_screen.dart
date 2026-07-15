@@ -263,7 +263,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
         return l10n.alertDescLowStockNoMin(qty, unit);
       case AlertCategory.recentDebt:
-        return l10n.alertDescRecent(_fmtUzs(item.amount ?? 0));
+        final amount = _fmtUzs(item.amount ?? 0);
+        // Show the DUE date (days remaining), consistent with the debt detail
+        // screen — a debt due in 11 days must not read "Bugun". Only legacy
+        // debts with no due date fall back to the recent-creation phrasing.
+        final days = item.daysUntilDue;
+        if (days == null) return l10n.alertDescRecent(amount);
+        if (days <= 0) return l10n.alertDescDueToday(amount);
+        if (days == 1) return l10n.alertDescDueTomorrow(amount);
+        return l10n.alertDescDueSoon(days, amount);
       case AlertCategory.overduePayment:
         return l10n.alertDescOverdue(
           item.ageDays ?? 0,

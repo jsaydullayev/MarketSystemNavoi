@@ -114,10 +114,24 @@ class OwnerDashboardBody extends StatelessWidget {
       footerDelta = '${delta.abs().toStringAsFixed(0)}%';
     }
 
+    // Per-day hover stats: weekday + date, revenue (price), checks, profit.
+    const weekdays = ['Dush', 'Sesh', 'Chor', 'Pay', 'Juma', 'Shan', 'Yak'];
+    String two(int n) => n.toString().padLeft(2, '0');
+    final barTooltips = series
+        .map(
+          (p) =>
+              '${weekdays[(p.date.weekday - 1).clamp(0, 6)]}, ${two(p.date.day)}.${two(p.date.month)}'
+              '\nSavdo: ${NumberFormatter.format(p.revenue)} UZS'
+              '\nCheklar: ${p.checkCount}'
+              '\nFoyda: ${NumberFormatter.format(p.profit)} UZS',
+        )
+        .toList();
+
     return ChartCard(
       title: l10n.thisWeekLabel,
       period: l10n.thisWeekLabel,
       bars: bars,
+      barTooltips: barTooltips,
       footerValue: footerValue,
       footerDelta: footerDelta,
       deltaCaption: footerDelta.isEmpty ? '' : l10n.chartVsLastWeek,

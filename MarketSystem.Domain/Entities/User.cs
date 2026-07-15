@@ -23,6 +23,20 @@ public class User : BaseEntity, ISoftDelete
     public bool IsActive { get; set; } = true;
     public bool IsDeleted { get; set; } = false;
 
+    /// <summary>
+    /// Token "epoxasi": shu vaqtdan OLDIN berilgan access tokenlar rad etiladi.
+    ///
+    /// Access token 30 daqiqa yashaydi va uning ichida rol/ruxsatlar muzlatilgan.
+    /// Parol o'zgarganda, foydalanuvchi o'chirilganda/deaktivatsiya qilinganda
+    /// yoki ruxsatlari olib tashlanganda — refresh tokenlarni bekor qilish
+    /// yetarli emas: eski access token yana 30 daqiqa ishlaydi. Bu maydon
+    /// stamplangach, JWT'ning `iat` claim'i undan kichik bo'lsa, token
+    /// OnTokenValidated'da DARHOL rad etiladi.
+    ///
+    /// null = hech qachon bekor qilinmagan (foydalanuvchilarning aksariyati).
+    /// </summary>
+    public DateTime? TokensInvalidBeforeUtc { get; set; }
+
     // --- Work shift — set by Admin/Owner, enforced at login for Sellers ---
     public ShiftStatus ShiftStatus { get; set; } = ShiftStatus.Active;
     public DateTime? ShiftStartUtc { get; set; }

@@ -35,6 +35,12 @@ public class AuthServiceTests : TestBase
     private const string TestPassword = "CorrectPassword123!";
     private const string TestKey = "test-jwt-key-must-be-at-least-32-chars-long-aaa";
 
+    /// Rotatsiya poygasi uchun grace oynasi (prod default bilan bir xil).
+    private const int GraceSeconds = 60;
+
+    /// Sessiyaning mutlaq umri (prod default bilan bir xil).
+    private const int MaxSessionDays = 30;
+
     private AuthService CreateService(out IConfiguration configRoot)
     {
         configRoot = new ConfigurationBuilder()
@@ -45,6 +51,8 @@ public class AuthServiceTests : TestBase
                 ["Jwt:Audience"] = "MarketSystemClient",
                 ["Jwt:AccessTokenExpireMinutes"] = "30",
                 ["Jwt:RefreshTokenExpireDays"] = "7",
+                ["Jwt:MaxSessionDays"] = MaxSessionDays.ToString(),
+                ["Jwt:RefreshRaceGraceSeconds"] = GraceSeconds.ToString(),
             }!)
             .Build();
 
@@ -224,12 +232,12 @@ public class AuthServiceTests : TestBase
     }
 
     [Fact]
-    public async Task Refresh_ReusedToken_RevokesEntireFamily()
+    public async Task Refresh_ReusedToken_OutsideGraceWindow_RevokesEntireFamily()
     {
-        // S1 — token-rotation reuse detection. If a client (or attacker)
-        // presents an ALREADY-USED refresh token, AuthService revokes ALL of
-        // that user's refresh tokens — both the legitimate user and the
-        // attacker must re-login.
+        // S1 — token-rotation reuse detection. Grace oynasidan TASHQARIDA
+        // sarflangan token taqdim etilishi — o'g'irlik signali: butun oila
+        // kuydiriladi, ham qonuniy foydalanuvchi, ham hujumchi qayta login
+        // qilishga majbur.
         await SeedRealPasswordAsync();
         var auth = CreateService(out _);
 
@@ -247,14 +255,21 @@ public class AuthServiceTests : TestBase
         });
         first.Should().NotBeNull();
 
-        // Replay the same (now used) token — simulates the attacker.
+        // Rotatsiyani grace oynasidan TASHQARIGA suramiz — bu haqiqiy o'g'irlik
+        // (kechiktirilgan replay), poyga emas. (Testda 60s kutib o'tirmaymiz.)
+        var usedHash = RefreshTokenHasher.Hash(login.RefreshToken);
+        var usedRow = await DbContext.RefreshTokens.FirstAsync(r => r.Token == usedHash);
+        usedRow.UsedAt = DateTime.UtcNow.AddSeconds(-(GraceSeconds + 5));
+        await DbContext.SaveChangesAsync();
+
+        // Replay the same (now long-used) token — simulates the attacker.
         var replay = await auth.RefreshTokenAsync(new RefreshTokenRequest
         {
             AccessToken = login.AccessToken,
             RefreshToken = login.RefreshToken,
         });
 
-        replay.Should().BeNull("a used token must be rejected");
+        replay.Should().BeNull("a token reused outside the grace window must be rejected");
 
         // Both the original AND the new token from `first` must now be
         // revoked — the attacker can't keep using anything from the chain.
@@ -263,7 +278,7 @@ public class AuthServiceTests : TestBase
             .Where(r => r.UserId == TestUserId)
             .ToListAsync();
         allTokens.Should().NotBeEmpty();
-        allTokens.Should().OnlyContain(r => r.IsRevoked || r.IsUsed,
+        allTokens.Should().OnlyContain(r => r.IsRevoked,
             "reuse detection burns the entire token family");
     }
 
@@ -311,13 +326,22 @@ public class AuthServiceTests : TestBase
             RefreshToken = stolenPlaintext,
         });
 
-        response.Should().BeNull();
+        response.Should().BeNull("a refresh token belonging to another user must never be honoured");
 
-        // The mismatched refresh token must be revoked.
+        // MUHIM: begona token BEKOR QILINMAYDI.
+        //
+        // Ilgari u revoke qilinardi ("blast radius"ni cheklash uchun). Lekin
+        // egalik tekshiruvi uni allaqachon ishlatib bo'lmaydigan qilib qo'ygan —
+        // shuning uchun revoke qilish faqat bitta narsani beradi: istalgan
+        // autentifikatsiyalangan foydalanuvchi (masalan, oddiy Seller) qurbonning
+        // refresh token satrini qo'lga kiritsa, uni QURBONNING TIRIK sessiyasini
+        // o'ldirish uchun ishlata olardi — ya'ni majburiy-logout DoS quroli.
         ClearDbContext();
         var otherToken = await DbContext.RefreshTokens
             .FirstAsync(r => r.UserId == otherUserId);
-        otherToken.IsRevoked.Should().BeTrue("a refresh used under the wrong identity is a theft signal");
+        otherToken.IsRevoked.Should().BeFalse(
+            "rejecting is enough; revoking would turn a leaked-but-unusable token into a force-logout weapon");
+        otherToken.IsUsed.Should().BeFalse("the victim's session must remain intact");
     }
 
     [Fact]

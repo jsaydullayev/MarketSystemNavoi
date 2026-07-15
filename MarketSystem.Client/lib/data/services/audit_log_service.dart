@@ -195,24 +195,64 @@ class BulkDeleteBurst {
   }
 }
 
+/// One recorded server-side fault (5xx) — status code + message + where, so the
+/// Owner/developer can read it and fix the problem.
+class ErrorEntry {
+  const ErrorEntry({
+    required this.statusCode,
+    required this.message,
+    required this.path,
+    required this.method,
+    required this.userName,
+    required this.createdAt,
+  });
+
+  final int statusCode;
+  final String message;
+  final String? path;
+  final String? method;
+  final String? userName;
+  final DateTime createdAt;
+
+  factory ErrorEntry.fromJson(Map<String, dynamic> json) => ErrorEntry(
+    statusCode: (json['statusCode'] as num?)?.toInt() ?? 0,
+    message: (json['message'] ?? '').toString(),
+    path: json['path'] as String?,
+    method: json['method'] as String?,
+    userName: json['userName'] as String?,
+    createdAt:
+        DateTime.tryParse((json['createdAt'] ?? '').toString())?.toLocal() ??
+        DateTime.now(),
+  );
+}
+
 /// Combined "things that look bad" payload for the Suspicious tab.
 class SuspiciousReport {
   const SuspiciousReport({
     required this.failedLoginBursts,
     required this.bulkDeleteBursts,
+    required this.recentErrors,
   });
 
   final List<FailedLoginBurst> failedLoginBursts;
   final List<BulkDeleteBurst> bulkDeleteBursts;
+  final List<ErrorEntry> recentErrors;
 
-  bool get isEmpty => failedLoginBursts.isEmpty && bulkDeleteBursts.isEmpty;
+  bool get isEmpty =>
+      failedLoginBursts.isEmpty &&
+      bulkDeleteBursts.isEmpty &&
+      recentErrors.isEmpty;
 
-  factory SuspiciousReport.empty() =>
-      const SuspiciousReport(failedLoginBursts: [], bulkDeleteBursts: []);
+  factory SuspiciousReport.empty() => const SuspiciousReport(
+    failedLoginBursts: [],
+    bulkDeleteBursts: [],
+    recentErrors: [],
+  );
 
   factory SuspiciousReport.fromJson(Map<String, dynamic> json) {
     final fl = json['failedLoginBursts'];
     final bd = json['bulkDeleteBursts'];
+    final er = json['recentErrors'];
     return SuspiciousReport(
       failedLoginBursts: fl is List
           ? fl
@@ -226,6 +266,12 @@ class SuspiciousReport {
           ? bd
                 .whereType<Map>()
                 .map((m) => BulkDeleteBurst.fromJson(m.cast<String, dynamic>()))
+                .toList()
+          : const [],
+      recentErrors: er is List
+          ? er
+                .whereType<Map>()
+                .map((m) => ErrorEntry.fromJson(m.cast<String, dynamic>()))
                 .toList()
           : const [],
     );

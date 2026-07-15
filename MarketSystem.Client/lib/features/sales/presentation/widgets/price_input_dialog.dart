@@ -1,10 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/utils/input_formatters.dart';
 import '../../../../core/utils/number_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'product_image_view.dart';
@@ -24,11 +26,13 @@ class PriceInputSheet extends StatefulWidget {
     required Map<String, dynamic> product,
     required Function(double price, double qty, String? comment) onConfirm,
   }) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => PriceInputSheet(product: product, onConfirm: onConfirm),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        backgroundColor: Colors.transparent,
+        child: PriceInputSheet(product: product, onConfirm: onConfirm),
+      ),
     );
   }
 
@@ -55,12 +59,19 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     _minPrice = widget.product['minSalePrice']?.toDouble() ?? 0.0;
 
     final currentPrice = widget.product['salePrice']?.toDouble() ?? 0.0;
-    final initialQty = widget.product['initialQuantity']?.toDouble() ?? 1.0;
+    // No default quantity for a fresh add — the cashier taps and types. Only an
+    // edit (initialQuantity provided) pre-fills the current qty.
+    final hasInitialQty = widget.product['initialQuantity'] != null;
+    final initialQty = widget.product['initialQuantity']?.toDouble() ?? 0.0;
 
     _priceController = TextEditingController(
-      text: _hidePrice ? '' : _formatNumber(currentPrice),
+      text: _hidePrice
+          ? ''
+          : ThousandsSeparatorFormatter.group(_formatNumber(currentPrice)),
     );
-    _qtyController = TextEditingController(text: _formatNumber(initialQty));
+    _qtyController = TextEditingController(
+      text: hasInitialQty ? _formatNumber(initialQty) : '',
+    );
     _commentController = TextEditingController(
       text: widget.product['comment'] ?? '',
     );
@@ -155,16 +166,12 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     final l10n = AppLocalizations.of(context)!;
     final unitName = widget.product['unitName'] ?? l10n.piece;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 520),
       child: Container(
         decoration: BoxDecoration(
           color: context.colors.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl2),
-          ),
+          borderRadius: BorderRadius.circular(AppRadius.xl2),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -223,6 +230,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                     icon: Icons.add_box_outlined,
                     suffix: unitName,
                     isNum: true,
+                    inputFormatters: const [NoLeadingZeroFormatter()],
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -235,6 +243,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
                     icon: Icons.payments_outlined,
                     suffix: l10n.currencySom,
                     isNum: true,
+                    inputFormatters: const [ThousandsSeparatorFormatter()],
                   ),
                 ),
               ],
@@ -386,6 +395,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
     required IconData icon,
     String? suffix,
     bool isNum = false,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,6 +418,7 @@ class _PriceInputSheetState extends State<PriceInputSheet> {
           keyboardType: isNum
               ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.text,
+          inputFormatters: inputFormatters,
           style: AppTextStyles.bodyLarge().copyWith(
             fontWeight: FontWeight.w700,
           ),
