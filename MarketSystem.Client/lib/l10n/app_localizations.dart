@@ -5461,6 +5461,252 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Bu bo\'limga kirish huquqi yo\'q'**
   String get noAccess;
+
+  /// No description provided for @suppliersTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yetkazib beruvchilar'**
+  String get suppliersTitle;
+
+  /// No description provided for @addSupplier.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi yetkazib beruvchi'**
+  String get addSupplier;
+
+  /// No description provided for @editSupplier.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yetkazib beruvchini tahrirlash'**
+  String get editSupplier;
+
+  /// No description provided for @supplierNameLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Nomi'**
+  String get supplierNameLabel;
+
+  /// No description provided for @supplierNameHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Masalan: Optom baza'**
+  String get supplierNameHint;
+
+  /// No description provided for @supplierPhoneLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Telefon'**
+  String get supplierPhoneLabel;
+
+  /// No description provided for @supplierAddressLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Manzil'**
+  String get supplierAddressLabel;
+
+  /// No description provided for @supplierCommentLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Izoh'**
+  String get supplierCommentLabel;
+
+  /// No description provided for @noSuppliers.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha yetkazib beruvchilar yo\'q'**
+  String get noSuppliers;
+
+  /// No description provided for @searchSupplier.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yetkazib beruvchini qidirish'**
+  String get searchSupplier;
+
+  /// No description provided for @supplierDebtLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz'**
+  String get supplierDebtLabel;
+
+  /// No description provided for @supplierRequired.
+  ///
+  /// In uz, this message translates to:
+  /// **'Nomi kiritilishi shart'**
+  String get supplierRequired;
+
+  /// No description provided for @supplierSaved.
+  ///
+  /// In uz, this message translates to:
+  /// **'Saqlandi'**
+  String get supplierSaved;
+
+  /// No description provided for @deleteSupplierConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yetkazib beruvchini o\'chirasizmi? Xaridlar tarixi saqlanadi.'**
+  String get deleteSupplierConfirm;
+
+  /// No description provided for @supplierLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yetkazib beruvchi'**
+  String get supplierLabel;
+
+  /// No description provided for @newReceipt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yangi priyomka'**
+  String get newReceipt;
+
+  /// No description provided for @selectSupplierOptional.
+  ///
+  /// In uz, this message translates to:
+  /// **'Yetkazib beruvchi (ixtiyoriy)'**
+  String get selectSupplierOptional;
+
+  /// No description provided for @noSupplierSelected.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tanlanmagan'**
+  String get noSupplierSelected;
+
+  /// No description provided for @invoiceNumberLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Nakladnoy raqami'**
+  String get invoiceNumberLabel;
+
+  /// No description provided for @invoiceNumberHint.
+  ///
+  /// In uz, this message translates to:
+  /// **'Ixtiyoriy'**
+  String get invoiceNumberHint;
+
+  /// No description provided for @basketTitle.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savat'**
+  String get basketTitle;
+
+  /// No description provided for @basketEmpty.
+  ///
+  /// In uz, this message translates to:
+  /// **'Savat bo\'sh. Mahsulot qo\'shing.'**
+  String get basketEmpty;
+
+  /// No description provided for @addProductToBasket.
+  ///
+  /// In uz, this message translates to:
+  /// **'Mahsulot qo\'shish'**
+  String get addProductToBasket;
+
+  /// No description provided for @itemsCountLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'{count} ta mahsulot'**
+  String itemsCountLabel(int count);
+
+  /// No description provided for @grandTotalLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Jami summa'**
+  String get grandTotalLabel;
+
+  /// No description provided for @paidLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'langan'**
+  String get paidLabel;
+
+  /// No description provided for @remainingDebtLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qolgan qarz'**
+  String get remainingDebtLabel;
+
+  /// No description provided for @paymentStatusLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov holati'**
+  String get paymentStatusLabel;
+
+  /// No description provided for @statusPaid.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'landi'**
+  String get statusPaid;
+
+  /// No description provided for @statusPartial.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qisman'**
+  String get statusPartial;
+
+  /// No description provided for @statusUnpaid.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarz'**
+  String get statusUnpaid;
+
+  /// No description provided for @receiveGoods.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qabul qilish'**
+  String get receiveGoods;
+
+  /// No description provided for @receiptCreated.
+  ///
+  /// In uz, this message translates to:
+  /// **'Priyomka qabul qilindi'**
+  String get receiptCreated;
+
+  /// No description provided for @payToSupplier.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov qilish'**
+  String get payToSupplier;
+
+  /// No description provided for @paymentRegistered.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov qayd etildi'**
+  String get paymentRegistered;
+
+  /// No description provided for @noReceipts.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hozircha priyomkalar yo\'q'**
+  String get noReceipts;
+
+  /// No description provided for @deleteReceiptConfirm.
+  ///
+  /// In uz, this message translates to:
+  /// **'Bu priyomkani o\'chirasizmi? Ombor qoldig\'i qaytariladi.'**
+  String get deleteReceiptConfirm;
+
+  /// No description provided for @markFullyPaid.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'liq to\'langan deb belgilash'**
+  String get markFullyPaid;
+
+  /// No description provided for @editItemAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'Tahrirlash'**
+  String get editItemAction;
+
+  /// No description provided for @removeItemAction.
+  ///
+  /// In uz, this message translates to:
+  /// **'O\'chirish'**
+  String get removeItemAction;
+
+  /// No description provided for @payFullAmount.
+  ///
+  /// In uz, this message translates to:
+  /// **'Hammasi'**
+  String get payFullAmount;
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/input_formatters.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
@@ -233,6 +234,7 @@ class _EditPriceBottomSheetState extends State<EditPriceBottomSheet> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: const [NoLeadingZeroFormatter()],
               style: AppTextStyles.bodyMedium().copyWith(fontSize: 15),
               onChanged: (_) => setState(() => _errorMessage = null),
               decoration: InputDecoration(

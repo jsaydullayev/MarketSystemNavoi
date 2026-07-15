@@ -2876,4 +2876,131 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get noAccess => 'Bu bo\'limga kirish huquqi yo\'q';
+
+  @override
+  String get suppliersTitle => 'Yetkazib beruvchilar';
+
+  @override
+  String get addSupplier => 'Yangi yetkazib beruvchi';
+
+  @override
+  String get editSupplier => 'Yetkazib beruvchini tahrirlash';
+
+  @override
+  String get supplierNameLabel => 'Nomi';
+
+  @override
+  String get supplierNameHint => 'Masalan: Optom baza';
+
+  @override
+  String get supplierPhoneLabel => 'Telefon';
+
+  @override
+  String get supplierAddressLabel => 'Manzil';
+
+  @override
+  String get supplierCommentLabel => 'Izoh';
+
+  @override
+  String get noSuppliers => 'Hozircha yetkazib beruvchilar yo\'q';
+
+  @override
+  String get searchSupplier => 'Yetkazib beruvchini qidirish';
+
+  @override
+  String get supplierDebtLabel => 'Qarz';
+
+  @override
+  String get supplierRequired => 'Nomi kiritilishi shart';
+
+  @override
+  String get supplierSaved => 'Saqlandi';
+
+  @override
+  String get deleteSupplierConfirm =>
+      'Yetkazib beruvchini o\'chirasizmi? Xaridlar tarixi saqlanadi.';
+
+  @override
+  String get supplierLabel => 'Yetkazib beruvchi';
+
+  @override
+  String get newReceipt => 'Yangi priyomka';
+
+  @override
+  String get selectSupplierOptional => 'Yetkazib beruvchi (ixtiyoriy)';
+
+  @override
+  String get noSupplierSelected => 'Tanlanmagan';
+
+  @override
+  String get invoiceNumberLabel => 'Nakladnoy raqami';
+
+  @override
+  String get invoiceNumberHint => 'Ixtiyoriy';
+
+  @override
+  String get basketTitle => 'Savat';
+
+  @override
+  String get basketEmpty => 'Savat bo\'sh. Mahsulot qo\'shing.';
+
+  @override
+  String get addProductToBasket => 'Mahsulot qo\'shish';
+
+  @override
+  String itemsCountLabel(int count) {
+    return '$count ta mahsulot';
+  }
+
+  @override
+  String get grandTotalLabel => 'Jami summa';
+
+  @override
+  String get paidLabel => 'To\'langan';
+
+  @override
+  String get remainingDebtLabel => 'Qolgan qarz';
+
+  @override
+  String get paymentStatusLabel => 'To\'lov holati';
+
+  @override
+  String get statusPaid => 'To\'landi';
+
+  @override
+  String get statusPartial => 'Qisman';
+
+  @override
+  String get statusUnpaid => 'Qarz';
+
+  @override
+  String get receiveGoods => 'Qabul qilish';
+
+  @override
+  String get receiptCreated => 'Priyomka qabul qilindi';
+
+  @override
+  String get payToSupplier => 'To\'lov qilish';
+
+  @override
+  String get paymentRegistered => 'To\'lov qayd etildi';
+
+  @override
+  String get noReceipts => 'Hozircha priyomkalar yo\'q';
+
+  @override
+  String get deleteReceiptConfirm =>
+      'Bu priyomkani o\'chirasizmi? Ombor qoldig\'i qaytariladi.';
+
+  @override
+  String get markFullyPaid => 'To\'liq to\'langan deb belgilash';
+
+  @override
+  String get editItemAction => 'Tahrirlash';
+
+  @override
+  String get removeItemAction => 'O\'chirish';
+
+  @override
+  String get payFullAmount => 'Hammasi';
 }

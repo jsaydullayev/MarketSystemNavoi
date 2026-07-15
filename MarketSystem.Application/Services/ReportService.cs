@@ -281,6 +281,9 @@ public partial class ReportService : IReportService
                             var itemRevenue = item.SalePrice * item.Quantity;
                             totalProfit += itemRevenue - itemCost;
                         }
+                        // Sale-level discount reduces this seller's profit once
+                        // per sale (gross item-profit above is overstated by it).
+                        totalProfit -= sale.DiscountAmount;
                     }
 
                     sellerReports.Add(new SellerReportDto(
@@ -408,6 +411,14 @@ public partial class ReportService : IReportService
                 }
             }
 
+            // Sale-level discount (chegirma) reduces profit once per sale.
+            // Revenue (sale.TotalAmount) is already net of the discount, so
+            // only profit — computed from GROSS item revenue above — needs it.
+            if (includeProfit)
+            {
+                totalProfit -= sale.DiscountAmount;
+            }
+
             // Accumulate payment breakdown from payments
             foreach (var payment in sale.Payments)
             {
@@ -533,11 +544,31 @@ public partial class ReportService : IReportService
             })
             .FirstOrDefaultAsync(cancellationToken);
 
+        // Sale-level chegirma (skidka): the item sums above are computed from
+        // GROSS item revenue, so every window is overstated by the discounts on
+        // its sales. Aggregate them with the SAME market/status filters and the
+        // SAME date windows so the two line up exactly, then subtract.
+        var discounts = await _context.Sales
+            .AsNoTracking()
+            .Where(s => s.MarketId == marketId
+                     && s.Status != SaleStatus.Cancelled
+                     && s.Status != SaleStatus.Draft)
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Today = g.Sum(s =>
+                    s.CreatedAt >= todayStart && s.CreatedAt < todayEnd ? s.DiscountAmount : 0m),
+                Week = g.Sum(s => s.CreatedAt >= weekStart ? s.DiscountAmount : 0m),
+                Month = g.Sum(s => s.CreatedAt >= monthStart ? s.DiscountAmount : 0m),
+                All = g.Sum(s => s.DiscountAmount),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
         return new ProfitSummaryDto(
-            summary?.Today ?? 0m,
-            summary?.Week ?? 0m,
-            summary?.Month ?? 0m,
-            summary?.All ?? 0m);
+            (summary?.Today ?? 0m) - (discounts?.Today ?? 0m),
+            (summary?.Week ?? 0m) - (discounts?.Week ?? 0m),
+            (summary?.Month ?? 0m) - (discounts?.Month ?? 0m),
+            (summary?.All ?? 0m) - (discounts?.All ?? 0m));
     }
 
     public async Task<CashBalanceDto> GetCashBalanceAsync(CancellationToken cancellationToken = default)
@@ -683,19 +714,23 @@ public partial class ReportService : IReportService
             decimal? profit = null;
             if (includeProfit)
             {
-                profit = 0;
                 var paidRatio = sale.TotalAmount > 0 ? paidAmount / sale.TotalAmount : 0;
 
+                decimal grossProfit = 0;
                 foreach (var item in sale.SaleItems)
                 {
                     // ✅ ISEXTERNAL SHARTI - Effective cost price
                     decimal costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
                     var itemCost = costPrice * item.Quantity;
                     var itemRevenue = item.SalePrice * item.Quantity;
-                    var itemProfit = itemRevenue - itemCost;
 
-                    profit += itemProfit * paidRatio;
+                    grossProfit += itemRevenue - itemCost;
                 }
+
+                // Chegirma (skidka) foydani sotuv bo'yicha BIR MARTA kamaytiradi:
+                // yuqoridagi item foydasi GROSS tushumdan hisoblangan. paidRatio
+                // esa allaqachon to'g'ri — sale.TotalAmount chegirilgan (net) summa.
+                profit = (grossProfit - sale.DiscountAmount) * paidRatio;
             }
 
             // Check if this sale has any refund (negative) payments
@@ -758,6 +793,10 @@ public partial class ReportService : IReportService
                 var itemRevenue = item.SalePrice * item.Quantity;
                 profit += itemRevenue - itemCost;
             }
+
+            // Chegirma (skidka) — item foydasi GROSS tushumdan hisoblangani uchun
+            // sotuv bo'yicha bir marta ayriladi.
+            profit -= sale.DiscountAmount;
         }
 
         return profit;
@@ -839,6 +878,16 @@ public partial class ReportService : IReportService
                     totalProfitOverall += itemProfit;
                 }
             }
+
+            // Chegirma (skidka) sale darajasida — uni aniq bir kategoriyaga
+            // bog'lab bo'lmaydi, shuning uchun per-category qatorlar GROSS qoladi.
+            // Lekin YAKUNIY jami tushum va foyda NET bo'lishi shart, aks holda bu
+            // hisobot dashboard'dagi ProfitSummary (net) bilan ziddiyatga tushardi.
+            totalSalesOverall -= sale.DiscountAmount;
+            if (includeProfit)
+            {
+                totalProfitOverall -= sale.DiscountAmount;
+            }
         }
 
         if (categorySales[otherCategoryId].TotalSales == 0)
@@ -915,19 +964,22 @@ public partial class ReportService : IReportService
             decimal? profit = null;
             if (includeProfit)
             {
-                profit = 0;
                 var paidRatio = sale.TotalAmount > 0 ? sale.PaidAmount / sale.TotalAmount : 0;
 
+                decimal grossProfit = 0;
                 foreach (var item in sale.SaleItems)
                 {
                     // ✅ ISEXTERNAL SHARTI - Effective cost price
                     var costPrice = item.IsExternal ? item.ExternalCostPrice : item.CostPrice;
                     var itemCost = costPrice * item.Quantity;
                     var itemRevenue = item.SalePrice * item.Quantity;
-                    var itemProfit = itemRevenue - itemCost;
 
-                    profit += itemProfit * paidRatio;
+                    grossProfit += itemRevenue - itemCost;
                 }
+
+                // Chegirma (skidka) foydani sotuv bo'yicha bir marta kamaytiradi —
+                // item foydasi GROSS tushumdan hisoblangan (item narxlari o'zgarmaydi).
+                profit = (grossProfit - sale.DiscountAmount) * paidRatio;
             }
 
             // Create sale items DTOs with product names from dictionary
@@ -1068,9 +1120,19 @@ public partial class ReportService : IReportService
                     sale.Status.ToString()
                 ));
             }
+
+            // Chegirma (skidka): item qatorlari GROSS narxda qoladi — tovar narxi
+            // o'zgarmaydi — lekin sotuvning jami tushumi (va foydasi) chegirma
+            // hisobiga kamayadi, shunda PDF'dagi yakuniy summa sale.TotalAmount
+            // (net) bilan mos keladi.
+            totalSales -= sale.DiscountAmount;
+            if (includeProfit)
+            {
+                totalProfit -= sale.DiscountAmount * paidRatio;
+            }
         }
 
-        
+
         try
         {
             _logger.LogInformation($"[ExportSalesListToPdfAsync] Starting PDF generation for {reportItems.Count} items");
@@ -1692,7 +1754,11 @@ public partial class ReportService : IReportService
             sale.TotalAmount,
             sale.PaidAmount,
             sale.TotalAmount - sale.PaidAmount,
-            sale.Status.ToString() // raw enum — RenderInvoicePdf localises it
+            sale.Status.ToString(), // raw enum — RenderInvoicePdf localises it
+            // Oraliq summa = chegirmagacha bo'lgan qatorlar yig'indisi;
+            // TotalAmount esa allaqachon net (gross − chegirma).
+            invoiceItems.Sum(i => i.Total),
+            sale.DiscountAmount
         );
 
         try
@@ -1811,12 +1877,16 @@ public partial class ReportService : IReportService
                         }
                     });
 
-                    // ── Totals block: ink-divided grand total, paid, debt block ──
-                    // (No separate subtotal — there is no discount/tax line, so a
-                    // subtotal would just repeat the grand total.)
+                    // ── Totals block: subtotal → chegirma → ink-divided grand
+                    // total, paid, debt block. Oraliq summa is the GROSS line-item
+                    // sum; a sale-level chegirma (skidka) is shown as its own
+                    // negative row, and the grand total is the NET the customer
+                    // actually owes (sale.TotalAmount already has it subtracted).
                     column.Item().PaddingTop(22).AlignRight().Width(290).Column(col =>
                     {
-                        InvoiceTotalRow(col, L("Oraliq summa", "Промежуточная"), $"{data.TotalAmount:N0}{L(" so'm", " сум")}");
+                        InvoiceTotalRow(col, L("Oraliq summa", "Промежуточная"), $"{data.SubtotalAmount:N0}{L(" so'm", " сум")}");
+                        if (data.DiscountAmount > 0)
+                            InvoiceTotalRow(col, L("Chegirma", "Скидка"), $"−{data.DiscountAmount:N0}{L(" so'm", " сум")}");
                         col.Item().PaddingTop(4).BorderTop(2).BorderColor(PdfTheme.Ink).PaddingTop(10).Row(r =>
                         {
                             r.RelativeItem().Text(L("Jami summa", "Общая сумма")).FontSize(13).Bold().FontColor(PdfTheme.Ink);
@@ -2001,11 +2071,20 @@ public partial class ReportService : IReportService
                     // ── Totals (compact, ink-divided) ──
                     column.Item().PaddingTop(10).AlignRight().Width(240).Column(col =>
                     {
+                        // Oraliq summa = GROSS (chegirmagacha); chegirma bo'lsa
+                        // alohida manfiy qator; "Jami" esa NET (data.TotalAmount).
                         col.Item().PaddingBottom(3).Row(r =>
                         {
                             r.RelativeItem().Text(L("Oraliq summa", "Промежуточная")).FontSize(9).FontColor(PdfTheme.Muted);
-                            r.AutoItem().Text($"{data.TotalAmount:N0}{L(" so'm", " сум")}").FontSize(9).SemiBold();
+                            r.AutoItem().Text($"{data.SubtotalAmount:N0}{L(" so'm", " сум")}").FontSize(9).SemiBold();
                         });
+                        if (data.DiscountAmount > 0)
+                            col.Item().PaddingBottom(3).Row(r =>
+                            {
+                                r.RelativeItem().Text(L("Chegirma", "Скидка")).FontSize(9).FontColor(PdfTheme.BrandDark);
+                                r.AutoItem().Text($"−{data.DiscountAmount:N0}{L(" so'm", " сум")}")
+                                    .FontSize(9).SemiBold().FontColor(PdfTheme.BrandDark);
+                            });
                         col.Item().BorderTop(1.5f).BorderColor(PdfTheme.Ink).PaddingTop(6).Row(r =>
                         {
                             r.RelativeItem().Text(L("Jami", "Итого")).FontSize(11).Bold().FontColor(PdfTheme.Ink);
@@ -2109,7 +2188,14 @@ public partial class ReportService : IReportService
         decimal TotalAmount,
         decimal PaidAmount,
         decimal RemainingAmount,
-        string Status
+        string Status,
+        // Chegirma (skidka): Subtotal — chegirmagacha bo'lgan jami (item
+        // qatorlari yig'indisi), Discount — qo'llangan chegirma. TotalAmount
+        // esa allaqachon NET (Subtotal − Discount). Chegirma yo'q sotuvlarda
+        // Subtotal == TotalAmount va Discount == 0, shuning uchun default
+        // qiymatlar eski chaqiruvlarni buzmaydi.
+        decimal SubtotalAmount = 0m,
+        decimal DiscountAmount = 0m
     );
 
     internal record InvoiceItemData(

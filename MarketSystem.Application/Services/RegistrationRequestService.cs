@@ -28,15 +28,18 @@ public partial class RegistrationRequestService : IRegistrationRequestService
     private readonly IAppDbContext _context;
     private readonly ILogger<RegistrationRequestService> _logger;
     private readonly IAuditLogService _auditLog;
+    private readonly IUserTokenEpochStore _tokenEpochStore;
 
     public RegistrationRequestService(
         IAppDbContext context,
         ILogger<RegistrationRequestService> logger,
-        IAuditLogService auditLog)
+        IAuditLogService auditLog,
+        IUserTokenEpochStore tokenEpochStore)
     {
         _context = context;
         _logger = logger;
         _auditLog = auditLog;
+        _tokenEpochStore = tokenEpochStore;
     }
 
     public async Task<Guid> SubmitAsync(SubmitRegistrationRequestDto dto, CancellationToken cancellationToken = default)
@@ -689,8 +692,37 @@ public partial class RegistrationRequestService : IRegistrationRequestService
                 foreach (var member in staff)
                     member.IsActive = false;
 
+                // IsActive=false ni o'rnatishning O'ZI sessiyani o'ldirmaydi:
+                //  • allaqachon berilgan access token o'zining TTL'i (30 daqiqagacha)
+                //    tugagunicha ishlayveradi — har so'rovda IsActive tekshirilmaydi;
+                //  • refresh tokenlar esa DB'da tirik qoladi.
+                // Ya'ni to'lamagani uchun to'xtatilgan do'kon xodimlari yana yarim soat
+                // savdo qilishi, chek berishi va kassadan pul yechishi mumkin edi.
+                // Shuning uchun: refresh oilasini kuydiramiz + token epoxasini
+                // stamplaymiz (iat < epoch bo'lgan access token darhol rad etiladi).
+                var invalidatedAt = DateTime.UtcNow;
+                var victims = staff.Append(owner).ToList();
+                foreach (var u in victims)
+                {
+                    u.TokensInvalidBeforeUtc = invalidatedAt;
+
+                    var live = await _context.RefreshTokens
+                        .Where(r => r.UserId == u.Id && !r.IsRevoked)
+                        .ToListAsync(cancellationToken);
+                    foreach (var rt in live)
+                    {
+                        rt.IsRevoked = true;
+                        rt.RevokedAt = invalidatedAt;
+                    }
+                }
+
                 await _context.SaveChangesAsync(cancellationToken);
                 await tx.CommitAsync(cancellationToken);
+
+                // Commit'dan KEYIN keshni yangilaymiz (rollback bo'lsa kesh iflos
+                // bo'lib qolmasin). Bu O(1) hot-path lookup manbai.
+                foreach (var u in victims)
+                    _tokenEpochStore.Publish(u.Id, invalidatedAt);
 
                 _logger.LogWarning(
                     "Owner soft-deleted: UserId={UserId} MarketId={MarketId} BySuperAdmin={SuperAdminId} Reason={Reason}",

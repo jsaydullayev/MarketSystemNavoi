@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/input_formatters.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -136,6 +137,7 @@ class _WithdrawBottomSheetState extends State<WithdrawBottomSheet> {
             hint: '0',
             controller: widget.amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: const [NoLeadingZeroFormatter()],
             prefixIcon: Icons.monetization_on_outlined,
           ),
           const SizedBox(height: AppSpacing.lg),

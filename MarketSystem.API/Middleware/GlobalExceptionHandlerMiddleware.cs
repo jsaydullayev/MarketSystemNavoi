@@ -1,6 +1,9 @@
 using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
+using MarketSystem.Domain.Constants;
 using MarketSystem.Domain.Exceptions;
+using MarketSystem.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -36,6 +39,42 @@ public class GlobalExceptionHandlerMiddleware
         {
             _logger.LogError(ex, "Unhandled exception. TraceId={TraceId}", context.TraceIdentifier);
             await HandleExceptionAsync(context, ex);
+            await TryRecordErrorAsync(context, ex);
+        }
+    }
+
+    /// Record a server-side fault (5xx) into the audit log so it surfaces in the
+    /// security journal's "Suspicious" tab with a status code + message the
+    /// Owner/developer can act on. Best-effort — a failure here (e.g. the DB is
+    /// the thing that's down) must never break the error response we just wrote.
+    private static async Task TryRecordErrorAsync(HttpContext context, Exception ex)
+    {
+        try
+        {
+            if (context.Response.StatusCode < 500) return; // only real server faults
+            var audit = context.RequestServices.GetService(typeof(IAuditLogService)) as IAuditLogService;
+            if (audit is null) return;
+
+            var userIdStr = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Guid.TryParse(userIdStr, out var parsed) ? parsed : Guid.Empty;
+
+            await audit.LogActionAsync(
+                AuditEntityTypes.Error,
+                Guid.NewGuid(),
+                AuditActions.Error,
+                userId,
+                new
+                {
+                    StatusCode = context.Response.StatusCode,
+                    Method = context.Request.Method,
+                    Path = context.Request.Path.Value,
+                    ExceptionType = ex.GetType().Name,
+                    Message = ex.Message
+                });
+        }
+        catch
+        {
+            // Swallow — audit logging must not mask the original error.
         }
     }
 

@@ -114,6 +114,18 @@ class _SuspiciousViewState extends State<SuspiciousView> {
                   _BulkDeleteCard(burst: burst),
                   const SizedBox(height: AppSpacing.md),
                 ],
+                const SizedBox(height: AppSpacing.lg),
+              ],
+              if (report.recentErrors.isNotEmpty) ...[
+                const _SectionHeader(
+                  icon: Icons.bug_report_rounded,
+                  label: 'Server xatoliklari',
+                ),
+                const SizedBox(height: AppSpacing.md),
+                for (final err in report.recentErrors) ...[
+                  _ErrorCard(error: err),
+                  const SizedBox(height: AppSpacing.md),
+                ],
               ],
             ],
           ),
@@ -240,6 +252,88 @@ class _BulkDeleteCard extends StatelessWidget {
             value: burst.entityTypes.join(', '),
           ),
       ],
+    );
+  }
+}
+
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.error});
+
+  final ErrorEntry error;
+
+  @override
+  Widget build(BuildContext context) {
+    final where = [
+      if (error.method?.isNotEmpty == true) error.method!,
+      if (error.path?.isNotEmpty == true) error.path!,
+    ].join(' ');
+    return _DangerCard(
+      titleRow: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.bug_report_rounded, color: AppColors.dangerStrong),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              error.message.isNotEmpty ? error.message : 'Server xatoligi',
+              style: AppTextStyles.bodyLarge().copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.dangerDeep,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          _StatusBadge(code: error.statusCode),
+        ],
+      ),
+      detailRows: [
+        if (where.isNotEmpty)
+          _DetailRow(
+            icon: Icons.link_rounded,
+            label: 'Manzil',
+            value: where,
+            mono: true,
+          ),
+        _DetailRow(
+          icon: Icons.schedule_rounded,
+          label: 'Vaqt',
+          value: formatTimestamp(error.createdAt),
+        ),
+        if (error.userName?.isNotEmpty == true)
+          _DetailRow(
+            icon: Icons.person_outline_rounded,
+            label: 'Kim',
+            value: error.userName!,
+          ),
+      ],
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.code});
+  final int code;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.danger,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Text(
+        '$code',
+        style: AppTextStyles.bodyMedium().copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
     );
   }
 }

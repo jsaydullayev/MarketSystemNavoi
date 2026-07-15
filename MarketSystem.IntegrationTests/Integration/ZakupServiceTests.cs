@@ -79,8 +79,11 @@ public class ZakupServiceTests : TestBase
 
         await CreateService().CreateZakupAsync(dto, TestUserId);
 
-        AuditLogServiceMock.Verify(x => x.LogZakupActionAsync(
-            It.IsAny<Guid>(), TestUserId, It.IsAny<CancellationToken>()), Times.Once);
+        // A quick single-item zakup now wraps its line in a 1-item ZakupReceipt,
+        // so the create audit is logged at the receipt level.
+        AuditLogServiceMock.Verify(x => x.LogActionAsync(
+            AuditEntityTypes.ZakupReceipt, It.IsAny<Guid>(), AuditActions.Create, TestUserId,
+            It.IsAny<object?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -90,7 +93,7 @@ public class ZakupServiceTests : TestBase
 
         Func<Task> act = async () => await CreateService().CreateZakupAsync(dto, TestUserId);
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not found*");
+            .WithMessage("*topilmadi*");
     }
 
     [Fact]
@@ -108,7 +111,7 @@ public class ZakupServiceTests : TestBase
 
         Func<Task> act = async () => await CreateService().CreateZakupAsync(dto, TestUserId);
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not found*");
+            .WithMessage("*topilmadi*");
 
         ClearDbContext();
         var untouched = await DbContext.Products.FirstAsync(p => p.Id == foreign.Id);

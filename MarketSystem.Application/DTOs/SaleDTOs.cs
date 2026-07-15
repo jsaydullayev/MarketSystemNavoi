@@ -48,6 +48,7 @@ public record SaleDto(
     [property: JsonPropertyName("totalAmount")] decimal TotalAmount,
     [property: JsonPropertyName("paidAmount")] decimal PaidAmount,
     [property: JsonPropertyName("remainingAmount")] decimal RemainingAmount,
+    [property: JsonPropertyName("discountAmount")] decimal DiscountAmount,
     [property: JsonPropertyName("createdAt")] DateTime CreatedAt,
     [property: JsonPropertyName("items")] List<SaleItemDto> Items,
     [property: JsonPropertyName("payments")] List<PaymentDto> Payments
@@ -133,4 +134,14 @@ public record UpdateSaleItemPriceDto(
     [property: JsonPropertyName("comment")]
     [param: StringLength(500)]
     string? Comment
+);
+
+/// <summary>
+/// Sale-level chegirma (skidka) — kassa to'lov oynasida qo'llaniladi. Item
+/// narxlariga tegmaydi; faqat sotuvning umumiy hisobini (TotalAmount) kamaytiradi.
+/// </summary>
+public record SetSaleDiscountDto(
+    [property: JsonPropertyName("discountAmount")]
+    [param: Range(0, double.MaxValue, ErrorMessage = "Chegirma manfiy bo'lmasin")]
+    decimal DiscountAmount
 );

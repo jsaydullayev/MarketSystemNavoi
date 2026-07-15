@@ -73,6 +73,16 @@ public class JwtService : IJwtService
 
         claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
 
+        // "iat" — token qachon berilgani (Unix soniya, RFC 7519 bo'yicha raqamli claim).
+        // Busiz access token'ni User.TokensInvalidBeforeUtc bilan solishtirib bo'lmaydi:
+        // parol o'zgargan / user o'chirilgan bo'lsa ham eski token to'liq TTL davomida
+        // (30 daqiqagacha) ishlayverardi. OnTokenValidated (Program.cs) shu claim'ni
+        // epoch bilan taqqoslab, eski tokenni darhol rad etadi.
+        claims.Add(new Claim(
+            JwtRegisteredClaimNames.Iat,
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+            ClaimValueTypes.Integer64));
+
         var security = new JwtSecurityToken(
             issuer: _jwtSetting.Issuer,
             audience: _jwtSetting.Audience,

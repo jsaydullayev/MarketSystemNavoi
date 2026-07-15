@@ -16,7 +16,27 @@ class ApiConstants {
   // Android emulator can't reach host via "localhost" — it must use 10.0.2.2.
   static const String _androidEmulatorDevApiUrl = 'http://10.0.2.2:5050/api';
 
+  /// HAQIQIY telefonda debug qilish uchun override.
+  ///
+  /// Emulyator `10.0.2.2` ni, iOS Simulator `localhost` ni ko'radi — lekin
+  /// haqiqiy qurilmada bu manzillarning IKKALASI ham ishlamaydi: `10.0.2.2`
+  /// hech qayerga ulanmaydi, `localhost` esa telefonning O'ZINI bildiradi.
+  /// Shu sababli simga ulangan telefonda har bir so'rov xatolik berardi.
+  ///
+  /// Kompyuteringizning LAN IP'sini bering (telefon shu Wi-Fi'da bo'lsin):
+  ///   flutter run --dart-define=API_BASE=http://192.168.1.50:5050/api
+  ///
+  /// Eslatma: bu HTTP manzil bo'lgani uchun Android'da
+  /// network_security_config.xml ga o'sha IP'ni cleartext istisno sifatida,
+  /// iOS'da esa Info.plist NSExceptionDomains ga qo'shish kerak bo'ladi.
+  static const String _devApiOverride = String.fromEnvironment('API_BASE');
+
   static String get baseUrl {
+    // Override har qanday debug taxminidan ustun (release'da bo'sh — prod URL).
+    if (kDebugMode && _devApiOverride.isNotEmpty) {
+      return _devApiOverride;
+    }
+
     if (kIsWeb) {
       // Debug: hit local backend directly (CORS already allows :3000/:8080/:8081).
       // Release: relative `/api` — host nginx proxies to the API container.
@@ -39,6 +59,7 @@ class ApiConstants {
   static const String customers = '/Customers';
   static const String sales = '/Sales';
   static const String zakups = '/Zakups';
+  static const String suppliers = '/Suppliers';
   static const String users = '/Users';
   static const String reports = '/Reports';
   static const String debts = '/Debts';
@@ -132,4 +153,15 @@ class ApiConstants {
       '?start=${start.toIso8601String()}&end=${end.toIso8601String()}';
   static const String zakupsExportExcel = '$zakups/ExportZakupsToExcel/export';
   static String deleteZakup(String id) => '$zakups/DeleteZakup/$id';
+
+  // Zakup goods-receipts (priyomka) — multi-item + supplier + payment.
+  static String deleteZakupReceipt(String id) => '$zakups/DeleteReceipt/$id';
+  static String zakupReceiptPay(String id) => '$zakups/RegisterSupplierPayment/$id';
+
+  // Suppliers (yetkazib beruvchilar) directory.
+  static String deleteSupplier(String id) => '$suppliers/DeleteSupplier/$id';
+  static String supplierDeleteInfo(String id) =>
+      '$suppliers/GetSupplierDeleteInfo/$id/delete-info';
+  static const String suppliersExportExcel =
+      '$suppliers/ExportSuppliersToExcel/export';
 }

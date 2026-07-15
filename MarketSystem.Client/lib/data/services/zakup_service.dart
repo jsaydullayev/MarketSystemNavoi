@@ -89,6 +89,80 @@ class ZakupService {
     }
   }
 
+  // ── Goods-receipts (priyomka) — multi-item + supplier + payment ──────────
+
+  /// List goods-receipts, newest first. Each item is a receipt map with a
+  /// nested `items` array (product lines).
+  Future<List<dynamic>> getAllReceipts() async {
+    final response = await _httpService.get(
+      '${ApiConstants.zakups}/GetAllReceipts',
+    );
+    if (response.statusCode == 200) {
+      return List<dynamic>.from(jsonDecode(response.body));
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to load receipts',
+    );
+  }
+
+  /// Create one goods-receipt with N product lines in a single request.
+  /// [items] entries: { productId, quantity, costPrice }.
+  Future<dynamic> createReceipt({
+    String? supplierId,
+    String? invoiceNumber,
+    required double paidAmount,
+    String? comment,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final response = await _httpService.post(
+      '${ApiConstants.zakups}/CreateReceipt',
+      body: {
+        if (supplierId != null) 'supplierId': supplierId,
+        if (invoiceNumber != null && invoiceNumber.isNotEmpty)
+          'invoiceNumber': invoiceNumber,
+        'paidAmount': paidAmount,
+        if (comment != null && comment.isNotEmpty) 'comment': comment,
+        'items': items,
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to create receipt',
+    );
+  }
+
+  /// Delete a whole receipt (reverses each line's stock, clamped at 0).
+  Future<void> deleteReceipt(String id) async {
+    final response = await _httpService.delete(
+      ApiConstants.deleteZakupReceipt(id),
+    );
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to delete receipt',
+      );
+    }
+  }
+
+  /// Register a supplier payment against a receipt; returns the updated receipt.
+  Future<dynamic> registerReceiptPayment(String id, double amount) async {
+    final response = await _httpService.post(
+      ApiConstants.zakupReceiptPay(id),
+      body: {'amount': amount},
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to register payment',
+    );
+  }
+
   Future<List<int>?> downloadZakupsExcel() async {
     return await _httpService.downloadBytes(ApiConstants.zakupsExportExcel);
   }

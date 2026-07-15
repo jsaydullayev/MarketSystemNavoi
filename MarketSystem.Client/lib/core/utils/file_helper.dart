@@ -101,49 +101,67 @@ class FileHelper {
     }
   }
 
+  /// Faylni saqlash uchun platformaga mos, YOZISH MUMKIN bo'lgan papka.
+  /// DownloadService ham shu yagona manbadan foydalanadi.
+  ///
+  /// Android: ilgari `/storage/emulated/0/Download` ishlatilardi. Bu papka
+  /// qurilmada MAVJUD, shuning uchun `exists()` doim true qaytarib, quyidagi
+  /// fallback hech qachon ishga tushmasdi — `writeAsBytes` esa Android 10+ da
+  /// scoped storage sababli "Permission denied (errno 13)" bilan yiqilardi
+  /// (WRITE_EXTERNAL_STORAGE manifestda maxSdkVersion=28 bilan cheklangan, ya'ni
+  /// zamonaviy Android'da umuman berilmaydi). Endi ilovaning o'z tashqi
+  /// papkasiga yozamiz: hech qanday ruxsat talab qilinmaydi va OpenFilex uni
+  /// FileProvider orqali tizim ilovasida ocha oladi (u yerdan ulashish/saqlash
+  /// mumkin).
+  ///
+  /// iOS: sandbox'da Downloads papkasi YO'Q — hujjatlar papkasi ishlatiladi.
+  static Future<Directory> resolveSaveDirectory() async {
+    Directory? directory;
+
+    if (Platform.isAndroid) {
+      directory = await getExternalStorageDirectory();
+    } else if (Platform.isIOS) {
+      directory = await getApplicationDocumentsDirectory();
+    } else {
+      // Desktop (Windows/macOS/Linux) — Downloads.
+      directory = await getDownloadsDirectory();
+    }
+
+    directory ??= await getApplicationDocumentsDirectory();
+
+    // path_provider papkaning mavjudligini KAFOLATLAMAYDI — yozishdan oldin
+    // yaratamiz, aks holda writeAsBytes ENOENT beradi.
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
+    return directory;
+  }
+
   /// Platformaga mos fayl yo'lini olish
   /// Web'da null qaytaradi (chunki fayl tizimi yo'q)
   static Future<String?> _getFilePath(String fileName) async {
     // Web'da fayl tizimi yo'q, shuning uchun null qaytaramiz
     if (kIsWeb) return null;
 
-    Directory? directory;
-
     try {
-      if (Platform.isAndroid) {
-        // Android da Downloads papkasiga saqlaymiz, topolmasa External Storage
-        directory = Directory('/storage/emulated/0/Download');
-        if (!await directory.exists()) {
-          directory = await getExternalStorageDirectory();
-        }
-      } else if (Platform.isIOS) {
-        // iOS da faqat application documents papkasiga ruxsat bor
-        directory = await getApplicationDocumentsDirectory();
-      } else if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-        // Kompyuter uchun Downloads
-        directory = await getDownloadsDirectory();
-      }
+      final directory = await resolveSaveDirectory();
 
-      if (directory != null) {
-        // Fayl nomi takrorlanmasligi uchun
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final nameWithoutExtension = fileName.split('.').first;
-        final extension = fileName.split('.').last;
+      // Fayl nomi takrorlanmasligi uchun
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final nameWithoutExtension = fileName.split('.').first;
+      final extension = fileName.split('.').last;
 
-        return '${directory.path}/${nameWithoutExtension}_$timestamp.$extension';
-      }
+      return '${directory.path}/${nameWithoutExtension}_$timestamp.$extension';
     } catch (e) {
       debugPrint('Error getting directory: $e');
       // Oxirgi chora sifatida vaqtinchalik papkaga saqlash
       try {
-        directory = await getTemporaryDirectory();
-        return '${directory.path}/$fileName';
+        final tempDir = await getTemporaryDirectory();
+        return '${tempDir.path}/$fileName';
       } catch (e2) {
         debugPrint('Error getting temp directory: $e2');
         return null;
       }
     }
-
-    return null;
   }
 }

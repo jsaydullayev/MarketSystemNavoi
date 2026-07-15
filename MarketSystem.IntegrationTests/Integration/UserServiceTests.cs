@@ -17,10 +17,13 @@ namespace MarketSystem.IntegrationTests.Integration;
 /// </summary>
 public class UserServiceTests : TestBase
 {
+    /// Epoch store — testlar undan foydalanuvchi "stamplanganini" tekshirishi mumkin.
+    private readonly FakeUserTokenEpochStore _epochStore = new();
+
     private UserService CreateService()
     {
         var unitOfWork = new UnitOfWork(DbContext, NullLogger<UnitOfWork>.Instance);
-        return new UserService(unitOfWork, DbContext, CurrentMarketServiceMock.Object);
+        return new UserService(unitOfWork, DbContext, CurrentMarketServiceMock.Object, _epochStore);
     }
 
     [Fact]

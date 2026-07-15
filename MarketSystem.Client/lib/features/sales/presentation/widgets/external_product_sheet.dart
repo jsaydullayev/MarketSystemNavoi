@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:market_system_client/core/utils/input_formatters.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
@@ -30,11 +32,15 @@ class ExternalProductSheet extends StatefulWidget {
     )
     onConfirm,
   }) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ExternalProductSheet(onConfirm: onConfirm),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        backgroundColor: Colors.transparent,
+        child: SingleChildScrollView(
+          child: ExternalProductSheet(onConfirm: onConfirm),
+        ),
+      ),
     );
   }
 
@@ -57,9 +63,9 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
     super.initState();
 
     _nameController = TextEditingController();
-    _costPriceController = TextEditingController(text: '0');
+    _costPriceController = TextEditingController();
     _qtyController = TextEditingController(text: '1');
-    _salePriceController = TextEditingController(text: '0');
+    _salePriceController = TextEditingController();
     _commentController = TextEditingController(text: '');
   }
 
@@ -76,11 +82,15 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
   void _validateAndSubmit() {
     final l10n = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
-    final costPrice =
-        double.tryParse(_costPriceController.text.replaceAll(',', '.')) ?? 0;
+    final costPrice = double.tryParse(
+          ThousandsSeparatorFormatter.unformat(_costPriceController.text),
+        ) ??
+        0;
     final qty = double.tryParse(_qtyController.text.replaceAll(',', '.')) ?? 0;
-    final salePrice =
-        double.tryParse(_salePriceController.text.replaceAll(',', '.')) ?? 0;
+    final salePrice = double.tryParse(
+          ThousandsSeparatorFormatter.unformat(_salePriceController.text),
+        ) ??
+        0;
 
     if (name.isEmpty) {
       setState(() {
@@ -130,16 +140,12 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 520),
       child: Container(
         decoration: BoxDecoration(
           color: context.colors.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl2),
-          ),
+          borderRadius: BorderRadius.circular(AppRadius.xl2),
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl2,
@@ -204,23 +210,23 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
               label: l10n.externalProductName,
               icon: Icons.description_rounded,
               isNum: false,
-              hintText: 'Masalan: Xizmat',
             ),
 
             const SizedBox(height: AppSpacing.lg),
 
-            // Cost price + qty
+            // Sale price + qty
             Row(
               children: [
                 Expanded(
                   flex: 2,
                   child: _buildField(
                     context: context,
-                    controller: _costPriceController,
-                    label: l10n.externalCostPrice,
-                    icon: Icons.inventory_2_rounded,
+                    controller: _salePriceController,
+                    label: l10n.salePrice,
+                    icon: Icons.payments_outlined,
                     suffix: l10n.currencySom,
                     isNum: true,
+                    inputFormatters: const [ThousandsSeparatorFormatter()],
                   ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
@@ -232,6 +238,7 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
                     label: l10n.amount,
                     icon: Icons.add_box_outlined,
                     isNum: true,
+                    inputFormatters: const [NoLeadingZeroFormatter()],
                   ),
                 ),
               ],
@@ -239,14 +246,15 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
 
             const SizedBox(height: AppSpacing.lg),
 
-            // Sale price
+            // Cost price
             _buildField(
               context: context,
-              controller: _salePriceController,
-              label: l10n.salePrice,
-              icon: Icons.payments_outlined,
+              controller: _costPriceController,
+              label: l10n.externalCostPrice,
+              icon: Icons.inventory_2_rounded,
               suffix: l10n.currencySom,
               isNum: true,
+              inputFormatters: const [ThousandsSeparatorFormatter()],
             ),
 
             // Validation error
@@ -329,6 +337,7 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
     bool isNum = false,
     String? hintText,
     int? maxLines = 1,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,6 +360,7 @@ class _ExternalProductSheetState extends State<ExternalProductSheet> {
           keyboardType: isNum
               ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.text,
+          inputFormatters: inputFormatters,
           maxLines: maxLines,
           style: AppTextStyles.bodyLarge().copyWith(
             fontWeight: FontWeight.w700,

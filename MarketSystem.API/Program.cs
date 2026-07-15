@@ -206,6 +206,53 @@ try
                             context.Fail("Token has been revoked.");
                         }
                     }
+
+                    // Per-user epoch: parol o'zgardi / user deaktivatsiya qilindi /
+                    // o'chirildi / ruxsatlari almashdi → o'sha paytdan OLDIN berilgan
+                    // har qanday access token o'lik. jti denylist buni qoplamaydi:
+                    // u faqat aniq bitta tokenni biladi, biz esa foydalanuvchining
+                    // hamma (shu jumladan hali ko'rmagan) tokenlarini rad etamiz.
+                    // GetEpoch — in-memory O(1); auth hot-path'da DB so'rovi YO'Q.
+                    var sub = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (Guid.TryParse(sub, out var tokenUserId))
+                    {
+                        var epochStore = context.HttpContext.RequestServices
+                            .GetRequiredService<IUserTokenEpochStore>();
+                        var epoch = epochStore.GetEpoch(tokenUserId);
+                        if (epoch.HasValue)
+                        {
+                            var iatRaw = context.Principal?.FindFirst(
+                                System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Iat)?.Value;
+
+                            if (long.TryParse(iatRaw, out var iatUnix))
+                            {
+                                var issuedAt = DateTimeOffset.FromUnixTimeSeconds(iatUnix).UtcDateTime;
+
+                                // Soat aniqligi: `iat` — butun soniya (pastga yaxlitlangan),
+                                // epoch esa sub-second. Parol almashtirilgandan so'ng DARHOL
+                                // qayta login qilinsa: stamp 12:00:05.400, yangi token
+                                // 12:00:05.900 da beriladi, lekin uning iat'i 12:00:05.000
+                                // ga tushadi — xom taqqoslashda (iat < epoch) haqiqiy yangi
+                                // token noto'g'ri o'ldirilardi va foydalanuvchi kirolmasdi.
+                                // Shuning uchun 1 soniyalik tolerans: iat + 1s >= epoch bo'lsa
+                                // token yashaydi. Narxi — stamp bilan bir SONIYADA berilgan
+                                // token omon qolishi mumkin (≤1s); eski tokenlar (daqiqalar
+                                // oldin berilgan) baribir aniq rad etiladi.
+                                if (issuedAt.AddSeconds(1) < epoch.Value)
+                                {
+                                    context.Fail("Token was issued before the user's credentials changed.");
+                                }
+                            }
+                            // `iat` yo'q token = shu deploy'dan OLDIN berilgan token.
+                            // Fail-open: hammasini rad etsak, deploy paytida barcha faol
+                            // kassirlar smena o'rtasida tizimdan uchib chiqadi. Bunday
+                            // tokenlar o'z tabiiy TTL'i (≤30 daqiqa) bilan o'ladi, keyingi
+                            // refresh esa `iat`li yangi token beradi — ya'ni bu bo'shliq
+                            // deploy'dan keyin ko'pi bilan 30 daqiqa yashaydi. Migratsiya
+                            // uchun xavfsiz tanlov.
+                        }
+                    }
+
                     return Task.CompletedTask;
                 }
             };
@@ -499,6 +546,7 @@ try
     builder.Services.AddScoped<ICustomerService, CustomerService>();
     builder.Services.AddScoped<ISaleService, SaleService>();
     builder.Services.AddScoped<IZakupService, ZakupService>();
+    builder.Services.AddScoped<ISupplierService, SupplierService>();
     builder.Services.AddScoped<IReportService, ReportService>();
     // One AuditLogService instance per scope satisfies both the write
     // (Domain) and read (Application) interfaces — forward them so the
@@ -522,6 +570,15 @@ try
     builder.Services.AddSingleton<DbRevokedTokenStore>();
     builder.Services.AddSingleton<IRevokedTokenStore>(
         sp => sp.GetRequiredService<DbRevokedTokenStore>());
+    // Singleton — per-user access-token epoch (Users.TokensInvalidBeforeUtc).
+    // Same shape as the revocation store: DB is the source of truth, memory is the
+    // hot path. GetEpoch() runs on EVERY authenticated request, so it must never
+    // touch the DB; the cache is rehydrated from the DB once during startup (below)
+    // and kept in sync by StampAsync on each password/deactivate/delete/permission
+    // change.
+    builder.Services.AddSingleton<DbUserTokenEpochStore>();
+    builder.Services.AddSingleton<IUserTokenEpochStore>(
+        sp => sp.GetRequiredService<DbUserTokenEpochStore>());
     // Brute-force lockout (Plan 05 Bosqich 3 — M1 hardening).
     //
     // Singleton — the failure counter must outlive any single request scope.
@@ -580,6 +637,15 @@ try
         using var scope = app.Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<DbRevokedTokenStore>();
         await store.LoadFromDbAsync();
+    }
+
+    // Hydrate the per-user token-epoch cache from Users.TokensInvalidBeforeUtc.
+    // Without this, a restart would forget every "password changed / user fired"
+    // stamp and the access tokens we had just killed would start working again.
+    {
+        using var scope = app.Services.CreateScope();
+        var epochStore = scope.ServiceProvider.GetRequiredService<DbUserTokenEpochStore>();
+        await epochStore.LoadFromDbAsync();
     }
 
     // M1 — hydrate the brute-force lockout cache from the LoginAttempts

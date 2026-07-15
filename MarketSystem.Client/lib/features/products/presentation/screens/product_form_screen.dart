@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/extensions/app_extensions.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/input_formatters.dart';
 import '../../../../data/models/product_category_model.dart';
 import '../../../../data/services/category_service.dart';
 import '../../../../data/services/product_service.dart';
@@ -222,192 +223,188 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
             )['name']
             as String;
 
-    // Match the app's other bottom sheets (pay_debt / category / withdraw):
-    // a single content-sized Container that the modal already bottom-anchors
-    // and centres — no outer Align/Padding needed. Default scroll physics
-    // (was AlwaysScrollableScrollPhysics) is what lets showModalBottomSheet's
-    // swipe-down-to-dismiss coordinate with the inner scroll; the old physics
-    // always claimed the vertical drag, so the sheet neither scrolled nor
-    // closed on a downward swipe. The keyboard/safe-area inset lives in the
-    // sheet's own bottom padding so the CTA clears the keyboard and home bar.
-    return Container(
+    // Markazdan chiqadigan dialog (showDialog + Dialog) — kategoriya oynasi
+    // bilan bir xil: har to'rt burchagi dumaloq karta. Klaviatura otstupi bu
+    // yerda QO'SHILMAYDI — Dialog'ning o'zi viewInsets bo'yicha kartani
+    // klaviatura ustiga ko'taradi; bu yerda ham qo'shsak, otstup ikkilanardi.
+    return ConstrainedBox(
       constraints: BoxConstraints(
         maxWidth: isWeb ? 500 : double.infinity,
-        maxHeight: MediaQuery.of(context).size.height * 0.95,
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl2),
+      child: Container(
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: BorderRadius.circular(28),
         ),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.xl,
-        AppSpacing.lg,
-        AppSpacing.xl,
-        MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl3,
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.colors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              16.height,
-              // Title only — subtitle removed to keep the whole panel on one
-              // screen without scrolling (roliksiz).
-              Center(
-                child: Text(
-                  _isEditing ? l10n.editProduct : l10n.addProduct,
-                  style: AppTextStyles.titleLarge().copyWith(fontSize: 19),
-                ),
-              ),
-              16.height,
-
-              // === Asosiy ma'lumotlar ===
-              SectionLabel(text: l10n.productBasicInfoSection),
-              10.height,
-              LabeledField(
-                label: l10n.productName,
-                required: true,
-                child: _buildTextField(
-                  controller: _nameController,
-                  hint: l10n.productNameHint,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? l10n.fillIn : null,
-                ),
-              ),
-              12.height,
-              Row(
-                children: [
-                  Expanded(
-                    child: LabeledField(
-                      label: l10n.categories,
-                      required: true,
-                      child: _buildCategoryDropdown(l10n),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.lg,
+          AppSpacing.xl,
+          AppSpacing.xl3,
+        ),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.colors.border,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  12.width,
-                  Expanded(
-                    child: LabeledField(
-                      label: l10n.unit,
-                      required: true,
-                      child: _buildUnitDropdown(l10n),
-                    ),
+                ),
+                16.height,
+                // Title only — subtitle removed to keep the whole panel on one
+                // screen without scrolling (roliksiz).
+                Center(
+                  child: Text(
+                    _isEditing ? l10n.editProduct : l10n.addProduct,
+                    style: AppTextStyles.titleLarge().copyWith(fontSize: 19),
                   ),
-                ],
-              ),
-              14.height,
+                ),
+                16.height,
 
-              // === Narxlar (brand-light card) ===
-              PriceCard(
-                title: l10n.pricesSection,
-                children: [
-                  // Kelgan narx (Owner/Admin) va sotish narxi yonma-yon — bir
-                  // ekranga sig'ishi uchun. Cost-yashirin foydalanuvchida faqat
-                  // sotish narxi to'liq kenglikda ko'rinadi (backend maskalaydi,
-                  // update'da null yuborilib eski cost saqlanadi).
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (canViewCost) ...[
+                // === Asosiy ma'lumotlar ===
+                SectionLabel(text: l10n.productBasicInfoSection),
+                10.height,
+                LabeledField(
+                  label: l10n.productName,
+                  required: true,
+                  child: _buildTextField(
+                    controller: _nameController,
+                    hint: l10n.productNameHint,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? l10n.fillIn : null,
+                  ),
+                ),
+                12.height,
+                Row(
+                  children: [
+                    Expanded(
+                      child: LabeledField(
+                        label: l10n.categories,
+                        required: true,
+                        child: _buildCategoryDropdown(l10n),
+                      ),
+                    ),
+                    12.width,
+                    Expanded(
+                      child: LabeledField(
+                        label: l10n.unit,
+                        required: true,
+                        child: _buildUnitDropdown(l10n),
+                      ),
+                    ),
+                  ],
+                ),
+                14.height,
+
+                // === Narxlar (brand-light card) ===
+                PriceCard(
+                  title: l10n.pricesSection,
+                  children: [
+                    // Kelgan narx (Owner/Admin) va sotish narxi yonma-yon — bir
+                    // ekranga sig'ishi uchun. Cost-yashirin foydalanuvchida faqat
+                    // sotish narxi to'liq kenglikda ko'rinadi (backend maskalaydi,
+                    // update'da null yuborilib eski cost saqlanadi).
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (canViewCost) ...[
+                          Expanded(
+                            child: LabeledField(
+                              label: 'Kelgan narxi',
+                              compact: true,
+                              child: _buildSuffixField(
+                                controller: _costPriceController,
+                                suffix: 'UZS',
+                                isNumber: true,
+                              ),
+                            ),
+                          ),
+                          12.width,
+                        ],
                         Expanded(
                           child: LabeledField(
-                            label: 'Kelgan narxi',
+                            label: l10n.salePrice,
+                            required: true,
                             compact: true,
                             child: _buildSuffixField(
-                              controller: _costPriceController,
+                              controller: _salePriceController,
                               suffix: 'UZS',
                               isNumber: true,
+                              validator: (v) =>
+                                  (v == null || v.isEmpty) ? l10n.fillIn : null,
                             ),
                           ),
                         ),
-                        12.width,
                       ],
-                      Expanded(
-                        child: LabeledField(
-                          label: l10n.salePrice,
-                          required: true,
-                          compact: true,
-                          child: _buildSuffixField(
-                            controller: _salePriceController,
-                            suffix: 'UZS',
-                            isNumber: true,
-                            validator: (v) =>
-                                (v == null || v.isEmpty) ? l10n.fillIn : null,
-                          ),
+                    ),
+                    12.height,
+                    // Narxni ko'rsatish/yashirish: ON = narx ko'rinadi,
+                    // OFF = sotuvda sotuvchiga narx (tannarx/sotuv narxi)
+                    // ko'rsatilmaydi.
+                    PriceVisibilityToggle(
+                      value: !_hideFromSeller,
+                      onChanged: (v) => setState(() => _hideFromSeller = !v),
+                    ),
+                  ],
+                ),
+                14.height,
+
+                // === Stok ===
+                SectionLabel(text: l10n.stockShort),
+                10.height,
+                Row(
+                  children: [
+                    Expanded(
+                      child: LabeledField(
+                        label: l10n.currentStockLabel,
+                        required: !_isEditing,
+                        child: _buildSuffixField(
+                          controller: _stockController,
+                          suffix: unitName,
+                          isNumber: true,
+                          // Yangi mahsulotда boshlang'ich qoldiq kiritiladi.
+                          // Mavjud mahsulotда qoldiq odatда zakup orqali
+                          // harakatlanadi — lekin Owner uni qo'lda tuzatishi
+                          // mumkin (masalan, inventarizatsiya). Boshqalar uchun
+                          // maydon o'zgartirib bo'lmaydigan holatда qoladi.
+                          enabled: !_isEditing || canEditStock,
                         ),
                       ),
-                    ],
-                  ),
-                  12.height,
-                  // Narxni ko'rsatish/yashirish: ON = narx ko'rinadi,
-                  // OFF = sotuvda sotuvchiga narx (tannarx/sotuv narxi)
-                  // ko'rsatilmaydi.
-                  PriceVisibilityToggle(
-                    value: !_hideFromSeller,
-                    onChanged: (v) => setState(() => _hideFromSeller = !v),
-                  ),
-                ],
-              ),
-              14.height,
-
-              // === Stok ===
-              SectionLabel(text: l10n.stockShort),
-              10.height,
-              Row(
-                children: [
-                  Expanded(
-                    child: LabeledField(
-                      label: l10n.currentStockLabel,
-                      required: !_isEditing,
-                      child: _buildSuffixField(
-                        controller: _stockController,
-                        suffix: unitName,
-                        isNumber: true,
-                        // Yangi mahsulotда boshlang'ich qoldiq kiritiladi.
-                        // Mavjud mahsulotда qoldiq odatда zakup orqali
-                        // harakatlanadi — lekin Owner uni qo'lda tuzatishi
-                        // mumkin (masalan, inventarizatsiya). Boshqalar uchun
-                        // maydon o'zgartirib bo'lmaydigan holatда qoladi.
-                        enabled: !_isEditing || canEditStock,
+                    ),
+                    12.width,
+                    Expanded(
+                      child: LabeledField(
+                        label: l10n.minStockLabel,
+                        optional: l10n.forWarningHint,
+                        child: _buildSuffixField(
+                          controller: _minThresholdController,
+                          suffix: unitName,
+                          isNumber: true,
+                        ),
                       ),
                     ),
-                  ),
-                  12.width,
-                  Expanded(
-                    child: LabeledField(
-                      label: l10n.minStockLabel,
-                      optional: l10n.forWarningHint,
-                      child: _buildSuffixField(
-                        controller: _minThresholdController,
-                        suffix: unitName,
-                        isNumber: true,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              16.height,
-              AppPrimaryButton(
-                label: _isEditing ? l10n.save : "Mahsulotni qo'shish",
-                icon: _isEditing ? Icons.check_rounded : Icons.add_rounded,
-                onPressed: _isLoading ? null : _saveProduct,
-                isLoading: _isLoading,
-              ),
-            ],
+                  ],
+                ),
+                16.height,
+                AppPrimaryButton(
+                  label: _isEditing ? l10n.save : "Mahsulotni qo'shish",
+                  icon: _isEditing ? Icons.check_rounded : Icons.add_rounded,
+                  onPressed: _isLoading ? null : _saveProduct,
+                  isLoading: _isLoading,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -449,6 +446,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
       keyboardType: isNumber
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
+      inputFormatters: isNumber ? const [NoLeadingZeroFormatter()] : null,
       validator: validator,
       onChanged: (_) => setState(() {}),
       style: AppTextStyles.bodyMedium().copyWith(

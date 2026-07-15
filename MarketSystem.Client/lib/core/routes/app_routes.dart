@@ -26,6 +26,7 @@ class AppRoutes {
   static const String sales = '/sales';
   static const String customers = '/customers';
   static const String zakup = '/zakup';
+  static const String suppliers = '/suppliers';
   static const String reports = '/reports';
   static const String debts = '/debts';
   static const String users = '/users';

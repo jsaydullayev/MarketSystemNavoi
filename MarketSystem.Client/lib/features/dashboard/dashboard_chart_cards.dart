@@ -24,6 +24,7 @@ class ChartCard extends StatelessWidget {
     required this.bars, // values 0..1 — last bar highlighted
     required this.footerValue,
     required this.footerDelta,
+    this.barTooltips = const [],
     this.deltaCaption = '',
     this.deltaIsPositive = true,
     this.isEmpty = false,
@@ -32,6 +33,12 @@ class ChartCard extends StatelessWidget {
   final String title;
   final String period;
   final List<double> bars;
+
+  /// Per-bar hover text (day + revenue + checks + profit). When an entry
+  /// exists for a bar, hovering it (web) or long-pressing (mobile) shows the
+  /// stats. Empty list = no tooltips.
+  final List<String> barTooltips;
+
   final String footerValue;
 
   /// Already-formatted delta string (e.g. "5%"). The card adds the sign
@@ -90,24 +97,16 @@ class ChartCard extends StatelessWidget {
               children: [
                 for (var i = 0; i < bars.length; i++) ...[
                   Expanded(
-                    child: FractionallySizedBox(
-                      // Empty-state placeholder bars are short (just enough
-                      // to hint at the axis) so the card isn't visually
-                      // dominated by full-height orange columns when there's
-                      // no real data behind them.
+                    // Full-height column is the hover target so even a short
+                    // bar is easy to point at; the bar itself is bottom-anchored.
+                    child: _HoverBar(
+                      tooltip: i < barTooltips.length ? barTooltips[i] : null,
                       heightFactor: isEmpty ? 0.08 : bars[i].clamp(0.05, 1.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isEmpty
-                              ? context.colors.borderSoft
-                              : (i == bars.length - 1
-                                    ? context.colors.brandDark
-                                    : context.colors.brand),
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(6),
-                          ),
-                        ),
-                      ),
+                      color: isEmpty
+                          ? context.colors.borderSoft
+                          : (i == bars.length - 1
+                                ? context.colors.brandDark
+                                : context.colors.brand),
                     ),
                   ),
                   if (i != bars.length - 1) const SizedBox(width: 6),
@@ -160,6 +159,56 @@ class ChartCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One chart column: a full-height hover target (so short bars are still easy
+/// to point at) with a bottom-anchored bar, wrapped in a stats [Tooltip].
+class _HoverBar extends StatelessWidget {
+  const _HoverBar({
+    required this.heightFactor,
+    required this.color,
+    this.tooltip,
+  });
+
+  final double heightFactor;
+  final Color color;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final bar = Container(
+      alignment: Alignment.bottomCenter,
+      child: FractionallySizedBox(
+        heightFactor: heightFactor,
+        child: Container(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+          ),
+        ),
+      ),
+    );
+
+    if (tooltip == null || tooltip!.isEmpty) return bar;
+    return Tooltip(
+      message: tooltip!,
+      preferBelow: false,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      textStyle: AppTextStyles.bodySmall().copyWith(
+        color: Colors.white,
+        fontSize: 12,
+        height: 1.4,
+      ),
+      child: bar,
     );
   }
 }

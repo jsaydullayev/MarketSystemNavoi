@@ -9,6 +9,8 @@ public static class AuditEntityTypes
     public const string Sale = "Sale";
     public const string Payment = "Payment";
     public const string Zakup = "Zakup";
+    public const string ZakupReceipt = "ZakupReceipt";
+    public const string Supplier = "Supplier";
     public const string Debt = "Debt";
     public const string Auth = "Auth";
     public const string User = "User";
@@ -18,6 +20,10 @@ public static class AuditEntityTypes
     public const string Shift = "Shift";
     public const string RegistrationRequest = "RegistrationRequest";
     public const string Product = "Product";
+    // Server-side fault captured by the global exception handler (5xx). Surfaces
+    // in the security journal's "Suspicious" tab so the Owner/developer can read
+    // the status code + message and fix it.
+    public const string Error = "Error";
 }
 
 /// <summary>Canonical <c>AuditLog.Action</c> values.</summary>
@@ -51,4 +57,7 @@ public static class AuditActions
     // flow (e.g. after a physical inventory count). Fraud-sensitive, so it gets
     // its own action rather than a generic Update for the security journal.
     public const string StockAdjust = "StockAdjust";
+
+    // A server-side fault (5xx) recorded by the global exception handler.
+    public const string Error = "Error";
 }

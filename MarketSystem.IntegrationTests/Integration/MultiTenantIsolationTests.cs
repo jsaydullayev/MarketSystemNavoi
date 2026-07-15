@@ -82,7 +82,8 @@ public class MultiTenantIsolationTests : TestBase
     private UserService CreateUserService()
     {
         var unitOfWork = new UnitOfWork(DbContext, NullLogger<UnitOfWork>.Instance);
-        return new UserService(unitOfWork, DbContext, CurrentMarketServiceMock.Object);
+        return new UserService(
+            unitOfWork, DbContext, CurrentMarketServiceMock.Object, new FakeUserTokenEpochStore());
     }
 
     // ─── UserService ─────────────────────────────────────────────────────

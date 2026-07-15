@@ -132,6 +132,7 @@ public partial class SaleService : ISaleService
         s.TotalAmount,
         s.PaidAmount,
         s.TotalAmount - s.PaidAmount,
+        s.DiscountAmount,
         s.CreatedAt,
         s.SaleItems.Select(si =>
         {
@@ -1095,9 +1096,16 @@ public partial class SaleService : ISaleService
     /// </summary>
     private async Task RecalculateSaleTotalAsync(Sale sale, CancellationToken cancellationToken = default)
     {
-        sale.TotalAmount = await _context.SaleItems
+        var gross = await _context.SaleItems
             .Where(si => si.SaleId == sale.Id)
             .SumAsync(si => si.SalePrice * si.Quantity, cancellationToken);
+
+        // Sale-level chegirma (skidka) reduces the charged total below the gross
+        // item sum. Clamp at 0 so an over-large discount — or a fixed discount
+        // left on a sale whose items later shrank — can never push TotalAmount
+        // negative and corrupt every report that sums TotalAmount. Item
+        // SalePrices are untouched; only the aggregate bill drops.
+        sale.TotalAmount = Math.Max(0m, gross - sale.DiscountAmount);
         _unitOfWork.Sales.Update(sale);
     }
 
@@ -1303,6 +1311,7 @@ public partial class SaleService : ISaleService
             sale.TotalAmount,
             sale.PaidAmount,
             sale.TotalAmount - sale.PaidAmount,
+            sale.DiscountAmount,
             sale.CreatedAt,
             itemsDto,
             paymentsDto
@@ -1494,6 +1503,7 @@ public partial class SaleService : ISaleService
                 sale.TotalAmount,
                 sale.PaidAmount,
                 sale.TotalAmount - sale.PaidAmount,
+                sale.DiscountAmount,
                 sale.CreatedAt,
                 itemsDto,
                 paymentsDto
@@ -1660,6 +1670,71 @@ public partial class SaleService : ISaleService
                 saleItem.Comment,
                 saleItem.IsExternal
             );
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets a sale-level chegirma (skidka) on a Draft/Debt sale. Mirrors
+    /// UpdateSaleItemPriceAsync: persist the discount, recompute the charged
+    /// TotalAmount via the single choke point (RecalculateSaleTotalAsync now
+    /// subtracts DiscountAmount), then re-sync any open debt against the new
+    /// total. Item SalePrices are left untouched, so per-item history and the
+    /// invoice line items stay intact — only the bill total drops.
+    /// </summary>
+    public async Task<SaleDto?> SetSaleDiscountAsync(Guid saleId, decimal discountAmount, CancellationToken cancellationToken = default)
+    {
+        if (discountAmount < 0)
+            throw new InvalidOperationException("Chegirma manfiy bo'lmasin");
+
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var sale = await _context.Sales
+                .FirstOrDefaultAsync(s => s.Id == saleId && s.MarketId == marketId, cancellationToken);
+
+            if (sale == null)
+                throw new InvalidOperationException("Sotuv topilmadi");
+
+            // Chegirmani faqat qurilayotgan (Draft) yoki Qarz holatidagi
+            // sotuvda o'zgartirish mumkin — yakunlangan (Paid/Closed/Cancelled)
+            // sotuvning tarixiy summasi muzlatilgan bo'lishi kerak.
+            if (sale.Status != SaleStatus.Draft && sale.Status != SaleStatus.Debt)
+                throw new InvalidOperationException(
+                    "Chegirmani faqat Draft yoki Qarz holatidagi sotuvlarda qo'llash mumkin");
+
+            // Chegirma jami item summasidan oshmasin — aks holda TotalAmount 0 ga
+            // clamp bo'lib, oshib ketgan qism jimgina yo'qolardi.
+            var gross = await _context.SaleItems
+                .Where(si => si.SaleId == sale.Id)
+                .SumAsync(si => si.SalePrice * si.Quantity, cancellationToken);
+            if (discountAmount > gross)
+                throw new InvalidOperationException("Chegirma jami summadan oshib ketmasligi kerak");
+
+            sale.DiscountAmount = discountAmount;
+            _unitOfWork.Sales.Update(sale);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Recompute charged total (gross − discount) via the choke point.
+            await RecalculateSaleTotalAsync(sale, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            if (sale.Status == SaleStatus.Debt)
+            {
+                var debt = await _context.Debts
+                    .FirstOrDefaultAsync(d => d.SaleId == sale.Id && d.MarketId == marketId, cancellationToken);
+                if (debt != null)
+                {
+                    debt.TotalDebt = sale.TotalAmount;
+                    debt.RemainingDebt = Math.Max(0, sale.TotalAmount - sale.PaidAmount);
+                    if (debt.RemainingDebt <= 0)
+                        debt.Status = DebtStatus.Closed;
+                    _context.Debts.Update(debt);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+            }
+
+            return await MapToDtoAsync(sale, cancellationToken);
         }, cancellationToken);
     }
 

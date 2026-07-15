@@ -138,6 +138,13 @@ class DashboardDrawer extends StatelessWidget {
           label: l10n.zakup,
           onTap: () => go(() => Navigator.pushNamed(context, AppRoutes.zakup)),
         ),
+      if (context.can(Permissions.suppliersAccess))
+        _SettingsTile(
+          icon: Icons.local_shipping_rounded,
+          label: l10n.suppliersTitle,
+          onTap: () =>
+              go(() => Navigator.pushNamed(context, AppRoutes.suppliers)),
+        ),
       if (context.can(Permissions.cashRegisterAccess))
         _SettingsTile(
           icon: Icons.account_balance_wallet_rounded,

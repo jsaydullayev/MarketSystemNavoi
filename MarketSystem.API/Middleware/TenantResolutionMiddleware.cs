@@ -1,4 +1,3 @@
-using System.Net;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using MarketSystem.Infrastructure.Data;
@@ -114,45 +113,12 @@ public class TenantResolutionMiddleware
             return;
         }
 
-        // Agar token'da MarketId bo'lmasa, subdomain bo'yicha qidiramiz (ikkinchi prioritet)
-        var host = context.Request.Host.Host;
-        if (!host.Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
-            host.Contains('.') &&
-            !System.Net.IPAddress.TryParse(host, out _))
-        {
-            var subdomain = host.Split('.')[0];
-            var market = await dbContext.Markets
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.Subdomain == subdomain);
-
-            if (market != null)
-            {
-                // Same block enforcement as the JWT path — without this, a
-                // blocked market could still be reached via its subdomain URL.
-                if (market.IsBlocked)
-                {
-                    _logger.LogWarning(
-                        "Request rejected — market {MarketId} (subdomain {Subdomain}) is blocked. Path={Path}",
-                        market.Id, subdomain, context.Request.Path);
-                    context.Response.StatusCode = 423;
-                    context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(new
-                    {
-                        code = "MARKET_BLOCKED",
-                        message = "Do'kon administrator tomonidan bloklangan. Iltimos, administrator bilan bog'laning.",
-                        reason = market.BlockedReason,
-                        blockedAt = market.BlockedAt,
-                        statusCode = 423
-                    });
-                    return;
-                }
-
-                context.Items["MarketId"] = market.Id;
-                _logger.LogInformation("MarketId set from subdomain: {Subdomain} -> {MarketId}", subdomain, market.Id);
-                await _next(context);
-                return;
-            }
-        }
+        // DIQQAT: bu yerda ilgari subdomain (Host header) bo'yicha fallback bor edi —
+        // qayta qo'shmang. Host header'ni to'liq klient boshqaradi, va u orqali topilgan
+        // market uchun foydalanuvchi a'zoligi (membership) hech qachon tekshirilmagan edi:
+        // MarketId claim'i yo'q token bilan istalgan tenant ichida ishlash mumkin bo'lardi
+        // (Owner esa barcha permission tekshiruvlarini chetlab o'tadi). Tenant faqat
+        // imzolangan JWT `MarketId` claim'idan olinadi; claim bo'lmasa — quyidagi 403.
 
         // MarketId topilmadi — user authenticated lekin market ga ruxsat yo'q → 403
         _logger.LogWarning("MarketId not found for user {User}, path {Path}",

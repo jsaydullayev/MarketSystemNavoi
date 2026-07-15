@@ -251,7 +251,65 @@ public class AuditLogService : IAuditLogService, IAuditLogQueryService
         var now = DateTime.UtcNow;
         var failedLoginBursts = await GetFailedLoginBurstsAsync(marketId, now, cancellationToken);
         var bulkDeleteBursts = await GetBulkDeleteBurstsAsync(marketId, now, cancellationToken);
-        return new SuspiciousActivityReport(failedLoginBursts, bulkDeleteBursts);
+        var recentErrors = await GetRecentErrorsAsync(marketId, now, cancellationToken);
+        return new SuspiciousActivityReport(failedLoginBursts, bulkDeleteBursts, recentErrors);
+    }
+
+    // Recent server-side faults (5xx) recorded by the global exception handler.
+    // Not a burst/threshold rule — just the latest problems the Owner/developer
+    // should see, newest first, over the last day.
+    private const int RecentErrorsWindowHours = 24;
+    private const int RecentErrorsMax = 50;
+
+    private async Task<IReadOnlyList<ErrorEntryDto>> GetRecentErrorsAsync(
+        int? marketId, DateTime now, CancellationToken ct)
+    {
+        var since = now.AddHours(-RecentErrorsWindowHours);
+        var query = _context.AuditLogs.AsNoTracking()
+            .Where(a => a.EntityType == AuditEntityTypes.Error && a.CreatedAt >= since);
+        if (marketId.HasValue)
+            query = query.Where(a => a.MarketId == marketId.Value);
+
+        var rows = await query
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(RecentErrorsMax)
+            .Select(a => new
+            {
+                a.Payload,
+                a.CreatedAt,
+                UserName = a.User != null ? a.User.FullName : null
+            })
+            .ToListAsync(ct);
+
+        return rows.Select(r => ParseError(r.Payload, r.CreatedAt, r.UserName)).ToList();
+    }
+
+    /// <summary>Pull the status code / message / path out of an Error payload.
+    /// Defensive against malformed JSON — a bad row degrades to a generic 500
+    /// entry rather than crashing the report.</summary>
+    private static ErrorEntryDto ParseError(string payload, DateTime createdAt, string? userName)
+    {
+        int status = 500;
+        string message = string.Empty;
+        string? path = null;
+        string? method = null;
+        try
+        {
+            using var doc = JsonDocument.Parse(payload);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (root.TryGetProperty("StatusCode", out var s) && s.TryGetInt32(out var sc)) status = sc;
+                if (root.TryGetProperty("Message", out var m) && m.ValueKind == JsonValueKind.String) message = m.GetString() ?? string.Empty;
+                if (root.TryGetProperty("Path", out var p) && p.ValueKind == JsonValueKind.String) path = p.GetString();
+                if (root.TryGetProperty("Method", out var me) && me.ValueKind == JsonValueKind.String) method = me.GetString();
+            }
+        }
+        catch (JsonException)
+        {
+            // swallowed — a bad payload doesn't crash the report.
+        }
+        return new ErrorEntryDto(status, message, path, method, userName, createdAt);
     }
 
     private async Task<IReadOnlyList<FailedLoginBurstDto>> GetFailedLoginBurstsAsync(

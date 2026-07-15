@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/auth/permissions.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/utils/number_formatter.dart';
@@ -42,9 +43,9 @@ class ProductRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final canZakup =
-        authProvider.user?['role'] == 'Admin' ||
-        authProvider.user?['role'] == 'Owner';
+    // Gate on the granted `zakup.create` permission, not the raw role — an Owner
+    // may grant it to a Seller. `can()` bypasses Owner/SuperAdmin automatically.
+    final canZakup = authProvider.can(Permissions.zakupCreate);
 
     final qty = (product['quantity'] as num?)?.toDouble() ?? 0.0;
     final minThreshold = (product['minThreshold'] as num?)?.toDouble() ?? 0.0;

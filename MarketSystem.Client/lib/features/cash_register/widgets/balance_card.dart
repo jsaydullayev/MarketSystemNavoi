@@ -27,24 +27,43 @@ class BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = cashBalance + clickBalance;
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Dark theme: drop the bright brand gradient for a calm brand-tinted dark
+    // surface, so the card doesn't glare against the dark background. Light
+    // theme keeps the brand "hero" gradient.
+    final gradientColors = isDark
+        ? [
+            Color.alphaBlend(
+              context.colors.brand.withValues(alpha: 0.20),
+              AppColors.darkSurface,
+            ),
+            AppColors.darkSurface,
+          ]
+        : [context.colors.brand, context.colors.brandDark];
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl3),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [context.colors.brand, context.colors.brandDark],
+          colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl2),
-        boxShadow: [
-          BoxShadow(
-            color: context.colors.brand.withValues(alpha: 0.30),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: isDark
+            ? Border.all(color: AppColors.darkBorder)
+            : null,
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: context.colors.brand.withValues(alpha: 0.30),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

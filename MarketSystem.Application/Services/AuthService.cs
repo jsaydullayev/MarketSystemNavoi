@@ -292,36 +292,40 @@ public class AuthService : IAuthService
         if (refreshToken is null || refreshToken.ExpiresAt < DateTime.UtcNow)
             return null;
 
-        // S1 — refresh-token rotation reuse detection (RFC 6749 §10.4 / OAuth
-        // best-current-practice). If someone presents an ALREADY-USED or
-        // REVOKED token, that's a strong signal of theft: the legitimate
-        // user rotated it (or we revoked it on another security event) and
-        // a second copy is now in the attacker's hand. Don't just refuse —
-        // burn the entire family for that user so the attacker can't keep
-        // refreshing with another stolen token from the same chain.
-        if (refreshToken.IsUsed || refreshToken.IsRevoked)
+        // S8 — EGALIK tekshiruvi reuse-detection'dan OLDIN turishi SHART.
+        // Aks holda istalgan autentifikatsiyalangan foydalanuvchi (masalan, oddiy
+        // Seller yoki boshqa tenant) qurbonning ALLAQACHON SARFLANGAN refresh
+        // token satrini qo'lga kiritsa, uni butun qurilmalaridan chiqarib yuborishi
+        // mumkin edi (force-logout DoS) — chunki reuse-detection oilani TOKEN
+        // EGASI bo'yicha kuydiradi. Sarflangan tokenlar arzon oshkor bo'ladi,
+        // shuning uchun oilani kuydirish faqat imzolangan access token bilan
+        // zanjir egaligini ISBOTLAGAN chaqiruvchi uchun ochiladi.
+        if (refreshToken.UserId != userId)
         {
-            _logger.LogWarning(
-                "Refresh-token reuse detected for user {UserId} (token IsUsed={IsUsed}, IsRevoked={IsRevoked}). " +
-                "Revoking ALL refresh tokens for this user as a defensive measure.",
-                refreshToken.UserId, refreshToken.IsUsed, refreshToken.IsRevoked);
-            await _unitOfWork.RefreshTokens.RevokeAllForUserAsync(refreshToken.UserId, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _auditLogService.LogActionAsync(
-                AuditEntityTypes.Auth, refreshToken.UserId, AuditActions.LoginFailed, Guid.Empty,
-                new { reason = "refresh_token_reuse_detected", tokenId = refreshToken.Id },
-                cancellationToken);
+            // DIQQAT: begona tokenni bu yerda BEKOR QILMAYMIZ. Egalik tekshiruvi
+            // uni allaqachon ishlatib bo'lmaydigan qilib qo'ydi, lekin uni
+            // revoke qilsak — qurbonning TIRIK sessiyasini o'ldirgan bo'lardik.
+            // Ya'ni "ishlatib bo'lmaydigan oshkor token" hujumchi qo'lida
+            // majburiy-logout quroliga aylanardi. Shunchaki rad etamiz.
+            _logger.LogWarning("Refresh token user mismatch. AccessTokenUser={AccessUser} RefreshTokenUser={RefreshUser}", userId, refreshToken.UserId);
             return null;
         }
 
-        // Ensure the refresh token belongs to the same user as the access token.
-        if (refreshToken.UserId != userId)
+        // S9 — sessiyaning MUTLAQ umri. ExpiresAt har rotatsiyada yangilanadi,
+        // shuning uchun o'g'irlangan tokenni muddat tugashidan oldin aylantirib
+        // turgan hujumchi hisobni ABADIY ushlab tura olardi. SessionStartedAt
+        // esa zanjir boshidan ko'chiriladi — bu chegara qat'iy: undan keyin
+        // to'liq qayta autentifikatsiya majburiy.
+        if (refreshToken.SessionStartedAt.AddDays(_jwtSetting.MaxSessionDays) < DateTime.UtcNow)
         {
-            _logger.LogWarning("Refresh token user mismatch. AccessTokenUser={AccessUser} RefreshTokenUser={RefreshUser}", userId, refreshToken.UserId);
-            // Defensive: revoke the leaked refresh token to limit blast radius.
+            // FAQAT shu zanjirni o'ldiramiz, RevokeAllForUserAsync EMAS: aks holda
+            // 30-kunlik limitga yetgan eski desktop sessiyasi foydalanuvchining
+            // kecha telefonda ochgan MUTLAQO YANGI sessiyasini ham o'ldirardi.
+            _logger.LogWarning(
+                "Refresh denied — absolute session lifetime exceeded for user {UserId} (session started {StartedAt:O}, max {MaxDays} days). Revoking this chain.",
+                refreshToken.UserId, refreshToken.SessionStartedAt, _jwtSetting.MaxSessionDays);
             refreshToken.IsRevoked = true;
             refreshToken.RevokedAt = DateTime.UtcNow;
-            _unitOfWork.RefreshTokens.Update(refreshToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return null;
         }
@@ -360,10 +364,58 @@ public class AuthService : IAuthService
             return null;
         }
 
-        // Mark current refresh token as used (one-time use)
-        refreshToken.IsUsed = true;
-        _unitOfWork.RefreshTokens.Update(refreshToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // S10 — tokenni bir martalik qilish ATOMIK bo'lishi kerak. Eski kod
+        // "o'qi → IsUsed'ni tekshir → yoz → saqla" qilardi; bu oynada ikki
+        // parallel refresh (masalan, ikki tab — har birining o'z single-flight'i
+        // bor, klient buni oldini ololmaydi) ikkalasi ham IsUsed=false ko'rib,
+        // ikkita oila chiqarardi yoki yutqazgani reuse-detection'ni qo'zg'atib
+        // foydalanuvchini o'zi tizimdan chiqarib yuborardi ("tasodifiy logout").
+        // TryClaimAsync — bitta shartli UPDATE, faqat bitta g'olib bo'ladi.
+        var claimedAtUtc = DateTime.UtcNow;
+        var claimed = await _unitOfWork.RefreshTokens.TryClaimAsync(refreshToken.Id, claimedAtUtc, cancellationToken);
+        if (!claimed)
+        {
+            // Claim'ni yutqazdik: token allaqachon sarflangan yoki bekor qilingan.
+            // Xotiradagi nusxa eskirgan (ExecuteUpdate tracker'ni chetlab o'tadi),
+            // shuning uchun qarorni DB'dagi YANGI holat bo'yicha chiqaramiz.
+            var current = await _unitOfWork.RefreshTokens.GetByIdNoTrackingAsync(refreshToken.Id, cancellationToken);
+            if (current is null)
+                return null;
+
+            if (current.IsRevoked)
+            {
+                // Oila allaqachon o'lik (logout, sessiya limiti yoki oldingi
+                // kuydirish). Uni QAYTA kuydirmaymiz: aks holda oddiy "bir tabda
+                // Chiqish bosildi, ikkinchisida refresh uchib ketayotgan edi"
+                // holati soxta "o'g'irlik aniqlandi" auditini yozardi.
+                _logger.LogInformation("Refresh rejected — token already revoked. User={UserId}", current.UserId);
+                return null;
+            }
+
+            if (!IsBenignReplay(current))
+            {
+                await BurnFamilyAsync(current, cancellationToken);
+                return null;
+            }
+
+            // Grace oynasi ichidagi qayta taqdim etish — O'G'IRLIK EMAS:
+            //  • ikki tab bir vaqtda refresh qildi (har birining o'z single-flight'i
+            //    bor, klient buni oldini ola olmaydi), YOKI
+            //  • server rotatsiya qildi, lekin javob yo'lda yo'qoldi (redeploy
+            //    paytidagi 502 / timeout) va klient hali eski tokenni ushlab turibdi.
+            //
+            // Ikkala holatda ham chaqiruvchi imzolangan access token bilan zanjir
+            // EGALIGINI isbotlagan. Shuning uchun uni rad etmaymiz — o'sha zanjirdan
+            // YANGI juftlik beramiz. (Rad etsak, klient eski tokenni qayta-qayta
+            // yuboraverib, grace tugagach o'g'irlik deb baholanardi va oila
+            // kuydirilib, foydalanuvchi baribir tizimdan chiqib ketardi — ya'ni
+            // biz tuzatmoqchi bo'lgan xatoning aynan o'zi.)
+            _logger.LogInformation(
+                "Benign refresh replay for user {UserId} — token rotated {Age:0.###}s ago (grace {Grace}s). Re-issuing from the same chain.",
+                current.UserId,
+                (DateTime.UtcNow - current.UsedAt!.Value).TotalSeconds,
+                _jwtSetting.RefreshRaceGraceSeconds);
+        }
 
         // Revoke the OLD access token's jti so the previous bearer can no
         // longer hit authenticated endpoints with it. Without this, an attacker
@@ -375,7 +427,47 @@ public class AuthService : IAuthService
             await _revokedTokens.RevokeAsync(ot.Jti, ot.ExpiresAtUtc, cancellationToken);
         }
 
-        return await GenerateAuthResponseAsync(user, cancellationToken);
+        // Sessiya boshlanish vaqti ota-tokendan KO'CHIRILADI — hech qachon
+        // qaytadan boshlanmaydi (S9 mutlaq limiti shunga tayanadi).
+        return await GenerateAuthResponseAsync(user, cancellationToken, refreshToken.SessionStartedAt);
+    }
+
+    /// <summary>
+    /// Sarflangan token qayta taqdim etildi — bu XAYRIXOH takrormi?
+    ///
+    /// Xayrixoh = bekor qilinmagan + rotatsiya orqali ishlatilgan + grace oynasi
+    /// ichida. Ya'ni ikki tab poygasi yoki "javob yo'lda yo'qoldi" holati.
+    /// Legacy satrlarda UsedAt = null (bu ustun kiritilishidan oldin ishlatilgan) —
+    /// ular xayrixoh emas: yoshini bilolmaymiz, shuning uchun ehtiyot yuzasidan
+    /// o'g'irlik deb qaraladi.
+    ///
+    /// Chaqiruvchi buni FAQAT egalik tekshiruvidan keyin ishlatishi shart.
+    /// </summary>
+    private bool IsBenignReplay(RefreshToken token) =>
+        !token.IsRevoked &&
+        token.UsedAt is { } usedAt &&
+        DateTime.UtcNow - usedAt <= TimeSpan.FromSeconds(_jwtSetting.RefreshRaceGraceSeconds);
+
+    /// <summary>
+    /// S1 — refresh-token reuse detection (RFC 6749 §10.4 / OAuth BCP).
+    /// Grace oynasidan TASHQARIDA sarflangan token taqdim etilishi — o'g'irlikning
+    /// kuchli belgisi: qonuniy foydalanuvchi uni allaqachon aylantirgan, ikkinchi
+    /// nusxa esa hujumchi qo'lida. Faqat rad etish yetarli emas — butun oilani
+    /// kuydiramiz, aks holda hujumchi o'sha zanjirdagi boshqa token bilan davom
+    /// etaverardi.
+    /// </summary>
+    private async Task BurnFamilyAsync(RefreshToken token, CancellationToken cancellationToken)
+    {
+        _logger.LogWarning(
+            "Refresh-token reuse detected for user {UserId} (IsUsed={IsUsed}, UsedAt={UsedAt:O}). " +
+            "Revoking ALL refresh tokens for this user as a defensive measure.",
+            token.UserId, token.IsUsed, token.UsedAt);
+        await _unitOfWork.RefreshTokens.RevokeAllForUserAsync(token.UserId, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _auditLogService.LogActionAsync(
+            AuditEntityTypes.Auth, token.UserId, AuditActions.LoginFailed, Guid.Empty,
+            new { reason = "refresh_token_reuse_detected", tokenId = token.Id },
+            cancellationToken);
     }
 
     public async Task<bool> LogoutAsync(string refreshToken, Guid callerUserId, string? accessTokenJti, DateTime? accessTokenExpiry, CancellationToken cancellationToken = default)
@@ -408,7 +500,16 @@ public class AuthService : IAuthService
         return true;
     }
 
-    private async Task<AuthResponse> GenerateAuthResponseAsync(User user, CancellationToken cancellationToken)
+    /// <param name="sessionStartedAt">
+    /// Rotatsiyada ota-tokendan MEROS olingan sessiya boshlanish vaqti. null bo'lsa
+    /// (login/register) — yangi sessiya boshlanadi. Rotatsiyada hech qachon
+    /// yangilanmasligi shart, aks holda mutlaq sessiya limiti (MaxSessionDays)
+    /// har refresh'da qaytadan boshlanib, cheksiz sessiyaga aylanadi.
+    /// </param>
+    private async Task<AuthResponse> GenerateAuthResponseAsync(
+        User user,
+        CancellationToken cancellationToken,
+        DateTime? sessionStartedAt = null)
     {
         try
         {
@@ -427,6 +528,7 @@ public class AuthService : IAuthService
                 UserId = user.Id,
                 Token = RefreshTokenHasher.Hash(refreshToken),
                 ExpiresAt = DateTime.UtcNow.AddDays(_jwtSetting.RefreshTokenExpireDays),
+                SessionStartedAt = sessionStartedAt ?? DateTime.UtcNow,
                 IsUsed = false,
                 IsRevoked = false
             };

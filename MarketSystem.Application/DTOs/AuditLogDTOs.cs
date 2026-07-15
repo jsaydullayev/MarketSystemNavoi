@@ -46,7 +46,25 @@ public record SuspiciousActivityReport(
     [property: JsonPropertyName("failedLoginBursts")]
     IReadOnlyList<FailedLoginBurstDto> FailedLoginBursts,
     [property: JsonPropertyName("bulkDeleteBursts")]
-    IReadOnlyList<BulkDeleteBurstDto> BulkDeleteBursts
+    IReadOnlyList<BulkDeleteBurstDto> BulkDeleteBursts,
+    // Recent server-side faults (5xx) captured by the global exception handler.
+    // Surfaced so the Owner/developer can read the status code + message and fix
+    // the problem without trawling server logs.
+    [property: JsonPropertyName("recentErrors")]
+    IReadOnlyList<ErrorEntryDto> RecentErrors
+);
+
+/// <summary>
+/// One recorded server-side fault, projected for the "Suspicious" tab. The
+/// fields are parsed out of the audit payload the exception handler wrote.
+/// </summary>
+public record ErrorEntryDto(
+    [property: JsonPropertyName("statusCode")] int StatusCode,
+    [property: JsonPropertyName("message")] string Message,
+    [property: JsonPropertyName("path")] string? Path,
+    [property: JsonPropertyName("method")] string? Method,
+    [property: JsonPropertyName("userName")] string? UserName,
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt
 );
 
 /// <summary>

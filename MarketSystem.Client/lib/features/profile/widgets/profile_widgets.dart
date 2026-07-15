@@ -349,7 +349,7 @@ class ProfileEditableField extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: context.colors.brandLight,
+              color: context.colors.brand.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(AppRadius.md - 1),
             ),
             child: Icon(
@@ -425,7 +425,7 @@ class ProfileInfoRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: context.colors.brandLight,
+              color: context.colors.brand.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(AppRadius.md - 1),
             ),
             child: Icon(icon, size: 16, color: context.colors.brand),

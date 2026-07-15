@@ -22,7 +22,11 @@ public record UserDto(
     [property: JsonPropertyName("isShiftActive")] bool IsShiftActive,
     // Owner RBAC — the user's effective permission set (full catalogue for
     // Owner/SuperAdmin). Lets the client gate its UI without a second call.
-    [property: JsonPropertyName("permissions")] IReadOnlyList<string> Permissions
+    [property: JsonPropertyName("permissions")] IReadOnlyList<string> Permissions,
+    // The user's market name — shown in the profile (Owner can edit it) and used
+    // on the sale-receipt PDF. Populated when the Market nav is loaded; null
+    // otherwise (e.g. SuperAdmin, or list endpoints that don't need it).
+    [property: JsonPropertyName("marketName")] string? MarketName = null
 );
 
 /// <summary>

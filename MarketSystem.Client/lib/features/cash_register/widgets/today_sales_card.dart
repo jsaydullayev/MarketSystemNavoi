@@ -64,7 +64,7 @@ class TodaySalesCard extends StatelessWidget {
                 vertical: AppSpacing.md + 2,
               ),
               decoration: BoxDecoration(
-                color: AppColors.warningLight,
+                color: AppColors.warning.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
@@ -108,7 +108,7 @@ class _KpiTile extends StatelessWidget {
         vertical: AppSpacing.lg,
       ),
       decoration: BoxDecoration(
-        color: context.colors.brandLight,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
@@ -117,7 +117,7 @@ class _KpiTile extends StatelessWidget {
           Text(
             value,
             style: AppTextStyles.titleMedium().copyWith(
-              color: context.colors.brandDark,
+              color: context.colors.text,
               fontWeight: FontWeight.w800,
               fontSize: 18,
             ),
@@ -129,7 +129,7 @@ class _KpiTile extends StatelessWidget {
             label.toUpperCase(),
             textAlign: TextAlign.center,
             style: AppTextStyles.caption().copyWith(
-              color: context.colors.brandDark,
+              color: context.colors.textMuted,
               fontSize: 10,
             ),
           ),

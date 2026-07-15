@@ -267,6 +267,39 @@ const List<PermissionGroup> permissionGroups = [
           '(вычитается). Для очистки ошибочной закупки.',
     ),
   ]),
+  PermissionGroup('Yetkazib beruvchilar', 'Postavshiki', [
+    PermissionEntry(
+      Permissions.suppliersAccess,
+      "Ko'rish",
+      'Prosmotr',
+      descUz:
+          "Yetkazib beruvchilar ro'yxatini va ularga qarzni ko'rish; "
+          "zakup qo'shishda yetkazib beruvchini tanlash.",
+      descRu:
+          'Просмотр списка поставщиков и долга перед ними; выбор поставщика '
+          'при добавлении закупки.',
+    ),
+    PermissionEntry(
+      Permissions.suppliersManage,
+      "Qo'shish / tahrirlash",
+      'Dobavlenie / redaktirovanie',
+      descUz:
+          "Yangi yetkazib beruvchi qo'shish va mavjudini tahrirlash; "
+          "priyomkaga to'lov kiritish.",
+      descRu:
+          'Добавление нового поставщика и редактирование существующего; '
+          'внесение оплаты по накладной.',
+    ),
+    PermissionEntry(
+      Permissions.suppliersDelete,
+      "O'chirish",
+      'Udalenie',
+      descUz:
+          "Yetkazib beruvchini o'chirish. Xaridlar tarixi saqlanadi.",
+      descRu:
+          'Удаление поставщика. История закупок сохраняется.',
+    ),
+  ]),
   PermissionGroup('Kassa', 'Kassa', [
     PermissionEntry(
       Permissions.cashRegisterAccess,
