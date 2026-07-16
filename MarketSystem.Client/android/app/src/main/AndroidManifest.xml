@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -12,6 +13,15 @@
         android:maxSdkVersion="28" />
     <!-- Android 13+ (API 33+) uchun granular media permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- image_picker_android plagini pickImage() BILAN BIRGA video/audio
+         picker uchun mo'ljallangan ruxsatlarni ham o'z manifestiga qo'shadi
+         (manifest merge orqali), garchi ilova kodida pickVideo() umuman
+         chaqirilmasa ham (tekshirildi: lib/ ichida yo'q). Google Play
+         ishlatilmagan ruxsat uchun asossiz deklaratsiyani rad etishi mumkin —
+         shuning uchun ularni aniq OLIB TASHLAYMIZ, "asoslash" o'rniga. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
 
     <application
         android:label="Strotech"

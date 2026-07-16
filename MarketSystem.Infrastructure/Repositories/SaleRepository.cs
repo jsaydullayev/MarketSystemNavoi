@@ -20,7 +20,13 @@ public class SaleRepository : BaseRepository<Sale>, ISaleRepository
 
     public async Task<Sale?> GetWithDetailsAsync(Guid saleId, int marketId, CancellationToken cancellationToken = default)
     {
+        // Sale.Seller is a REQUIRED navigation, so Include(s => s.Seller) INNER-JOINs
+        // User and enforces its `!IsDeleted` global filter — a sale whose seller was
+        // soft-deleted would return null (a phantom 404). IgnoreQueryFilters() lifts
+        // ALL global filters, so re-apply Sale's own soft-delete guard by hand.
         return await _dbSet
+            .IgnoreQueryFilters()
+            .Where(s => !s.IsDeleted)
             .Include(s => s.SaleItems)
             .Include(s => s.Payments)
             .Include(s => s.Debt)

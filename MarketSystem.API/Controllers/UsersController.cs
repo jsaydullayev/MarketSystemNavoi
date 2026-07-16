@@ -4,6 +4,7 @@ using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Interfaces;
 using MarketSystem.API.Authorization;
 using MarketSystem.Domain.Constants;
+using MarketSystem.Domain.Enums;
 using MarketSystem.Domain.Interfaces;
 using System.Security.Claims;
 using System.Text.Json;
@@ -88,6 +89,19 @@ public class UsersController : ControllerBase
     [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto request)
     {
+        // Escalation guard: minting an Owner is Owner/SuperAdmin-only. An Admin
+        // may hold users.manage (enough to create Admin/Seller), but must never
+        // be able to create an Owner and thereby escalate its own tenant
+        // privileges. Client-side role hiding is not sufficient — a hand-crafted
+        // POST would otherwise reach the service, so enforce it here too.
+        if (Enum.TryParse<Role>(request.Role, ignoreCase: true, out var requestedRole) &&
+            requestedRole == Role.Owner)
+        {
+            var callerRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (callerRole is not ("Owner" or "SuperAdmin"))
+                return Forbid();
+        }
+
         try
         {
             var user = await _userService.CreateUserAsync(request);

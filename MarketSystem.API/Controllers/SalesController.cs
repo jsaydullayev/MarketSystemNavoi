@@ -215,6 +215,30 @@ public class SalesController : ControllerBase
     }
 
     /// <summary>
+    /// Aralash (multi-tender) to'lov — barcha bo'laklarni bitta atomik so'rovda
+    /// yuboradi. Mijoz talabi/ortiqcha to'lov bo'laklar yig'indisiga qarab
+    /// tekshiriladi, shuning uchun mijozsiz savdo ham naqd + karta bo'lib to'liq
+    /// to'lanadi (eski har-bo'lak-alohida oqim birinchi qisman bo'lakda xato berardi).
+    /// </summary>
+    [HttpPost("{saleId}/payments/batch")]
+    [RequirePermission(PermissionKeys.SalesCreate)]
+    public async Task<ActionResult<PaymentDto>> AddPayments(Guid saleId, [FromBody] AddPaymentsDto request, CancellationToken ct = default)
+    {
+        try
+        {
+            var payment = await _saleService.AddPaymentsAsync(saleId, request.Payments, ct);
+            if (payment is null)
+                return NotFound();
+
+            return Ok(payment);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Sotuvga sale-level chegirma (skidka) qo'llash. Kassa to'lov oynasidan
     /// chaqiriladi — mahsulotlar qo'shilgach, to'lovdan oldin. Item narxlariga
     /// tegmaydi; faqat umumiy hisobni (TotalAmount) kamaytiradi, keyingi

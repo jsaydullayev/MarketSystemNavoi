@@ -111,10 +111,14 @@ public class UserService : IUserService
         if (!Enum.TryParse<Role>(request.Role, ignoreCase: true, out var role))
             throw new InvalidOperationException($"Invalid role: '{request.Role}'");
 
-        // Only Admin and Seller can be created through this endpoint.
-        // Owner is created via self-registration; SuperAdmin is provisioned out-of-band.
-        if (role is not (Role.Admin or Role.Seller))
-            throw new InvalidOperationException("Faqat Admin yoki Seller foydalanuvchi yaratish mumkin.");
+        // Admin, Seller, and Owner can be created here (an Owner may add a
+        // co-Owner). Creating an Owner is additionally gated to Owner/SuperAdmin
+        // callers in UsersController.CreateUser — an Admin holding users.manage
+        // must NOT be able to mint an Owner and self-escalate. SuperAdmin is
+        // never created through this tenant endpoint; it is provisioned
+        // out-of-band.
+        if (role is not (Role.Admin or Role.Seller or Role.Owner))
+            throw new InvalidOperationException("Faqat Owner, Admin yoki Seller foydalanuvchi yaratish mumkin.");
 
         var currentMarketId = _currentMarketService.TryGetCurrentMarketId();
         if (!currentMarketId.HasValue)

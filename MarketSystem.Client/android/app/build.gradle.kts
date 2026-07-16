@@ -47,7 +47,10 @@ android {
     }
 
     defaultConfig {
-        applicationId = "strotech.uz"
+        // Play Console'dagi "Название пакета" bilan AYNAN mos bo'lishi shart va
+        // bir marta tanlanadi (keyin O'ZGARMAYDI). strotech.uz band bo'lgani
+        // uchun strotech.uz1.
+        applicationId = "strotech.uz1"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutter.versionCode

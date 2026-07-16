@@ -118,7 +118,10 @@
       "Bash(xargs echo \"master o'zgartirgan fayllar soni:\")",
       "Bash(xargs echo \"session fayllar soni:\")",
       "Bash(xargs echo \"kesishgan fayllar soni:\")",
-      "Bash(grep -iE \"\\\\.env$|key\\\\.properties|appsettings\\\\.Development|google-services|secret|\\\\.pem$|\\\\.p12$|\\\\.keystore$|\\\\.jks$\")"
+      "Bash(grep -iE \"\\\\.env$|key\\\\.properties|appsettings\\\\.Development|google-services|secret|\\\\.pem$|\\\\.p12$|\\\\.keystore$|\\\\.jks$\")",
+      "Bash(read f *)",
+      "Bash(python -c 'import json; print\\(json.load\\(open\\('\\\\''__TRACKED_VAR__'\\\\''\\)\\).get\\('\\\\''applicationId'\\\\''\\)\\)')",
+      "Bash(awk '{print $5, \"bayt,\", $6, $7, $8}')"
     ],
     "additionalDirectories": [
       "C:\\Users\\joo\\Desktop\\MarketSystem\\MarketSystem.*",

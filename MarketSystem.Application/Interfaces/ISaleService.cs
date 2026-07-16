@@ -23,6 +23,10 @@ public interface ISaleService
     Task<SaleItemDto?> AddSaleItemAsync(Guid saleId, AddSaleItemDto request, CancellationToken cancellationToken = default);
     Task<SaleItemDto?> RemoveSaleItemAsync(Guid saleId, RemoveSaleItemDto request, CancellationToken cancellationToken = default);
     Task<PaymentDto?> AddPaymentAsync(Guid saleId, AddPaymentDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Aralash (multi-tender) to'lov — barcha bo'laklarni atomik qo'llaydi;
+    /// mijoz talabi va ortiqcha to'lov bo'laklar yig'indisiga nisbatan tekshiriladi.</summary>
+    Task<PaymentDto?> AddPaymentsAsync(Guid saleId, IReadOnlyList<AddPaymentDto> payments, CancellationToken cancellationToken = default);
     Task<SaleDto?> DeleteSaleAsync(Guid saleId, CancellationToken cancellationToken = default);
     /// <summary>
     /// Cancel a paid sale. <paramref name="adminId"/> MUST be the

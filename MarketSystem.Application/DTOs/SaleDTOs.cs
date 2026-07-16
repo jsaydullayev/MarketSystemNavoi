@@ -116,6 +116,18 @@ public record AddPaymentDto(
 );
 
 /// <summary>
+/// Aralash (multi-tender) to'lov — bir savdo uchun barcha to'lov bo'laklari,
+/// atomik qo'llanadi. Mijoz talabi bo'laklar YIG'INDISIGA qarab baholanadi, shu
+/// sabab mijozsiz savdo ham naqd + karta bo'lib to'liq to'lanishi mumkin.
+/// </summary>
+public record AddPaymentsDto(
+    [property: JsonPropertyName("payments")]
+    [param: Required(ErrorMessage = "To'lov(lar) majburiy")]
+    [param: MinLength(1, ErrorMessage = "Kamida bitta to'lov kiritilishi kerak")]
+    IReadOnlyList<AddPaymentDto> Payments
+);
+
+/// <summary>
 /// "Qarzga olish" (to'liq qarz) uchun ixtiyoriy to'lov muddati (due date).
 /// </summary>
 public record MarkSaleAsDebtDto(

@@ -430,19 +430,18 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
             listen: false,
           );
           final salesService = SalesService(authProvider: authProvider);
-          // Sequential, not Future.wait: multi-tender payments otherwise hit
-          // the single per-market CashRegister row and the per-sale Debt row
-          // concurrently, colliding on their xmin tokens → 409.
-          // Qarz qoldirilsa — standart to'lov muddati +14 kun (keyin Qarz
-          // bo'limidan aniq sanaga o'zgartirsa bo'ladi).
+          // Aralash to'lov — barcha bo'laklar BITTA atomik so'rovda ketadi.
+          // Backend yig'indini hisobga solib tekshiradi (mijozsiz savdo ham
+          // naqd + karta bo'lib to'liq to'lanadi) va CashRegister/Debt qatorini
+          // bir marta yangilaydi, shu sabab intra-checkout 409 ham bo'lmaydi.
+          // Qarz qoldirilsa — standart to'lov muddati +14 kun.
           final dueIso = useDebt
               ? DateTime.now().add(const Duration(days: 14)).toIso8601String()
               : null;
-          for (final payment in payments) {
-            await salesService.addPayment(
+          if (payments.isNotEmpty) {
+            await salesService.addPayments(
               saleId: widget.saleId,
-              paymentType: payment['paymentType'],
-              amount: payment['amount'],
+              payments: payments,
               dueDate: dueIso,
             );
           }

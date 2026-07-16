@@ -291,6 +291,41 @@ class SalesService {
     }
   }
 
+  /// Aralash (multi-tender) to'lov — barcha bo'laklarni BITTA atomik so'rovda
+  /// yuboradi. Backend bo'laklar yig'indisini hisobga solib tekshiradi, shu
+  /// sabab mijozsiz savdo ham naqd + karta bo'lib to'liq to'lanadi. Eski
+  /// har-bo'lak-alohida sikl birinchi qisman bo'lakni "mijozsiz qarz" deb
+  /// backend rad etardi.
+  Future<dynamic> addPayments({
+    required String saleId,
+    required List<Map<String, dynamic>> payments,
+    // Qisman to'lov qarz qoldirsa — qarz to'lov muddati (ISO-8601).
+    String? dueDate,
+  }) async {
+    final response = await _httpService.post(
+      '${ApiConstants.sales}/$saleId/payments/batch',
+      body: {
+        'payments': [
+          for (final p in payments)
+            {
+              'paymentType': p['paymentType'],
+              'amount': p['amount'],
+              if (dueDate != null) 'dueDate': dueDate,
+            },
+        ],
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw ApiException.fromResponse(
+        response,
+        fallbackMessage: 'Failed to add payments',
+      );
+    }
+  }
+
   // Savdoni qarzga yozish (Mark as Debt). dueDate — to'lov muddati (ISO-8601).
   Future<dynamic> markSaleAsDebt(String saleId, {String? dueDate}) async {
     final response = await _httpService.post(

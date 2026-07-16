@@ -345,19 +345,18 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               );
             }
 
-            // Payments SEQUENTIALLY too — multi-tender (e.g. Cash + Terminal)
-            // otherwise hits the single per-market CashRegister row and the
-            // per-sale Debt row concurrently → 409.
-            // Qarz qoldirilsa — standart to'lov muddati +14 kun (keyin Qarz
-            // bo'limidan aniq sanaga o'zgartirsa bo'ladi).
+            // Aralash to'lov — barcha bo'laklar BITTA atomik so'rovda ketadi.
+            // Backend yig'indini hisobga solib tekshiradi, shu sabab mijozsiz
+            // savdo ham naqd + karta bo'lib to'liq to'lanadi (eski har-bo'lak
+            // sikli birinchi qisman bo'lakni "mijozsiz qarz" deb rad etardi).
+            // Qarz qoldirilsa — standart to'lov muddati +14 kun.
             final dueIso = useDebt
                 ? DateTime.now().add(const Duration(days: 14)).toIso8601String()
                 : null;
-            for (final payment in payments) {
-              await salesService.addPayment(
+            if (payments.isNotEmpty) {
+              await salesService.addPayments(
                 saleId: saleId,
-                paymentType: payment['paymentType'],
-                amount: payment['amount'],
+                payments: payments,
                 dueDate: dueIso,
               );
             }
