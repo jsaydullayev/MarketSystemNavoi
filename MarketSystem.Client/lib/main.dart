@@ -2,6 +2,8 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:image_picker_android/image_picker_android.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 
 import 'core/app/main_app.dart';
 import 'core/utils/di.dart';
@@ -27,6 +29,19 @@ void main() async {
   // can stay unchanged.
   if (kReleaseMode) {
     debugPrint = (String? message, {int? wrapWidth}) {};
+  }
+
+  // Android 13+ (API 33+): galereyadan rasm tanlashda tizim Photo Picker'ini
+  // (ActivityResultContracts.PickVisualMedia) ishlatamiz. Photo Picker
+  // READ_MEDIA_IMAGES ruxsatini TALAB QILMAYDI — foydalanuvchi faqat o'zi
+  // tanlagan rasmni ilovaga uzatadi — shu bois Google Play "Photo and video
+  // permissions" siyosatiga to'liq mos keladi. Bu yoqilmasa image_picker eski
+  // ACTION_GET_CONTENT oynasiga tushib qolardi. Boshqa platformalarda (web /
+  // iOS / desktop) registratsiya qilingan implementatsiya ImagePickerAndroid
+  // bo'lmagani uchun bu blok hech narsa qilmaydi.
+  final imagePickerImpl = ImagePickerPlatform.instance;
+  if (imagePickerImpl is ImagePickerAndroid) {
+    imagePickerImpl.useAndroidPhotoPicker = true;
   }
 
   usePathUrlStrategy(); // Use clean URLs (/sales) instead of hash URLs (#/sales)

@@ -11,15 +11,17 @@
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
-    <!-- Android 13+ (API 33+) uchun granular media permissions -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-
-    <!-- image_picker_android plagini pickImage() BILAN BIRGA video/audio
-         picker uchun mo'ljallangan ruxsatlarni ham o'z manifestiga qo'shadi
-         (manifest merge orqali), garchi ilova kodida pickVideo() umuman
-         chaqirilmasa ham (tekshirildi: lib/ ichida yo'q). Google Play
-         ishlatilmagan ruxsat uchun asossiz deklaratsiyani rad etishi mumkin —
-         shuning uchun ularni aniq OLIB TASHLAYMIZ, "asoslash" o'rniga. -->
+    <!-- Android 13+ (API 33+) granular media ruxsatlari — QASDDAN OLIB TASHLANGAN.
+         Google Play "Photo and video permissions" siyosati: galereyadan rasm
+         tanlash uchun tizim Photo Picker'i ishlatilishi SHART; keng qamrovli
+         READ_MEDIA_* ruxsatlari faqat asosiy funksiya butun galereyaga kirishni
+         talab qilsagina asoslanadi. Bu ilovada galereya faqat BITTA rasm tanlash
+         uchun ochiladi (mahsulot / profil rasmi) — buni Android Photo Picker
+         (ActivityResultContracts.PickVisualMedia; main.dart'da yoqilgan) HECH
+         QANDAY ruxsatsiz bajaradi. Shuning uchun uchala READ_MEDIA_* ruxsatini
+         ham merged manifestdan aniq OLIB TASHLAYMIZ — image_picker_android
+         plagini yoki boshqa transitiv kutubxona ularni merge qilsa ham. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
 
