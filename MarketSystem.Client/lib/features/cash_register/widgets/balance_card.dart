@@ -192,14 +192,22 @@ class _BalanceChip extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.70),
                   ),
                 ),
-                Text(
-                  '${NumberFormatter.format(amount)} ${l10n.currencySom}',
-                  style: AppTextStyles.bodyMedium().copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                // Katta balans (masalan "198 478 987") chip eniga sig'masdi
+                // va "198 478 987 …" bo'lib kesilardi. FittedBox.scaleDown
+                // matnni chip eniga qarab kichraytiradi (chapga tekislangan),
+                // shunda son to'liq ko'rinadi.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${NumberFormatter.format(amount)} ${l10n.currencySom}',
+                    maxLines: 1,
+                    style: AppTextStyles.bodyMedium().copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import '../../../data/services/debt_service.dart';
 import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
+import 'customer_debts_list_screen.dart';
 import 'debt_details_screen.dart';
 
 /// Client-side ordering for the debt-list view. The backend already filters
@@ -83,6 +84,43 @@ class _DebtsScreenState extends State<DebtsScreen> {
         ),
       );
     }
+  }
+
+  /// Mijozning barcha ochiq qarzlarini alohida ko'rsatadigan ekranni ochadi.
+  /// Qaytgach ro'yxatni yangilaydi (to'lov/tahrir summalarni o'zgartirgan
+  /// bo'lishi mumkin).
+  Future<void> _openCustomer(
+    String customerId,
+    String customerName,
+    AppLocalizations l10n,
+  ) async {
+    final debts = _debtsByCustomer[customerId] ?? const [];
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CustomerDebtsListScreen(
+          customerId: customerId,
+          customerName: customerName,
+          initialDebts: List<dynamic>.from(debts),
+        ),
+      ),
+    );
+    if (mounted) _loadData();
+  }
+
+  /// Bitta qarz tafsilotini ochadi (yagona qarzli mijoz uchun). Qaytgach
+  /// ro'yxatni yangilaydi — narx tahriri summani o'zgartirgan bo'lishi mumkin.
+  Future<void> _openDetails(dynamic debt, String customerName) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DebtDetailsScreen(
+          debt: debt,
+          customerName: customerName,
+        ),
+      ),
+    );
+    if (mounted) _loadData();
   }
 
   void _openPaySheet(dynamic debt, AppLocalizations l10n) {
@@ -217,22 +255,24 @@ class _DebtsScreenState extends State<DebtsScreen> {
                         totalDebt: totalDebt,
                         remainingDebt: remainingDebt,
                         canManage: canManage,
+                        // Bitta qarz bo'lsa — to'g'ridan-to'g'ri tafsilot /
+                        // to'lov oynasi. Bir nechta bo'lsa — mijozning barcha
+                        // qarzlari ro'yxati ochiladi (aks holda faqat birinchi
+                        // qarz ko'rinib/to'lanib, qolgani e'tibordan chetda
+                        // qolardi — asosiy nosozlik shu edi).
                         onTap: () {
-                          final debt = customerDebts.firstOrNull;
-                          if (debt == null) return;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DebtDetailsScreen(
-                                debt: debt,
-                                customerName: customerName,
-                              ),
-                            ),
-                          );
+                          if (customerDebts.length == 1) {
+                            _openDetails(customerDebts.first, customerName);
+                          } else {
+                            _openCustomer(customerId, customerName, l10n);
+                          }
                         },
                         onPay: () {
-                          final debt = customerDebts.firstOrNull;
-                          if (debt != null) _openPaySheet(debt, l10n);
+                          if (customerDebts.length == 1) {
+                            _openPaySheet(customerDebts.first, l10n);
+                          } else {
+                            _openCustomer(customerId, customerName, l10n);
+                          }
                         },
                       );
                     },

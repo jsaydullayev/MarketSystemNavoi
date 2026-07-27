@@ -121,11 +121,35 @@
       "Bash(grep -iE \"\\\\.env$|key\\\\.properties|appsettings\\\\.Development|google-services|secret|\\\\.pem$|\\\\.p12$|\\\\.keystore$|\\\\.jks$\")",
       "Bash(read f *)",
       "Bash(python -c 'import json; print\\(json.load\\(open\\('\\\\''__TRACKED_VAR__'\\\\''\\)\\).get\\('\\\\''applicationId'\\\\''\\)\\)')",
-      "Bash(awk '{print $5, \"bayt,\", $6, $7, $8}')"
+      "Bash(awk '{print $5, \"bayt,\", $6, $7, $8}')",
+      "Bash(git branch *)",
+      "Bash(git grep *)",
+      "Bash(awk -F= '{ if \\($1 ~ /PASSWORD|KEY|TOKEN|URL|SEGMENT|PASSPHRASE/\\) { print $1 \"=<len \" length\\($2\\) \">\" } else print }' /c/Users/joo/Desktop/MarketSystem/.env)",
+      "Bash(mkdir -p \"/c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/45c47feb-2b21-4795-a5a1-cdaab876dc2e/scratchpad\" && timeout 500 dotnet ef migrations script --project MarketSystem.Infrastructure --startup-project MarketSystem.API --output \"/c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/45c47feb-2b21-4795-a5a1-cdaab876dc2e/scratchpad/full.sql\" 2>&1 | tail -10; wc -l \"/c/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/45c47feb-2b21-4795-a5a1-cdaab876dc2e/scratchpad/full.sql\")",
+      "Bash(grep -v \"//\")",
+      "Bash(grep -rnE 'Text\\\\\\(\\\\s*'\\\\''[^'\\\\'']*\\\\$e'\\\\''|Text\\\\\\(\\\\s*\"[^\"]*\\\\$e\"|content: Text\\\\\\('\\\\''.*\\\\$e|'\\\\''\\\\$\\\\{?e\\\\}?'\\\\''' --include=*.dart features/ core/)",
+      "Bash(grep -rn \"Payments$\\\\|_context.Payments\" /c/Users/joo/Desktop/MarketSystem/MarketSystem.Application/Services/ReportService.cs)",
+      "Bash(python \"C:/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/45c47feb-2b21-4795-a5a1-cdaab876dc2e/scratchpad/scan.py\")",
+      "Bash(python \"C:/Users/joo/AppData/Local/Temp/claude/c--Users-joo-Desktop-MarketSystem/45c47feb-2b21-4795-a5a1-cdaab876dc2e/scratchpad/l10n.py\")",
+      "Bash(awk -F: '{s+=$2; print} END{print \"TOTAL=\"s}')",
+      "Bash(grep -v \"^.*//\")",
+      "Bash(awk '{printf \"%d\\\\t%s\\\\n\", $1+34, substr\\($0, index\\($0,$2\\)\\)}')",
+      "Bash(awk 'NR>=40 && NR<=130 {printf \"%d\\\\t%s\\\\n\", NR, $0}' MarketSystem.API/Program.cs)",
+      "Bash(awk 'NR>=595 && NR<=660 {printf \"%d\\\\t%s\\\\n\", NR, $0}' MarketSystem.API/Program.cs)",
+      "Bash(awk 'NR>=700 && NR<=810 {printf \"%d\\\\t%s\\\\n\", NR, $0}' MarketSystem.API/Program.cs)",
+      "Bash(awk 'NR>=890 && NR<=930 {printf \"%d\\\\t%s\\\\n\", NR, $0}' MarketSystem.API/Program.cs)",
+      "Bash(awk 'NR>=150 && NR<=160 {printf \"%d\\\\t%s\\\\n\", NR, $0}' deployment/nginx/strotech.uz.conf)",
+      "Bash(awk 'NR>=105 && NR<=125 {printf \"%d\\\\t%s\\\\n\", NR, $0}' deployment/scripts/TELEGRAM_BACKUP.md)",
+      "Bash(awk 'NR<=79 {printf \"%d\\\\t%s\\\\n\", NR, $0}' .github/workflows/ci.yml)",
+      "Bash(grep -v \"\\\\.FindAsync\\($\")",
+      "Bash(grep -vE \"FindAsync\\\\\\(\\\\s*$|FindAsync\\\\\\(\\\\w+ =>|FindAsync\\\\\\(p =>|FindAsync\\\\\\(s =>|FindAsync\\\\\\(d =>|FindAsync\\\\\\(z =>|FindAsync\\\\\\(c =>|FindAsync\\\\\\(u =>|FindAsync\\\\\\(new object\")",
+      "Bash(grep -n \"return \\\\$\\\\\"{UrlPrefix}\" MarketSystem.API/Storage/LocalProductImageStorage.cs)",
+      "Bash(grep -rn ': $e'\\\\''' lib/features/)"
     ],
     "additionalDirectories": [
       "C:\\Users\\joo\\Desktop\\MarketSystem\\MarketSystem.*",
-      "C:\\Users\\joo\\AppData\\Local\\Temp\\claude\\c--Users-joo-Desktop-MarketSystem\\a9da022c-3949-4ea9-ac29-ff9f2d8d1b6f\\tasks"
+      "C:\\Users\\joo\\AppData\\Local\\Temp\\claude\\c--Users-joo-Desktop-MarketSystem\\a9da022c-3949-4ea9-ac29-ff9f2d8d1b6f\\tasks",
+      "C:\\Users\\joo\\AppData\\Local\\Temp\\claude\\c--Users-joo-Desktop-MarketSystem\\45c47feb-2b21-4795-a5a1-cdaab876dc2e\\scratchpad"
     ]
   }
 }

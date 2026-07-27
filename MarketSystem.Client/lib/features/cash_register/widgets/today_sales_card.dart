@@ -114,15 +114,21 @@ class _KpiTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            value,
-            style: AppTextStyles.titleMedium().copyWith(
-              color: context.colors.text,
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
+          // Uch plitka qatorni teng bo'lishadi (~1/3 en) — "11 392 004" kabi
+          // katta summa 18px'da sig'masdi va "11 392 …" bo'lib kesilardi.
+          // FittedBox.scaleDown summani plitka eniga qarab kichraytiradi
+          // (18px — eng katta o'lcham), shunda son HAR DOIM to'liq ko'rinadi.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: AppTextStyles.titleMedium().copyWith(
+                color: context.colors.text,
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
