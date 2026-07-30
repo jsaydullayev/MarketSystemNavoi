@@ -14,13 +14,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
 import 'package:market_system_client/core/utils/error_parser.dart';
+import 'package:market_system_client/core/utils/file_helper.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
+import 'package:market_system_client/data/models/customer_debt_summary.dart';
 import 'package:market_system_client/data/services/debt_service.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
+import 'package:market_system_client/features/debts/widgets/debtor_summary_header.dart';
 import 'package:market_system_client/features/debts/widgets/due_date_badge.dart';
 import 'package:market_system_client/features/debts/widgets/pay_debt_bottomsheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
@@ -52,6 +55,11 @@ class CustomerDebtsListScreen extends StatefulWidget {
 class _CustomerDebtsListScreenState extends State<CustomerDebtsListScreen> {
   late List<dynamic> _debts;
   bool _isLoading = false;
+  bool _isExporting = false;
+
+  /// Backend'dan kelgan yig'ma ko'rsatkichlar (jami qarz / oxirgi olingan qarz /
+  /// oxirgi to'lov). Yuklanmaguncha sarlavha mahalliy ro'yxatdan hisoblaydi.
+  CustomerDebtSummary? _summary;
 
   @override
   void initState() {
@@ -60,22 +68,37 @@ class _CustomerDebtsListScreenState extends State<CustomerDebtsListScreen> {
     _refresh();
   }
 
-  /// Ochiq qarzlarni qayta tortadi. getAllDebts(status:'Open') ota-ekran bilan
-  /// AYNAN bir xil DTO (saleItems bilan) qaytaradi — shu sabab bu yerdan
-  /// DebtDetailsScreen'ga o'tilganda mahsulotlar to'liq ko'rinadi.
+  /// Mijozning ochiq qarzlarini va yig'ma ko'rsatkichlarini qayta tortadi.
+  ///
+  /// `getCustomerDebts` server tomonida mijoz bo'yicha filtrlaydi va AYNAN shu
+  /// DTO'ni (saleItems bilan) qaytaradi — shu sabab bu yerdan
+  /// DebtDetailsScreen'ga o'tilganda mahsulotlar to'liq ko'rinadi. Ilgari bu
+  /// yerda `getAllDebts(status:'Open')` chaqirilib, BUTUN market'ning ochiq
+  /// qarzlari tortilar va keyin Dart'da bitta mijoz uchun filtrlanardi — 300
+  /// qarzdorli do'konda bu 300 barobar ortiqcha ma'lumot degani.
+  ///
+  /// Ikki so'rov parallel ketadi: yig'ma ko'rsatkich sekinlashsa ro'yxat baribir
+  /// o'z vaqtida chiqadi.
   Future<void> _refresh() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final debtService = DebtService(authProvider: authProvider);
-      final all = await debtService.getAllDebts(status: 'Open');
-      final mine = all
-          .where((d) => d['customerId'] == widget.customerId)
-          .toList();
+
+      final results = await Future.wait([
+        debtService.getCustomerDebts(widget.customerId),
+        // Yig'ma ko'rsatkich yiqilsa ham ro'yxat ko'rinishi kerak — shuning
+        // uchun xatoni shu yerda yutamiz va sarlavha fallback'ga tushadi.
+        debtService
+            .getCustomerSummary(widget.customerId)
+            .catchError((_) => null as CustomerDebtSummary?),
+      ]);
+
       if (!mounted) return;
       setState(() {
-        _debts = mine;
+        _debts = results[0] as List<dynamic>;
+        _summary = results[1] as CustomerDebtSummary?;
         _isLoading = false;
       });
     } catch (e) {
@@ -99,6 +122,56 @@ class _CustomerDebtsListScreenState extends State<CustomerDebtsListScreen> {
     0.0,
     (sum, d) => sum + ((d['remainingDebt'] as num?)?.toDouble() ?? 0),
   );
+
+  /// Qarzdor hisobotini PDF sifatida yuklab oladi. Baytlar backend'da
+  /// (QuestPDF) chiziladi — ekrandagi uchta ko'rsatkich + qarzlar va to'lovlar
+  /// tarixi bilan.
+  Future<void> _exportPdf() async {
+    if (_isExporting) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final lang = Localizations.localeOf(context).languageCode;
+
+    setState(() => _isExporting = true);
+    try {
+      final bytes = await DebtService(
+        authProvider: authProvider,
+      ).downloadCustomerDebtPdf(widget.customerId, lang: lang);
+
+      if (bytes == null || bytes.isEmpty) {
+        throw Exception(l10n.downloadError);
+      }
+
+      final safeName = widget.customerName
+          .replaceAll(RegExp(r'[^\w\s-]'), '')
+          .trim()
+          .replaceAll(RegExp(r'\s+'), '_');
+      final stamp = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+      final ok = await FileHelper.saveAndOpenPdf(
+        bytes,
+        'qarzdor_${safeName.isEmpty ? 'hisobot' : safeName}_$stamp.pdf',
+      );
+
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(ok ? l10n.pdfDownloaded : l10n.downloadError),
+          backgroundColor: ok ? AppColors.success : AppColors.danger,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(ErrorParser.parse(e.toString())),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
 
   Future<void> _openDetails(dynamic debt) async {
     await Navigator.push(
@@ -137,7 +210,23 @@ class _CustomerDebtsListScreenState extends State<CustomerDebtsListScreen> {
 
     return Scaffold(
       backgroundColor: context.colors.bg,
-      appBar: CommonAppBar(title: widget.customerName, onRefresh: _refresh),
+      appBar: CommonAppBar(
+        title: widget.customerName,
+        onRefresh: _refresh,
+        extraActions: [
+          IconButton(
+            tooltip: l10n.downloadPdf,
+            onPressed: _isExporting ? null : _exportPdf,
+            icon: _isExporting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.picture_as_pdf_rounded),
+          ),
+        ],
+      ),
       body: _debts.isEmpty
           ? Center(
               child: _isLoading
@@ -161,10 +250,11 @@ class _CustomerDebtsListScreenState extends State<CustomerDebtsListScreen> {
                 itemCount: _debts.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    return _AggregateHeader(
-                      totalDebt: _totalDebt,
-                      remaining: _remaining,
-                      debtCount: _debts.length,
+                    return DebtorSummaryHeader(
+                      summary: _summary,
+                      fallbackTotalDebt: _remaining,
+                      fallbackTakenTotal: _totalDebt,
+                      fallbackDebtCount: _debts.length,
                     );
                   }
                   final debt = _debts[index - 1];
@@ -178,112 +268,6 @@ class _CustomerDebtsListScreenState extends State<CustomerDebtsListScreen> {
                 },
               ),
             ),
-    );
-  }
-}
-
-/// Mijozning barcha ochiq qarzlari yig'indisi — amber gradient karta.
-class _AggregateHeader extends StatelessWidget {
-  const _AggregateHeader({
-    required this.totalDebt,
-    required this.remaining,
-    required this.debtCount,
-  });
-
-  final double totalDebt;
-  final double remaining;
-  final int debtCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.warningDark, AppColors.warning],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.xl2),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.warning.withValues(alpha: 0.22),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _HeaderRow(
-            label: l10n.totalDebt,
-            value: NumberFormatter.format(totalDebt),
-            currency: l10n.currencySom,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Container(height: 1, color: Colors.white.withValues(alpha: 0.2)),
-          const SizedBox(height: AppSpacing.sm),
-          _HeaderRow(
-            label: l10n.remaining,
-            value: NumberFormatter.format(remaining),
-            currency: l10n.currencySom,
-            isBig: true,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              l10n.debtCount(debtCount),
-              style: AppTextStyles.bodySmall().copyWith(
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeaderRow extends StatelessWidget {
-  const _HeaderRow({
-    required this.label,
-    required this.value,
-    required this.currency,
-    this.isBig = false,
-  });
-
-  final String label;
-  final String value;
-  final String currency;
-  final bool isBig;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium().copyWith(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: isBig ? 14 : 13,
-          ),
-        ),
-        Text(
-          '$value $currency',
-          style:
-              (isBig ? AppTextStyles.titleLarge() : AppTextStyles.bodyMedium())
-                  .copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                  ),
-        ),
-      ],
     );
   }
 }
@@ -363,7 +347,7 @@ class _DebtRowCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Sotuv #$index',
+                            l10n.saleNumberLabel(index),
                             style: AppTextStyles.labelLarge().copyWith(
                               fontSize: 15,
                             ),
@@ -400,7 +384,10 @@ class _DebtRowCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _AmountItem(
-                          label: l10n.totalDebt,
+                          // Bu bitta sotuvda OLINGAN summa. "Jami qarz" deb
+                          // yozilsa, tepadagi "JAMI QARZ" (barcha qarzlar
+                          // qoldig'i) bilan chalkashadi.
+                          label: l10n.takenLabel,
                           amount: total,
                           color: context.colors.textSecondary,
                         ),

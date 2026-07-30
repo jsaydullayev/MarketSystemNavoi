@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/search_matcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:market_system_client/core/auth/permissions.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
@@ -76,7 +77,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   List<Map<String, dynamic>> _applyFilters(
     List<Map<String, dynamic>> customers,
   ) {
-    final query = _searchController.text.toLowerCase().trim();
+    final query = _searchController.text;
     return customers.where((c) {
       final debt = (c['totalDebt'] as num?)?.toDouble() ?? 0.0;
       switch (_filter) {
@@ -89,9 +90,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
         case _CustomerFilter.all:
           break;
       }
-      if (query.isEmpty) return true;
-      return (c['fullName'] ?? '').toString().toLowerCase().contains(query) ||
-          (c['phone'] ?? '').toString().toLowerCase().contains(query);
+      // Nom va telefon bo'ylab so'zma-so'z qidiruv: "toshmat 9989" ham
+      // ishlaydi (bir so'z ismdan, ikkinchisi raqamdan topiladi).
+      return SearchMatcher.matchesAny(
+        [c['fullName']?.toString(), c['phone']?.toString()],
+        query,
+      );
     }).toList();
   }
 

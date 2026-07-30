@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/search_matcher.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/auth/permissions.dart';
@@ -85,11 +86,11 @@ class _ZakupSupplierPickerState extends State<ZakupSupplierPicker> {
   }
 
   void _filter() {
-    final q = _searchCtrl.text.toLowerCase();
+    final q = _searchCtrl.text;
     setState(() {
-      _filtered = q.isEmpty
+      _filtered = q.trim().isEmpty
           ? _all
-          : _all.where((s) => s.name.toLowerCase().contains(q)).toList();
+          : _all.where((s) => SearchMatcher.matches(s.name, q)).toList();
     });
   }
 

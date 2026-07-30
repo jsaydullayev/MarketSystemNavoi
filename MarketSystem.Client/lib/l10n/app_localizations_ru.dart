@@ -3007,4 +3007,27 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get payFullAmount => 'Всё';
+
+  @override
+  String get lastTakenDebt => 'Последний взятый долг';
+
+  @override
+  String get lastDebtPayment => 'Последний платёж';
+
+  @override
+  String get noPaymentYet => 'Платежей не было';
+
+  @override
+  String get takenTotalLabel => 'Взято всего';
+
+  @override
+  String get takenLabel => 'Взято';
+
+  @override
+  String saleNumberLabel(int number) {
+    return 'Продажа #$number';
+  }
+
+  @override
+  String get debtorReport => 'Отчёт по должнику';
 }

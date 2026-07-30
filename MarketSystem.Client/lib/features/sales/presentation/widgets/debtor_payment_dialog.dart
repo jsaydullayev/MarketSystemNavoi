@@ -8,8 +8,8 @@
 // is preserved so other screens that already call into this file keep working.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:market_system_client/core/providers/auth_provider.dart';
+import 'package:market_system_client/core/utils/input_formatters.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/data/services/sales_service.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
@@ -69,7 +69,7 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
 
   double get _entered =>
       double.tryParse(
-        _amountController.text.replaceAll(',', '.').replaceAll(' ', ''),
+        ThousandsSeparatorFormatter.unformat(_amountController.text),
       ) ??
       0;
 
@@ -77,8 +77,9 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
   void initState() {
     super.initState();
     final v = _remainingDebt;
+    final str = v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
     _amountController = TextEditingController(
-      text: v == v.truncateToDouble() ? v.toInt().toString() : v.toString(),
+      text: ThousandsSeparatorFormatter.group(str),
     );
     _amountController.addListener(() => setState(() {}));
   }
@@ -94,11 +95,12 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
     _setAmount(next.toDouble());
   }
 
+  /// Maydonga summani minglik ajratgich bilan yozadi: 50000 → "50 000".
   void _setAmount(double value) {
     final str = value == value.truncateToDouble()
         ? value.toInt().toString()
         : value.toStringAsFixed(2);
-    _amountController.text = str;
+    _amountController.text = ThousandsSeparatorFormatter.group(str);
   }
 
   Future<void> _onConfirm() async {
@@ -238,7 +240,10 @@ class _DebtorPaymentSheetState extends State<DebtorPaymentSheet> {
               remaining: remaining,
               onAdd: _applyQuickAdd,
               onSet: _setAmount,
-              onClear: () => _amountController.text = '0',
+              // Bo'sh qoldiramiz, '0' EMAS: aks holda foydalanuvchi summa
+              // yozishdan oldin har safar nolni o'chirishga majbur bo'lardi
+              // ("0" + "5" = "05").
+              onClear: () => _amountController.clear(),
             ),
             const SizedBox(height: AppSpacing.xl),
 
@@ -472,9 +477,9 @@ class _PayAmountInput extends StatelessWidget {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                  ],
+                  // ThousandsSeparatorFormatter'ning o'zi raqam bo'lmagan
+                  // belgilarni filtrlaydi va boshdagi nolni tashlaydi.
+                  inputFormatters: const [ThousandsSeparatorFormatter()],
                   style: AppTextStyles.displayMedium().copyWith(
                     color: context.colors.brandDark,
                     fontSize: 26,

@@ -3003,4 +3003,27 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get payFullAmount => 'Hammasi';
+
+  @override
+  String get lastTakenDebt => 'Oxirgi olingan qarz';
+
+  @override
+  String get lastDebtPayment => 'Oxirgi to\'lov';
+
+  @override
+  String get noPaymentYet => 'To\'lov qilinmagan';
+
+  @override
+  String get takenTotalLabel => 'Olingan jami';
+
+  @override
+  String get takenLabel => 'Olingan';
+
+  @override
+  String saleNumberLabel(int number) {
+    return 'Sotuv #$number';
+  }
+
+  @override
+  String get debtorReport => 'Qarzdor hisoboti';
 }

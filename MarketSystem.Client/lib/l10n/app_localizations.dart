@@ -5707,6 +5707,48 @@ abstract class AppLocalizations {
   /// In uz, this message translates to:
   /// **'Hammasi'**
   String get payFullAmount;
+
+  /// No description provided for @lastTakenDebt.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oxirgi olingan qarz'**
+  String get lastTakenDebt;
+
+  /// No description provided for @lastDebtPayment.
+  ///
+  /// In uz, this message translates to:
+  /// **'Oxirgi to\'lov'**
+  String get lastDebtPayment;
+
+  /// No description provided for @noPaymentYet.
+  ///
+  /// In uz, this message translates to:
+  /// **'To\'lov qilinmagan'**
+  String get noPaymentYet;
+
+  /// No description provided for @takenTotalLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Olingan jami'**
+  String get takenTotalLabel;
+
+  /// No description provided for @takenLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Olingan'**
+  String get takenLabel;
+
+  /// No description provided for @saleNumberLabel.
+  ///
+  /// In uz, this message translates to:
+  /// **'Sotuv #{number}'**
+  String saleNumberLabel(int number);
+
+  /// No description provided for @debtorReport.
+  ///
+  /// In uz, this message translates to:
+  /// **'Qarzdor hisoboti'**
+  String get debtorReport;
 }
 
 class _AppLocalizationsDelegate

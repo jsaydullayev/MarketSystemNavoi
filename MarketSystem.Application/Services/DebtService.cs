@@ -58,6 +58,19 @@ public class DebtService : IDebtService
             .SumAsync(d => (decimal?)d.RemainingDebt, cancellationToken) ?? 0m;
     }
 
+    public async Task<CustomerDebtSummaryDto?> GetCustomerSummaryAsync(Guid customerId, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarket.GetCurrentMarketId();
+
+        // Yuklash va hisoblash CustomerDebtSummaryBuilder'da — ReportService
+        // PDF eksportda AYNAN shu kodni chaqiradi, shuning uchun ekrandagi va
+        // PDF'dagi raqamlar hech qachon ajralib ketmaydi.
+        var snapshot = await CustomerDebtSummaryBuilder.LoadAsync(
+            _context, customerId, marketId, cancellationToken);
+
+        return snapshot is null ? null : CustomerDebtSummaryBuilder.Build(snapshot);
+    }
+
     public async Task<IEnumerable<DebtDto>> ListAsync(DebtStatus? status, CancellationToken cancellationToken = default)
     {
         var marketId = _currentMarket.GetCurrentMarketId();

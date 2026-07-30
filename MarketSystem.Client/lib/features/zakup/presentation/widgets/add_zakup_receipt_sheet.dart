@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/search_matcher.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/providers/auth_provider.dart';
@@ -125,12 +126,12 @@ class _AddZakupReceiptSheetState extends State<AddZakupReceiptSheet> {
 
   // ── actions ───────────────────────────────────────────────────────────────
   void _filterProducts() {
-    final q = _searchCtrl.text.toLowerCase();
+    final q = _searchCtrl.text;
     setState(() {
-      _filtered = q.isEmpty
+      _filtered = q.trim().isEmpty
           ? widget.products
           : widget.products
-                .where((p) => (p['name'] ?? '').toLowerCase().contains(q))
+                .where((p) => SearchMatcher.matches(p['name']?.toString(), q))
                 .toList();
     });
   }

@@ -1027,5 +1027,12 @@
   "markFullyPaid": "Отметить полностью оплаченным",
   "editItemAction": "Редактировать",
   "removeItemAction": "Удалить",
-  "payFullAmount": "Всё"
+  "payFullAmount": "Всё",
+  "lastTakenDebt": "Последний взятый долг",
+  "lastDebtPayment": "Последний платёж",
+  "noPaymentYet": "Платежей не было",
+  "takenTotalLabel": "Взято всего",
+  "takenLabel": "Взято",
+  "saleNumberLabel": "Продажа #{number}",
+  "debtorReport": "Отчёт по должнику"
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../core/constants/api_constants.dart';
 import '../../core/errors/api_exception.dart';
 import '../../core/providers/auth_provider.dart';
+import '../models/customer_debt_summary.dart';
 import 'http_service.dart';
 
 class DebtService {
@@ -74,6 +75,38 @@ class DebtService {
         fallbackMessage: 'Failed to load customer total debt',
       );
     }
+  }
+
+  /// Bitta qarzdorning yig'ma ko'rsatkichlari: jami qarz, oxirgi (hozirgi)
+  /// olingan qarz va oxirgi to'lov. Mijoz topilmasa (404) `null`.
+  Future<CustomerDebtSummary?> getCustomerSummary(String customerId) async {
+    final response = await _httpService.get(
+      '${ApiConstants.debts}/customer/$customerId/summary',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty) return null;
+      final data = jsonDecode(response.body);
+      if (data is! Map) return null;
+      return CustomerDebtSummary.fromJson(Map<String, dynamic>.from(data));
+    }
+    if (response.statusCode == 404) return null;
+
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to load customer debt summary',
+    );
+  }
+
+  /// Qarzdor bo'yicha PDF hisobot (uchta ko'rsatkich + qarzlar/to'lovlar
+  /// tarixi). Baytlar backend'da QuestPDF bilan chiziladi.
+  Future<List<int>?> downloadCustomerDebtPdf(
+    String customerId, {
+    String lang = 'uz',
+  }) async {
+    return await _httpService.downloadBytes(
+      '${ApiConstants.debts}/customer/$customerId/export-pdf?lang=$lang',
+    );
   }
 
   // Pay debt

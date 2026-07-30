@@ -27,6 +27,51 @@ public record DebtorDto(
     [property: JsonPropertyName("sales")] List<SaleDto> Sales
 );
 
+/// <summary>
+/// Qarz hisobiga tushgan bitta to'lov. `Payment` jadvalida qarzning ota-sotuvi
+/// (SaleId) bo'yicha saqlanadi — Debt'ga to'g'ridan-to'g'ri FK yo'q.
+/// </summary>
+public record DebtPaymentDto(
+    [property: JsonPropertyName("id")] Guid Id,
+    [property: JsonPropertyName("saleId")] Guid SaleId,
+    [property: JsonPropertyName("amount")] decimal Amount,
+    [property: JsonPropertyName("paymentType")] string PaymentType,
+    [property: JsonPropertyName("createdAt")] DateTime CreatedAt
+);
+
+/// <summary>
+/// Bitta qarzdorning yig'ma ko'rinishi. Bitta mijoz bir necha marta qarz olishi
+/// mumkin, shuning uchun qarzdor kartasiga bosilganda uchta asosiy raqam kerak:
+///   • <see cref="TotalDebt"/> — jami qoldiq qarz (barcha ochiq qarzlar bo'yicha);
+///   • <see cref="LastDebtAmount"/> — oxirgi (ya'ni hozirgi) olingan qarz summasi;
+///   • <see cref="LastPaymentAmount"/> — oxirgi marta qarzga to'langan summa.
+/// Aynan shu DTO PDF eksportga ham asos bo'ladi, shuning uchun ekran va PDF
+/// raqamlari hech qachon farq qilmaydi.
+/// </summary>
+public record CustomerDebtSummaryDto(
+    [property: JsonPropertyName("customerId")] Guid CustomerId,
+    [property: JsonPropertyName("customerName")] string? CustomerName,
+    [property: JsonPropertyName("customerPhone")] string? CustomerPhone,
+    // Ochiq qarzlarning qoldiq yig'indisi — "jami qarz".
+    [property: JsonPropertyName("totalDebt")] decimal TotalDebt,
+    // Ochiq qarzlarning boshlang'ich (olingan) summalari yig'indisi.
+    [property: JsonPropertyName("totalOriginalDebt")] decimal TotalOriginalDebt,
+    // Ochiq qarzlar bo'yicha shu vaqtga qadar to'langan summa.
+    [property: JsonPropertyName("totalPaid")] decimal TotalPaid,
+    [property: JsonPropertyName("openDebtCount")] int OpenDebtCount,
+    // Oxirgi olingan qarzning boshlang'ich summasi.
+    [property: JsonPropertyName("lastDebtAmount")] decimal LastDebtAmount,
+    // Oxirgi olingan qarzning hozirgi qoldig'i.
+    [property: JsonPropertyName("lastDebtRemaining")] decimal LastDebtRemaining,
+    [property: JsonPropertyName("lastDebtDate")] DateTime? LastDebtDate,
+    [property: JsonPropertyName("lastPaymentAmount")] decimal LastPaymentAmount,
+    [property: JsonPropertyName("lastPaymentType")] string? LastPaymentType,
+    [property: JsonPropertyName("lastPaymentDate")] DateTime? LastPaymentDate,
+    [property: JsonPropertyName("oldestDebtDate")] DateTime? OldestDebtDate,
+    // Oxirgi to'lovlar (eng yangisi birinchi), ko'pi bilan 10 ta.
+    [property: JsonPropertyName("recentPayments")] List<DebtPaymentDto> RecentPayments
+);
+
 public record PayDebtDto(
     [property: JsonPropertyName("amount")] decimal Amount,
     [property: JsonPropertyName("paymentType")] string PaymentType

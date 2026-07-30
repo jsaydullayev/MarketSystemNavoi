@@ -1,5 +1,6 @@
 using MarketSystem.Application.DTOs;
 using MarketSystem.Application.Services;
+using MarketSystem.Domain.Enums;
 using FluentAssertions;
 using Xunit;
 
@@ -240,4 +241,68 @@ public class PdfExportTests
 
         AssertValidPdf(ReportService.RenderComprehensiveReportPdf(report, "13.05.2026", FixedNow));
     }
+
+    // ---- Debtor report ----
+    // Qarzdor hisoboti ekrandagi uchta ko'rsatkichni qog'ozga chiqaradi:
+    // jami qarz, hozirgi olingan qarz, oxirgi to'lov.
+
+    [Fact]
+    public void RenderCustomerDebtPdf_LastDebtWithItems_IsValid()
+    {
+        var model = new ReportService.DebtorPdfModel(
+            CustomerName: "Alisher Karimov",
+            CustomerPhone: "+998901234567",
+            TotalDebt: 1_000_000m,
+            TotalOriginalDebt: 1_300_000m,
+            TotalPaid: 300_000m,
+            OpenDebtCount: 2,
+            LastDebtAmount: 800_000m,
+            LastDebtRemaining: 800_000m,
+            LastDebtDate: new DateTime(2026, 7, 20, 9, 30, 0),
+            LastPaymentAmount: 100_000m,
+            LastPaymentType: "Terminal",
+            LastPaymentDate: new DateTime(2026, 7, 18, 8, 0, 0),
+            OldestDebtDate: new DateTime(2026, 7, 1, 10, 0, 0),
+            LastDebt: new ReportService.DebtorPdfRow(
+                new DateTime(2026, 7, 20, 9, 30, 0), 800_000m, 0m, 800_000m,
+                new DateTime(2026, 8, 20), DebtStatus.Open,
+                new List<ReportService.DebtorPdfItem>
+                {
+                    new("Sement M400", 10m, "qop", 65_000m, 650_000m, null),
+                    // Tashqi tovar: Unit bo'sh + izoh bor — ikkisi ham chizilishi kerak.
+                    new("Mix (tashqi)", 3m, "", 50_000m, 150_000m, "Tezkor buyurtma"),
+                    new("Taxta 40x100, juda uzun nomli tovar misoli", 25.5m, "dona", 19_608m, 500_000m, null),
+                }));
+
+        AssertValidPdf(ReportService.RenderCustomerDebtPdf(model, FixedNow));
+        AssertValidPdf(ReportService.RenderCustomerDebtPdf(model, FixedNow, "ru"));
+    }
+
+    /// <summary>Tovarsiz qarz (masalan boshlang'ich qarz) — "Tovarlar
+    /// ko'rsatilmagan" tarmog'i.</summary>
+    [Fact]
+    public void RenderCustomerDebtPdf_LastDebtWithoutItems_IsValid()
+        => AssertValidPdf(ReportService.RenderCustomerDebtPdf(
+            new ReportService.DebtorPdfModel(
+                "Mijoz", "998901112233",
+                500_000m, 500_000m, 0m, 1,
+                500_000m, 500_000m, new DateTime(2026, 7, 2, 9, 0, 0),
+                0m, null, null, new DateTime(2026, 7, 2, 9, 0, 0),
+                new ReportService.DebtorPdfRow(
+                    new DateTime(2026, 7, 2, 9, 0, 0), 500_000m, 0m, 500_000m,
+                    null, DebtStatus.Open,
+                    new List<ReportService.DebtorPdfItem>())),
+            FixedNow));
+
+    /// <summary>Qarzi butunlay yo'q mijoz — LastDebt null.</summary>
+    [Fact]
+    public void RenderCustomerDebtPdf_NoDebtAtAll_IsValid()
+        => AssertValidPdf(ReportService.RenderCustomerDebtPdf(
+            new ReportService.DebtorPdfModel(
+                "Ismi ko'rsatilmagan", null,
+                0m, 0m, 0m, 0,
+                0m, 0m, null,
+                0m, null, null, null,
+                LastDebt: null),
+            FixedNow));
 }

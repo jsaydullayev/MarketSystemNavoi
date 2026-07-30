@@ -278,4 +278,132 @@ public class DebtServiceTests : TestBase
         var total = await CreateService().GetCustomerTotalAsync(TestCustomer.Id);
         total.Should().Be(130m);
     }
+
+    // ───────────────── Qarzdor yig'ma ko'rsatkichlari ─────────────────
+    // Bitta mijoz bir necha marta qarz olishi mumkin. Qarzdor kartasi va PDF
+    // hisobot uchta raqamga tayanadi — jami qarz, HOZIRGI (oxirgi) olingan qarz
+    // va OXIRGI to'lov — shuning uchun ular aynan shu yerda qulflanadi.
+
+    /// <summary>
+    /// Sanasi aniq belgilangan qarz. `SeedDebtAsync` DateTime.UtcNow ishlatadi,
+    /// ketma-ket ikkita chaqiruv esa deyarli bir xil vaqt beradi — "oxirgi qarz"
+    /// tanlovini tekshirish uchun sana qo'lda berilishi shart.
+    /// </summary>
+    private async Task<Debt> SeedDatedDebtAsync(
+        decimal totalDebt,
+        decimal remainingDebt,
+        DateTime saleCreatedAtUtc,
+        DebtStatus status = DebtStatus.Open)
+    {
+        var sale = new Sale
+        {
+            Id = Guid.NewGuid(),
+            SellerId = TestUserId,
+            CustomerId = TestCustomer.Id,
+            TotalAmount = totalDebt,
+            PaidAmount = totalDebt - remainingDebt,
+            Status = status == DebtStatus.Open ? SaleStatus.Debt : SaleStatus.Closed,
+            MarketId = TestMarketId,
+            CreatedAt = saleCreatedAtUtc,
+        };
+        DbContext.Sales.Add(sale);
+
+        var debt = new Debt
+        {
+            Id = Guid.NewGuid(),
+            SaleId = sale.Id,
+            CustomerId = TestCustomer.Id,
+            TotalDebt = totalDebt,
+            RemainingDebt = remainingDebt,
+            Status = status,
+            MarketId = TestMarketId,
+            CreatedAt = saleCreatedAtUtc,
+        };
+        DbContext.Debts.Add(debt);
+        await DbContext.SaveChangesAsync();
+        return debt;
+    }
+
+    private async Task AddPaymentAsync(Guid saleId, decimal amount, PaymentType type, DateTime atUtc)
+    {
+        DbContext.Payments.Add(new Payment
+        {
+            Id = Guid.NewGuid(),
+            SaleId = saleId,
+            Amount = amount,
+            PaymentType = type,
+            MarketId = TestMarketId,
+            CreatedAt = atUtc,
+        });
+        await DbContext.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task GetCustomerSummary_MultipleDebts_SumsRemainingAndPicksLatestDebtAndPayment()
+    {
+        var older = await SeedDatedDebtAsync(500m, 200m, new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc));
+        await SeedDatedDebtAsync(800m, 800m, new DateTime(2026, 7, 20, 9, 30, 0, DateTimeKind.Utc));
+
+        await AddPaymentAsync(older.SaleId, 200m, PaymentType.Cash, new DateTime(2026, 7, 5, 12, 0, 0, DateTimeKind.Utc));
+        await AddPaymentAsync(older.SaleId, 100m, PaymentType.Terminal, new DateTime(2026, 7, 18, 8, 0, 0, DateTimeKind.Utc));
+
+        var summary = await CreateService().GetCustomerSummaryAsync(TestCustomer.Id);
+
+        summary.Should().NotBeNull();
+        summary!.TotalDebt.Should().Be(1000m, "jami qarz = 200 + 800");
+        summary.TotalOriginalDebt.Should().Be(1300m);
+        summary.TotalPaid.Should().Be(300m);
+        summary.OpenDebtCount.Should().Be(2);
+
+        summary.LastDebtAmount.Should().Be(800m, "hozirgi olingan qarz — eng yangi qarz");
+        summary.LastDebtRemaining.Should().Be(800m);
+        summary.LastDebtDate.Should().Be(new DateTime(2026, 7, 20, 9, 30, 0, DateTimeKind.Utc));
+
+        summary.LastPaymentAmount.Should().Be(100m, "oxirgi to'lov — 18-iyuldagi 100");
+        summary.LastPaymentType.Should().Be("Terminal");
+        summary.LastPaymentDate.Should().Be(new DateTime(2026, 7, 18, 8, 0, 0, DateTimeKind.Utc));
+
+        summary.RecentPayments.Should().HaveCount(2);
+        summary.RecentPayments[0].Amount.Should().Be(100m, "eng yangisi birinchi");
+        summary.OldestDebtDate.Should().Be(new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc));
+    }
+
+    [Fact]
+    public async Task GetCustomerSummary_ClosedDebtPayment_StillReportedAsLastPayment()
+    {
+        // Ochiq qarz to'lovsiz, yopilgan qarzda esa to'lov bor: "oxirgi to'lov"
+        // yopilgan qarzdan kelishi kerak, aks holda qarzni yopgan to'lov
+        // ko'rinmay qolardi.
+        var closed = await SeedDatedDebtAsync(
+            300m, 0m, new DateTime(2026, 6, 1, 10, 0, 0, DateTimeKind.Utc), DebtStatus.Closed);
+        await AddPaymentAsync(closed.SaleId, 300m, PaymentType.Cash, new DateTime(2026, 6, 9, 11, 0, 0, DateTimeKind.Utc));
+        await SeedDatedDebtAsync(400m, 400m, new DateTime(2026, 7, 10, 10, 0, 0, DateTimeKind.Utc));
+
+        var summary = await CreateService().GetCustomerSummaryAsync(TestCustomer.Id);
+
+        summary!.TotalDebt.Should().Be(400m, "yopilgan qarz jami qarzga qo'shilmaydi");
+        summary.OpenDebtCount.Should().Be(1);
+        summary.LastDebtAmount.Should().Be(400m);
+        summary.LastPaymentAmount.Should().Be(300m);
+    }
+
+    [Fact]
+    public async Task GetCustomerSummary_NoPayments_ReportsZeroLastPayment()
+    {
+        await SeedDatedDebtAsync(400m, 400m, new DateTime(2026, 7, 10, 10, 0, 0, DateTimeKind.Utc));
+
+        var summary = await CreateService().GetCustomerSummaryAsync(TestCustomer.Id);
+
+        summary!.LastPaymentAmount.Should().Be(0m);
+        summary.LastPaymentDate.Should().BeNull();
+        summary.LastPaymentType.Should().BeNull();
+        summary.RecentPayments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCustomerSummary_UnknownCustomer_ReturnsNull()
+    {
+        var summary = await CreateService().GetCustomerSummaryAsync(Guid.NewGuid());
+        summary.Should().BeNull();
+    }
 }

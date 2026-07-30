@@ -136,7 +136,12 @@ class _DebtAmountRow extends StatelessWidget {
         children: [
           Expanded(
             child: _AmountItem(
-              label: l10n.totalDebt,
+              // "Jami qarz" EMAS: bu mijozning boshlang'ich (olingan) summasi.
+              // "Jami qarz" yorlig'i faqat QOLDIQ uchun ishlatiladi (ekran
+              // tepasidagi hero va qarzdor sarlavhasi) — aks holda bitta so'z
+              // ikki xil raqamni bildirib, ekranlar bir-biriga qarama-qarshi
+              // ko'rinardi (ro'yxatda 160 000, ichkarida 110 000).
+              label: l10n.takenLabel,
               amount: totalDebt,
               color: context.colors.textSecondary,
             ),
