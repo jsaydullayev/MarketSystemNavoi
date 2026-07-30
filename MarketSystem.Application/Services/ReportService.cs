@@ -1618,6 +1618,7 @@ public partial class ReportService : IReportService
         "Cash" => isRu ? "Наличные" : "Naqd",
         "Transfer" => isRu ? "Перевод / Счёт" : "O'tkazma / Hisob",
         "Qaytarilgan" or "Refund" => isRu ? "Возврат" : "Qaytarilgan",
+        "Credit" => isRu ? "Из аванса" : "Avans hisobidan",
         _ => type, // Terminal / Click — already fine
     };
 

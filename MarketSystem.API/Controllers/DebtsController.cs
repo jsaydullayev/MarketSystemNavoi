@@ -15,10 +15,14 @@ namespace MarketSystem.API.Controllers;
 public class DebtsController : ControllerBase
 {
     private readonly IDebtService _debts;
+    private readonly IReportService _reports;
+    private readonly ITashkentClock _clock;
 
-    public DebtsController(IDebtService debts)
+    public DebtsController(IDebtService debts, IReportService reports, ITashkentClock clock)
     {
         _debts = debts;
+        _reports = reports;
+        _clock = clock;
     }
 
     /// <summary>Open debts for one customer.</summary>
@@ -32,6 +36,39 @@ public class DebtsController : ControllerBase
     [RequirePermission(PermissionKeys.DebtsAccess)]
     public async Task<ActionResult<decimal>> GetCustomerTotalDebt(Guid customerId, CancellationToken ct)
         => Ok(await _debts.GetCustomerTotalAsync(customerId, ct));
+
+    /// <summary>
+    /// Bitta qarzdorning yig'ma ko'rsatkichlari: jami qoldiq qarz, oxirgi
+    /// (hozirgi) olingan qarz summasi va oxirgi to'lov. Mijoz bir necha marta
+    /// qarz olgan bo'lsa ham bitta javobda umumlashtiriladi.
+    /// </summary>
+    [HttpGet("~/api/Debts/customer/{customerId}/summary")]
+    [RequirePermission(PermissionKeys.DebtsAccess)]
+    public async Task<ActionResult<CustomerDebtSummaryDto>> GetCustomerDebtSummary(Guid customerId, CancellationToken ct)
+    {
+        var summary = await _debts.GetCustomerSummaryAsync(customerId, ct);
+        return summary is null ? NotFound(new { message = "Mijoz topilmadi." }) : Ok(summary);
+    }
+
+    /// <summary>
+    /// Qarzdor bo'yicha PDF hisobot — ekrandagi uchta ko'rsatkich + qarzlar va
+    /// to'lovlar tarixi.
+    /// </summary>
+    [HttpGet("~/api/Debts/customer/{customerId}/export-pdf")]
+    [RequirePermission(PermissionKeys.DebtsAccess)]
+    public async Task<IActionResult> ExportCustomerDebtPdf(
+        Guid customerId,
+        [FromQuery] string lang = "uz",
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var pdfBytes = await _reports.ExportCustomerDebtPdfAsync(customerId, lang, ct);
+            var fileName = $"Qarzdor_{customerId}_{_clock.NowLocal:yyyyMMdd_HHmmss}.pdf";
+            return File(pdfBytes, "application/pdf", fileName);
+        }
+        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+    }
 
     /// <summary>Make a payment against an open debt.</summary>
     [HttpPost("~/api/Debts/{debtId}/pay")]

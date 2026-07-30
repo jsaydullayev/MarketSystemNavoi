@@ -14,7 +14,6 @@ import '../../../data/services/debt_service.dart';
 import '../../../core/auth/permissions.dart';
 import '../../../core/providers/auth_provider.dart';
 import 'customer_debts_list_screen.dart';
-import 'debt_details_screen.dart';
 
 /// Client-side ordering for the debt-list view. The backend already filters
 /// to status='Open' so the chips just re-shuffle the same list — keeps the
@@ -102,21 +101,6 @@ class _DebtsScreenState extends State<DebtsScreen> {
           customerId: customerId,
           customerName: customerName,
           initialDebts: List<dynamic>.from(debts),
-        ),
-      ),
-    );
-    if (mounted) _loadData();
-  }
-
-  /// Bitta qarz tafsilotini ochadi (yagona qarzli mijoz uchun). Qaytgach
-  /// ro'yxatni yangilaydi — narx tahriri summani o'zgartirgan bo'lishi mumkin.
-  Future<void> _openDetails(dynamic debt, String customerName) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DebtDetailsScreen(
-          debt: debt,
-          customerName: customerName,
         ),
       ),
     );
@@ -255,18 +239,14 @@ class _DebtsScreenState extends State<DebtsScreen> {
                         totalDebt: totalDebt,
                         remainingDebt: remainingDebt,
                         canManage: canManage,
-                        // Bitta qarz bo'lsa — to'g'ridan-to'g'ri tafsilot /
-                        // to'lov oynasi. Bir nechta bo'lsa — mijozning barcha
-                        // qarzlari ro'yxati ochiladi (aks holda faqat birinchi
-                        // qarz ko'rinib/to'lanib, qolgani e'tibordan chetda
-                        // qolardi — asosiy nosozlik shu edi).
-                        onTap: () {
-                          if (customerDebts.length == 1) {
-                            _openDetails(customerDebts.first, customerName);
-                          } else {
-                            _openCustomer(customerId, customerName, l10n);
-                          }
-                        },
+                        // Bosilganda HAR DOIM mijozning qarzdorlik ekrani
+                        // ochiladi — qarzi bittami yoki beshtami, farqi yo'q.
+                        // Ilgari bitta qarzli mijozda to'g'ridan-to'g'ri qarz
+                        // tafsiloti ochilardi, u yerda esa yig'ma
+                        // ko'rsatkichlar (jami qarz, oxirgi olingan qarz,
+                        // oxirgi to'lov) va PDF hisobot yo'q.
+                        onTap: () =>
+                            _openCustomer(customerId, customerName, l10n),
                         onPay: () {
                           if (customerDebts.length == 1) {
                             _openPaySheet(customerDebts.first, l10n);

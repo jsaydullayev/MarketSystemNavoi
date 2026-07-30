@@ -1032,5 +1032,13 @@
   "markFullyPaid": "To'liq to'langan deb belgilash",
   "editItemAction": "Tahrirlash",
   "removeItemAction": "O'chirish",
-  "payFullAmount": "Hammasi"
+  "payFullAmount": "Hammasi",
+  "lastTakenDebt": "Oxirgi olingan qarz",
+  "lastDebtPayment": "Oxirgi to'lov",
+  "noPaymentYet": "To'lov qilinmagan",
+  "takenTotalLabel": "Olingan jami",
+  "takenLabel": "Olingan",
+  "saleNumberLabel": "Sotuv #{number}",
+  "@saleNumberLabel": { "placeholders": { "number": { "type": "int" } } },
+  "debtorReport": "Qarzdor hisoboti"
 }

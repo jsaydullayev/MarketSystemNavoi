@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:market_system_client/core/utils/search_matcher.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
 import 'package:market_system_client/design/tokens/app_tokens.dart';
@@ -63,13 +64,16 @@ class _ContinueSaleScreenState extends State<ContinueSaleScreen> {
     super.dispose();
   }
 
+  /// Tovarni nom bo'yicha izlaydi. Oddiy `contains` EMAS — `SearchMatcher`
+  /// so'rovni so'zlarga bo'ladi va `ё`/`е` ni tenglashtiradi, shu sabab
+  /// sotuvchi "включатель VIKO" deb yozsa "включатель 3 та VIKO" ham topiladi.
   void _filterProducts() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text;
     setState(() {
-      _filteredProducts = query.isEmpty
+      _filteredProducts = query.trim().isEmpty
           ? _products
           : _products
-                .where((p) => (p['name'] ?? '').toLowerCase().contains(query))
+                .where((p) => SearchMatcher.matches(p['name']?.toString(), query))
                 .toList();
     });
   }

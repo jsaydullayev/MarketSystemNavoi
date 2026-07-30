@@ -413,13 +413,18 @@ public class SalesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Ochiq qarzi bor mijozlar, mijoz bo'yicha jamlangan (bitta mijozning
+    /// bir nechta qarzi bitta qatorga yig'iladi). Javob shakli — CustomerDto:
+    /// e'lon `DebtorDto` bo'lgani xato edi, xizmat hech qachon uni qurmaydi.
+    /// </summary>
     [HttpGet("debtors")]
     [RequirePermission(PermissionKeys.SalesAccess)]
-    public async Task<ActionResult<IEnumerable<DebtorDto>>> GetDebtors(CancellationToken ct = default)
+    public async Task<ActionResult<IEnumerable<CustomerDto>>> GetDebtors(CancellationToken ct = default)
     {
         try
         {
-            var debtors = await _saleService.GetDebtorsAsync();
+            var debtors = await _saleService.GetDebtorsAsync(ct);
             return Ok(debtors);
         }
         catch (Exception ex)

@@ -2074,18 +2074,29 @@ public partial class SaleService : ISaleService
             cancellationToken,
             includeProperties: "Customer");
 
-        var customers = debts
+        // Bitta mijoz bir necha marta qarz olishi mumkin, ya'ni bir mijozga
+        // bir nechta ochiq Debt qatori to'g'ri keladi. Ilgari bu yerda har
+        // qarz alohida CustomerDto'ga aylanardi va `Distinct()` yordam
+        // bermasdi (record teng-lik BARCHA maydonlarni, jumladan farq qiluvchi
+        // RemainingDebt'ni ham solishtiradi) — natijada qarzdor ro'yxatda
+        // takrorlanib chiqar, ko'rsatilgan summa esa jami emas, bitta qarzning
+        // qoldig'i bo'lar edi. Endi mijoz bo'yicha guruhlab, qoldiqlarni
+        // yig'amiz.
+        return debts
             .Where(d => d.Customer != null)
-            .Select(d => new CustomerDto(
-                d.Customer!.Id,
-                d.Customer!.Phone ?? "",
-                d.Customer!.FullName,
-                d.Customer!.Comment,
-                d.RemainingDebt
-            ))
-            .Distinct()
+            .GroupBy(d => d.Customer!.Id)
+            .Select(g =>
+            {
+                var customer = g.First().Customer!;
+                return new CustomerDto(
+                    customer.Id,
+                    customer.Phone ?? "",
+                    customer.FullName,
+                    customer.Comment,
+                    g.Sum(d => d.RemainingDebt)
+                );
+            })
+            .OrderByDescending(c => c.TotalDebt)
             .ToList();
-
-        return customers;
     }
 }

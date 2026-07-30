@@ -7,6 +7,7 @@
 // - Brand-orange extended FAB to open [AddUserSheet]
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/search_matcher.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/core/widgets/common_app_bar.dart';
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -60,7 +61,7 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   List<dynamic> _applyFilters(List<dynamic> users) {
-    final q = _searchCtrl.text.toLowerCase().trim();
+    final q = _searchCtrl.text;
     return users.where((u) {
       final role = (u['role'] ?? '').toString().toLowerCase();
       // "Shift open/closed" reflects the real shift state, not the account
@@ -82,9 +83,10 @@ class _UsersScreenState extends State<UsersScreen> {
         case _UsersFilter.all:
           break;
       }
-      if (q.isEmpty) return true;
-      return (u['fullName'] ?? '').toString().toLowerCase().contains(q) ||
-          (u['username'] ?? '').toString().toLowerCase().contains(q);
+      return SearchMatcher.matchesAny(
+        [u['fullName']?.toString(), u['username']?.toString()],
+        q,
+      );
     }).toList();
   }
 

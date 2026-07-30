@@ -42,6 +42,11 @@ public interface IReportService
     // Sales list export to PDF
     Task<byte[]> ExportSalesListToPdfAsync(DateTime? startDate, DateTime? endDate, string? userRole = null, string lang = "uz", CancellationToken cancellationToken = default);
 
+    // Bitta qarzdor bo'yicha hisobot: jami qarz / oxirgi olingan qarz / oxirgi
+    // to'lov uchligi + qarzlar va to'lovlar tarixi. Mijoz topilmasa
+    // KeyNotFoundException.
+    Task<byte[]> ExportCustomerDebtPdfAsync(Guid customerId, string lang = "uz", CancellationToken cancellationToken = default);
+
     // Dashboard aggregations — added 2026-05-18 to back the new design's
     // ChartCard (weekly bar series), TopSellersCard (ranking), and the
     // Users / Reports → Staff page. All three are read-only aggregations

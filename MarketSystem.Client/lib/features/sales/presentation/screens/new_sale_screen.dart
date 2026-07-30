@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/search_matcher.dart';
 import 'package:market_system_client/design/widgets/app_snackbar.dart';
 import 'package:market_system_client/core/utils/number_formatter.dart';
 import 'package:market_system_client/design/tokens/app_theme_colors.dart';
@@ -88,12 +89,15 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
     _filterProducts();
   }
 
+  /// Tovarni nom bo'yicha izlaydi. `SearchMatcher` so'rovni so'zlarga bo'ladi
+  /// va `ё`/`е` ni tenglashtiradi — "включатель VIKO" so'rovi "включатель 3 та
+  /// VIKO" tovarini ham topadi.
   void _filterProducts() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text;
     setState(() {
       _filteredProducts = _products.where((product) {
-        final name = (product['name'] ?? '').toString().toLowerCase();
-        final matchesSearch = query.isEmpty || name.contains(query);
+        final matchesSearch =
+            SearchMatcher.matches(product['name']?.toString(), query);
         final matchesCategory =
             _selectedCategoryName == null ||
             product['categoryName'] == _selectedCategoryName;

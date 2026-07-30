@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:market_system_client/core/utils/search_matcher.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/auth/permissions.dart';
@@ -70,16 +71,12 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   }
 
   void _applyFilter() {
-    final q = _searchCtrl.text.trim().toLowerCase();
+    final q = _searchCtrl.text;
     setState(() {
-      _filtered = q.isEmpty
+      _filtered = q.trim().isEmpty
           ? _all
           : _all
-                .where(
-                  (s) =>
-                      s.name.toLowerCase().contains(q) ||
-                      (s.phone ?? '').toLowerCase().contains(q),
-                )
+                .where((s) => SearchMatcher.matchesAny([s.name, s.phone], q))
                 .toList();
     });
   }

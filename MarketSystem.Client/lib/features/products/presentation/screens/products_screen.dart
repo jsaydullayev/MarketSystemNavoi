@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:market_system_client/core/utils/input_formatters.dart';
+import 'package:market_system_client/core/utils/search_matcher.dart';
 import 'package:market_system_client/core/utils/file_helper.dart'
     as core_file_helper;
 import 'package:market_system_client/core/widgets/network_wrapper.dart';
@@ -83,13 +84,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
     });
   }
 
+  /// Nom bo'yicha izlash. `SearchMatcher` so'rovni so'zlarga bo'ladi va
+  /// `ё`/`е` ni tenglashtiradi — POS ekranidagi qidiruv bilan bir xil qoida.
   void _filterProducts() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text;
     setState(() {
-      _filteredProducts = query.isEmpty
+      _filteredProducts = query.trim().isEmpty
           ? _products
           : _products
-                .where((p) => (p['name'] ?? '').toLowerCase().contains(query))
+                .where((p) => SearchMatcher.matches(p['name']?.toString(), query))
                 .toList();
     });
   }

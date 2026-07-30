@@ -12,6 +12,13 @@ public interface IDebtService
     Task<decimal> GetCustomerTotalAsync(Guid customerId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Bitta qarzdorning yig'ma ko'rsatkichlari: jami qoldiq qarz, oxirgi
+    /// (hozirgi) olingan qarz summasi va oxirgi to'lov. Mijoz shu market'da
+    /// topilmasa <c>null</c>.
+    /// </summary>
+    Task<CustomerDebtSummaryDto?> GetCustomerSummaryAsync(Guid customerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// All debts in the current market. Optional filter by Status; result is
     /// ordered newest-first for the SuperAdmin / Owner debt console.
     /// </summary>
