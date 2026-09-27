@@ -461,7 +461,9 @@ public class UserService : IUserService
     ///     The user starts on the new role's defaults; the Owner can re-customise.
     ///   • work shift — only Sellers are shift-gated, so a Blocked/Scheduled status
     ///     left over from an earlier Seller stint would otherwise lock a demoted
-    ///     Admin out the moment they become a Seller again.
+    ///     Admin out the moment they become a Seller again. An open work session
+    ///     is closed too: only Sellers get the open/close shift card, so a promoted
+    ///     Admin could never close it and its duration would grow without bound.
     /// The role and permissions are baked into the JWT, so every session is killed.
     /// Picking the current role is a no-op — nobody gets logged out for nothing.
     /// </summary>
@@ -487,6 +489,8 @@ public class UserService : IUserService
         if (user.Role == newRole)
             return MapToDto(user);
 
+        var utcNow = DateTime.UtcNow;
+
         user.Role = newRole;
         user.Permissions = new List<string>();
         user.IsPermissionsCustomized = false;
@@ -494,7 +498,15 @@ public class UserService : IUserService
         user.ShiftStartUtc = null;
         user.ShiftEndUtc = null;
 
-        var utcNow = DateTime.UtcNow;
+        var openShifts = await _unitOfWork.Shifts.FindAsync(
+            s => s.UserId == user.Id && s.MarketId == marketId && s.ClosedAt == null,
+            cancellationToken);
+        foreach (var shift in openShifts)
+        {
+            shift.ClosedAt = utcNow;
+            _unitOfWork.Shifts.Update(shift);
+        }
+
         await InvalidateSessionsAsync(user, utcNow, cancellationToken);
 
         _unitOfWork.Users.Update(user);

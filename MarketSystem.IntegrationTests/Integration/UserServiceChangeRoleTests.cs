@@ -134,6 +134,31 @@ public class UserServiceChangeRoleTests : TestBase
     }
 
     [Fact]
+    public async Task Promoting_SellerMidShift_ClosesTheOpenWorkSession()
+    {
+        // Admins get no open/close shift card, so a session left open by the
+        // promotion could never be closed and would count hours forever.
+        var seller = await SeedUserAsync(Role.Seller);
+        var shiftId = Guid.NewGuid();
+        DbContext.Shifts.Add(new Shift
+        {
+            Id = shiftId,
+            UserId = seller.Id,
+            MarketId = TestMarketId,
+            OpenedAt = DateTime.UtcNow.AddHours(-3),
+        });
+        await DbContext.SaveChangesAsync();
+        ClearDbContext();
+
+        await CreateService().ChangeUserRoleAsync(seller.Id, new ChangeRoleDto("Admin"));
+
+        ClearDbContext();
+        var shift = await DbContext.Shifts.SingleAsync(s => s.Id == shiftId);
+        shift.IsOpen.Should().BeFalse();
+        shift.DurationMinutes.Should().BeInRange(179, 181);
+    }
+
+    [Fact]
     public async Task SameRole_IsANoOp_KeepsSessionsAndCustomPermissions()
     {
         var custom = new List<string> { PermissionKeys.SalesAccess, PermissionKeys.SalesCreate };
