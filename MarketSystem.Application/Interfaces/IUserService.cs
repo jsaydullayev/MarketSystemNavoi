@@ -17,6 +17,9 @@ public interface IUserService
     Task<bool> ActivateUserAsync(Guid id, CancellationToken cancellationToken = default);
     Task<UserDto?> UpdateShiftAsync(Guid id, UpdateShiftDto request, CancellationToken cancellationToken = default);
 
+    // Owner-only — move an employee between Admin and Seller.
+    Task<UserDto?> ChangeUserRoleAsync(Guid id, ChangeRoleDto request, CancellationToken cancellationToken = default);
+
     // Owner RBAC — per-user permission configuration (Owner-only).
     Task<UserPermissionsDto?> GetUserPermissionsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<UserPermissionsDto?> UpdateUserPermissionsAsync(Guid id, UpdatePermissionsDto request, CancellationToken cancellationToken = default);

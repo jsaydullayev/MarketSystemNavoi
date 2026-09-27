@@ -167,23 +167,15 @@ public class UserService : IUserService
             return null;
 
         // Privilege-escalation guard. Without this, an Admin (who holds
-        // users.manage by default) could PUT {"role":"Owner"} to promote
-        // itself — or rewrite the real Owner row — and bypass all RBAC.
-        // Mirror CreateUserAsync: an Owner/SuperAdmin is never editable here,
-        // and the only assignable roles are Admin and Seller.
+        // users.manage by default) could rewrite the real Owner row — reset its
+        // password or deactivate it — and bypass all RBAC. The role itself is
+        // not editable here at all: see ChangeUserRoleAsync (Owner-only).
         if (user.Role is Role.Owner or Role.SuperAdmin)
             return null;
 
-        if (!Enum.TryParse<Role>(request.Role, ignoreCase: true, out var newRole))
-            throw new InvalidOperationException($"Invalid role: '{request.Role}'");
-        if (newRole is not (Role.Admin or Role.Seller))
-            throw new InvalidOperationException("Faqat Admin yoki Seller rolini belgilash mumkin.");
-
         var wasActive = user.IsActive;
-        var previousRole = user.Role;
 
         user.FullName = request.FullName;
-        user.Role = newRole;
         user.IsActive = request.IsActive;
 
         // Update password only if provided
@@ -196,14 +188,10 @@ public class UserService : IUserService
 
         // Sessiyalarni uzish shartlari:
         //  • parol almashtirildi,
-        //  • user deaktivatsiya qilindi (active → inactive),
-        //  • ROL o'zgardi — rol JWT ichiga muzlatib qo'yiladi (ClaimTypes.Role) va
-        //    ruxsat tekshiruvlari o'shanga qaraydi. Busiz Admin'dan Seller'ga
-        //    tushirilgan xodim access token muddati tugaguncha (30 daqiqa) Admin
-        //    bo'lib qolaverardi.
-        var roleChanged = previousRole != newRole;
+        //  • user deaktivatsiya qilindi (active → inactive).
+        // (Rol o'zgarishi alohida — ChangeUserRoleAsync ham sessiyalarni uzadi.)
         var utcNow = DateTime.UtcNow;
-        var invalidate = passwordChanged || (wasActive && !user.IsActive) || roleChanged;
+        var invalidate = passwordChanged || (wasActive && !user.IsActive);
         if (invalidate)
             await InvalidateSessionsAsync(user, utcNow, cancellationToken);
 
@@ -458,6 +446,61 @@ public class UserService : IUserService
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        return MapToDto(user);
+    }
+
+    /// <summary>
+    /// Owner-only: move an employee between Admin and Seller. Owner/SuperAdmin
+    /// are not employees — their lifecycle belongs to the SuperAdmin console.
+    ///
+    /// Role-scoped state is reset together with the role:
+    ///   • explicit permissions — a set tailored to the OLD role must not survive.
+    ///     A customised Admin demoted to Seller would otherwise keep users.manage,
+    ///     sales.delete, … (and could promote themselves straight back), while a
+    ///     customised Seller promoted to Admin would get none of the Admin rights.
+    ///     The user starts on the new role's defaults; the Owner can re-customise.
+    ///   • work shift — only Sellers are shift-gated, so a Blocked/Scheduled status
+    ///     left over from an earlier Seller stint would otherwise lock a demoted
+    ///     Admin out the moment they become a Seller again.
+    /// The role and permissions are baked into the JWT, so every session is killed.
+    /// Picking the current role is a no-op — nobody gets logged out for nothing.
+    /// </summary>
+    public async Task<UserDto?> ChangeUserRoleAsync(Guid id, ChangeRoleDto request, CancellationToken cancellationToken = default)
+    {
+        var marketId = _currentMarketService.GetCurrentMarketId();
+
+        var users = await _unitOfWork.Users.FindAsync(
+            u => u.Id == id && u.MarketId == marketId,
+            cancellationToken);
+        var user = users.FirstOrDefault();
+
+        if (user is null)
+            return null;
+
+        if (user.Role is Role.Owner or Role.SuperAdmin)
+            throw new InvalidOperationException("Owner rolini o'zgartirib bo'lmaydi.");
+
+        if (!Enum.TryParse<Role>(request.Role, ignoreCase: true, out var newRole)
+            || newRole is not (Role.Admin or Role.Seller))
+            throw new InvalidOperationException("Faqat Admin yoki Seller rolini belgilash mumkin.");
+
+        if (user.Role == newRole)
+            return MapToDto(user);
+
+        user.Role = newRole;
+        user.Permissions = new List<string>();
+        user.IsPermissionsCustomized = false;
+        user.ShiftStatus = ShiftStatus.Active;
+        user.ShiftStartUtc = null;
+        user.ShiftEndUtc = null;
+
+        var utcNow = DateTime.UtcNow;
+        await InvalidateSessionsAsync(user, utcNow, cancellationToken);
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        PublishEpoch(user.Id, utcNow);
         return MapToDto(user);
     }
 

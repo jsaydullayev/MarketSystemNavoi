@@ -5180,6 +5180,24 @@ abstract class AppLocalizations {
   /// **'Ruxsatlarni boshqarish'**
   String get managePermissions;
 
+  /// No description provided for @changeRole.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rolni o\'zgartirish'**
+  String get changeRole;
+
+  /// No description provided for @changeRoleWarning.
+  ///
+  /// In uz, this message translates to:
+  /// **'Xodim tizimdan chiqariladi va qayta kirishi kerak bo\'ladi. Maxsus sozlangan ruxsatlari yangi rolning standart ruxsatlariga qaytadi.'**
+  String get changeRoleWarning;
+
+  /// No description provided for @roleChanged.
+  ///
+  /// In uz, this message translates to:
+  /// **'Rol o\'zgartirildi'**
+  String get roleChanged;
+
   /// No description provided for @shiftOpen.
   ///
   /// In uz, this message translates to:

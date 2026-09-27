@@ -120,4 +120,33 @@ public class UsersControllerCreateOwnerTests
             x => x.CreateUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task CreateUser_AdminRoleRequestedBySeller_Forbids()
+    {
+        // An Owner may grant users.manage to a Seller — that must still not let
+        // them mint an Admin account (whose password they chose) and log in as it.
+        var controller = ControllerAs(Role.Seller);
+
+        var result = await controller.CreateUser(NewUserRequest("Admin"));
+
+        result.Result.Should().BeOfType<ForbidResult>();
+        _userServiceMock.Verify(
+            x => x.CreateUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateUser_SellerRoleRequestedBySeller_StillAllowed()
+    {
+        _userServiceMock
+            .Setup(x => x.CreateUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(FakeUser("Seller"));
+        var controller = ControllerAs(Role.Seller);
+
+        var result = await controller.CreateUser(NewUserRequest("Seller"));
+
+        result.Result.Should().BeOfType<CreatedAtActionResult>(
+            "a Seller holding users.manage may still add fellow Sellers");
+    }
 }

@@ -9,6 +9,7 @@ import 'package:market_system_client/design/tokens/app_tokens.dart';
 import 'package:market_system_client/design/tokens/app_typography.dart';
 import 'package:market_system_client/design/widgets/app_button.dart';
 import 'package:market_system_client/features/users/screens/user_permissions_screen.dart';
+import 'package:market_system_client/features/users/widgets/change_role_sheet.dart';
 import 'package:market_system_client/features/users/widgets/shift_history_sheet.dart';
 import 'package:market_system_client/l10n/app_localizations.dart';
 
@@ -119,6 +120,23 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
     }
   }
 
+  /// Owner-only: pick a new role for this employee, then refresh local +
+  /// parent state (the shift section follows the Seller role).
+  Future<void> _changeRole() async {
+    final l10n = AppLocalizations.of(context)!;
+    final updated = await ChangeRoleSheet.show(context, user: _user);
+    if (updated == null || !mounted) return;
+    setState(() => _user = updated);
+    widget.onChanged?.call();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.roleChanged),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   /// Pick a custom [start, end] window via date + time pickers, then apply
   /// it as a Scheduled shift.
   Future<void> _pickWindow() async {
@@ -193,10 +211,11 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final canManageShift = auth.can(Permissions.usersShift);
     final isSellerViewed = role.toLowerCase() == 'seller';
-    // Permission management is Owner-only (backend endpoint is OwnerOnly) and
-    // only meaningful for the gateable roles — Admin and Seller.
+    // Role and permission management are Owner-only (both backend endpoints
+    // are OwnerOnly) and only meaningful for the employee roles — Admin and
+    // Seller.
     final roleLower = role.toLowerCase();
-    final canManagePermissions =
+    final isOwnerViewingEmployee =
         auth.role == 'Owner' && (roleLower == 'admin' || roleLower == 'seller');
 
     return Container(
@@ -303,9 +322,16 @@ class _UserInfoSheetState extends State<UserInfoSheet> {
                 onSetWindow: _pickWindow,
               ),
             ],
-            // Owner → fine-grained permission matrix for this user.
-            if (canManagePermissions) ...[
+            // Owner → move this employee between Admin and Seller, and the
+            // fine-grained permission matrix for them.
+            if (isOwnerViewingEmployee) ...[
               const SizedBox(height: AppSpacing.lg),
+              AppSecondaryButton(
+                label: l10n.changeRole,
+                icon: Icons.swap_horiz_rounded,
+                onPressed: _changeRole,
+              ),
+              const SizedBox(height: AppSpacing.md),
               AppSecondaryButton(
                 label: l10n.managePermissions,
                 icon: Icons.shield_outlined,
