@@ -62,12 +62,11 @@ class _AddUserSheetState extends State<AddUserSheet> {
     super.dispose();
   }
 
-  // Role gating: Owner can create any role, Admin can create Admin/Seller,
-  // everyone else only Seller. Preserved from the legacy widget.
+  // Role gating mirrors UsersController.CreateUser: only the Owner mints Admin
+  // (and co-Owner) accounts; everyone else holding users.manage adds Sellers.
   List<String> get _roles {
     final r = Provider.of<AuthProvider>(context, listen: false).user?['role'];
     if (r == 'Owner') return ['Seller', 'Admin', 'Owner'];
-    if (r == 'Admin') return ['Seller', 'Admin'];
     return ['Seller'];
   }
 
