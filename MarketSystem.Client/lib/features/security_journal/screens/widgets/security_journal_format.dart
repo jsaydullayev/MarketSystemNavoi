@@ -32,6 +32,8 @@ const Map<String, String> _payloadLabels = {
   'productname': 'Mahsulot',
   'customername': 'Mijoz',
   'username': 'Login',
+  'fromrole': 'Oldingi rol',
+  'torole': 'Yangi rol',
   'statuscode': 'Status kod',
   'message': 'Xatolik',
   'path': 'Manzil',

@@ -13,14 +13,15 @@ using Xunit;
 namespace MarketSystem.IntegrationTests.Integration;
 
 /// <summary>
-/// Controller-level tests for the "Owner can add an Owner" capability and its
-/// escalation guard in <see cref="UsersController.CreateUser"/>.
+/// Controller-level tests for the escalation guard in
+/// <see cref="UsersController.CreateUser"/>.
 ///
-/// The security contract: creating an Owner is restricted to Owner/SuperAdmin
-/// callers. An Admin holding <c>users.manage</c> (enough to create Admin/Seller)
-/// must NOT be able to POST <c>role=Owner</c> and self-escalate — the exact
-/// Admin→Owner escalation the codebase guards against. Client-side role hiding
-/// is cosmetic; this gate is the real boundary.
+/// The security contract: creating an Owner or an Admin is restricted to
+/// Owner/SuperAdmin callers; <c>users.manage</c> alone only adds Sellers. An
+/// Admin must NOT be able to POST <c>role=Owner</c> and self-escalate (the
+/// Admin→Owner escalation the codebase guards against), and nobody but the
+/// Owner may mint an Admin whose password they would then know. Client-side
+/// role hiding is cosmetic; this gate is the real boundary.
 /// </summary>
 public class UsersControllerCreateOwnerTests
 {
@@ -104,20 +105,52 @@ public class UsersControllerCreateOwnerTests
             Times.Once);
     }
 
-    [Fact]
-    public async Task CreateUser_AdminRoleRequestedByAdmin_StillAllowed()
+    [Theory]
+    [InlineData(Role.Admin)]
+    [InlineData(Role.Seller)]
+    public async Task CreateUser_AdminRoleRequestedByNonOwner_ForbidsAndSkipsService(Role callerRole)
+    {
+        // The creator picks the password, so minting an Admin means logging in
+        // with the full Admin set — a Seller granted users.manage, or an Admin
+        // the Owner restricted, must not escape their limits this way.
+        var controller = ControllerAs(callerRole);
+
+        var result = await controller.CreateUser(NewUserRequest("Admin"));
+
+        result.Result.Should().BeOfType<ForbidResult>();
+        _userServiceMock.Verify(
+            x => x.CreateUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData(Role.Owner)]
+    [InlineData(Role.SuperAdmin)]
+    public async Task CreateUser_AdminRoleRequestedByOwnerOrSuperAdmin_CreatesAdmin(Role callerRole)
     {
         _userServiceMock
             .Setup(x => x.CreateUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(FakeUser("Admin"));
-        var controller = ControllerAs(Role.Admin);
+        var controller = ControllerAs(callerRole);
 
         var result = await controller.CreateUser(NewUserRequest("Admin"));
 
+        result.Result.Should().BeOfType<CreatedAtActionResult>();
+    }
+
+    [Theory]
+    [InlineData(Role.Admin)]
+    [InlineData(Role.Seller)]
+    public async Task CreateUser_SellerRoleRequestedByUsersManageHolder_StillAllowed(Role callerRole)
+    {
+        _userServiceMock
+            .Setup(x => x.CreateUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(FakeUser("Seller"));
+        var controller = ControllerAs(callerRole);
+
+        var result = await controller.CreateUser(NewUserRequest("Seller"));
+
         result.Result.Should().BeOfType<CreatedAtActionResult>(
-            "the Owner gate must not block an Admin from creating an Admin/Seller");
-        _userServiceMock.Verify(
-            x => x.CreateUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            "users.manage still lets its holder add Sellers");
     }
 }

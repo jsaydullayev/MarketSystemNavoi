@@ -2722,6 +2722,16 @@ class AppLocalizationsUz extends AppLocalizations {
   String get managePermissions => 'Ruxsatlarni boshqarish';
 
   @override
+  String get changeRole => 'Rolni o\'zgartirish';
+
+  @override
+  String get changeRoleWarning =>
+      'Xodim tizimdan chiqariladi va qayta kirishi kerak bo\'ladi. Maxsus sozlangan ruxsatlari yangi rolning standart ruxsatlariga qaytadi.';
+
+  @override
+  String get roleChanged => 'Rol o\'zgartirildi';
+
+  @override
   String get shiftOpen => 'Smena ochiq';
 
   @override

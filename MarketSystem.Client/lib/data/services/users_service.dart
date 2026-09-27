@@ -72,12 +72,11 @@ class UsersService {
     }
   }
 
-  // User yangilash (Admin/Owner only)
+  // User yangilash (Admin/Owner only). Rol bu yerda o'zgarmaydi — [changeRole].
   Future<dynamic> updateUser({
     required String id,
     required String fullName,
     String? password,
-    required String role,
     required bool isActive,
   }) async {
     final response = await _httpService.put(
@@ -86,7 +85,6 @@ class UsersService {
         'id': id,
         'fullName': fullName,
         if (password != null) 'password': password,
-        'role': role,
         'isActive': isActive,
       },
     );
@@ -99,6 +97,25 @@ class UsersService {
         fallbackMessage: 'Failed to update user',
       );
     }
+  }
+
+  // Xodim rolini o'zgartirish (Admin ↔ Seller) — faqat Owner.
+  // Backend route: PUT /api/Users/ChangeRole/{id}
+  // Xodimning barcha sessiyalari uziladi, maxsus ruxsatlari esa yangi rolning
+  // standart ruxsatlariga qaytadi.
+  Future<dynamic> changeRole({required String id, required String role}) async {
+    final response = await _httpService.put(
+      '${ApiConstants.users}/ChangeRole/$id',
+      body: {'role': role},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw ApiException.fromResponse(
+      response,
+      fallbackMessage: 'Failed to change role',
+    );
   }
 
   // User o'chirish

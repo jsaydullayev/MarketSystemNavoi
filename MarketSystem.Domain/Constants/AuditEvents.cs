@@ -50,6 +50,9 @@ public static class AuditActions
     // security journal can isolate credential events for review.
     public const string PasswordChange = "PasswordChange";
     public const string ShiftChange = "ShiftChange";
+    // Owner moved an employee between Admin and Seller — a privilege change, so
+    // it is journaled with from/to instead of as a generic User Update.
+    public const string RoleChange = "RoleChange";
     public const string ProfileImageUpdate = "ProfileImageUpdate";
     public const string ProductImageUpdate = "ProductImageUpdate";
 

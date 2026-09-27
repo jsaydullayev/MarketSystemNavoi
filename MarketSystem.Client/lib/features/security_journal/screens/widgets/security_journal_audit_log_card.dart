@@ -134,6 +134,7 @@ class AuditLogCard extends StatelessWidget {
     'Block' ||
     'PasswordChange' ||
     'ShiftChange' ||
+    'RoleChange' ||
     'Error' => true,
     _ => false,
   };

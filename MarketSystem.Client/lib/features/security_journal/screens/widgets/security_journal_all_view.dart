@@ -33,7 +33,8 @@ const _entityTypes = <String>[
 // in this filter chip-list is still rendered as a row, just unfilterable.
 // Last sync with backend Y1: added Deposit (cash AddCash), PasswordChange
 // (UpdateProfile w/ new password), ShiftChange (admin sets seller shift),
-// ProfileImageUpdate (avatar set/clear).
+// ProfileImageUpdate (avatar set/clear), RoleChange (Owner moves an employee
+// between Admin and Seller).
 const _actions = <String>[
   'Create',
   'Update',
@@ -53,6 +54,7 @@ const _actions = <String>[
   'Close',
   'PasswordChange',
   'ShiftChange',
+  'RoleChange',
   'ProfileImageUpdate',
 ];
 

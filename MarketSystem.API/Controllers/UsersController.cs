@@ -36,6 +36,11 @@ public class UsersController : ControllerBase
     private Guid CurrentUserId() =>
         Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : Guid.Empty;
 
+    /// <summary>Owner/SuperAdmin — the only callers allowed to create or edit
+    /// Admin accounts (users.manage alone covers Sellers).</summary>
+    private bool IsOwnerOrSuperAdmin() =>
+        User.FindFirst(ClaimTypes.Role)?.Value is "Owner" or "SuperAdmin";
+
     [HttpGet("{id}")]
     [RequirePermission(PermissionKeys.UsersAccess)]
     public async Task<ActionResult<UserDto>> GetUser(Guid id)
@@ -89,17 +94,19 @@ public class UsersController : ControllerBase
     [RequirePermission(PermissionKeys.UsersManage)]
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto request)
     {
-        // Escalation guard: minting an Owner is Owner/SuperAdmin-only. An Admin
-        // may hold users.manage (enough to create Admin/Seller), but must never
-        // be able to create an Owner and thereby escalate its own tenant
-        // privileges. Client-side role hiding is not sufficient — a hand-crafted
-        // POST would otherwise reach the service, so enforce it here too.
+        // Escalation guard — only the Owner (or SuperAdmin) mints Owner and Admin
+        // accounts; users.manage alone creates Sellers (the same rule
+        // add_user_sheet.dart's role picker applies). The creator chooses the
+        // password, so minting an Admin means logging in with the full Admin
+        // permission set: a Seller granted users.manage, or an Admin whose
+        // permissions the Owner restricted, would otherwise escape their limits.
+        // Client-side role hiding is not sufficient — a hand-crafted POST would
+        // otherwise reach the service, so enforce it here too.
         if (Enum.TryParse<Role>(request.Role, ignoreCase: true, out var requestedRole) &&
-            requestedRole == Role.Owner)
+            requestedRole is (Role.Owner or Role.Admin) &&
+            !IsOwnerOrSuperAdmin())
         {
-            var callerRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (callerRole is not ("Owner" or "SuperAdmin"))
-                return Forbid();
+            return Forbid();
         }
 
         try
@@ -122,6 +129,17 @@ public class UsersController : ControllerBase
     {
         if (id != request.Id)
             return BadRequest("ID mismatch");
+
+        // Admin accounts are the Owner's to edit. This endpoint sets passwords,
+        // so otherwise any users.manage holder could reset a fellow Admin's
+        // password — an Admin the Owner may have granted more (audit log,
+        // profit, …) — and log in as them.
+        if (!IsOwnerOrSuperAdmin())
+        {
+            var target = await _userService.GetUserByIdAsync(id);
+            if (target?.Role == Role.Admin.ToString())
+                return Forbid();
+        }
 
         try
         {
@@ -349,6 +367,41 @@ public class UsersController : ControllerBase
             await _auditLogService.LogActionAsync(
                 AuditEntityTypes.User, id, AuditActions.ShiftChange, CurrentUserId(),
                 new { request.Status, request.StartUtc, request.EndUtc });
+
+            return Ok(user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Owner RBAC — move an employee between Admin and Seller. Owner-only, like
+    /// the permission matrix: promoting to Admin grants a whole permission bundle,
+    /// so it must not be reachable with users.manage alone. The employee's custom
+    /// permissions reset to the new role's defaults and all their sessions end.
+    /// </summary>
+    [HttpPut("{id}")]
+    [Authorize(Policy = "OwnerOnly")]
+    public async Task<ActionResult<UserDto>> ChangeRole(Guid id, [FromBody] ChangeRoleDto request)
+    {
+        try
+        {
+            // Snapshot the role BEFORE the change so the audit record shows
+            // from → to, not merely the final state.
+            var before = await _userService.GetUserByIdAsync(id);
+
+            var user = await _userService.ChangeUserRoleAsync(id, request);
+            if (user is null)
+                return NotFound();
+
+            if (before is not null && before.Role != user.Role)
+            {
+                await _auditLogService.LogActionAsync(
+                    AuditEntityTypes.User, id, AuditActions.RoleChange, CurrentUserId(),
+                    new { user.Username, fromRole = before.Role, toRole = user.Role });
+            }
 
             return Ok(user);
         }

@@ -88,11 +88,20 @@ public record UpdateUserDto(
     [param: StrongPassword]
     string? Password,
 
+    // No Role here on purpose: this endpoint only needs users.manage, and a
+    // Seller granted users.manage could otherwise promote themselves to Admin.
+    // Roles change through the Owner-only ChangeRole endpoint (ChangeRoleDto).
+    [property: JsonPropertyName("isActive")] bool IsActive
+);
+
+/// <summary>
+/// Owner request to move an employee to another role. Only "Admin" and
+/// "Seller" are accepted — Owner/SuperAdmin are never assigned this way.
+/// </summary>
+public record ChangeRoleDto(
     [property: JsonPropertyName("role")]
     [param: Required(ErrorMessage = "Rol majburiy")]
-    string Role,
-
-    [property: JsonPropertyName("isActive")] bool IsActive
+    string Role
 );
 
 /// <summary>

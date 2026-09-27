@@ -2726,6 +2726,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get managePermissions => 'Управление правами';
 
   @override
+  String get changeRole => 'Изменить роль';
+
+  @override
+  String get changeRoleWarning =>
+      'Сотрудник выйдет из системы и должен будет войти заново. Настроенные вручную права сбросятся к стандартным правам новой роли.';
+
+  @override
+  String get roleChanged => 'Роль изменена';
+
+  @override
   String get shiftOpen => 'Смена открыта';
 
   @override
